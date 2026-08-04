@@ -1,0 +1,30 @@
+{
+  "name": "pmi-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "typecheck": "tsc --build --force",
+    "test": "vitest run",
+    "test:unit": "vitest run --project backend-unit --project worker-unit --project engine-contract --project fixture-adapter --project speckit-adapter",
+    "test:contract": "vitest run --project backend-contract",
+    "test:integration": "vitest run --project backend-integration",
+    "test:arch": "vitest run --project architecture",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.19.1",
+    "@typescript-eslint/parser": "^8.19.1",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

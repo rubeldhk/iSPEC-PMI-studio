@@ -1,0 +1,173 @@
+// T012 + T013 — Workspace, User, universal columns, and the structural tables
+// EPIC-001's job orchestration depends on.
+//
+// Design source: specs/_shared/schema.sql and specs/_shared/data-model.md
+//
+// FR-002: every tenant-scoped model carries workspaceId from the FIRST
+// migration, so Phase 3 row-level security is a switch rather than a data
+// migration. Scoping is applied by a helper (T014), never by hand at call sites.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- tenancy
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  projects       Project[]
+  generationJobs GenerationJob[]
+  auditEntries   AuditEntry[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  email        String   @unique
+  displayName  String
+  // Argon2id. Never selected by a read path. Hashing itself is EPIC-005.
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------- project stub
+//
+// STRUCTURAL ONLY — decided in specs/001-platform-foundation/plan.md.
+//
+// GenerationJob needs a project to belong to, and "a job belongs to a project"
+// is structural rather than behavioural: no BRS will remove it. What a BRS WILL
+// settle — naming rules, archival, templates, health, engine selection — is
+// deliberately absent.
+//
+// EPIC-006 takes ownership and extends this when it unfreezes.
+// **This table must not grow before then.** Asserted by T011a.
+
+model Project {
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String
+  ownerUserId String
+  createdAt   DateTime @default(now())
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  generationJobs GenerationJob[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+  @@map("projects")
+}
+
+// ---------------------------------------------------------------- jobs
+
+enum JobKind {
+  generate_specification
+  generate_tasks
+  validate_specification
+}
+
+enum JobState {
+  queued
+  running
+  succeeded
+  failed
+  cancelled
+  timed_out
+}
+
+// FR-026 / SC-005: there is deliberately no `unknown` member.
+enum JobFailureReason {
+  engine_unavailable
+  engine_error
+  malformed_output
+  empty_output
+  timeout
+  cancelled
+  input_too_large
+  empty_selection
+}
+
+model GenerationJob {
+  id             String            @id @default(uuid())
+  workspaceId    String
+  projectId      String
+  // Idempotency: a duplicate submission joins the existing job rather than
+  // starting — and billing — a second engine run.
+  jobKey         String
+  kind           JobKind
+  requestedById  String
+  engineName     String
+  engineVersion  String
+  // Correlation identifier, carried API -> queue -> worker -> sandbox (PC-3).
+  correlationId  String
+  inputRefs      Json
+  state          JobState          @default(queued)
+  failureReason  JobFailureReason?
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime          @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  // Only one LIVE job per idempotency key. Enforced in the migration as a
+  // partial unique index over state IN ('queued','running').
+  @@index([projectId, jobKey])
+  @@index([projectId, createdAt])
+  @@index([workspaceId])
+  @@map("generation_jobs")
+}
+
+// ---------------------------------------------------------------- audit
+
+enum AuditAction {
+  create
+  update
+  lifecycle_transition
+  engine_invocation
+  access_refused
+}
+
+enum AuditOutcome {
+  success
+  refused
+  failed
+}
+
+// FR-033 / SC-012. Append-only: no update or delete path exists in code, and
+// a database trigger rejects UPDATE and DELETE (see specs/_shared/schema.sql).
+model AuditEntry {
+  id          String       @id @default(uuid())
+  workspaceId String
+  // Null ONLY for unauthenticated refusals — the events most worth recording.
+  actorId     String?
+  action      AuditAction
+  targetType  String
+  targetId    String?
+  outcome     AuditOutcome
+  detail      Json?
+  occurredAt  DateTime     @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, occurredAt])
+  @@index([targetType, targetId])
+  @@map("audit_entries")
+}
