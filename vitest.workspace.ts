@@ -23,6 +23,12 @@ export default defineWorkspace([
       root: './backend',
       include: ['tests/contract/**/*.spec.ts'],
       environment: 'node',
+      // Legitimately empty until the held product-surface epics land: every
+      // contract test belongs to an epic blocked on PMI-DOC-004 (decision
+      // D-10). The step stays wired so it activates the moment the first one
+      // appears. NOT set on unit or architecture — an empty suite there would
+      // be a real alarm, not an expected state.
+      passWithNoTests: true,
     },
   },
   {
@@ -31,6 +37,8 @@ export default defineWorkspace([
       root: './backend',
       include: ['tests/integration/**/*.spec.ts'],
       environment: 'node',
+      // Empty until T052 lands (needs a generated Prisma client + migrations).
+      passWithNoTests: true,
     },
   },
   {
