@@ -185,7 +185,8 @@
 
 This Epic may be declared complete and promoted out of `local` only when ALL hold:
 
-- [ ] Every implementation task has a passing unit test (Constitution V)
+- [ ] Every implementation task has a passing unit test — or, for document/configuration outputs,
+      a passing executable conformance check (Constitution V)
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
 - [ ] `specs/[epic-id]/defects/` contains no open defect records
 - [ ] Promotion follows `local → dev → stage → prod` with no skipped environment

@@ -1,29 +1,45 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 1.1.0
-Bump rationale: MINOR — two new principles added governing agent session conduct
-(session labelling and a mandatory closing report). No existing principle was removed,
-renamed, or redefined; all prior guidance remains valid unchanged.
+Version change: 1.1.0 → 1.2.0
+Bump rationale: MINOR — two existing principles materially expanded. Nothing removed, renamed,
+or redefined incompatibly; every prior obligation still holds. Both amendments ratify rulings
+made in the EPIC-018 clarification session of 2026-08-05.
 
-Modified principles: none renamed or redefined
+Modified principles:
+  - I. Spec Kit Command Gate — `governance/**` added to the exempt list; the constitution
+    itself explicitly declared NOT exempt
+  - V. Mandatory Task-Level Unit Tests — extended to non-code outputs, which are satisfied by
+    an executable conformance check
 
-Added principles:
-  - VIII. Session Labelling by Working Epic
-  - IX. Mandatory Closing Report (NON-NEGOTIABLE)
-
+Added principles: none
 Added sections: none
 Removed sections: none
 
+MIGRATION NOTE (required — Principle V is NON-NEGOTIABLE):
+Principle V is *broadened*, not relaxed. Tasks that already carry unit tests are unaffected.
+  • EPIC-018 — all 29 tasks already pair with conformance checks; compliant as written.
+  • EPIC-003 T088/T089, EPIC-004 T013, EPIC-014 T149, EPIC-016 — already given paired unit
+    tests by the remediation of 2026-08-03/05. Not affected by this amendment.
+  • No in-flight epic becomes non-compliant. Any FUTURE task whose output is a document or
+    configuration file now requires an executable check where previously the obligation was
+    arguable. `/speckit-tasks` MUST emit one.
+  • The one new obligation on existing work: EPIC-018 T336 must land, since a conformance
+    check that is never wired into CI does not satisfy the principle.
+
 Templates requiring updates:
-  ✅ .specify/templates/plan-template.md   — Constitution Check gained gate rows VIII, IX
-  ✅ .specify/templates/tasks-template.md  — session labelling in "Before starting"; closing
-                                             report added to Notes and Epic Closure phase
-  ✅ .specify/templates/spec-template.md   — Epic Exit Criteria gained a closing-report item
+  ✅ .specify/templates/tasks-template.md  — Tests header and Notes extended to non-code outputs
+  ✅ .specify/templates/plan-template.md   — gate V row covers conformance checks
+  ✅ .specify/templates/spec-template.md   — Epic Exit Criteria unit-test item widened
   ✅ .claude/skills/speckit-*/SKILL.md     — reviewed; generic guidance, no outdated refs
-  ✅ readme.txt                            — reviewed; no principle references to update
+  ✅ specs/018-repository-governance/**    — already consistent; this ratifies its assumptions
 
 Follow-up TODOs: none
+
+--- previous report (v1.1.0) ---
+MINOR — two new principles added governing agent session conduct: VIII Session Labelling by
+Working Epic, and IX Mandatory Closing Report (NON-NEGOTIABLE). No principle removed or
+redefined. Propagated to all three templates.
 
 --- previous report (v1.0.0) ---
 Initial ratification. All placeholder tokens replaced with concrete governance derived from
@@ -47,8 +63,14 @@ Exempt from this gate — these MAY be edited directly:
 
 - Spec Kit's own governance and scaffolding files: `.specify/**`, `.claude/skills/speckit-*/**`,
   and generated artifacts under `specs/**` (`spec.md`, `plan.md`, `tasks.md`, checklists).
+- Repository governance artifacts under `governance/**` — steering files, the repository layout,
+  the governance index, and the process conventions that accompany them.
 - Requirement source material under `SRS/**`.
 - Repository metadata that is not application code: `README*`, `.gitignore`, CI configuration.
+
+**This document is NOT exempt.** Amending the constitution requires `/speckit-constitution`.
+The distinction is deliberate: standards change often and governance rarely, so steering content
+must be cheap to correct while the rules that bind it stay expensive to change.
 
 If a needed change has no covering task, the correct response is to run the Spec Kit command
 that produces one — never to edit the code first.
@@ -103,8 +125,22 @@ every implementation task it generates.
 - A Task is not complete until its tests pass.
 - A Feature is not complete until every Task's tests pass together.
 
+**Non-code outputs are covered too.** A Task whose output is a document, a configuration file, or
+any other non-executable artifact MUST be paired with an **executable conformance check** — a test
+that reads the artifact and fails when it drifts from the standard governing it. The check is the
+test; it satisfies this principle in full.
+
+- The check MUST be executable and MUST run in CI. **Manual review does not satisfy this
+  principle**, and neither does a checklist item a person ticks.
+- A conformance check MUST be able to fail. A check that cannot fail is decoration.
+- Whether a failing check blocks the build or only reports is a per-epic decision, recorded in
+  that epic's spec. Reporting is acceptable; having no check is not.
+
 **Rationale**: Task-scoped tests keep the failure blast radius small and make convergence and
-defect triage evidence-based rather than opinion-based.
+defect triage evidence-based rather than opinion-based. Extending that to documents closes the
+loophole where an epic delivers governance nobody verifies: a specification, standard, or layout
+that no check reads is a document that silently rots, and rotted governance is worse than none
+because it is still trusted.
 
 ### VI. Defect Traceability Per Epic
 
@@ -261,4 +297,4 @@ IV, V, VI, and VII were honored. Every command run MUST end with the closing rep
 Principle IX. Complexity or deviation MUST be justified in the plan's Complexity Tracking table,
 or the work MUST be simplified.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-03
+**Version**: 1.2.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-05

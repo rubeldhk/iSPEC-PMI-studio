@@ -16,6 +16,11 @@ have at least one accompanying unit-test task. Unit tests are written FIRST and 
 the implementing code is written. A task is not complete until its tests pass. Tests are never
 optional in this project.
 
+**Non-code outputs count too** (Constitution V, v1.2.0). A task whose output is a document, a
+configuration file, or any other non-executable artifact MUST be paired with an **executable
+conformance check** that reads the artifact and fails when it drifts from its governing standard.
+Manual review does not satisfy the gate, and a check that cannot fail is decoration.
+
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 **Before starting**: sync the repository from GitHub, and confirm no other Claude session is
@@ -285,4 +290,6 @@ With multiple developers:
   direct patches (Constitution VI)
 - Every command run ends with a closing report: what was done + recommended next task
   (Constitution IX); unrun tests are never reported as passing
+- Document and configuration tasks pair with an executable conformance check, not a unit test
+  (Constitution V); whether it blocks CI or only reports is recorded in the epic's spec
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

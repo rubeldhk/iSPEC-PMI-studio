@@ -48,7 +48,7 @@
 | II | Every requirement traces to a cited `SRS/` document; untraced items listed in Assumptions | [PASS/FAIL] |
 | III | Work is decomposed Epic → Feature → Task; Epic ID assigned and `specs/<epic-id>/` exists | [PASS/FAIL] |
 | IV | `/speckit-converge` is scheduled as the Epic exit gate before any promotion | [PASS/FAIL] |
-| V | Every implementation task will carry a mandatory unit-test task, written to fail first | [PASS/FAIL] |
+| V | Every implementation task carries a mandatory unit-test task, written to fail first — or, for document/configuration outputs, an executable conformance check that can fail | [PASS/FAIL] |
 | VI | `specs/<epic-id>/defects/` exists and is the sole intake for defects in this Epic | [PASS/FAIL] |
 | VII | Changes land in the local Claude repo first; promotion follows local → dev → stage → prod | [PASS/FAIL] |
 | VIII | Session/clone is labelled with the working Epic (`EPIC-### <name>`), or the first command | [PASS/FAIL] |
