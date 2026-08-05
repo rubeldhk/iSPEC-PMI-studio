@@ -1,6 +1,6 @@
 # Epic Specification: Specification Authoring & Generation
 
-**Epic**: `EPIC-008` | **Module**: M-04 | **Tasks**: 19
+**Epic**: `EPIC-008` | **Module**: M-04 | **Tasks**: 23
 
 **Parent product spec**: [../_shared/platform-spec.md](../_shared/platform-spec.md)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
@@ -65,4 +65,5 @@ Specification, versions, traceability links, and the job's terminal state are wr
 - [ ] `/speckit-converge` reports no unbuilt work for this epic
 - [ ] `specs/008-spec-authoring-generation/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
+- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge

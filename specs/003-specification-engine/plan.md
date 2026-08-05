@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-003` | **Module**: M-08 | **Date**: 2026-08-03 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 29 · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
+**Tasks**: 35 · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([engine contract](../_shared/contracts/specification-engine.md) ·
@@ -28,7 +28,7 @@ it ships.
 | F-08.3 Engine resolution and selection | 5 | Per-project resolution; Spec Kit registered as default |
 | F-08.4 Fixture adapter | 2 | Deterministic engine with injectable failures |
 | F-08.5 Conformance suite | 3 | 13 cases, run against **every** adapter |
-| F-08.6 Spec Kit sandbox | 4 | Engine image, sandbox constraints, ephemeral workspace |
+| F-08.6 Spec Kit sandbox | 6 | Engine image, sandbox constraints, ephemeral workspace |
 | F-08.7 Spec Kit invocation and parsing | 5 | The five-step sequence; descriptor versioning |
 | F-08.8 Architecture enforcement | 4 | Build fails on a Spec Kit reference in `backend/`, or an HTTP type in a service |
 
@@ -58,7 +58,7 @@ AI provider endpoint; no platform credentials mounted.
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — via [platform-spec](../_shared/platform-spec.md) |
-| III | Epic → Feature → Task decomposition | PASS — 8 functions, 29 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 8 functions, 35 tasks |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS |
 | V | Every implementation task carries a unit test, written to fail first | PASS — 0 gaps |
 | VI | `specs/003-specification-engine/defects/` exists | PASS |
@@ -129,7 +129,7 @@ Implements existing shared artifacts; adds none:
 
 ## Definition of done
 
-- [ ] 29 tasks complete, every unit test passing (Constitution V)
+- [ ] 35 tasks complete, every unit test passing (Constitution V)
 - [ ] **Conformance suite green against both adapters** — 13 cases each
 - [ ] `pnpm test:arch` green — no Spec Kit reference anywhere in `backend/src`
 - [ ] Quickstart **V11** (engine independence) passes: switch a project to the fixture engine,

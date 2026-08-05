@@ -5,7 +5,7 @@ description: "Task list for EPIC-011 — Traceability"
 
 # Tasks: Traceability
 
-**Epic**: `EPIC-011` | **Module**: M-04 | **Tasks**: 15
+**Epic**: `EPIC-011` | **Module**: M-04 | **Tasks**: 19
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -28,7 +28,7 @@ paired unit-test task, written to fail first.
 
 - [ ] T077a [P] [US3] Unit tests asserting `TraceabilityLink` permits only the two Phase 1 edge types and rejects duplicates, in `backend/tests/unit/traceability/link-constraints.spec.ts`
 - [ ] T078 [US3] Define `TraceabilityLink` model with indexes on both traversal directions in `backend/prisma/schema.prisma` (unit test: T077a)
-- [ ] T081 [US3] Implement traceability link creation on successful generation in `backend/src/modules/traceability/link-writer.service.ts` (unit test: T073)
+- [ ] T081 [US3] Implement traceability link creation on successful generation in `backend/src/modules/traceability/link-writer.service.ts` (unit test: T073 — **defined in EPIC-008**)
 
 ## F-04.13 · Bidirectional traversal
 
@@ -56,3 +56,15 @@ paired unit-test task, written to fail first.
 
 - [ ] T133a [P] [US7] Component unit tests asserting both traversal directions render and retired links are flagged in `frontend/tests/unit/pages/Traceability.spec.tsx`
 - [ ] T134 [P] [US7] Implement traceability and coverage views in `frontend/src/pages/Traceability.tsx` (unit test: T133a)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/011-traceability/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T201 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/011-traceability/closure.md`
+- [ ] T202 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/011-traceability/closure.md`
+- [ ] T203 Triage `specs/011-traceability/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/011-traceability/closure.md`
+- [ ] T204 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/011-traceability/closure.md`

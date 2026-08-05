@@ -5,7 +5,7 @@ description: "Task list for EPIC-007 — Requirement Intelligence"
 
 # Tasks: Requirement Intelligence
 
-**Epic**: `EPIC-007` | **Module**: M-03 | **Tasks**: 18
+**Epic**: `EPIC-007` | **Module**: M-03 | **Tasks**: 22
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -67,3 +67,15 @@ paired unit-test task, written to fail first.
 - [ ] T071 [P] [US2] Implement requirement register page with filters in `frontend/src/pages/Requirements.tsx` (unit test: T070a)
 - [ ] T071a [P] [US2] Component unit tests for the requirement editor covering empty-description refusal and history rendering in `frontend/tests/unit/components/RequirementEditor.spec.tsx`
 - [ ] T072 [P] [US2] Implement requirement editor and version history view in `frontend/src/components/RequirementEditor.tsx` (unit test: T071a)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/007-requirement-intelligence/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T185 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/007-requirement-intelligence/closure.md`
+- [ ] T186 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/007-requirement-intelligence/closure.md`
+- [ ] T187 Triage `specs/007-requirement-intelligence/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/007-requirement-intelligence/closure.md`
+- [ ] T188 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/007-requirement-intelligence/closure.md`

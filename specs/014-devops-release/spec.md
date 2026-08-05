@@ -1,6 +1,6 @@
 # Epic Specification: DevOps & Release
 
-**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 12
+**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 17
 
 **Parent product spec**: [../_shared/platform-spec.md](../_shared/platform-spec.md)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
@@ -42,7 +42,8 @@ functional requirement. See Purpose and Exit Criteria.
 
 ## Depends on
 
-- All other epics — this is the closure gate
+- **Every other epic, including EPIC-015** — this is the final closure gate and runs last
+- The dependency is one-way: QA validates the product epics, then DevOps closes and promotes
 
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 
@@ -61,4 +62,5 @@ Closure now includes the **architecture review (T152a)** and **security review (
 - [ ] `/speckit-converge` reports no unbuilt work for this epic
 - [ ] `specs/014-devops-release/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
+- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [ ] **This epic owns the platform release gate** (F-11.2): all 15 `closure.md` records confirmed, then promotion `local → dev → stage → prod` with no skipped environment

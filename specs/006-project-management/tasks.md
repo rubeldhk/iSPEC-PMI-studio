@@ -5,7 +5,7 @@ description: "Task list for EPIC-006 — Project Management"
 
 # Tasks: Project Management
 
-**Epic**: `EPIC-006` | **Module**: M-02 | **Tasks**: 9
+**Epic**: `EPIC-006` | **Module**: M-02 | **Tasks**: 13
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -39,3 +39,15 @@ paired unit-test task, written to fail first.
 
 - [ ] T055a [P] [US1] Component unit tests for the projects pages in `frontend/tests/unit/pages/Projects.spec.tsx`
 - [ ] T056 [P] [US1] Implement project list and detail pages in `frontend/src/pages/Projects.tsx` (unit test: T055a)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/006-project-management/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T181 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/006-project-management/closure.md`
+- [ ] T182 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/006-project-management/closure.md`
+- [ ] T183 Triage `specs/006-project-management/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/006-project-management/closure.md`
+- [ ] T184 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/006-project-management/closure.md`

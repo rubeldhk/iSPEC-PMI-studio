@@ -5,7 +5,7 @@ description: "Task list for EPIC-004 — Workspace Tenancy & Audit"
 
 # Tasks: Workspace Tenancy & Audit
 
-**Epic**: `EPIC-004` | **Module**: M-01 / M-13 | **Tasks**: 14
+**Epic**: `EPIC-004` | **Module**: M-01 / M-13 | **Tasks**: 19
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -25,7 +25,8 @@ paired unit-test task, written to fail first.
 
 - [X] T011a [P] Write failing unit tests asserting `Workspace`/`User` schema constraints — required `workspace_id`, unique email, `password_hash` never selected — in `backend/tests/unit/core/schema-constraints.spec.ts`
 - [X] T012 Initialise Prisma and define `Workspace` and `User` models in `backend/prisma/schema.prisma` (unit test: T011a)
-- [X] T013 Add universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) convention and first migration in `backend/prisma/migrations/`
+- [ ] T012a [P] Write failing unit tests asserting the generated migration applies the universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) to **every** table, not only `Workspace` and `User`, in `backend/tests/unit/core/universal-columns.spec.ts`
+- [ ] T013 Add universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) convention and first migration in `backend/prisma/migrations/` (unit test: T012a) — ⚠️ **partially done**: the convention is in `schema.prisma` and asserted by T011a, but **no migration has been generated or applied**. Needs `prisma migrate dev`.
 
 ## F-01.2 · Workspace scoping and isolation
 
@@ -45,3 +46,15 @@ paired unit-test task, written to fail first.
 - [X] T029 Implement transactional audit interceptor in `backend/src/modules/audit/audit.interceptor.ts` (unit test: T028a)
 - [X] T029a [P] Write failing unit tests asserting the audit controller exposes no write or delete route in `backend/tests/unit/audit/audit.controller.spec.ts`
 - [X] T030 [P] Implement read-only `/audit` endpoint in `backend/src/modules/audit/audit.controller.ts` (unit test: T029a)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/004-workspace-tenancy-audit/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T173 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/004-workspace-tenancy-audit/closure.md`
+- [ ] T174 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/004-workspace-tenancy-audit/closure.md`
+- [ ] T175 Triage `specs/004-workspace-tenancy-audit/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/004-workspace-tenancy-audit/closure.md`
+- [ ] T176 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/004-workspace-tenancy-audit/closure.md`

@@ -5,7 +5,7 @@ description: "Task list for EPIC-009 — Specification Lifecycle & Versioning"
 
 # Tasks: Specification Lifecycle & Versioning
 
-**Epic**: `EPIC-009` | **Module**: M-04 | **Tasks**: 22
+**Epic**: `EPIC-009` | **Module**: M-04 | **Tasks**: 26
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -54,3 +54,15 @@ paired unit-test task, written to fail first.
 - [ ] T122 [US6] Implement the approval path surfacing outstanding findings in `backend/src/modules/specifications/approval.service.ts` (unit test: T118)
 - [ ] T122a [P] [US6] Unit tests for validation endpoints with a mocked service in `backend/tests/unit/specifications/validation.controller.spec.ts`
 - [ ] T123 [US6] Implement validation endpoints in `backend/src/modules/specifications/specifications.controller.ts` (unit test: T122a; contract test: T119)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/009-spec-lifecycle-versioning/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T193 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/009-spec-lifecycle-versioning/closure.md`
+- [ ] T194 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/009-spec-lifecycle-versioning/closure.md`
+- [ ] T195 Triage `specs/009-spec-lifecycle-versioning/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/009-spec-lifecycle-versioning/closure.md`
+- [ ] T196 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/009-spec-lifecycle-versioning/closure.md`

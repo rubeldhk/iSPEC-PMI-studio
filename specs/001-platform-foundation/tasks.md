@@ -5,7 +5,7 @@ description: "Task list for EPIC-001 — Platform Foundation"
 
 # Tasks: Platform Foundation
 
-**Epic**: `EPIC-001` | **Module**: M-00 | **Tasks**: 31
+**Epic**: `EPIC-001` | **Module**: M-00 | **Tasks**: 35
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -70,3 +70,15 @@ paired unit-test task, written to fail first.
 - [X] T162 Implement correlation propagation across the sandbox boundary in `engine-adapters/speckit/src/correlation.ts` (PC-3; unit test: T161)
 - [X] T163 [P] Unit tests for job and request metrics — counts, durations, terminal-state breakdown — in `backend/tests/unit/observability/metrics.spec.ts`
 - [X] T164 Implement metrics emission for API requests and generation jobs in `backend/src/core/observability/metrics.ts` (unit test: T163)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/001-platform-foundation/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T165 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/001-platform-foundation/closure.md`
+- [ ] T166 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/001-platform-foundation/closure.md`
+- [ ] T167 Triage `specs/001-platform-foundation/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/001-platform-foundation/closure.md`
+- [ ] T168 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/001-platform-foundation/closure.md`

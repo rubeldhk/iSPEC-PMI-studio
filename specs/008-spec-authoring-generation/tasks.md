@@ -5,7 +5,7 @@ description: "Task list for EPIC-008 — Specification Authoring & Generation"
 
 # Tasks: Specification Authoring & Generation
 
-**Epic**: `EPIC-008` | **Module**: M-04 | **Tasks**: 19
+**Epic**: `EPIC-008` | **Module**: M-04 | **Tasks**: 23
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -67,3 +67,15 @@ paired unit-test task, written to fail first.
 
 - [ ] T093a [P] [US3] Unit tests asserting a requirement change flags derived specifications out of date without altering their content, in `backend/tests/unit/specifications/out-of-date.spec.ts`
 - [ ] T094 [US3] Implement out-of-date flagging when a source requirement changes, without altering the specification, in `backend/src/modules/specifications/out-of-date.service.ts` (unit test: T093a)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/008-spec-authoring-generation/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T189 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/008-spec-authoring-generation/closure.md`
+- [ ] T190 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/008-spec-authoring-generation/closure.md`
+- [ ] T191 Triage `specs/008-spec-authoring-generation/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/008-spec-authoring-generation/closure.md`
+- [ ] T192 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/008-spec-authoring-generation/closure.md`

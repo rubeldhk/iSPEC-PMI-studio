@@ -5,7 +5,7 @@ description: "Task list for EPIC-003 — Specification Engine & Sandbox"
 
 # Tasks: Specification Engine & Sandbox
 
-**Epic**: `EPIC-003` | **Module**: M-08 | **Tasks**: 29
+**Epic**: `EPIC-003` | **Module**: M-08 | **Tasks**: 35
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -61,8 +61,10 @@ paired unit-test task, written to fail first.
 *Untrusted execution. The largest single component in the Epic — a sandboxed runtime, not an integration client.*
 
 - [ ] T086 [P] [US3] Unit tests for workspace provisioning and guaranteed teardown on every terminal outcome in `engine-adapters/speckit/tests/unit/workspace.spec.ts`
-- [ ] T088 [US3] Build the engine container image containing the `specify` CLI, AI agent CLI, and git in `engine-adapters/speckit/docker/Dockerfile`
-- [ ] T089 [US3] Apply sandbox constraints — non-root user, read-only root filesystem, CPU/memory/wall-clock caps, egress restricted to the AI provider — in `engine-adapters/speckit/docker/sandbox.json`
+- [ ] T088a [P] [US3] Unit tests asserting the engine image definition installs the `specify` CLI, the AI agent CLI, and git, and declares a non-root default user, in `engine-adapters/speckit/tests/unit/engine-image.spec.ts`
+- [ ] T088 [US3] Build the engine container image containing the `specify` CLI, AI agent CLI, and git in `engine-adapters/speckit/docker/Dockerfile` (unit test: T088a)
+- [ ] T089a [P] [US3] Unit tests asserting the sandbox manifest declares a non-root user, a read-only root filesystem, CPU, memory and wall-clock caps, and an egress allow-list containing only the AI provider endpoint — the sole containment for RAID **R-02** — in `engine-adapters/speckit/tests/unit/sandbox-config.spec.ts`
+- [ ] T089 [US3] Apply sandbox constraints — non-root user, read-only root filesystem, CPU/memory/wall-clock caps, egress restricted to the AI provider — in `engine-adapters/speckit/docker/sandbox.json` (unit test: T089a)
 - [ ] T090 [US3] Implement ephemeral workspace provisioning and teardown in `engine-adapters/speckit/src/workspace.ts` (unit test: T086)
 
 ## F-08.7 · Spec Kit invocation and parsing
@@ -81,3 +83,15 @@ paired unit-test task, written to fail first.
 - [ ] T142 [US8] Extend the architecture test to cover string identifiers and dynamic imports in `backend/tests/architecture/engine-independence.spec.ts`
 - [ ] T137 [P] [US8] Integration test generating against both adapters and asserting identical platform behaviour in `backend/tests/integration/engine-swap.spec.ts`
 - [ ] T142a Implement the architecture test failing the build if any `backend/src/modules/**/*.service.ts` imports an HTTP type, enforcing PC-1 service/transport separation, in `backend/tests/architecture/transport-independence.spec.ts`
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/003-specification-engine/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T169 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/003-specification-engine/closure.md`
+- [ ] T170 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/003-specification-engine/closure.md`
+- [ ] T171 Triage `specs/003-specification-engine/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/003-specification-engine/closure.md`
+- [ ] T172 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/003-specification-engine/closure.md`

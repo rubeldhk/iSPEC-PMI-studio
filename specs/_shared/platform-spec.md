@@ -615,15 +615,24 @@ Deferred per the SRS Roadmap and the clarifications above:
 This Epic may be declared complete and promoted out of `local` only when ALL hold:
 
 Exit criteria are **per epic** since the split of 2026-08-03 — see each epic's `spec.md`.
-The platform-wide release gate lives in **EPIC-014 DevOps & Release** (F-11.2, tasks T151–T156),
-which writes its outcome to `specs/_shared/release-readiness-report.md` (created by tasks
-T151–T153; it does not exist until the release gate runs).
+
+**Two-stage gate** (restructured 2026-08-03, `/speckit-analyze` finding **C1**):
+
+1. **Per-epic closure** — each epic's `Phase Z · Epic closure` discharges its own unit-test
+   completeness, `/speckit-converge`, defect triage, and principle deltas, writing the result to
+   `specs/<epic>/closure.md`. An epic reaches **release-eligible** alone, waiting on no other epic.
+   This is what lets the proceeding slice (EPIC-001, 003, 004) close while twelve epics stay held.
+2. **Platform release gate** — **EPIC-014 DevOps & Release** (F-11.2, tasks T151–T156) *confirms*
+   the 15 `closure.md` records and adds what no single epic can discharge, writing its outcome to
+   `specs/_shared/release-readiness-report.md` (it does not exist until the release gate runs).
 
 Platform-wide criteria that no single epic can discharge alone:
 
-- [ ] Every implementation task **across all 15 epics** has a passing unit test (Constitution V)
-- [ ] `/speckit-converge` run per epic reports no unbuilt work
-- [ ] **Every** `specs/*/defects/` folder contains no open records
+- [ ] All 15 `closure.md` records present and clean — unit tests, converge, defects, deltas
+- [ ] Architecture review and security review held (MPS Volume 6 §8)
+- [ ] `pnpm test:arch` green — PC-1 transport separation and PC-2 engine independence intact
+- [ ] Quickstart V1–V12 executed and recorded
 - [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
 - [ ] **SRS back-fill completed for FR-024 and FR-025**, which have no SRS source (Constitution II)
-- [ ] **Principle Conformance baseline reviewed** plus every epic's deltas (PMI-DOC-003, decision D-6)
+- [ ] **Principle Conformance baseline reviewed** (PMI-DOC-003, decision D-6); per-epic deltas are
+      confirmed in each epic's own closure task

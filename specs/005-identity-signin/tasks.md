@@ -5,7 +5,7 @@ description: "Task list for EPIC-005 — Identity & Sign-in"
 
 # Tasks: Identity & Sign-in
 
-**Epic**: `EPIC-005` | **Module**: M-01 | **Tasks**: 11
+**Epic**: `EPIC-005` | **Module**: M-01 | **Tasks**: 15
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -40,3 +40,15 @@ paired unit-test task, written to fail first.
 - [ ] T057 [P] [US1] Implement sign-in page and session handling in `frontend/src/pages/SignIn.tsx` (unit test: T056a)
 - [ ] T057a [P] [US1] Unit tests for the API client covering error-shape parsing and session expiry in `frontend/tests/unit/services/api.spec.ts`
 - [ ] T058 [US1] Implement API client for auth and projects in `frontend/src/services/api.ts` (unit test: T057a)
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/005-identity-signin/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T177 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/005-identity-signin/closure.md`
+- [ ] T178 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/005-identity-signin/closure.md`
+- [ ] T179 Triage `specs/005-identity-signin/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/005-identity-signin/closure.md`
+- [ ] T180 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/005-identity-signin/closure.md`

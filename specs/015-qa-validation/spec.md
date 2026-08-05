@@ -1,6 +1,6 @@
 # Epic Specification: QA & Validation
 
-**Epic**: `EPIC-015` | **Module**: M-12 | **Tasks**: 5
+**Epic**: `EPIC-015` | **Module**: M-12 | **Tasks**: 9
 
 **Parent product spec**: [../_shared/platform-spec.md](../_shared/platform-spec.md)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
@@ -43,7 +43,10 @@ functional requirement. See Purpose and Exit Criteria.
 
 ## Depends on
 
-- All product epics — validation runs against them
+- EPIC-005, EPIC-006, EPIC-007, EPIC-008, EPIC-009, EPIC-010, EPIC-011, EPIC-012, EPIC-013,
+  EPIC-016, EPIC-019, EPIC-020, EPIC-021, EPIC-022 — the product epics validation runs against
+- **Deliberately NOT EPIC-014.** DevOps & Release closes *after* QA reports. Declaring a mutual
+  dependency made both epics unschedulable (analyze finding F1, 2026-08-04)
 
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 
@@ -62,4 +65,5 @@ The real-engine smoke test runs **nightly, not per-commit** — it is slow, cost
 - [ ] `/speckit-converge` reports no unbuilt work for this epic
 - [ ] `specs/015-qa-validation/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
+- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge

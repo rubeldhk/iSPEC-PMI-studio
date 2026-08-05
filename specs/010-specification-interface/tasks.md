@@ -5,7 +5,7 @@ description: "Task list for EPIC-010 — Specification Interface"
 
 # Tasks: Specification Interface
 
-**Epic**: `EPIC-010` | **Module**: M-04 | **Tasks**: 14
+**Epic**: `EPIC-010` | **Module**: M-04 | **Tasks**: 19
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -38,3 +38,21 @@ paired unit-test task, written to fail first.
 - [ ] T116 [P] [US5] Implement lifecycle transition controls in `frontend/src/components/LifecycleControls.tsx` (unit test: T115a)
 - [ ] T123a [P] [US6] Component unit tests asserting each finding renders its location and severity in `frontend/tests/unit/components/ValidationFindings.spec.tsx`
 - [ ] T124 [P] [US6] Implement findings panel in `frontend/src/components/ValidationFindings.tsx` (unit test: T123a)
+
+## F-04.18 · SC-001 journey measurement
+
+*This epic **owns** SC-001 but had no task measuring it — the only timing run was T153, inside held EPIC-014. Added by `/speckit-analyze` finding **G2**.*
+
+- [ ] T124a [P] [US3] Measure the SC-001 journey — sign-in to holding a generated specification linked to its requirements — asserting completion in under 15 minutes with no external help, in `e2e/tests/sc-001-journey.spec.ts`
+
+## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
+
+*Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
+`specs/010-specification-interface/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
+confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
+NOT part of this phase.*
+
+- [ ] T197 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/010-specification-interface/closure.md`
+- [ ] T198 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/010-specification-interface/closure.md`
+- [ ] T199 Triage `specs/010-specification-interface/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/010-specification-interface/closure.md`
+- [ ] T200 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/010-specification-interface/closure.md`

@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-001` | **Module**: M-00 | **Date**: 2026-08-03 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 31 · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
+**Tasks**: 35 · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([platform plan](../_shared/plan.md) · [system-design](../_shared/system-design.md) ·
@@ -53,7 +53,7 @@ record.
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — via [platform-spec](../_shared/platform-spec.md) |
-| III | Epic → Feature → Task decomposition | PASS — 5 functions, 31 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 5 functions, 35 tasks |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS |
 | V | Every implementation task carries a unit test, written to fail first | PASS — 0 gaps |
 | VI | `specs/001-platform-foundation/defects/` exists | PASS |
@@ -153,7 +153,7 @@ This epic adds no new design artifacts — it implements the shared ones:
 
 ## Definition of done
 
-- [ ] 31 tasks complete, every unit test passing (Constitution V)
+- [ ] 35 tasks complete, every unit test passing (Constitution V)
 - [ ] `pnpm test:unit`, `test:contract`, `test:arch` green in CI
 - [ ] Quickstart **V5** — every failure reason distinct, no partial artifact stored — passes
 - [ ] Quickstart **V11a** — one correlation identifier across four hops; no engine output or
