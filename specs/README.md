@@ -15,8 +15,8 @@ specs/
 │   ├── data-model.md · schema.sql · contracts/
 │   ├── research.md           12 decisions with alternatives
 │   └── raid-log.md           risks, assumptions, issues, dependencies
-├── srs-alignment.md  conflicts C-01..C-17, decisions D-1..D-14
-└── <epic>/           spec.md · tasks.md · checklists/ · defects/
+├── srs-alignment.md  conflicts C-01..C-18, decisions D-1..D-18
+└── <epic>/           spec.md · plan.md · tasks.md · checklists/ · defects/ · closure.md
 ```
 
 Requirements are defined **once** in `_shared/platform-spec.md`. Each epic's `spec.md` declares
@@ -25,17 +25,17 @@ divergent truths.
 
 ## Epics
 
-### ▶ Proceeding — 74 tasks
+### ▶ Proceeding — 89 tasks
 
 Buildable now. Nothing here depends on the Business Requirement Specification.
 
 | Epic | Title | Module | Tasks |
 |------|-------|--------|-------|
-| [EPIC-001](./001-platform-foundation/) | Platform Foundation | M-00 | 31 |
-| [EPIC-003](./003-specification-engine/) | Specification Engine & Sandbox | M-08 | 29 |
-| [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 14 |
+| [EPIC-001](./001-platform-foundation/) | Platform Foundation | M-00 | 35 |
+| [EPIC-003](./003-specification-engine/) | Specification Engine & Sandbox | M-08 | 35 |
+| [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 19 |
 
-### ⏸ Held — 141 tasks
+### ⏸ Held — 199 tasks
 
 Blocked on `PMI-DOC-004` Business Requirement Specification and approved business scope
 (PMI-TASK-001 T-101, T-106; decision D-10; RAID **D-K**). Held is not cancelled — these tasks are
@@ -43,26 +43,58 @@ complete, reviewed, and Constitution V compliant.
 
 | Epic | Title | Module | Tasks |
 |------|-------|--------|-------|
-| [EPIC-005](./005-identity-signin/) | Identity & Sign-in | M-01 | 11 |
-| [EPIC-006](./006-project-management/) | Project Management | M-02 | 9 |
-| [EPIC-007](./007-requirement-intelligence/) | Requirement Intelligence | M-03 | 18 |
-| [EPIC-008](./008-spec-authoring-generation/) | Specification Authoring & Generation | M-04 | 19 |
-| [EPIC-009](./009-spec-lifecycle-versioning/) | Specification Lifecycle & Versioning | M-04 | 22 |
-| [EPIC-010](./010-specification-interface/) | Specification Interface | M-04 | 14 |
-| [EPIC-011](./011-traceability/) | Traceability | M-04 | 15 |
-| [EPIC-012](./012-workflow-tasks/) | Workflow & Tasks | M-06 | 10 |
-| [EPIC-013](./013-engine-api-selection/) | Engine API & Selection | M-08 | 4 |
-| [EPIC-014](./014-devops-release/) | DevOps & Release | M-11 | 12 |
-| [EPIC-015](./015-qa-validation/) | QA & Validation | M-12 | 5 |
-| [EPIC-016](./016-architecture-decision-records/) | Architecture Decision Records | M-13 | 2 |
+| [EPIC-005](./005-identity-signin/) | Identity & Sign-in | M-01 | 15 |
+| [EPIC-006](./006-project-management/) | Project Management | M-02 | 13 |
+| [EPIC-007](./007-requirement-intelligence/) | Requirement Intelligence | M-03 | 22 |
+| [EPIC-008](./008-spec-authoring-generation/) | Specification Authoring & Generation | M-04 | 23 |
+| [EPIC-009](./009-spec-lifecycle-versioning/) | Specification Lifecycle & Versioning | M-04 | 26 |
+| [EPIC-010](./010-specification-interface/) | Specification Interface | M-04 | 19 |
+| [EPIC-011](./011-traceability/) | Traceability | M-04 | 19 |
+| [EPIC-012](./012-workflow-tasks/) | Workflow & Tasks | M-06 | 16 |
+| [EPIC-013](./013-engine-api-selection/) | Engine API & Selection | M-08 | 8 |
+| [EPIC-014](./014-devops-release/) | DevOps & Release | M-11 | 17 |
+| [EPIC-015](./015-qa-validation/) | QA & Validation | M-12 | 9 |
+| [EPIC-016](./016-architecture-decision-records/) | Architecture Decision Records | M-13 | 12 |
 
-### Separate epic
+### Separate epics
 
 | Epic | Title | Status |
 |------|-------|--------|
-| [EPIC-002](./002-team-review-access-storage/) | Team Review, Access Control & External Storage | Clarified; not yet planned. Depends on the epics above |
+| [EPIC-002](./002-team-review-access-storage/) | Team Review, Access Control & External Storage | ⏸ **Held** — clarified 2026-08-02, tasked 2026-08-05 (**87 tasks**, T340–T432). Planned retroactively 2026-08-05. Depends on the epics above |
+| [EPIC-018](./018-repository-governance/) | Repository Governance Process | ▶ **Proceeding** — process, not product. Split from EPIC-017 on 2026-08-04 (D-17). Planned and tasked (**32 tasks**, T312–T339 + closure) |
 
-**Total: 215 tasks** — unchanged by the split. Not one task ID moved.
+### The enhancement-model family — 87 tasks, all ⏸ held
+
+`SRS/enhancement_module/PMI_Studio_Enhancement_Model_for_SpecKit.docx` was cut twice. **D-17** split
+it along the product/process seam — the repository process became EPIC-018 and proceeds; the product
+capability stayed held. **D-18** then split that product half into four delivery epics.
+
+[**EPIC-017**](./017-enhancement-model/) is now a **parent design carrying no tasks** — spec, plan,
+research, data model, contracts, and quickstart shared by all four children, the role `_shared/`
+plays for the platform.
+
+| Epic | Title | Module | Tasks | IDs |
+|------|-------|--------|-------|-----|
+| [EPIC-019](./019-steering-engine/) | Steering Engine | M-01 / M-04 | 26 | T225–T250 |
+| [EPIC-020](./020-living-specifications/) | Living Specifications & Impact | M-04 | 22 | T251–T272 |
+| [EPIC-021](./021-review-gates-roles/) | Review Gates & Roles | M-04 | 23 | T273–T295 |
+| [EPIC-022](./022-product-traceability/) | Product Structure & Traceability | M-04 | 16 | T296–T311 |
+
+⚠️ **EPIC-019 must land first** — it adds a tenancy scope above workspace, which is a column while no
+workspace rows exist and a data migration afterwards.
+🔀 **EPIC-022 is a fold candidate** into EPIC-011, kept separate while folding is still cheap.
+
+Ruling **D-16** layered the source document's authority: its 21-section template and 12-link chain
+govern PMI Studio's *outputs*, while `PMI-DOC-000` continues to govern this repository's own
+documents — which is why no existing specification here became non-conformant.
+
+EPIC-002 (87) and EPIC-018 (32) are counted in the grand total below but not in the platform or
+enhancement subtotals, which cover the D-15 and D-18 families only.
+
+**Total: 494 tasks** — including EPIC-002 (87) and EPIC-018 (32). The platform family holds **288** — 215 from the D-15 split, plus 7
+remediation tasks and a 4-task `Phase Z · Epic closure` in each of the 15 epics (T165–T224). The
+enhancement-model family holds **87** (T225–T311, ruling D-18). **Not one existing task ID has ever
+moved.**
 
 ## Build order
 
@@ -103,7 +135,7 @@ fifteen folders — was rejected for good reason. But it means:
 
 ## Conventions
 
-- **Task IDs are globally unique and invariant** (`T001`–`T164` plus suffixes). A
+- **Task IDs are globally unique and invariant** (`T001`–`T432` plus suffixes such as `T143a`). A
   `(unit test: T0nn)` reference may point into another epic — expected and correct.
 - **Requirement IDs are not yet globally unique.** EPIC-002 has its own `FR-001`–`FR-040` that
   collide with the platform set. This is conflict **C-01**; decision **D-1** fixes it by adopting
@@ -112,4 +144,6 @@ fifteen folders — was rejected for good reason. But it means:
   not yet re-cut (decisions D-12, D-13). `M-08` here is the *Specification Engine*; MPS `M08` is
   *Specification Management*. Read carefully.
 - Each epic carries its own `defects/` (Constitution VI) and converges independently
-  (Constitution IV).
+  (Constitution IV) via its **`Phase Z · Epic closure`**, which writes `closure.md`. An epic reaches
+  *release-eligible* on its own; **platform promotion** is a separate gate in
+  [EPIC-014 F-11.2](./014-devops-release/tasks.md), which confirms the 15 `closure.md` records.

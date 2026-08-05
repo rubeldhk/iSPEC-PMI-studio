@@ -720,6 +720,133 @@ owned — is preserved.
 its own `FR-001`–`FR-040` colliding with the platform set*. That is conflict **C-01** demonstrated
 in practice, and it strengthens the case for **D-1**.
 
+## Part 7 — The enhancement model (C-18, D-16, 2026-08-04)
+
+`SRS/enhancement_module/PMI_Studio_Enhancement_Model_for_SpecKit.docx` arrived as a target-state
+model: nine enhancements, twelve enterprise modules, twelve AI agent roles, a twenty-one-section
+specification template, and a twelve-link traceability chain. Specified as **EPIC-017** on
+2026-08-03; three questions blocked planning and were answered 2026-08-04.
+
+### C-18 · The enhancement model contradicts PMI-DOC-000 — ✅ RESOLVED by D-16
+
+Two direct contradictions with a governing document:
+
+| Subject | `PMI-DOC-000` | Enhancement model |
+|---|---|---|
+| Specification structure | §4 — **13 sections** | **21 sections** |
+| Traceability | §5 traceability rules; D-2's 9-level chain | **12-link chain**, vision → operations |
+
+Taken at face value, adopting the enhancement model would render **every existing specification in
+this repository non-conformant** at a stroke — 18 epic specs plus `_shared/`. Taken the other way,
+the model's central structural proposals would be discarded.
+
+### D-16 ruling · Authority layered by artifact population ✅ DECIDED 2026-08-04
+
+> **Decision**: the enhancement document governs **the structure and traceability of specifications
+> PMI Studio generates or manages as a product capability**. It does **not** govern documents in this
+> repository. `PMI-DOC-000` continues to govern those.
+
+This extends D-12's layering by subject matter with a layering by **which artifacts are governed**:
+
+| Authority | Governs |
+|---|---|
+| **MPS** | PMI Studio product scope and requirements |
+| **PMI-DOC-000** | Documentation standards for documents **inside this repository** |
+| **PMI-DOC-003** | Principles |
+| **Enhancement model** | Structure and traceability of specifications **PMI Studio produces** |
+| PMI-PLAN-001 / PMI-TASK-001 | Sequencing |
+
+**Consequences**:
+
+- Repository specifications keep the `PMI-DOC-000` structure unless `PMI-DOC-000` is itself amended.
+- The 21-section structure applies to product outputs — EPIC-017 `FR-ENH-020`.
+- Repository traceability stays governed by `PMI-DOC-000` and the eventual resolution of **D-2**.
+- The 12-link chain applies to PMI Studio's product traceability — EPIC-017 `FR-ENH-021`.
+- **No existing repository specification becomes non-conformant.** This was the deciding factor.
+- C-18 is resolved by layering, not supersession. Nothing is overridden; the two standards address
+  different populations of artifacts.
+
+**Effect on D-2 and D-4**: both are **scoped, not closed**. The enhancement model no longer bears on
+either. D-2 still must decide this repository's traceability depth; D-4 still must decide whether the
+repository's templates move to `PMI-DOC-000`'s thirteen sections. Both remain open below.
+
+### D-17 ruling · EPIC-017 split along the product/process seam ✅ DECIDED 2026-08-04
+
+> **Decision**: the enhancement model is delivered as **two epics**. **EPIC-017** keeps the product
+> capability and stays ⏸ **held** with the rest of the product surface. **EPIC-018 Repository
+> Governance Process** takes the repository half and ▶ **proceeds** immediately.
+
+| EPIC-017 — product, held | EPIC-018 — process, proceeding |
+|---|---|
+| Steering Engine | Steering-file definitions for this repository |
+| Living Specifications | Recommended repository paths |
+| AI Review Gates | Spec Kit folder mapping |
+| Product specification structure and traceability | Repository governance workflow |
+| The twelve reviewing roles | Internal specification templates |
+| | Internal traceability conventions |
+
+This is the same seam that split **EPIC-013** out of **EPIC-003**: the engine proceeded, the surface
+that touched `projects.controller.ts` was held. Here the product capability is held and the
+repository process — which touches no product surface and waits on no BRS — proceeds.
+
+### Phase authority · target state does not move the roadmap ✅ DECIDED 2026-08-04
+
+> **Decision**: the enhancement model describes intended **target-state architecture**. It does
+> **not** supersede approved phase and module assignments.
+
+| Capability | Stays at |
+|---|---|
+| Enterprise Knowledge Graph | **M-10, Phase 2** |
+| Persistent AI Memory | later knowledge-capability delivery |
+| Prompt Registry · Model Registry | **M-07** |
+| MCP-related capabilities | **M-09, Phase 3** |
+| Agent Marketplace | its approved later-phase module |
+| AI-platform and cost-optimisation controls | **M-07** |
+
+**M-07, M-09, and M-10 are not pulled forward through EPIC-017.** EPIC-017's User Story 6, together
+with `FR-ENH-017` to `FR-ENH-019` and `SC-ENH-008`, moves to the Phase 2 knowledge epic. Those
+identifiers are left **deliberately vacant** in EPIC-017 rather than reused.
+
+**Principle rulings**: **PP-013** and **PP-017** are confirmed as valid target-state principles but
+remain **deferred** — PP-013 to M-10, PP-017 to M-07. Neither is contested any longer.
+
+⚠️ **Residual exposure worth watching.** The twelve reviewing roles stay in EPIC-017 while the
+cost-optimisation controls that would bound them stay in M-07. Containment falls entirely to the
+platform's existing per-job caps (FR-025). **RAID R-02 must be re-scored when EPIC-017 is planned** —
+this is recorded in EPIC-017's exit criteria, not left to memory.
+
+### D-18 ruling · EPIC-017 split into four delivery epics ✅ DECIDED 2026-08-04
+
+> **Decision**: EPIC-017's eleven functions are delivered by **four child epics**. EPIC-017 becomes a
+> **parent design** carrying no tasks — the same role `_shared/` plays for the platform.
+
+| Child epic | Functions | Requirements | Tasks |
+|---|---|---|---|
+| **EPIC-019** Steering Engine | F-17.1 – F-17.3 | FR-ENH-001 – 005 | T225–T250 (26) |
+| **EPIC-020** Living Specifications & Impact | F-17.4 – F-17.6 | FR-ENH-006 – 011 | T251–T272 (22) |
+| **EPIC-021** Review Gates & Roles | F-17.7, F-17.8, F-17.11 | FR-ENH-012 – 016, 023, 024 | T273–T295 (23) |
+| **EPIC-022** Product Structure & Traceability | F-17.9, F-17.10 | FR-ENH-020 – 022 | T296–T311 (16) |
+
+**Why**: the same argument as **D-15**. MPS Volume 6 §1 places Epics *below* Modules; EPIC-017 spanned
+two modules and eleven functions clustering into four groups that share almost no entities.
+Constitution IV gates convergence per epic, and one 87-task gate is worse than four incremental ones.
+
+**What did not change**: every requirement, every success criterion, and the principle register stay
+defined **once** in the parent. No requirement was renumbered. Task IDs `T225`–`T311` were allocated
+fresh at the split, continuing from `T224`.
+
+**Ordering constraint**: **EPIC-019 must land first.** F-17.1 adds a tenancy scope above workspace —
+a column while no workspace rows exist, a data migration afterwards (research R-017-1).
+
+**One open sub-decision**: **EPIC-022 is a fold candidate.** It extends EPIC-011's link model rather
+than standing fully alone. Kept separate for now because folding stays cheap while both epics are held
+and unimplemented, and the invariant-ID convention makes the fold a regrouping rather than a
+renumbering.
+
+⚠️ **A known cross-epic break was scheduled, not discovered**: EPIC-011 `T077a` asserts
+`TraceabilityLink` permits only the two Phase 1 edge types, and fails the build the moment EPIC-022's
+`T301` widens the enumeration. `T302` updates it.
+
 ## Decisions required
 
 Nothing below can be resolved by reading the SRS; each needs an owner's decision.
@@ -727,9 +854,9 @@ Nothing below can be resolved by reading the SRS; each needs an owner's decision
 | # | Decision | Blocks | Cost if adopted |
 |---|---|---|---|
 | **D-1** | Adopt PMI-DOC-000 identifier scheme (typed, 4-digit, corpus-unique)? | All future specs | Renumber + reclassify 74 requirements; update ~200 downstream citations |
-| **D-2** | Amend Constitution III to the 9-level chain, with Requirement **above** Epic? | Constitution | `/speckit-constitution` amendment; restructures how Epics are scoped |
+| **D-2** | Amend Constitution III to the 9-level chain, with Requirement **above** Epic? | Constitution | `/speckit-constitution` amendment; restructures how Epics are scoped. 🔵 **Scoped by D-16 (2026-08-04)** — applies to *repository* traceability only; PMI Studio's 12-link product chain is settled and out of D-2's reach |
 | ~~**D-3**~~ | ~~Which module taxonomy is authoritative?~~ | — | ✅ **DECIDED 2026-08-02** — Module-Based catalog (16 modules). `tasks.md` re-cut; 197 task IDs unchanged |
-| **D-4** | Amend `spec-template.md` to PMI-DOC-000's 13 sections? | Both Epic specs | Template change + back-fill 6 sections into 2 specs |
+| **D-4** | Amend `spec-template.md` to PMI-DOC-000's 13 sections? | Repository templates; **EPIC-018** | Template change + back-fill across 18 epic specs. 🔵 **Scoped by D-16 (2026-08-04)** — the enhancement model's 21-section structure does **not** bear on this; it governs product outputs only. D-4 remains a repository-only question, now owned by EPIC-018 `FR-RGP-010`/`FR-RGP-011` |
 | **D-5** | Convert `SRS/` to Markdown, per standard §7 **and PP-011**? | SRS itself | A new Epic — previously rejected scope, now mandated by **two** governing documents |
 | ~~**D-6**~~ | ~~Do principles bind Phase 1 or the programme?~~ | — | ✅ **DECIDED 2026-08-03** — programme-wide, with a mandatory per-Epic deferral register. C-07 and C-09 resolved; template and both Epic specs updated |
 | ~~**D-7**~~ | ~~Observability into EPIC-001?~~ | — | ✅ **DECIDED — adopted.** New function **F-00.5**; sits in PMI-PLAN-001's *Infrastructure — Proceed* lane, so it lands inside the proceeding slice |
@@ -740,6 +867,9 @@ Nothing below can be resolved by reading the SRS; each needs an owner's decision
 | ~~**D-12**~~ | ~~Which document is authoritative?~~ | — | ✅ **DECIDED — layered by subject matter.** MPS = product content; PMI-DOC-000 = documentation standards; PMI-DOC-003 = principles; PMI-PLAN-001/TASK-001 = sequencing |
 | ~~**D-13**~~ | ~~Re-cut onto 18 modules now?~~ | — | ✅ **DECIDED — wait.** The MPS taxonomy supersedes D-3, but application is deferred until an MPS baseline. Re-cut once, folding in D-1 and D-9 |
 | ~~**D-14**~~ | ~~Adopt the 6-state specification lifecycle?~~ | — | ✅ **DECIDED — adopted.** FR-011/FR-011a, `data-model.md`, `schema.sql`, T099/T106/T111/T111a |
+| ~~**D-16**~~ | ~~Does the enhancement model override PMI-DOC-000?~~ | — | ✅ **DECIDED 2026-08-04 — layered by artifact population.** PMI-DOC-000 governs repository documents; the enhancement model governs PMI Studio's product outputs. C-18 resolved; no existing specification rendered non-conformant. D-2 and D-4 scoped, not closed |
+| ~~**D-17**~~ | ~~One epic or two for the enhancement model?~~ | — | ✅ **DECIDED 2026-08-04 — two.** EPIC-017 keeps product capability (⏸ held); **EPIC-018 Repository Governance Process** takes the process half (▶ proceeding). Same seam as EPIC-003/EPIC-013 |
+| ~~**D-18**~~ | ~~One epic or four for the enhancement model's product half?~~ | — | ✅ **DECIDED 2026-08-04 — four.** EPIC-017 becomes a parent design with no tasks; EPIC-019/020/021/022 deliver, 87 tasks (T225–T311). EPIC-019 must land first. EPIC-022 kept as a fold candidate into EPIC-011 |
 
 **Recommended order**: ~~D-3~~ ✅ done. Then **D-6 first among the rest** — it is a single ruling
 that resolves C-07 and C-09 at once and determines whether D-7 is even in scope. Then D-1 and D-2

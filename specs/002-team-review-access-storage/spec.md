@@ -6,7 +6,7 @@
 
 **Created**: 2026-08-02
 
-**Status**: Draft — 3 clarifications outstanding
+**Status**: Clarified — 5 questions answered in the 2026-08-02 session; zero `[NEEDS CLARIFICATION]` markers remain. Tasked 2026-08-05. **Not yet planned** — no `plan.md`
 
 **Input**: User description: "1. executing command should have option to set run all and keep
 qustions and suggesions recordet all togather for the team to disscus and select ans and submit.
@@ -15,6 +15,13 @@ manager third pary solution like google drive, dropbox, s3 etc"
 
 **Depends on**: `EPIC-001` — PMI Studio Phase 1 Platform Core. This Epic extends the projects,
 requirements, specifications, tasks, and generation jobs that EPIC-001 establishes.
+
+## Depends on
+
+- EPIC-001 — platform foundation: job orchestration, failure taxonomy, observability
+- EPIC-004 — tenancy and audit, which the per-artifact access grants extend
+- EPIC-008 — generation, which unattended runs drive
+- EPIC-009 — the specification lifecycle that provisional approval overrides
 
 ## Clarifications
 
@@ -611,5 +618,6 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] Every implementation task has a passing unit test (Constitution V)
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
 - [ ] `specs/002-team-review-access-storage/defects/` contains no open defect records
-- [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
+- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge
 - [ ] SRS back-fill completed for unattended runs and storage integration (Constitution II)
