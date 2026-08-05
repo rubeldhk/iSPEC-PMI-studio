@@ -20,7 +20,8 @@ One versioned statement of repository standards. Format specified in
 | `scope` | front matter | `repository` for all Phase 1 files |
 | `version` | front matter | integer, incremented on meaningful change |
 | `status` | front matter | `active` \| `superseded` |
-| `owner` | front matter | a person, not a team — an unowned standard is unmaintained |
+| `owner` | front matter | one of the three programme roles — `tech-lead`, `product-owner`, `project-owner` (clarified 2026-08-05). An unowned standard is unmaintained; a file naming no role fails conformance |
+| `last_reviewed` | front matter | ISO date. A file past 90 days is **reported, not failed** (clarified 2026-08-05, `FR-RGP-016`) |
 | `standards[]` | body | each individually identifiable and checkable |
 
 **Validation**:
@@ -131,6 +132,7 @@ which is what makes the plan's reading B viable rather than aspirational:
 3. Location coverage — every artifact type mapped exactly once (`SC-RGP-004`)
 4. Template conformance — every template checked, every deviation reasoned (`SC-RGP-006`)
 5. Link rules — every required link expressed as a checkable rule (`SC-RGP-008`)
+6. Review currency — no steering file past its 90-day interval unreported (`SC-RGP-009`)
 
 Two criteria are **not** mechanically checkable and are honest about it: `SC-RGP-001` (someone new can
 name the standards) needs a person, and `SC-RGP-007` (one index answers the question) is a judgement.

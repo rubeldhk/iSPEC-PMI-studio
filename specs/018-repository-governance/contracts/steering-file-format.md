@@ -23,7 +23,8 @@ subject: coding-standards
 scope: repository
 version: 1
 status: active
-owner: <a person>
+owner: tech-lead            # tech-lead | product-owner | project-owner
+last_reviewed: 2026-08-05  # ISO date; reported when older than 90 days
 supersedes: null
 ---
 
@@ -52,7 +53,7 @@ Every exported function declares an explicit return type.
 ## Rules
 
 - **SF-1** — Front matter is required and complete. A file missing `subject`, `version`, `status`, or
-  `owner` fails conformance. An unowned standard is an unmaintained standard.
+  `owner` fails conformance. `owner` is one of the three programme roles — `tech-lead`, `product-owner`, `project-owner` (clarified 2026-08-05) — not an individual, so the file survives staff changes. An unowned standard is an unmaintained standard.
 - **SF-2** — Each standard carries a **stable identifier** (`CS-001`) so it can be cited, linked, and
   checked. "The third bullet in coding standards" is not a citation.
 - **SF-3** — Each standard states a condition an artifact can be **held against**. "Write clean code"
@@ -68,6 +69,10 @@ Every exported function declares an explicit return type.
   file is corrected. There is no override direction.
 - **SF-8** — `status: superseded` files are **retained**, with `supersedes` pointing at the successor.
   History is not deleted, matching how the platform treats retired requirements.
+- **SF-10** — `last_reviewed` is **required** and is an ISO date. A file past **90 days** is
+  reported by check **G-07**, not failed — staleness is a prompt to look, not a reason to stop the
+  build. A file that is well-formed but no longer true is worse than a missing one, because agents
+  load it as context.
 - **SF-9** — The "Deliberately not covered here" section is **required**, even when empty. It is what
   stops a reader concluding a standard does not exist when it merely lives elsewhere — the failure the
   `_shared/` "Known limitation" note in the README had to be written to fix.
@@ -84,6 +89,7 @@ Run under Vitest in `tests/governance/`, alongside `pnpm test:arch` (R-018-4).
 | **G-04** | No substantial verbatim overlap with the constitution or templates | `SC-RGP-003`, SF-6 |
 | **G-05** | Every file has a "Deliberately not covered here" section | SF-9 |
 | **G-06** | No two active files share a subject | data-model validation |
+| **G-07** | No steering file is past its 90-day review interval unreported | `SC-RGP-009`, SF-10 |
 
 **G-04 is the one that matters most.** The others catch omissions, which are visible. G-04 catches
 duplication, which is invisible until two copies disagree — and by then both are believed.

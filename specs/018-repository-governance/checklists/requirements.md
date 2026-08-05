@@ -31,7 +31,7 @@
 
 ## Project-Specific Gates *(constitution v1.1.0)*
 
-- [x] **Constitution II** — requirements cite their source; `FR-RGP-014`/`FR-RGP-015` derive from the
+- [x] **Constitution II** — requirements cite their source; `FR-RGP-014`–`FR-RGP-016` derive from the
       constitution rather than `SRS/` and are declared as such with a back-fill owner
 - [x] **PMI-DOC-003 / decision D-6** — principle deltas recorded, not the full 20-row register,
       following the epic convention
@@ -42,6 +42,10 @@
 - [x] **Constitution VI** — `defects/` folder created
 - [x] **Constitution IX** — closing-report item present in Epic Exit Criteria
 - [x] **C1 split honoured** — exit criteria separate epic release-eligibility from platform promotion
+- [x] **Clarified** — 5 questions answered 2026-08-05; zero `[NEEDS CLARIFICATION]` markers
+- [x] **Constitution amendment ratified** — constitution **v1.2.0** (2026-08-05) extends Principle V
+      to non-code outputs via executable conformance checks, and adds `governance/**` to Principle I's
+      exempt list. This epic no longer relies on unratified readings
 
 ## Validation Iterations
 

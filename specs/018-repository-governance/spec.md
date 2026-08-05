@@ -36,6 +36,21 @@ a set of templates, and the working memory of whoever is at the keyboard. Steeri
 explicit, versioned, and inspectable — which is exactly the argument PP-011 "Documentation as Code"
 makes, applied to the programme itself.
 
+## Clarifications
+
+### Session 2026-08-05
+
+- Q: When a task's only output is a markdown document rather than running code, what satisfies Constitution V's non-negotiable requirement for a paired test? → A: **A — an executable conformance check satisfies Constitution V**, ratified as a constitution amendment so it applies programme-wide rather than as a per-epic exemption. This also settles the same open question in EPIC-003 (`T088`/`T089`), EPIC-014 (`T149`) and EPIC-016.
+
+- Q: Should the governance files this epic creates be exempt from Constitution I's rule that code may only be changed via a Spec Kit command? → A: **A — exempt `governance/**`**, recorded explicitly in the governance index alongside `.specify/**` and `specs/**`. Standards are cheap to revise; governance is not, so the constitution itself stays non-exempt.
+
+- Q: When a governance conformance check fails, should it block the build for everyone, or report without stopping work? → A: **C — split.** The duplication check (`SC-RGP-003`, PP-002) **blocks** the build; coverage and conformance checks **report** without failing CI. Duplication is the one failure here that is silent and compounding; omissions are visible on inspection. Mirrors `pnpm test:arch`, which blocks on exactly one invisibly-eroding property.
+
+- Q: Who owns a steering file, and what happens when nobody is named? → A: **B — the existing three programme roles**: tech lead, product owner, project owner, one assigned per subject. Reuses the ownership model the principle register and SRS back-fill obligations already use, rather than inventing a second one. A file naming no role fails its conformance check.
+  Assignment: **tech lead** — architecture, technology-stack, coding-standards, security, ai-governance. **Product owner** — product, business-rules, ui-standards. **Project owner** — organization, workspace.
+
+- Q: What stops a steering file from going stale — current in form, but no longer true in practice? → A: **A — a `last_reviewed` date in front matter**, with a check reporting files not reviewed within the interval. Interval set at **90 days** (quarterly); the check **reports**, it does not block, per the severity split above. Chosen because it is the only mechanically checkable option, which is what every other criterion in this epic demands of itself.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -51,8 +66,14 @@ makes, applied to the programme itself.
 
 **Requirements not yet covered by SRS**: FR-RGP-014 and FR-RGP-015 encode the constitution's own
 session-labelling and closing-report duties (Principles VIII and IX, added in constitution v1.1.0) as
-repository artifacts. They derive from the constitution rather than from `SRS/`. Back-fill owner:
-project owner — to be reflected in `PMI-DOC-000` if the standard is amended.
+repository artifacts. They derive from the constitution rather than from `SRS/`.
+
+**FR-RGP-016** (steering-file currency) derives from **neither** — it came from the clarification
+session of 2026-08-05, which found that every check in this epic verified a file's *form* and none
+verified its *accuracy*. Declared here rather than left implicit.
+
+Back-fill owner for all three: project owner — to be reflected in `PMI-DOC-000` if the standard is
+amended.
 
 ## Principle Conformance — deltas *(PMI-DOC-003, decision D-6)*
 
@@ -245,7 +266,8 @@ version without searching the file tree.
 - **FR-RGP-008**: The layout MUST NOT pre-empt decision **D-13** (the deferred 18-module re-cut);
   where the two touch the same paths, the layout MUST record the dependency.
 - **FR-RGP-009**: Repository MUST publish a single governance index naming every governance artifact,
-  its purpose, and its current version.
+  its purpose, its current version, and **whether its path is exempt from the Spec Kit command gate**
+  (Constitution I).
 
 #### Internal templates and conventions
 
@@ -266,6 +288,12 @@ version without searching the file tree.
 - **FR-RGP-015**: Repository MUST define the closing-report format required by Constitution IX,
   including its two mandatory sections and the honesty rule that unrun checks are never reported as
   passing.
+
+#### Currency
+
+- **FR-RGP-016**: Every steering file MUST record when it was last reviewed, and the repository MUST
+  report files not reviewed within 90 days. Reporting only — a stale file is not a build failure
+  (clarified 2026-08-05).
 
 ### Key Entities
 
@@ -289,7 +317,8 @@ version without searching the file tree.
 - **SC-RGP-002**: 100% of the ten steering subjects named by the source document have a corresponding
   file, or a recorded reason for absence.
 - **SC-RGP-003**: Zero steering content duplicates the constitution or a template — every overlap is
-  a reference.
+  a reference. **This check fails the build**; it is the only governance check that does (clarified
+  2026-08-05).
 - **SC-RGP-004**: Every artifact type in the repository has exactly one documented location; zero
   types are undefined.
 - **SC-RGP-005**: Zero existing paths break on layout adoption — every migration is recorded before
@@ -299,19 +328,35 @@ version without searching the file tree.
 - **SC-RGP-007**: A reader can determine what governs this repository from a single index.
 - **SC-RGP-008**: Every required inter-artifact link is stated as a checkable rule; zero links exist
   only by convention.
+- **SC-RGP-009**: Every steering file records a review date, and zero files pass their 90-day
+  interval without being reported.
 
 ## Assumptions
 
 - **This epic changes no application code.** Its outputs are governance and documentation artifacts.
   That is what makes it buildable while the product surface is held.
+- **Constitution V is satisfied by executable conformance checks**, not unit tests (clarified
+  2026-08-05). A governance document that no check reads is a document that silently rots, so the
+  check is the test. Checks run under `pnpm test:governance` in CI — manual review does not
+  satisfy the gate. Ratified programme-wide in constitution **v1.2.0**
+  (2026-08-05).
 - **Steering files govern this repository only.** PMI Studio's product Steering Engine is EPIC-017's
   FR-ENH-001 to FR-ENH-005 and is a different thing that happens to share a name.
 - **The layout is adopted incrementally.** The recommended directories are created and populated as
   artifacts arrive; the epic does not require a big-bang move of 65 tracked files.
 - **`PMI-DOC-000` governs, per D-16** — and whether the internal templates move to its thirteen
   sections remains **decision D-4**, which this epic surfaces rather than settles.
-- **Constitution I exempts `.specify/**` and `specs/**`** from the Spec Kit command gate. Artifacts
-  created outside those paths need an explicit exemption decision, recorded rather than assumed.
+- **`governance/**` is exempt from the Spec Kit command gate** (clarified 2026-08-05), joining
+  `.specify/**` and `specs/**`. The exemption is recorded in the governance index, not assumed. The
+  **constitution itself remains non-exempt** — amending governance still requires
+  `/speckit-constitution`. `governance/**` was added to Constitution I's exempt list in
+  **v1.2.0** (2026-08-05), alongside the Constitution V ruling above.
+- **Governance checks are split by severity** (clarified 2026-08-05): the duplication check blocks
+  CI; coverage, layout, template-conformance and process checks report without failing it. A
+  blocking check on an *omission* would halt unrelated work across every held epic for a missing
+  document; a non-blocking check on *duplication* would let two sources of truth diverge unseen.
+- **The review interval is 90 days**, chosen as a quarterly cadence long enough not to become
+  noise. It is configuration, not a principle — changing it should not require a spec change.
 - **This epic must not weaken PP-002.** Written standards that restate other written standards create
   two sources of truth, which is the failure mode this epic is most likely to cause.
 
@@ -325,8 +370,10 @@ version without searching the file tree.
 
 This Epic may be declared complete and promoted out of `local` only when ALL hold:
 
-- [ ] Every implementation task has a passing unit test (Constitution V) — or, for tasks that produce
-      only documentation, an explicit and recorded Constitution V exemption
+- [ ] Every artifact task has a **passing executable conformance check** — which satisfies
+      Constitution V for documentation outputs (clarified 2026-08-05). Manual review does not count
+- [x] The Constitution V amendment ratifying conformance checks has been made — constitution
+      **v1.2.0**, 2026-08-05. This epic rests on governance, not on a reading
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
 - [ ] `specs/018-repository-governance/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; PP-002 verified — zero steering content duplicates the

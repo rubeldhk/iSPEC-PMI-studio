@@ -5,7 +5,7 @@ description: "Task list for EPIC-018 — Repository Governance Process"
 
 # Tasks: Repository Governance Process
 
-**Epic**: `EPIC-018` | **Process, not product** | **Tasks**: 32
+**Epic**: `EPIC-018` | **Process, not product** | **Tasks**: 29
 
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -85,17 +85,6 @@ clause that makes a closing report worth reading.*
 
 ---
 
-# F-18.5 · Epic closure
-
-*MANDATORY — Constitution IV, VI, VII, IX.*
-
-- [ ] T336 Wire `pnpm test:governance` into `package.json` and `.github/workflows/ci.yml` so every conformance check runs on each commit
-- [ ] T337 Confirm every artifact task in this epic has a passing conformance check; record in `specs/018-repository-governance/epic-closure-report.md`
-- [ ] T338 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/018-repository-governance/epic-closure-report.md`
-- [ ] T339 Triage `specs/018-repository-governance/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/018-repository-governance/epic-closure-report.md`
-
----
-
 ## Dependencies
 
 **Depends on**: nothing. This epic has no product dependency and no BRS dependency — it governs the
@@ -108,7 +97,7 @@ epic planned after it inherits explicit standards instead of implicit ones.
 
 ```text
 F-18.1 steering files ──┐
-F-18.2 layout ──────────┼──► F-18.5 closure
+F-18.2 layout ──────────┼──► Phase Z closure
 F-18.3 templates ───────┤
 F-18.4 process ─────────┘
 ```
@@ -129,11 +118,16 @@ F-18.1 to F-18.4 are **mutually independent** and can run in parallel. Only clos
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
+*Deduplicated 2026-08-05: an `F-18.5 · Epic closure` section duplicated this block and wrote to a
+different file. `T337`–`T339` were removed as exact duplicates of `T408`–`T410`; **`T336` survived**
+and sits below, because wiring the checks into CI exists nowhere else.*
+
 *Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
 `specs/018-repository-governance/closure.md`, which is the record [EPIC-014 F-11.2](../014-devops-release/tasks.md)
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
+- [ ] T336 Wire `pnpm test:governance` into `package.json` and `.github/workflows/ci.yml` so every conformance check runs on each commit — without this the checks exist but never run
 - [ ] T407 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/018-repository-governance/closure.md`
 - [ ] T408 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/018-repository-governance/closure.md`
 - [ ] T409 Triage `specs/018-repository-governance/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/018-repository-governance/closure.md`
