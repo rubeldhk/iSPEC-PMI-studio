@@ -5,7 +5,7 @@ description: "Task list for EPIC-004 — Workspace Tenancy & Audit"
 
 # Tasks: Workspace Tenancy & Audit
 
-**Epic**: `EPIC-004` | **Module**: M-01 / M-13 | **Tasks**: 19
+**Epic**: `EPIC-004` | **Module**: M-01 / M-13 | **Tasks**: 23
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -26,17 +26,26 @@ paired unit-test task, written to fail first.
 - [X] T011a [P] Write failing unit tests asserting `Workspace`/`User` schema constraints — required `workspace_id`, unique email, `password_hash` never selected — in `backend/tests/unit/core/schema-constraints.spec.ts`
 - [X] T012 Initialise Prisma and define `Workspace` and `User` models in `backend/prisma/schema.prisma` (unit test: T011a)
 - [ ] T012a [P] Write failing unit tests asserting the generated migration applies the universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) to **every** table, not only `Workspace` and `User`, in `backend/tests/unit/core/universal-columns.spec.ts`
-- [ ] T013 Add universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) convention and first migration in `backend/prisma/migrations/` (unit test: T012a) — ⚠️ **partially done**: the convention is in `schema.prisma` and asserted by T011a, but **no migration has been generated or applied**. Needs `prisma migrate dev`.
+- [ ] T013 Add universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) convention and first migration in `backend/prisma/migrations/` (unit test: T012a) — ⚠️ **partially done**: the convention is in `schema.prisma` and asserted by T011a, but **no migration has been generated or applied**. Needs `prisma migrate dev`. **T454 depends on this** — the trigger ships in the same migration.
 
 ## F-01.2 · Workspace scoping and isolation
 
 *FR-002 and SC-004. Cross-workspace access returns not-found, never forbidden — existence is not disclosed.*
 
 - [X] T011 [P] Write failing unit tests for workspace-scoping helpers in `backend/tests/unit/core/workspace-scope.spec.ts`
-- [X] T014 Implement workspace-scoping query helper enforcing `workspace_id` on every read in `backend/src/core/workspace-scope.ts` (unit test: T011)
+- [X] T014 Implement workspace-scoping query helper enforcing `workspace_id` on every read in `backend/src/core/workspace-scope.ts` (**FR-002**; unit test: T011)
 - [X] T015 [P] Write failing unit tests asserting cross-workspace access returns not-found, never forbidden, in `backend/tests/unit/core/workspace-guard.spec.ts`
 - [X] T016 Implement workspace context guard in `backend/src/core/workspace.guard.ts` (unit test: T015)
 - [ ] T052 [P] [US1] Integration test asserting cross-workspace project access returns not-found and is audited, in `backend/tests/integration/workspace-isolation.spec.ts`
+
+### Project scoping *(added 2026-08-08 — closes analysis finding **C4**)*
+
+*`FR-003` is co-owned with EPIC-006 and had **zero** task coverage here. EPIC-006 `T054` builds the
+projects service; the generic mechanism that stops content leaking between projects belongs with the
+scoping helper, which lives in this epic.*
+
+- [ ] T455 [P] [US1] Write failing unit tests asserting the scoping helper enforces `project_id` on project-scoped reads with no leakage between projects, and that project scoping composes with workspace scoping rather than replacing it (**FR-003**), in `backend/tests/unit/core/project-scope.spec.ts`
+- [ ] T456 [US1] Extend the scoping query helper to apply project scoping alongside workspace scoping in `backend/src/core/workspace-scope.ts` (**FR-003**; unit test: T455)
 
 ## F-13.1 · Audit trail
 
@@ -46,6 +55,16 @@ paired unit-test task, written to fail first.
 - [X] T029 Implement transactional audit interceptor in `backend/src/modules/audit/audit.interceptor.ts` (unit test: T028a)
 - [X] T029a [P] Write failing unit tests asserting the audit controller exposes no write or delete route in `backend/tests/unit/audit/audit.controller.spec.ts`
 - [X] T030 [P] Implement read-only `/audit` endpoint in `backend/src/modules/audit/audit.controller.ts` (unit test: T029a)
+
+### Database-level immutability *(added 2026-08-08 — closes analysis finding **C1**)*
+
+*`spec.md` states audit tables **reject `UPDATE` and `DELETE` at the database level**, and `plan.md`
+says immutability is "enforced twice — in code… in the database, a trigger raises". `T028` delivered
+only the code half. **No task built the trigger**, so the epic's own definition of done contained an
+item nothing produced — and it is the half that survives a bug in the service layer.*
+
+- [ ] T453 [P] Write failing integration test asserting `UPDATE` and `DELETE` against `audit_entries` are rejected **by the database**, not merely absent from the service — issued as raw SQL against a real PostgreSQL via Testcontainers, since a mocked repository cannot fail this (**FR-033**, **SC-012**), in `backend/tests/integration/audit-immutability.spec.ts`
+- [ ] T454 Add the shared `reject_mutation()` function and the `audit_entries_immutable` `BEFORE UPDATE OR DELETE` trigger, per `../_shared/schema.sql`, to the migration in `backend/prisma/migrations/` (**FR-033**; integration test: T453; depends on T013). The **function is shared** — EPIC-007 `requirement_versions` and EPIC-009 `specification_versions` attach their own triggers to it and must not redefine it
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 

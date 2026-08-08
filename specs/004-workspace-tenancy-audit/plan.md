@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-004` | **Modules**: M-01 / M-13 | **Date**: 2026-08-03 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 19 · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
+**Tasks**: 23 · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([schema](../_shared/schema.sql) · [data-model](../_shared/data-model.md) ·
@@ -22,8 +22,9 @@ impossible by construction rather than by discipline.
 | Function | Tasks | What it delivers |
 |---|---|---|
 | F-01.1 Workspace and user data foundation | 4 | `Workspace`, `User`, universal column convention, first migration |
-| F-01.2 Workspace scoping and isolation | 5 | Scoping query helper, workspace guard, cross-workspace integration test |
-| F-13.1 Audit trail | 6 | `AuditEntry`, append-only service, transactional interceptor, read-only endpoint |
+| F-01.2 Workspace scoping and isolation | 7 | Scoping query helper, workspace guard, **project scoping (FR-003)**, cross-workspace integration test |
+| F-13.1 Audit trail | 8 | `AuditEntry`, append-only service, transactional interceptor, read-only endpoint, **database-level immutability trigger** |
+| Phase Z Epic closure | 4 | Per-epic gate (Constitution IV, V, VI, IX) |
 
 **Out of scope**: authentication and sign-in (EPIC-005), RBAC and SSO (Phase 3).
 
@@ -48,7 +49,7 @@ orphan audit row. This is the part most likely to be got subtly wrong.
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — via [platform-spec](../_shared/platform-spec.md) |
-| III | Epic → Feature → Task decomposition | PASS — 3 functions, 19 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 3 functions + closure, 23 tasks |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS |
 | V | Every implementation task carries a unit test, written to fail first | PASS — 0 gaps |
 | VI | `specs/004-workspace-tenancy-audit/defects/` exists | PASS |
@@ -106,7 +107,7 @@ Implements existing shared artifacts; adds none:
 
 ## Definition of done
 
-- [ ] 19 tasks complete, every unit test passing (Constitution V)
+- [ ] 23 tasks complete, every unit test passing (Constitution V)
 - [ ] Quickstart **V2** passes — a cross-workspace request returns **404**, and the attempt appears
       in `/v1/audit`
 - [ ] Quickstart **V12** passes — create, edit, lifecycle transition, engine invocation, and refused
