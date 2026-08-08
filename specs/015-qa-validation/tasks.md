@@ -29,8 +29,8 @@ paired unit-test task, written to fail first.
 ## F-12.2 · Engine smoke and performance
 
 - [ ] T146 [P] Add nightly real-engine smoke test (quickstart V13) in `.github/workflows/nightly-engine.yml`
-- [ ] T147 [P] Add performance check for 500 specifications per project in `backend/tests/integration/scale.spec.ts`
-- [ ] T147a [P] Add a generation job outcome-rate measurement asserting SC-011 — 95% of requests complete or report a named failure within the time limit — in `backend/tests/integration/job-outcome-rate.spec.ts`
+- [ ] T147 [P] Add performance check asserting listing, search, and traceability views return in **under 1 second at the 95th percentile** with 500 specifications in one project (**SC-009**, quantified 2026-08-07), in `backend/tests/integration/scale.spec.ts`
+- [ ] T147a [P] Add a generation job outcome-rate measurement asserting SC-011 — 95% of requests complete or report a named failure within the configured wall-clock limit, **10 minutes by default** (FR-025, quantified 2026-08-07) — in `backend/tests/integration/job-outcome-rate.spec.ts`
 
 ## F-12.3 · Test completeness
 

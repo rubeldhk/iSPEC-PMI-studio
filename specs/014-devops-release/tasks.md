@@ -5,7 +5,7 @@ description: "Task list for EPIC-014 — DevOps & Release"
 
 # Tasks: DevOps & Release
 
-**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 17
+**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 18
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -26,7 +26,8 @@ paired unit-test task, written to fail first.
 
 - [ ] T149a [P] Unit tests asserting the seed script is idempotent and creates exactly one workspace and one user with a hashed password, in `backend/tests/unit/core/seed.spec.ts`
 - [ ] T149 [P] Add seed script creating one workspace and user in `backend/prisma/seed.ts` (unit test: T149a)
-- [ ] T150 Create `README.md` at the repository root with developer setup documentation matching `specs/_shared/quickstart.md` — the repository currently holds only `readme.txt`
+- [ ] T452 [P] Conformance check asserting `README.md` exists at the repository root and covers every setup step in `specs/_shared/quickstart.md` — the executable check Constitution V (v1.2.0) requires for a document output, since manual review does not satisfy the gate — in `tests/governance/readme-conformance.spec.ts`
+- [ ] T150 Create `README.md` at the repository root with developer setup documentation matching `specs/_shared/quickstart.md` — the repository currently holds only `readme.txt` (conformance check: T452)
 
 ## F-11.2 · Platform release gate
 

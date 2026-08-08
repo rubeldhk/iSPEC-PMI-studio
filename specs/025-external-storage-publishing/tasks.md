@@ -5,7 +5,7 @@ description: "Task list for EPIC-025 — External Storage Publishing"
 
 # Tasks: External Storage Publishing
 
-**Epic**: `EPIC-025` | **Module**: M-11 DevOps | **Tasks**: 32
+**Epic**: `EPIC-025` | **Module**: M-11 DevOps | **Tasks**: 37
 
 **Parent design**: [../002-team-review-access-storage/](../002-team-review-access-storage/) — requirements, clarifications, SRS traceability and the principle register live there
 **Shared design**: [../_shared/](../_shared/)
@@ -41,7 +41,19 @@ description: "Task list for EPIC-025 — External Storage Publishing"
 - [ ] T392 [US6] Implement access-aware exclusion during publish in `backend/src/modules/storage/publish.service.ts` (FR-033; unit test: T385)
 - [ ] T393 [US6] Implement the publish failure taxonomy in `backend/src/modules/storage/publish-failures.ts` (FR-035; unit test: T384)
 - [ ] T394 [US6] Implement republish preview and concurrent-publish prevention in `backend/src/modules/storage/republish.service.ts` (FR-036, FR-040; unit test: T386)
-- [ ] T395 [US7] Implement provider switching and disconnection with artifact preservation in `backend/src/modules/storage/provider-switch.service.ts` (FR-037, FR-038; unit test: T387)
+- [ ] T395 [US7] Implement provider switching and disconnection with artifact preservation in `backend/src/modules/storage/provider-switch.service.ts` (FR-037, FR-038; unit test: T387) (unit test: T451)
+
+### Credentials and disconnection *(added 2026-08-08 — FR-029a, FR-029b, FR-038, SC-014, clarified today)*
+
+*Authorisation is **delegated OAuth-style**: the platform stores a refresh token encrypted at rest and
+never accepts a password. The token never reaches the adapter, which gets a short-lived access token
+per call — preserving contract rule **S7** and the ADR-0002 sandbox posture.*
+
+- [ ] T447 [P] [US5] Write failing unit tests asserting an expired access token is refreshed without user interaction where the provider permits it, and that a connection whose refresh fails reports `needs_reauthorisation` rather than `unavailable` (**FR-029a**, FR-031), in `backend/tests/unit/storage/token-refresh.spec.ts`
+- [ ] T448 [US5] Implement token refresh and re-authorisation reporting in `backend/src/modules/storage/token-refresh.service.ts` (**FR-029a**; unit test: T447)
+- [ ] T449 [P] [US5] Write failing unit tests asserting a stored refresh token never appears in any endpoint response, log entry, or error message, that no provider account password is ever accepted, and that the token is discarded on disconnection (**FR-029b**, **SC-014**), in `backend/tests/unit/storage/token-exposure.spec.ts`
+- [ ] T450 [US5] Implement refresh-token encryption at rest, non-exposure, and discard-on-disconnect in `backend/src/modules/storage/connection.service.ts` (**FR-029b**, **SC-014**; unit test: T449)
+- [ ] T451 [P] [US7] Write failing unit tests asserting disconnection **leaves already-published files untouched at the provider** and marks their publish records no longer tracked — the platform never deletes at the provider (**FR-038**), in `backend/tests/unit/storage/disconnect-retention.spec.ts`
 - [ ] T396 [P] [US5] Implement a fixture storage provider with injectable failures, mirroring the engine fixture pattern, in `packages/storage-adapters/fixture/src/index.ts` (unit tests: T382, T384)
 - [ ] T421 [P] [US5] Write failing unit tests for the storage connections controller with mocked services, asserting an unreachable provider reports `unavailable` and never `healthy`, in `backend/tests/unit/storage/connections.controller.spec.ts`
 - [ ] T422 [P] [US5] Contract tests for connection endpoints against `contracts/platform-api-epic-002.md` in `backend/tests/contract/storage-connections.spec.ts`
