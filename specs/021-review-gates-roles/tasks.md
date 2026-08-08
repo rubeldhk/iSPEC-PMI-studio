@@ -22,9 +22,9 @@ paired unit-test task, written to fail first.
 > Containment is the platform's per-job caps alone (FR-025). **T291 re-scores RAID R-02 and is a
 > blocking task, not a formality.**
 
-> ⚠️ **Open dependency — finding A1.** `ReviewGate.transition` must be one of the permitted
-> transitions of the M08 six-state lifecycle, but **that permitted set is not enumerated in any
-> specification**. T277 cannot be fully validated until it is. See the Notes.
+> ✅ **A1 resolved 2026-08-07.** `ReviewGate.transition` binds to one of the **eight permitted
+> transitions** now enumerated in `FR-011` (`../_shared/platform-spec.md`), exposed through six
+> endpoints. T277 is fully specifiable.
 
 ---
 
@@ -106,7 +106,7 @@ is recorded. Quickstart **V17-7** and **V17-8**.
 
 ## Notes
 
-- ⚠️ **A1 blocks full validation of T277.** FR-011 requires refusing transitions "outside the permitted
+- ✅ **A1 resolved 2026-08-07.** `FR-011` enumerates the eight permitted transitions (six endpoints; `reject` and `archive` each serve more than one starting state). `T277` asserts refusal against that set.
   set, naming the permitted ones", but the permitted set is enumerated nowhere — it exists only as
   "eight permitted transitions" in EPIC-009 `T106` against "six lifecycle transition endpoints" in
   `T108`. `/speckit-clarify` on EPIC-009 resolves it. T277 can be written against the six endpoints

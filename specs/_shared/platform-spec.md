@@ -53,6 +53,14 @@
   task traceability. AI-assisted requirement analysis (Requirement Intelligence / REG) stays
   Phase 2.
 
+### Session 2026-08-07
+
+- Q: Which state changes is a specification allowed to make, out of the six states `draft → review → approved → baselined → implemented → archived`? → A: **B — forward, plus reject and archive.** Eight permitted transitions exposed through six endpoints, because `reject` and `archive` each serve more than one starting state. Resolves finding **A1**, which blocked EPIC-009 `T106`/`T113` and EPIC-021 `T277`.
+
+- Q: How long may a specification-generation job run before the platform gives up on it? → A: **B — 10 minutes wall-clock**, configurable per deployment, with the default recorded here. Comfortably above a normal five-step agent run while bounding a runaway job; makes `SC-011` measurable and gives PP-017 a concrete containment value while optimisation stays deferred to M-07.
+
+- Q: When a project holds 500 specifications, how quickly must its list, search, and traceability views come back? → A: **B — under 1 second at the 95th percentile**, measured with 500 specifications in one project. Gives EPIC-015 `T147` a threshold to assert, and is loose enough that EPIC-020's recursive-query choice (research **R-002-5**) stands without a materialised closure table.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -423,7 +431,24 @@ adapter layer.
   to exactly one project.
 - **FR-011**: System MUST support the specification lifecycle defined by SRS module specification
   M08 §8 — `draft → review → approved → baselined → implemented → archived` — and MUST refuse
-  transitions outside the permitted set, naming the permitted ones.
+  transitions outside the permitted set, naming the permitted ones. **The permitted set is these
+  eight transitions** (clarified 2026-08-07):
+
+  | # | Transition | Endpoint |
+  |---|---|---|
+  | 1 | `draft → review` | `submit-for-review` |
+  | 2 | `review → approved` | `approve` |
+  | 3 | `review → draft` | `reject` |
+  | 4 | `approved → baselined` | `baseline` |
+  | 5 | `baselined → implemented` | `mark-implemented` |
+  | 6 | `approved → archived` | `archive` |
+  | 7 | `baselined → archived` | `archive` |
+  | 8 | `implemented → archived` | `archive` |
+
+  Eight transitions, **six endpoints** — `archive` serves three starting states. Every other
+  transition MUST be refused, naming these. `archived` is terminal. An approved specification
+  MUST NOT return to `draft`; correcting one after approval is a new version (FR-011a), not a
+  backward transition.
 - **FR-011a**: System MUST treat a baselined specification as immutable: editing one creates a new
   version in `draft` rather than altering the baseline, and the baselined version remains
   retrievable unchanged (M08 BR-SPEC-001, BR-SPEC-002).
@@ -458,8 +483,11 @@ adapter layer.
 
 - **FR-024**: Users MUST be able to cancel an in-progress generation job, with no partial artifact
   stored.
-- **FR-025**: System MUST enforce a time limit on generation jobs, reporting a timed-out job as
-  failed with no partial artifact stored.
+- **FR-025**: System MUST enforce a wall-clock time limit on generation jobs, reporting a timed-out
+  job as failed with no partial artifact stored. **The default limit is 10 minutes** (clarified
+  2026-08-07); it is deployment configuration, and a deployment that changes it MUST measure
+  SC-011 against its own value. This limit is the platform's primary per-job cost bound while
+  PP-017's optimisation half remains deferred to M-07.
 - **FR-026**: System MUST report engine failure, unavailability, malformed output, and empty output
   as distinct, named failure reasons rather than a generic error.
 - **FR-027**: System MUST leave the platform in its pre-request state when a generation job fails.
@@ -535,11 +563,12 @@ adapter layer.
   version can be retrieved unchanged.
 - **SC-008**: A second specification engine can be introduced and used for a project with zero
   changes to platform behaviour outside the adapter layer.
-- **SC-009**: A single project supports at least 500 specifications without degrading the
-  responsiveness of listing, search, or traceability views.
+- **SC-009**: A single project supports at least 500 specifications with listing, search, and
+  traceability views returning in **under 1 second at the 95th percentile** (clarified
+  2026-08-07).
 - **SC-010**: Users can identify every uncovered requirement in a project in a single view.
 - **SC-011**: 95% of generation requests either complete or report a named failure within the
-  stated time limit.
+  configured wall-clock limit — **10 minutes by default** (FR-025).
 - **SC-012**: Every state-changing action on an artifact appears in the audit record.
 
 ## MPS-Derived Requirements — Adoption Register *(added 2026-08-03)*

@@ -38,7 +38,7 @@ Inherited from [`../_shared/plan.md`](../_shared/plan.md) and the
 
 **Empty findings is a pass.** A deliberate divergence from the base contract's empty-output-is-failure rule, which exists for *generation* where an empty specification is meaningless. A review that finds nothing is legitimate and common — and the most likely thing to implement wrongly.
 
-**NEEDS CLARIFICATION**: one, inherited — **A1**, the unenumerated set of permitted lifecycle transitions. It does not block Phase 0; it blocks full validation of T277.
+**NEEDS CLARIFICATION**: none. The inherited **A1** question — the unenumerated set of permitted lifecycle transitions — was resolved 2026-08-07; `FR-011` now enumerates eight transitions across six endpoints, so `T277` is fully specifiable.
 
 ## Constitution Check
 
@@ -58,7 +58,7 @@ Inherited from [`../_shared/plan.md`](../_shared/plan.md) and the
 | — | Principle register present, deferrals argued (D-6) | PASS — deltas in [spec.md](./spec.md) |
 | — | **D-16 honoured** — product scope only | PASS |
 
-**Any FAIL blocks Phase 0.** No FAIL. One inherited open question (A1) recorded above and in [tasks.md](./tasks.md).
+**Any FAIL blocks Phase 0.** No FAIL. The inherited A1 question was resolved 2026-08-07.
 
 **Post-design re-check**: PASS. PP-003 and PP-016 are both *satisfied here for the platform*, not merely declared.
 

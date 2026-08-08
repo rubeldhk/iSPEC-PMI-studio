@@ -71,7 +71,7 @@ records only where it differs:
 
 ⚠️ **This epic carries the whole PP-017 cost exposure of the family.** Twelve roles per gate is twelve model invocations, with M-07's optimisation controls deferred by the 2026-08-04 ruling. **Gates should be configured with the roles a transition actually needs — twelve is the maximum, not the default.**
 
-⚠️ **Open dependency, finding A1.** FR-011 requires refusing transitions outside the permitted set and naming the permitted ones, but that set is enumerated nowhere — EPIC-009 `T106` says eight, `T108` implements six. `/speckit-clarify` on EPIC-009 resolves it; T277 will need revisiting if the answer is eight.
+✅ **A1 resolved 2026-08-07.** `FR-011` now enumerates the **eight permitted transitions** across six endpoints, so a gate binds to a defined set and `T277` can assert refusal by name.
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
 

@@ -160,8 +160,8 @@ incomplete and does not say so reads as completeness — the failure mode this f
 | `blocking` | whether findings block advancement pending decision |
 
 **Validation**: `transition` must be one of the permitted transitions of the M08 six-state lifecycle.
-⚠️ **That permitted set is not yet enumerated in any specification** — open finding **A1** from the
-2026-08-03 analysis. This gate model cannot be fully validated until it is.
+✅ **That permitted set is now enumerated** in `FR-011` — eight transitions across six endpoints — resolving finding **A1** from the
+2026-08-03 analysis. The gate model is fully validatable.
 
 ### GateOutcome *(append-only)*
 

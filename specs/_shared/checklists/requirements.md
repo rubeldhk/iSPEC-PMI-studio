@@ -42,7 +42,7 @@
 ## Clarification Coverage
 
 - [x] Clarifications section present with a dated session
-- [x] Every accepted answer recorded exactly once (5 answers, 5 bullets)
+- [x] Every accepted answer recorded exactly once (8 answers, 8 bullets across 2 sessions: 5 on 2026-08-02, 3 on 2026-08-07)
 - [x] No superseded or contradictory text left behind by the clarifications
 - [x] Explicit Out of Scope section present, aligned to the SRS roadmap phases
 
