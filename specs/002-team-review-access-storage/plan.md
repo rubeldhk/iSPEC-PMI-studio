@@ -3,7 +3,7 @@
 **Epic**: `EPIC-002` | **Modules**: M-06 Workflow / M-13 Security & Governance / M-11 DevOps |
 **Date**: 2026-08-05 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 87 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10) — product surface
+**Tasks**: none — split into EPIC-023/024/025 by ruling **D-19** | **Posture**: ⏸ **HELD** (D-10)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([platform-spec](../_shared/platform-spec.md) · [system-design](../_shared/system-design.md) ·
@@ -19,8 +19,8 @@ epic reuses for storage · [ADR-0004](../../adr/ADR-0004-one-way-external-storag
 > then extended to **87** by the follow-up `/speckit-tasks` pass this plan triggered. That inverts the
 > normal order and means those tasks never passed a Constitution Check until now. This plan therefore
 > does two jobs: it records the technical context the tasks assumed, and it **reviews the existing
-> task list**. Six gaps were found; **five are closed**, and **G-02.6 (split) remains open** as a
-> governance decision.
+> task list**. Six gaps were found; **all six are now closed** — G-02.6 by ruling **D-19** on
+> 2026-08-07, which split this epic into three module-aligned children.
 >
 > This is the largest instance of finding **C3** in the repository — 12 epics hold `tasks.md` with no
 > `plan.md` — and at 45 requirements it is the one where the missing gate mattered most.
@@ -52,10 +52,10 @@ That is what makes this the programme's strongest expression of **PP-003 Human-i
 | F-02.5 Artifact access control | 15 | Grants, enforcement, hiding, inheritance, last-editor guarantee, snapshots, **access API**, **integration tests** |
 | F-02.6 External storage integration | 25 | Provider contract, connections, publish, failure taxonomy, switching, fixture, **storage + publish API**, **conformance suite**, **architecture test** |
 | F-02.7 Interface | 6 | Review session, access grants, storage connections |
-| Phase Z Epic closure | 5 | Per-epic gate, including the SRS back-fill **approval** gate (T404) |
+| Phase Z Epic closure | 5→14 | Per-child gates; the SRS back-fill **approval** gate now exists in EPIC-023 (T404) and EPIC-025 (T439) |
 
-**68 → 87 tasks** on 2026-08-05, closing G-02.3, G-02.4 and G-02.5 plus the storage conformance suite
-and the provider-independence architecture test.
+**68 → 87 tasks** on 2026-08-05, closing G-02.3, G-02.4 and G-02.5. **Split 2026-08-07 (D-19)** into
+[EPIC-023](../023-unattended-runs-review/tasks.md), [EPIC-024](../024-artifact-access-control/tasks.md), [EPIC-025](../025-external-storage-publishing/tasks.md) — 87 IDs preserved, 9 closure tasks added, 96 total.
 
 ## Technical Context
 
@@ -99,12 +99,12 @@ zero remain. The seven open technical questions are resolved in Phase 0.
 |---|------|--------|
 | I | All code changes produced only via Spec Kit commands — no direct edits | PASS |
 | II | Every requirement traces to a cited `SRS/` document; untraced items in Assumptions | ⚠️ **PASS WITH DEBT** — **two whole capability areas have no SRS source**: unattended runs (FR-001–FR-020) and third-party storage (FR-029–FR-040). Declared in the spec with a named back-fill owner and re-verified against the MPS drop. `T404` gates **approval**, not merely closure. The largest Constitution II debt in the programme |
-| III | Work decomposed Epic → Feature → Task; Epic ID assigned and directory exists | PASS — 7 functions + closure, 87 tasks. ⚠️ See **G-02.6**: split candidate, and 87 tasks strengthens the case |
-| IV | `/speckit-converge` scheduled as the Epic exit gate | PASS — `Phase Z` present in [tasks.md](./tasks.md) |
+| III | Work decomposed Epic → Feature → Task; Epic ID assigned and directory exists | ✅ **PASS** — resolved by **D-19**: split into EPIC-023 (43), EPIC-024 (21), EPIC-025 (32), one per module |
+| IV | `/speckit-converge` scheduled as the Epic exit gate | PASS — each child carries its own closure section |
 | V | Every implementation task carries a unit-test task, written to fail first | ✅ **PASS** — G-02.3 and G-02.4 closed 2026-08-05. Every controller now carries a unit test and a contract test |
 | VI | `specs/002-team-review-access-storage/defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | PASS — via EPIC-014 F-11.2 |
-| VIII | Session/clone labelled with the working Epic, or the first command | PASS — `tasks.md` declares `EPIC-002 Team Review & Storage`; this session is labelled `speckit-constitution` (its first command) and states so in its closing report |
+| VIII | Session/clone labelled with the working Epic, or the first command | PASS — each child declares its own session label |
 | IX | Run closes with a Work Completed + Recommended Next Task report | PASS |
 | — | Repository synced from GitHub before this work started | PASS — 0 commits behind `origin/main`, verified 2026-08-04 |
 | — | No other Claude session active on this checkout | ⚠️ **CANNOT ASSERT** — `002/tasks.md` and `018/tasks.md` appeared in this working tree mid-session, authored outside it. The single-session assumption did not hold today |
@@ -172,16 +172,76 @@ rather than a mock: a mocked repository passes while the real query leaks.
 ✅ **Closed** — `T427` (enforcement returns absence against real PostgreSQL), `T428` (last-editor
 invariant under concurrent revocation), `T429` (concurrent-publish advisory lock).
 
-### G-02.6 · This epic is a split candidate
+### G-02.6 · This epic is a split candidate — ✅ RESOLVED 2026-08-07 (ruling D-19)
 
 Three capability areas, 8 functions, **87 tasks**, 45 requirements, 7 user stories. `F-02.5` and `F-02.6`
 are explicitly independent of the run/review chain and of each other — the task file's own build order
 says three developers could work in parallel. That is the shape **D-15** split EPIC-001 for and
 **D-18** split EPIC-017 for.
 
-**Recommended cut**: unattended runs + review (F-02.1–F-02.4, US1–US3) · access control (F-02.5, US4)
-· external storage (F-02.6, US5–US7). Splitting is a governance decision, so this plan **recommends
-but does not execute** it.
+**Recommended cut — now executed** as **EPIC-023** (M-06, 43 tasks), **EPIC-024** (M-13, 21) and
+**EPIC-025** (M-11, 32). All 87 task IDs preserved; 9 closure tasks added so each child converges
+independently. EPIC-002 is now a parent design carrying no tasks.
+
+#### Strengthened 2026-08-07 — the module-inversion argument
+
+The original entry argued from size and independence. There is a stronger argument, and it is the
+same one that decided **D-15**:
+
+**This epic spans three modules.** Its own header declares *M-06 Workflow · M-13 Security &
+Governance · M-11 DevOps*. **MPS Volume 6 §1** places epics **below** modules
+(`Domains → Modules → Capabilities → Epics → Features → …`). An epic covering three modules inverts
+the hierarchy — precisely the defect D-15 corrected when EPIC-001 spanned ten.
+
+The recommended cut maps one-to-one onto those modules:
+
+| Proposed epic | Module | Functions | Approx. tasks |
+|---|---|---|---|
+| Unattended Runs & Team Review | M-06 Workflow | F-02.1 – F-02.4 | ~38 |
+| Artifact Access Control | M-13 Security & Governance | F-02.5 | ~17 |
+| External Storage Publishing | M-11 DevOps | F-02.6 | ~26 |
+
+Two further points the size argument alone missed:
+
+- **Convergence granularity.** Constitution IV gates per epic. One 87-task epic means a single
+  enormous gate; three epics converge independently, and a defect in storage stops storage rather
+  than the whole feature.
+- **Scheduling is barely affected.** All three still sit behind EPIC-008/009, so splitting buys
+  little calendar time. The gain is governance, not speed — which is worth saying rather than
+  overselling.
+
+**Cost**: ~87 tasks re-homed across three directories, task IDs held invariant (the D-15 method,
+which moved 215 tasks without renumbering one). Requirements stay defined once in this spec, with
+each child declaring what it owns — the pattern EPIC-017 uses for EPIC-019–022.
+
+## Position in the delivery sequence *(added 2026-08-07)*
+
+The cross-epic dependency analysis of 2026-08-07 sorted all 19 epics into 10 waves. **EPIC-002 lands
+in Wave 8** — joint-latest of the product epics, and second-latest overall.
+
+| Depends on | For | Wave |
+|---|---|---|
+| EPIC-001 | Job orchestration, failure taxonomy, observability | 1 ✅ done |
+| EPIC-004 | Tenancy and audit, which access grants extend | 2 |
+| EPIC-008 | Generation, which unattended runs drive | 6 |
+| EPIC-009 | The lifecycle that provisional approval overrides | 7 |
+
+```text
+001 → 004 → 005 → 006 → 007 → 008 → 009 → [EPIC-002] → 015 → 014
+                                              wave 8
+```
+
+**Nothing in this epic can start until EPIC-009 completes**, and that whole chain is held on
+`PMI-DOC-004`. Two consequences worth stating plainly:
+
+- **The 87 tasks have a long runway.** Restructuring now costs nothing in delivery time, which
+  weakens the usual argument against splitting late.
+- **The Constitution II debt has time to be discharged.** `T404` gates *approval*, and approval is
+  seven waves away — so the SRS back-fill is not on the critical path unless it is left until then.
+
+Its spec previously declared this dependency in the **header** rather than a `## Depends on` section,
+so automated graph-building missed it and placed the epic in Wave 1. Corrected 2026-08-07
+(analyze finding **F2**).
 
 ## Build order
 

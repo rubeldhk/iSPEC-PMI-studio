@@ -13,6 +13,30 @@ qustions and suggesions recordet all togather for the team to disscus and select
 2. set access of project management file 3.manage project management files integration with file
 manager third pary solution like google drive, dropbox, s3 etc"
 
+> ## ⚠️ This is a parent design, not a delivery epic
+>
+> **Split 2026-08-07 by ruling D-19.** The three capability areas specified here are delivered by
+> three child epics, one per module. This document — with [plan.md](./plan.md),
+> [research.md](./research.md), [data-model.md](./data-model.md), [contracts/](./contracts/) and
+> [quickstart.md](./quickstart.md) — is the **shared design** they reference, the same pattern
+> `_shared/` serves for the platform and EPIC-017 serves for EPIC-019–022.
+>
+> | Child epic | Module | Requirements owned | Tasks |
+> |---|---|---|---|
+> | [EPIC-023 Unattended Runs & Team Review](../023-unattended-runs-review/) | M-06 Workflow | FR-001–FR-020, FR-005a–c, FR-015a | 43 |
+> | [EPIC-024 Artifact Access Control](../024-artifact-access-control/) | M-13 Security & Governance | FR-021–FR-028 | 21 |
+> | [EPIC-025 External Storage Publishing](../025-external-storage-publishing/) | M-11 DevOps | FR-029–FR-040 | 32 |
+>
+> **Why split**: this epic spanned **three modules**, and MPS Volume 6 §1 places epics *below*
+> modules. An epic covering three inverts the hierarchy — the same defect D-15 corrected when
+> EPIC-001 spanned ten. Recorded as gap **G-02.6** in [plan.md](./plan.md).
+>
+> **EPIC-002 itself now has no `tasks.md` and no closure of its own.** It is closed when all three
+> children are. Requirements, clarifications, SRS traceability and the principle register are defined
+> **once** here; each child declares what it owns.
+>
+> All 87 task IDs were preserved unchanged; 9 closure tasks were added so each child can converge
+> independently (Constitution IV).
 **Depends on**: `EPIC-001` — PMI Studio Phase 1 Platform Core. This Epic extends the projects,
 requirements, specifications, tasks, and generation jobs that EPIC-001 establishes.
 

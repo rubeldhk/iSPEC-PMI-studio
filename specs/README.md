@@ -60,7 +60,10 @@ complete, reviewed, and Constitution V compliant.
 
 | Epic | Title | Status |
 |------|-------|--------|
-| [EPIC-002](./002-team-review-access-storage/) | Team Review, Access Control & External Storage | ⏸ **Held** — clarified 2026-08-02, tasked 2026-08-05 (**87 tasks**, T340–T432). Planned retroactively 2026-08-05. Depends on the epics above |
+| [EPIC-002](./002-team-review-access-storage/) | Team Review, Access Control & External Storage | **PARENT DESIGN** — split 2026-08-07 by ruling **D-19** into three module-aligned children. Holds requirements, clarifications, SRS traceability and the principle register; carries no tasks |
+| [EPIC-023](./023-unattended-runs-review/) | Unattended Runs & Team Review — M-06 Workflow | ⏸ Held · **43 tasks** · owns FR-001–FR-020, FR-005a–c, FR-015a |
+| [EPIC-024](./024-artifact-access-control/) | Artifact Access Control — M-13 Security & Governance | ⏸ Held · **21 tasks** · owns FR-021–FR-028 |
+| [EPIC-025](./025-external-storage-publishing/) | External Storage Publishing — M-11 DevOps | ⏸ Held · **32 tasks** · owns FR-029–FR-040 |
 | [EPIC-018](./018-repository-governance/) | Repository Governance Process | ▶ **Proceeding** — process, not product. Split from EPIC-017 on 2026-08-04 (D-17). Planned and tasked (**32 tasks**, T312–T339 + closure) |
 
 ### The enhancement-model family — 87 tasks, all ⏸ held
@@ -88,10 +91,10 @@ Ruling **D-16** layered the source document's authority: its 21-section template
 govern PMI Studio's *outputs*, while `PMI-DOC-000` continues to govern this repository's own
 documents — which is why no existing specification here became non-conformant.
 
-EPIC-002 (87) and EPIC-018 (32) are counted in the grand total below but not in the platform or
+EPIC-023/024/025 (96, split from EPIC-002) and EPIC-018 (32) are counted in the grand total below but not in the platform or
 enhancement subtotals, which cover the D-15 and D-18 families only.
 
-**Total: 494 tasks** — including EPIC-002 (87) and EPIC-018 (32). The platform family holds **288** — 215 from the D-15 split, plus 7
+**Total: 502 tasks** — including EPIC-023/024/025 (96, split from EPIC-002 by D-19) and EPIC-018 (32). The platform family holds **288** — 215 from the D-15 split, plus 7
 remediation tasks and a 4-task `Phase Z · Epic closure` in each of the 15 epics (T165–T224). The
 enhancement-model family holds **87** (T225–T311, ruling D-18). **Not one existing task ID has ever
 moved.**
@@ -137,7 +140,7 @@ fifteen folders — was rejected for good reason. But it means:
 
 - **Task IDs are globally unique and invariant** (`T001`–`T432` plus suffixes such as `T143a`). A
   `(unit test: T0nn)` reference may point into another epic — expected and correct.
-- **Requirement IDs are not yet globally unique.** EPIC-002 has its own `FR-001`–`FR-040` that
+- **Requirement IDs are not yet globally unique.** The EPIC-002 family has its own `FR-001`–`FR-040` that
   collide with the platform set. This is conflict **C-01**; decision **D-1** fixes it by adopting
   PMI-DOC-000's typed four-digit scheme.
 - **Module IDs `M-nn` follow the 16-module catalog**, superseded by the MPS 18-module taxonomy but
