@@ -1,21 +1,18 @@
 /**
- * T047 + T142a — architecture enforcement.
+ * T047 + T142 — engine independence enforcement.
  *
  * These are the tests that turn two claims into build failures:
  *
  *   FR-017 / SC-008 / ADR-0001 — nothing in `backend/src` may reference Spec
  *   Kit or any concrete engine adapter. Adapters are supplied at the WORKER's
  *   composition root.
- *
- *   PC-1 — services must be callable without HTTP, so an MCP transport can be
- *   added in Phase 3 without redesign.
- *
+ * *
  * A claim like "the platform is engine-independent" decays silently unless
  * something fails when it stops being true. This is that something.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -65,27 +62,5 @@ describe('engine independence (FR-017, ADR-0001)', () => {
   });
 });
 
-describe('service / transport separation (PC-1)', () => {
-  const services = files.filter(
-    (f) => f.rel.endsWith('.service.ts') || f.rel.startsWith(`core${sep}`),
-  );
-  const TRANSPORT_ALLOWED = /\.(filter|guard|controller|module)\.ts$/;
-
-  it('has services to check', () => {
-    expect(services.length).toBeGreaterThan(0);
-  });
-
-  it('services never import HTTP types', () => {
-    const offenders = services
-      .filter((f) => !TRANSPORT_ALLOWED.test(f.rel))
-      .filter((f) => /from\s+['"](@nestjs\/common|@nestjs\/core|express)['"]/.test(f.body));
-    expect(offenders.map((o) => o.rel)).toEqual([]);
-  });
-
-  it('controllers exist and DO use the transport layer', () => {
-    // Otherwise this suite would pass on a codebase with no transport at all.
-    const controllers = files.filter((f) => f.rel.endsWith('.controller.ts'));
-    expect(controllers.length).toBeGreaterThan(0);
-    expect(controllers.some((c) => /@nestjs\/common/.test(c.body))).toBe(true);
-  });
-});
+// PC-1 service/transport separation moved to transport-independence.spec.ts
+// by EPIC-003 (T142a) — a different constraint deserves its own file.

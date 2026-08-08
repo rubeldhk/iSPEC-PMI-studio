@@ -1,0 +1,101 @@
+{
+  "$comment": [
+    "T089 — sandbox constraints for the Spec Kit engine container (ADR-0002).",
+    "",
+    "This container runs code the platform did not write, driven by a",
+    "non-deterministic AI agent. Every constraint below is the containment for a",
+    "specific risk, not defensive decoration:",
+    "",
+    "  limits.*        RAID R-02, unbounded AI agent cost. PC-2 cost CONTAINMENT",
+    "                  ships here; optimisation is deferred to M-07.",
+    "  network.egress  RAID R-06, credential exfiltration and sandbox escape.",
+    "  user / caps     RAID R-06, privilege escalation inside the container.",
+    "",
+    "One container per job, destroyed after it (E8). Nothing here is a default",
+    "to be relaxed under delivery pressure — T089a fails the build if it is."
+  ],
+
+  "image": "pmi-studio/speckit-engine",
+  "oneContainerPerJob": true,
+
+  "user": {
+    "name": "engine",
+    "uid": 10001,
+    "gid": 10001,
+    "nonRoot": true
+  },
+
+  "filesystem": {
+    "readOnlyRootFilesystem": true,
+    "writableMounts": [
+      {
+        "path": "/workspace",
+        "ephemeral": true,
+        "sizeMb": 512,
+        "$comment": "The ONLY writable path. Destroyed with the container."
+      }
+    ]
+  },
+
+  "limits": {
+    "cpus": 1.0,
+    "memoryMb": 2048,
+    "pids": 256,
+    "wallClockSeconds": 600,
+    "$comment": [
+      "wallClockSeconds matches the 10-minute job ceiling clarified 2026-08-07 and",
+      "recorded in specs/_shared/platform-spec.md. Configurable per deployment;",
+      "the value here is the default, and the cap is enforced by the container",
+      "runtime as well as by the adapter, so a hung agent cannot outlive it even",
+      "if the adapter itself is wedged (E5)."
+    ]
+  },
+
+  "network": {
+    "egress": {
+      "policy": "deny-all",
+      "allow": [
+        {
+          "host": "api.anthropic.com",
+          "port": 443,
+          "protocol": "https",
+          "$comment": "The AI provider endpoint. The ONLY reachable destination."
+        }
+      ]
+    },
+    "ingress": {
+      "policy": "deny-all"
+    }
+  },
+
+  "capabilities": {
+    "drop": ["ALL"],
+    "add": []
+  },
+
+  "security": {
+    "noNewPrivileges": true,
+    "seccompProfile": "runtime/default",
+    "privileged": false
+  },
+
+  "environment": {
+    "allowedKeys": ["PMI_CORRELATION_ID", "AI_PROVIDER_TOKEN"],
+    "$comment": [
+      "Exhaustive. Whatever is not listed does not exist inside the container:",
+      "no DATABASE_URL, no queue URL, no session secret. Built by",
+      "src/correlation.ts, which returns exactly these two keys."
+    ]
+  },
+
+  "telemetry": {
+    "egressFromContainer": false,
+    "$comment": [
+      "PC-3, and the asymmetry is deliberate. The correlation id travels IN as an",
+      "environment variable; nothing observable travels OUT. Emitting telemetry",
+      "from inside would require widening the egress allow-list above, which is",
+      "the one control standing between this container and the open internet.",
+      "The WORKER records spans and metrics from outside, on its behalf."
+    ]
+  }
+}

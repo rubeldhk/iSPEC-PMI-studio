@@ -87,3 +87,28 @@ describe('AuditEntry', () => {
     expect(model('AuditEntry')).toMatch(/actorId\s+String\?/);
   });
 });
+
+// T034 — EngineRegistration. Added by EPIC-003.
+describe('EngineRegistration (EPIC-003 T034)', () => {
+  const engine = () => model('EngineRegistration');
+
+  it('records the engine set a deployment accepted', () => {
+    expect(engine()).toMatch(/name\s+String\s+@unique/);
+    expect(engine()).toMatch(/version\s+String/);
+    expect(engine()).toMatch(/capabilities\s+String\[\]/);
+    expect(engine()).toMatch(/isDefault\s+Boolean/);
+  });
+
+  it('is NOT tenant-scoped — an engine belongs to the deployment, not a customer', () => {
+    // FR-002's universal-column rule covers tenant-scoped models. Asserting the
+    // exception so a future reader knows it was decided, not forgotten.
+    expect(engine()).not.toMatch(/workspaceId/);
+  });
+
+  it('carries no per-project selection — that is EPIC-006 (FR-019)', () => {
+    // The Project stub must not grow before EPIC-006 owns it, and selection is
+    // EPIC-006's. EngineResolverService reads it through a port instead.
+    expect(engine()).not.toMatch(/projectId/);
+    expect(model('Project')).not.toMatch(/engineName/);
+  });
+});

@@ -56,6 +56,25 @@ export default [
     },
   },
   {
+    // The ONE exception, and it is one FILE — not a directory (EPIC-003 T137).
+    //
+    // `engine-swap.spec.ts` is the acceptance test for SC-008: it proves the
+    // platform is not tied to Spec Kit by driving the same caller against two
+    // engines. It cannot be written without touching both, and a test that
+    // proves engine-independence is the opposite of a breach of it.
+    //
+    // Scoped to the single file deliberately. Widening this to
+    // `backend/tests/**` would let any future test import an adapter for
+    // convenience, which is exactly how RAID R-05 ("engine independence erodes
+    // under delivery pressure") plays out. The production boundary is
+    // unaffected and still enforced twice: by the rule above for
+    // `backend/src/**`, and by tests/architecture/engine-independence.spec.ts.
+    files: ['backend/tests/integration/engine-swap.spec.ts'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  {
     // PC-1: services stay callable without HTTP so an MCP transport can be
     // added in Phase 3 without redesign.
     files: ['backend/src/**/*.service.ts', 'backend/src/core/**/*.ts'],

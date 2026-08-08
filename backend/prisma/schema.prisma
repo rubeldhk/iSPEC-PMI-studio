@@ -171,3 +171,35 @@ model AuditEntry {
   @@index([targetType, targetId])
   @@map("audit_entries")
 }
+
+// ---------------------------------------------------------------- engines
+//
+// T034 — the engine set a deployment accepted at startup.
+//
+// NOT tenant-scoped, so no workspaceId: an engine is a property of the
+// deployment, not of a customer. FR-002's universal-column rule applies to
+// tenant-scoped models; recording the exception here rather than leaving a
+// reader to wonder whether it was forgotten.
+//
+// This table is a RECORD, not the source of truth. Adapters are supplied at the
+// composition root (worker/src/engine-composition.ts) and validated there
+// (FR-021); rows here exist so an operator can see which engines a running
+// deployment accepted, and at what version, without reading the code.
+//
+// Per-project engine SELECTION is deliberately absent. The Project stub must
+// not grow before EPIC-006 owns it, and EPIC-006 owns selection — so
+// EngineResolverService reads it through a port that EPIC-006 will implement.
+
+model EngineRegistration {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  // Identifies BOTH tool and model (FR-022, E10). Same Spec Kit + different
+  // model is a different version, because the output differs.
+  version      String
+  capabilities String[]
+  isDefault    Boolean  @default(false)
+  registeredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("engine_registrations")
+}

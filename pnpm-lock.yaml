@@ -59,6 +59,13 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+    devDependencies:
+      '@pmi/engine-adapter-fixture':
+        specifier: workspace:*
+        version: link:../engine-adapters/fixture
+      '@pmi/engine-adapter-speckit':
+        specifier: workspace:*
+        version: link:../engine-adapters/speckit
 
   engine-adapters/fixture:
     dependencies:

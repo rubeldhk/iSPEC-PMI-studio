@@ -16,5 +16,10 @@
     "bullmq": "^5.34.6",
     "pino": "^9.6.0",
     "@opentelemetry/api": "^1.9.0"
+  },
+  "//devDependencies": "Adapters are TEST-ONLY (T137 engine-swap). They must never move to dependencies: backend/src may import the contract and never a concrete engine (FR-017, ADR-0001). The architecture test enforces that regardless of what is installed.",
+  "devDependencies": {
+    "@pmi/engine-adapter-fixture": "workspace:*",
+    "@pmi/engine-adapter-speckit": "workspace:*"
   }
 }
