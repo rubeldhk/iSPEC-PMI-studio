@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-007` | **Module**: M-03 | **Date**: 2026-08-07 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 22 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
+**Tasks**: 24 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([platform-spec](../_shared/platform-spec.md) · [system-design](../_shared/system-design.md) · [data-model](../_shared/data-model.md) · [schema](../_shared/schema.sql) · [platform-api](../_shared/contracts/platform-api.md)))
@@ -26,7 +26,7 @@ retirement, not a wall of prose. AI-assisted analysis (REG) is Phase 2 and expli
 | F-03.1 Requirement data model | 3 | `Requirement` + `RequirementVersion`, indexed for filtering |
 | F-03.2 Validation rules | 1 | Refuse incomplete requirements, naming the field |
 | F-03.3 Requirement register service | 1 | Create, edit, list, filter |
-| F-03.4 Edit history | 2 | Append-only versions on edit |
+| F-03.4 Edit history | 4 | Append-only versions on edit, **enforced by a database trigger** |
 | F-03.5 Retirement | 2 | Mark, never delete; derived artifacts stay traceable |
 | F-03.6 Change detection | 2 | Content hashing, feeding out-of-date flagging |
 | F-03.7 Requirement API | 3 | `/requirements` endpoints |
@@ -56,7 +56,7 @@ traceable to it, which is what makes EPIC-011's retired-link flagging (`T127`) m
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — FR-004 to FR-009 cite the Requirement Intake module via [platform-spec](../_shared/platform-spec.md) |
-| III | Epic → Feature → Task decomposition | PASS — 8 functions, 22 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 8 functions, 24 tasks |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `Phase Z` in [tasks.md](./tasks.md) |
 | V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | PASS — 0 gaps; 9 implementation tasks, 9 paired tests |
 | VI | `specs/007-requirement-intelligence/defects/` exists | PASS |
@@ -109,7 +109,7 @@ plan made.
 
 ## Definition of done
 
-- [ ] 22 tasks complete, every unit test passing (Constitution V)
+- [ ] 24 tasks complete, every unit test passing (Constitution V)
 - [ ] Editing a requirement preserves the prior text as retrievable history
 - [ ] Retiring a requirement keeps derived artifacts traceable
 - [ ] Quickstart **V3** (requirement register) passes

@@ -5,7 +5,7 @@ description: "Task list for EPIC-009 — Specification Lifecycle & Versioning"
 
 # Tasks: Specification Lifecycle & Versioning
 
-**Epic**: `EPIC-009` | **Module**: M-04 | **Tasks**: 26
+**Epic**: `EPIC-009` | **Module**: M-04 | **Tasks**: 28
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -39,6 +39,17 @@ paired unit-test task, written to fail first.
 - [ ] T105 [P] [US5] Unit tests asserting each meaningful change creates a version and prior versions stay unaltered in `backend/tests/unit/specifications/versioning.spec.ts`
 - [ ] T107 [P] [US5] Unit tests for version comparison output in `backend/tests/unit/specifications/version-diff.spec.ts`
 - [ ] T110 [US5] Implement append-only version creation on meaningful change in `backend/src/modules/specifications/version.service.ts` (unit test: T105)
+
+### Database-level immutability *(added 2026-08-08)*
+
+*The shared design mandates immutability **at the database**: `../_shared/schema.sql` attaches a
+`BEFORE UPDATE OR DELETE` trigger to this table. The service-layer task above delivers only the code
+half — which a bug or a direct query bypasses. Same gap found in EPIC-004 (analysis finding **C1**)
+and closed there by `T454`, which creates the shared `reject_mutation()` function this trigger
+attaches to.*
+
+- [ ] T459 [P] [US5] Write failing integration test asserting `UPDATE` and `DELETE` against `specification_versions` are rejected **by the database** — raw SQL against a real PostgreSQL via Testcontainers (**FR-013**, **SC-007**: any prior version retrievable *unchanged*), in `backend/tests/integration/specification-version-immutability.spec.ts`
+- [ ] T460 [US5] Attach the `specification_versions_immutable` `BEFORE UPDATE OR DELETE` trigger to the shared `reject_mutation()` function, per `../_shared/schema.sql`, in `backend/prisma/migrations/` (**FR-013**, **SC-007**; integration test: T459; **depends on EPIC-004 T454**, which creates the function — do not redefine it)
 - [ ] T112 [US5] Implement version comparison in `backend/src/modules/specifications/version-diff.service.ts` (unit test: T107)
 
 ## F-04.10 · Lifecycle, versioning and validation APIs

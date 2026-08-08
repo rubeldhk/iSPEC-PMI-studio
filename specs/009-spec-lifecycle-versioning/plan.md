@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-009` | **Module**: M-04 | **Date**: 2026-08-07 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 26 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
+**Tasks**: 28 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([platform-spec](../_shared/platform-spec.md) · [system-design](../_shared/system-design.md) · [data-model](../_shared/data-model.md) · [schema](../_shared/schema.sql) · [platform-api](../_shared/contracts/platform-api.md)))
@@ -29,7 +29,7 @@ transitions across six endpoints**.
 | Function | Tasks | What it delivers |
 |---|---|---|
 | F-04.8 Lifecycle state machine | 7 | Six states, eight transitions, guards, attributed transitions, baseline immutability |
-| F-04.9 Versioning and comparison | 4 | Append-only versions on meaningful change; version diff |
+| F-04.9 Versioning and comparison | 6 | Append-only versions on meaningful change, **enforced by a database trigger**; version diff |
 | F-04.10 Lifecycle, versioning and validation APIs | 11 | Six transition endpoints, version endpoints, validation orchestration and findings |
 | Phase Z Epic closure | 4 | Per-epic gate (Constitution IV, V, VI, IX) |
 
@@ -69,7 +69,7 @@ contract; a finding without a location is malformed output, not a finding (`T117
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — via [platform-spec](../_shared/platform-spec.md); `FR-011` cites SRS M08 §8 |
-| III | Epic → Feature → Task decomposition | PASS — 3 functions, 26 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 3 functions, 28 tasks |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `Phase Z` in [tasks.md](./tasks.md) |
 | V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | PASS — 0 gaps; 11 implementation tasks, 11 paired tests |
 | VI | `specs/009-spec-lifecycle-versioning/defects/` exists | PASS |
@@ -144,7 +144,7 @@ plan made.
 
 ## Definition of done
 
-- [ ] 26 tasks complete, every unit test passing (Constitution V)
+- [ ] 28 tasks complete, every unit test passing (Constitution V)
 - [ ] `T106` asserts exactly the eight transitions in the `FR-011` table, and refuses every other by name
 - [ ] `T113` exposes exactly six endpoints, with `archive` serving three starting states
 - [ ] An approved specification cannot return to `draft`; `archived` is terminal

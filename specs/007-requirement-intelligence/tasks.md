@@ -5,7 +5,7 @@ description: "Task list for EPIC-007 — Requirement Intelligence"
 
 # Tasks: Requirement Intelligence
 
-**Epic**: `EPIC-007` | **Module**: M-03 | **Tasks**: 22
+**Epic**: `EPIC-007` | **Module**: M-03 | **Tasks**: 24
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -40,6 +40,17 @@ paired unit-test task, written to fail first.
 
 - [ ] T060 [P] [US2] Unit tests asserting an edit appends a version and prior text stays retrievable, in `backend/tests/unit/requirements/requirement-versions.spec.ts`
 - [ ] T067 [US2] Implement append-only version history on edit in `backend/src/modules/requirements/requirement-version.service.ts` (unit test: T060)
+
+### Database-level immutability *(added 2026-08-08)*
+
+*The shared design mandates immutability **at the database**: `../_shared/schema.sql` attaches a
+`BEFORE UPDATE OR DELETE` trigger to this table. The service-layer task above delivers only the code
+half — which a bug or a direct query bypasses. Same gap found in EPIC-004 (analysis finding **C1**)
+and closed there by `T454`, which creates the shared `reject_mutation()` function this trigger
+attaches to.*
+
+- [ ] T457 [P] [US2] Write failing integration test asserting `UPDATE` and `DELETE` against `requirement_versions` are rejected **by the database** — issued as raw SQL against a real PostgreSQL via Testcontainers, since a mocked repository cannot fail this (**FR-009**, and FR-013's "prior versions retrievable and unaltered"), in `backend/tests/integration/requirement-version-immutability.spec.ts`
+- [ ] T458 [US2] Attach the `requirement_versions_immutable` `BEFORE UPDATE OR DELETE` trigger to the shared `reject_mutation()` function, per `../_shared/schema.sql`, in `backend/prisma/migrations/` (**FR-009**; integration test: T457; **depends on EPIC-004 T454**, which creates the function — do not redefine it)
 
 ## F-03.5 · Retirement
 
