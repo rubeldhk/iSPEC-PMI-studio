@@ -81,4 +81,12 @@ export default defineWorkspace([
       environment: 'node',
     },
   },
+  {
+    test: {
+      name: 'governance',
+      root: '.',
+      include: ['tests/governance/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
 ]);

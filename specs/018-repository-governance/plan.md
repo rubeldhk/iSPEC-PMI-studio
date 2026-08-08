@@ -3,7 +3,7 @@
 **Epic**: `EPIC-018` | **Module**: governance (no product module) | **Date**: 2026-08-04 |
 **Spec**: [spec.md](./spec.md)
 
-**Tasks**: not yet generated · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
+**Tasks**: 31 · [tasks.md](./tasks.md) · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
 
 **Sibling**: [EPIC-017 Enhancement Model](../017-enhancement-model/plan.md) — the product half, held
 
@@ -51,8 +51,8 @@ Task figures are **estimates** — `/speckit-tasks` has not run.
 
 | Function | Est. tasks | What it delivers |
 |---|---|---|
-| F-18.1 Steering file set | ~12 | Ten steering subjects authored, each stating checkable standards |
-| F-18.2 Steering conformance checks | ~4 | Subject coverage, no-duplication check against constitution and templates |
+| F-18.1 Steering file set | 11 | Ten steering subjects authored, each stating checkable standards, each recording `last_reviewed` |
+| F-18.2 Steering conformance checks | — | Subject coverage, no-duplication, and currency checks (G-01 to G-07); authored alongside F-18.1 |
 | F-18.3 Repository layout definition | ~6 | One documented home per artifact type; relationship to `specs/<epic>/` and `_shared/` |
 | F-18.4 Layout migration record | ~4 | Every path that must move, recorded before it moves |
 | F-18.5 Template conformance against PMI-DOC-000 | ~6 | Each template checked; deviations recorded with reasons |
@@ -61,7 +61,8 @@ Task figures are **estimates** — `/speckit-tasks` has not run.
 | F-18.8 Governance index | ~3 | One document naming every governance artifact and its version |
 | F-18.9 Constitutional process artifacts | ~4 | Session-labelling (VIII) and closing-report (IX) formats |
 
-**Estimated total: ~48 tasks.**
+**Actual total: 31 tasks** (T312–T336, T433–T434, plus Phase Z T407–T410). The ~48 estimate was
+high: several functions collapsed into single documents rather than one task per artifact type.
 
 **Explicitly out of scope**: PMI Studio's product Steering Engine (EPIC-017 `FR-ENH-001`–`005`), which
 shares a name and nothing else.
@@ -194,6 +195,7 @@ future session loads. That argues for a predictable format over prose — hence
 - [ ] All tasks complete, each paired with a passing conformance check (Constitution V, reading B)
 - [ ] Quickstart **V18-1** to **V18-6** pass
 - [ ] All ten steering subjects present, or absence recorded with a reason (`SC-RGP-002`)
+- [ ] Every steering file records `last_reviewed`; none past the 90-day interval unreported (`SC-RGP-009`)
 - [ ] **Zero duplication** between steering files and the constitution or templates (`SC-RGP-003`)
 - [ ] Zero existing paths broken (`SC-RGP-005`)
 - [ ] `/speckit-converge` reports no unbuilt work

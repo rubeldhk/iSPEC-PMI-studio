@@ -5,7 +5,7 @@ description: "Task list for EPIC-018 — Repository Governance Process"
 
 # Tasks: Repository Governance Process
 
-**Epic**: `EPIC-018` | **Process, not product** | **Tasks**: 29
+**Epic**: `EPIC-018` | **Process, not product** | **Tasks**: 31
 
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -31,15 +31,24 @@ fails when the artifact drifts from its governing standard. Those checks are exe
 it. A steering file that duplicates the constitution is a second source of truth, and the next
 amendment silently forks them.*
 
-- [ ] T312 [P] Write failing conformance check asserting every steering subject named by the source document has a file, and that each states checkable standards rather than aspiration, in `tests/governance/steering-files.spec.ts`
-- [ ] T313 [P] Write failing conformance check asserting no steering file duplicates constitution or template text beyond a quoted reference (FR-RGP-004), in `tests/governance/steering-no-duplication.spec.ts`
-- [ ] T314 Create the steering file index and authoring convention in `governance/steering/README.md` (FR-RGP-001, FR-RGP-003; check: T312)
-- [ ] T315 [P] Author organization, workspace and product steering files in `governance/steering/{organization,workspace,product}.md` (FR-RGP-001, FR-RGP-002; check: T312)
-- [ ] T316 [P] Author architecture and technology-stack steering files in `governance/steering/{architecture,technology-stack}.md`, referencing `../_shared/system-design.md`, `tech-stack.md` and the ADRs rather than restating them (FR-RGP-004; check: T313)
-- [ ] T317 [P] Author coding-standards and UI-standards steering files in `governance/steering/{coding-standards,ui-standards}.md`, deferring UI specifics to SRS Volume 8 where it is not yet written (FR-RGP-002; check: T312)
-- [ ] T318 [P] Author security and AI-governance steering files in `governance/steering/{security,ai-governance}.md`, referencing ADR-0002 sandbox controls and PP-016/PP-017 (FR-RGP-004; check: T313)
-- [ ] T319 [P] Author business-rules steering file in `governance/steering/business-rules.md`, recording that content awaits `PMI-DOC-004` and naming the back-fill owner (FR-RGP-002; check: T312)
-- [ ] T320 Implement the constitution-wins precedence rule and record it in `governance/steering/README.md`, with a check that fails when a steering file contradicts a constitution principle (FR-RGP-005; check: T313)
+- [X] T312 [P] Write failing conformance check asserting every steering subject named by the source document has a file, and that each states checkable standards rather than aspiration, in `tests/governance/steering-files.spec.ts`
+- [X] T313 [P] Write failing conformance check asserting no steering file duplicates constitution or template text beyond a quoted reference (FR-RGP-004), in `tests/governance/steering-no-duplication.spec.ts`
+- [X] T314 Create the steering file index and authoring convention in `governance/steering/README.md` (FR-RGP-001, FR-RGP-003; check: T312)
+- [X] T315 [P] Author organization, workspace and product steering files in `governance/steering/{organization,workspace,product}.md` (FR-RGP-001, FR-RGP-002; check: T312)
+- [X] T316 [P] Author architecture and technology-stack steering files in `governance/steering/{architecture,technology-stack}.md`, referencing `../_shared/system-design.md`, `tech-stack.md` and the ADRs rather than restating them (FR-RGP-004; check: T313)
+- [X] T317 [P] Author coding-standards and UI-standards steering files in `governance/steering/{coding-standards,ui-standards}.md`, deferring UI specifics to SRS Volume 8 where it is not yet written (FR-RGP-002; check: T312)
+- [X] T318 [P] Author security and AI-governance steering files in `governance/steering/{security,ai-governance}.md`, referencing ADR-0002 sandbox controls and PP-016/PP-017 (FR-RGP-004; check: T313)
+- [X] T319 [P] Author business-rules steering file in `governance/steering/business-rules.md`, recording that content awaits `PMI-DOC-004` and naming the back-fill owner (FR-RGP-002; check: T312)
+- [X] T320 Implement the constitution-wins precedence rule and record it in `governance/steering/README.md`, with a check that fails when a steering file contradicts a constitution principle (FR-RGP-005; check: T313)
+
+### Currency *(added 2026-08-06 — FR-RGP-016, SC-RGP-009, clarified 2026-08-05)*
+
+*Every other check in this epic verifies a steering file's **form**. None verifies its **accuracy**.
+A file that says "we use X" a year after the team moved to Y passes all six checks and actively
+misleads — worse than a missing file, because agent sessions load it as context.*
+
+- [X] T433 [P] Write failing conformance check **G-07** asserting every steering file records a `last_reviewed` ISO date, and reporting — not failing — any file older than the configured interval, reading that interval from `governance/governance.config.json` rather than hard-coding it, in `tests/governance/steering-currency.spec.ts`
+- [X] T434 Create `governance/governance.config.json` with `steeringReviewIntervalDays: 90`, and record in `governance/steering/README.md` that `last_reviewed` is required front matter, that the interval is configuration rather than a principle, and that a stale file is **reported, never a build failure** (FR-RGP-016; check: T433)
 
 ---
 
@@ -49,12 +58,12 @@ amendment silently forks them.*
 pre-empt D-13**, the deferred 18-module re-cut. Where the two touch the same paths, the layout
 records the dependency instead of resolving it.*
 
-- [ ] T321 [P] Write failing conformance check asserting every artifact type named in the layout has exactly one documented location, and that no location contradicts the existing `specs/<epic>/` or `specs/_shared/` structure, in `tests/governance/layout.spec.ts`
-- [ ] T322 [P] Write failing conformance check asserting the layout records its D-13 dependency and proposes no module-path change while D-13 is open (FR-RGP-008), in `tests/governance/layout-d13-guard.spec.ts`
-- [ ] T323 Author the repository layout in `governance/repository-layout.md`, mapping each artifact type to its location and reconciling the source document's proposed tree with the structure this repository already uses (FR-RGP-006, FR-RGP-007; check: T321)
-- [ ] T324 Record the Spec Kit folder mapping and every path that would migrate, marked as *proposed, not applied*, in `governance/repository-layout.md` (FR-RGP-007; check: T321)
-- [ ] T325 Record the D-13 dependency and the paths both decisions touch in `governance/repository-layout.md` (FR-RGP-008; check: T322)
-- [ ] T326 Author the governance index naming every governance artifact, its purpose, path and version, in `governance/README.md` (FR-RGP-009; check: T321)
+- [X] T321 [P] Write failing conformance check asserting every artifact type named in the layout has exactly one documented location, and that no location contradicts the existing `specs/<epic>/` or `specs/_shared/` structure, in `tests/governance/layout.spec.ts`
+- [X] T322 [P] Write failing conformance check asserting the layout records its D-13 dependency and proposes no module-path change while D-13 is open (FR-RGP-008), in `tests/governance/layout-d13-guard.spec.ts`
+- [X] T323 Author the repository layout in `governance/repository-layout.md`, mapping each artifact type to its location and reconciling the source document's proposed tree with the structure this repository already uses (FR-RGP-006, FR-RGP-007; check: T321)
+- [X] T324 Record the Spec Kit folder mapping and every path that would migrate, marked as *proposed, not applied*, in `governance/repository-layout.md` (FR-RGP-007; check: T321)
+- [X] T325 Record the D-13 dependency and the paths both decisions touch in `governance/repository-layout.md` (FR-RGP-008; check: T322)
+- [X] T326 Author the governance index naming every governance artifact, its purpose, path and version, in `governance/README.md` (FR-RGP-009; check: T321)
 
 ---
 
@@ -64,11 +73,11 @@ records the dependency instead of resolving it.*
 twenty-one-section structure. Where a required section is genuinely absent, the deviation is recorded
 with a reason rather than quietly omitted.*
 
-- [ ] T327 [P] Write failing conformance check asserting every repository template is measured against the 13 `PMI-DOC-000` §4 sections, with each absence carrying a recorded reason, in `tests/governance/template-conformance.spec.ts`
-- [ ] T328 [P] Write failing conformance check asserting no template follows the enhancement document's 21-section structure in place of `PMI-DOC-000` (FR-RGP-011, D-16), in `tests/governance/template-authority.spec.ts`
-- [ ] T329 Produce the template conformance record for `.specify/templates/{spec,plan,tasks,checklist}-template.md` in `governance/template-conformance.md`, listing present sections, absent sections, and the reason for each deviation (FR-RGP-010, FR-RGP-011; checks: T327, T328)
-- [ ] T330 Define the planning and task-document structure so a plan or task list is conformant by construction, in `governance/document-structure.md` (FR-RGP-012; check: T327)
-- [ ] T331 State the internal traceability convention — which artifact types link to which, and which links are mandatory — in `governance/traceability-convention.md`, recording that the full chain awaits decision **D-2** (FR-RGP-013; check: T327)
+- [X] T327 [P] Write failing conformance check asserting every repository template is measured against the 13 `PMI-DOC-000` §4 sections, with each absence carrying a recorded reason, in `tests/governance/template-conformance.spec.ts`
+- [X] T328 [P] Write failing conformance check asserting no template follows the enhancement document's 21-section structure in place of `PMI-DOC-000` (FR-RGP-011, D-16), in `tests/governance/template-authority.spec.ts`
+- [X] T329 Produce the template conformance record for `.specify/templates/{spec,plan,tasks,checklist}-template.md` in `governance/template-conformance.md`, listing present sections, absent sections, and the reason for each deviation (FR-RGP-010, FR-RGP-011; checks: T327, T328)
+- [X] T330 Define the planning and task-document structure so a plan or task list is conformant by construction, in `governance/document-structure.md` (FR-RGP-012; check: T327)
+- [X] T331 State the internal traceability convention — which artifact types link to which, and which links are mandatory — in `governance/traceability-convention.md`, recording that the full chain awaits decision **D-2** (FR-RGP-013; check: T327)
 
 ---
 
@@ -78,10 +87,10 @@ with a reason rather than quietly omitted.*
 carries the honesty rule explicitly: an unrun check is never reported as passing — which is the
 clause that makes a closing report worth reading.*
 
-- [ ] T332 [P] Write failing conformance check asserting the session-label format is defined and matches the branch-naming convention actually in use, in `tests/governance/session-label.spec.ts`
-- [ ] T333 [P] Write failing conformance check asserting the closing-report format defines both mandatory sections and states the honesty rule, in `tests/governance/closing-report.spec.ts`
-- [ ] T334 Define the session-labelling convention — label format, where it is applied (terminal, worktree, branch), and when to relabel — in `governance/session-labelling.md` (FR-RGP-014, Constitution VIII; check: T332)
-- [ ] T335 Define the closing-report format — Work Completed and Recommended Next Task, plus the rule that unrun checks are never reported as passing and deferred work is never reported as complete — in `governance/closing-report.md` (FR-RGP-015, Constitution IX; check: T333)
+- [X] T332 [P] Write failing conformance check asserting the session-label format is defined and matches the branch-naming convention actually in use, in `tests/governance/session-label.spec.ts`
+- [X] T333 [P] Write failing conformance check asserting the closing-report format defines both mandatory sections and states the honesty rule, in `tests/governance/closing-report.spec.ts`
+- [X] T334 Define the session-labelling convention — label format, where it is applied (terminal, worktree, branch), and when to relabel — in `governance/session-labelling.md` (FR-RGP-014, Constitution VIII; check: T332)
+- [X] T335 Define the closing-report format — Work Completed and Recommended Next Task, plus the rule that unrun checks are never reported as passing and deferred work is never reported as complete — in `governance/closing-report.md` (FR-RGP-015, Constitution IX; check: T333)
 
 ---
 
@@ -111,6 +120,9 @@ F-18.1 to F-18.4 are **mutually independent** and can run in parallel. Only clos
 - **FR-RGP-008 is the constraint most easily broken**: it is tempting to "tidy" module paths while
   writing a layout document. D-13 is deferred deliberately; this epic records the dependency and
   changes nothing.
+- **G-07 reports, it does not block.** Per the 2026-08-05 severity split, only the duplication
+  check (G-04) fails CI. A blocking staleness check would halt unrelated work across every held
+  epic because a document turned 91 days old.
 - **Requirement IDs are namespaced** `FR-RGP-###` to avoid collision C-01, and to keep process
   requirements visibly distinct from product ones.
 
@@ -127,8 +139,20 @@ and sits below, because wiring the checks into CI exists nowhere else.*
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T336 Wire `pnpm test:governance` into `package.json` and `.github/workflows/ci.yml` so every conformance check runs on each commit — without this the checks exist but never run
-- [ ] T407 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/018-repository-governance/closure.md`
-- [ ] T408 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/018-repository-governance/closure.md`
-- [ ] T409 Triage `specs/018-repository-governance/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/018-repository-governance/closure.md`
-- [ ] T410 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/018-repository-governance/closure.md`
+- [X] T336 Wire `pnpm test:governance` into `package.json` and `.github/workflows/ci.yml` so every conformance check runs on each commit — without this the checks exist but never run
+- [X] T407 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/018-repository-governance/closure.md`
+- [X] T408 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/018-repository-governance/closure.md`
+- [X] T409 Triage `specs/018-repository-governance/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/018-repository-governance/closure.md`
+- [X] T410 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/018-repository-governance/closure.md`
+
+---
+
+## Phase 6: Convergence
+
+*Appended by `/speckit-converge` on 2026-08-07, after the 31 tasks above were implemented and
+verified. No existing task was modified. IDs continue from the repository maximum (`T443`), so they
+remain unique programme-wide per `DS-2`.*
+
+- [X] T444 State in `governance/steering/README.md` that git retains the change history for steering files, and add a conformance check asserting a content change carries a `version` increment, in `tests/governance/steering-files.spec.ts` per FR-RGP-003 (partial)
+- [ ] T445 Perform the V18-5 and V18-6 human walkthroughs in [quickstart.md](./quickstart.md) and record the outcome in `specs/018-repository-governance/closure.md` per SC-RGP-001, SC-RGP-007 (missing) — these cannot be automated: one needs a reader new to the programme, the other is a judgement
+- [ ] T446 Review `tests/governance/tsconfig.json` and the `typecheck:governance` script — keep as owned by this epic, or transfer to EPIC-014 with the rest of CI (unrequested)

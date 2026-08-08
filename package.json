@@ -16,7 +16,9 @@
     "test:integration": "vitest run --project backend-integration --passWithNoTests",
     "test:arch": "vitest run --project architecture",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:governance": "vitest run --project governance",
+    "typecheck:governance": "tsc -p tests/governance/tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

@@ -1,0 +1,58 @@
+{
+  "_comment": "Configuration for the EPIC-018 governance conformance checks (pnpm test:governance). Values here are configuration, not principles: changing an interval is an ordinary edit, changing a principle is a constitution amendment.",
+  "steeringReviewIntervalDays": 90,
+  "steeringSubjects": [
+    "organization",
+    "workspace",
+    "product",
+    "architecture",
+    "coding-standards",
+    "security",
+    "ui-standards",
+    "business-rules",
+    "technology-stack",
+    "ai-governance"
+  ],
+  "owners": ["tech-lead", "product-owner", "project-owner"],
+  "statuses": ["active", "superseded", "awaiting-input"],
+  "pmiDoc000Sections": [
+    "Executive Summary",
+    "Business Objective",
+    "Scope",
+    "Stakeholders",
+    "Definitions",
+    "Requirements",
+    "Business Rules",
+    "Constraints",
+    "Dependencies",
+    "Acceptance Criteria",
+    "Traceability",
+    "Related Documents",
+    "Revision History"
+  ],
+  "templates": [
+    ".specify/templates/spec-template.md",
+    ".specify/templates/plan-template.md",
+    ".specify/templates/tasks-template.md",
+    ".specify/templates/checklist-template.md"
+  ],
+  "overlapCorpus": [
+    ".specify/memory/constitution.md",
+    ".specify/templates/spec-template.md",
+    ".specify/templates/plan-template.md",
+    ".specify/templates/tasks-template.md"
+  ],
+  "overlapShingleWords": 12,
+  "vagueTerms": [
+    "robust",
+    "intuitive",
+    "clean code",
+    "world-class",
+    "best-in-class",
+    "as appropriate",
+    "where possible",
+    "good practice",
+    "modern",
+    "seamless"
+  ]
+}

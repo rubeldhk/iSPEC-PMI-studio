@@ -46,3 +46,23 @@ jobs:
 
       - name: Contract tests
         run: pnpm test:contract
+
+      # EPIC-018 T336 — governance conformance.
+      #
+      # These checks are what make Constitution V satisfiable for an epic that produces
+      # documents rather than application code: a governance document no check reads is a
+      # document that silently rots. Without this step the checks exist but never run.
+      #
+      # G-04 (no steering file restates constitution or template text) is the check that
+      # earns a hard CI failure — duplicated text reads correctly the day it is written
+      # and forks at the next amendment, leaving two sources of truth and no signal that
+      # they disagree. G-07 staleness reports in the log and does not fail; see
+      # governance/README.md for the severity split.
+      #
+      # The checks live outside every workspace package, so `pnpm -r typecheck` does not
+      # reach them. Typechecking them explicitly is the same rule they assert of everything
+      # else — see steering/technology-stack.md TS-004.
+      - name: Governance checks
+        run: |
+          pnpm typecheck:governance
+          pnpm test:governance
