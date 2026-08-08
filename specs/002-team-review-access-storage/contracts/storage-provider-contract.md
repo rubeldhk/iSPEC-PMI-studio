@@ -24,7 +24,7 @@ situation SC-008 was in before the fixture engine existed.
 | `checkHealth` | yes | Distinguish healthy / needs-reauthorisation / unavailable (FR-031) |
 | `putFile` | yes | Write one file to the destination |
 | `listDestination` | yes | Compute the republish preview (FR-036) |
-| `deleteFile` | **no** | Publishing is one-way; providers need not support deletion |
+| `deleteFile` | **no** | Publishing is one-way, and disconnection leaves published files untouched (FR-038, clarified 2026-08-08) — so nothing in this epic ever deletes at the provider. A write-only provider is supportable |
 
 A provider missing any **required** capability is **refused at connection time, naming the missing
 capability** (FR-039) — mirroring the engine registry's capability refusal.
@@ -102,9 +102,10 @@ every reason in the taxonomy. It exists for the same three reasons the fixture e
 
 ## What this contract does not do
 
-- It does not choose an authorisation mechanism or specify credential storage. That is a security
-  design decision the spec left open and this plan flags as owed before `T390` — see
-  [data-model.md](../data-model.md) *Out of scope*.
+- It does not hold credentials. Authorisation is **delegated OAuth-style** (FR-029, clarified
+  2026-08-08) and the refresh token lives on `StorageConnection`, encrypted at rest — never in the
+  adapter, which runs sandboxed with no platform credentials (rule **S7**, ADR-0002). An adapter
+  receives a short-lived access token per call and nothing more.
 - It does not define retry or rate-limit policy beyond requiring that rate limiting "slows or defers
   rather than failing outright" (edge case). Concrete policy belongs to the adapter.
 - It does not govern *what* is published — artifact selection and access-based exclusion (FR-033)

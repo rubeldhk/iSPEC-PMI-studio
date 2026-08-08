@@ -6,7 +6,7 @@
 
 **Created**: 2026-08-02
 
-**Status**: Clarified — 5 questions answered in the 2026-08-02 session; zero `[NEEDS CLARIFICATION]` markers remain. Tasked 2026-08-05. **Not yet planned** — no `plan.md`
+**Status**: Clarified — **8 questions** answered across two sessions (5 on 2026-08-02, 3 on 2026-08-08); zero unresolved markers. Tasked 2026-08-05, planned 2026-08-05, **split into EPIC-023/024/025 on 2026-08-07 (D-19)**. Now a parent design carrying no tasks.
 
 **Input**: User description: "1. executing command should have option to set run all and keep
 qustions and suggesions recordet all togather for the team to disscus and select ans and submit.
@@ -71,6 +71,14 @@ requirements, specifications, tasks, and generation jobs that EPIC-001 establish
 - Q: Who may submit a review session once the team has agreed the answers? → A: **B — Project owner
   or the person who started the run.** Answering and noting stay open to everyone with access;
   committing the batch is limited to those two roles.
+
+### Session 2026-08-08
+
+- Q: How does the platform hold the permission it needs to write files into someone's Google Drive, Dropbox, or S3 account? → A: **A — OAuth-style delegated tokens.** The administrator authorises at the provider; the platform stores a **refresh token encrypted at rest** and never sees a password. Resolves **G-025.1**, which blocked `T390`. Chosen because all three named providers support it, revocation works from the provider side without platform cooperation, and the secret stays out of the adapter — which matters because adapters run sandboxed with no platform credentials (ADR-0002).
+
+- Q: When an administrator disconnects a storage provider, what happens to the files the platform already published there? → A: **A — leave them untouched.** The platform records that the connection was removed and stops tracking them. Consistent with ADR-0004's one-way boundary: the files are copies in storage the customer owns, and putting them there gives the platform no standing to remove them. Keeps `deleteFile` an **optional** capability, so a write-only provider stays supportable.
+
+- Q: When an artifact is derived from two sources with different access restrictions, which one applies? → A: **A — most restrictive wins.** A user needs a grant on **every** source to see the derived artifact. The only reading that cannot leak: under any other rule, a specification generated from one open and one restricted requirement becomes a way to read the restricted one indirectly. Derivation must not launder access.
 
 ## SRS Traceability *(mandatory — Constitution II)*
 
@@ -411,6 +419,9 @@ confirm both publishes succeeded and no platform artifact changed.
 - **Access is revoked mid-edit**: the in-progress change is refused on save.
 - **A restricted artifact is cited by an artifact someone can see**: the citation is shown as
   present but its content is withheld.
+- **A specification generated from one open and one restricted requirement**: hidden from anyone
+  lacking a grant on the restricted one. Most-restrictive-wins, so derivation cannot be used to
+  read a restricted source indirectly.
 - **Access changes during a run**: the run uses the access in force when it started and reports
   anything it could not use.
 - **Reviewer lacks access to an artifact a question concerns**: the question is hidden from them
@@ -427,6 +438,9 @@ confirm both publishes succeeded and no platform artifact changed.
   already running.
 - **File exceeds the provider's size limit**: that file is skipped and reported; the rest continue.
 - **Provider is disconnected while a publish is running**: the publish stops cleanly and is reported.
+- **Provider disconnected after files were published**: those files stay at the provider,
+  untouched. The publish history is retained and marked as no longer tracked; the platform never
+  reaches into the customer's storage to clean up after itself.
 - **Artifact name is invalid at the destination**: the name is adapted and the adaptation reported.
 
 ## Requirements *(mandatory)*
@@ -498,8 +512,10 @@ confirm both publishes succeeded and no platform artifact changed.
   grant, and MUST record the refused attempt.
 - **FR-024**: System MUST hide artifacts a user cannot access rather than showing them as
   inaccessible placeholders in listings.
-- **FR-025**: System MUST ensure an artifact derived from a restricted artifact is at least as
-  restricted as its source.
+- **FR-025**: System MUST ensure an artifact derived from restricted artifacts is at least as
+  restricted as **every** source it derives from (clarified 2026-08-08). Where sources carry
+  different grants, **the most restrictive wins**: a user MUST hold a sufficient grant on every
+  source to view the derived artifact. Derivation MUST NOT widen access.
 - **FR-026**: System MUST record every access grant and revocation with the actor, the change, and
   the time.
 - **FR-027**: System MUST prevent an artifact from reaching a state where no user holds edit access
@@ -510,7 +526,15 @@ confirm both publishes succeeded and no platform artifact changed.
 #### External storage integration
 
 - **FR-029**: Administrators MUST be able to connect a workspace to an external file storage
-  provider and select a destination within it.
+  provider and select a destination within it. Authorisation MUST be **delegated** (clarified
+  2026-08-08): the administrator authorises at the provider, and the platform stores only a
+  **refresh token, encrypted at rest**. The platform MUST NOT accept, store, or transmit a
+  provider account password.
+- **FR-029a**: System MUST refresh an expired access token without user interaction where the
+  provider permits it, and MUST report the connection as needing re-authorisation when it cannot
+  (FR-031).
+- **FR-029b**: System MUST NOT expose a stored token through any endpoint, log entry, or error
+  message, and MUST discard it on disconnection.
 - **FR-030**: System MUST support more than one provider type, and MUST allow a new provider type
   to be added without changing platform behaviour outside the storage integration layer.
 - **FR-031**: System MUST report the status of each connection, distinguishing healthy, needing
@@ -529,7 +553,10 @@ confirm both publishes succeeded and no platform artifact changed.
 - **FR-037**: System MUST keep platform artifacts intact and available regardless of any change,
   deletion, or disconnection at the provider.
 - **FR-038**: Administrators MUST be able to disconnect or switch providers without loss of any
-  platform artifact or publish history.
+  platform artifact or publish history. On disconnection the platform MUST **leave already-published
+  files untouched at the provider** (clarified 2026-08-08), record that the connection was removed,
+  and stop tracking those files. It MUST NOT delete them — they are copies in storage the customer
+  owns.
 - **FR-039**: System MUST refuse to connect a provider that cannot support a required capability,
   naming the missing capability.
 - **FR-040**: System MUST prevent two concurrent publishes of the same project.
@@ -590,6 +617,8 @@ confirm both publishes succeeded and no platform artifact changed.
   behaviour outside the storage integration layer.
 - **SC-012**: Deleting or altering published files at the provider has zero effect on the platform's
   own artifacts.
+- **SC-014**: Zero provider account passwords are accepted or stored; zero stored tokens appear in
+  any endpoint response, log entry, or error message.
 - **SC-013**: Every access grant, revocation, and refusal appears in the audit record.
 
 ## Out of Scope

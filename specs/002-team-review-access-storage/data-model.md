@@ -154,8 +154,10 @@ everyone with access.
 
 **Rules**:
 
-- A derived artifact is **at least as restricted as its source** (FR-025) — evaluated on read, not
-  copied on write, so a later restriction on the source propagates.
+- A derived artifact is **at least as restricted as every source** (FR-025) — evaluated on read, not
+  copied on write, so a later restriction on any source propagates. Where sources differ, **the most
+  restrictive wins**: a user needs a sufficient grant on *all* sources (clarified 2026-08-08).
+  Derivation never widens access, which is what stops a multi-source artifact laundering it.
 - **No artifact may reach a state with no user holding `edit`** (FR-027, SC-008). This is a system
   invariant enforced **in the same transaction as the revoke**, not a pre-check — otherwise
   concurrent revocations race past it.
@@ -186,6 +188,7 @@ the refusal, matching EPIC-004's audit interceptor — an action cannot be refus
 | `destination` | text | folder or bucket (FR-029) |
 | `status` | enum `connection_status` | `healthy` \| `needs_reauthorisation` \| `unavailable` (FR-031) |
 | `authorised_by`, `last_checked_at` | | |
+| `refresh_token` | encrypted at rest | never returned by any endpoint; discarded on disconnect (FR-029b) |
 
 **Rules**: an unreachable provider reports `unavailable`, **never `healthy`** (FR-031). Disconnection
 must not touch any platform artifact (FR-037, FR-038, SC-010, SC-012). **Credentials are not modelled
@@ -232,6 +235,8 @@ member**, matching `job_failure_reason` in `_shared/schema.sql` — a generic fa
 
 **Rules**: retained through a provider switch (FR-038, SC-010). Deleting the file at the provider has
 **zero effect** on the platform artifact (FR-037, SC-012) — the reference simply becomes stale.
+On **disconnection** the reference is retained and marked no longer tracked; the file itself is left
+untouched at the provider (FR-038, clarified 2026-08-08).
 
 ---
 
@@ -270,8 +275,9 @@ Workspace 1──n StorageConnection ──► StorageProviderType
 
 ## Out of scope for this data model
 
-- **Provider credentials and token storage.** FR-029 requires authorisation but the spec chooses no
-  mechanism, and secret handling is a security design decision, not a data-model one. It must be
-  settled before `T390` — **flagged, not resolved here**.
+- **Provider credentials** — ✅ **resolved 2026-08-08**: delegated OAuth-style authorisation, with a
+  **refresh token encrypted at rest** on `StorageConnection` and no password ever accepted
+  (FR-029, FR-029a, FR-029b). The token is never returned by an endpoint and is discarded on
+  disconnection. Key management for the encryption itself remains a deployment concern.
 - **Roles, groups, inherited permissions, SSO** — Phase 3 by clarification.
 - **Two-way sync**, import-back, and external editing — permanently out (ADR-0004).
