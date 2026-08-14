@@ -71,7 +71,7 @@ All three are fixed and covered.
   asserts its contents. Building it in CI is RAID **R-04** (container-in-container), so the image is
   exercised nightly by EPIC-015 `T146`, which has not run. Nothing here proves the image builds or
   that `specify` and the agent CLI install at their pinned versions.
-- **No real container has ever started.** Every sandbox test drives a mocked runtime — see `T447`
+- **No real container has ever started.** Every sandbox test drives a mocked runtime — see `T646`
   below.
 - **Quickstart `V11` and `V13`** have not been run.
 - **The Prisma schema is unvalidated by Prisma.** Prisma is not a dependency in this repository yet
@@ -82,9 +82,9 @@ All three are fixed and covered.
 | Item | Owner | Status |
 |---|---|---|
 | `T138` per-project selection endpoint | EPIC-006 | **Blocked** — `projects.controller.ts` is held product surface |
-| `T447` production `ContainerRuntime` | tech-lead | **No task owned this.** The adapter defines the port; nothing implements it |
-| `T448` register Spec Kit as default (FR-018) | tech-lead | Waits on `T447` |
-| `T449` duplicate registry in worker vs backend | tech-lead | Two implementations of FR-021 can disagree |
+| `T646` production `ContainerRuntime` | tech-lead | **No task owned this.** The adapter defines the port; nothing implements it |
+| `T647` register Spec Kit as default (FR-018) | tech-lead | Waits on `T646` |
+| `T648` duplicate registry in worker vs backend | tech-lead | Two implementations of FR-021 can disagree |
 
 ### The gap worth stating plainly
 
@@ -132,16 +132,48 @@ file in the same directory is still blocked. Widening it is how RAID **R-05** ("
 erodes under delivery pressure") actually happens. The production boundary is unchanged and still
 enforced twice.
 
+## Addendum — second convergence pass, 2026-08-08
+
+A second `/speckit-converge` run after the implementation commit found five further gaps. All five
+are now closed (`T461`–`T465`); tests rose 532 → **550**.
+
+| Task | Was | Now |
+|---|---|---|
+| `T461` | No session label — a live **Constitution VIII** violation | Added. Still absent in EPIC-001 and EPIC-004, untracked |
+| `T462` | Registry and resolver **unreachable** — `AppModule` never imported them | `EnginesModule` wired in; services stay decorator-free (PC-1) |
+| `T463` | `engine_registrations` never written; port had no implementation | `PrismaEngineRegistrationStore` against a narrow delegate, plus an explicit null store |
+| `T464` | Quickstart **V11** never executed | Executed as 5 repeatable assertions inside `engine-swap.spec.ts` |
+| `T465` | `T037` named `fixture.adapter.ts`; code lived at `index.ts` | File moved; `index.ts` kept as the package entry point |
+
+**V11 · Engine independence — PASSED**, all five steps:
+
+1. Fixture registered alongside Spec Kit — both present in the registry.
+2. A project switched to the fixture engine — resolves to `fixture`.
+3. Generation succeeds and records `fixture` as producer; identical result shape from both engines.
+4. `pnpm test:arch` — 12 passed, so `backend/src` holds no Spec Kit reference.
+5. An adapter declaring two of three capabilities is **refused, naming the missing one**.
+
+Two of my own assertions were wrong and had to be corrected rather than the code: the PC-1
+architecture test flagged `engines.module.ts` for importing Nest — which is precisely *why* the
+services need no decorators — and an adapter-import check matched the comment in `app.module.ts`
+explaining the rule it was checking.
+
+`T463` is written against a narrow delegate rather than `@prisma/client`, because Prisma is still
+not a dependency (EPIC-004 `T013`). The shape is Prisma's own, so it drops in unchanged.
+
+**Still open**: `T138` (blocked), `T646`, `T647`, `T648`. The statement below is unchanged — the
+engine layer is now reachable, and still cannot run.
+
 ## Recommended Next Task
 
-**`T447` — the production `ContainerRuntime`.** It is the single thing standing between a tested
+**`T646` — the production `ContainerRuntime`.** It is the single thing standing between a tested
 adapter and a working engine, and it is the last piece of "Spec Kit is Engine V1" that has never
-been executed rather than mocked. `T448` follows immediately and is three lines.
+been executed rather than mocked. `T647` follows immediately and is three lines.
 
 Do that **before** EPIC-004's `T013`, despite my previous recommendation. The reasoning changed:
 `T013` matters for schema ordering, but `EngineRegistration` is already in the schema and nothing
 else is queued behind it — whereas every claim this epic makes about the real engine is still
-unexecuted. Building `T447` is also what makes quickstart `V13` runnable, which is the only scenario
+unexecuted. Building `T646` is also what makes quickstart `V13` runnable, which is the only scenario
 that has ever proven the sandbox works end to end.
 
 Then `T013`/`T052` to close EPIC-004, then the EPIC-001 closure sweep.

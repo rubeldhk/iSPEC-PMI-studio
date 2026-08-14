@@ -130,7 +130,7 @@ refused before a container starts and is therefore never billed.
 Three registries after this epic: engine (exists), agent (new), execution provider (new). All three
 follow one shape — register with capability assertion, resolve by name or default, list descriptors.
 
-**`T449` is resolved first** (`R-028-3`): `backend/src/modules/engines/engine-registry.service.ts`
+**`T648` is resolved first** (`R-028-3`): `backend/src/modules/engines/engine-registry.service.ts`
 owns capability validation and the worker delegates. Copying today's duplication into two new
 registries would turn one disagreement into three.
 

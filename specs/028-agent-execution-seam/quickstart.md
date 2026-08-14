@@ -116,7 +116,7 @@ pnpm test:unit --project execution-providers -t "validation"
 ```bash
 # Requires a Docker daemon. NOT run in CI (RAID R-04).
 pnpm --filter @pmi/execution-provider-docker build
-node scripts/v6-real-run.mjs        # created by T447b
+node scripts/v6-real-run.mjs        # created by T646b
 ```
 
 **Expected**: a container starts, the five ordered invocation steps run, a specification is produced,
@@ -140,8 +140,8 @@ worth more than eleven more days of not knowing.
 pnpm test:unit --project worker-unit -t "composition"
 ```
 
-**Expected**: `composeEngineRegistry()` returns `SpecKitEngine` as default (`T448`, `FR-018`), and
-**one** registry owns capability validation (`T449`).
+**Expected**: `composeEngineRegistry()` returns `SpecKitEngine` as default (`T647`, `FR-018`), and
+**one** registry owns capability validation (`T648`).
 
 `FR-018` has been unsatisfied in the running system since EPIC-003 closed — the composition root
 still registers the fixture as default. This is where that ends.
@@ -174,4 +174,4 @@ Stated here so a green board is not mistaken for a working product.
 | Scenario | Blocked by |
 |---|---|
 | V0–V5, V7, V8 | `/speckit-tasks` has not run; no code exists yet |
-| **V6** | `T447b`, **and** a machine with Docker. Not CI |
+| **V6** | `T646b`, **and** a machine with Docker. Not CI |

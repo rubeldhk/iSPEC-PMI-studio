@@ -29,7 +29,7 @@ Only the engine lane is built. Verified by inspection, not by reading `tasks.md`
 | Component | State | Evidence |
 |---|---|---|
 | `packages/engine-contract` | ✅ built | `SpecificationEngine`: generate · generateTasks · validate |
-| `engine-adapters/speckit` | ✅ built, **cannot run** | Logic complete and conformant; `ContainerRuntime` has no implementation (`T447`) |
+| `engine-adapters/speckit` | ✅ built, **cannot run** | Logic complete and conformant; `ContainerRuntime` has no implementation (`T646`) |
 | `engine-adapters/fixture` | ✅ built | Second engine proving contract neutrality |
 | `backend/src/modules` | audit · engines · jobs **only** | No projects, requirements, specifications, traceability — all held |
 | `worker/src` | ✅ built | `engine-composition.ts` (composition root), `generation.consumer.ts` |
@@ -102,10 +102,10 @@ early: the adapter is one file, has 65 tests, and no product surface depends on 
 
 **Cost**: one new package, one adapter refactor, ~3 tasks plus checks. **Owner decision `D-20`.**
 
-## A.4 · **C-20 — `T447` is about to hard-code the execution substrate** 🔴 CRITICAL, time-sensitive
+## A.4 · **C-20 — `T646` is about to hard-code the execution substrate** 🔴 CRITICAL, time-sensitive
 
 `ContainerRuntime` (`speckit.adapter.ts:66`) is `start(...)` / `stop(...)` with a workspace path, a
-timeout and an abort signal. It has **no implementation**. The EPIC-003 closure report names `T447`
+timeout and an abort signal. It has **no implementation**. The EPIC-003 closure report names `T646`
 — write the production `ContainerRuntime` — as the single recommended next task, and it is right
 that it is the last unexecuted claim in "Spec Kit is Engine V1".
 
@@ -114,17 +114,17 @@ ProjectExecutionEnvironment abstraction capable of supporting persistent VM, per
 container, ephemeral container, Kubernetes workload, cloud development environment, future execution
 providers."* It also says *"Docker remains the Phase 1 execution provider."*
 
-**Both are satisfiable at once, but only if `T447` is written as a `ProjectExecutionEnvironment`
+**Both are satisfiable at once, but only if `T646` is written as a `ProjectExecutionEnvironment`
 driver rather than as a Docker runtime.** The port is small and already correctly shaped; what it
 lacks is the vocabulary the amendment needs — lifecycle (ephemeral vs persistent), an egress policy,
 credential scoping, and a capability descriptor.
 
-**If `T447` lands first as plain Docker, this becomes a refactor of the one component nobody can
+**If `T646` lands first as plain Docker, this becomes a refactor of the one component nobody can
 test without Docker.** That is the argument for deciding now.
 
 **Recommended correction**: widen the port to `ProjectExecutionEnvironment` (drafted in
 [contracts/project-execution-environment.md](../027-ai-native-amendment/contracts/project-execution-environment.md)) and
-implement `T447` against it with a Docker provider. Docker stays Phase 1; the seam is present from
+implement `T646` against it with a Docker provider. Docker stays Phase 1; the seam is present from
 the first implementation instead of retrofitted. **Cost: roughly +1 task over the plain
 implementation.** **Owner decision `D-21` — the most urgent in this document.**
 

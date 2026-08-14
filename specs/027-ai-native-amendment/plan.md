@@ -41,7 +41,7 @@ then EPIC-027's own plan.
 
 Three further findings compound it, all verified against the repository rather than asserted:
 
-- The `ContainerRuntime` port exists with **no production implementation** (`T447`), and `T447` is
+- The `ContainerRuntime` port exists with **no production implementation** (`T646`), and `T646` is
   the *next task the programme was about to do* (EPIC-003 closure report, 2026-08-08). Implementing
   it as a Docker driver — the obvious reading — creates exactly the coupling Native §4 forbids.
   **This is the single most time-critical item in the amendment.**
@@ -177,7 +177,7 @@ programme-wide consequences had the same problem in reverse: one epic holding wh
 | Capability area | Verdict | Home | Posture |
 |---|---|---|---|
 | Agent Gateway + agent contract | MISSING, urgent | **EPIC-028** ✅ created 2026-08-13 | ▶ proceeds — engine lane |
-| ProjectExecutionEnvironment | ENHANCE, urgent | **EPIC-028** via `T447` | ▶ proceeds |
+| ProjectExecutionEnvironment | ENHANCE, urgent | **EPIC-028** via `T646` | ▶ proceeds |
 | EgressPolicy profiles | CONFLICT | **EPIC-028**, `ADR-0002` extension | ▶ proceeds |
 | Persistent project state | MISSING | **New epic — EPIC-029 (proposed)** | ▶ proceeds (no product surface) |
 | Agent-independence architecture test | MISSING | **EPIC-028** | ▶ proceeds |
@@ -203,7 +203,7 @@ queue behind a gate that already exists. The count is asserted by `G-27-13` so t
 split between "EPIC-003 re-entry" and a narrower EPIC-028, but they land in the same files and none
 is verifiable until a container actually starts — so three convergence gates would have been three
 gates on work that cannot be proven separately. [`EPIC-028 Agent & Execution Seam`](../028-agent-execution-seam/spec.md)
-owns all of it, with `T447`/`T448`/`T449` **routed rather than reissued**, per the `D-19` precedent.
+owns all of it, with `T646`/`T647`/`T648` **routed rather than reissued**, per the `D-19` precedent.
 EPIC-003 stays closed.
 
 ## D.2 Sequencing — §17.11's three bands
@@ -213,10 +213,10 @@ EPIC-003 stays closed.
 
 ```text
 ✅ D-20  agent-contract package + fixture agent   ──┐
-✅ D-21  PEE port widened                          ─┼─► T447 against PEE, Docker provider
+✅ D-21  PEE port widened                          ─┼─► T646 against PEE, Docker provider
 ✅ D-28  EgressPolicy profiles (generation frozen)  ─┘        │
                                                              └─► agent-independence.spec.ts
-                                                                     └─► T448 Spec Kit as default
+                                                                     └─► T647 Spec Kit as default
                                                                              └─► FIRST REAL RUN
 ```
 

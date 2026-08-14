@@ -164,7 +164,7 @@ already asserted by `T157`, extended to a new entity. That is a preserved contro
 
 | Entity | Verdict | Notes | Posture |
 |---|---|---|---|
-| **ProjectExecutionEnvironment** | ENHANCE of `ContainerRuntime` | Lifecycle (`ephemeral` \| `persistent`), provider, capability descriptor, egress profile, credential scope | ▶ **urgent — `T447`** |
+| **ProjectExecutionEnvironment** | ENHANCE of `ContainerRuntime` | Lifecycle (`ephemeral` \| `persistent`), provider, capability descriptor, egress profile, credential scope | ▶ **urgent — `T646`** |
 | **PersistentProjectState** | MISSING | Repository ref · `.specify/` state · project config · toolchain config. **Durable substrate is `D-22`** | ▶ |
 | **EgressProfile** | ENHANCE of the fixed allow-list | `name` · `allowed_destinations[]` · `enforcement` | ▶ **`ADR-0002` extension, `D-28`/`D-36`** |
 | **ScopedCredential** | MISSING | purpose · scope · TTL · minted-per-run. **Never a long-lived secret in a sandbox** | ▶ |

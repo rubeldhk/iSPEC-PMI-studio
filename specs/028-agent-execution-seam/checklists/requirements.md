@@ -56,7 +56,7 @@
 - **This epic is unusual in the corpus: it proceeds while nineteen epics are held, and it is the
   only proceeding epic whose exit criteria include something that has never happened** — a real
   container starting. Every prior claim about the Spec Kit engine rests on mocks.
-- **Three task IDs are routed rather than reissued** — `T447`, `T448`, `T449` — following `D-19`.
+- **Three task IDs are routed rather than reissued** — `T646`, `T647`, `T648` — following `D-19`.
   EPIC-003 stays closed; its closure report already names all three as deferred with owners.
 - **`SC-AGT-005` is the most important criterion and the easiest to skip.** It asserts that the
   existing egress control is unchanged for the case it was written for. An epic that widens a

@@ -24,10 +24,10 @@ three decisions taken on 2026-08-13 that gate it — `D-20`, `D-21`, `D-28`.
 
 **EPIC-003 delivered a specification engine that cannot run.** Its closure report says so plainly:
 *"The Spec Kit engine cannot run. Its logic is complete and conformant, but `ContainerRuntime` has no
-production implementation, so nothing can start a container."* `T447` was named as the single next
+production implementation, so nothing can start a container."* `T646` was named as the single next
 task standing between a tested adapter and a working engine.
 
-EPIC-027's reassessment then found that writing `T447` the obvious way — a Docker driver behind the
+EPIC-027's reassessment then found that writing `T646` the obvious way — a Docker driver behind the
 existing port — would bake in two couplings the amendment forbids, on the one component nobody can
 test without Docker. It also found a third coupling **already in the tree**.
 
@@ -53,13 +53,13 @@ each had a materially different alternative, and three of them are hard to rever
 
 - Q: `R-AI-001`/`R-AI-002` are uninvestigated — nobody has verified that `claude -p <command>` in a
   container is a supported server-side execution model. Investigate first, build and discover, or
-  ship fixture-only? → **A: build and discover via `T447b`.** The contract is provider-neutral either
+  ship fixture-only? → **A: build and discover via `T646b`.** The contract is provider-neutral either
   way. If the first real container shows the invocation does not work as mocked, that is a finding
   this programme has been unable to produce since 2026-08-03, and it arrives in the epic designed to
   surface it. **`SC-AGT-001` may therefore fail for a reason no design prevents — that is accepted,
   not overlooked.**
 - Q: RAID **R-04** blocks container-in-container in CI. Manual transcript, invest in CI containers, or
-  a nightly job? → **A: split `T447` as planned** — `T447a` mocked in CI, `T447b` a manual recorded
+  a nightly job? → **A: split `T646` as planned** — `T646a` mocked in CI, `T646b` a manual recorded
   transcript carrying the image digest, which Phase Z will not close without. **R-04 stays open**;
   this works around it honestly rather than closing it. A nightly runner remains the natural follow-up
   and EPIC-015 `T146` already anticipates one.
@@ -82,7 +82,7 @@ Recorded so they are visible rather than buried, and can still be overridden bef
 
 | Decision | Where argued |
 |---|---|
-| `T449` — the backend service owns capability validation; the worker registry delegates | [research.md](./research.md) `R-028-3` |
+| `T648` — the backend service owns capability validation; the worker registry delegates | [research.md](./research.md) `R-028-3` |
 | No `dockerode`; the provider talks to the Engine HTTP API over its socket | `R-028-1` |
 | `AgentCapability` is a **closed** enum; open-endedness lives in `toolCapabilities: string[]` | [contracts/agent-contract.md](./contracts/agent-contract.md) |
 | The `persistent` workspace binding **type** ships here; EPIC-029 builds the persistence | [data-model.md](./data-model.md) |
@@ -150,7 +150,7 @@ A generation job starts a real container, runs the engine inside it, and writes 
 the first time in the programme's history.
 
 **Why this priority**: every claim EPIC-003 makes about the real engine is currently proven by mocks.
-`T447` is the last unexecuted piece of *"Spec Kit is Engine V1"*.
+`T646` is the last unexecuted piece of *"Spec Kit is Engine V1"*.
 
 **Independent Test**: quickstart `V13` — the scenario that has never run.
 
@@ -273,7 +273,7 @@ load-bearing rather than tidy.
 
 ## Assumptions
 
-- **`T447`, `T448` and `T449` are routed here with their identifiers preserved**, following the
+- **`T646`, `T647` and `T648` are routed here with their identifiers preserved**, following the
   `D-19` precedent (`T340`→023, `T377`→024, `T391`→025). EPIC-003 stays closed; its closure report
   already records all three as deferred with named owners.
 - **`R-AI-001`, `R-AI-002` and `R-AI-005` are uninvestigated and gate the *real* Claude and Cursor

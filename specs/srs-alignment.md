@@ -1001,7 +1001,7 @@ far larger capability that happens to share a name. Settled by `D-33`.
 | # | Conflict | Severity | Resolved by |
 |---|---|---|---|
 | **C-19** | Engine independence is enforced by a build-time test; **agent independence is not**. `engine-adapters/speckit` names `claude` in four places and takes one `aiProviderToken`, so swapping the AI provider and swapping the specification engine are the same edit — the merge Native §3 forbids | 🔴 CRITICAL | ✅ `D-20` |
-| **C-20** | `T447` — the next task in the programme — was about to hard-code Docker as the execution substrate, which Native §4 forbids | 🔴 CRITICAL | ✅ `D-21` |
+| **C-20** | `T646` — the next task in the programme — was about to hard-code Docker as the execution substrate, which Native §4 forbids | 🔴 CRITICAL | ✅ `D-21` |
 | **C-21** | Persistent project state has no home; the current design destroys the workspace by design and never commits it | 🟠 HIGH | ✅ `D-22` |
 | **C-22** | The egress allow-list (*"AI provider endpoint only"*, `ADR-0002`, asserted by test) makes implementation agents impossible. The amendment's only direct conflict with a **built and tested** control | 🟠 HIGH | ✅ `D-28` |
 | **C-23** | Two sources of truth: the same specification would exist as a PostgreSQL row and as tracked markdown. Native §6 names the hazard; §22 proposes a boundary and leaves the rules undefined | 🔴 CRITICAL | ✅ `D-29` |
@@ -1037,7 +1037,7 @@ across the other 26 epic specifications. Finding A holds.
 
 | # | Decision | Why now | Outcome |
 |---|---|---|---|
-| ~~**D-21**~~ | ~~Is `T447` a Docker runtime, or a `ProjectExecutionEnvironment` with a Docker provider?~~ | `T447` is the next recommended task; deciding after it lands means refactoring the one component that cannot be tested without Docker | ✅ **DECIDED 2026-08-13 — PEE with a Docker provider.** `ContainerRuntime` widens per [contracts/project-execution-environment.md](027-ai-native-amendment/contracts/project-execution-environment.md); Docker registers at the worker composition root. Docker remains the Phase 1 provider per Native §4 |
+| ~~**D-21**~~ | ~~Is `T646` a Docker runtime, or a `ProjectExecutionEnvironment` with a Docker provider?~~ | `T646` is the next recommended task; deciding after it lands means refactoring the one component that cannot be tested without Docker | ✅ **DECIDED 2026-08-13 — PEE with a Docker provider.** `ContainerRuntime` widens per [contracts/project-execution-environment.md](027-ai-native-amendment/contracts/project-execution-environment.md); Docker registers at the worker composition root. Docker remains the Phase 1 provider per Native §4 |
 | ~~**D-20**~~ | ~~Introduce `packages/agent-contract` + `agent-independence.spec.ts` now, or defer?~~ | The violation exists today and is invisible; the adapter is one file with 65 tests and no dependants | ✅ **DECIDED 2026-08-13 — now.** Contract, architecture test and fixture agent land together; `SpecKitEngine` takes an injected agent instead of naming `claude`. `C-19` closes on delivery |
 | ~~**D-28**~~ | ~~Per-purpose `EgressPolicy` profiles, or one allow-list?~~ | Implementation agents cannot run a build under the current policy; `ADR-0002` is built and tested | ✅ **DECIDED 2026-08-13 — named profiles, proxy-enforced.** `generation` unchanged including its test; `implementation` explicitly enumerated. `ADR-0002` extended, not superseded (`D-36` follows) |
 
@@ -1082,7 +1082,7 @@ across the other 26 epic specifications. Finding A holds.
 Four decided in the planning session. Each is recorded here with its consequences, because three of
 them change other open decisions rather than merely closing themselves.
 
-### D-21 · `T447` becomes a `ProjectExecutionEnvironment` with a Docker provider ✅
+### D-21 · `T646` becomes a `ProjectExecutionEnvironment` with a Docker provider ✅
 
 **Closes `C-20`.** The port widens per
 [contracts/project-execution-environment.md](027-ai-native-amendment/contracts/project-execution-environment.md); Docker
@@ -1090,7 +1090,7 @@ registers at the worker composition root exactly as engine adapters already do. 
 Phase 1 provider, which is what Native §4 asks for.
 
 **Consequences**:
-- `T447`'s scope grows by roughly one task. It is no longer "write a Docker driver" but "widen the
+- `T646`'s scope grows by roughly one task. It is no longer "write a Docker driver" but "widen the
   port, then write a Docker provider behind it".
 - The new dependency rule — *no component reaches a container runtime directly* — becomes assertable,
   and belongs in the same architecture test as `D-20`'s.
@@ -1293,3 +1293,75 @@ wall of prose"* — with AI analysis still explicitly out of scope.
 
 **Consequence**: the name collision is now documented rather than latent. Both scopes are stated in
 the register, which is what stops two teams believing one epic covers both.
+
+## Part 9 — Corpus review and delivery sequence (2026-08-14)
+
+A repository-wide `/speckit-analyze` pass over all 28 epics. Two findings and a reprioritised
+sequence. The metrics below are measured, not estimated.
+
+| | |
+|---|---|
+| Epics | 28 (26 with tasks; `002` and `017` are parent designs) |
+| Tasks | **714** |
+| Complete | **114 (15%)** |
+| Held on `PMI-DOC-004` | **393 (55%)**, across 19 epics |
+| Proceeding and open | **207 (29%)** |
+
+### C-27 · Three task identifiers meant two different things — ✅ RESOLVED 2026-08-14
+
+`T447`, `T448` and `T449` were owned rows in **three** epics simultaneously:
+
+| ID | EPIC-003 | EPIC-025 | EPIC-028 |
+|---|---|---|---|
+| `T447` | production `ContainerRuntime` | expired-token refresh tests | routed copy |
+| `T448` | register Spec Kit as default engine | token refresh service | routed copy |
+| `T449` | remove the duplicate registry | refresh-token non-exposure | routed copy |
+
+**Root cause, recorded in the offending file itself.** EPIC-003's convergence pass of 2026-08-08
+states *"IDs continue from the repository maximum (`T446`), so they stay unique programme-wide."*
+`T446` was **not** the maximum: EPIC-025 had already been allocated `T447`–`T451` by the `D-19`
+split, recorded in `002/plan.md`. The claim was checked against the wrong thing — the highest ID in
+*that* epic rather than in the corpus. The EPIC-028 routing of 2026-08-13 then propagated two of the
+three into a third epic.
+
+**Resolution**: EPIC-003 and EPIC-028 renumbered to **`T646`–`T648`** (true corpus maximum was
+`T645`). EPIC-025 untouched — its allocation was correct. EPIC-003's three rows are struck through
+and marked **routed to EPIC-028**, so exactly one epic owns each. **Zero duplicate identifiers remain
+corpus-wide**, verified by enumeration.
+
+**This is `C-10` recurring inside the epic task namespace.** `C-10` recorded the `T-001`/`T001`
+collision between programme and epic tasks; this is the same failure one level down. **`D-9`
+(namespace epic task IDs, `E1-T001`) remains open and would have prevented it.** Until it lands, any
+`/speckit-converge` pass that appends IDs must check the **corpus** maximum, not the epic's.
+
+### C-28 · `T013` blocks validated persistence corpus-wide
+
+EPIC-004 `T013` — add Prisma and the first migration — is open. Three consequences already exist:
+
+- EPIC-003's `EngineRegistration` is *"verified by text assertions only"* (its closure report).
+- EPIC-003 `T463` writes `PrismaEngineRegistrationStore` against a narrow delegate rather than
+  `@prisma/client`, because Prisma is not installed.
+- EPIC-028's `AgentRegistration` is planned the same way — **a second unvalidated store, added
+  deliberately**.
+
+Each entity built before `T013` needs re-verification after it. `T012a`+`T013` are **two tasks**;
+this is the highest leverage-to-cost ratio in the corpus.
+
+### Delivery sequence — reprioritised
+
+Supersedes the per-epic "recommended next task" lines, which optimised locally.
+
+| Tier | Work | Why here |
+|---|---|---|
+| **0** | ~~Fix the `T447`/`T448`/`T449` collision~~ ✅ done 2026-08-14 | Corpus integrity; worsens with every new epic |
+| **1** | **EPIC-004** `T012a`, `T013` → then `T453`, `T454` | Prisma unblocks *validated* persistence everywhere. `T453`/`T454` make audit immutability a database guarantee rather than a design claim |
+| **2** | **EPIC-001** `T165`–`T168`; **EPIC-018** `T445`, `T446` | Six Phase Z tasks close two epics sitting at 93%. Constitution IV counts nothing until convergence runs |
+| **3** | **EPIC-028** (66 tasks) | The agent/execution seam and `T646b` — the first real container in the programme's history. Now with real Prisma behind it |
+| **4** | **EPIC-003** closure | After Tier 3 takes `T646`–`T648`, only `T138` remains and it is blocked by held product surface. Close with it deferred to EPIC-006 |
+| **5** | **EPIC-027** (49 tasks) | **Deliberately late.** §17 makes reconciliation the precondition for *new implementation tasks*, but the 13 held capability areas cannot be specified until `PMI-DOC-004` exists, and EPIC-028's decisions were already taken. Complete it *just before* the BRS unblocks the held work |
+| **6** | **EPIC-026** (71 tasks) | Clarify or park explicitly. 71 tasks of process tooling competes with the 393 a BRS would release |
+| **—** | **`PMI-DOC-004` + business scope approval** | **Worth more than all six tiers.** 393 tasks across 19 epics wait on two owner deliverables; no engineering sequence changes that number |
+
+**What changed and why**: EPIC-027 moved *later* and EPIC-004 moved *first*. The earlier ordering
+treated 027 as blocking because §17 says reconciliation precedes new implementation tasks — but the
+work it would unblock is held regardless, while `T013` silently taxes everything that is not.

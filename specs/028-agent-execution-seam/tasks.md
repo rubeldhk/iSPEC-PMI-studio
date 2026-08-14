@@ -22,9 +22,9 @@ paired unit-test task, written to fail first. Three tasks produce configuration 
 carry an **executable conformance check** instead (`T537`, `T591`, `T578`).
 
 **Task IDs**: new IDs run `T537`–`T596`, plus `T549a` and `T576a` added by the analyse pass of
-2026-08-14 (corpus max was `T536`). **`T447`, `T448` and `T449` are routed from EPIC-003, not
-reissued** — the `D-19` precedent. EPIC-003 stays closed; `T595` annotates its rows. `T447` splits
-into `T447a`/`T447b` per the `T142a` suffix convention.
+2026-08-14 (corpus max was `T536`). **`T646`, `T647` and `T648` are routed from EPIC-003, not
+reissued** — the `D-19` precedent. EPIC-003 stays closed; `T595` annotates its rows. `T646` splits
+into `T646a`/`T646b` per the `T142a` suffix convention.
 
 **Amended 2026-08-14** by `/speckit-analyze`, which found one Constitution V violation and four
 unenforced claims. Fixes are marked inline: `T576a` (the runner had no test), `T549a`
@@ -90,7 +90,7 @@ would make the execution layer depend on the AI layer — the coupling this epic
 - [ ] T552 [P] Write failing unit tests asserting `assertAgentCapabilities` refuses and names **every** missing capability in `packages/agent-contract/tests/unit/capabilities.spec.ts`
 - [ ] T553 Implement `assertAgentCapabilities` and `MissingAgentCapabilityError` in `packages/agent-contract/src/index.ts` (unit test: T552)
 - [ ] T554 [P] Write failing unit tests asserting exactly one implementation owns `FR-021` capability validation in `backend/tests/unit/engines/registry-ownership.spec.ts`
-- [ ] T449 Remove the duplicate registry — `worker/src/engine-composition.ts` delegates capability validation to `backend/src/modules/engines/engine-registry.service.ts` (unit test: T554) *(routed from EPIC-003)*
+- [ ] T648 Remove the duplicate registry — `worker/src/engine-composition.ts` delegates capability validation to `backend/src/modules/engines/engine-registry.service.ts` (unit test: T554) *(routed from EPIC-003)*
 
   > **Open since 2026-08-08 with no owner.** Two implementations of `FR-021` that can disagree.
   > Fixed here rather than later because this epic adds an agent registry and an execution-provider
@@ -131,7 +131,7 @@ engines, applied to the axis the amendment cares about.
 
 ### Implementation for User Story 1
 
-- [ ] T562 [US1] Implement `AgentRegistry` and `composeAgentRegistry()` in `worker/src/agent-composition.ts`, delegating capability validation per T449 (unit test: T555)
+- [ ] T562 [US1] Implement `AgentRegistry` and `composeAgentRegistry()` in `worker/src/agent-composition.ts`, delegating capability validation per T648 (unit test: T555)
 - [ ] T563 [US1] Implement `FixtureAgent` in `agent-adapters/fixture/src/fixture.agent.ts` (conformance: T556)
 - [ ] T564 [US1] Implement `ClaudeAgent` in `agent-adapters/claude/src/claude.agent.ts`, carrying `specKitIntegrationName: 'claude'` — **the only place that string may now appear** (unit test: T557)
 - [ ] T565 [US1] Run the shared conformance suite against `ClaudeAgent` in `agent-adapters/claude/tests/conformance.spec.ts` (suite: T556)
@@ -151,7 +151,7 @@ specification — the first time in this programme's history.
 
 **Independent Test**: quickstart `V6`. **It has never run.**
 
-**Depends on US1** for `T447b` only: the manual run exercises engine → agent → environment end to
+**Depends on US1** for `T646b` only: the manual run exercises engine → agent → environment end to
 end. Everything else in this phase is independently testable against a mocked daemon.
 
 ### Tests for User Story 2 (MANDATORY — Constitution V) ⚠️
@@ -162,28 +162,28 @@ end. Everything else in this phase is independently testable against a mocked da
 
 ### Implementation for User Story 2
 
-- [ ] T447a [US2] Implement `DockerExecutionEnvironment` against the Docker Engine HTTP API over its unix socket — **no `dockerode`, no `docker` CLI** — in `execution-providers/docker/src/docker.provider.ts` (unit test: T570) *(routed from EPIC-003)*
+- [ ] T646a [US2] Implement `DockerExecutionEnvironment` against the Docker Engine HTTP API over its unix socket — **no `dockerode`, no `docker` CLI** — in `execution-providers/docker/src/docker.provider.ts` (unit test: T570) *(routed from EPIC-003)*
 - [ ] T573 [US2] Declare `supportedLifecycles: ['ephemeral']` and implement the persistent-binding refusal in `execution-providers/docker/src/docker.provider.ts` (unit test: T571)
 - [ ] T574 [US2] Register the Docker provider at the worker composition root in `worker/src/execution-composition.ts` (unit test: T570)
 - [ ] T575 [US2] Replace `ContainerRuntime` with `ProjectExecutionEnvironment` in `SpecKitEngine` and **delete the local `ContainerRuntime` declaration** from `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
-- [ ] T448 [US2] Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts`, satisfying `FR-018` (integration test: T572) *(routed from EPIC-003)*
+- [ ] T647 [US2] Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts`, satisfying `FR-018` (integration test: T572) *(routed from EPIC-003)*
 - [ ] T576a [P] [US2] Write failing unit tests for the manual runner's step sequencing, image-digest extraction and transcript formatting — driven by a stubbed environment, no daemon required — in `scripts/tests/v6-real-run.spec.mjs`
 - [ ] T576 [US2] Create the manual runner `scripts/v6-real-run.mjs` implementing quickstart `V6`, printing the image digest and every step outcome (unit test: T576a)
 
   > **Constitution V applies here.** `scripts/` is not on Constitution I's exempt list, so this is
   > application code and V is NON-NEGOTIABLE. The runner's *logic* — ordering, digest extraction,
-  > transcript shape — is testable without a daemon; only `T447b`'s **execution** is not. Conflating
+  > transcript shape — is testable without a daemon; only `T646b`'s **execution** is not. Conflating
   > the two is how an untested script ends up as the sole evidence for `SC-AGT-001`.
-- [ ] T447b [US2] **MANUAL** — run `scripts/v6-real-run.mjs` on a machine with a Docker daemon; commit the transcript, including the image digest, to `specs/028-agent-execution-seam/v6-transcript.md` (conformance check: T577) *(routed from EPIC-003)*
+- [ ] T646b [US2] **MANUAL** — run `scripts/v6-real-run.mjs` on a machine with a Docker daemon; commit the transcript, including the image digest, to `specs/028-agent-execution-seam/v6-transcript.md` (conformance check: T577) *(routed from EPIC-003)*
 
   > **RAID R-04 blocks container-in-container in CI**, so this cannot run there. It is split from
-  > `T447a` deliberately: EPIC-003 shipped 65 passing tests and an engine that cannot start, and its
+  > `T646a` deliberately: EPIC-003 shipped 65 passing tests and an engine that cannot start, and its
   > closure report says *"No real container has ever started."* A green CI run is **not** evidence for
   > this task and must not be reported as one. If the run fails because `claude -p <command>` is not a
   > supported server-side model (`R-028-5`, uninvestigated by decision), **that is a finding, not a
   > defeat** — see [spec.md](./spec.md) Clarifications.
 
-- [ ] T577 [P] [US2] Write a conformance check asserting `v6-transcript.md` exists and names an image digest, in `tests/governance/v6-transcript.spec.ts` (gates T447b at closure)
+- [ ] T577 [P] [US2] Write a conformance check asserting `v6-transcript.md` exists and names an image digest, in `tests/governance/v6-transcript.spec.ts` (gates T646b at closure)
 
 **Checkpoint**: `SC-AGT-001` satisfied — or a real finding recorded. Either is progress; eleven days of not knowing is not.
 
@@ -246,8 +246,8 @@ never by editing business logic.
 - [ ] T592 Confirm every implementation task has a passing unit test, **and** that no Vitest project collects zero tests (T537) — the check that would have caught the EPIC-003 correction
 - [ ] T593 Run `/speckit-converge`; append and complete any remaining unbuilt work
 - [ ] T594 Triage `specs/028-agent-execution-seam/defects/`; every record closed or deferred to a named Epic
-- [ ] T595 Annotate the routed rows in `specs/003-specification-engine/tasks.md` — `T447`, `T448`, `T449` now owned by EPIC-028 — without reopening EPIC-003's closure
-- [ ] T596 Publish the Epic closing report: work completed, work deferred, `T447b`'s outcome stated plainly, and the recommended next command (Constitution IX)
+- [ ] T595 Annotate the routed rows in `specs/003-specification-engine/tasks.md` — `T646`, `T647`, `T648` now owned by EPIC-028 — without reopening EPIC-003's closure
+- [ ] T596 Publish the Epic closing report: work completed, work deferred, `T646b`'s outcome stated plainly, and the recommended next command (Constitution IX)
 
 ---
 
@@ -258,14 +258,14 @@ never by editing business logic.
 - **Phase 1 Setup** — no dependencies. `T537` first.
 - **Phase 2 Foundational** — depends on Phase 1. **Blocks all three stories.** Execution contract before agent contract.
 - **Phase 3 US1** — depends on Phase 2. No dependency on US2 or US3.
-- **Phase 4 US2** — depends on Phase 2. `T447b` **additionally depends on US1** (the manual run exercises the full chain).
+- **Phase 4 US2** — depends on Phase 2. `T646b` **additionally depends on US1** (the manual run exercises the full chain).
 - **Phase 5 US3** — depends on Phase 2. Independent of US1 and US2.
 - **Phase 6 / Phase Z** — depend on all stories.
 
 ### The one cross-story edge
 
 ```text
-US1 complete ──► T447b (manual real run)
+US1 complete ──► T646b (manual real run)
 ```
 
 Everything else in US2 is provable against a mocked daemon, so US2 and US3 can proceed in parallel
@@ -275,7 +275,7 @@ with US1 up to that point.
 
 - Tests written first and failing (Constitution V)
 - Contracts before registries, registries before adapters, adapters before composition roots
-- `T447a` (mocked, CI) before `T447b` (manual, not CI)
+- `T646a` (mocked, CI) before `T646b` (manual, not CI)
 
 ### Parallel opportunities
 
@@ -317,11 +317,11 @@ increment even if the epic stopped there — and it removes a coupling that exis
 1. Setup + Foundational → foundation ready
 2. **US1** → provider independence, enforced (MVP)
 3. **US3** → policy validation; parallel with US1 if staffed
-4. **US2** → the real container run; `T447b` last
+4. **US2** → the real container run; `T646b` last
 
 **US2 is deliberately last despite being P1.** It is the epic's headline outcome and its most
 uncertain task, and it is the only one that cannot be verified in CI. Everything else being green
-first means a `T447b` failure is unambiguously about the container or the vendor invocation, not
+first means a `T646b` failure is unambiguously about the container or the vendor invocation, not
 about the seam.
 
 ---
@@ -332,6 +332,6 @@ about the seam.
 - Verify tests fail before implementing — this is not ceremony; the EPIC-003 correction found three
   tasks marked `[X]` with no test file in the repository
 - Never edit code outside a Spec Kit command (Constitution I); defects become new tasks (VI)
-- Unrun tests are never reported as passing (Constitution IX). **`T447b` is the task most likely to
+- Unrun tests are never reported as passing (Constitution IX). **`T646b` is the task most likely to
   be misreported** — a green CI run says nothing about it
 - Commit after each task or logical group

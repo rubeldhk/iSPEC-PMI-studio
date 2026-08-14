@@ -6,7 +6,7 @@
 **Decision that adopts or rejects it**: `D-21` — **the most time-critical decision in this epic**
 **Research it depends on**: `R-AI-007`, `R-AI-009`, `R-AI-010`, `R-AI-011`
 
-> **Why this one is urgent.** `T447` — the production `ContainerRuntime` — is the next task the
+> **Why this one is urgent.** `T646` — the production `ContainerRuntime` — is the next task the
 > EPIC-003 closure report recommends, and it is correct to recommend it: nothing in the programme has
 > ever started a real container. Written as a Docker driver, it must later be refactored. Written
 > against this port, Docker becomes a provider and the refactor never happens. **The difference is

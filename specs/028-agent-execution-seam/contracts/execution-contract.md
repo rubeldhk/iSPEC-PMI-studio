@@ -148,8 +148,8 @@ Talks to the Engine HTTP API over the unix socket — **no `dockerode`, no `dock
 Six endpoints; `ADR-0002`'s controls are daemon flags set directly on the create call, so there is no
 translation layer between the security contract and its enforcement.
 
-**`T447` is split** (`R-028-2`): `T447a` asserts request construction, flag presence, failure mapping,
-cancellation and teardown idempotence against a mocked daemon in CI. `T447b` is a **manual, recorded**
+**`T646` is split** (`R-028-2`): `T646a` asserts request construction, flag presence, failure mapping,
+cancellation and teardown idempotence against a mocked daemon in CI. `T646b` is a **manual, recorded**
 run — RAID **R-04** means container-in-container is unavailable in CI, and EPIC-003 has already
 demonstrated what happens when a component is signed off on mocked evidence alone.
 

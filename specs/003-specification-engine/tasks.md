@@ -12,12 +12,19 @@ description: "Task list for EPIC-003 — Specification Engine & Sandbox"
 > ▶ **PROCEEDING** under decision D-10. Buildable now — nothing here depends on the
 > Business Requirement Specification.
 
+**Session label**: `EPIC-003 Specification Engine` (Constitution VIII). Branch: `epic/003-specification-engine`.
+
 
 **Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a
 paired unit-test task, written to fail first.
 
 **Task IDs are invariant** — unchanged by the epic split of 2026-08-03. Cross-references such as
 `(unit test: T0nn)` may point at a task in another epic; that is expected and correct.
+
+**One exception, 2026-08-14**: the three convergence tasks were renumbered `T447`→`T646`,
+`T448`→`T647`, `T449`→`T648` because they collided with identifiers EPIC-025 already owned. See the
+Phase 6 note. Invariance is a convention for *correctly allocated* IDs, not a reason to keep a
+collision.
 
 ---
 
@@ -110,6 +117,37 @@ NOT part of this phase.*
 *Appended by `/speckit-converge` on 2026-08-08. No existing task modified. IDs continue from the
 repository maximum (`T446`), so they stay unique programme-wide.*
 
-- [ ] T447 Implement a production `ContainerRuntime` (OCI/Docker driver) honouring `docker/sandbox.json` in `engine-adapters/speckit/src/container-runtime.ts`, with unit tests against a mocked daemon per missing (no task owned this — the adapter defines the port and nothing implements it, so the Spec Kit engine cannot actually run)
-- [ ] T448 Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts` once T447 lands, per FR-018 (partial) — the composition root still registers `FixtureEngine` as default, so the *default engine* requirement is unmet in the running system even though the adapter is built
-- [ ] T449 Remove the duplicate registry: `worker/src/engine-composition.ts` defines its own `EngineRegistry` alongside `backend/src/modules/engines/engine-registry.service.ts` per duplication — decide which owns capability validation, since two implementations of FR-021 can disagree
+> ⚠️ **That claim was wrong, and it was corrected on 2026-08-14.** `T446` was not the repository
+> maximum: **EPIC-025 already owned `T447`–`T451`**, allocated by the `D-19` split and recorded in
+> [`002/plan.md`](../002-team-review-access-storage/plan.md). This pass allocated `T447`, `T448` and
+> `T449` on top of them, so three identifiers meant two different things — a token-refresh service in
+> EPIC-025 and a container runtime here. The EPIC-028 routing then made two of them three-way.
+>
+> **Renumbered to `T646`–`T648`** (the true corpus maximum was `T645`). EPIC-025 is untouched. This
+> is conflict **C-10** recurring inside the epic task namespace, and **`D-9`** — namespace epic task
+> IDs — is the open decision that would have prevented it.
+
+**All three are now owned by [EPIC-028](../028-agent-execution-seam/tasks.md)**, which builds them
+behind the `ProjectExecutionEnvironment` port per `D-21`. The rows below are retained for history and
+are **not actionable in this epic**.
+
+- ~~[ ] T646~~ **ROUTED → EPIC-028 T646a/T646b** — Implement a production `ContainerRuntime` (OCI/Docker driver) honouring `docker/sandbox.json` in `engine-adapters/speckit/src/container-runtime.ts`, with unit tests against a mocked daemon per missing (no task owned this — the adapter defines the port and nothing implements it, so the Spec Kit engine cannot actually run)
+- ~~[ ] T647~~ **ROUTED → EPIC-028 T647** — Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts` once T646 lands, per FR-018 (partial) — the composition root still registers `FixtureEngine` as default, so the *default engine* requirement is unmet in the running system even though the adapter is built
+- ~~[ ] T648~~ **ROUTED → EPIC-028 T648** — Remove the duplicate registry: `worker/src/engine-composition.ts` defines its own `EngineRegistry` alongside `backend/src/modules/engines/engine-registry.service.ts` per duplication — decide which owns capability validation, since two implementations of FR-021 can disagree
+
+---
+
+## Phase 7: Convergence
+
+*Appended by `/speckit-converge` on 2026-08-08, a second pass after the EPIC-003 implementation
+commit. No existing task modified. IDs continue from the repository maximum (`T460`).*
+
+*`T646`, `T647`, `T648` (now routed to EPIC-028) and `T138` remain open from the previous pass and are **deliberately not
+repeated here** — re-appending a tracked finding manufactures duplicate work and makes the epic look
+like it is regressing.*
+
+- [X] T461 **CRITICAL** Add the session-label line `**Session label**: EPIC-003 Specification Engine` to this task document per Constitution VIII (missing) — required by `governance/document-structure.md`; EPIC-023/024/025 carry one and EPIC-001/003/004 do not
+- [X] T462 Create `backend/src/modules/engines/engines.module.ts` and import it in `backend/src/app.module.ts` per FR-019 (partial) — `EngineRegistryService` and `EngineResolverService` are built and tested but nothing outside their own directory constructs them, so they are unreachable from the running API
+- [X] T463 Implement a Prisma-backed `EngineRegistrationStore` in `backend/src/modules/engines/engine-registration.store.ts`, or record why the table stays unwritten, per T034 (partial) — the port has no implementation, so `recordRegistrations()` no-ops and `engine_registrations` is never written
+- [X] T464 Execute quickstart **V11** (engine independence) and record the outcome in `specs/003-specification-engine/closure.md` per plan Definition of done (missing) — its substance is automated by T136/T137, but the walkthrough has never been run
+- [X] T465 Reconcile the fixture adapter path: T037 names `engine-adapters/fixture/src/fixture.adapter.ts`, the code lives at `src/index.ts` (partial) — correct the record or move the file

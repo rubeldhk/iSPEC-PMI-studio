@@ -23,9 +23,9 @@ the (unimplemented) container driver. This epic separates the three into contrac
 failure defends, implements the container driver behind the middle one, and ends at quickstart `V13`
 — the scenario that has never run.
 
-**The sequencing constraint that shapes everything below**: `T447` is the only task that requires
+**The sequencing constraint that shapes everything below**: `T646` is the only task that requires
 Docker, and RAID **R-04** says container-in-container is not available in CI. So every other task
-must be provable without a container, and `T447`'s verification is explicitly split into a mocked
+must be provable without a container, and `T646`'s verification is explicitly split into a mocked
 half that runs in CI and a manual half that does not. Pretending otherwise is how EPIC-003 ended up
 with 65 passing tests and an engine that cannot start.
 
@@ -99,9 +99,9 @@ honest limit** below.
 **One deviation (VIII), no FAIL.** Phase 0 proceeds.
 
 **Post-design re-check (after Phase 1)**: **PASS.** No gate weakened. Gate V is the one worth
-re-stating: `T447` is the task most likely to be marked complete without being verified, because its
-real verification cannot run in CI. The design answers that by splitting it — `T447a` asserts the
-driver against a mocked daemon in CI, `T447b` is a **manual, recorded** execution that Phase Z
+re-stating: `T646` is the task most likely to be marked complete without being verified, because its
+real verification cannot run in CI. The design answers that by splitting it — `T646a` asserts the
+driver against a mocked daemon in CI, `T646b` is a **manual, recorded** execution that Phase Z
 refuses to close without. That is the direct lesson of the EPIC-003 correction.
 
 ---
@@ -112,7 +112,7 @@ refuses to close without. That is the direct lesson of the EPIC-003 correction.
 F-28.1 workspace + test plumbing
         │
         ├──► F-28.2 execution-contract ──┐
-        │                                 ├──► F-28.5 Docker provider ──► T447 ──► V13
+        │                                 ├──► F-28.5 Docker provider ──► T646 ──► V13
         └──► F-28.3 agent-contract ──────┤                                          ▲
                      │                    └──► F-28.4 SpecKitEngine refactor ────────┘
                      │                                    │
@@ -138,7 +138,7 @@ Task counts are estimates — `/speckit-tasks` has not run. **New IDs start at `
 | **F-28.2** Execution contract | ~9 | `FR-AGT-006`, `008` | `ProjectExecutionEnvironment`, `WorkspaceBinding` union, `EgressProfile`, `ScopedCredentialRef`, typed failures |
 | **F-28.3** Agent contract | ~11 | `FR-AGT-001`–`003`, `005` | `AgentGateway`, descriptor, request, registry, fixture agent, conformance suite |
 | **F-28.4** Engine refactor | ~8 | `FR-AGT-001`, `012` | `SpecKitEngine` takes an injected agent; the four `claude` strings leave; execution records |
-| **F-28.5** Docker provider | ~11 | `FR-AGT-007`, `010`, `011` | The provider, egress profiles, `T447`, `T448`, `T449` |
+| **F-28.5** Docker provider | ~11 | `FR-AGT-007`, `010`, `011` | The provider, egress profiles, `T646`, `T647`, `T648` |
 | **F-28.6** Architecture enforcement | ~6 | `FR-AGT-004`, `009` | `agent-independence.spec.ts` — the third suite |
 | **Phase Z** closure | ~4 | `FR-AGT-013` | Preserved-element records, convergence, closing report |
 
@@ -159,7 +159,7 @@ agent-adapters/               # NEW workspace glob
 └── claude/                   # the reference adapter
 
 execution-providers/          # NEW workspace glob
-└── docker/                   # T447 lives here, NOT in the speckit adapter
+└── docker/                   # T646 lives here, NOT in the speckit adapter
 
 engine-adapters/speckit/      # refactored: no provider names, no ContainerRuntime
 worker/src/                   # composition root gains two registries
@@ -200,11 +200,11 @@ Three reasons carry forward with hard-won meaning, all from the EPIC-003 conform
 `cancelled` must never be reported as `timeout`; `engine_unavailable` must mean the runtime is
 unreachable and not that the caller was misconfigured; a hung step self-terminates.
 
-### `T449` — resolving the duplicate registry, finally
+### `T648` — resolving the duplicate registry, finally
 
 `worker/src/engine-composition.ts` defines its own `EngineRegistry` alongside
 `backend/src/modules/engines/engine-registry.service.ts`. Two implementations of `FR-021` that can
-disagree. `T449` has been open since 2026-08-08 with no owner.
+disagree. `T648` has been open since 2026-08-08 with no owner.
 
 **Decision: the backend service owns capability validation; the worker registry delegates to it.**
 The backend's version is the one `EnginesModule` wires and the one with 20 tests. Adding two more
@@ -230,7 +230,7 @@ than a failure of this plan.
 |---|---|---|
 | **Two new top-level directories** (`agent-adapters/`, `execution-providers/`) | Mirrors `engine-adapters/`, and the ESLint boundary rules key off directory names — a rule that says "backend may not import `agent-adapters/*`" needs the directory to exist | Putting adapters under `packages/*` is simpler, but then the boundary rule cannot distinguish a contract from an implementation, and the whole enforcement mechanism rests on package naming discipline |
 | **Two new contract packages rather than one** | Native §3 forbids merging abstractions of different kinds, and the dependency runs one way: agent → execution, never back | One `packages/runtime-contract` is fewer moving parts. It would let the execution layer see agent types, which is the coupling this epic exists to remove — repeated at a new seam |
-| **`T447` verification split across CI and manual** | RAID **R-04**: container-in-container is unavailable in CI. A single task would be marked complete on mocked evidence | Asserting the driver only against a mock. That is precisely how EPIC-003 shipped an engine that cannot start, and the closure report says so |
+| **`T646` verification split across CI and manual** | RAID **R-04**: container-in-container is unavailable in CI. A single task would be marked complete on mocked evidence | Asserting the driver only against a mock. That is precisely how EPIC-003 shipped an engine that cannot start, and the closure report says so |
 | **Constitution VIII deviation** — fourth occurrence | Branch is `epic/003-specification-engine`; EPIC-003 has uncommitted work that branching would drag along | Branching first remains correct and did not happen. Not justified — recorded. `D-39` proposes the check that would catch it |
 
 ---

@@ -8,9 +8,9 @@ assumptions where research is required."* They are marked open with what they bl
 
 | ID | Question | Status | Blocks |
 |---|---|---|---|
-| **R-028-1** | How does the Docker provider talk to the daemon? | 🟢 Answered | `T447` |
-| **R-028-2** | How is `T447` verified when CI cannot run a container? | 🟢 Answered | Phase Z closure |
-| **R-028-3** | Where does capability validation live, given two registries exist? | 🟢 Answered | `T449`, then everything |
+| **R-028-1** | How does the Docker provider talk to the daemon? | 🟢 Answered | `T646` |
+| **R-028-2** | How is `T646` verified when CI cannot run a container? | 🟢 Answered | Phase Z closure |
+| **R-028-3** | Where does capability validation live, given two registries exist? | 🟢 Answered | `T648`, then everything |
 | **R-028-4** | What does the agent conformance suite need on day one? | 🟢 Answered | `F-28.3` |
 | **R-028-5** | Is `claude -p <command>` in a container a supported execution model? | 🔴 **OPEN — not investigated** | `SC-AGT-001`, the Claude adapter's capability |
 | **R-028-6** | What belongs in the `implementation` egress profile? | 🟡 Partial | `FR-AGT-011`; deferred, not guessed |
@@ -40,9 +40,9 @@ worker image is another assumption.
 **Consequence for `D-21`**: none. The provider is behind the port either way; this decision is
 reversible in one file, which is exactly what the port was for.
 
-## R-028-2 · Verifying `T447` when CI cannot run a container — answered 🟢
+## R-028-2 · Verifying `T646` when CI cannot run a container — answered 🟢
 
-**Decision: split the task. `T447a` runs in CI against a mocked daemon; `T447b` is a manual, recorded
+**Decision: split the task. `T646a` runs in CI against a mocked daemon; `T646b` is a manual, recorded
 execution that Phase Z will not close without.**
 
 **Rationale** — this is the single most important decision in the epic, and the evidence is in this
@@ -61,10 +61,10 @@ that matters.
 
 | Half | Runs where | Asserts |
 |---|---|---|
-| `T447a` | CI, mocked daemon | Request construction, `ADR-0002` flags present, failure mapping, cancellation, teardown idempotence |
-| `T447b` | **Manual, recorded** | A container starts, the five steps run, a specification is produced, the container is destroyed |
+| `T646a` | CI, mocked daemon | Request construction, `ADR-0002` flags present, failure mapping, cancellation, teardown idempotence |
+| `T646b` | **Manual, recorded** | A container starts, the five steps run, a specification is produced, the container is destroyed |
 
-`T447b` produces a recorded transcript committed under `specs/028-agent-execution-seam/`. Phase Z
+`T646b` produces a recorded transcript committed under `specs/028-agent-execution-seam/`. Phase Z
 checks the transcript exists and names the image digest. RAID **R-04** stays open; this does not
 close it, it works around it honestly.
 
@@ -76,7 +76,7 @@ delegates.**
 **Evidence**: the backend service is the one `EnginesModule` wires (`T462`), the one with 20 tests,
 and the one `PrismaEngineRegistrationStore` persists against (`T463`). The worker's `EngineRegistry`
 in `engine-composition.ts` is a second implementation of `FR-021` with its own `assertPhase1Capabilities`
-call — `T449` recorded this on 2026-08-08 and nothing owned the fix.
+call — `T648` recorded this on 2026-08-08 and nothing owned the fix.
 
 **Why it must land before the new registries, not after**: this epic adds an agent registry and an
 execution-provider registry. Copying the current pattern would produce **six** registry
@@ -121,10 +121,10 @@ without an interactive session, whether long-running or multi-turn work needs a 
 and what it costs per run.
 
 **What it blocks**: `SC-AGT-001` — the epic's headline criterion. **Not** the contract, which is
-provider-neutral by construction, and **not** `T447`, which starts containers regardless of what runs
+provider-neutral by construction, and **not** `T646`, which starts containers regardless of what runs
 inside them.
 
-**Deliberately not resolved by assumption.** If `T447b` reveals the invocation does not work as
+**Deliberately not resolved by assumption.** If `T646b` reveals the invocation does not work as
 mocked, that is a finding this programme has been unable to produce for eleven days, and it arrives
 in the epic designed to surface it.
 
