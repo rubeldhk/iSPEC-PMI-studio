@@ -8,7 +8,8 @@
 
 **Created**: 2026-08-13
 
-**Status**: Draft — ready for clarification
+**Status**: **Clarified** — 4 questions answered 2026-08-14; zero unresolved markers. Ready for
+`/speckit-tasks`.
 
 **Delivery posture**: ▶ **PROCEEDING** (decision D-10). Every requirement below sits in the engine
 lane. Nothing here touches product surface, and nothing waits on `PMI-DOC-004`.
@@ -41,6 +42,51 @@ This epic closes all three and ends at the first real generation run in the prog
 **The three are one slice, not three.** They land in the same files, and none of them is verifiable
 until a container actually starts. Splitting them across epics would mean three convergence gates on
 work that cannot be proven separately.
+
+## Clarifications
+
+### Session 2026-08-14 — four questions, four confirmations, zero changes
+
+Unusual and worth recording as such: every answer confirmed the plan's stated recommendation. That is
+weak evidence the recommendations were right and **strong evidence the questions were worth asking** —
+each had a materially different alternative, and three of them are hard to reverse later.
+
+- Q: `R-AI-001`/`R-AI-002` are uninvestigated — nobody has verified that `claude -p <command>` in a
+  container is a supported server-side execution model. Investigate first, build and discover, or
+  ship fixture-only? → **A: build and discover via `T447b`.** The contract is provider-neutral either
+  way. If the first real container shows the invocation does not work as mocked, that is a finding
+  this programme has been unable to produce since 2026-08-03, and it arrives in the epic designed to
+  surface it. **`SC-AGT-001` may therefore fail for a reason no design prevents — that is accepted,
+  not overlooked.**
+- Q: RAID **R-04** blocks container-in-container in CI. Manual transcript, invest in CI containers, or
+  a nightly job? → **A: split `T447` as planned** — `T447a` mocked in CI, `T447b` a manual recorded
+  transcript carrying the image digest, which Phase Z will not close without. **R-04 stays open**;
+  this works around it honestly rather than closing it. A nightly runner remains the natural follow-up
+  and EPIC-015 `T146` already anticipates one.
+- Q: Two new top-level directories, one `adapters/` tree, or everything under `packages/`? →
+  **A: `agent-adapters/` + `execution-providers/`**, mirroring `engine-adapters/`. The ESLint boundary
+  rules key off directory names, so enforcement does not rest on package-naming discipline — which is
+  the mechanism `ADR-0001` deliberately avoided. Moving the existing `engine-adapters/` was rejected:
+  it is a Native §28 preserved element and would touch every import inside an epic that has enough
+  surface already.
+- Q: Does the `implementation` egress profile ship with a researched destination list? → **A: ship
+  minimal** — AI provider endpoint only, identical to `generation`. It proves the abstraction and
+  fails loudly rather than permitting silently. A guessed npm/PyPI/GitHub list would be untested, read
+  as authoritative, and be inherited as settled by the first implementation agent. **The audit proxy
+  `D-28` chose is not built here** — `EgressProfile.enforcement` records the intent and the Docker
+  provider implements the network-policy half.
+
+### Decisions taken in the plan and *not* re-opened
+
+Recorded so they are visible rather than buried, and can still be overridden before `/speckit-tasks`:
+
+| Decision | Where argued |
+|---|---|
+| `T449` — the backend service owns capability validation; the worker registry delegates | [research.md](./research.md) `R-028-3` |
+| No `dockerode`; the provider talks to the Engine HTTP API over its socket | `R-028-1` |
+| `AgentCapability` is a **closed** enum; open-endedness lives in `toolCapabilities: string[]` | [contracts/agent-contract.md](./contracts/agent-contract.md) |
+| The `persistent` workspace binding **type** ships here; EPIC-029 builds the persistence | [data-model.md](./data-model.md) |
+| The four conformance cases ship on day one, and the suite is mutation-tested | `R-028-4` |
 
 ## SRS Traceability *(mandatory — Constitution II)*
 

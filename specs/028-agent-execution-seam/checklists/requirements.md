@@ -17,7 +17,9 @@
 
 ## Requirement Completeness
 
-- [x] No `[NEEDS CLARIFICATION]` markers — the three gating decisions were taken 2026-08-13
+- [x] No `[NEEDS CLARIFICATION]` markers — the three gating decisions were taken 2026-08-13, and a
+      four-question clarification session on 2026-08-14 confirmed all four plan recommendations
+      without changing any
 - [x] Requirements are testable — 12 of 13 `FR-AGT-*` are assertable by a test that can fail;
       `FR-AGT-013` is a record-completeness check
 - [x] Success criteria measurable — 8 criteria, each a count, an assertion, or an executed scenario
