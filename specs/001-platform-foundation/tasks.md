@@ -97,14 +97,14 @@ tested, and unreachable"* — recurring across the whole of F-00.4 and F-00.5. T
 because the services take narrow ports (correct PC-1 design) and the tests supply them; no process
 does.
 
-- [ ] T650 [P] Write failing unit tests asserting `JobsModule` provides `JobsService`, `JobRunnerService` and the job state machine, and that resolving them from the Nest container succeeds, in `backend/tests/unit/jobs/jobs.module.spec.ts` per FR-024 (partial)
-- [ ] T651 Wire the job providers in `backend/src/modules/jobs/jobs.module.ts` using factory providers, keeping the services framework-free (PC-1), mirroring `engines.module.ts` per FR-024, FR-025, FR-027 (partial) — unit test: T650
-- [ ] T652 [P] Write failing unit tests asserting the worker constructs a BullMQ `Worker` bound to the generation queue and dispatches each job to `consumeGenerationJob`, against a stubbed queue, in `worker/tests/unit/worker-bootstrap.spec.ts` per FR-028 (partial)
-- [ ] T653 Create the BullMQ `Worker` in `worker/src/main.ts`, wiring it to `consumeGenerationJob` with the composed engine registry, cancellation signal and wall-clock limits per FR-028, T046 (partial) — unit test: T652
-- [ ] T654 [P] Write failing unit tests asserting `JobsService` enqueues onto a real queue port and that a duplicate submission joins the live job rather than enqueuing twice, in `backend/tests/unit/jobs/queue-port.spec.ts` per FR-028 (partial)
-- [ ] T655 Construct the BullMQ queue behind the existing narrow port and provide it to `JobsService` in `backend/src/modules/jobs/jobs.module.ts` per FR-028, T043 (partial) — unit test: T654
-- [ ] T656 [P] Write failing unit tests asserting the API bootstrap installs the structured logger and metrics, and that a request carries a correlation identifier end to end, in `backend/tests/unit/observability/bootstrap.spec.ts` per PP-010 (partial)
-- [ ] T657 Wire `logger.ts`, `correlation.ts` and `metrics.ts` into `backend/src/main.ts` and `worker/src/main.ts` per PP-010 (partial) — unit test: T656
+- [X] T650 [P] Write failing unit tests asserting `JobsModule` provides `JobsService`, `JobRunnerService` and the job state machine, and that resolving them from the Nest container succeeds, in `backend/tests/unit/jobs/jobs.module.spec.ts` per FR-024 (partial)
+- [X] T651 Wire the job providers in `backend/src/modules/jobs/jobs.module.ts` using factory providers, keeping the services framework-free (PC-1), mirroring `engines.module.ts` per FR-024, FR-025, FR-027 (partial) — unit test: T650
+- [X] T652 [P] Write failing unit tests asserting the worker constructs a BullMQ `Worker` bound to the generation queue and dispatches each job to `consumeGenerationJob`, against a stubbed queue, in `worker/tests/unit/worker-bootstrap.spec.ts` per FR-028 (partial)
+- [X] T653 Create the BullMQ `Worker` in `worker/src/main.ts`, wiring it to `consumeGenerationJob` with the composed engine registry, cancellation signal and wall-clock limits per FR-028, T046 (partial) — unit test: T652
+- [X] T654 [P] Write failing unit tests asserting `JobsService` enqueues onto a real queue port and that a duplicate submission joins the live job rather than enqueuing twice, in `backend/tests/unit/jobs/queue-port.spec.ts` per FR-028 (partial)
+- [X] T655 Construct the BullMQ queue behind the existing narrow port and provide it to `JobsService` in `backend/src/modules/jobs/jobs.module.ts` per FR-028, T043 (partial) — unit test: T654
+- [X] T656 [P] Write failing unit tests asserting the API bootstrap installs the structured logger and metrics, and that a request carries a correlation identifier end to end, in `backend/tests/unit/observability/bootstrap.spec.ts` per PP-010 (partial)
+- [X] T657 Wire `logger.ts`, `correlation.ts` and `metrics.ts` into `backend/src/main.ts` and `worker/src/main.ts` per PP-010 (partial) — unit test: T656
 
   > **`spec.md` claims PP-010 is "✅ Satisfied here for the whole platform".** At runtime nothing
   > emits a log, a metric, or a correlation identifier, because all three modules are referenced only
