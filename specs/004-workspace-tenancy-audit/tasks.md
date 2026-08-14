@@ -25,8 +25,12 @@ paired unit-test task, written to fail first.
 
 - [X] T011a [P] Write failing unit tests asserting `Workspace`/`User` schema constraints — required `workspace_id`, unique email, `password_hash` never selected — in `backend/tests/unit/core/schema-constraints.spec.ts`
 - [X] T012 Initialise Prisma and define `Workspace` and `User` models in `backend/prisma/schema.prisma` (unit test: T011a)
-- [ ] T012a [P] Write failing unit tests asserting the generated migration applies the universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) to **every** table, not only `Workspace` and `User`, in `backend/tests/unit/core/universal-columns.spec.ts`
-- [ ] T013 Add universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) convention and first migration in `backend/prisma/migrations/` (unit test: T012a) — ⚠️ **partially done**: the convention is in `schema.prisma` and asserted by T011a, but **no migration has been generated or applied**. Needs `prisma migrate dev`. **T454 depends on this** — the trigger ships in the same migration.
+- [X] T012a [P] Write failing unit tests asserting the generated migration applies the universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) to **every** table, not only `Workspace` and `User`, in `backend/tests/unit/core/universal-columns.spec.ts`
+- [X] T013 Add universal columns (`workspaceId`, `createdAt`) convention and first migration in `backend/prisma/migrations/20260814000000_init/` (unit test: T012a) — **done 2026-08-14**. Prisma installed (`prisma`, `@prisma/client` v5); migration generated **offline** via `prisma migrate diff --from-empty --to-schema-datamodel`, since `prisma migrate dev` needs a live database and none is available here.
+
+  > ⚠️ **The migration has never been applied to a real database.** Its *content* is asserted by `T012a`; its *execution* happens for the first time inside `T453`, which needs a container runtime. Do not report this as a working schema until `T649` runs.
+  >
+  > **Column naming is camelCase**, not the snake_case of `_shared/schema.sql`. `tech-stack.md` makes `schema.prisma` authoritative at implementation and the design DDL "design-level"; the built application reads `workspaceId` throughout. **`createdBy`/`updatedBy` are absent** — recorded as `defects/DEF-004-001-created-by-columns.md`, not invented here.
 
 ## F-01.2 · Workspace scoping and isolation
 
@@ -63,8 +67,21 @@ says immutability is "enforced twice — in code… in the database, a trigger r
 only the code half. **No task built the trigger**, so the epic's own definition of done contained an
 item nothing produced — and it is the half that survives a bug in the service layer.*
 
-- [ ] T453 [P] Write failing integration test asserting `UPDATE` and `DELETE` against `audit_entries` are rejected **by the database**, not merely absent from the service — issued as raw SQL against a real PostgreSQL via Testcontainers, since a mocked repository cannot fail this (**FR-033**, **SC-012**), in `backend/tests/integration/audit-immutability.spec.ts`
-- [ ] T454 Add the shared `reject_mutation()` function and the `audit_entries_immutable` `BEFORE UPDATE OR DELETE` trigger, per `../_shared/schema.sql`, to the migration in `backend/prisma/migrations/` (**FR-033**; integration test: T453; depends on T013). The **function is shared** — EPIC-007 `requirement_versions` and EPIC-009 `specification_versions` attach their own triggers to it and must not redefine it
+- [X] T453 [P] Write failing integration test asserting `UPDATE` and `DELETE` against `audit_entries` are rejected **by the database**, not merely absent from the service — issued as raw SQL against a real PostgreSQL via Testcontainers, since a mocked repository cannot fail this (**FR-033**, **SC-012**), in `backend/tests/integration/audit-immutability.spec.ts`
+- [X] T454 Add the shared `reject_mutation()` function and the `audit_entries_immutable` `BEFORE UPDATE OR DELETE` trigger, per `../_shared/schema.sql`, to the migration in `backend/prisma/migrations/` (**FR-033**; integration test: T453; depends on T013). The **function is shared** — EPIC-007 `requirement_versions` and EPIC-009 `specification_versions` attach their own triggers to it and must not redefine it
+
+  > **Written and never executed.** `T453` asserts the trigger against a real PostgreSQL via
+  > Testcontainers, and **no container runtime is available here** (RAID **R-04**). The suite is
+  > collected and skips *by name* under `DOCKER_UNAVAILABLE=1` — it is never silently passed. The
+  > trigger SQL is therefore unverified: `reject_mutation()` has never raised.
+
+- [ ] T649 **MANUAL** — run `pnpm test:integration` on a machine with a container runtime; confirm all
+  six `T453` cases pass and record the outcome in `specs/004-workspace-tenancy-audit/closure.md`
+  (verifies T013, T454; **FR-033**, **SC-012**)
+
+  > This is the first execution of the migration against a real database and the first proof that
+  > audit immutability is enforced by PostgreSQL rather than asserted in a comment. Phase Z must not
+  > close without it.
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
