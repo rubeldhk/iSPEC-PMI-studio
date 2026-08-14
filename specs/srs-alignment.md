@@ -1019,10 +1019,14 @@ Twenty-two raised, grouped by what they gate. `D-20` onward continues the number
 *Decisions required* table above; `C-19` onward continues `C-01`–`C-18`. **None can be resolved by
 reading the SRS.**
 
-**Status after the planning session of 2026-08-13: 12 decided, 9 open, 1 subsumed.** Every decided
-row is struck through with its outcome; consequences are recorded in the section that follows the
-register. Two decisions were *created* by other decisions — `D-40` and `D-41` — which is why the
-count grew.
+**Status: 14 decided, 7 open, 1 subsumed.** 12 taken in the planning session of 2026-08-13; `D-35`
+and `D-40` added by the clarification session of 2026-08-14. Every decided row is struck through
+with its outcome; consequences are recorded in the section that follows the register. Two decisions
+were *created* by other decisions — `D-40` and `D-41` — which is why the count grew.
+
+**Still open**: `D-23`, `D-24`, `D-30`, `D-34`, `D-36`, `D-37`, `D-39`. None blocks EPIC-027's task
+generation or EPIC-028's implementation, and each carries a recommendation. `D-36` is effectively
+settled by `D-28` — `ADR-0002` is extended — and needs only to be recorded as such.
 
 **Verified 2026-08-13**: the premise search behind `D-32` was re-run for this plan, excluding
 EPIC-027's own spec. All nine terms — Change Room, Defect Room, Requirement Room, Decision Room,
@@ -1058,13 +1062,13 @@ across the other 26 epic specifications. Finding A holds.
 | ~~**D-26**~~ | ~~Does MCP move from M-09 Phase 3 to core agent enablement?~~ | ✅ **DECIDED 2026-08-13 — split.** The agent-facing least-privilege context surface joins core agent enablement; discovery, third-party servers and the marketplace stay at M-09 Phase 3. `C-25` closes; `C-07`'s deferral is *narrowed*, not reversed |
 | **D-23** | Does the amendment trigger the deferred 18-module re-cut (`D-13`)? | No. Record the dependency; re-cut once, folding in `D-1` and `D-9` |
 | **D-34** | Does the amendment release any part of the `PMI-DOC-004` hold? | **No.** The amendment is architecture and positioning, not a BRS |
-| **D-40** | Does **self-hosted** remain a supported deployment, or is it out of scope for now? *(created by `D-31`)* | Out of scope for now, but keep the credential broker and egress enforcement abstracted so it stays reachable. Deciding "SaaS only, forever" would let real coupling in |
+| ~~**D-40**~~ | ~~Does **self-hosted** remain a supported deployment?~~ *(created by `D-31`)* | ✅ **DECIDED 2026-08-14 — out of scope now, seams kept abstracted.** Do not build, test or claim self-hosted; keep the credential broker and egress enforcement behind ports. EPIC-028 is building those ports regardless, so the option costs almost nothing to preserve |
 
 ### Gate 4 — governance and record-keeping
 
 | # | Decision | Recommendation |
 |---|---|---|
-| **D-35** | Are the twelve Native §27 ADRs created now as open records, or when each is decided? | Now, as open records naming what each awaits — §26 forbids answering by assumption |
+| ~~**D-35**~~ | ~~Are the twelve Native §27 ADRs created now, or when each is decided?~~ | ✅ **DECIDED 2026-08-14 — all twelve now.** Each either decided or explicitly `open` naming what it awaits; seven are decidable immediately from the 2026-08-13 session. Native §26 forbids answering by assumption, and an ADR that exists as an open question is what prevents one |
 | **D-36** | Does `ADR-0002` get extended or superseded by the egress change? | Extended. Native §27: *"Preserve existing ADRs unless explicitly superseded with documented reasoning"* |
 | **D-37** | Does the Human/AI responsibility model become a platform-wide register in `_shared/`? | Yes — it is cross-cutting and belongs where the principle register already lives |
 | ~~**D-38**~~ | ~~Is RAID **R-02** (AI cost) re-scored now?~~ | ✅ **Subsumed by `D-41`.** Re-scored, and mitigated structurally rather than by caps alone |

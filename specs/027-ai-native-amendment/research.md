@@ -220,6 +220,13 @@ row count will exceed the number of *distinct* capabilities considerably. `FR-AM
 verdict per clause regardless; duplicates resolve to the same owner, which is how the register proves
 `SC-AMD-003` (no new identifier where one exists).
 
+**Granularity settled 2026-08-14: one row per clause, duplicates cross-linked** — not one row per
+distinct capability. The collapsed form was offered and rejected for a specific reason: **it cannot
+prove `SC-AMD-001`.** A register that lists a capability and cites the clauses mentioning it looks
+identical whether every clause was read or three were missed, because a clause nobody noticed simply
+never appears. Cross-linked duplicates cost roughly 200 extra rows and buy the one property the
+criterion actually asserts — *zero clauses silently dropped*.
+
 ---
 
 ## What research does **not** resolve

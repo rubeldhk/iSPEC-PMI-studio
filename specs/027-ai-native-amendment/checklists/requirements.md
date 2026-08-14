@@ -17,7 +17,9 @@
 ## Requirement Completeness
 
 - [x] No [NEEDS CLARIFICATION] markers remain — every open choice was resolved from the amendment
-      itself, which is unusually prescriptive, and recorded in Assumptions
+      itself, which is unusually prescriptive, and recorded in Assumptions. A clarification session
+      on 2026-08-14 then settled the register's granularity (~340 rows, one per clause) and two
+      programme decisions (`D-35`, `D-40`)
 - [x] Requirements are testable and unambiguous — each `FR-AMD` names what must be recorded, verified
       or produced
 - [x] Success criteria are measurable — `SC-AMD-001` to `SC-AMD-012` are counts or completeness checks

@@ -104,10 +104,11 @@ later work — knowledge-graph traversal and context assembly — and both are r
 598 tracked tasks across 24 task lists · 5 ADRs (12 more required by Native §27) · 14 named research
 items · 22 decisions raised, 12 taken.
 
-**NEEDS CLARIFICATION**: none blocking Phase 0. The amendment is unusually prescriptive; where a
-normal plan would guess, this one quotes. The nine remaining open decisions
-([`srs-alignment.md`](../srs-alignment.md) Part 8) are **stakeholder decisions**, not specification
-gaps — they are the §18.25 deliverable, not a failure to specify.
+**NEEDS CLARIFICATION**: none. A clarification session on 2026-08-14 settled the register's
+granularity and two further decisions — see [spec.md](./spec.md) *Clarifications*. The **seven**
+remaining open decisions ([`srs-alignment.md`](../srs-alignment.md) Part 8) are **stakeholder
+decisions**, not specification gaps — they are the §18.25 deliverable, not a failure to specify, and
+none blocks task generation.
 
 ---
 
@@ -238,7 +239,7 @@ Evidence Gate, Integration Hub, MCP surface. All behind `PMI-DOC-004`.
 
 | Function | Requirements | Criteria | Delivers | Check |
 |---|---|---|---|---|
-| **F-27.1** Clause register | `FR-AMD-002`, `003`, `005` | `SC-AMD-001`, `002`, `003` | Every substantive clause, one verdict, named owner | `G-27-01` · `G-27-02` · `G-27-03` |
+| **F-27.1** Clause register | `FR-AMD-002`, `003`, `005` | `SC-AMD-001`, `002`, `003` | Every substantive clause, one verdict, named owner. **~340 rows** — one per clause, duplicates cross-linked (clarified 2026-08-14) | `G-27-01` · `G-27-02` · `G-27-03` |
 | **F-27.2** Premise checks | `FR-AMD-006`, `007` | `SC-AMD-005` | Search evidence for each "existing capability" claim | `G-27-05` |
 | **F-27.3** Capability classification | `FR-AMD-004` | `SC-AMD-004`, `011` | native / integrated / hybrid + reason + boundary; the seventeen capability areas enumerated | `G-27-04` · `G-27-13` |
 | **F-27.4** §18 impact report | `FR-AMD-009`, `010`, `011`, `012` | `SC-AMD-006` | All 25 sections, no placeholders, ending in the three-band sequence | `G-27-06` |

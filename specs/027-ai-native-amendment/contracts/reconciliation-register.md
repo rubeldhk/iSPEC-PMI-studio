@@ -162,7 +162,7 @@ rather than a promise about it.
 
 Per Constitution V, whether a failing check blocks CI is a per-epic decision recorded in the spec.
 
-**Decision for EPIC-027**: all fourteen **report** rather than block, matching EPIC-018's precedent
+**Decision for EPIC-027** *(confirmed 2026-08-14)*: all fourteen **report** rather than block, matching EPIC-018's precedent
 where only the duplication check blocks — **except `G-27-09` and `G-27-14`, which block.** Both guard
 the same boundary: a reconciliation epic that has quietly modified product code, or quietly changed
 another epic's delivery posture, is not a reporting matter. `FR-AMD-016` and `FR-AMD-017` are the two

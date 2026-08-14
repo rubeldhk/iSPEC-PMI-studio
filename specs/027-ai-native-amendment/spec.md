@@ -6,7 +6,8 @@
 
 **Created**: 2026-08-13
 
-**Status**: Draft — ready for clarification
+**Status**: **Clarified** — 4 questions answered 2026-08-14; zero unresolved markers. Ready for
+`/speckit-tasks`.
 
 **Input**: Four documents added to `SRS/August112026/` on 2026-08-11/12/13, plus the project owner's
 instruction to *"analyze and incorporate changes in specs… it will impact the whole project plan.
@@ -93,6 +94,39 @@ prioritisation, a twelve-state requirement machine, baselines and a Decision Roo
 and far larger capability that happens to share a name.
 
 Left unreconciled, this produces the worst kind of drift: two teams believing one epic covers both.
+
+## Clarifications
+
+### Session 2026-08-14 — four answers, two of them programme decisions
+
+- Q: Does every substantive clause get a register row (~340), or does the register collapse to one
+  row per distinct capability (~90–120)? → **A: every clause gets a row; duplicates cross-link.**
+  A clause stating the same thing in another document carries its own row with a `duplicates` list,
+  and both resolve to the same owner. **This is the only form in which `SC-AMD-001` is provable** —
+  a collapsed register cannot show what it collapsed, so a clause nobody read is indistinguishable
+  from one that is not there. Sizes F-27.1 at roughly 340 rows.
+- Q: Are the twelve Native §27 ADRs created now as records, or when each decision is taken?
+  (`D-35`) → **A: all twelve now**, each either decided or explicitly `open` naming what it awaits.
+  **Seven can be marked decided immediately** from the 2026-08-13 session. Native §26 forbids
+  answering by assumption, and an ADR that exists as an open question is what stops someone
+  assuming the answer later.
+- Q: Does self-hosted remain a supported deployment after `D-31`? (`D-40`) → **A: out of scope now,
+  but keep the seams abstracted.** Do not build, test, or claim self-hosted; keep the credential
+  broker and egress enforcement behind ports so it stays reachable. The ports cost almost nothing —
+  EPIC-028 is building them anyway — and deciding "SaaS only, forever" is what lets real coupling in.
+- Q: Which of the fourteen conformance checks block CI? → **A: two block, twelve report**, matching
+  EPIC-018's precedent. The two that block are `G-27-09` (zero product code changed) and `G-27-14`
+  (no epic's posture changed without a recorded reason) — exactly the two constraints the project
+  owner named as the scope-creep concern. A reporting-only check on either leaves the boundary
+  defended by good intentions.
+
+### Still open after this session
+
+Seven decisions remain, all in [`srs-alignment.md`](../srs-alignment.md) Part 8, and **none blocks
+`/speckit-tasks`**: `D-23` (18-module re-cut), `D-24` (`pgvector`), `D-30` (AI Gateway native vs
+integrated), `D-34` (the `PMI-DOC-004` hold), `D-36` (`ADR-0002` extended vs superseded — effectively
+settled by `D-28`), `D-37` (Human/AI register in `_shared/`), `D-39` (branch-vs-epic check for
+EPIC-018). Each carries a recommendation.
 
 ## SRS Traceability *(mandatory — Constitution II)*
 
