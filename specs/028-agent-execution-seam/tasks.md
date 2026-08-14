@@ -5,7 +5,7 @@ description: "Task list for EPIC-028 — Agent & Execution Seam"
 
 # Tasks: Agent & Execution Seam
 
-**Epic**: `EPIC-028` | **Module**: M-08 (execution half) | **Tasks**: 64
+**Epic**: `EPIC-028` | **Module**: M-08 (execution half) | **Tasks**: 66
 
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Contracts**: [contracts/](./contracts/)
 
@@ -21,9 +21,15 @@ recorded in [plan.md](./plan.md) Complexity Tracking rather than hidden. `T594` 
 paired unit-test task, written to fail first. Three tasks produce configuration or documents and
 carry an **executable conformance check** instead (`T537`, `T591`, `T578`).
 
-**Task IDs**: new IDs run `T537`–`T596` (corpus max was `T536`). **`T447`, `T448` and `T449` are
-routed from EPIC-003, not reissued** — the `D-19` precedent. EPIC-003 stays closed; `T595` annotates
-its rows. `T447` splits into `T447a`/`T447b` per the `T142a` suffix convention.
+**Task IDs**: new IDs run `T537`–`T596`, plus `T549a` and `T576a` added by the analyse pass of
+2026-08-14 (corpus max was `T536`). **`T447`, `T448` and `T449` are routed from EPIC-003, not
+reissued** — the `D-19` precedent. EPIC-003 stays closed; `T595` annotates its rows. `T447` splits
+into `T447a`/`T447b` per the `T142a` suffix convention.
+
+**Amended 2026-08-14** by `/speckit-analyze`, which found one Constitution V violation and four
+unenforced claims. Fixes are marked inline: `T576a` (the runner had no test), `T549a`
+(`SC-AGT-005` had no CI enforcement), the layering rule in `T560`, and assertion top-ups in `T537`,
+`T545`, `T550`, `T555`, `T570`, `T580`.
 
 **Before starting**: sync from GitHub, confirm no other Claude session is on this checkout.
 
@@ -39,14 +45,14 @@ sibling projects have tests"* — two projects collected nothing, the run stayed
 were marked complete with **no test file anywhere in the repository**. Adding three more projects
 without a guard repeats it three times over.
 
-- [ ] T537 Write a conformance check asserting every project named in the `test:unit` script collects at least one test file, failing with the project name, in `tests/governance/vitest-projects.spec.ts`
+- [ ] T537 Write a conformance check asserting (a) every project named in the `test:unit` script collects at least one test file, failing with the project name, and (b) every new package declares the expected name and a `workspace:*` dependency on its contract — in `tests/governance/vitest-projects.spec.ts`
 - [ ] T538 Add `agent-adapters/*` and `execution-providers/*` to the `packages` list in `pnpm-workspace.yaml` (conformance check: T537)
 - [ ] T539 Register the `agent-contract`, `agent-adapters` and `execution-providers` projects in `vitest.config.ts` and add them to the `test:unit` script in `package.json` (conformance check: T537)
 - [ ] T540 [P] Write failing tests asserting the ESLint dependency-boundary rule forbids `backend/**` importing `agent-adapters/*` or `execution-providers/*` in `tests/governance/eslint-boundaries.spec.ts`
 - [ ] T541 Extend the dependency-boundary rule in `eslint.config.js` with the two new forbidden edges (test: T540)
-- [ ] T542 [P] Scaffold `packages/execution-contract` — `package.json` (name `@pmi/execution-contract`), `tsconfig.json`, `src/index.ts`
-- [ ] T543 [P] Scaffold `packages/agent-contract` — `package.json` (name `@pmi/agent-contract`), `tsconfig.json`, `src/index.ts`
-- [ ] T544 [P] Scaffold `agent-adapters/fixture`, `agent-adapters/claude` and `execution-providers/docker` with `package.json`, `tsconfig.json` and a `workspace:*` dependency on their contract
+- [ ] T542 [P] Scaffold `packages/execution-contract` — `package.json` (name `@pmi/execution-contract`), `tsconfig.json`, `src/index.ts` (conformance check: T537)
+- [ ] T543 [P] Scaffold `packages/agent-contract` — `package.json` (name `@pmi/agent-contract`), `tsconfig.json`, `src/index.ts` (conformance check: T537)
+- [ ] T544 [P] Scaffold `agent-adapters/fixture`, `agent-adapters/claude` and `execution-providers/docker` with `package.json`, `tsconfig.json` and a `workspace:*` dependency on their contract (conformance check: T537)
 
 **Checkpoint**: `pnpm -r typecheck` passes, `pnpm test:unit` names eight projects, and `T537` fails loudly if any collects nothing.
 
@@ -63,12 +69,23 @@ two more registries exist.
 an `ExecutionSession`; the environment knows nothing about agents. Building it the other way round
 would make the execution layer depend on the AI layer — the coupling this epic exists to remove.
 
-- [ ] T545 [P] Write failing unit tests for `ExecutionResult` narrowing, descriptor validation, and the `WorkspaceBinding` union in `packages/execution-contract/tests/unit/contract.spec.ts`
+- [ ] T545 [P] Write failing unit tests for `ExecutionResult` narrowing, descriptor validation, and the `WorkspaceBinding` union — **including type-level assertions (`@ts-expect-error` / `expectTypeOf`) that a `persistent` binding without a `branch` does not compile (`FR-AGT-008`)** — in `packages/execution-contract/tests/unit/contract.spec.ts`
+
+  > The compile-time claim is the mechanism, not a nicety: [data-model.md](./data-model.md) argues the
+  > union is what makes Native §5's *"no sandbox state may implicitly become authoritative project
+  > state"* structural rather than conventional. An untested type claim is a comment.
 - [ ] T546 Define `ProjectExecutionEnvironment`, `ExecutionEnvironmentDescriptor`, `ExecutionRequest`, `ExecutionSession`, `ExecResult`, `ResourceLimits` and the failure taxonomy (closed enum, no `unknown` member) in `packages/execution-contract/src/index.ts` (unit test: T545)
 - [ ] T547 Define the `WorkspaceBinding` discriminated union, `EgressProfile` and `ScopedCredentialRef` in `packages/execution-contract/src/index.ts` (unit test: T545)
 - [ ] T548 [P] Write failing unit tests asserting the frozen `generation` profile matches `ADR-0002` exactly — AI provider endpoint only — in `packages/execution-contract/tests/unit/generation-profile.spec.ts`
 - [ ] T549 Define `GENERATION_EGRESS_PROFILE` as a frozen constant in `packages/execution-contract/src/profiles.ts` (unit test: T548)
-- [ ] T550 [P] Write failing unit tests for `AgentResult` narrowing and `AGENT_FAILURE_REASONS` completeness in `packages/agent-contract/tests/unit/contract.spec.ts`
+- [ ] T549a Write a conformance check asserting `engine-adapters/speckit/tests/unit/sandbox-config.spec.ts` and `engine-adapters/speckit/docker/sandbox.json` are **unchanged from `main`** — content hash comparison — in `tests/governance/generation-egress-frozen.spec.ts`
+
+  > **`SC-AGT-005` had no enforcement that could fail in CI** until the analyse pass of 2026-08-14 —
+  > only a `git diff` inside `T591`'s quickstart run. The epic's own checklist calls it *"the most
+  > important criterion and the easiest to skip"*, and it is the one that proves which half of a
+  > security boundary this epic did **not** touch. A modified test would pass just as green and mean
+  > nothing; a hash comparison is the only form of that assertion that works.
+- [ ] T550 [P] Write failing unit tests for `AgentResult` narrowing, `AGENT_FAILURE_REASONS` completeness (closed enum, no `unknown` member), and **`AgentDescriptor` carrying every field Native §7 names (`FR-AGT-002`)** in `packages/agent-contract/tests/unit/contract.spec.ts`
 - [ ] T551 Define `AgentGateway`, `AgentDescriptor`, `AgentInvocation`, `AgentContext`, `AgentExecutionRecord` and `AGENT_FAILURE_REASONS` in `packages/agent-contract/src/index.ts` (unit test: T550)
 - [ ] T552 [P] Write failing unit tests asserting `assertAgentCapabilities` refuses and names **every** missing capability in `packages/agent-contract/tests/unit/capabilities.spec.ts`
 - [ ] T553 Implement `assertAgentCapabilities` and `MissingAgentCapabilityError` in `packages/agent-contract/src/index.ts` (unit test: T552)
@@ -94,12 +111,18 @@ engines, applied to the axis the amendment cares about.
 
 ### Tests for User Story 1 (MANDATORY — Constitution V) ⚠️
 
-- [ ] T555 [P] [US1] Write failing unit tests for `AgentRegistry` register / resolve / list and capability refusal in `worker/tests/unit/agent-registry.spec.ts`
+- [ ] T555 [P] [US1] Write failing unit tests for `AgentRegistry` register / resolve / list, capability refusal, **and refusal of a second adapter claiming an already-registered provider identifier** (spec Edge Cases) in `worker/tests/unit/agent-registry.spec.ts`
 - [ ] T556 [P] [US1] Write the failing agent conformance suite — already-aborted signal, hung step, failure misclassification, capability refusal — in `agent-adapters/fixture/tests/conformance.spec.ts`
 - [ ] T557 [P] [US1] Write failing unit tests for `ClaudeAgent` descriptor, invocation and failure mapping in `agent-adapters/claude/tests/unit/claude.agent.spec.ts`
 - [ ] T558 [P] [US1] Write failing unit tests asserting `SpecKitEngine` accepts an injected agent and names no provider in `engine-adapters/speckit/tests/unit/agent-injection.spec.ts`
 - [ ] T559 [P] [US1] Write failing unit tests asserting no prompt and no model output reaches operational logs (PC-3) in `engine-adapters/speckit/tests/unit/log-exclusion.spec.ts`
-- [ ] T560 [P] [US1] Write the failing architecture test — no provider identifier under `backend/src` or in any engine adapter, covering imports, cross-directory imports, **string identifiers** and dynamic imports — in `backend/tests/architecture/agent-independence.spec.ts`
+- [ ] T560 [P] [US1] Write the failing architecture test — no provider identifier under `backend/src` or in any engine adapter, covering imports, cross-directory imports, **string identifiers** and dynamic imports; **plus the layering rule: `packages/execution-contract` must not import `@pmi/agent-contract`** — in `backend/tests/architecture/agent-independence.spec.ts`
+
+  > The layering assertion was added by the analyse pass of 2026-08-14. [plan.md](./plan.md)'s build
+  > order rests on it — *"the agent contract references `ExecutionSession`, never the other way round…
+  > getting this backwards would make the execution layer depend on the AI layer"* — and nothing
+  > enforced it. A claim the build order depends on should fail a build, which is `ADR-0001`'s whole
+  > argument applied to a third seam.
 - [ ] T561 [P] [US1] Write a failing integration test running one agent-agnostic caller against both adapters in `backend/tests/integration/agent-swap.spec.ts`
 
   > The string-identifier check in `T560` is the one that matters. Today's violation is `'claude'` as
@@ -133,7 +156,7 @@ end. Everything else in this phase is independently testable against a mocked da
 
 ### Tests for User Story 2 (MANDATORY — Constitution V) ⚠️
 
-- [ ] T570 [P] [US2] Write failing unit tests for the Docker provider against a **mocked daemon** — request construction, every `ADR-0002` flag present (non-root, read-only rootfs, cpu/memory/pid caps, network mode), failure mapping, cancellation, teardown idempotence — in `execution-providers/docker/tests/unit/docker.provider.spec.ts`
+- [ ] T570 [P] [US2] Write failing unit tests for the Docker provider against a **mocked daemon** — request construction, every `ADR-0002` flag present (non-root, read-only rootfs, cpu/memory/pid caps, network mode), failure mapping, cancellation, teardown idempotence, **and that it registers as the Phase 1 default (`FR-AGT-007`)** — in `execution-providers/docker/tests/unit/docker.provider.spec.ts`
 - [ ] T571 [P] [US2] Write failing unit tests asserting the provider refuses a `persistent` binding, naming the reason, in `execution-providers/docker/tests/unit/lifecycle-refusal.spec.ts`
 - [ ] T572 [P] [US2] Write a failing integration test asserting the default engine resolves to Spec Kit and the engine → agent → environment chain wires end to end in `backend/tests/integration/engine-default.spec.ts`
 
@@ -144,8 +167,14 @@ end. Everything else in this phase is independently testable against a mocked da
 - [ ] T574 [US2] Register the Docker provider at the worker composition root in `worker/src/execution-composition.ts` (unit test: T570)
 - [ ] T575 [US2] Replace `ContainerRuntime` with `ProjectExecutionEnvironment` in `SpecKitEngine` and **delete the local `ContainerRuntime` declaration** from `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
 - [ ] T448 [US2] Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts`, satisfying `FR-018` (integration test: T572) *(routed from EPIC-003)*
-- [ ] T576 [US2] Create the manual runner `scripts/v6-real-run.mjs` implementing quickstart `V6`, printing the image digest and every step outcome
-- [ ] T447b [US2] **MANUAL** — run `scripts/v6-real-run.mjs` on a machine with a Docker daemon; commit the transcript, including the image digest, to `specs/028-agent-execution-seam/v6-transcript.md` *(routed from EPIC-003)*
+- [ ] T576a [P] [US2] Write failing unit tests for the manual runner's step sequencing, image-digest extraction and transcript formatting — driven by a stubbed environment, no daemon required — in `scripts/tests/v6-real-run.spec.mjs`
+- [ ] T576 [US2] Create the manual runner `scripts/v6-real-run.mjs` implementing quickstart `V6`, printing the image digest and every step outcome (unit test: T576a)
+
+  > **Constitution V applies here.** `scripts/` is not on Constitution I's exempt list, so this is
+  > application code and V is NON-NEGOTIABLE. The runner's *logic* — ordering, digest extraction,
+  > transcript shape — is testable without a daemon; only `T447b`'s **execution** is not. Conflating
+  > the two is how an untested script ends up as the sole evidence for `SC-AGT-001`.
+- [ ] T447b [US2] **MANUAL** — run `scripts/v6-real-run.mjs` on a machine with a Docker daemon; commit the transcript, including the image digest, to `specs/028-agent-execution-seam/v6-transcript.md` (conformance check: T577) *(routed from EPIC-003)*
 
   > **RAID R-04 blocks container-in-container in CI**, so this cannot run there. It is split from
   > `T447a` deliberately: EPIC-003 shipped 65 passing tests and an engine that cannot start, and its
@@ -171,7 +200,7 @@ never by editing business logic.
 
 - [ ] T578 [P] [US3] Write failing unit tests asserting `*`, `0.0.0.0/0`, `::/0` and an empty destination list are each rejected, in `packages/execution-contract/tests/unit/egress-validation.spec.ts`
 - [ ] T579 [P] [US3] Write failing unit tests asserting a provider with `supportsNetworkPolicy: false` cannot accept any egress profile, in `packages/execution-contract/tests/unit/policy-capability.spec.ts`
-- [ ] T580 [P] [US3] Write failing unit tests asserting a `ScopedCredentialRef` without `expiresAt` is rejected and that `env` contains no credential value, in `packages/execution-contract/tests/unit/credential-validation.spec.ts`
+- [ ] T580 [P] [US3] Write failing unit tests asserting a `ScopedCredentialRef` without `expiresAt` is rejected, that `env` contains no credential value, **and that an unresolvable credential ref fails the run before any container starts** (spec Edge Cases), in `packages/execution-contract/tests/unit/credential-validation.spec.ts`
 - [ ] T581 [P] [US3] Write the failing architecture rule — no component outside the worker composition root reaches a container runtime directly — appended to `backend/tests/architecture/agent-independence.spec.ts`
 
 ### Implementation for User Story 3
@@ -199,9 +228,15 @@ never by editing business logic.
   > `location` from a fixture finding turned `C11` red, so the suite is not vacuous."* A suite nobody
   > has broken on purpose is decoration.
 
-- [ ] T588 [P] Write `specs/028-agent-execution-seam/preserved-elements.md` recording the three Native §28 changes — `SpecificationEngine` contract (unchanged), Docker isolation, sandbox credential model — each with reason, affected requirement, migration impact, compatibility impact and alternative considered
+- [ ] T588 [P] Write `specs/028-agent-execution-seam/preserved-elements.md` recording the three Native §28 changes — `SpecificationEngine` contract (unchanged), Docker isolation, sandbox credential model — each with reason, affected requirement, migration impact, compatibility impact and alternative considered (conformance check: T589)
 - [ ] T589 [P] Write a conformance check asserting every `preserved-elements.md` row carries all five §28 fields non-empty, in `tests/governance/preserved-elements.spec.ts` (pairs with T588)
 - [ ] T590 [P] Mark the three new dependency rules as **enforced** in `specs/_shared/ai-native-architecture.md` §C.2
+
+  > **No conformance check, deliberately.** Constitution V covers document outputs, but **no
+  > `specs/_shared/*.md` in this corpus has a check** — EPIC-018's governance suite covers
+  > `governance/**` only. Adding one here for a single paragraph would create a standard that seven
+  > sibling documents fail. Recorded as a **corpus-wide gap** rather than fixed locally; it belongs
+  > in an EPIC-018 follow-up alongside `D-39`.
 - [ ] T591 Run quickstart `V0`–`V5`, `V7`, `V8` and record every result, distinguishing passes from unrun
 
 ---
