@@ -82,3 +82,31 @@ NOT part of this phase.*
 - [ ] T166 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/001-platform-foundation/closure.md`
 - [ ] T167 Triage `specs/001-platform-foundation/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/001-platform-foundation/closure.md`
 - [ ] T168 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/001-platform-foundation/closure.md`
+
+---
+
+## Phase 6: Convergence
+
+*Appended by `/speckit-converge` on 2026-08-14. No existing task modified. IDs continue from the
+**corpus** maximum (`T649`) — not this epic's, which is the mistake that produced conflict `C-27`
+(see [srs-alignment.md](../srs-alignment.md) Part 9).*
+
+**All four findings share one shape**: the logic is built, unit-tested and correct, and **nothing
+composes it into a running system**. This is the defect EPIC-003 `T462` named — *"fully built, fully
+tested, and unreachable"* — recurring across the whole of F-00.4 and F-00.5. The unit suites pass
+because the services take narrow ports (correct PC-1 design) and the tests supply them; no process
+does.
+
+- [ ] T650 [P] Write failing unit tests asserting `JobsModule` provides `JobsService`, `JobRunnerService` and the job state machine, and that resolving them from the Nest container succeeds, in `backend/tests/unit/jobs/jobs.module.spec.ts` per FR-024 (partial)
+- [ ] T651 Wire the job providers in `backend/src/modules/jobs/jobs.module.ts` using factory providers, keeping the services framework-free (PC-1), mirroring `engines.module.ts` per FR-024, FR-025, FR-027 (partial) — unit test: T650
+- [ ] T652 [P] Write failing unit tests asserting the worker constructs a BullMQ `Worker` bound to the generation queue and dispatches each job to `consumeGenerationJob`, against a stubbed queue, in `worker/tests/unit/worker-bootstrap.spec.ts` per FR-028 (partial)
+- [ ] T653 Create the BullMQ `Worker` in `worker/src/main.ts`, wiring it to `consumeGenerationJob` with the composed engine registry, cancellation signal and wall-clock limits per FR-028, T046 (partial) — unit test: T652
+- [ ] T654 [P] Write failing unit tests asserting `JobsService` enqueues onto a real queue port and that a duplicate submission joins the live job rather than enqueuing twice, in `backend/tests/unit/jobs/queue-port.spec.ts` per FR-028 (partial)
+- [ ] T655 Construct the BullMQ queue behind the existing narrow port and provide it to `JobsService` in `backend/src/modules/jobs/jobs.module.ts` per FR-028, T043 (partial) — unit test: T654
+- [ ] T656 [P] Write failing unit tests asserting the API bootstrap installs the structured logger and metrics, and that a request carries a correlation identifier end to end, in `backend/tests/unit/observability/bootstrap.spec.ts` per PP-010 (partial)
+- [ ] T657 Wire `logger.ts`, `correlation.ts` and `metrics.ts` into `backend/src/main.ts` and `worker/src/main.ts` per PP-010 (partial) — unit test: T656
+
+  > **`spec.md` claims PP-010 is "✅ Satisfied here for the whole platform".** At runtime nothing
+  > emits a log, a metric, or a correlation identifier, because all three modules are referenced only
+  > by their own tests. **`T168` must not sign the principle delta until `T657` lands** — that
+  > exit criterion asks whether the deltas still hold, and today this one does not.
