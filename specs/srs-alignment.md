@@ -847,6 +847,53 @@ renumbering.
 `TraceabilityLink` permits only the two Phase 1 edge types, and fails the build the moment EPIC-022's
 `T301` widens the enumeration. `T302` updates it.
 
+### D-19 ruling · EPIC-002 split into three delivery epics ✅ DECIDED 2026-08-07
+
+> **Decision**: EPIC-002's three capability areas are delivered by **three child epics**. EPIC-002
+> becomes a **parent design** carrying no tasks — the same role EPIC-017 plays for its family, and
+> `_shared/` plays for the platform.
+
+| Child epic | Module | Requirements | Tasks |
+|---|---|---|---|
+| **EPIC-023** Unattended Runs & Team Review | M-06 Workflow | FR-001–FR-020 | 43 |
+| **EPIC-024** Artifact Access Control | M-13 Security & Governance | FR-021–FR-028 | 21 |
+| **EPIC-025** External Storage Publishing | M-11 DevOps | FR-029–FR-040 | 37 |
+
+**Why**: the same argument as **D-15** and **D-18**. At 87 tasks across three capability areas that
+EPIC-002's own build order already described as mutually independent — "three developers could work in
+parallel once the epic unfreezes" — it was the shape EPIC-001 had before D-15 and EPIC-017 had before
+D-18. Constitution IV gates convergence per epic, and one 87-task gate is worse than three.
+
+**What did not change**: every requirement, success criterion, and the clarification history stay
+defined **once** in the parent. No requirement was renumbered. Task IDs were preserved and routed
+(`T340`→023, `T377`→024, `T391`→025); the count has since grown to 101 as later passes added
+coverage. `002/tasks.md` was deleted deliberately — recreating it would duplicate all 101.
+
+**Both SRS back-fill gates survived the split**, each landing in the epic that owes it: `T404`
+(unattended runs, FR-001–FR-020) in EPIC-023, and a new `T439` (third-party storage, FR-029–FR-040)
+in EPIC-025. Neither capability area has an SRS source, and both gate **approval**, not merely
+closure — the largest Constitution II debt in the programme.
+
+**Sequencing**: **EPIC-023 → EPIC-024 → EPIC-025**, which is the numbering as written.
+
+- **EPIC-024 depends on EPIC-023**: `T381` (run-start access snapshotting, FR-028, owned by 024)
+  writes the `access_snapshot` column on `Run`, and `Run` is defined by EPIC-023 `T343`.
+- **EPIC-025 depends on EPIC-024**: `T392` excludes artifacts the publisher cannot access (FR-033) —
+  without grants it silently becomes a no-op that still passes its test. Recorded in EPIC-025's
+  `Depends on` since the split.
+- **EPIC-023 depends on neither**: nothing across its 43 tasks references access or grants.
+
+*Corrected 2026-08-08. This ruling first stated that EPIC-024 gated both siblings and that neither
+recorded the dependency. Both halves were wrong: the 023 dependency runs the other way, and 025 had
+always recorded its own. The `Depends on` entry EPIC-024 was genuinely missing has been added.*
+
+⚠️ **G-02F.1 — the identifier collision extends to success criteria.** **C-01** was recorded as a
+*requirement* collision. The criteria collide too and nobody had written it down: the EPIC-002 family
+uses `SC-001`–`SC-014` and the platform uses `SC-001`–`SC-012`, so every identifier overlaps. Before
+the split this was contained in one spec; now three separate specs each cite bare `SC-00n`, and
+`SC-001` here means something different from the `SC-001` EPIC-010 owns. **Decision D-1 should be
+widened to cover success criteria.** Recorded rather than renumbered — renumbering is D-1's pass.
+
 ## Decisions required
 
 Nothing below can be resolved by reading the SRS; each needs an owner's decision.
@@ -870,6 +917,13 @@ Nothing below can be resolved by reading the SRS; each needs an owner's decision
 | ~~**D-16**~~ | ~~Does the enhancement model override PMI-DOC-000?~~ | — | ✅ **DECIDED 2026-08-04 — layered by artifact population.** PMI-DOC-000 governs repository documents; the enhancement model governs PMI Studio's product outputs. C-18 resolved; no existing specification rendered non-conformant. D-2 and D-4 scoped, not closed |
 | ~~**D-17**~~ | ~~One epic or two for the enhancement model?~~ | — | ✅ **DECIDED 2026-08-04 — two.** EPIC-017 keeps product capability (⏸ held); **EPIC-018 Repository Governance Process** takes the process half (▶ proceeding). Same seam as EPIC-003/EPIC-013 |
 | ~~**D-18**~~ | ~~One epic or four for the enhancement model's product half?~~ | — | ✅ **DECIDED 2026-08-04 — four.** EPIC-017 becomes a parent design with no tasks; EPIC-019/020/021/022 deliver, 87 tasks (T225–T311). EPIC-019 must land first. EPIC-022 kept as a fold candidate into EPIC-011 |
+| ~~**D-19**~~ | ~~One epic or three for EPIC-002?~~ | — | ✅ **DECIDED 2026-08-07 — three.** EPIC-002 becomes a parent design with no tasks; EPIC-023/024/025 deliver, 101 tasks. Order is EPIC-023 → 024 → 025, as numbered. Surfaced **G-02F.1**: the C-01 identifier collision extends to success criteria |
+
+> **`D-20` to `D-41` are in [Part 8](#part-8--the-ai-native-amendment-c-19-to-c-26-d-20-to-d-41-2026-08-13)**,
+> not in the table above. They arrived as one batch from the AI-native amendment and are recorded
+> together with the conflicts that raised them; splitting them across two tables would make the
+> largest of them — `D-31`, which commits the product to multi-tenant SaaS — findable only by
+> reading both. Twelve are decided, nine open, one subsumed.
 
 **Recommended order**: ~~D-3~~ ✅ done. Then **D-6 first among the rest** — it is a single ruling
 that resolves C-07 and C-09 at once and determines whether D-7 is even in scope. Then D-1 and D-2
@@ -900,3 +954,338 @@ code is far more expensive than across specs.
 - Both Epic specs' SRS Traceability tables updated to cite the new governing documents
 - No requirement was renumbered, no template amended, no constitution changed — all await decisions
   above
+
+## Part 8 — The AI-native amendment (C-19 to C-26, D-20 to D-41, 2026-08-13)
+
+Four documents arrived in `SRS/August112026/` on 2026-08-11/12/13 — a Plan Amendment, a Native
+Spec-Kit Execution Environment architecture, a recommended lifecycle, and a defect-management
+workflow. Together they restate what PMI Studio *is*: an AI-native engineering operating system that
+owns workflow, governance, context and evidence, and integrates commodity execution.
+
+Reconciled as **EPIC-027**, which is analysis-only and builds nothing. The design that follows from
+these decisions lives in [`_shared/ai-native-architecture.md`](_shared/ai-native-architecture.md);
+the decisions themselves live here, with `C-01`–`C-18` and `D-1`–`D-19`, because that is where this
+repository has always kept them.
+
+**The amendment is explicitly evolutionary.** Plan Amendment §Purpose: *"Do NOT redesign PMI Studio
+from scratch."* §19: *"This amendment is evolutionary, not a product reset."* Native §28: *"MUST NOT
+invalidate already implemented EPIC-001 functionality without explicit justification."* Constitution
+II makes those binding. The "start over" question was therefore answered by the source, not by
+preference.
+
+### Two premises verified rather than accepted
+
+**Finding A — three of the "existing" Rooms were never specified.** The amendment says *"maintain
+and enhance the existing Change Room"* and *"the existing Defect Room"*. Searching every epic
+specification except EPIC-027's own, on 2026-08-13:
+
+| Concept | Occurrences in `specs/*/spec.md` |
+|---|---|
+| Change Room · Defect Room · Requirement Room · Decision Room | **0 each** |
+| Agent Gateway · Integration Hub · Context Engine · Evidence Package | **0 each** |
+| "change request" (any casing) | **0** |
+
+The word *defect* appears in all 26 specs, but always as the Constitution VI obligation that
+`specs/<epic>/defects/` hold no open records — a repository process convention, not a product Defect
+Room. **These are builds, not enhancements**, and the difference is a programme-sized estimate.
+Settled by `D-32`.
+
+**Finding B — EPIC-007 is a name collision.** `specs/007-requirement-intelligence/spec.md` states
+its own scope plainly: *"AI-assisted analysis (REG) is Phase 2 and out of scope."* It owns six CRUD
+requirements. The amendment's Requirement Intelligence Engine — ambiguity detection, options,
+trade-offs, MoSCoW/WSJF, a twelve-state machine, baselines and a Decision Room — is a different and
+far larger capability that happens to share a name. Settled by `D-33`.
+
+### New conflicts
+
+| # | Conflict | Severity | Resolved by |
+|---|---|---|---|
+| **C-19** | Engine independence is enforced by a build-time test; **agent independence is not**. `engine-adapters/speckit` names `claude` in four places and takes one `aiProviderToken`, so swapping the AI provider and swapping the specification engine are the same edit — the merge Native §3 forbids | 🔴 CRITICAL | ✅ `D-20` |
+| **C-20** | `T447` — the next task in the programme — was about to hard-code Docker as the execution substrate, which Native §4 forbids | 🔴 CRITICAL | ✅ `D-21` |
+| **C-21** | Persistent project state has no home; the current design destroys the workspace by design and never commits it | 🟠 HIGH | ✅ `D-22` |
+| **C-22** | The egress allow-list (*"AI provider endpoint only"*, `ADR-0002`, asserted by test) makes implementation agents impossible. The amendment's only direct conflict with a **built and tested** control | 🟠 HIGH | ✅ `D-28` |
+| **C-23** | Two sources of truth: the same specification would exist as a PostgreSQL row and as tracked markdown. Native §6 names the hazard; §22 proposes a boundary and leaves the rules undefined | 🔴 CRITICAL | ✅ `D-29` |
+| **C-24** | Native §20's `waiting_for_approval` state cannot live in a BullMQ job without destroying timeout semantics and occupying worker slots indefinitely | 🟠 HIGH | ✅ `D-25` |
+| **C-25** | MCP was deferred to M-09 Phase 3 as a *marketplace*; the amendment makes it the agent's least-privilege access path to governed context | 🟠 HIGH | ✅ `D-26` |
+| **C-26** | §1's target market (*"organizations without dedicated internal developer-platform teams"*) implies SaaS hosting, which the corpus deliberately never decided | 🟠 HIGH | ✅ `D-31` |
+
+**`C-07` is narrowed, not reversed**, by `D-26`. **`ADR-0002` is extended, not superseded**, by
+`D-28` and `D-36`. **`PC-1` is vindicated**: MCP is a second transport over services that are already
+transport-independent and tested as such, which is the condition on which `C-07`'s deferral was
+accepted in the first place.
+### The consolidated register
+
+Twenty-two raised, grouped by what they gate. `D-20` onward continues the numbering of the
+*Decisions required* table above; `C-19` onward continues `C-01`–`C-18`. **None can be resolved by
+reading the SRS.**
+
+**Status after the planning session of 2026-08-13: 12 decided, 9 open, 1 subsumed.** Every decided
+row is struck through with its outcome; consequences are recorded in the section that follows the
+register. Two decisions were *created* by other decisions — `D-40` and `D-41` — which is why the
+count grew.
+
+**Verified 2026-08-13**: the premise search behind `D-32` was re-run for this plan, excluding
+EPIC-027's own spec. All nine terms — Change Room, Defect Room, Requirement Room, Decision Room,
+Agent Gateway, Integration Hub, Context Engine, Evidence Package, change request — return **zero**
+across the other 26 epic specifications. Finding A holds.
+
+### Gate 1 — blocks the next task in the programme
+
+| # | Decision | Why now | Outcome |
+|---|---|---|---|
+| ~~**D-21**~~ | ~~Is `T447` a Docker runtime, or a `ProjectExecutionEnvironment` with a Docker provider?~~ | `T447` is the next recommended task; deciding after it lands means refactoring the one component that cannot be tested without Docker | ✅ **DECIDED 2026-08-13 — PEE with a Docker provider.** `ContainerRuntime` widens per [contracts/project-execution-environment.md](027-ai-native-amendment/contracts/project-execution-environment.md); Docker registers at the worker composition root. Docker remains the Phase 1 provider per Native §4 |
+| ~~**D-20**~~ | ~~Introduce `packages/agent-contract` + `agent-independence.spec.ts` now, or defer?~~ | The violation exists today and is invisible; the adapter is one file with 65 tests and no dependants | ✅ **DECIDED 2026-08-13 — now.** Contract, architecture test and fixture agent land together; `SpecKitEngine` takes an injected agent instead of naming `claude`. `C-19` closes on delivery |
+| ~~**D-28**~~ | ~~Per-purpose `EgressPolicy` profiles, or one allow-list?~~ | Implementation agents cannot run a build under the current policy; `ADR-0002` is built and tested | ✅ **DECIDED 2026-08-13 — named profiles, proxy-enforced.** `generation` unchanged including its test; `implementation` explicitly enumerated. `ADR-0002` extended, not superseded (`D-36` follows) |
+
+### Gate 2 — architecture, decidable now
+
+| # | Decision | Recommendation |
+|---|---|---|
+| ~~**D-22**~~ | ~~Where does persistent project state live?~~ | ✅ **DECIDED 2026-08-13 — the git remote is the durable substrate.** Volumes are cache only and always reconstructible |
+| ~~**D-25**~~ | ~~Do human-approval states live in BullMQ or a database state machine?~~ | ✅ **DECIDED 2026-08-13 — database machine; the queue serves compute segments.** A run suspends by *completing* its queue job. Temporal recorded as the rejected alternative with its trigger |
+| ~~**D-27**~~ | ~~Credential model for agents that push code~~ | ✅ **DECIDED 2026-08-13 — per-run minted, purpose-scoped, short-lived.** No long-lived secret ever enters a sandbox; broker abstracted. BYOK was not bundled here and was taken separately as `D-41` |
+| ~~**D-29**~~ | ~~Source-of-truth rule between PostgreSQL and repository markdown~~ | ✅ **DECIDED 2026-08-13 — Postgres authoritative; markdown is a one-way projection.** An agent editing markdown produces a proposal, never a fact |
+| **D-30** | Is the AI Gateway native or integrated? | Split: agent layer native, model routing integrable |
+| **D-24** | Adopt `pgvector` for similarity? | Yes, when the first similarity requirement is planned — not before |
+
+### Gate 3 — programme shape
+
+| # | Decision | Recommendation |
+|---|---|---|
+| ~~**D-31**~~ | ~~Is PMI Studio SaaS-hosted, self-hosted, or both?~~ | ✅ **DECIDED 2026-08-13 — multi-tenant SaaS first.** Consequences below |
+| ~~**D-32**~~ | ~~Are the three Rooms new capability or enhancements? (Finding A)~~ | ✅ **DECIDED 2026-08-13 — new capability.** Sized as builds. `D-33` (EPIC-007) deliberately left separate and still open |
+| ~~**D-33**~~ | ~~Does the Requirement Intelligence Engine belong to EPIC-007, or a new epic? (Finding B)~~ | ✅ **DECIDED 2026-08-13 — new epic.** EPIC-007 keeps `EPIC-007`, its name, and its current register-only scope. No renumbering, no mid-programme re-scope. The collision is documented so it cannot be rediscovered as a surprise |
+| ~~**D-26**~~ | ~~Does MCP move from M-09 Phase 3 to core agent enablement?~~ | ✅ **DECIDED 2026-08-13 — split.** The agent-facing least-privilege context surface joins core agent enablement; discovery, third-party servers and the marketplace stay at M-09 Phase 3. `C-25` closes; `C-07`'s deferral is *narrowed*, not reversed |
+| **D-23** | Does the amendment trigger the deferred 18-module re-cut (`D-13`)? | No. Record the dependency; re-cut once, folding in `D-1` and `D-9` |
+| **D-34** | Does the amendment release any part of the `PMI-DOC-004` hold? | **No.** The amendment is architecture and positioning, not a BRS |
+| **D-40** | Does **self-hosted** remain a supported deployment, or is it out of scope for now? *(created by `D-31`)* | Out of scope for now, but keep the credential broker and egress enforcement abstracted so it stays reachable. Deciding "SaaS only, forever" would let real coupling in |
+
+### Gate 4 — governance and record-keeping
+
+| # | Decision | Recommendation |
+|---|---|---|
+| **D-35** | Are the twelve Native §27 ADRs created now as open records, or when each is decided? | Now, as open records naming what each awaits — §26 forbids answering by assumption |
+| **D-36** | Does `ADR-0002` get extended or superseded by the egress change? | Extended. Native §27: *"Preserve existing ADRs unless explicitly superseded with documented reasoning"* |
+| **D-37** | Does the Human/AI responsibility model become a platform-wide register in `_shared/`? | Yes — it is cross-cutting and belongs where the principle register already lives |
+| ~~**D-38**~~ | ~~Is RAID **R-02** (AI cost) re-scored now?~~ | ✅ **Subsumed by `D-41`.** Re-scored, and mitigated structurally rather than by caps alone |
+| ~~**D-41**~~ | ~~SaaS + no BYOK leaves model spend unbounded on PMI Studio's account~~ | ✅ **DECIDED 2026-08-13 — BYOK becomes a near-term requirement.** Tenant-owned AI provider keys; repository access stays per-run minted (`D-27`). Removes the exposure structurally |
+| **D-39** | Should EPIC-018 gain a check comparing branch name to working epic? | Yes — the Constitution VIII lapse has now occurred three times and `G-08` structurally cannot catch it |
+
+---
+
+### Decisions taken 2026-08-13, and what they change
+
+Four decided in the planning session. Each is recorded here with its consequences, because three of
+them change other open decisions rather than merely closing themselves.
+
+### D-21 · `T447` becomes a `ProjectExecutionEnvironment` with a Docker provider ✅
+
+**Closes `C-20`.** The port widens per
+[contracts/project-execution-environment.md](027-ai-native-amendment/contracts/project-execution-environment.md); Docker
+registers at the worker composition root exactly as engine adapters already do. Docker remains the
+Phase 1 provider, which is what Native §4 asks for.
+
+**Consequences**:
+- `T447`'s scope grows by roughly one task. It is no longer "write a Docker driver" but "widen the
+  port, then write a Docker provider behind it".
+- The new dependency rule — *no component reaches a container runtime directly* — becomes assertable,
+  and belongs in the same architecture test as `D-20`'s.
+- A `PreservedElementChange` row is now **required** for "Docker isolation" (`FR-AMD-015`), carrying
+  all five §28 fields. It is a widening, not a weakening, and the row must say so.
+- `D-22` (where persistent state lives) is now **downstream of a committed port** rather than an open
+  architectural direction, which narrows it usefully.
+
+### D-20 · The agent contract lands now ✅
+
+**Closes `C-19`.** `packages/agent-contract`, `agent-adapters/fixture`, an injected agent in
+`SpecKitEngine`, and `backend/tests/architecture/agent-independence.spec.ts`.
+
+**Consequences**:
+- `--integration claude` becomes `--integration <agent.specKitIntegrationName>`; the four hardcoded
+  `'claude'` strings leave the engine adapter.
+- `aiProviderToken` stops being a single opaque secret and becomes a credential resolved per agent —
+  which makes `D-27` more urgent, not less.
+- **`R-AI-001`/`R-AI-002`/`R-AI-005` still gate the real Claude and Cursor adapters.** The contract
+  is provider-neutral by construction and does not wait on them; the adapters do. This is the split
+  the second option in the question offered, and the recommendation absorbs it: land the boundary,
+  defer the vendor work.
+- The conformance suite must carry the already-aborted-signal and hung-step cases from day one
+  (`R-AI-012`) — both are defects this programme has already shipped once.
+
+### D-31 · Multi-tenant SaaS first 🔴 the largest change in this session
+
+**Closes `C-26`**, and it is the decision with the widest blast radius. Recorded consequences:
+
+| Area | What changes |
+|---|---|
+| **Credentials (`D-27`)** | Escalates from important to **blocking**. In SaaS, PMI Studio holds customer AI provider credentials and mints repository tokens on their behalf. "Secrets are an environment concern" is now definitively dead. BYOK (Native §8) moves from nice-to-have to a market requirement |
+| **Egress (`D-28`)** | Becomes a **tenant-isolation control**, not just a sandbox hygiene control. A shared sandbox host means one tenant's agent must not reach another tenant's anything. Strengthens the case for named profiles and for proxy-based enforcement |
+| **Tenancy** | ✅ **Already correct.** `workspace_id` on every row from the first migration, and EPIC-019 F-17.1 already adds a tenancy scope above workspace. The 2026-08-02 decision to be "multi-tenant-ready on a single-user surface" is vindicated — this is the decision it was hedging against |
+| **Cost (`D-38`)** | Escalates sharply. In SaaS **you** pay for agent execution until per-tenant attribution exists. PP-017's optimisation half is deferred to M-07; the containment half (per-job caps) is now the only thing between the platform and an unbounded bill. **RAID R-02 must be re-scored, and this is the third epic to say so** |
+| **Execution substrate (`D-21`)** | Unchanged for Phase 1, but the second provider is now near-certainly Kubernetes rather than a developer's Docker host. The port decision looks better in hindsight than it did an hour ago |
+| **`ADR-0002`** | Its threat model widens from "the agent is untrusted" to "the agent is untrusted **and** the neighbouring tenant is untrusted". Extension, not supersession — but the reasoning changes |
+| **Positioning** | §1 and §15 are now internally consistent with the architecture. An organisation without a platform team can use the product without operating it, which was the promise |
+
+**New open question this creates**: does self-hosted remain a supported deployment at all, or is it
+explicitly out of scope for now? Recorded as **`D-40`** — the answer changes how much of the
+credential and egress work must be abstracted versus simply built for one environment.
+
+### D-32 · The three Rooms are new capability, not enhancements ✅
+
+**Resolves the amendment's false premise.** They are sized as builds. The evidence is recorded in
+`premises.md` and re-verified for this plan: zero occurrences across all 26 other epic specs.
+
+**Consequences**:
+- The Rooms' epics are new epics, and they are **held** behind `PMI-DOC-004` — which is right, since
+  the BRS is precisely the document that should settle requirement-approval behaviour.
+- **`D-33` is deliberately still open.** The combined option was offered and not taken, so EPIC-007's
+  fate is a separate decision rather than a side effect of this one. Recorded rather than assumed.
+- `FR-AMD-006` and `SC-AMD-005` are satisfied for these eight capabilities: the claim was verified
+  against the corpus, and the evidence — query, count, locations — is recorded rather than asserted.
+
+### D-29 · PostgreSQL authoritative; markdown is a one-way projection ✅
+
+**Closes `C-23`, the deepest design question in the amendment.**
+
+```text
+Postgres  ──regenerate──►  specs/*.md        Git owns implementation history.
+     ▲                          │            Markdown is never merged back directly.
+     │                          │ agent edits
+  governed                      ▼
+  transition   ◄──review──  proposal / diff
+```
+
+**Consequences**:
+- Native §22's ruling is adopted verbatim: agent workspace and AI conversation are **not
+  authoritative**, and generated output becomes authoritative only through a governed lifecycle
+  transition.
+- The `specs/` tree in a project execution environment is **read-mostly for agents**. An agent that
+  edits a specification produces a diff for review, not a change.
+- **Accepted cost, stated plainly**: the repository tree can visibly drift from the database between
+  regenerations. Engineers will occasionally read a stale spec in the repo. The alternative — git
+  authoritative for content — was rejected because approval state would then point at content the
+  governance store does not hold, and "what was approved" must be answerable from one place.
+- `R-AI-006` (Spec Kit's behaviour in persistent repositories) is now **narrower**: it no longer has
+  to settle authority, only concurrency and cancellation mechanics.
+- This decision makes `D-22` (where persistent state lives) largely a storage question rather than a
+  governance one.
+
+### D-27 · Per-run minted, purpose-scoped, short-lived credentials ✅
+
+**No long-lived secret ever enters a sandbox.** A broker mints a token per run, scoped to one
+repository and one branch, expiring with the run. The backing store — cloud KMS, Vault, or otherwise
+— stays an operational choice behind an abstraction, consistent with PP-015.
+
+**Consequences**:
+- `aiProviderToken` as a single opaque string in `SpecKitAdapterOptions` is superseded by
+  `ScopedCredentialRef[]` on the execution request. This is a `PreservedElementChange` candidate and
+  needs its five §28 fields.
+- **BYOK was deliberately not bundled into this decision**, so that repository delegation and model-
+  spend ownership were decided on their own merits. It was raised immediately as **`D-41`** and
+  adopted there. The two credential models coexist: delegation for repositories, ownership for spend.
+- `R-AI-011` (secure git credential delegation) is the research item this decision depends on and it
+  is **uninvestigated**. The decision names the model; the mechanism still has to be verified against
+  what GitHub, GitLab and Bitbucket actually support.
+
+### D-28 · Named egress profiles, proxy-enforced ✅
+
+`generation` keeps today's policy **and today's test, unchanged**. `implementation` is a new,
+explicitly enumerated profile. Enforcement is an auditing proxy, so the policy is auditable rather
+than merely configured — which matters more under `D-31` because the sandbox host is now shared
+between tenants.
+
+**Consequences**:
+- `ADR-0002` is **extended** with a recorded rationale, never superseded (`D-36` now has an obvious
+  answer).
+- A proxy is a new operational component. That is a real cost of this choice and it lands on the
+  SaaS platform, not on a customer.
+- The concrete destination list stays open (`R-AI-009`) — registry hostnames vary by ecosystem and
+  by mirror, and guessing them produces an allow-list that fails in production.
+
+### D-41 · BYOK becomes a near-term requirement ✅
+
+**Closes the exposure `D-31` created.** Tenant-owned AI provider keys mean model spend lands on the
+tenant's account. Repository access stays per-run minted (`D-27`); the two credential models coexist
+because they solve different problems — delegation for repositories, ownership for model spend.
+
+**Consequences**:
+- Native §8's *"organization-managed credentials, BYOK, provider API credentials, cloud-provider-
+  hosted models, enterprise AI gateways"* moves from an architectural aspiration to a near-term
+  requirement.
+- **RAID `R-02` is re-scored down**, not merely re-raised. Three epics have now flagged it; this is
+  the first mitigation that is structural rather than a cap.
+- `PP-017`'s optimisation half stays deferred to M-07, and that deferral is now *safe* — the platform
+  is no longer paying for the optimisation it has not built.
+- **Onboarding friction is the accepted cost.** A tenant must supply a key before running an agent.
+  Whether a managed-key tier exists for self-serve is a product decision, not an architectural one.
+
+### D-25 · Database run state machine; the queue serves compute segments ✅
+
+**Closes `C-24`.**
+
+```text
+queued ─► provisioning ─► running ──┬──► validating ─► succeeded
+                                    │
+                                    └──► waiting_for_approval   [queue job ENDS]
+                                                │
+                                          approval event
+                                                │
+                                          new queue job ─► running
+```
+
+**Consequences**:
+- BullMQ is preserved exactly as Native §28 requires, and its timeout semantics stay meaningful —
+  wall-clock applies per compute segment, which is the only place it means anything.
+- Restart-safety and idempotency (both §20 requirements) come free: resumption reads persisted state
+  rather than in-memory continuation.
+- `GenerationJob` → `AgentRun` is now a **schema** change with defined transition ownership, which is
+  what §20 demands before adding states. It lands in EPIC-012 and stays held.
+- **Temporal is rejected with a recorded trigger**: revisit when more than one capability needs
+  multi-step compensation, or when run duration routinely exceeds a day. Under `D-31` it would also
+  be a service PMI Studio operates, which raises its cost.
+- Native §24's single correlation identifier must now span **multiple queue jobs** for one logical
+  run. That is a real complication and it is the price of the choice — recorded, not hidden.
+
+### D-26 · MCP splits — agent-facing core, marketplace stays at M-09 ✅
+
+**Closes `C-25`, and narrows `C-07` rather than reversing it.**
+
+| Moves to core agent enablement | Stays at M-09 Phase 3 |
+|---|---|
+| `getAllowedContext`, `getRequirement`, `getSpecification`, `getTask`, `getTraceability` | Third-party MCP server registration |
+| `submitImplementationResult`, `submitTestEvidence`, `reportDefect`, `proposeChangeRequest` | Discovery and catalogue |
+| The least-privilege authorization model (`R-AI-014`) | Marketplace surface and monetisation |
+
+**Consequences**:
+- **`PC-1` is vindicated.** MCP is a second transport over services that are already transport-
+  independent and tested as such. C-07's deferral was accepted *on that condition*, and the condition
+  held — this is the moment it paid.
+- `R-AI-014` (least-privilege MCP authorization) moves from a Phase 3 research item to a near-term
+  blocker, because the agent-facing surface cannot ship without it.
+- `ContextScope` and `AccessSnapshot` become near-term entities, and `AccessSnapshot` already exists
+  for EPIC-024. Reuse, not invention (`FR-AMD-003`).
+
+### D-22 · The git remote is the durable substrate ✅
+
+Volumes are cache only and always reconstructible. **No new storage tier to operate, back up, or
+isolate per tenant** — which matters more under `D-31` than it would have yesterday.
+
+**Consequences**:
+- Consistent with `D-29`: git owns implementation history; Postgres owns governance state; neither
+  gains a third competitor.
+- **Accepted cost**: every run pays clone or fetch time. Mitigated by caching, never by treating the
+  cache as authoritative — which is Native §5's invariant restated as an operational rule.
+- `PersistentProjectState` is therefore a *reference plus cache policy*, not a storage entity. That
+  is a materially smaller build than a managed workspace tier.
+- `R-AI-007` (preserving Spec Kit state between runs) narrows to a real question: **what part of
+  `.specify/` must be committed rather than cached?** Feature numbering and `feature.json` are the
+  obvious candidates, and they are already committed in this repository.
+
+### D-33 · EPIC-007 keeps its identifier and its scope ✅
+
+**Closes Finding B.** The amendment's Requirement Intelligence Engine becomes a new, held epic.
+EPIC-007 remains the requirement register — *"structured records with history and retirement, not a
+wall of prose"* — with AI analysis still explicitly out of scope.
+
+**Consequence**: the name collision is now documented rather than latent. Both scopes are stated in
+the register, which is what stops two teams believing one epic covers both.

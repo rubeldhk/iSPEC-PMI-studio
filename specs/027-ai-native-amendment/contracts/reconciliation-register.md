@@ -116,6 +116,16 @@ check most likely to catch a real mistake**, because regenerating is the step pe
     "compatibility_impact": "…", "alternative_considered": "…"   // all five REQUIRED — §28
   }],
 
+  "capability_areas": [{                 // exactly 17 — G-27-13
+    "area": "Agent Gateway + agent contract",
+    "verdict": "missing", "home": "EPIC-028", "posture": "proceeds"
+  }],
+
+  "epic_status_changes": [{              // normally EMPTY — FR-AMD-017
+    "epic": "EPIC-0nn", "from": "held", "to": "proceeding",
+    "reason": "…", "clause": "CLA-###"
+  }],
+
   "impact_report": { "sections": 25, "empty_with_reason": ["…"], "placeholders": 0 }
 }
 ```
@@ -141,6 +151,8 @@ named in [quickstart.md](../quickstart.md).
 | `G-27-10` | Every decision has ≥2 options, a consequence per option, and an owner | `SC-AMD-012` |
 | `G-27-11` | `generated_from` digests match the source files | `R-027-1` |
 | `G-27-12` | Every `preserved_element_changes` row has all five §28 fields non-empty | `FR-AMD-015` |
+| `G-27-13` | The capability-area table has exactly **17** rows; every row carries a verdict, a named home and a posture; the count matches the figure quoted in `spec.md` | `SC-AMD-011` |
+| `G-27-14` | No other epic's **Delivery posture** line is modified by this epic's diff unless a matching `epic_status_changes` row exists, carrying `epic`, `from`, `to`, `reason` and the `CLA-###` responsible | `SC-AMD-010` |
 
 **`G-27-09` is the one that enforces `FR-AMD-016`.** It is also the only check here that inspects the
 repository rather than the register, and it is the reason "analysis only" is a property of this epic
@@ -150,10 +162,12 @@ rather than a promise about it.
 
 Per Constitution V, whether a failing check blocks CI is a per-epic decision recorded in the spec.
 
-**Decision for EPIC-027**: all twelve **report** rather than block, matching EPIC-018's precedent
-where only the duplication check blocks — **except `G-27-09`, which blocks.** A reconciliation epic
-that has quietly modified product code is not a reporting matter; it is the boundary the whole epic
-rests on.
+**Decision for EPIC-027**: all fourteen **report** rather than block, matching EPIC-018's precedent
+where only the duplication check blocks — **except `G-27-09` and `G-27-14`, which block.** Both guard
+the same boundary: a reconciliation epic that has quietly modified product code, or quietly changed
+another epic's delivery posture, is not a reporting matter. `FR-AMD-016` and `FR-AMD-017` are the two
+constraints the project owner asked for by name, and a reporting-only check on either would leave
+the scope-creep concern defended by good intentions.
 
 ## What the register does not do
 

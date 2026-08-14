@@ -5,6 +5,12 @@
 The stack, why each piece is here, and what it would cost to change. Dependency register with
 licences and risk is in [dependencies.md](./dependencies.md).
 
+> **Re-examined against the AI-native amendment on 2026-08-13** —
+> [ai-native-architecture.md](./ai-native-architecture.md) §B.1. **No preserved element requires
+> replacement.** Three require extension and one (Docker) is demoted from *abstraction* to
+> *provider*. Two candidate additions are recommended and not yet adopted: `pgvector` (`D-24`) and a
+> model-routing layer beneath the agent gateway (`D-30`).
+
 > **Version policy**: major/LTS lines are fixed here. Exact patch versions are pinned at
 > implementation time via a lockfile and recorded in [dependencies.md](./dependencies.md). Nothing
 > below asserts a specific patch release.

@@ -6,6 +6,14 @@ Component architecture, runtime topology, and the flows that matter. Companion d
 [tech-stack.md](./tech-stack.md), [dependencies.md](./dependencies.md), [schema.sql](./schema.sql),
 [raid-log.md](./raid-log.md).
 
+> **This document describes the platform as built.** For the target the `SRS/August112026/` amendment
+> moves it toward — and the measured distance between the two — see
+> [ai-native-architecture.md](./ai-native-architecture.md). Four decisions taken 2026-08-13 change
+> statements below: `D-21` demotes Docker from abstraction to provider, `D-28` splits the egress
+> allow-list into named profiles, `D-22` adds persistent project state alongside the ephemeral
+> sandbox, and `D-31` commits the product to multi-tenant SaaS. Nothing here is wrong; it is
+> incomplete as of that date.
+
 ## Design drivers
 
 Four forces shape every decision below:

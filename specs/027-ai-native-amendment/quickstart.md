@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-027` | **Date**: 2026-08-13 | **Plan**: [plan.md](./plan.md)
 
-How to validate that this epic actually did what it claims. Twelve scenarios, all executable, all
+How to validate that this epic actually did what it claims. Fourteen scenarios, all executable, all
 able to fail.
 
 **The distinction this document exists to enforce**: a reconciliation is easy to *appear* to
@@ -194,6 +194,38 @@ compatibility impact, alternative considered.
 the `TraceabilityLink` edge-type expansion. If that table is empty, either nothing touches the
 sixteen preserved elements — which would contradict the plan — or the rows were not written.
 
+### V13 · The seventeen capability areas are enumerated and counted
+
+```bash
+pnpm test:governance -- -t "G-27-13"
+```
+
+**Expected**: exactly 17 rows, each with a verdict, a named home and a posture — and the count
+matching the figure quoted in `spec.md`.
+
+**Why the count is asserted rather than trusted**: `SC-AMD-011` is a countable criterion, and the
+spec said *fifteen* while the plan's table listed *seventeen* until the analyse pass of 2026-08-13
+caught it. A criterion whose denominator drifts is unfalsifiable. This check is the reason it cannot
+drift again.
+
+### V14 · No epic's posture changed without a recorded reason
+
+```bash
+pnpm test:governance -- -t "G-27-14"
+git diff --name-only main...HEAD -- 'specs/*/spec.md' | grep -v 027-ai-native
+```
+
+**Expected**: the `git diff` returns nothing, and the check passes with an empty
+`epic_status_changes` array. **This check blocks CI.**
+
+`FR-AMD-017` says work already in flight continues unless a named clause conflicts with it. The
+normal state of this table is therefore *empty*, and an empty table is the passing case — but the
+check is not vacuous, because it fails the moment another epic's **Delivery posture** line moves
+without a matching row naming the `CLA-###` responsible.
+
+**Prove it can fail**: change any held epic's posture line to `PROCEEDING` without adding a row. Must
+go red, and must block.
+
 ---
 
 ## The one thing these scenarios cannot check
@@ -216,8 +248,9 @@ Stated here rather than discovered later: the checks make the register *auditabl
 
 | Scenario | Blocked by |
 |---|---|
-| All twelve | `/speckit-tasks` has not run; the register files do not exist yet |
+| All fourteen | `/speckit-tasks` has not run; the register files do not exist yet |
 | V5's `premises.md` half | Same — though the `grep` half runs today and returns zero |
+| V14's `git diff` half | Runs today and returns nothing, which is the expected state |
 
 The `grep` commands in **V5 are runnable right now** and are the fastest way to sanity-check the
 single most consequential finding in this epic before committing to any of it.

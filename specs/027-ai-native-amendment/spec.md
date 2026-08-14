@@ -30,13 +30,13 @@ the SRS wins.** Three passages, all mandatory in tone:
 | Plan Amendment §19 | *"This amendment is evolutionary, not a product reset."* |
 | Native Spec-Kit §28 | *"This plan MUST NOT invalidate already implemented EPIC-001 functionality without explicit justification. Prefer additive evolution."* — then names sixteen existing elements to preserve, matching `ADR-0003` exactly |
 
-Starting over would also discard **461 tracked tasks across 26 epics**, five ADRs, a working engine
+Starting over would also discard **598 tracked tasks across 24 task lists**, five ADRs, a working engine
 contract with two adapters, and the entire `_shared/` design — to rebuild toward an architecture the
 amendment describes as an *extension* of that same design.
 
 **The recommendation is therefore: do not start over.** The scope-creep concern is real and is
 addressed differently — by this epic being **analysis-only** (`FR-AMD-016`), so that the amendment's
-fifteen new capability areas enter the plan as a sequenced, decided backlog rather than as an
+**seventeen** new capability areas enter the plan as a sequenced, decided backlog rather than as an
 undifferentiated expansion of current work.
 
 ## Purpose
@@ -435,9 +435,10 @@ recorded reason referencing an amendment clause.
   names its owning epic.
 - **SC-AMD-010**: Zero epics in flight change status without a recorded reason citing a specific
   amendment clause.
-- **SC-AMD-011**: A reader can determine, for any of the fifteen capability areas the amendment
+- **SC-AMD-011**: A reader can determine, for any of the **seventeen** capability areas the amendment
   introduces, whether it is new, an enhancement, or already covered — and which epic owns it — from a
-  single document.
+  single document. The seventeen are enumerated in the plan's capability-area table; the count is
+  asserted by `G-27-13`, so the criterion and the table cannot drift apart again.
 - **SC-AMD-012**: Every conflict is presented as a decision with options; zero conflicts are resolved
   silently in the reconciliation itself.
 
@@ -445,8 +446,8 @@ recorded reason referencing an amendment clause.
 
 - **This is a reconciliation epic, not a product epic** (`FR-AMD-016`). It produces analysis,
   decisions and a sequence. It builds nothing. This is the direct answer to the project owner's
-  scope-creep concern: the amendment's fifteen new capability areas enter the programme as a decided,
-  sequenced backlog rather than as an undifferentiated expansion of work already under way.
+  scope-creep concern: the amendment's seventeen new capability areas enter the programme as a
+  decided, sequenced backlog rather than as an undifferentiated expansion of work already under way.
 - **Starting over is rejected on the authority of the SRS**, not on preference — Plan Amendment
   §Purpose and §19, and Native §28. Constitution II makes the SRS binding where it and a spec
   disagree. Recorded above rather than assumed.

@@ -138,6 +138,9 @@ path added or removed without updating this document fails the build.
 - `specs/023-unattended-runs-review/`
 - `specs/024-artifact-access-control/`
 - `specs/025-external-storage-publishing/`
+- `specs/026-epic-stage-kanban/`
+- `specs/027-ai-native-amendment/`
+- `specs/028-agent-execution-seam/`
 
 ## Deliberately not covered here
 
