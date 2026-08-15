@@ -26,6 +26,7 @@
     "@types/pg": "^8.21.0",
     "pg": "^8.23.0",
     "prisma": "^5",
-    "testcontainers": "^10"
+    "testcontainers": "^10",
+    "@pmi/agent-adapter-fixture": "workspace:*"
   }
 }

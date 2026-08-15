@@ -16,7 +16,9 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  MissingCapabilityError,
   PHASE_1_CAPABILITIES,
+  assertPhase1Capabilities,
   type EngineContext,
   type GenerateSpecificationInput,
   type SpecificationEngine,
@@ -29,6 +31,7 @@ import {
   type SandboxSession,
 } from '@pmi/engine-adapter-speckit';
 import { EngineRegistryService } from '../../src/modules/engines/engine-registry.service.js';
+import { FixtureAgent } from '@pmi/agent-adapter-fixture';
 import {
   EngineResolverService,
   type ProjectEngineSelectionPort,
@@ -63,6 +66,7 @@ function speckitEngine(): SpecKitEngine {
       removeDirectory: async () => undefined,
     },
     aiProviderToken: 'sk-swapTestToken0123456789',
+    agent: new FixtureAgent(),
   });
 }
 
@@ -190,5 +194,61 @@ describe('adding an engine costs nothing outside the adapter layer (SC-008)', ()
 
     expect(registry.listRegistered()).toHaveLength(2); // same name replaces
     expect(registry.listRegistered().map((d) => d.name).sort()).toEqual(['fixture', 'speckit']);
+  });
+});
+
+/**
+ * T464 — quickstart **V11 · Engine independence (US8)**, executed.
+ *
+ * The plan's Definition of done requires V11 to pass. Its five steps map exactly
+ * onto code, so it is run here as a repeatable scenario rather than transcribed
+ * as a one-off manual walkthrough — a scenario nobody can re-run is a claim, not
+ * a check.
+ *
+ * Step 4 (`pnpm test:arch`) is a separate suite by design and is run as its own
+ * CI gate; it is asserted here only to the extent that this file cannot see it.
+ */
+describe('quickstart V11 · engine independence (executed)', () => {
+  it('V11.1 — the fixture adapter is registered alongside Spec Kit', () => {
+    const registry = new EngineRegistryService();
+    registry.register(speckitEngine(), { isDefault: true });
+    registry.register(new FixtureEngine());
+    expect(registry.listRegistered().map((d) => d.name).sort()).toEqual(['fixture', 'speckit']);
+  });
+
+  it('V11.2 — a project can be switched to the fixture engine', async () => {
+    const engine = await buildResolver().resolveForProject('project-on-fixture');
+    expect(engine.descriptor.name).toBe('fixture');
+  });
+
+  it('V11.3 — generation succeeds and records the fixture as producer', async () => {
+    const result = await generateFor('project-on-fixture');
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.producedBy.name).toBe('fixture');
+  });
+
+  it('V11.3b — no behavioural difference outside the adapter layer', async () => {
+    const viaFixture = await generateFor('project-on-fixture');
+    const viaSpeckit = await generateFor('project-on-default');
+    expect(viaFixture.ok).toBe(viaSpeckit.ok);
+    if (viaFixture.ok && viaSpeckit.ok) {
+      expect(Object.keys(viaFixture.value).sort()).toEqual(Object.keys(viaSpeckit.value).sort());
+    }
+  });
+
+  it('V11.5 — an adapter declaring only two of three capabilities is refused, naming it', () => {
+    const missing = PHASE_1_CAPABILITIES[2];
+    try {
+      assertPhase1Capabilities({
+        name: 'half-built',
+        version: 'half-built-1.0.0+model=none',
+        capabilities: [PHASE_1_CAPABILITIES[0], PHASE_1_CAPABILITIES[1]],
+      });
+      throw new Error('expected the incomplete adapter to be refused');
+    } catch (error) {
+      expect(error).toBeInstanceOf(MissingCapabilityError);
+      expect((error as Error).message).toContain(missing);
+      expect((error as Error).message).toContain('half-built');
+    }
   });
 });

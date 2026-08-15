@@ -78,7 +78,12 @@ describe('service / transport separation (PC-1)', () => {
   it('the engine registry and resolver are callable without HTTP', () => {
     // EPIC-003's own contribution to backend/src, asserted explicitly: these
     // are what the worker calls, and the worker has no HTTP layer at all.
-    const engines = files.filter((f) => f.rel.startsWith(`modules${sep}engines${sep}`));
+    // The module file is excluded on purpose: wiring is the transport layer's
+    // job, and it is exactly BECAUSE engines.module.ts holds the Nest
+    // decorators that the services themselves need none.
+    const engines = files
+      .filter((f) => f.rel.startsWith(`modules${sep}engines${sep}`))
+      .filter((f) => !TRANSPORT_ALLOWED.test(f.rel));
     expect(engines.length).toBeGreaterThan(0);
     for (const file of engines) {
       expect(HTTP_IMPORT.test(file.body), `${file.rel} imports an HTTP type`).toBe(false);

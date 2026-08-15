@@ -16,7 +16,7 @@ import {
   type EngineDescriptor,
 } from '@pmi/engine-contract';
 import { runEngineConformance, type ConformanceHarness } from '@pmi/engine-contract/conformance';
-import { FixtureEngine, FIXTURE_INPUT_CEILING } from '../src/index';
+import { FixtureEngine, FIXTURE_INPUT_CEILING } from '../src/fixture.adapter.js';
 
 /** A credential-shaped value the engine can see, so C13 is a real test rather than a tautology. */
 const SECRET_PROBE = 'sk-fixtureProbe0123456789';

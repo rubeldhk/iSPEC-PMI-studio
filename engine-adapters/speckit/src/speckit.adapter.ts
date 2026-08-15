@@ -22,6 +22,7 @@ import {
   engineOk,
   type EngineContext,
   type EngineDescriptor,
+  type EngineFailureReason,
   type EngineResult,
   type GeneratedSpecification,
   type GeneratedTask,
@@ -32,6 +33,11 @@ import {
   type ValidateSpecificationInput,
   type ValidationFinding,
 } from '@pmi/engine-contract';
+import type {
+  AgentCapability,
+  AgentExecutionRecord,
+  AgentGateway,
+} from '@pmi/agent-contract';
 import { buildSandboxEnvironment } from './correlation.js';
 import { findSpecificationPath, parseSpecification } from './parse.js';
 import { withEphemeralWorkspace, type WorkspaceFileSystem } from './workspace.js';
@@ -78,6 +84,17 @@ export interface ContainerRuntime {
 export interface SpecKitAdapterOptions {
   descriptor: EngineDescriptor;
   runtime: ContainerRuntime;
+  /**
+   * T566 — WHO reasons, injected rather than named.
+   *
+   * Before this, the adapter hardcoded `claude` in four places, so swapping the
+   * AI provider and swapping the specification engine were the same edit — the
+   * merge Native §3 forbids. The engine still owns the five ordered steps and
+   * the failure taxonomy; it no longer owns the answer to "which agent".
+   */
+  agent: AgentGateway;
+  /** T567 — where each execution record is delivered. Never carries a prompt. */
+  onAgentRun?: (record: AgentExecutionRecord) => void;
   fileSystem: WorkspaceFileSystem;
   /** The one credential the sandbox receives. */
   aiProviderToken: string;
@@ -89,7 +106,7 @@ export interface SpecKitAdapterOptions {
 class StepFailure extends Error {
   constructor(
     readonly step: InvocationStep,
-    readonly reason: 'engine_error' | 'malformed_output' | 'empty_output',
+    readonly reason: EngineFailureReason,
     readonly detail: string,
   ) {
     super(`${step}: ${detail}`);
@@ -130,7 +147,7 @@ export class SpecKitEngine implements SpecificationEngine {
         '--here',
         '--force',
         '--integration',
-        'claude',
+        this.integrationName(),
         '--script',
         'sh',
         '--ignore-agent-tools',
@@ -140,11 +157,12 @@ export class SpecKitEngine implements SpecificationEngine {
 
       await this.write(session, 'pmi-input.md', renderRequirements(input));
 
-      await this.step('agent_run', session, [
-        'claude',
-        '-p',
+      await this.runAgent(
+        session,
+        ctx,
+        'generate',
         `/speckit-specify ${input.projectName}: see pmi-input.md`,
-      ]);
+      );
 
       ctx.onProgress?.('generated');
 
@@ -169,13 +187,13 @@ export class SpecKitEngine implements SpecificationEngine {
         '--here',
         '--force',
         '--integration',
-        'claude',
+        this.integrationName(),
         '--script',
         'sh',
         '--ignore-agent-tools',
       ]);
       await this.write(session, 'pmi-spec.md', input.specificationContent);
-      await this.step('agent_run', session, ['claude', '-p', '/speckit-tasks']);
+      await this.runAgent(session, ctx, 'generate', '/speckit-tasks');
 
       const raw = await this.readBackFile(session, 'tasks.md');
       const tasks = raw
@@ -198,7 +216,7 @@ export class SpecKitEngine implements SpecificationEngine {
     return this.runInSandbox(ctx, async (session) => {
       await this.step('git_init', session, ['git', 'init']);
       await this.write(session, 'pmi-spec.md', input.specificationContent);
-      const result = await this.step('agent_run', session, ['claude', '-p', '/speckit-analyze']);
+      const result = await this.runAgent(session, ctx, 'analyze', '/speckit-analyze');
 
       const findings = parseFindings(result.stdout);
       // FR-023: a finding with no location is malformed output, not a finding.
@@ -207,6 +225,86 @@ export class SpecKitEngine implements SpecificationEngine {
       }
       return findings;
     });
+  }
+
+  // ------------------------------------------------------------------ agent
+
+  /**
+   * What Spec Kit's `--integration` flag should be given.
+   *
+   * The name lives on the AGENT because only the agent knows what Spec Kit
+   * calls it. An agent that declares none cannot scaffold a Spec Kit project,
+   * and saying so is better than silently passing `undefined`.
+   */
+  private integrationName(): string {
+    const name = this.options.agent.descriptor.specKitIntegrationName;
+    if (!name) {
+      throw new StepFailure(
+        'specify_init',
+        'engine_error',
+        `Agent "${this.options.agent.descriptor.name}" declares no specKitIntegrationName, so Spec Kit cannot be scaffolded for it.`,
+      );
+    }
+    return name;
+  }
+
+  /**
+   * Delegate the reasoning, and record it (T567, Native §7).
+   *
+   * The agent's failure taxonomy is mapped onto the ENGINE's, because the
+   * engine's contract is what the caller holds. Cancellation and timeout are
+   * carried across unchanged — collapsing them is the defect `T045a` was
+   * written to prevent and the EPIC-003 suite caught recurring.
+   */
+  private async runAgent(
+    session: SandboxSession,
+    ctx: EngineContext,
+    capability: AgentCapability,
+    command: string,
+  ): Promise<ExecResult> {
+    const agent = this.options.agent;
+    const startedAt = new Date().toISOString();
+
+    const result = await agent.execute(
+      { capability, command },
+      session,
+      ctx.onProgress
+        ? { correlationId: ctx.correlationId, signal: ctx.signal, timeoutMs: ctx.timeoutMs, onProgress: ctx.onProgress }
+        : { correlationId: ctx.correlationId, signal: ctx.signal, timeoutMs: ctx.timeoutMs },
+    );
+
+    const base = {
+      provider: agent.descriptor.provider,
+      model: agent.descriptor.model,
+      executionId: `${ctx.correlationId}:${command}`,
+      correlationId: ctx.correlationId,
+      startedAt,
+      endedAt: new Date().toISOString(),
+      ...(agent.descriptor.agentVersion ? { agentVersion: agent.descriptor.agentVersion } : {}),
+    };
+
+    if (result.ok) {
+      // Note what is absent: stdout. An execution record is provenance, never
+      // model output (PC-3, FR-AGT-012).
+      this.options.onAgentRun?.({ ...base, status: 'succeeded' });
+      return { exitCode: result.value.exitCode, stdout: result.value.stdout, stderr: '' };
+    }
+
+    const reason = result.failure.reason;
+    this.options.onAgentRun?.({
+      ...base,
+      status: reason === 'cancelled' ? 'cancelled' : reason === 'timeout' ? 'timed_out' : 'failed',
+      failureReason: reason,
+    });
+
+    const engineReason =
+      reason === 'cancelled' || reason === 'timeout' || reason === 'malformed_output' || reason === 'empty_output'
+        ? reason
+        : reason === 'agent_unavailable'
+          ? 'engine_unavailable'
+          : 'engine_error';
+
+    throw new StepFailure('agent_run', engineReason, result.failure.message);
   }
 
   // ------------------------------------------------------------------ plumbing
@@ -390,11 +488,23 @@ function abandonOn(ctx: EngineContext): Promise<{ kind: 'timeout' | 'cancelled' 
   });
 }
 
-const FAILURE_MESSAGE = {
+/**
+ * One user-safe sentence per reason.
+ *
+ * Widened by T566: a step failure can now originate in the AGENT, so the map
+ * must cover every reason the engine contract declares rather than only the
+ * three a Spec Kit step could previously produce.
+ */
+const FAILURE_MESSAGE: Record<EngineFailureReason, string> = {
   engine_error: 'The engine ran and failed.',
   malformed_output: 'The engine produced output that could not be read.',
   empty_output: 'The engine produced no output.',
-} as const;
+  engine_unavailable: 'The engine is unavailable.',
+  timeout: 'The run exceeded its time limit.',
+  cancelled: 'Generation was cancelled.',
+  input_too_large: 'The selection is too large for the engine.',
+  empty_selection: 'Select at least one requirement.',
+};
 
 /** Requirements rendered as the agent's input document. */
 function renderRequirements(input: GenerateSpecificationInput): string {

@@ -29,6 +29,7 @@ import {
   type SandboxSession,
 } from '../src/speckit.adapter.js';
 import type { WorkspaceFileSystem } from '../src/workspace.js';
+import { FixtureAgent } from '@pmi/agent-adapter-fixture';
 
 const SECRET_PROBE = 'sk-speckitProbe0123456789';
 const GENERATED_SPEC = '# Specification: Conformance\n\n## Overview\n\nGenerated body.\n';
@@ -98,7 +99,7 @@ function buildEngine(behaviour: RuntimeBehaviour = {}): SpecKitEngine {
     },
   };
 
-  return new SpecKitEngine({ descriptor, runtime, fileSystem, aiProviderToken: SECRET_PROBE });
+  return new SpecKitEngine({ descriptor, runtime, fileSystem, aiProviderToken: SECRET_PROBE, agent: new FixtureAgent() });
 }
 
 /** Drive the adapter into a specific terminal reason through the runtime alone. */

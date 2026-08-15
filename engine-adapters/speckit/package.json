@@ -9,9 +9,14 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@pmi/engine-contract": "workspace:*"
+    "@pmi/engine-contract": "workspace:*",
+    "@pmi/agent-contract": "workspace:*",
+    "@pmi/execution-contract": "workspace:*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@pmi/agent-adapter-fixture": "workspace:*"
   }
 }

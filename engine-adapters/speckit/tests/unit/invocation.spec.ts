@@ -23,6 +23,7 @@ import {
   type SandboxSession,
 } from '../../src/speckit.adapter.js';
 import type { WorkspaceFileSystem } from '../../src/workspace.js';
+import { FixtureAgent } from '@pmi/agent-adapter-fixture';
 
 const CORRELATION_ID = '3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607';
 const TOKEN = 'sk-testProviderToken0123456789';
@@ -94,7 +95,7 @@ function harness(
     descriptor,
     runtime,
     fileSystem,
-    aiProviderToken: TOKEN,
+    aiProviderToken: TOKEN, agent: new FixtureAgent(),
     ...(options.ceiling !== undefined ? { inputCeiling: options.ceiling } : {}),
   });
 
@@ -158,7 +159,10 @@ describe('the five steps, in order (R-001)', () => {
       '--here',
       '--force',
       '--integration',
-      'claude',
+      // T566: the name comes from the AGENT's descriptor, not a literal here.
+      // That single substitution is what makes SpecKitEngine -> Cursor
+      // expressible, which Native §3 names as a required configuration.
+      new FixtureAgent().descriptor.specKitIntegrationName,
       '--script',
       'sh',
       '--ignore-agent-tools',
@@ -172,7 +176,7 @@ describe('the five steps, in order (R-001)', () => {
     await h.engine.generateSpecification(input, ctx());
     expect(h.written).toHaveLength(1);
     expect(h.written[0]?.content).toContain('FR-001');
-    const agentIndex = h.commands.findIndex((c) => c[0] === 'claude');
+    const agentIndex = h.commands.findIndex((c) => c[0]?.startsWith('/speckit-'));
     const specifyIndex = h.commands.findIndex((c) => c[0] === 'specify');
     expect(agentIndex).toBeGreaterThan(specifyIndex);
   });
@@ -180,7 +184,9 @@ describe('the five steps, in order (R-001)', () => {
   it('invokes the AI agent, not specify, to generate', async () => {
     const h = harness();
     await h.engine.generateSpecification(input, ctx());
-    const agent = h.commands.find((c) => c[0] === 'claude');
+    // The engine no longer names a provider at all: it hands the command to
+    // whichever agent was injected, and the fixture runs it verbatim.
+    const agent = h.commands.find((c) => c[0]?.startsWith('/speckit-'));
     expect(agent?.join(' ')).toContain('/speckit-specify');
   });
 
@@ -206,11 +212,11 @@ describe('a failure at ANY step yields the right reason', () => {
   it.each([
     ['git', 'git_init'],
     ['specify', 'specify_init'],
-    ['claude', 'agent_run'],
+    ['/speckit-specify', 'agent_run'],
   ])('a non-zero exit from %s is engine_error naming the step', async (failing, step) => {
     const h = harness({
       execImpl: async (command) =>
-        command[0] === failing
+        command[0]?.startsWith(failing)
           ? { exitCode: 1, stdout: '', stderr: 'boom' }
           : { exitCode: 0, stdout: '', stderr: '' },
     });
@@ -339,7 +345,7 @@ describe('the sandbox receives exactly two environment values (PC-3)', () => {
     };
     const engine = new SpecKitEngine({
       descriptor,
-      aiProviderToken: TOKEN,
+      aiProviderToken: TOKEN, agent: new FixtureAgent(),
       runtime: {
         start: async ({ env }) => {
           captured = env;
@@ -390,7 +396,7 @@ describe('validation findings carry a location (FR-023)', () => {
   it('parses findings from agent output', async () => {
     const h = harness({
       execImpl: async (command) =>
-        command[0] === 'claude'
+        command[0] === '/speckit-analyze'
           ? { exitCode: 0, stdout: 'Section 2 | error | Requirement has no acceptance criterion\n', stderr: '' }
           : { exitCode: 0, stdout: '', stderr: '' },
     });
@@ -409,7 +415,7 @@ describe('validation findings carry a location (FR-023)', () => {
   it('reports malformed_output when a finding has no location', async () => {
     const h = harness({
       execImpl: async (command) =>
-        command[0] === 'claude'
+        command[0] === '/speckit-analyze'
           ? { exitCode: 0, stdout: ' | error | Something is wrong somewhere\n', stderr: '' }
           : { exitCode: 0, stdout: '', stderr: '' },
     });

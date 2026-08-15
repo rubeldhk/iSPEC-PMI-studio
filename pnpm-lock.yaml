@@ -81,6 +81,9 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
     devDependencies:
+      '@pmi/agent-adapter-fixture':
+        specifier: workspace:*
+        version: link:../agent-adapters/fixture
       '@pmi/engine-adapter-fixture':
         specifier: workspace:*
         version: link:../engine-adapters/fixture
@@ -111,9 +114,19 @@ importers:
 
   engine-adapters/speckit:
     dependencies:
+      '@pmi/agent-contract':
+        specifier: workspace:*
+        version: link:../../packages/agent-contract
       '@pmi/engine-contract':
         specifier: workspace:*
         version: link:../../packages/engine-contract
+      '@pmi/execution-contract':
+        specifier: workspace:*
+        version: link:../../packages/execution-contract
+    devDependencies:
+      '@pmi/agent-adapter-fixture':
+        specifier: workspace:*
+        version: link:../../agent-adapters/fixture
 
   execution-providers/docker:
     dependencies:
@@ -158,6 +171,15 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
+      '@pmi/agent-adapter-claude':
+        specifier: workspace:*
+        version: link:../agent-adapters/claude
+      '@pmi/agent-adapter-fixture':
+        specifier: workspace:*
+        version: link:../agent-adapters/fixture
+      '@pmi/agent-contract':
+        specifier: workspace:*
+        version: link:../packages/agent-contract
       '@pmi/engine-adapter-fixture':
         specifier: workspace:*
         version: link:../engine-adapters/fixture
@@ -167,6 +189,9 @@ importers:
       '@pmi/engine-contract':
         specifier: workspace:*
         version: link:../packages/engine-contract
+      '@pmi/execution-contract':
+        specifier: workspace:*
+        version: link:../packages/execution-contract
       bullmq:
         specifier: ^5.34.6
         version: 5.81.3

@@ -116,12 +116,12 @@ engines, applied to the axis the amendment cares about.
 
 ### Tests for User Story 1 (MANDATORY — Constitution V) ⚠️
 
-- [ ] T555 [P] [US1] Write failing unit tests for `AgentRegistry` register / resolve / list, capability refusal, **and refusal of a second adapter claiming an already-registered provider identifier** (spec Edge Cases) in `worker/tests/unit/agent-registry.spec.ts`
+- [X] T555 [P] [US1] Write failing unit tests for `AgentRegistry` register / resolve / list, capability refusal, **and refusal of a second adapter claiming an already-registered provider identifier** (spec Edge Cases) in `worker/tests/unit/agent-registry.spec.ts`
 - [X] T556 [P] [US1] Write the failing agent conformance suite — already-aborted signal, hung step, failure misclassification, capability refusal — in `agent-adapters/fixture/tests/conformance.spec.ts`
 - [ ] T557 [P] [US1] Write failing unit tests for `ClaudeAgent` descriptor, invocation and failure mapping in `agent-adapters/claude/tests/unit/claude.agent.spec.ts`
 - [ ] T558 [P] [US1] Write failing unit tests asserting `SpecKitEngine` accepts an injected agent and names no provider in `engine-adapters/speckit/tests/unit/agent-injection.spec.ts`
 - [ ] T559 [P] [US1] Write failing unit tests asserting no prompt and no model output reaches operational logs (PC-3) in `engine-adapters/speckit/tests/unit/log-exclusion.spec.ts`
-- [ ] T560 [P] [US1] Write the failing architecture test — no provider identifier under `backend/src` or in any engine adapter, covering imports, cross-directory imports, **string identifiers** and dynamic imports; **plus the layering rule: `packages/execution-contract` must not import `@pmi/agent-contract`** — in `backend/tests/architecture/agent-independence.spec.ts`
+- [X] T560 [P] [US1] Write the failing architecture test — no provider identifier under `backend/src` or in any engine adapter, covering imports, cross-directory imports, **string identifiers** and dynamic imports; **plus the layering rule: `packages/execution-contract` must not import `@pmi/agent-contract`** — in `backend/tests/architecture/agent-independence.spec.ts`
 
   > The layering assertion was added by the analyse pass of 2026-08-14. [plan.md](./plan.md)'s build
   > order rests on it — *"the agent contract references `ExecutionSession`, never the other way round…
@@ -136,14 +136,14 @@ engines, applied to the axis the amendment cares about.
 
 ### Implementation for User Story 1
 
-- [ ] T562 [US1] Implement `AgentRegistry` and `composeAgentRegistry()` in `worker/src/agent-composition.ts`, delegating capability validation per T648 (unit test: T555)
+- [X] T562 [US1] Implement `AgentRegistry` and `composeAgentRegistry()` in `worker/src/agent-composition.ts`, delegating capability validation per T648 (unit test: T555)
 - [X] T563 [US1] Implement `FixtureAgent` in `agent-adapters/fixture/src/fixture.agent.ts` (conformance: T556)
 - [ ] T564 [US1] Implement `ClaudeAgent` in `agent-adapters/claude/src/claude.agent.ts`, carrying `specKitIntegrationName: 'claude'` — **the only place that string may now appear** (unit test: T557)
 - [ ] T565 [US1] Run the shared conformance suite against `ClaudeAgent` in `agent-adapters/claude/tests/conformance.spec.ts` (suite: T556)
-- [ ] T566 [US1] Refactor `SpecKitEngine` to take an injected `AgentGateway` — replace `--integration claude` with `agent.descriptor.specKitIntegrationName` and the four `claude` command invocations with `agent.execute()` — in `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
-- [ ] T567 [US1] Record `AgentExecutionRecord` (provider, model, agent version, execution id, correlation id, timestamps, status, cost metadata) in `engine-adapters/speckit/src/speckit.adapter.ts` (unit tests: T558, T559)
-- [ ] T568 [US1] Sweep the remaining provider names out of `engine-adapters/speckit/src/` until `agent-independence.spec.ts` passes (test: T560)
-- [ ] T569 [US1] Register both agent adapters at the worker composition root in `worker/src/agent-composition.ts` (integration test: T561)
+- [X] T566 [US1] Refactor `SpecKitEngine` to take an injected `AgentGateway` — replace `--integration claude` with `agent.descriptor.specKitIntegrationName` and the four `claude` command invocations with `agent.execute()` — in `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
+- [X] T567 [US1] Record `AgentExecutionRecord` (provider, model, agent version, execution id, correlation id, timestamps, status, cost metadata) in `engine-adapters/speckit/src/speckit.adapter.ts` (unit tests: T558, T559)
+- [X] T568 [US1] Sweep the remaining provider names out of `engine-adapters/speckit/src/` until `agent-independence.spec.ts` passes (test: T560)
+- [X] T569 [US1] Register both agent adapters at the worker composition root in `worker/src/agent-composition.ts` (integration test: T561)
 
 **Checkpoint**: the AI provider is swappable, and the build fails if anyone names one outside an agent adapter. **US1 is independently testable and is the MVP.**
 
@@ -206,7 +206,7 @@ never by editing business logic.
 - [X] T578 [P] [US3] Write failing unit tests asserting `*`, `0.0.0.0/0`, `::/0` and an empty destination list are each rejected, in `packages/execution-contract/tests/unit/egress-validation.spec.ts`
 - [X] T579 [P] [US3] Write failing unit tests asserting a provider with `supportsNetworkPolicy: false` cannot accept any egress profile, in `packages/execution-contract/tests/unit/policy-capability.spec.ts`
 - [X] T580 [P] [US3] Write failing unit tests asserting a `ScopedCredentialRef` without `expiresAt` is rejected, that `env` contains no credential value, **and that an unresolvable credential ref fails the run before any container starts** (spec Edge Cases), in `packages/execution-contract/tests/unit/credential-validation.spec.ts`
-- [ ] T581 [P] [US3] Write the failing architecture rule — no component outside the worker composition root reaches a container runtime directly — appended to `backend/tests/architecture/agent-independence.spec.ts`
+- [X] T581 [P] [US3] Write the failing architecture rule — no component outside the worker composition root reaches a container runtime directly — appended to `backend/tests/architecture/agent-independence.spec.ts`
 
 ### Implementation for User Story 3
 
@@ -219,7 +219,7 @@ never by editing business logic.
   > be untested, would read as authoritative, and would be inherited as settled. **The proxy is not
   > built here** — the Docker provider implements the network-policy half.
 
-- [ ] T586 [US3] Make the runtime-access rule pass — route every container access through `ProjectExecutionEnvironment` (test: T581)
+- [X] T586 [US3] Make the runtime-access rule pass — route every container access through `ProjectExecutionEnvironment` (test: T581)
 
 **Checkpoint**: all three stories independently functional.
 

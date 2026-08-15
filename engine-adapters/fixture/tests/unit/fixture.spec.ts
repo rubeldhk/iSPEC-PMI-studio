@@ -9,7 +9,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { PHASE_1_CAPABILITIES, type EngineContext } from '@pmi/engine-contract';
-import { FixtureEngine, FIXTURE_INPUT_CEILING } from '../../src/index';
+import { FixtureEngine, FIXTURE_INPUT_CEILING } from '../../src/fixture.adapter.js';
 
 function ctx(overrides: Partial<EngineContext> = {}): EngineContext {
   return {
