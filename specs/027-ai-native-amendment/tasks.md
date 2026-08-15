@@ -5,7 +5,7 @@ description: "Task list for EPIC-027 — AI-Native Amendment Reconciliation"
 
 # Tasks: AI-Native Amendment Reconciliation
 
-**Epic**: `EPIC-027` | **Module**: programme reconciliation (no product module) | **Tasks**: 49
+**Epic**: `EPIC-027` | **Module**: programme reconciliation (no product module) | **Tasks**: 51
 
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Register schema**: [contracts/reconciliation-register.md](./contracts/reconciliation-register.md)
 
@@ -26,10 +26,11 @@ block CI**; the other twelve report. Those two guard `FR-AMD-016` (analysis only
 (do not disturb work in flight) — the two constraints the project owner named as the scope-creep
 concern.
 
-**Task IDs**: `T597`–`T645`. Corpus max was `T596` (EPIC-028). No routed IDs.
+**Task IDs**: `T597`–`T645`, plus `T658`/`T659` added 2026-08-14 when the Augment/Cosmos
+amendment widened this epic from four source documents to five. No routed IDs.
 
 **Register grain** *(clarified 2026-08-14)*: **one row per clause, duplicates cross-linked** —
-roughly 340 rows, not one row per distinct capability. The collapsed form cannot prove `SC-AMD-001`,
+roughly 470 rows across five documents, not one row per distinct capability. The collapsed form cannot prove `SC-AMD-001`,
 because a clause nobody noticed is indistinguishable from one that is not there.
 
 **Before starting**: sync from GitHub, confirm no other Claude session is on this checkout.
@@ -41,7 +42,7 @@ because a clause nobody noticed is indistinguishable from one that is not there.
 **Purpose**: make the register machine-readable before anything is written into it.
 
 **Why the generator comes first**: `R-027-1` decided humans read markdown and checks read a JSON
-projection. Writing 340 rows and *then* discovering the projection cannot parse them is the expensive
+projection. Writing 470 rows and *then* discovering the projection cannot parse them is the expensive
 order.
 
 - [ ] T597 [P] Write a failing conformance check asserting every `register/*.md` file exists and carries the required table header, in `tests/governance/register-structure.spec.ts`
@@ -76,7 +77,7 @@ order.
 **Goal**: for each clause, a recorded verdict naming the existing requirement or epic that covers it,
 or an explicit statement that none was found.
 
-**Independent Test**: pick ten clauses spanning all four documents; each carries a verdict and a named
+**Independent Test**: pick ten clauses spanning all five documents; each carries a verdict and a named
 artifact or `NO-EXISTING-COVERAGE`.
 
 ### Checks for User Story 1 (MANDATORY — Constitution V) ⚠️
@@ -89,7 +90,16 @@ artifact or `NO-EXISTING-COVERAGE`.
 - [ ] T609 [US1] Extract every substantive clause from `Native Spec-Kit Execution Environment` (§1–§30, ~120 rows) into `register/clauses.md` (conformance check: T607)
 - [ ] T610 [US1] Extract every substantive clause from `Recommended PMI Studio lifecycle` (§1–§13, ~45 rows) into `register/clauses.md` (conformance check: T607)
 - [ ] T611 [US1] Extract every substantive clause from `Defect Management governed intelligence workflow` (§1–§12, ~25 rows) into `register/clauses.md` (conformance check: T607)
-- [ ] T612 [US1] Cross-link `duplicates` across all four documents in `register/clauses.md` — the three Rooms appear in three of the four (conformance check: T607)
+- [ ] T658 [US1] Extract every substantive clause from `SRS/AUg142026/PMI_Studio_Augment_Cosmos_Learnings_Amendment.docx` (§1–§13, ~130 rows) into `register/clauses.md` (conformance check: T607)
+
+  > **Added 2026-08-14.** A fifth document, and explicitly a *refinement* of the August-11 set rather
+  > than a competing direction (§1, §11). Six of its eight architectural refinements enhance capability
+  > areas this register already tracks; **two are genuinely new** — Governed Learning (§3.4) and the
+  > Specification Compliance Agent (§3.5) — and neither appears anywhere in the first four documents.
+  > It was folded here rather than given its own epic because it demands the *same* reconciliation, and
+  > §9 warns in its own words: *"Do not duplicate existing requirements or create replacement IDs
+  > unnecessarily."* Two registers would have been exactly that.
+- [ ] T612 [US1] Cross-link `duplicates` across all five documents in `register/clauses.md` — the three Rooms appear in four of the five (conformance check: T607)
 - [ ] T613 [US1] Record one verdict per clause — one of the five values, with owner, reasoning and resulting action — in `register/verdicts.md` (conformance check: T607)
 
   > **Quote, never paraphrase** (`data-model.md`). Paraphrase is where premises get lost, and Finding
@@ -123,9 +133,9 @@ artifact or `NO-EXISTING-COVERAGE`.
 **Independent Test**: source control, CI/CD, AI coding engines, requirement approval and traceability
 each carry a verdict consistent with §2.
 
-- [ ] T618 [P] [US3] Write the failing `G-27-04` and `G-27-13` checks — ownership present, boundary named for every `integrated`/`hybrid`, `removed_because_external` false throughout, and exactly seventeen capability areas — in `tests/governance/g27-capabilities.spec.ts`
+- [ ] T618 [P] [US3] Write the failing `G-27-04` and `G-27-13` checks — ownership present, boundary named for every `integrated`/`hybrid`, `removed_because_external` false throughout, and exactly **twenty** capability areas — in `tests/governance/g27-capabilities.spec.ts`
 - [ ] T619 [US3] Classify every capability as native / integrated / hybrid with the reason and, where integrated, the abstraction boundary, in `register/capabilities.md` (conformance check: T618)
-- [ ] T620 [US3] Record the seventeen capability areas with verdict, owning epic and posture in `register/capability-areas.md` (conformance check: T618)
+- [ ] T620 [US3] Record the **twenty** capability areas with verdict, owning epic and posture in `register/capability-areas.md` (conformance check: T618)
 - [ ] T621 [US3] Record every existing requirement that should change from native implementation to integration (§18.9, `FR-AMD-010`) in `register/capabilities.md` (conformance check: T618)
 
 ---
@@ -152,6 +162,7 @@ mean writing it twice.
 
 - [ ] T626 [P] [US5] Write the failing `G-27-07`, `G-27-08` and `G-27-10` checks — twelve ADR subjects present, `supersedes` carrying reasoning, every research item naming what it blocks, **no decision `decided` while its blocking research is unanswered**, every decision carrying ≥2 options and an owner — in `tests/governance/g27-decisions.spec.ts`
 - [ ] T627 [US5] Create the twelve Native §27 ADRs as `adr/ADR-0006` … `adr/ADR-0017` — seven decided from the 2026-08-13 session, five `open` naming what each awaits (`D-35`) (conformance check: T626)
+- [ ] T659 [US5] Create the five ADRs Cosmos §9 names — Governed Engineering Loops, Context Engine composition, Engineering Expert definition, Governed Learning, Specification Compliance/Evidence — as `adr/ADR-0018` … `adr/ADR-0022`, each decided or `open` naming what it awaits (conformance check: T626)
 - [ ] T628 [US5] Record all twelve ADR subjects, status and `awaits` in `register/adrs.md`, and confirm `ADR-0001`–`ADR-0005` are preserved with `ADR-0002` marked **extended, not superseded** (`D-36`) (conformance check: T626)
 - [ ] T629 [US5] Register `R-AI-001`–`R-AI-014` and `R-027-1`–`R-027-8` with what each blocks and its owner, in `register/research.md` (conformance check: T626)
 - [ ] T630 [US5] Record every open decision with question, ≥2 options, the consequence of each, owner, status and blocking research, in `register/decisions.md` — citing `srs-alignment.md` Part 8 rather than restating it (conformance check: T626)
@@ -201,7 +212,7 @@ mean writing it twice.
 - [ ] T641 Confirm every task's conformance check passes, **and** that the governance project collects a non-zero test count
 - [ ] T642 Run `/speckit-converge`; append and complete any remaining unbuilt work
 - [ ] T643 Triage `specs/027-ai-native-amendment/defects/`; every record closed or deferred to a named Epic
-- [ ] T644 **Sample ten clauses spanning all four documents and confirm each verdict survives reading** — the one thing the checks cannot check
+- [ ] T644 **Sample ten clauses spanning all five documents and confirm each verdict survives reading** — the one thing the checks cannot check
 - [ ] T645 Publish the Epic closing report: work completed, work deferred, and the recommended next command (Constitution IX)
 
   > `T644` exists because the checks verify the register is **complete and internally consistent**,

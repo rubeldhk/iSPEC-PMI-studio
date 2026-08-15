@@ -1365,3 +1365,58 @@ Supersedes the per-epic "recommended next task" lines, which optimised locally.
 **What changed and why**: EPIC-027 moved *later* and EPIC-004 moved *first*. The earlier ordering
 treated 027 as blocking because §17 says reconciliation precedes new implementation tasks — but the
 work it would unblock is held regardless, while `T013` silently taxes everything that is not.
+
+## Part 10 — The Augment/Cosmos Learnings Amendment (2026-08-14)
+
+A fifth amendment document: `SRS/AUg142026/PMI_Studio_Augment_Cosmos_Learnings_Amendment.docx`,
+dated 14 August 2026, status **ACCEPTED FOR PLAN RECONCILIATION**. It applies selected architectural
+lessons from Augment Code/Cosmos and is explicit in three places (§1, §11, §13) that it is an
+*evolutionary refinement*, not a reset.
+
+### D-42 · Folded into EPIC-027 rather than given its own epic ✅ DECIDED 2026-08-14
+
+> **Decision**: EPIC-027 widens from **four source documents to five**. No new epic is created.
+
+**Rationale.** The document demands (§9, §10) precisely what EPIC-027 exists to produce — reconcile
+against the existing corpus, classify into the same five buckets, emit an impact report, propose a
+sequence. Six of its eight architectural refinements are *enhancements* to capability areas EPIC-027
+already tracks:
+
+| § | Refinement | Against EPIC-027's register |
+|---|---|---|
+| 3.1 | Governed Engineering Loops | Rooms tracked; the **shared loop engine** is new |
+| 3.2 | Context Engine → four capabilities | Context Engine tracked; the decomposition is an enhancement |
+| 3.3 | Engineering Expert model | Enhancement of Agent Gateway / Agent Registry |
+| **3.4** | **Governed Learning** | 🔴 **Genuinely new** — absent from all four August-11 documents |
+| **3.5** | **Specification Compliance Agent** | 🔴 **Genuinely new**; Evidence Package tracked, the agent is not |
+| 5 | Capability Resolver | Enhancement of Integration Hub |
+| 6 | Workspace Fabric | Enhancement of the `ProjectExecutionEnvironment` — adds customer-cloud and local-connector modes |
+| 7 | Risk-adaptive human-in-the-loop | Enhancement of the Human/AI responsibility model |
+
+A separate reconciliation epic would have produced **two registers, two impact reports, and two
+answers to "what is the state of the plan"** for overlapping ground — the **PP-002** violation
+`FR-AMD-003` exists to prevent, and precisely what §9 warns against in its own words: *"Do not
+duplicate existing requirements or create replacement IDs unnecessarily."*
+
+**EPIC-027 was tasked but not started (0/49), so widening it cost no rework.**
+
+**Applied**:
+
+- Source documents 4 → **5**; substantive clauses ~340 → **~470**
+- Capability areas **17 → 20** — Governed Engineering Loops, Governed Learning, Specification
+  Compliance Agent. `SC-AMD-011` and check `G-27-13` updated together, since the count is asserted
+- ADR subjects **12 → 17** — Cosmos §9 names five more (`T659`, `ADR-0018`–`ADR-0022`)
+- Tasks 49 → **51** (`T658` extraction, `T659` ADRs)
+- **Zero requirement identifiers renumbered**; no existing decision reopened
+
+### What this amendment does NOT change
+
+`D-31` (multi-tenant SaaS) is **reinforced**, not challenged: §1 and §11 both restate the SMB/
+mid-market boundary and forbid repositioning for large enterprises building their own platforms.
+`D-20`, `D-21` and `D-28` are untouched — §2 names Claude, Codex, Cursor and Augment as
+*interchangeable execution engines*, which is the agent contract's whole premise. §5's Capability
+Resolver is the same abstraction argument one layer up from `CreateImplementationBranch()`.
+
+**Three of the twenty areas now have no owning epic** — Governed Engineering Loops, Governed
+Learning, Specification Compliance. All three are product surface and therefore **held** behind
+`PMI-DOC-004`, so nothing is blocked by leaving them unassigned until the reconciliation reports.

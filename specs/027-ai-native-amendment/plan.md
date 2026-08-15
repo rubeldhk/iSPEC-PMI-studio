@@ -17,7 +17,7 @@ modules). All in [srs-alignment.md](../srs-alignment.md).
 ## Summary
 
 The project owner asked for a reassessment of **solution, architecture, system design and
-technology** against the four amendment documents, and for the questions to be gathered rather than
+technology** against the amendment documents — four at the time, five since 2026-08-14 — and for the questions to be gathered rather than
 dripped out one at a time.
 
 This plan did that. It is not a build plan — `FR-AMD-016` bounds EPIC-027 to analysis — but it is
@@ -100,7 +100,7 @@ later work — knowledge-graph traversal and context assembly — and both are r
 - **PP-002 Single Source of Truth** is the failure mode most likely here: the amendment restates
   capabilities that already exist under other names. Every classification must resolve to one owner.
 
-**Scale/Scope**: 4 source documents · ~340 substantive clauses · 26 existing epic specifications ·
+**Scale/Scope**: **5** source documents · **~470** substantive clauses · 26 existing epic specifications ·
 598 tracked tasks across 24 task lists · 5 ADRs (12 more required by Native §27) · 14 named research
 items · 22 decisions raised, 12 taken.
 
@@ -193,11 +193,15 @@ programme-wide consequences had the same problem in reverse: one epic holding wh
 | PMI Studio MCP surface | Phase conflict | **M-09**, phase decision `D-26` | ⏸ held |
 | Spec Kit native lifecycle | ENHANCE | EPIC-008 / EPIC-013 | ⏸ held |
 | Human/AI responsibility model | ENHANCE | Cross-cutting → `_shared/platform-spec.md` | ▶ recordable now |
+| **Governed Engineering Loops** *(Cosmos §3.1)* | MISSING | New epic — the shared workflow engine beneath the three Rooms | ⏸ held |
+| **Governed Learning** *(Cosmos §3.4)* | MISSING | New epic — nothing in the August-11 set covers it | ⏸ held |
+| **Specification Compliance Agent** *(Cosmos §3.5)* | MISSING | New epic, or EPIC-015 QA extension | ⏸ held |
 
-**Seventeen areas. Four proceed, thirteen are held.** That is the scope-creep answer in one table:
+**Twenty areas. Four proceed, sixteen are held.** That is the scope-creep answer in one table:
 the amendment adds a small amount of *immediately buildable* architectural work and a long, sequenced
 queue behind a gate that already exists. The count is asserted by `G-27-13` so the table and
-`SC-AMD-011` cannot drift apart.
+`SC-AMD-011` cannot drift apart. The count rose from seventeen on 2026-08-14 when the
+Augment/Cosmos amendment added three areas the August-11 set does not cover.
 
 **The four proceeding areas were consolidated into one epic on 2026-08-13.** They were provisionally
 split between "EPIC-003 re-entry" and a narrower EPIC-028, but they land in the same files and none
@@ -239,9 +243,9 @@ Evidence Gate, Integration Hub, MCP surface. All behind `PMI-DOC-004`.
 
 | Function | Requirements | Criteria | Delivers | Check |
 |---|---|---|---|---|
-| **F-27.1** Clause register | `FR-AMD-002`, `003`, `005` | `SC-AMD-001`, `002`, `003` | Every substantive clause, one verdict, named owner. **~340 rows** — one per clause, duplicates cross-linked (clarified 2026-08-14) | `G-27-01` · `G-27-02` · `G-27-03` |
+| **F-27.1** Clause register | `FR-AMD-002`, `003`, `005` | `SC-AMD-001`, `002`, `003` | Every substantive clause, one verdict, named owner. **~470 rows** — one per clause, duplicates cross-linked (clarified 2026-08-14) | `G-27-01` · `G-27-02` · `G-27-03` |
 | **F-27.2** Premise checks | `FR-AMD-006`, `007` | `SC-AMD-005` | Search evidence for each "existing capability" claim | `G-27-05` |
-| **F-27.3** Capability classification | `FR-AMD-004` | `SC-AMD-004`, `011` | native / integrated / hybrid + reason + boundary; the seventeen capability areas enumerated | `G-27-04` · `G-27-13` |
+| **F-27.3** Capability classification | `FR-AMD-004` | `SC-AMD-004`, `011` | native / integrated / hybrid + reason + boundary; the twenty capability areas enumerated | `G-27-04` · `G-27-13` |
 | **F-27.4** §18 impact report | `FR-AMD-009`, `010`, `011`, `012` | `SC-AMD-006` | All 25 sections, no placeholders, ending in the three-band sequence | `G-27-06` |
 | **F-27.5** ADR register | `FR-AMD-013` | `SC-AMD-007` | 12 subjects from Native §27, open ones naming what they await | `G-27-07` |
 | **F-27.6** Research register | `FR-AMD-014` | `SC-AMD-008` | `R-AI-001`–`014` + `R-027-*`, each naming what it blocks | `G-27-08` |

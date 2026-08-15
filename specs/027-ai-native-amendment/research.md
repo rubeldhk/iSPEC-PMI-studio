@@ -142,7 +142,7 @@ once and caught only because a conformance suite existed.
 | **R-027-5** | Is `pgvector` sufficient for duplicate detection and context selection at target scale? | 🟡 Partial | `D-24` |
 | **R-027-6** | What is an acceptable context-assembly latency and token budget per agent run? | 🔴 OPEN | Context Engine design; PP-017 |
 | **R-027-7** | Does the amendment's positioning (§1) require multi-tenant SaaS hosting? | 🔴 OPEN — **business decision, not research** | `D-31` |
-| **R-027-8** | How many substantive clauses are there across the four documents? | 🟢 Answered — ~340 | Sizing F-27.1 |
+| **R-027-8** | How many substantive clauses are there across the five documents? | 🟢 Answered — ~470 | Sizing F-27.1 |
 
 ### R-027-1 · Machine-readable register — answered 🟢
 
@@ -213,9 +213,10 @@ a normative verb (SHALL/MUST/SHOULD/MAY) or naming a capability, entity, workflo
 | Native Spec-Kit Execution Environment | 30 | ~120 |
 | Recommended PMI Studio lifecycle | 13 + architecture | ~45 |
 | Defect Management governed intelligence workflow | 12 | ~25 |
-| **Total** | **74** | **~340** |
+| Augment/Cosmos Learnings Amendment *(added 2026-08-14)* | 13 | ~130 |
+| **Total** | **87** | **~470** |
 
-Overlap is substantial — the three Rooms appear in three of the four documents — so the register's
+Overlap is substantial — the three Rooms appear in four of the five documents — so the register's
 row count will exceed the number of *distinct* capabilities considerably. `FR-AMD-002` requires a
 verdict per clause regardless; duplicates resolve to the same owner, which is how the register proves
 `SC-AMD-003` (no new identifier where one exists).

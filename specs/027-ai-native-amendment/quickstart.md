@@ -41,7 +41,7 @@ that was the point of EPIC-018 landing first.
 pnpm test:governance -- -t "G-27-01"
 ```
 
-**Expected**: pass, with the clause count reported (~340 expected).
+**Expected**: pass, with the clause count reported (~470 expected across five documents).
 
 **Prove it can fail** — the mutation that must turn it red:
 
@@ -194,13 +194,13 @@ compatibility impact, alternative considered.
 the `TraceabilityLink` edge-type expansion. If that table is empty, either nothing touches the
 sixteen preserved elements — which would contradict the plan — or the rows were not written.
 
-### V13 · The seventeen capability areas are enumerated and counted
+### V13 · The twenty capability areas are enumerated and counted
 
 ```bash
 pnpm test:governance -- -t "G-27-13"
 ```
 
-**Expected**: exactly 17 rows, each with a verdict, a named home and a posture — and the count
+**Expected**: exactly 20 rows, each with a verdict, a named home and a posture — and the count
 matching the figure quoted in `spec.md`.
 
 **Why the count is asserted rather than trusted**: `SC-AMD-011` is a countable criterion, and the
@@ -236,7 +236,7 @@ Every check above verifies that the reconciliation is *complete and internally c
 verifies that a clause marked `already-covered` is genuinely covered by the requirement it names.
 That is a reading task, and it belongs to the project owner.
 
-**Suggested sampling**: ten clauses spanning all four documents — the Independent Test named in
+**Suggested sampling**: ten clauses spanning all five documents — the Independent Test named in
 User Story 1. If nine of ten hold, the register is trustworthy. If three of ten are wrong, the
 register is worse than nothing, because its completeness checks will all still be green.
 

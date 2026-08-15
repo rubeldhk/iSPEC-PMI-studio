@@ -9,7 +9,8 @@
 **Status**: **Clarified** — 4 questions answered 2026-08-14; zero unresolved markers. Ready for
 `/speckit-tasks`.
 
-**Input**: Four documents added to `SRS/August112026/` on 2026-08-11/12/13, plus the project owner's
+**Input**: **Five** documents — four added to `SRS/August112026/` on 2026-08-11/12/13, and
+`SRS/AUg142026/PMI_Studio_Augment_Cosmos_Learnings_Amendment.docx` added 2026-08-14 — plus the project owner's
 instruction to *"analyze and incorporate changes in specs… it will impact the whole project plan.
 Think about starting over for scope creep. Incorporate changes in existing spec if appropriate."*
 
@@ -37,7 +38,7 @@ amendment describes as an *extension* of that same design.
 
 **The recommendation is therefore: do not start over.** The scope-creep concern is real and is
 addressed differently — by this epic being **analysis-only** (`FR-AMD-016`), so that the amendment's
-**seventeen** new capability areas enter the plan as a sequenced, decided backlog rather than as an
+**twenty** new capability areas enter the plan as a sequenced, decided backlog rather than as an
 undifferentiated expansion of current work.
 
 ## Purpose
@@ -99,7 +100,8 @@ Left unreconciled, this produces the worst kind of drift: two teams believing on
 
 ### Session 2026-08-14 — four answers, two of them programme decisions
 
-- Q: Does every substantive clause get a register row (~340), or does the register collapse to one
+- Q: Does every substantive clause get a register row (~340 at the time of asking; ~470 since the
+  fifth document arrived), or does the register collapse to one
   row per distinct capability (~90–120)? → **A: every clause gets a row; duplicates cross-link.**
   A clause stating the same thing in another document carries its own row with a `duplicates` list,
   and both resolve to the same owner. **This is the only form in which `SC-AMD-001` is provable** —
@@ -146,6 +148,11 @@ EPIC-018). Each carries a recommendation.
 | ″ | §27 — the twelve required ADRs | FR-AMD-012 |
 | ″ | §28 — compatibility constraint; sixteen named elements to preserve | FR-AMD-001, FR-AMD-015 |
 | ″ | §22, §30 — source-of-truth boundaries; core architectural invariant | FR-AMD-007, FR-AMD-015 |
+| `SRS/AUg142026/PMI_Studio_Augment_Cosmos_Learnings_Amendment.docx` | §1, §11, §13 — evolutionary refinement; preserve existing rooms, IDs and decisions | FR-AMD-001, FR-AMD-003 |
+| ″ | §3.1 Governed Engineering Loops · §3.2 Context Engine as four capabilities · §3.3 Engineering Expert model | FR-AMD-004, FR-AMD-006 |
+| ″ | §3.4 **Governed Learning** · §3.5 **Specification Compliance Agent** — the two genuinely new capability areas | FR-AMD-006, FR-AMD-012 |
+| ″ | §5 Capability Resolver · §6 Workspace Fabric · §7 risk-adaptive human-in-the-loop | FR-AMD-004, FR-AMD-007 |
+| ″ | §8 build-vs-integrate table · §9 reconciliation instructions · §10 the seventeen-part impact report | FR-AMD-002, FR-AMD-009, FR-AMD-010 |
 | `.specify/memory/constitution.md` | Principle II — SRS wins where spec and SRS disagree; Principle III — Epic decomposition | FR-AMD-001, FR-AMD-005 |
 | `specs/srs-alignment.md` | The existing conflict/decision register (`C-01`–`C-18`, `D-1`–`D-19`) this epic extends rather than replaces | FR-AMD-003, FR-AMD-013 |
 
@@ -181,7 +188,7 @@ integration rather than a native build — with the existing requirement or epic
 in this epic is safe without it, and it is what prevents the amendment being implemented twice
 alongside requirements that already cover it.
 
-**Independent Test**: Pick ten clauses spanning all four documents and confirm each carries a verdict
+**Independent Test**: Pick ten clauses spanning all five documents and confirm each carries a verdict
 and a named existing artifact or an explicit "no existing coverage".
 
 **Acceptance Scenarios**:
@@ -428,7 +435,7 @@ recorded reason referencing an amendment clause.
 
 ### Key Entities
 
-- **Amendment Clause**: One substantive statement from one of the four documents. Attributes: source
+- **Amendment Clause**: One substantive statement from one of the five documents. Attributes: source
   document, section, text, whether normative (SHALL/MUST) or advisory (SHOULD/MAY).
 - **Clause Verdict**: The classification of one clause. Attributes: clause, one of the five verdicts,
   named existing requirement or epic, reasoning, resulting action.
@@ -471,7 +478,7 @@ recorded reason referencing an amendment clause.
   amendment clause.
 - **SC-AMD-011**: A reader can determine, for any of the **seventeen** capability areas the amendment
   introduces, whether it is new, an enhancement, or already covered — and which epic owns it — from a
-  single document. The seventeen are enumerated in the plan's capability-area table; the count is
+  single document. The twenty are enumerated in the plan's capability-area table; the count is
   asserted by `G-27-13`, so the criterion and the table cannot drift apart again.
 - **SC-AMD-012**: Every conflict is presented as a decision with options; zero conflicts are resolved
   silently in the reconciliation itself.
@@ -480,7 +487,7 @@ recorded reason referencing an amendment clause.
 
 - **This is a reconciliation epic, not a product epic** (`FR-AMD-016`). It produces analysis,
   decisions and a sequence. It builds nothing. This is the direct answer to the project owner's
-  scope-creep concern: the amendment's seventeen new capability areas enter the programme as a
+  scope-creep concern: the amendments' twenty new capability areas enter the programme as a
   decided, sequenced backlog rather than as an undifferentiated expansion of work already under way.
 - **Starting over is rejected on the authority of the SRS**, not on preference — Plan Amendment
   §Purpose and §19, and Native §28. Constitution II makes the SRS binding where it and a spec
@@ -504,8 +511,9 @@ recorded reason referencing an amendment clause.
 - **Advisory clauses are recorded as principles, not requirements.** The documents mix SHALL with
   SHOULD and with narrative recommendation; converting an aspiration into a functional requirement
   produces an untestable requirement, which the quality gate would reject anyway.
-- **The four documents are read as one amendment.** They overlap substantially — the Rooms appear in
-  three of them. Where they differ in detail, the more specific and later text governs, and the
+- **The five documents are read as one amendment.** They overlap substantially — the Rooms appear in
+  four of them, and the Cosmos amendment (2026-08-14) is explicitly a *refinement* of the August-11
+  set rather than a competing direction (§1, §11). Where they differ in detail, the more specific and later text governs, and the
   reconciliation records which was used.
 - **The two `~$` files in `SRS/August112026/` are editor lock files**, not source documents, and the
   `.docx` and `.md` copies of the Plan Amendment carry identical content — verified.

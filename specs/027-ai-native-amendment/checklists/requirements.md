@@ -18,7 +18,7 @@
 
 - [x] No [NEEDS CLARIFICATION] markers remain — every open choice was resolved from the amendment
       itself, which is unusually prescriptive, and recorded in Assumptions. A clarification session
-      on 2026-08-14 then settled the register's granularity (~340 rows, one per clause) and two
+      on 2026-08-14 then settled the register's granularity (one row per clause) and two
       programme decisions (`D-35`, `D-40`)
 - [x] Requirements are testable and unambiguous — each `FR-AMD` names what must be recorded, verified
       or produced
@@ -57,12 +57,15 @@
 - [x] Both name collisions are documented with the conflicting scopes quoted from source
 - [x] The amendment's own contradiction — calling capabilities "existing" that are absent — is
       recorded as a decision, not resolved unilaterally
-- [x] The four source documents are distinguished, and the overlap between them noted
+- [x] The five source documents are distinguished, and the overlap between them noted — the
+      Augment/Cosmos amendment of 2026-08-14 is explicitly a refinement of the August-11 set (§1, §11),
+      not a competing direction
 
 ## Notes
 
-- Validation run 2026-08-13, single iteration, all items pass.
-- **Zero clarification markers, unusually.** The four amendment documents are prescriptive to the
+- Validation run 2026-08-13, single iteration, all items pass. Re-validated 2026-08-14 after the
+  Augment/Cosmos amendment widened the epic from four documents to five (`D-42`).
+- **Zero clarification markers, unusually.** The five amendment documents are prescriptive to the
   point of specifying their own deliverable (§18), their own method (§17), and their own constraint
   (§19). Where a normal spec would guess, this one quotes.
 - **Two findings were verified before writing, not during planning**, and both change how the

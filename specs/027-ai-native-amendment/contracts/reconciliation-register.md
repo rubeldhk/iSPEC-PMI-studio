@@ -17,7 +17,7 @@ Constitution V requires an executable check that **can fail**, and states the re
 > *"…a specification, standard, or layout that no check reads is a document that silently rots, and
 > rotted governance is worse than none because it is still trusted."*
 
-A twenty-five-section impact report with a clause register of ~340 rows is exactly the artifact that
+A twenty-five-section impact report with a clause register of ~470 rows is exactly the artifact that
 rots. Checking it by regex over prose produces a check that passes on malformed input — which is
 worse than no check, because it manufactures confidence.
 
@@ -55,7 +55,7 @@ check most likely to catch a real mistake**, because regenerating is the step pe
 
   "clauses": [{
     "id": "CLA-001",
-    "document": "plan-amendment",          // | native-speckit | lifecycle | defect-management
+    "document": "plan-amendment",          // | native-speckit | lifecycle | defect-management | cosmos-learnings
     "section": "§19",
     "text": "This amendment is evolutionary, not a product reset.",
     "normativity": "shall",                // | must | should | may | narrative
@@ -116,7 +116,7 @@ check most likely to catch a real mistake**, because regenerating is the step pe
     "compatibility_impact": "…", "alternative_considered": "…"   // all five REQUIRED — §28
   }],
 
-  "capability_areas": [{                 // exactly 17 — G-27-13
+  "capability_areas": [{                 // exactly 20 — G-27-13
     "area": "Agent Gateway + agent contract",
     "verdict": "missing", "home": "EPIC-028", "posture": "proceeds"
   }],
@@ -145,13 +145,13 @@ named in [quickstart.md](../quickstart.md).
 | `G-27-04` | Every capability has an `ownership`; every `integrated`/`hybrid` names a boundary; `removed_because_external` is false throughout | `SC-AMD-004` |
 | `G-27-05` | Every premise has a count and, when count > 0, locations | `SC-AMD-005` |
 | `G-27-06` | Impact report has exactly 25 sections and zero placeholders | `SC-AMD-006` |
-| `G-27-07` | All 12 Native §27 ADR subjects present; every `open` names what it awaits; every `supersedes` carries reasoning | `SC-AMD-007` |
+| `G-27-07` | All **17** ADR subjects present — 12 from Native §27 plus 5 from Cosmos §9; every `open` names what it awaits; every `supersedes` carries reasoning | `SC-AMD-007` |
 | `G-27-08` | All 14 `R-AI-*` items registered with `blocks`; no decision is `decided` while `blocking_research` is unanswered | `SC-AMD-008` |
 | `G-27-09` | Zero product source files changed by this epic — `git diff --name-only` touches nothing under `backend/`, `worker/`, `packages/`, `engine-adapters/`, `frontend/` | `SC-AMD-009` |
 | `G-27-10` | Every decision has ≥2 options, a consequence per option, and an owner | `SC-AMD-012` |
 | `G-27-11` | `generated_from` digests match the source files | `R-027-1` |
 | `G-27-12` | Every `preserved_element_changes` row has all five §28 fields non-empty | `FR-AMD-015` |
-| `G-27-13` | The capability-area table has exactly **17** rows; every row carries a verdict, a named home and a posture; the count matches the figure quoted in `spec.md` | `SC-AMD-011` |
+| `G-27-13` | The capability-area table has exactly **20** rows; every row carries a verdict, a named home and a posture; the count matches the figure quoted in `spec.md` | `SC-AMD-011` |
 | `G-27-14` | No other epic's **Delivery posture** line is modified by this epic's diff unless a matching `epic_status_changes` row exists, carrying `epic`, `from`, `to`, `reason` and the `CLA-###` responsible | `SC-AMD-010` |
 
 **`G-27-09` is the one that enforces `FR-AMD-016`.** It is also the only check here that inspects the

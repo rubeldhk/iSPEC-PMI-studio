@@ -19,18 +19,18 @@ projection the conformance checks read (`R-027-1`). Schema in
 
 ## AmendmentClause
 
-One substantive statement from one of the four documents.
+One substantive statement from one of the five documents.
 
 | Field | Type | Rules |
 |---|---|---|
 | `id` | `CLA-###` | Stable, sequential, never reused |
-| `document` | enum | `plan-amendment` · `native-speckit` · `lifecycle` · `defect-management` |
+| `document` | enum | `plan-amendment` · `native-speckit` · `lifecycle` · `defect-management` · `cosmos-learnings` |
 | `section` | string | Section number as printed in the source, e.g. `§19` |
 | `text` | string | Quoted, not paraphrased — paraphrase is where premises get lost |
 | `normativity` | enum | `shall` · `must` · `should` · `may` · `narrative` |
 | `duplicates` | `CLA-###[]` | Clauses stating the same thing in another document |
 
-**Why `normativity` is a field and not a judgement made later**: the four documents mix binding
+**Why `normativity` is a field and not a judgement made later**: the five documents mix binding
 language with recommendation, and the spec's Assumptions already rule that *"advisory clauses are
 recorded as principles, not requirements"*. Recording the verb at intake makes that rule mechanical
 rather than a per-clause argument.
@@ -232,4 +232,4 @@ stack.
 | Field-level detail for the three Rooms | Held behind `PMI-DOC-004`; the BRS is precisely the document that settles requirement-approval behaviour |
 | MCP tool schemas | Native §10: *"exact tools must be specified during design"* — M-09's work |
 | Embedding dimensions, index type, model choice | Depends on `D-24` and `R-027-5`; guessing produces a migration nobody can justify |
-| Identifier form for new entities | **`D-1` is still open.** Choosing `FR-xxxx` vs `FR-SPEC-001` here would pre-empt a decision four documents are already arguing about |
+| Identifier form for new entities | **`D-1` is still open.** Choosing `FR-xxxx` vs `FR-SPEC-001` here would pre-empt a decision five documents are already arguing about |
