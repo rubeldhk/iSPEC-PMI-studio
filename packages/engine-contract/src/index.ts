@@ -175,10 +175,23 @@ export class MissingCapabilityError extends Error {
   }
 }
 
+/**
+ * T648 — the ONE implementation of FR-021's capability check.
+ *
+ * Convergence found it written twice: `assertPhase1Capabilities` here, and
+ * open-coded again inside `EngineRegistryService.registerAll`. Two
+ * implementations of one requirement can disagree, and EPIC-028 adds two more
+ * registries — fixing one duplicate is cheap, fixing three is a refactor.
+ * Every caller now routes through this.
+ */
+export function missingPhase1Capabilities(descriptor: EngineDescriptor): EngineCapability[] {
+  return PHASE_1_CAPABILITIES.filter((c) => !descriptor.capabilities.includes(c));
+}
+
 /** FR-021: refuse registration, naming the missing capability. */
 export function assertPhase1Capabilities(descriptor: EngineDescriptor): void {
-  const missing = PHASE_1_CAPABILITIES.filter((c) => !descriptor.capabilities.includes(c));
+  const missing = missingPhase1Capabilities(descriptor);
   if (missing.length > 0) {
-    throw new MissingCapabilityError(descriptor.name, [...missing]);
+    throw new MissingCapabilityError(descriptor.name, missing);
   }
 }

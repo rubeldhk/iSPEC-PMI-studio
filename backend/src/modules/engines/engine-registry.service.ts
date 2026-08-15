@@ -11,8 +11,8 @@
  */
 import {
   MissingCapabilityError,
-  PHASE_1_CAPABILITIES,
   assertPhase1Capabilities,
+  missingPhase1Capabilities,
   type EngineDescriptor,
   type SpecificationEngine,
 } from '@pmi/engine-contract';
@@ -90,9 +90,9 @@ export class EngineRegistryService {
   ): void {
     const refusals: MissingCapabilityError[] = [];
     for (const entry of entries) {
-      const missing = PHASE_1_CAPABILITIES.filter(
-        (capability) => !entry.engine.descriptor.capabilities.includes(capability),
-      );
+      // T648: delegates to the contract's single implementation rather than
+      // re-deriving it. Two answers to FR-021 can disagree.
+      const missing = missingPhase1Capabilities(entry.engine.descriptor);
       if (missing.length > 0) {
         refusals.push(new MissingCapabilityError(entry.engine.descriptor.name, [...missing]));
       }

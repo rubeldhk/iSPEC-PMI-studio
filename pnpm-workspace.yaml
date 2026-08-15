@@ -4,3 +4,5 @@ packages:
   - 'worker'
   - 'packages/*'
   - 'engine-adapters/*'
+  - 'agent-adapters/*'
+  - 'execution-providers/*'

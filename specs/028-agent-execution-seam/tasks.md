@@ -45,14 +45,19 @@ sibling projects have tests"* — two projects collected nothing, the run stayed
 were marked complete with **no test file anywhere in the repository**. Adding three more projects
 without a guard repeats it three times over.
 
-- [ ] T537 Write a conformance check asserting (a) every project named in the `test:unit` script collects at least one test file, failing with the project name, and (b) every new package declares the expected name and a `workspace:*` dependency on its contract — in `tests/governance/vitest-projects.spec.ts`
-- [ ] T538 Add `agent-adapters/*` and `execution-providers/*` to the `packages` list in `pnpm-workspace.yaml` (conformance check: T537)
+- [X] T537 Write a conformance check asserting (a) every project named in the `test:unit` script collects at least one test file, failing with the project name, and (b) every new package declares the expected name and a `workspace:*` dependency on its contract — in `tests/governance/vitest-projects.spec.ts`
+- [X] T538 Add `agent-adapters/*` and `execution-providers/*` to the `packages` list in `pnpm-workspace.yaml` (conformance check: T537)
 - [ ] T539 Register the `agent-contract`, `agent-adapters` and `execution-providers` projects in `vitest.config.ts` and add them to the `test:unit` script in `package.json` (conformance check: T537)
-- [ ] T540 [P] Write failing tests asserting the ESLint dependency-boundary rule forbids `backend/**` importing `agent-adapters/*` or `execution-providers/*` in `tests/governance/eslint-boundaries.spec.ts`
-- [ ] T541 Extend the dependency-boundary rule in `eslint.config.js` with the two new forbidden edges (test: T540)
-- [ ] T542 [P] Scaffold `packages/execution-contract` — `package.json` (name `@pmi/execution-contract`), `tsconfig.json`, `src/index.ts` (conformance check: T537)
-- [ ] T543 [P] Scaffold `packages/agent-contract` — `package.json` (name `@pmi/agent-contract`), `tsconfig.json`, `src/index.ts` (conformance check: T537)
-- [ ] T544 [P] Scaffold `agent-adapters/fixture`, `agent-adapters/claude` and `execution-providers/docker` with `package.json`, `tsconfig.json` and a `workspace:*` dependency on their contract (conformance check: T537)
+
+  > ⚠️ **Partially done 2026-08-14.** `execution-contract`, `agent-contract` and `agent-adapters`
+  > are registered in `vitest.workspace.ts` and `test:unit`. **`execution-providers` is deliberately
+  > NOT registered**: it has no test file yet, and `T537` correctly fails on a project that collects
+  > nothing. Register it in the same commit as `T646a`, which is the task that gives it tests.
+- [X] T540 [P] Write failing tests asserting the ESLint dependency-boundary rule forbids `backend/**` importing `agent-adapters/*` or `execution-providers/*` in `tests/governance/eslint-boundaries.spec.ts`
+- [X] T541 Extend the dependency-boundary rule in `eslint.config.js` with the two new forbidden edges (test: T540)
+- [X] T542 [P] Scaffold `packages/execution-contract` — `package.json` (name `@pmi/execution-contract`), `tsconfig.json`, `src/index.ts` (conformance check: T537)
+- [X] T543 [P] Scaffold `packages/agent-contract` — `package.json` (name `@pmi/agent-contract`), `tsconfig.json`, `src/index.ts` (conformance check: T537)
+- [X] T544 [P] Scaffold `agent-adapters/fixture`, `agent-adapters/claude` and `execution-providers/docker` with `package.json`, `tsconfig.json` and a `workspace:*` dependency on their contract (conformance check: T537)
 
 **Checkpoint**: `pnpm -r typecheck` passes, `pnpm test:unit` names eight projects, and `T537` fails loudly if any collects nothing.
 
@@ -69,28 +74,28 @@ two more registries exist.
 an `ExecutionSession`; the environment knows nothing about agents. Building it the other way round
 would make the execution layer depend on the AI layer — the coupling this epic exists to remove.
 
-- [ ] T545 [P] Write failing unit tests for `ExecutionResult` narrowing, descriptor validation, and the `WorkspaceBinding` union — **including type-level assertions (`@ts-expect-error` / `expectTypeOf`) that a `persistent` binding without a `branch` does not compile (`FR-AGT-008`)** — in `packages/execution-contract/tests/unit/contract.spec.ts`
+- [X] T545 [P] Write failing unit tests for `ExecutionResult` narrowing, descriptor validation, and the `WorkspaceBinding` union — **including type-level assertions (`@ts-expect-error` / `expectTypeOf`) that a `persistent` binding without a `branch` does not compile (`FR-AGT-008`)** — in `packages/execution-contract/tests/unit/contract.spec.ts`
 
   > The compile-time claim is the mechanism, not a nicety: [data-model.md](./data-model.md) argues the
   > union is what makes Native §5's *"no sandbox state may implicitly become authoritative project
   > state"* structural rather than conventional. An untested type claim is a comment.
-- [ ] T546 Define `ProjectExecutionEnvironment`, `ExecutionEnvironmentDescriptor`, `ExecutionRequest`, `ExecutionSession`, `ExecResult`, `ResourceLimits` and the failure taxonomy (closed enum, no `unknown` member) in `packages/execution-contract/src/index.ts` (unit test: T545)
-- [ ] T547 Define the `WorkspaceBinding` discriminated union, `EgressProfile` and `ScopedCredentialRef` in `packages/execution-contract/src/index.ts` (unit test: T545)
-- [ ] T548 [P] Write failing unit tests asserting the frozen `generation` profile matches `ADR-0002` exactly — AI provider endpoint only — in `packages/execution-contract/tests/unit/generation-profile.spec.ts`
-- [ ] T549 Define `GENERATION_EGRESS_PROFILE` as a frozen constant in `packages/execution-contract/src/profiles.ts` (unit test: T548)
-- [ ] T549a Write a conformance check asserting `engine-adapters/speckit/tests/unit/sandbox-config.spec.ts` and `engine-adapters/speckit/docker/sandbox.json` are **unchanged from `main`** — content hash comparison — in `tests/governance/generation-egress-frozen.spec.ts`
+- [X] T546 Define `ProjectExecutionEnvironment`, `ExecutionEnvironmentDescriptor`, `ExecutionRequest`, `ExecutionSession`, `ExecResult`, `ResourceLimits` and the failure taxonomy (closed enum, no `unknown` member) in `packages/execution-contract/src/index.ts` (unit test: T545)
+- [X] T547 Define the `WorkspaceBinding` discriminated union, `EgressProfile` and `ScopedCredentialRef` in `packages/execution-contract/src/index.ts` (unit test: T545)
+- [X] T548 [P] Write failing unit tests asserting the frozen `generation` profile matches `ADR-0002` exactly — AI provider endpoint only — in `packages/execution-contract/tests/unit/generation-profile.spec.ts`
+- [X] T549 Define `GENERATION_EGRESS_PROFILE` as a frozen constant in `packages/execution-contract/src/profiles.ts` (unit test: T548)
+- [X] T549a Write a conformance check asserting `engine-adapters/speckit/tests/unit/sandbox-config.spec.ts` and `engine-adapters/speckit/docker/sandbox.json` are **unchanged from `main`** — content hash comparison — in `tests/governance/generation-egress-frozen.spec.ts`
 
   > **`SC-AGT-005` had no enforcement that could fail in CI** until the analyse pass of 2026-08-14 —
   > only a `git diff` inside `T591`'s quickstart run. The epic's own checklist calls it *"the most
   > important criterion and the easiest to skip"*, and it is the one that proves which half of a
   > security boundary this epic did **not** touch. A modified test would pass just as green and mean
   > nothing; a hash comparison is the only form of that assertion that works.
-- [ ] T550 [P] Write failing unit tests for `AgentResult` narrowing, `AGENT_FAILURE_REASONS` completeness (closed enum, no `unknown` member), and **`AgentDescriptor` carrying every field Native §7 names (`FR-AGT-002`)** in `packages/agent-contract/tests/unit/contract.spec.ts`
-- [ ] T551 Define `AgentGateway`, `AgentDescriptor`, `AgentInvocation`, `AgentContext`, `AgentExecutionRecord` and `AGENT_FAILURE_REASONS` in `packages/agent-contract/src/index.ts` (unit test: T550)
-- [ ] T552 [P] Write failing unit tests asserting `assertAgentCapabilities` refuses and names **every** missing capability in `packages/agent-contract/tests/unit/capabilities.spec.ts`
-- [ ] T553 Implement `assertAgentCapabilities` and `MissingAgentCapabilityError` in `packages/agent-contract/src/index.ts` (unit test: T552)
-- [ ] T554 [P] Write failing unit tests asserting exactly one implementation owns `FR-021` capability validation in `backend/tests/unit/engines/registry-ownership.spec.ts`
-- [ ] T648 Remove the duplicate registry — `worker/src/engine-composition.ts` delegates capability validation to `backend/src/modules/engines/engine-registry.service.ts` (unit test: T554) *(routed from EPIC-003)*
+- [X] T550 [P] Write failing unit tests for `AgentResult` narrowing, `AGENT_FAILURE_REASONS` completeness (closed enum, no `unknown` member), and **`AgentDescriptor` carrying every field Native §7 names (`FR-AGT-002`)** in `packages/agent-contract/tests/unit/contract.spec.ts`
+- [X] T551 Define `AgentGateway`, `AgentDescriptor`, `AgentInvocation`, `AgentContext`, `AgentExecutionRecord` and `AGENT_FAILURE_REASONS` in `packages/agent-contract/src/index.ts` (unit test: T550)
+- [X] T552 [P] Write failing unit tests asserting `assertAgentCapabilities` refuses and names **every** missing capability in `packages/agent-contract/tests/unit/capabilities.spec.ts`
+- [X] T553 Implement `assertAgentCapabilities` and `MissingAgentCapabilityError` in `packages/agent-contract/src/index.ts` (unit test: T552)
+- [X] T554 [P] Write failing unit tests asserting exactly one implementation owns `FR-021` capability validation in `backend/tests/unit/engines/registry-ownership.spec.ts`
+- [X] T648 Remove the duplicate registry — `worker/src/engine-composition.ts` delegates capability validation to `backend/src/modules/engines/engine-registry.service.ts` (unit test: T554) *(routed from EPIC-003)*
 
   > **Open since 2026-08-08 with no owner.** Two implementations of `FR-021` that can disagree.
   > Fixed here rather than later because this epic adds an agent registry and an execution-provider
@@ -112,7 +117,7 @@ engines, applied to the axis the amendment cares about.
 ### Tests for User Story 1 (MANDATORY — Constitution V) ⚠️
 
 - [ ] T555 [P] [US1] Write failing unit tests for `AgentRegistry` register / resolve / list, capability refusal, **and refusal of a second adapter claiming an already-registered provider identifier** (spec Edge Cases) in `worker/tests/unit/agent-registry.spec.ts`
-- [ ] T556 [P] [US1] Write the failing agent conformance suite — already-aborted signal, hung step, failure misclassification, capability refusal — in `agent-adapters/fixture/tests/conformance.spec.ts`
+- [X] T556 [P] [US1] Write the failing agent conformance suite — already-aborted signal, hung step, failure misclassification, capability refusal — in `agent-adapters/fixture/tests/conformance.spec.ts`
 - [ ] T557 [P] [US1] Write failing unit tests for `ClaudeAgent` descriptor, invocation and failure mapping in `agent-adapters/claude/tests/unit/claude.agent.spec.ts`
 - [ ] T558 [P] [US1] Write failing unit tests asserting `SpecKitEngine` accepts an injected agent and names no provider in `engine-adapters/speckit/tests/unit/agent-injection.spec.ts`
 - [ ] T559 [P] [US1] Write failing unit tests asserting no prompt and no model output reaches operational logs (PC-3) in `engine-adapters/speckit/tests/unit/log-exclusion.spec.ts`
@@ -132,7 +137,7 @@ engines, applied to the axis the amendment cares about.
 ### Implementation for User Story 1
 
 - [ ] T562 [US1] Implement `AgentRegistry` and `composeAgentRegistry()` in `worker/src/agent-composition.ts`, delegating capability validation per T648 (unit test: T555)
-- [ ] T563 [US1] Implement `FixtureAgent` in `agent-adapters/fixture/src/fixture.agent.ts` (conformance: T556)
+- [X] T563 [US1] Implement `FixtureAgent` in `agent-adapters/fixture/src/fixture.agent.ts` (conformance: T556)
 - [ ] T564 [US1] Implement `ClaudeAgent` in `agent-adapters/claude/src/claude.agent.ts`, carrying `specKitIntegrationName: 'claude'` — **the only place that string may now appear** (unit test: T557)
 - [ ] T565 [US1] Run the shared conformance suite against `ClaudeAgent` in `agent-adapters/claude/tests/conformance.spec.ts` (suite: T556)
 - [ ] T566 [US1] Refactor `SpecKitEngine` to take an injected `AgentGateway` — replace `--integration claude` with `agent.descriptor.specKitIntegrationName` and the four `claude` command invocations with `agent.execute()` — in `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
@@ -198,17 +203,17 @@ never by editing business logic.
 
 ### Tests for User Story 3 (MANDATORY — Constitution V) ⚠️
 
-- [ ] T578 [P] [US3] Write failing unit tests asserting `*`, `0.0.0.0/0`, `::/0` and an empty destination list are each rejected, in `packages/execution-contract/tests/unit/egress-validation.spec.ts`
-- [ ] T579 [P] [US3] Write failing unit tests asserting a provider with `supportsNetworkPolicy: false` cannot accept any egress profile, in `packages/execution-contract/tests/unit/policy-capability.spec.ts`
-- [ ] T580 [P] [US3] Write failing unit tests asserting a `ScopedCredentialRef` without `expiresAt` is rejected, that `env` contains no credential value, **and that an unresolvable credential ref fails the run before any container starts** (spec Edge Cases), in `packages/execution-contract/tests/unit/credential-validation.spec.ts`
+- [X] T578 [P] [US3] Write failing unit tests asserting `*`, `0.0.0.0/0`, `::/0` and an empty destination list are each rejected, in `packages/execution-contract/tests/unit/egress-validation.spec.ts`
+- [X] T579 [P] [US3] Write failing unit tests asserting a provider with `supportsNetworkPolicy: false` cannot accept any egress profile, in `packages/execution-contract/tests/unit/policy-capability.spec.ts`
+- [X] T580 [P] [US3] Write failing unit tests asserting a `ScopedCredentialRef` without `expiresAt` is rejected, that `env` contains no credential value, **and that an unresolvable credential ref fails the run before any container starts** (spec Edge Cases), in `packages/execution-contract/tests/unit/credential-validation.spec.ts`
 - [ ] T581 [P] [US3] Write the failing architecture rule — no component outside the worker composition root reaches a container runtime directly — appended to `backend/tests/architecture/agent-independence.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T582 [US3] Implement `assertEgressProfile` — non-empty destinations, no wildcard or general-internet form — in `packages/execution-contract/src/validation.ts` (unit test: T578)
-- [ ] T583 [US3] Implement the provider/profile compatibility refusal in `packages/execution-contract/src/validation.ts` (unit test: T579)
-- [ ] T584 [US3] Implement `ScopedCredentialRef` validation and the `env` secret-scan in `packages/execution-contract/src/validation.ts` (unit test: T580)
-- [ ] T585 [US3] Define the **deliberately minimal** `implementation` egress profile — AI provider endpoint only, `enforcement: 'proxy'` recording intent — in `packages/execution-contract/src/profiles.ts` (unit test: T578)
+- [X] T582 [US3] Implement `assertEgressProfile` — non-empty destinations, no wildcard or general-internet form — in `packages/execution-contract/src/validation.ts` (unit test: T578)
+- [X] T583 [US3] Implement the provider/profile compatibility refusal in `packages/execution-contract/src/validation.ts` (unit test: T579)
+- [X] T584 [US3] Implement `ScopedCredentialRef` validation and the `env` secret-scan in `packages/execution-contract/src/validation.ts` (unit test: T580)
+- [X] T585 [US3] Define the **deliberately minimal** `implementation` egress profile — AI provider endpoint only, `enforcement: 'proxy'` recording intent — in `packages/execution-contract/src/profiles.ts` (unit test: T578)
 
   > One destination on purpose (`R-028-6`, confirmed 2026-08-14). A guessed npm/PyPI/GitHub list would
   > be untested, would read as authoritative, and would be inherited as settled. **The proxy is not

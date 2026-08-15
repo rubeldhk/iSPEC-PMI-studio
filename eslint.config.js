@@ -50,6 +50,16 @@ export default [
               message:
                 'backend/ must not import an engine adapter. Depend on @pmi/engine-contract only (FR-017, ADR-0001).',
             },
+            {
+              group: ['@pmi/agent-adapter-*', '**/agent-adapters/*'],
+              message:
+                'backend/ must not import an agent adapter. Depend on @pmi/agent-contract only — Native §3 forbids merging the specification engine with the AI agent (FR-AGT-004).',
+            },
+            {
+              group: ['@pmi/execution-provider-*', '**/execution-providers/*'],
+              message:
+                'backend/ must not import an execution provider. Depend on @pmi/execution-contract only — Native §4 forbids business logic depending directly on Docker (FR-AGT-009).',
+            },
           ],
         },
       ],

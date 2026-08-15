@@ -83,6 +83,38 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'execution-contract',
+      root: './packages/execution-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
+      name: 'agent-contract',
+      root: './packages/agent-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
+      name: 'agent-adapters',
+      root: './agent-adapters',
+      include: ['**/tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
+      name: 'execution-providers',
+      root: './execution-providers',
+      include: ['**/tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'governance',
       root: '.',
       include: ['tests/governance/**/*.spec.ts'],

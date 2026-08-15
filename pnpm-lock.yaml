@@ -30,6 +30,24 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.1)
 
+  agent-adapters/claude:
+    dependencies:
+      '@pmi/agent-contract':
+        specifier: workspace:*
+        version: link:../../packages/agent-contract
+      '@pmi/execution-contract':
+        specifier: workspace:*
+        version: link:../../packages/execution-contract
+
+  agent-adapters/fixture:
+    dependencies:
+      '@pmi/agent-contract':
+        specifier: workspace:*
+        version: link:../../packages/agent-contract
+      '@pmi/execution-contract':
+        specifier: workspace:*
+        version: link:../../packages/execution-contract
+
   backend:
     dependencies:
       '@nestjs/common':
@@ -97,6 +115,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/engine-contract
 
+  execution-providers/docker:
+    dependencies:
+      '@pmi/execution-contract':
+        specifier: workspace:*
+        version: link:../../packages/execution-contract
+
   frontend:
     dependencies:
       react:
@@ -119,7 +143,15 @@ importers:
         specifier: ^6.0.7
         version: 6.4.3(@types/node@22.20.1)(yaml@2.9.0)
 
+  packages/agent-contract:
+    dependencies:
+      '@pmi/execution-contract':
+        specifier: workspace:*
+        version: link:../execution-contract
+
   packages/engine-contract: {}
+
+  packages/execution-contract: {}
 
   worker:
     dependencies:
