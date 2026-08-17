@@ -20,10 +20,32 @@ import { describe, expect, it } from 'vitest';
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(here, '../..');
 
-/** The two artifacts that together define the frozen control. */
-const FROZEN = [
-  'engine-adapters/speckit/docker/sandbox.json',
-  'engine-adapters/speckit/tests/unit/sandbox-config.spec.ts',
+/**
+ * The two artifacts that together define the frozen control, with the hash each
+ * is frozen AT.
+ *
+ * **DEF-028-003.** This check previously compared against `main` alone — and
+ * neither file exists on `main`, which is at `7980f9f`, predating EPIC-003. The
+ * comparison threw, the check took its skip branch, and printed a SKIPPED line
+ * on every run on every machine including CI. The skip was written for a shallow
+ * clone, a transient condition; the real condition was permanent. So the check
+ * added *because* `SC-AGT-005` had no enforcement that could fail still had
+ * none, while the suite was green and the criterion was listed as enforced.
+ *
+ * A hash committed in the repository is what "frozen" actually means: changing
+ * the manifest now requires changing the constant below in the same commit,
+ * which is a visible, reviewable act rather than a silent drift. It works on any
+ * branch, at any clone depth, before and after a merge.
+ */
+const FROZEN: readonly { path: string; sha256: string }[] = [
+  {
+    path: 'engine-adapters/speckit/docker/sandbox.json',
+    sha256: '389daa738f82bd342654ad8c2fc8fcca75936f9f6ff7663550afc4c293cc40ea',
+  },
+  {
+    path: 'engine-adapters/speckit/tests/unit/sandbox-config.spec.ts',
+    sha256: 'f50299cf51fc08be53ec611d9732b26157dfa5a59cb3ab7a10d524990ba5bc34',
+  },
 ];
 
 const sha = (buf: string | Buffer): string => createHash('sha256').update(buf).digest('hex');
@@ -42,12 +64,37 @@ function atMain(path: string): string | null {
 }
 
 describe('T549a · the generation egress control is frozen (SC-AGT-005)', () => {
-  it.each(FROZEN)('%s is unchanged from main', (path) => {
+  /**
+   * The primary assertion. Always runs, everywhere.
+   *
+   * If this fails, someone changed a security control this epic promised not to
+   * touch. Updating the constant to match is not a fix — it is the change,
+   * made visible, and it needs the reasoning that goes with it.
+   */
+  it.each(FROZEN)('$path matches its frozen hash', ({ path, sha256 }) => {
+    expect(
+      sha(readFileSync(join(ROOT, path))),
+      `${path} was modified. SC-AGT-005 promises this epic did not touch the generation egress ` +
+        `control; if the change is intended, update the hash in this file in the SAME commit and ` +
+        `record why.`,
+    ).toBe(sha256);
+  });
+
+  /**
+   * A second, additive assertion — genuine evidence when the ref exists.
+   *
+   * Kept rather than deleted: after this branch merges it becomes live and
+   * catches a class the hash cannot, namely a hash and a file updated together
+   * without review. But it is no longer the ONLY assertion, so a skip here no
+   * longer means nothing ran.
+   */
+  it.each(FROZEN)('$path is unchanged from main, when main has it', ({ path }) => {
     const baseline = atMain(path);
     if (baseline === null) {
-      // Reported, never silently passed: an unavailable ref means the check
-      // did not run, which is not the same as the check succeeding.
-      console.warn(`[T549a] SKIPPED — 'main:${path}' is unavailable in this checkout.`);
+      console.warn(
+        `[T549a] SECONDARY CHECK SKIPPED — 'main:${path}' is unavailable ` +
+          `(main predates this file). The frozen-hash assertion above DID run and is authoritative.`,
+      );
       return;
     }
     expect(sha(readFileSync(join(ROOT, path))), `${path} was modified`).toBe(sha(baseline));
@@ -56,7 +103,7 @@ describe('T549a · the generation egress control is frozen (SC-AGT-005)', () => 
   it('the profile constant matches the manifest it mirrors', () => {
     // The contract package cannot import the adapter (boundary), so the
     // destination is duplicated. This is what stops the two drifting.
-    const manifest = JSON.parse(readFileSync(join(ROOT, FROZEN[0] as string), 'utf8')) as {
+    const manifest = JSON.parse(readFileSync(join(ROOT, FROZEN[0]!.path), 'utf8')) as {
       network: { egress: { allow: { host: string }[] } };
     };
     const profiles = readFileSync(
@@ -72,7 +119,7 @@ describe('T549a · the generation egress control is frozen (SC-AGT-005)', () => 
   });
 
   it('the manifest still denies egress by default', () => {
-    const manifest = JSON.parse(readFileSync(join(ROOT, FROZEN[0] as string), 'utf8')) as {
+    const manifest = JSON.parse(readFileSync(join(ROOT, FROZEN[0]!.path), 'utf8')) as {
       network: { egress: { policy: string } };
     };
     expect(manifest.network.egress.policy).toBe('deny-all');

@@ -54,6 +54,8 @@ this epic **owns** the following and is where they are satisfied:
 
 - EPIC-004 — tenancy and audit, which these grants extend
 - EPIC-008 — artifacts to grant access on
+- **EPIC-023** — the `Run` model, which carries the `access_snapshot` column `T381` writes (FR-028).
+  A run-start snapshot cannot be taken against a `Run` that does not exist
 
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 

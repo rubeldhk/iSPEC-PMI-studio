@@ -68,6 +68,7 @@ complete, reviewed, and Constitution V compliant.
 | [EPIC-023](./023-unattended-runs-review/) | Unattended Runs & Team Review — M-06 Workflow | ⏸ Held · **43 tasks** · owns FR-001–FR-020, FR-005a–c, FR-015a |
 | [EPIC-024](./024-artifact-access-control/) | Artifact Access Control — M-13 Security & Governance | ⏸ Held · **21 tasks** · owns FR-021–FR-028 |
 | [EPIC-025](./025-external-storage-publishing/) | External Storage Publishing — M-11 DevOps | ⏸ Held · **32 tasks** · owns FR-029–FR-040 |
+| [EPIC-028](./028-agent-execution-seam/) | Agent & Execution Seam | 🟡 **65/66 · 2026-08-17** — the agent and execution seams are built and defended by build-failing tests. `T646b` (the first real container run) is deferred to an operator with a Docker daemon, so **`SC-AGT-001` is unverified and the epic is not release-eligible**. [closure.md](./028-agent-execution-seam/closure.md) |
 | [EPIC-018](./018-repository-governance/) | Repository Governance Process | ✅ **RELEASE-ELIGIBLE 2026-08-17** — 36/37; the one open task (`T666`, the `V18-6` newcomer walkthrough) is explicitly deferred to the project owner. [closure.md](./018-repository-governance/closure.md) |
 
 ### The enhancement-model family — 87 tasks, all ⏸ held

@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-019` | **Module**: M-01 / M-04 | **Date**: 2026-08-04 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 26 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
+**Tasks**: 27 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
 
 **Parent design** — not duplicated here: [`../017-enhancement-model/`](../017-enhancement-model/)
 ([plan](../017-enhancement-model/plan.md) · [research](../017-enhancement-model/research.md) ·
@@ -47,7 +47,7 @@ Inherited from [`../_shared/plan.md`](../_shared/plan.md) and the
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — via the [parent spec](../017-enhancement-model/spec.md) |
-| III | Epic → Feature → Task decomposition | PASS — 3 functions, 26 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 3 functions, 27 tasks |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `Phase Z` in [tasks.md](./tasks.md) |
 | V | Every implementation task carries a unit test, written to fail first | PASS — 0 gaps |
 | VI | `specs/019-steering-engine/defects/` exists | PASS |
@@ -81,7 +81,7 @@ F-17.1 scopes + organization tier
 
 ## Definition of done
 
-- [ ] 26 tasks complete, every unit test passing (Constitution V)
+- [ ] 27 tasks complete, every unit test passing (Constitution V)
 - [ ] Quickstart **V17-1**, **V17-2**, **V17-3** pass
 - [ ] Conformance cases **C-14** to **C-16** green against the fixture and Spec Kit adapters
 - [ ] `pnpm test:arch` green — no engine-specific reference introduced by steering

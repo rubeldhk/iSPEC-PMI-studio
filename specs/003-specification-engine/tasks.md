@@ -135,6 +135,19 @@ are **not actionable in this epic**.
 - ~~[ ] T647~~ **ROUTED → EPIC-028 T647** — Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts` once T646 lands, per FR-018 (partial) — the composition root still registers `FixtureEngine` as default, so the *default engine* requirement is unmet in the running system even though the adapter is built
 - ~~[ ] T648~~ **ROUTED → EPIC-028 T648** — Remove the duplicate registry: `worker/src/engine-composition.ts` defines its own `EngineRegistry` alongside `backend/src/modules/engines/engine-registry.service.ts` per duplication — decide which owns capability validation, since two implementations of FR-021 can disagree
 
+> **`T595` · Delivered by EPIC-028, 2026-08-17.** All three routed rows are now built. Recorded here
+> so a reader of *this* file is not left believing they are outstanding; **EPIC-003's closure is not
+> reopened** and its task ledger is unchanged — these rows stay struck through and owned elsewhere.
+>
+> | Row | Landed as | Note |
+> |---|---|---|
+> | `T646` | `T646a` **done** · `T646b` **NOT done** | `T646a` implements `DockerExecutionEnvironment` against the Docker Engine HTTP API. It did **not** land as `engine-adapters/speckit/src/container-runtime.ts` as this row proposed — decision `D-21` (conflict `C-20`) moved it behind a port into `execution-providers/docker`, because Native §4 forbids business logic depending directly on Docker. `T646b`, the real container run, still needs a machine with a daemon |
+> | `T647` | **done** | `SpecKitEngine` is the default engine; `FR-018` is satisfied in the running system for the first time |
+> | `T648` | **done** | `worker/src/engine-composition.ts` delegates capability validation to `assertPhase1Capabilities`; one implementation owns `FR-021` |
+>
+> The one thing EPIC-003's closure report said it could not claim — *"No real container has ever
+> started"* — **remains true**. `T646b` is the task that changes it, and it has not run.
+
 ---
 
 ## Phase 7: Convergence

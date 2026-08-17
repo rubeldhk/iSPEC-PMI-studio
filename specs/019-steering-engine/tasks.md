@@ -5,7 +5,7 @@ description: "Task list for EPIC-019 — Steering Engine"
 
 # Tasks: Steering Engine
 
-**Epic**: `EPIC-019` | **Module**: M-01 / M-04 | **Tasks**: 26
+**Epic**: `EPIC-019` | **Module**: M-01 / M-04 | **Tasks**: 27
 
 **Spec**: [spec.md](./spec.md) | **Parent design**: [../017-enhancement-model/](../017-enhancement-model/) | **Shared design**: [../_shared/](../_shared/)
 
@@ -15,7 +15,9 @@ description: "Task list for EPIC-019 — Steering Engine"
 **Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a
 paired unit-test task, written to fail first.
 
-**Task IDs are invariant** — allocated `T225`–`T250` at the split. Cross-references such as
+**Task IDs are invariant** — allocated `T225`–`T250` at the split, plus `T246a` added 2026-08-09 to
+close the steering/prompt architecture-test gap (sub-lettered so no existing ID moves).
+Cross-references such as
 `(unit test: T0nn)` may point at a task in another epic; that is expected and correct.
 
 > ⚠️ **F-17.1 must land before any other epic in the EPIC-017 family.** It adds a tenancy scope above
@@ -62,6 +64,7 @@ not the steering that applied.*
 - [ ] T244 [US1] Add the optional `steering` field to `GenerateSpecificationInput` per `../017-enhancement-model/contracts/steering-contract.md` in `packages/engine-contract/src/index.ts` (unit test: T243)
 - [ ] T245 [US1] Extend the shared conformance suite with cases **C-14** (absent steering is byte-identical to baseline), **C-15** (structured steering consumed with no platform-side formatting), and **C-16** (a steering violation returns a finding, not a failure) in `packages/engine-contract/tests/conformance/engine-conformance.suite.ts`
 - [ ] T246 [US1] Extend the fixture adapter to consume steering and to inject a steering violation on demand, in `engine-adapters/fixture/src/fixture.adapter.ts` (conformance: T245)
+- [ ] T246a [US1] Extend the architecture test to fail the build if `backend/src/**` assembles steering into prompt text — assert no steering field is template-interpolated, string-concatenated, or joined into a natural-language instruction, and that steering leaves `backend/` only as structured `SteeringInput[]` — in `backend/tests/architecture/engine-independence.spec.ts` (**R-017-2**, PP-006). The existing `T047`/`T142` checks match engine *names* and cannot detect a prompt built from steering without naming one
 
 ---
 
@@ -103,7 +106,8 @@ difference. Quickstart **V17-1**, **V17-2**, and **V17-3** in
 - Steering is **additive**: an empty `steering` field must leave every existing conformance case
   passing unchanged (contract rule S4). T245 asserts it.
 - `backend/` must never format steering into a prompt — that is engine-specific and regresses PP-006.
-  The existing architecture test (T047, T142) is the backstop.
+  **`T246a` is the backstop.** `T047`/`T142` are *not* sufficient here: they match engine names and
+  adapter imports, and a prompt assembled from steering text names no engine, so it passes them.
 - Never edit code outside a Spec Kit command (Constitution I); defects become new tasks, not direct
   patches (Constitution VI).
 - Every command run ends with a closing report: what was done + recommended next task (Constitution IX).

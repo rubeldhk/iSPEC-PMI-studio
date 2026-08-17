@@ -80,16 +80,19 @@ check-then-revoke sequence races past it.
 
 ## Review of the existing task list
 
-### G-024.1 · This epic gates its siblings ⚠️ open, sequencing
+### G-024.1 · Sequencing — ✅ corrected 2026-08-08
 
-Two of the three children depend on grants existing:
+**An earlier version of this section had the dependency backwards.** It claimed this epic gates both
+siblings and that neither recorded it. Checking the task placement showed otherwise:
 
-- **EPIC-023** `T381` snapshots access at run start — nothing to snapshot without grants.
-- **EPIC-025** `T392` excludes artifacts the publisher cannot access (`FR-033`) — no exclusion
-  without grants.
+- `T381` (run-start access snapshotting, **FR-028**, owned here) lives in **this epic**, not EPIC-023.
+  It writes the `access_snapshot` column on `Run`, and **`Run` is defined by EPIC-023 `T343`** — so
+  **this epic depends on EPIC-023**, not the reverse. Now recorded in [spec.md](./spec.md).
+- **EPIC-023 does not depend on this epic.** Nothing across its 43 tasks references access or grants.
+- **EPIC-025 already recorded its dependency** on this epic — `T392` excludes artifacts the publisher
+  cannot access (`FR-033`) — and always had; that half of the original claim was simply wrong.
 
-Neither dependency is recorded in those epics' `Depends on` sections. **This epic should land
-first** among the three, which inverts the numbering.
+**Corrected order**: EPIC-023 → EPIC-024 → EPIC-025. The numbering was right all along.
 
 **Otherwise the cleanest of the three.** The access API (`T418`–`T420`) and both integration tests
 (`T427`, `T428`) were added on 2026-08-05 and migrated intact. It is the only child where every

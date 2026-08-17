@@ -12,7 +12,7 @@ description: "Task list for EPIC-025 — External Storage Publishing"
 
 > ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` and approved business scope. Held is not cancelled — these tasks await an input, not more design.
 
-**Requirements owned**: FR-029 – FR-040
+**Requirements owned**: FR-029 – FR-040, FR-029a, FR-029b
 
 **Session label**: `EPIC-025 External Storage Publishing` (Constitution VIII).
 

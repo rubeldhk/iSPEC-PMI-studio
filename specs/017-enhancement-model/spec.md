@@ -17,9 +17,9 @@
 >
 > | Child epic | Functions | Requirements owned | Tasks |
 > |---|---|---|---|
-> | [EPIC-019 Steering Engine](../019-steering-engine/) | F-17.1 – F-17.3 | FR-ENH-001 – 005 | 26 |
+> | [EPIC-019 Steering Engine](../019-steering-engine/) | F-17.1 – F-17.3 | FR-ENH-001 – 005 | 27 |
 > | [EPIC-020 Living Specifications & Impact](../020-living-specifications/) | F-17.4 – F-17.6 | FR-ENH-006 – 011 | 22 |
-> | [EPIC-021 Review Gates & Roles](../021-review-gates-roles/) | F-17.7, F-17.8, F-17.11 | FR-ENH-012 – 016, 023, 024 | 23 |
+> | [EPIC-021 Review Gates & Roles](../021-review-gates-roles/) | F-17.7, F-17.8, F-17.11, F-17.12 | FR-ENH-012 – 016, 023, 024 | 23 |
 > | [EPIC-022 Product Structure & Traceability](../022-product-traceability/) | F-17.9, F-17.10 | FR-ENH-020 – 022 | 16 |
 >
 > **EPIC-017 itself has no `tasks.md` and no `Phase Z` closure.** It is closed when all four children

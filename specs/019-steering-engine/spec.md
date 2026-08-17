@@ -1,6 +1,6 @@
 # Epic Specification: Steering Engine
 
-**Epic**: `EPIC-019` | **Module**: M-01 / M-04 | **Tasks**: 26
+**Epic**: `EPIC-019` | **Module**: M-01 / M-04 | **Tasks**: 27
 
 **Parent design**: [../017-enhancement-model/](../017-enhancement-model/) — spec, plan, research,
 data model, contracts, quickstart. Requirements are defined **once** there; this epic declares which
@@ -61,7 +61,7 @@ records only where it differs:
 | Principle | Status in this epic |
 |---|---|
 | PP-001 Specification First, AI Second | ✅ **Satisfied here** — steering constrains generation *before* it runs |
-| PP-006 Engine Independence | ⚠️ **At risk here, and defended.** Steering enters through the contract as structured data, never as a prompt fragment. The architecture test (T047, T142) is the backstop |
+| PP-006 Engine Independence | ⚠️ **At risk here, and defended.** Steering enters through the contract as structured data, never as a prompt fragment. **`T246a` is the backstop** — it fails the build if `backend/src/**` assembles steering into prompt text. `T047`/`T142` are not sufficient: they match engine *names*, and a prompt built from steering names none |
 | PP-014 Configuration over Customization | ✅ Satisfied here — steering is configuration, not a per-tenant fork |
 
 ## Notes
@@ -77,6 +77,7 @@ records only where it differs:
 - [ ] `specs/019-steering-engine/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; any deferral retains a valid owner
 - [ ] Conformance cases **C-14** to **C-16** green against both adapters
+- [ ] `pnpm test:arch` green including **`T246a`** — no steering text assembled into a prompt in `backend/src/**`
 - [ ] A closing report was published: work completed, work deferred, and the recommended next task
       named as a concrete Spec Kit command (Constitution IX)
 - [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**

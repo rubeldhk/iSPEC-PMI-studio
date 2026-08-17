@@ -227,32 +227,32 @@ never by editing business logic.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T587 **Mutation-test the agent conformance suite** — break one assertion in `agent-adapters/fixture/src/fixture.agent.ts`, confirm `agent-adapters/fixture/tests/conformance.spec.ts` turns red, restore it, and record the result in the closing report
+- [X] T587 **Mutation-test the agent conformance suite** — break one assertion in `agent-adapters/fixture/src/fixture.agent.ts`, confirm `agent-adapters/fixture/tests/conformance.spec.ts` turns red, restore it, and record the result in the closing report
 
   > EPIC-003 did this and it is the only evidence a conformance suite tests anything: *"dropping
   > `location` from a fixture finding turned `C11` red, so the suite is not vacuous."* A suite nobody
   > has broken on purpose is decoration.
 
-- [ ] T588 [P] Write `specs/028-agent-execution-seam/preserved-elements.md` recording the three Native §28 changes — `SpecificationEngine` contract (unchanged), Docker isolation, sandbox credential model — each with reason, affected requirement, migration impact, compatibility impact and alternative considered (conformance check: T589)
-- [ ] T589 [P] Write a conformance check asserting every `preserved-elements.md` row carries all five §28 fields non-empty, in `tests/governance/preserved-elements.spec.ts` (pairs with T588)
-- [ ] T590 [P] Mark the three new dependency rules as **enforced** in `specs/_shared/ai-native-architecture.md` §C.2
+- [X] T588 [P] Write `specs/028-agent-execution-seam/preserved-elements.md` recording the three Native §28 changes — `SpecificationEngine` contract (unchanged), Docker isolation, sandbox credential model — each with reason, affected requirement, migration impact, compatibility impact and alternative considered (conformance check: T589)
+- [X] T589 [P] Write a conformance check asserting every `preserved-elements.md` row carries all five §28 fields non-empty, in `tests/governance/preserved-elements.spec.ts` (pairs with T588)
+- [X] T590 [P] Mark the three new dependency rules as **enforced** in `specs/_shared/ai-native-architecture.md` §C.2
 
   > **No conformance check, deliberately.** Constitution V covers document outputs, but **no
   > `specs/_shared/*.md` in this corpus has a check** — EPIC-018's governance suite covers
   > `governance/**` only. Adding one here for a single paragraph would create a standard that seven
   > sibling documents fail. Recorded as a **corpus-wide gap** rather than fixed locally; it belongs
   > in an EPIC-018 follow-up alongside `D-39`.
-- [ ] T591 Run quickstart `V0`–`V5`, `V7`, `V8` and record every result, distinguishing passes from unrun
+- [X] T591 Run quickstart `V0`–`V5`, `V7`, `V8` and record every result, distinguishing passes from unrun
 
 ---
 
 ## Phase Z: Epic Closure (MANDATORY — Constitution IV, VI, VII, IX)
 
-- [ ] T592 Confirm every implementation task has a passing unit test, **and** that no Vitest project collects zero tests (T537) — the check that would have caught the EPIC-003 correction
-- [ ] T593 Run `/speckit-converge`; append and complete any remaining unbuilt work
-- [ ] T594 Triage `specs/028-agent-execution-seam/defects/`; every record closed or deferred to a named Epic
-- [ ] T595 Annotate the routed rows in `specs/003-specification-engine/tasks.md` — `T646`, `T647`, `T648` now owned by EPIC-028 — without reopening EPIC-003's closure
-- [ ] T596 Publish the Epic closing report: work completed, work deferred, `T646b`'s outcome stated plainly, and the recommended next command (Constitution IX)
+- [X] T592 Confirm every implementation task has a passing unit test, **and** that no Vitest project collects zero tests (T537) — the check that would have caught the EPIC-003 correction
+- [X] T593 Run `/speckit-converge`; append and complete any remaining unbuilt work
+- [X] T594 Triage `specs/028-agent-execution-seam/defects/`; every record closed or deferred to a named Epic
+- [X] T595 Annotate the routed rows in `specs/003-specification-engine/tasks.md` — `T646`, `T647`, `T648` now owned by EPIC-028 — without reopening EPIC-003's closure
+- [X] T596 Publish the Epic closing report: work completed, work deferred, `T646b`'s outcome stated plainly, and the recommended next command (Constitution IX)
 
 ---
 

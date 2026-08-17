@@ -12,7 +12,7 @@ description: "Task list for EPIC-023 — Unattended Runs & Team Review"
 
 > ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` and approved business scope. Held is not cancelled — these tasks await an input, not more design.
 
-**Requirements owned**: FR-001 – FR-020, FR-005a – FR-005c, FR-015a
+**Requirements owned**: FR-001 – FR-020, FR-005a – FR-005c, FR-008a, FR-015a
 
 **Session label**: `EPIC-023 Unattended Runs & Team Review` (Constitution VIII).
 

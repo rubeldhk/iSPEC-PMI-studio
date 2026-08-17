@@ -39,9 +39,10 @@ this epic **owns** the following and is where they are satisfied:
 |---|
 | FR-001 to FR-008 — unattended run mode and the user-selected stop point |
 | FR-005a to FR-005c — provisional approval by explicit, recorded override |
-| FR-009 to FR-020 — review sessions, draft answers, conflict detection, atomic submission |
+| FR-008a — the run stops at the range the user selected and reports that it did |
+| FR-009 to FR-015 — review sessions, draft answers, conflict detection, atomic submission |
 | FR-015a — submission restricted to the project owner or the run initiator |
-| FR-016 to FR-019 — re-run with submitted answers, and stale-answer warning |
+| FR-016 to FR-020 — re-run with submitted answers, marking clearance, and stale-answer warning |
 
 ## User stories owned
 

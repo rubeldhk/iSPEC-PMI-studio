@@ -23,9 +23,9 @@ manager third pary solution like google drive, dropbox, s3 etc"
 >
 > | Child epic | Module | Requirements owned | Tasks |
 > |---|---|---|---|
-> | [EPIC-023 Unattended Runs & Team Review](../023-unattended-runs-review/) | M-06 Workflow | FR-001–FR-020, FR-005a–c, FR-015a | 43 |
+> | [EPIC-023 Unattended Runs & Team Review](../023-unattended-runs-review/) | M-06 Workflow | FR-001–FR-020, FR-005a–c, FR-008a, FR-015a | 43 |
 > | [EPIC-024 Artifact Access Control](../024-artifact-access-control/) | M-13 Security & Governance | FR-021–FR-028 | 21 |
-> | [EPIC-025 External Storage Publishing](../025-external-storage-publishing/) | M-11 DevOps | FR-029–FR-040 | 32 |
+> | [EPIC-025 External Storage Publishing](../025-external-storage-publishing/) | M-11 DevOps | FR-029–FR-040, FR-029a–b | 37 |
 >
 > **Why split**: this epic spanned **three modules**, and MPS Volume 6 §1 places epics *below*
 > modules. An epic covering three inverts the hierarchy — the same defect D-15 corrected when
@@ -36,7 +36,9 @@ manager third pary solution like google drive, dropbox, s3 etc"
 > **once** here; each child declares what it owns.
 >
 > All 87 task IDs were preserved unchanged; 9 closure tasks were added so each child can converge
-> independently (Constitution IV).
+> independently (Constitution IV) — **96 at the split**. The clarification session of **2026-08-08**
+> then added **5 tasks** to EPIC-025 (`T447`–`T451`) for the new token-lifecycle requirements
+> **FR-029a** and **FR-029b**, bringing the current total to **101** (43 + 21 + 37).
 **Depends on**: `EPIC-001` — PMI Studio Phase 1 Platform Core. This Epic extends the projects,
 requirements, specifications, tasks, and generation jobs that EPIC-001 establishes.
 

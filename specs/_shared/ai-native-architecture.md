@@ -445,14 +445,29 @@ backend    ──►  engine-adapters/*                ❌   (existing, tested)
 worker     ──►  engine-adapters/*                ✅   composition root only (existing)
 service    ──►  HTTP types                       ❌   PC-1 (existing, tested)
 
-engine adapter ──►  agent-contract               ✅   NEW — engines request an agent
-engine adapter ──►  a named provider             ❌   NEW — no 'claude' string outside an agent adapter
-any component  ──►  a container runtime directly ❌   NEW — only via ProjectExecutionEnvironment
+engine adapter ──►  agent-contract               ✅   ENFORCED — engines request an agent
+engine adapter ──►  a named provider             ❌   ENFORCED — no 'claude' string outside an agent adapter
+any component  ──►  a container runtime directly ❌   ENFORCED — only via ProjectExecutionEnvironment
+execution-contract ──► agent-contract            ❌   ENFORCED — layering; the environment knows nothing of agents
 ```
 
-Each of the three new rules is one assertion in `agent-independence.spec.ts`. That file is the
+Each of the new rules is one assertion in `agent-independence.spec.ts`. That file is the
 smallest artifact in this plan and the one that does the most work, because it converts the
 amendment's most repeated instruction from prose into a build failure.
+
+> **Marked ENFORCED 2026-08-17 by `T590`.** All four assertions are live in
+> `backend/tests/architecture/agent-independence.spec.ts` and run in CI as `pnpm test:arch`, which
+> is a build-failing gate rather than a review convention. The fourth rule — the layering
+> assertion — was added by the analyse pass of 2026-08-14: [plan.md](../028-agent-execution-seam/plan.md)'s
+> build order rests on *"the agent contract references `ExecutionSession`, never the other way
+> round"*, and nothing enforced it. A claim the build order depends on should fail a build.
+>
+> **No conformance check reads this paragraph, deliberately.** Constitution V covers document
+> outputs, but **no `specs/_shared/*.md` in this corpus has one** — EPIC-018's governance suite
+> covers `governance/**` only. Adding a check here for a single paragraph would create a standard
+> that seven sibling documents immediately fail. Recorded as a **corpus-wide gap** belonging to an
+> EPIC-018 follow-up alongside `D-39`, rather than fixed locally in a way that looks like coverage
+> and is not.
 
 ## C.3 What this epic does **not** design
 

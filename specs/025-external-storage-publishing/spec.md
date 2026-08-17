@@ -1,6 +1,6 @@
 # Epic Specification: External Storage Publishing
 
-**Epic**: `EPIC-025` | **Module**: M-11 DevOps | **Tasks**: 32
+**Epic**: `EPIC-025` | **Module**: M-11 DevOps | **Tasks**: 37
 
 **Parent design**: [../002-team-review-access-storage/](../002-team-review-access-storage/)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
@@ -38,6 +38,7 @@ this epic **owns** the following and is where they are satisfied:
 | Requirement |
 |---|
 | FR-029, FR-031 — connect a provider and report connection health distinctly |
+| FR-029a, FR-029b — refresh an expired token without user interaction; never expose a stored token |
 | FR-030, FR-039 — more than one provider type, behind one boundary, new types without change elsewhere |
 | FR-032, FR-034 — publish artifacts organised by project, and record what landed where |
 | FR-033 — exclude artifacts the publisher cannot access, and report the exclusion |
@@ -57,6 +58,7 @@ this epic **owns** the following and is where they are satisfied:
 - SC-010 — provider switch with zero loss of artifacts or publish history
 - SC-011 — a new provider type with zero change outside the storage boundary
 - SC-012 — provider-side deletion has zero effect on platform artifacts
+- SC-014 — zero provider passwords accepted or stored; zero stored tokens in any response, log or error
 
 ## Depends on
 
