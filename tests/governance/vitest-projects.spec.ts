@@ -58,7 +58,13 @@ const PROJECT_DIRS: Record<string, string> = {
   'execution-contract': 'packages/execution-contract/tests',
   'agent-contract': 'packages/agent-contract/tests',
   'agent-adapters': 'agent-adapters',
+  // EPIC-028 T539 — registered only once T646a gave it tests. `T537` correctly
+  // fails on a project that collects nothing, and registering it earlier would
+  // have meant silencing the check that exists to catch exactly that.
   'execution-providers': 'execution-providers',
+  // EPIC-028 T576a — the manual runner's logic. `scripts/` is application code
+  // under Constitution I, so Constitution V applies to it like anything else.
+  scripts: 'scripts/tests',
 };
 
 describe('T537 · every project named by test:unit actually collects tests', () => {

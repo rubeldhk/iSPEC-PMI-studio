@@ -102,6 +102,9 @@ importers:
       '@pmi/engine-adapter-speckit':
         specifier: workspace:*
         version: link:../engine-adapters/speckit
+      '@pmi/worker':
+        specifier: workspace:*
+        version: link:../worker
       '@testcontainers/postgresql':
         specifier: ^10
         version: 10.28.0
@@ -210,6 +213,9 @@ importers:
       '@pmi/execution-contract':
         specifier: workspace:*
         version: link:../packages/execution-contract
+      '@pmi/execution-provider-docker':
+        specifier: workspace:*
+        version: link:../execution-providers/docker
       '@pmi/observability':
         specifier: workspace:*
         version: link:../packages/observability

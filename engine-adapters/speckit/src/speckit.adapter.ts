@@ -38,11 +38,28 @@ import type {
   AgentExecutionRecord,
   AgentGateway,
 } from '@pmi/agent-contract';
+import {
+  GENERATION_EGRESS_PROFILE,
+  type ExecResult,
+  type ExecutionSession,
+  type ProjectExecutionEnvironment,
+} from '@pmi/execution-contract';
 import { buildSandboxEnvironment } from './correlation.js';
 import { findSpecificationPath, parseSpecification } from './parse.js';
 import { withEphemeralWorkspace, type WorkspaceFileSystem } from './workspace.js';
 
 export const SPECKIT_INPUT_CEILING = 500;
+
+/** From docker/sandbox.json, which sandbox-config.spec.ts has asserted since EPIC-003. */
+export const DEFAULT_ENGINE_IMAGE = 'pmi-studio/speckit-engine';
+
+/** ADR-0002's caps. Simultaneously a safety control and a cost control (RAID R-02). */
+export const DEFAULT_RESOURCE_LIMITS = Object.freeze({
+  cpus: 1,
+  memoryMb: 2048,
+  pids: 256,
+  wallClockMs: 600_000,
+});
 
 /** The five steps, in the order they must run. Exported so tests assert ordering by name. */
 export const INVOCATION_STEPS = [
@@ -55,35 +72,38 @@ export const INVOCATION_STEPS = [
 
 export type InvocationStep = (typeof INVOCATION_STEPS)[number];
 
-export interface ExecResult {
-  exitCode: number;
-  stdout: string;
-  /** Operator-facing only. Never returned to a user, never logged (R-011). */
-  stderr: string;
-}
+/**
+ * T575 — `ContainerRuntime` and `SandboxSession` were declared HERE, inside the
+ * engine adapter, which is why nothing else in the programme could use them and
+ * why implementing Docker against them would have made Docker the abstraction
+ * rather than a provider (Native §4, conflict `C-20`, decision `D-21`).
+ *
+ * They are now `ProjectExecutionEnvironment` and `ExecutionSession` in
+ * `@pmi/execution-contract`. The aliases below are retained ONLY as deprecated
+ * names so the many existing tests keep compiling; nothing in `src/` uses them.
+ *
+ * `ExecutionSession` is deliberately identical in shape to the `SandboxSession`
+ * it replaces — Native §28 preserves the contract, and a widened port that also
+ * changed its session shape would have been two changes wearing one name.
+ */
+export type { ExecResult, ExecutionSession };
 
-export interface SandboxSession {
-  exec(command: readonly string[]): Promise<ExecResult>;
-  writeFile(path: string, content: string): Promise<void>;
-  listFiles(): Promise<string[]>;
-  readFile(path: string): Promise<string>;
-}
-
-export interface ContainerRuntime {
-  /** Start a container. Throwing here means the engine could not be reached. */
-  start(options: {
-    env: Record<string, string>;
-    workspacePath: string;
-    timeoutMs: number;
-    signal: AbortSignal;
-  }): Promise<SandboxSession>;
-  /** Destroy it. Must be idempotent and must not throw into a result. */
-  stop(session: SandboxSession): Promise<void>;
-}
+/** @deprecated Use `ExecutionSession` from `@pmi/execution-contract`. */
+export type SandboxSession = ExecutionSession;
+/** @deprecated Use `ProjectExecutionEnvironment` from `@pmi/execution-contract`. */
+export type ContainerRuntime = ProjectExecutionEnvironment;
 
 export interface SpecKitAdapterOptions {
   descriptor: EngineDescriptor;
-  runtime: ContainerRuntime;
+  /**
+   * The execution substrate, as a PORT.
+   *
+   * No component outside the worker composition root reaches a container
+   * runtime directly — asserted by `agent-independence.spec.ts` (T581).
+   */
+  environment: ProjectExecutionEnvironment;
+  /** Image the environment starts. Overridable per deployment. */
+  image?: string;
   /**
    * T566 — WHO reasons, injected rather than named.
    *
@@ -259,7 +279,7 @@ export class SpecKitEngine implements SpecificationEngine {
    * written to prevent and the EPIC-003 suite caught recurring.
    */
   private async runAgent(
-    session: SandboxSession,
+    session: ExecutionSession,
     ctx: EngineContext,
     capability: AgentCapability,
     command: string,
@@ -331,7 +351,7 @@ export class SpecKitEngine implements SpecificationEngine {
    */
   private async runInSandbox<T>(
     ctx: EngineContext,
-    work: (session: SandboxSession) => Promise<T>,
+    work: (session: ExecutionSession) => Promise<T>,
   ): Promise<EngineResult<T>> {
     if (ctx.signal.aborted) return engineFail('cancelled', 'Generation was cancelled.');
 
@@ -354,11 +374,21 @@ export class SpecKitEngine implements SpecificationEngine {
             aiProviderToken: this.options.aiProviderToken,
           });
 
-          let session: SandboxSession;
+          let session: ExecutionSession;
           try {
-            session = await this.options.runtime.start({
+            // T575 — an `ExecutionRequest`, not four loose options. The workspace
+            // binding is `ephemeral` by construction: there is no binding that is
+            // persistent and unnamed, so sandbox state cannot implicitly become
+            // authoritative project state (Native §5, decisions D-22/D-29).
+            session = await this.options.environment.start({
+              lifecycle: 'ephemeral',
+              image: this.options.image ?? DEFAULT_ENGINE_IMAGE,
               env,
-              workspacePath: workspace.path,
+              workspace: { kind: 'ephemeral', scratchPath: workspace.path },
+              // The FROZEN profile. Widening it is `SC-AGT-005`'s whole subject.
+              egressProfile: GENERATION_EGRESS_PROFILE,
+              credentials: [],
+              resourceLimits: DEFAULT_RESOURCE_LIMITS,
               timeoutMs: ctx.timeoutMs,
               signal: ctx.signal,
             });
@@ -392,7 +422,7 @@ export class SpecKitEngine implements SpecificationEngine {
             return this.attribute<T>(error, ctx, timedOutByLimit);
           } finally {
             // E8 — the container goes whatever happened.
-            await this.options.runtime.stop(session).catch(() => undefined);
+            await this.options.environment.stop(session).catch(() => undefined);
           }
         },
         this.options.onTeardownFailure
@@ -427,7 +457,7 @@ export class SpecKitEngine implements SpecificationEngine {
 
   private async step(
     step: InvocationStep,
-    session: SandboxSession,
+    session: ExecutionSession,
     command: readonly string[],
   ): Promise<ExecResult> {
     const result = await session.exec(command);
@@ -437,7 +467,7 @@ export class SpecKitEngine implements SpecificationEngine {
     return result;
   }
 
-  private async write(session: SandboxSession, path: string, content: string): Promise<void> {
+  private async write(session: ExecutionSession, path: string, content: string): Promise<void> {
     try {
       await session.writeFile(path, content);
     } catch (error) {
@@ -454,7 +484,7 @@ export class SpecKitEngine implements SpecificationEngine {
     return session.readFile(path);
   }
 
-  private async readBackFile(session: SandboxSession, suffix: string): Promise<string> {
+  private async readBackFile(session: ExecutionSession, suffix: string): Promise<string> {
     const files = await session.listFiles();
     const path = files.find((file) => file.replace(/\\/g, '/').endsWith(suffix));
     if (!path) {

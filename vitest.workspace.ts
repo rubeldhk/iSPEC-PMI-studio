@@ -126,6 +126,17 @@ export default defineWorkspace([
     },
   },
   {
+    // T576a — the manual runner is application code (Constitution V), and
+    // `scripts/` is not on Constitution I's exempt list. Its logic is testable
+    // without a daemon; only T646b's execution is not.
+    test: {
+      name: 'scripts',
+      root: './scripts',
+      include: ['tests/**/*.spec.mjs'],
+      environment: 'node',
+    },
+  },
+  {
     test: {
       name: 'governance',
       root: '.',

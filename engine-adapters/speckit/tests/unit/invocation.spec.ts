@@ -25,6 +25,18 @@ import {
 import type { WorkspaceFileSystem } from '../../src/workspace.js';
 import { FixtureAgent } from '@pmi/agent-adapter-fixture';
 
+/**
+ * T575 — the engine now takes a ProjectExecutionEnvironment, which carries a
+ * descriptor. Fakes declare one so the port is honoured rather than cast away.
+ */
+const ENV_DESCRIPTOR = {
+  provider: 'fake',
+  supportedLifecycles: ['ephemeral'],
+  supportsPersistentState: false,
+  supportsNetworkPolicy: true,
+  maxWallClockMs: 900_000,
+} as const;
+
 const CORRELATION_ID = '3f1a2b4c-5d6e-4f70-8a91-b2c3d4e5f607';
 const TOKEN = 'sk-testProviderToken0123456789';
 
@@ -73,7 +85,8 @@ function harness(
     readFile: async (path) => files[path] ?? '',
   };
 
-  const runtime: ContainerRuntime = {
+  const environment: ContainerRuntime = {
+    descriptor: ENV_DESCRIPTOR,
     start: async () => {
       counters.started++;
       if (options.startThrows) throw options.startThrows;
@@ -93,7 +106,7 @@ function harness(
 
   const engine = new SpecKitEngine({
     descriptor,
-    runtime,
+    environment,
     fileSystem,
     aiProviderToken: TOKEN, agent: new FixtureAgent(),
     ...(options.ceiling !== undefined ? { inputCeiling: options.ceiling } : {}),
@@ -346,7 +359,8 @@ describe('the sandbox receives exactly two environment values (PC-3)', () => {
     const engine = new SpecKitEngine({
       descriptor,
       aiProviderToken: TOKEN, agent: new FixtureAgent(),
-      runtime: {
+      environment: {
+        descriptor: ENV_DESCRIPTOR,
         start: async ({ env }) => {
           captured = env;
           return session;

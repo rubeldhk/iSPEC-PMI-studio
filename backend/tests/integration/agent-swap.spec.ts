@@ -27,9 +27,21 @@ import {
   type SandboxSession,
 } from '@pmi/engine-adapter-speckit';
 
+/**
+ * T575 — the engine now takes a `ProjectExecutionEnvironment`, which carries a
+ * descriptor. Fakes declare one so the port is honoured rather than cast away.
+ */
+const ENV_DESCRIPTOR = {
+  provider: 'fake',
+  supportedLifecycles: ['ephemeral'],
+  supportsPersistentState: false,
+  supportsNetworkPolicy: true,
+  maxWallClockMs: 900_000,
+} as const;
+
 const SPEC = ['# Feature Specification: Apollo', '', '## Requirements', '', '- **FR-001**: MUST x', ''].join('\n');
 
-function runtime(exitCode = 0): ContainerRuntime & { commands: string[][] } {
+function environment(exitCode = 0): ContainerRuntime & { commands: string[][] } {
   const commands: string[][] = [];
   const session: SandboxSession = {
     exec: async (command) => {
@@ -43,7 +55,7 @@ function runtime(exitCode = 0): ContainerRuntime & { commands: string[][] } {
     listFiles: async () => ['specs/001-apollo/spec.md'],
     readFile: async () => SPEC,
   };
-  return { commands, start: async () => session, stop: async () => undefined };
+  return { commands, descriptor: ENV_DESCRIPTOR, start: async () => session, stop: async () => undefined };
 }
 
 const fileSystem = {
@@ -64,14 +76,14 @@ const input = {
 
 function engineWith(agent: AgentGateway, exitCode = 0) {
   const records: AgentExecutionRecord[] = [];
-  const rt = runtime(exitCode);
+  const rt = environment(exitCode);
   const engine = new SpecKitEngine({
     descriptor: {
       name: 'speckit',
       version: '1.0.0',
       capabilities: ['generate_specification', 'generate_tasks', 'validate_specification'],
     },
-    runtime: rt,
+    environment: rt,
     agent,
     fileSystem,
     aiProviderToken: 'sk-test-not-real',

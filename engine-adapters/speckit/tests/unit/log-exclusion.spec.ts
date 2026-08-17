@@ -18,6 +18,18 @@ import type { AgentExecutionRecord } from '@pmi/agent-contract';
 import { redact, SpecKitEngine, type ContainerRuntime, type SandboxSession } from '../../src/speckit.adapter.js';
 import type { WorkspaceFileSystem } from '../../src/workspace.js';
 
+/**
+ * T575 — the engine now takes a ProjectExecutionEnvironment, which carries a
+ * descriptor. Fakes declare one so the port is honoured rather than cast away.
+ */
+const ENV_DESCRIPTOR = {
+  provider: 'fake',
+  supportedLifecycles: ['ephemeral'],
+  supportsPersistentState: false,
+  supportsNetworkPolicy: true,
+  maxWallClockMs: 900_000,
+} as const;
+
 const SECRET_REQUIREMENT = 'Patients must be able to export their diagnosis history';
 const MODEL_OUTPUT = '# Feature Specification: Apollo\n\n## Requirements\n\n- **FR-001**: MUST ' + SECRET_REQUIREMENT + '\n';
 
@@ -26,14 +38,14 @@ const fileSystem: WorkspaceFileSystem = {
   removeDirectory: async () => undefined,
 };
 
-function runtime(): ContainerRuntime {
+function environment(): ContainerRuntime {
   const session: SandboxSession = {
     exec: async () => ({ exitCode: 0, stdout: MODEL_OUTPUT, stderr: '' }),
     writeFile: async () => undefined,
     listFiles: async () => ['specs/001-apollo/spec.md'],
     readFile: async () => MODEL_OUTPUT,
   };
-  return { start: async () => session, stop: async () => undefined };
+  return { descriptor: ENV_DESCRIPTOR, start: async () => session, stop: async () => undefined };
 }
 
 const ctx = () => ({
@@ -53,7 +65,7 @@ async function recordsFrom(agent = new FixtureAgent({ stdout: MODEL_OUTPUT })) {
   const records: AgentExecutionRecord[] = [];
   await new SpecKitEngine({
     descriptor: { name: 'speckit', version: '1.0.0', capabilities: ['generate_specification', 'generate_tasks', 'validate_specification'] },
-    runtime: runtime(),
+    environment: environment(),
     agent,
     fileSystem,
     aiProviderToken: 'sk-live-not-a-real-key',

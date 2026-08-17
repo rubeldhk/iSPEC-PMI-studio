@@ -31,6 +31,18 @@ import {
 import type { WorkspaceFileSystem } from '../src/workspace.js';
 import { FixtureAgent } from '@pmi/agent-adapter-fixture';
 
+/**
+ * T575 — the engine now takes a ProjectExecutionEnvironment, which carries a
+ * descriptor. Fakes declare one so the port is honoured rather than cast away.
+ */
+const ENV_DESCRIPTOR = {
+  provider: 'fake',
+  supportedLifecycles: ['ephemeral'],
+  supportsPersistentState: false,
+  supportsNetworkPolicy: true,
+  maxWallClockMs: 900_000,
+} as const;
+
 const SECRET_PROBE = 'sk-speckitProbe0123456789';
 const GENERATED_SPEC = '# Specification: Conformance\n\n## Overview\n\nGenerated body.\n';
 
@@ -86,7 +98,8 @@ function buildEngine(behaviour: RuntimeBehaviour = {}): SpecKitEngine {
     readFile: async (path) => files[path] ?? '',
   };
 
-  const runtime: ContainerRuntime = {
+  const environment: ContainerRuntime = {
+    descriptor: ENV_DESCRIPTOR,
     start: async () => {
       // Counted only on success: a start that throws leaves no container to
       // stop, so counting it would report a leak that does not exist.
@@ -99,7 +112,7 @@ function buildEngine(behaviour: RuntimeBehaviour = {}): SpecKitEngine {
     },
   };
 
-  return new SpecKitEngine({ descriptor, runtime, fileSystem, aiProviderToken: SECRET_PROBE, agent: new FixtureAgent() });
+  return new SpecKitEngine({ descriptor, environment, fileSystem, aiProviderToken: SECRET_PROBE, agent: new FixtureAgent() });
 }
 
 /** Drive the adapter into a specific terminal reason through the runtime alone. */

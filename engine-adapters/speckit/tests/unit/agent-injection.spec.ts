@@ -15,6 +15,18 @@ import type { AgentGateway } from '@pmi/agent-contract';
 import { SpecKitEngine, type ContainerRuntime, type SandboxSession } from '../../src/speckit.adapter.js';
 import type { WorkspaceFileSystem } from '../../src/workspace.js';
 
+/**
+ * T575 — the engine now takes a ProjectExecutionEnvironment, which carries a
+ * descriptor. Fakes declare one so the port is honoured rather than cast away.
+ */
+const ENV_DESCRIPTOR = {
+  provider: 'fake',
+  supportedLifecycles: ['ephemeral'],
+  supportsPersistentState: false,
+  supportsNetworkPolicy: true,
+  maxWallClockMs: 900_000,
+} as const;
+
 const DESCRIPTOR = {
   name: 'speckit',
   version: '1.0.0',
@@ -24,7 +36,7 @@ const DESCRIPTOR = {
 const SPEC = ['# Feature Specification: Apollo', '', '## Requirements', '', '- **FR-001**: MUST x', ''].join('\n');
 
 /** Records every command the engine runs, and serves a readable spec back. */
-function runtime(): ContainerRuntime & { commands: string[][] } {
+function environment(): ContainerRuntime & { commands: string[][] } {
   const commands: string[][] = [];
   const session: SandboxSession = {
     exec: async (command) => {
@@ -37,6 +49,7 @@ function runtime(): ContainerRuntime & { commands: string[][] } {
   };
   return {
     commands,
+    descriptor: ENV_DESCRIPTOR,
     start: async () => session,
     stop: async () => undefined,
   };
@@ -50,7 +63,7 @@ const fileSystem: WorkspaceFileSystem = {
 function engine(agent: AgentGateway, onAgentRun?: (r: unknown) => void) {
   return new SpecKitEngine({
     descriptor: { ...DESCRIPTOR, capabilities: [...DESCRIPTOR.capabilities] },
-    runtime: runtime(),
+    environment: environment(),
     agent,
     fileSystem,
     aiProviderToken: 'sk-test-not-real',
@@ -103,11 +116,11 @@ describe('T558 · the engine delegates reasoning to the injected agent', () => {
 
 describe('T558 · the Spec Kit integration name comes from the agent', () => {
   it('scaffolds with the agent-supplied name, never a literal', async () => {
-    const rt = runtime();
+    const rt = environment();
     const agent = new FixtureAgent();
     await new SpecKitEngine({
       descriptor: { ...DESCRIPTOR, capabilities: [...DESCRIPTOR.capabilities] },
-      runtime: rt,
+      environment: rt,
       agent,
       fileSystem,
       aiProviderToken: 'sk-test-not-real',
@@ -121,11 +134,11 @@ describe('T558 · the Spec Kit integration name comes from the agent', () => {
   });
 
   it('changes with the agent — the acceptance criterion for provider independence', async () => {
-    const rt = runtime();
+    const rt = environment();
     const renamed = new FixtureAgent({ descriptor: { specKitIntegrationName: 'somethingelse' } });
     await new SpecKitEngine({
       descriptor: { ...DESCRIPTOR, capabilities: [...DESCRIPTOR.capabilities] },
-      runtime: rt,
+      environment: rt,
       agent: renamed,
       fileSystem,
       aiProviderToken: 'sk-test-not-real',

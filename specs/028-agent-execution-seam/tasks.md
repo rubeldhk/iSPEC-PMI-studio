@@ -47,7 +47,7 @@ without a guard repeats it three times over.
 
 - [X] T537 Write a conformance check asserting (a) every project named in the `test:unit` script collects at least one test file, failing with the project name, and (b) every new package declares the expected name and a `workspace:*` dependency on its contract — in `tests/governance/vitest-projects.spec.ts`
 - [X] T538 Add `agent-adapters/*` and `execution-providers/*` to the `packages` list in `pnpm-workspace.yaml` (conformance check: T537)
-- [ ] T539 Register the `agent-contract`, `agent-adapters` and `execution-providers` projects in `vitest.config.ts` and add them to the `test:unit` script in `package.json` (conformance check: T537)
+- [X] T539 Register the `agent-contract`, `agent-adapters` and `execution-providers` projects in `vitest.config.ts` and add them to the `test:unit` script in `package.json` (conformance check: T537)
 
   > ⚠️ **Partially done 2026-08-14.** `execution-contract`, `agent-contract` and `agent-adapters`
   > are registered in `vitest.workspace.ts` and `test:unit`. **`execution-providers` is deliberately
@@ -161,19 +161,19 @@ end. Everything else in this phase is independently testable against a mocked da
 
 ### Tests for User Story 2 (MANDATORY — Constitution V) ⚠️
 
-- [ ] T570 [P] [US2] Write failing unit tests for the Docker provider against a **mocked daemon** — request construction, every `ADR-0002` flag present (non-root, read-only rootfs, cpu/memory/pid caps, network mode), failure mapping, cancellation, teardown idempotence, **and that it registers as the Phase 1 default (`FR-AGT-007`)** — in `execution-providers/docker/tests/unit/docker.provider.spec.ts`
-- [ ] T571 [P] [US2] Write failing unit tests asserting the provider refuses a `persistent` binding, naming the reason, in `execution-providers/docker/tests/unit/lifecycle-refusal.spec.ts`
-- [ ] T572 [P] [US2] Write a failing integration test asserting the default engine resolves to Spec Kit and the engine → agent → environment chain wires end to end in `backend/tests/integration/engine-default.spec.ts`
+- [X] T570 [P] [US2] Write failing unit tests for the Docker provider against a **mocked daemon** — request construction, every `ADR-0002` flag present (non-root, read-only rootfs, cpu/memory/pid caps, network mode), failure mapping, cancellation, teardown idempotence, **and that it registers as the Phase 1 default (`FR-AGT-007`)** — in `execution-providers/docker/tests/unit/docker.provider.spec.ts`
+- [X] T571 [P] [US2] Write failing unit tests asserting the provider refuses a `persistent` binding, naming the reason, in `execution-providers/docker/tests/unit/lifecycle-refusal.spec.ts`
+- [X] T572 [P] [US2] Write a failing integration test asserting the default engine resolves to Spec Kit and the engine → agent → environment chain wires end to end in `backend/tests/integration/engine-default.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T646a [US2] Implement `DockerExecutionEnvironment` against the Docker Engine HTTP API over its unix socket — **no `dockerode`, no `docker` CLI** — in `execution-providers/docker/src/docker.provider.ts` (unit test: T570) *(routed from EPIC-003)*
-- [ ] T573 [US2] Declare `supportedLifecycles: ['ephemeral']` and implement the persistent-binding refusal in `execution-providers/docker/src/docker.provider.ts` (unit test: T571)
-- [ ] T574 [US2] Register the Docker provider at the worker composition root in `worker/src/execution-composition.ts` (unit test: T570)
-- [ ] T575 [US2] Replace `ContainerRuntime` with `ProjectExecutionEnvironment` in `SpecKitEngine` and **delete the local `ContainerRuntime` declaration** from `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
-- [ ] T647 [US2] Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts`, satisfying `FR-018` (integration test: T572) *(routed from EPIC-003)*
-- [ ] T576a [P] [US2] Write failing unit tests for the manual runner's step sequencing, image-digest extraction and transcript formatting — driven by a stubbed environment, no daemon required — in `scripts/tests/v6-real-run.spec.mjs`
-- [ ] T576 [US2] Create the manual runner `scripts/v6-real-run.mjs` implementing quickstart `V6`, printing the image digest and every step outcome (unit test: T576a)
+- [X] T646a [US2] Implement `DockerExecutionEnvironment` against the Docker Engine HTTP API over its unix socket — **no `dockerode`, no `docker` CLI** — in `execution-providers/docker/src/docker.provider.ts` (unit test: T570) *(routed from EPIC-003)*
+- [X] T573 [US2] Declare `supportedLifecycles: ['ephemeral']` and implement the persistent-binding refusal in `execution-providers/docker/src/docker.provider.ts` (unit test: T571)
+- [X] T574 [US2] Register the Docker provider at the worker composition root in `worker/src/execution-composition.ts` (unit test: T570)
+- [X] T575 [US2] Replace `ContainerRuntime` with `ProjectExecutionEnvironment` in `SpecKitEngine` and **delete the local `ContainerRuntime` declaration** from `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
+- [X] T647 [US2] Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts`, satisfying `FR-018` (integration test: T572) *(routed from EPIC-003)*
+- [X] T576a [P] [US2] Write failing unit tests for the manual runner's step sequencing, image-digest extraction and transcript formatting — driven by a stubbed environment, no daemon required — in `scripts/tests/v6-real-run.spec.mjs`
+- [X] T576 [US2] Create the manual runner `scripts/v6-real-run.mjs` implementing quickstart `V6`, printing the image digest and every step outcome (unit test: T576a)
 
   > **Constitution V applies here.** `scripts/` is not on Constitution I's exempt list, so this is
   > application code and V is NON-NEGOTIABLE. The runner's *logic* — ordering, digest extraction,
@@ -188,7 +188,7 @@ end. Everything else in this phase is independently testable against a mocked da
   > supported server-side model (`R-028-5`, uninvestigated by decision), **that is a finding, not a
   > defeat** — see [spec.md](./spec.md) Clarifications.
 
-- [ ] T577 [P] [US2] Write a conformance check asserting `v6-transcript.md` exists and names an image digest, in `tests/governance/v6-transcript.spec.ts` (gates T646b at closure)
+- [X] T577 [P] [US2] Write a conformance check asserting `v6-transcript.md` exists and names an image digest, in `tests/governance/v6-transcript.spec.ts` (gates T646b at closure)
 
 **Checkpoint**: `SC-AGT-001` satisfied — or a real finding recorded. Either is progress; eleven days of not knowing is not.
 

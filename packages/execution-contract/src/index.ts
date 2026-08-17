@@ -133,6 +133,30 @@ export function isExecutionFailure<T>(r: ExecutionResult<T>): r is Extract<Execu
   return r.ok === false;
 }
 
+/**
+ * A typed failure for `start()`, which returns a session rather than a result.
+ *
+ * Added by `T646a`. Without it a provider can only throw an untyped `Error`, so
+ * the caller has to guess from a message string whether the daemon was
+ * unreachable, the image was missing, or the policy refused — and the closed
+ * taxonomy above becomes decoration at the one boundary that most needs it.
+ *
+ * `start()` is deliberately NOT changed to return `ExecutionResult<ExecutionSession>`:
+ * the Spec Kit engine already distinguishes "could not start" from "ran and
+ * failed" by catching, and Native §28 preserves that contract shape.
+ */
+export class ExecutionProviderError extends Error {
+  constructor(
+    readonly reason: ExecutionFailureReason,
+    message: string,
+    /** Operator-facing only. Never returned to a user, never logged (PC-3). */
+    readonly diagnostics?: string,
+  ) {
+    super(message);
+    this.name = 'ExecutionProviderError';
+  }
+}
+
 // ---------------------------------------------------------------- the contract
 
 export interface ExecResult {
@@ -169,3 +193,12 @@ export interface ProjectExecutionEnvironment {
   /** Idempotent. Must never throw into a result. */
   stop(session: ExecutionSession): Promise<void>;
 }
+
+/**
+ * The named egress profiles.
+ *
+ * Re-exported here so a consumer needs one import for the contract and its
+ * frozen policy constants. profiles.ts imports only a TYPE from this module,
+ * so the cycle is erased at runtime.
+ */
+export * from './profiles.js';

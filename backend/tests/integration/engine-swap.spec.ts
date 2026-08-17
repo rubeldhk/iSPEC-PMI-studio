@@ -30,6 +30,18 @@ import {
   type ContainerRuntime,
   type SandboxSession,
 } from '@pmi/engine-adapter-speckit';
+
+/**
+ * T575 — the engine now takes a `ProjectExecutionEnvironment`, which carries a
+ * descriptor. Fakes declare one so the port is honoured rather than cast away.
+ */
+const ENV_DESCRIPTOR = {
+  provider: 'fake',
+  supportedLifecycles: ['ephemeral'],
+  supportsPersistentState: false,
+  supportsNetworkPolicy: true,
+  maxWallClockMs: 900_000,
+} as const;
 import { EngineRegistryService } from '../../src/modules/engines/engine-registry.service.js';
 import { FixtureAgent } from '@pmi/agent-adapter-fixture';
 import {
@@ -53,14 +65,14 @@ function speckitEngine(): SpecKitEngine {
     listFiles: async () => Object.keys(workspaceFiles),
     readFile: async (path) => workspaceFiles[path] ?? '',
   };
-  const runtime: ContainerRuntime = { start: async () => session, stop: async () => undefined };
+  const environment: ContainerRuntime = { descriptor: ENV_DESCRIPTOR, start: async () => session, stop: async () => undefined };
   return new SpecKitEngine({
     descriptor: buildEngineDescriptor({
       specifyVersion: '0.0.17',
       agentCliVersion: '1.0.0',
       agentModel: 'claude-opus-5',
     }),
-    runtime,
+    environment,
     fileSystem: {
       makeTempDirectory: async (prefix) => `${prefix}swap`,
       removeDirectory: async () => undefined,
