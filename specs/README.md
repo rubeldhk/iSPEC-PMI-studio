@@ -15,9 +15,13 @@ specs/
 │   ├── data-model.md · schema.sql · contracts/
 │   ├── research.md           12 decisions with alternatives
 │   └── raid-log.md           risks, assumptions, issues, dependencies
-├── srs-alignment.md  conflicts C-01..C-18, decisions D-1..D-18
+├── srs-alignment.md  conflicts C-01..C-28, decisions D-1..D-42
 └── <epic>/           spec.md · plan.md · tasks.md · checklists/ · defects/ · closure.md
 ```
+
+📊 **Programme status** — measured state of infrastructure, system design, solution plan, technology
+plan and amendment incorporation: [`_shared/programme-status.md`](./_shared/programme-status.md)
+(2026-08-17).
 
 Requirements are defined **once** in `_shared/platform-spec.md`. Each epic's `spec.md` declares
 which it *owns*. Architecture is never duplicated — fifteen copies of a schema would become fifteen
@@ -31,7 +35,7 @@ Buildable now. Nothing here depends on the Business Requirement Specification.
 
 | Epic | Title | Module | Tasks |
 |------|-------|--------|-------|
-| [EPIC-001](./001-platform-foundation/) | Platform Foundation | M-00 | 35 |
+| [EPIC-001](./001-platform-foundation/) | Platform Foundation | M-00 | 47 ✅ **CLOSED 2026-08-17** — [closure.md](./001-platform-foundation/closure.md) |
 | [EPIC-003](./003-specification-engine/) | Specification Engine & Sandbox | M-08 | 35 |
 | [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 19 |
 

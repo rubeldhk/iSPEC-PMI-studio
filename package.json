@@ -11,7 +11,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "vitest run",
-    "test:unit": "vitest run --project backend-unit --project worker-unit --project engine-contract --project fixture-adapter --project speckit-adapter --project execution-contract --project agent-contract --project agent-adapters",
+    "test:unit": "vitest run --project backend-unit --project worker-unit --project engine-contract --project observability --project fixture-adapter --project speckit-adapter --project execution-contract --project agent-contract --project agent-adapters",
     "test:contract": "vitest run --project backend-contract --passWithNoTests",
     "test:integration": "vitest run --project backend-integration --passWithNoTests",
     "test:arch": "vitest run --project architecture",

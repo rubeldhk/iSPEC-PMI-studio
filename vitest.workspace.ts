@@ -66,6 +66,18 @@ export default defineWorkspace([
     },
   },
   {
+    // T661 — observability moved out of `backend/` so both processes can install
+    // it (DEF-001-001). Registered here AND in the `test:unit` script; a project
+    // that exists in only one of the two runs in `pnpm test` and silently not in
+    // CI, which is the gap EPIC-028 T539 names.
+    test: {
+      name: 'observability',
+      root: './packages/observability',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     test: {
       name: 'fixture-adapter',
       root: './engine-adapters/fixture',

@@ -49,6 +49,10 @@ const PROJECT_DIRS: Record<string, string> = {
   'backend-unit': 'backend/tests/unit',
   'worker-unit': 'worker/tests/unit',
   'engine-contract': 'packages/engine-contract/tests',
+  // EPIC-001 T661 — added when observability moved out of `backend/` so both
+  // long-running processes could install it (DEF-001-001). This check failed on
+  // the way in, which is the check doing its job.
+  observability: 'packages/observability/tests',
   'fixture-adapter': 'engine-adapters/fixture/tests',
   'speckit-adapter': 'engine-adapters/speckit/tests',
   'execution-contract': 'packages/execution-contract/tests',

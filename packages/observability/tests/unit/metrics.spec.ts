@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MetricsRecorder,
   type MetricSink,
-} from '../../../src/core/observability/metrics.js';
+} from '../../src/metrics.js';
 
 function sink(): MetricSink & { points: { name: string; value: number; attrs: Record<string, string> }[] } {
   const points: { name: string; value: number; attrs: Record<string, string> }[] = [];

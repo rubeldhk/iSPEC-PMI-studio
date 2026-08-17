@@ -7,7 +7,7 @@
  * credential is ever logged (research R-011).
  */
 import { describe, expect, it } from 'vitest';
-import { buildLogRecord, REDACTED, redact } from '../../../src/core/observability/logger.js';
+import { buildLogRecord, REDACTED, redact } from '../../src/logger.js';
 
 const ctx = { workspaceId: 'ws_a', actorId: 'u1', correlationId: 'corr-1' };
 

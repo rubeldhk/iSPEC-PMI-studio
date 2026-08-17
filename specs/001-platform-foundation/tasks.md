@@ -78,10 +78,14 @@ paired unit-test task, written to fail first.
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T165 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/001-platform-foundation/closure.md`
-- [ ] T166 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/001-platform-foundation/closure.md`
-- [ ] T167 Triage `specs/001-platform-foundation/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/001-platform-foundation/closure.md`
-- [ ] T168 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/001-platform-foundation/closure.md`
+- [X] T165 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/001-platform-foundation/closure.md`
+- [X] T166 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/001-platform-foundation/closure.md`
+- [X] T167 Triage `specs/001-platform-foundation/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/001-platform-foundation/closure.md`
+- [X] T168 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/001-platform-foundation/closure.md`
+
+> **Closed 2026-08-17** — see [`closure.md`](./closure.md). `T166` found two defects, both fixed
+> rather than deferred (`T660`–`T663`). **EPIC-001 is release-eligible and is the first epic in this
+> programme to close.**
 
 ---
 
@@ -110,3 +114,38 @@ does.
   > emits a log, a metric, or a correlation identifier, because all three modules are referenced only
   > by their own tests. **`T168` must not sign the principle delta until `T657` lands** — that
   > exit criterion asks whether the deltas still hold, and today this one does not.
+  >
+  > **Re-opened and re-closed 2026-08-17 during `T165`.** The API half was wired; the worker half was
+  > not, and was **not reachable** — the modules lived in `backend/src/core/`, which the worker may not
+  > import. `T656` passed throughout because both of its installation assertions read
+  > `backend/src/main.ts` and nothing read `worker/src/main.ts`. Recorded as
+  > [`DEF-001-001`](./defects/DEF-001-001-worker-observability-not-installed.md) and discharged by
+  > `T660`/`T661` below. The warning above was correct and did its job.
+
+---
+
+## Phase 7: Convergence — `DEF-001-001`
+
+*Appended by `/speckit-implement` on 2026-08-17 while executing `T165`. No existing task modified
+except `T657`, whose completion claim was false. IDs continue from the **corpus** maximum (`T659`,
+enumerated across all 28 `tasks.md` files) — not this epic's, which is the mistake that produced
+conflict `C-27`.*
+
+**The finding**: `T657` wired observability into `backend/src/main.ts` and not into
+`worker/src/main.ts`, because `buildObservability` lived in `backend/src/core/observability/` and the
+worker has no dependency on `@pmi/backend` — nor should it acquire one. PP-010 was therefore
+satisfied in one of two long-running processes while `spec.md` claimed the platform. See
+[`DEF-001-001`](./defects/DEF-001-001-worker-observability-not-installed.md) for the full record,
+the four options considered, and why option **A** was taken.
+
+- [X] T660 [P] Write failing unit tests asserting the worker bootstrap installs the observability bundle — that `worker/src/main.ts` builds it, emits `worker.started` through the structured logger rather than `console.log`, and records a terminal-state metric per job — in `worker/tests/unit/observability-installation.spec.ts` per PP-010, PC-3, SC-011
+- [X] T661 Extract `logger.ts`, `correlation.ts`, `metrics.ts` and `bootstrap.ts` into `packages/observability`, depend on it from both `backend` and `worker`, and install the bundle in `worker/src/main.ts` and `worker/src/generation.consumer.ts` per PP-010 — unit test: T660
+
+**Second finding, from the same pass** — `T166` looked for further instances of the DEF-001-001
+shape and found one. `T164` says *"metrics emission for **API requests** and generation jobs"*;
+`requestFinished` and `correlationFor` had zero production call sites, because nothing in the API
+runs per request. See
+[`DEF-001-002`](./defects/DEF-001-002-api-request-metrics-never-emitted.md).
+
+- [X] T662 [P] Write failing unit tests asserting the HTTP interceptor adopts a valid inbound `x-correlation-id` and mints one otherwise, records `http.request` and `http.duration_ms` with a templated route and status, measures failed requests too, and is installed globally by `backend/src/main.ts`, in `backend/tests/unit/observability/http-interceptor.spec.ts` per PP-010, PC-3
+- [X] T663 [US-] Implement `HttpObservabilityInterceptor` in `backend/src/modules/observability/http-observability.interceptor.ts` and install it in `backend/src/main.ts` — placed in `modules/` not `core/`, because PC-1 forbids `core/**` from importing HTTP types and an interceptor is transport (unit test: T662)

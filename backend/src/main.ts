@@ -2,8 +2,8 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ErrorFilter } from './core/error.filter.js';
-import { buildObservability, NullMetricSink } from './core/observability/bootstrap.js';
-import { newCorrelationId } from './core/observability/correlation.js';
+import { buildObservability, newCorrelationId, NullMetricSink } from '@pmi/observability';
+import { HttpObservabilityInterceptor } from './modules/observability/http-observability.interceptor.js';
 
 /**
  * API entry point.
@@ -15,6 +15,10 @@ import { newCorrelationId } from './core/observability/correlation.js';
  * and correlation modules built, tested, and called by nothing — so a running
  * API emitted no telemetry at all while `spec.md` claimed PP-010 was satisfied
  * platform-wide.
+ *
+ * T661: the bundle now comes from `@pmi/observability`. It lived under
+ * `backend/src/core/` until the worker needed it too and could not reach it —
+ * DEF-001-001. One implementation, so the redaction rules cannot fork.
  */
 async function bootstrap(): Promise<void> {
   // The collector endpoint is configuration, not a Phase 1 decision
@@ -23,6 +27,10 @@ async function bootstrap(): Promise<void> {
 
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new ErrorFilter());
+  // T663 / DEF-001-002: startup telemetry is not request telemetry. Without
+  // this, `requestFinished` and `correlationFor` have no call site and an
+  // inbound `x-correlation-id` is discarded.
+  app.useGlobalInterceptors(new HttpObservabilityInterceptor(observability));
   // D-8 / PP-012: every path is versioned.
   app.setGlobalPrefix('v1');
 

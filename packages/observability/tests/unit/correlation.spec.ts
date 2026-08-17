@@ -13,7 +13,7 @@ import {
   extractCorrelation,
   isValidCorrelationId,
   newCorrelationId,
-} from '../../../src/core/observability/correlation.js';
+} from '../../src/correlation.js';
 
 describe('newCorrelationId()', () => {
   it('produces a valid, unique id', () => {

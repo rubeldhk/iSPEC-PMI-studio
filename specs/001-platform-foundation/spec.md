@@ -58,15 +58,25 @@ This epic records only where it **differs** or is the place a principle is satis
 |---|---|
 | PP-010 Observability by Default | ✅ **Satisfied here for the whole platform.** Function F-00.5 delivers structured logging, metrics, and tracing with one correlation identifier spanning API → queue → worker → sandbox (D-7, R-011, PC-3) |
 
+> **This claim was false from 2026-08-03 until 2026-08-17.** The modules were built and tested; for
+> most of that period nothing called them, and after `T657` only the API did. It became true with
+> `T663`. Recorded rather than silently corrected, because the interesting fact is not that the gap
+> existed but that a specification asserted a principle for two years' worth of downstream planning
+> while the system did not honour it — see
+> [`DEF-001-001`](./defects/DEF-001-001-worker-observability-not-installed.md) and
+> [`DEF-001-002`](./defects/DEF-001-002-api-request-metrics-never-emitted.md).
+
 ## Notes
 
 The failure taxonomy is deliberately an enum with no `unknown` member. A generic failure is a defect, not a fallback.
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI)*
 
-- [ ] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `specs/001-platform-foundation/defects/` contains no open defect records
-- [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [x] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
+- [x] `/speckit-converge` reports no unbuilt work for this epic
+- [x] `specs/001-platform-foundation/defects/` contains no open defect records
+- [x] Principle deltas above still hold; any deferral retains a valid owner
+- [x] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
 - [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge
+
+**Closed 2026-08-17.** See [`closure.md`](./closure.md). The first epic in this programme to close.

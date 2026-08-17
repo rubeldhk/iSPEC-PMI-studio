@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@pmi/engine-contract": "workspace:*",
+    "@pmi/observability": "workspace:*",
     "@pmi/engine-adapter-fixture": "workspace:*",
     "@pmi/engine-adapter-speckit": "workspace:*",
     "bullmq": "^5.34.6",

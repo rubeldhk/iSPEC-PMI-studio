@@ -1,6 +1,6 @@
 # Epic Quality Checklist: Platform Foundation
 
-**Epic**: `EPIC-001` | **Tasks**: 31 | **Created**: 2026-08-03
+**Epic**: `EPIC-001` | **Tasks**: 47 | **Created**: 2026-08-03 | **Closed**: 2026-08-17
 
 Per-epic instance. The platform baseline is
 [../_shared/checklists/requirements.md](../../_shared/checklists/requirements.md); this records only
@@ -30,10 +30,10 @@ what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] All tasks complete with tests passing
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `defects/` has no open records
-- [ ] Principle deltas still hold; deferrals retain valid owners
+- [x] All tasks complete with tests passing — 47/47; `pnpm test:unit` 506 passed (2026-08-17)
+- [x] `/speckit-converge` reports no unbuilt work for this epic — 2 findings, both built (`T660`–`T663`)
+- [x] `defects/` has no open records — `DEF-001-001` and `DEF-001-002`, both CLOSED
+- [x] Principle deltas still hold; deferrals retain valid owners — PP-010 true as of `T663`
 
 ## Notes
 
