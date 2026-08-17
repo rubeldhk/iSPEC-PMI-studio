@@ -154,5 +154,24 @@ verified. No existing task was modified. IDs continue from the repository maximu
 remain unique programme-wide per `DS-2`.*
 
 - [X] T444 State in `governance/steering/README.md` that git retains the change history for steering files, and add a conformance check asserting a content change carries a `version` increment, in `tests/governance/steering-files.spec.ts` per FR-RGP-003 (partial)
-- [ ] T445 Perform the V18-5 and V18-6 human walkthroughs in [quickstart.md](./quickstart.md) and record the outcome in `specs/018-repository-governance/closure.md` per SC-RGP-001, SC-RGP-007 (missing) — these cannot be automated: one needs a reader new to the programme, the other is a judgement
-- [ ] T446 Review `tests/governance/tsconfig.json` and the `typecheck:governance` script — keep as owned by this epic, or transfer to EPIC-014 with the rest of CI (unrequested)
+- [X] T445 Perform the **V18-5** walkthrough in [quickstart.md](./quickstart.md) — the judgement half — and record the outcome in `specs/018-repository-governance/closure.md` per SC-RGP-006. **V18-6 split out to `T666`**: it requires a reader new to the programme, which an agent session cannot supply, and the scenario says so in its own text
+- [X] T446 Review `tests/governance/tsconfig.json` and the `typecheck:governance` script — keep as owned by this epic, or transfer to EPIC-014 with the rest of CI (unrequested) — **DECIDED: keep here**, see [closure.md](./closure.md)
+
+---
+
+## Phase 7: Convergence — `DEF-018-001`
+
+*Appended by `/speckit-implement` on 2026-08-17 while performing `T445`. IDs continue from the
+**corpus** maximum (`T663`), enumerated across all 28 `tasks.md` files — not this epic's, which is
+the mistake that produced conflict `C-27`.*
+
+**What `V18-5` found.** The walkthrough asks whether the conformance record makes decision **D-4**
+answerable. It does not: **ten cells claimed `Present` for a section the template does not contain**,
+including "Related Documents" for all four templates. `spec-template.md` read as 9 of 13 conformant
+and is 3. `G-06` could not catch it — it validates every *absent* cell and never compares a
+`Present` claim to the template. See
+[`DEF-018-001`](./defects/DEF-018-001-conformance-record-overstates-presence.md).
+
+- [X] T664 [P] Extend check `G-06` to resolve every bare `Present` claim against the template's actual headings, accepting an explicitly qualified equivalence (`Present — as X`) and rejecting a bare `Present` for a section with no matching heading, in `tests/governance/template-conformance.spec.ts` per FR-RGP-010, FR-RGP-011, SC-RGP-006
+- [X] T665 Correct the ten overstated cells in `governance/template-conformance.md`, add the measured-gap table D-4 actually turns on, and bump the record to version 2 (conformance check: T664)
+- [ ] T666 **HUMAN** — perform the `V18-6` walkthrough: give someone unfamiliar with the programme the repository root and nothing else, ask them to name the coding, security and architecture standards and what governs this repository, and record the outcome in `closure.md` per SC-RGP-001, SC-RGP-007. **Owner: project-owner.** Deferred, not deprioritised: *"'Can someone new find this?' is answered by someone new, not by a script"*

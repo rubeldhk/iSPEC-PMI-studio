@@ -75,6 +75,54 @@ describe('G-06 · template conformance record (FR-RGP-010, FR-RGP-011)', () => {
     expect(record).toMatch(/\bD-4\b/);
     expect(record).toMatch(/open|unsettled|does not settle|remains/i);
   });
+
+  /**
+   * T664 · DEF-018-001 — the positive half of every claim.
+   *
+   * The assertion above validates every ABSENT cell. Nothing validated a cell
+   * reading "Present", so the record could claim conformance the templates did
+   * not have and stay green — which is exactly what it did, for four sections
+   * of `spec-template.md` and for "Related Documents" across all four.
+   *
+   * The record is the stated evidence for decision D-4, and D-4 turns on how
+   * big the gap is. Overstating presence sizes the migration at half its cost.
+   *
+   * An **explicitly qualified** equivalence is accepted — `Present — as the
+   * summary block` for `## Summary` is a true statement about a real heading,
+   * and forcing a rename would be conformance theatre. A **bare** `Present`
+   * must resolve to a heading that actually exists.
+   */
+  it('verifies every "Present" claim against the template it describes', () => {
+    const overstated: string[] = [];
+
+    for (const [section, perTemplate] of parsed) {
+      for (const [template, verdict] of perTemplate) {
+        if (!/present/i.test(verdict) || /absent/i.test(verdict)) continue;
+
+        // `Present — as the overview` states an equivalence and owns it. Only a
+        // bare `Present` claims the section is there under its own name.
+        const isQualified = /present\s*[—-]\s*\S/i.test(verdict);
+        if (isQualified) continue;
+
+        const path = config.templates.find((t: string) => t.endsWith(template));
+        if (!path || !repoExists(path)) continue;
+
+        const headings = read(path)
+          .split(/\r?\n/)
+          .filter((line) => /^#{1,4}\s/.test(line))
+          .map((line) => line.replace(/^#{1,4}\s*/, '').toLowerCase());
+
+        const found = headings.some((h) => h.includes(section.toLowerCase()));
+        if (!found) overstated.push(`${template} · ${section}`);
+      }
+    }
+
+    expect(
+      overstated,
+      'a bare "Present" for a section with no matching heading overstates conformance and ' +
+        'misprices decision D-4 — qualify it as an equivalence or record it as absent',
+    ).toEqual([]);
+  });
 });
 
 describe('G-06b · document structure convention (FR-RGP-012)', () => {
