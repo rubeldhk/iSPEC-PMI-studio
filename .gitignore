@@ -25,6 +25,8 @@ backend/prisma/*.db
 .DS_Store
 Thumbs.db
 *.swp
+# Word/Excel lock files — created beside any open SRS/*.docx, never source material
+~$*
 .vscode/
 .idea/
 
