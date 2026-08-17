@@ -1366,6 +1366,45 @@ Supersedes the per-epic "recommended next task" lines, which optimised locally.
 treated 027 as blocking because §17 says reconciliation precedes new implementation tasks — but the
 work it would unblock is held regardless, while `T013` silently taxes everything that is not.
 
+### C-29 · A task sat in an epic that does not own its requirement — ✅ RESOLVED 2026-08-17
+
+`T138` — *"Implement per-project engine selection endpoint in `projects.controller.ts`"* — was the
+last open task in EPIC-003 and the only thing standing between that epic and closure. It could not
+be built, and it could not be built **by design**:
+
+| | |
+|---|---|
+| Requirement it serves | `FR-019` — *register additional engines and select one per project* |
+| Epic that **owns** `FR-019` | **EPIC-013**, which is ⏸ **held** on `PMI-DOC-004` |
+| EPIC-003's owned set | FR-016, FR-017, FR-018, FR-021, FR-022, FR-023 — **`FR-019` is absent** |
+| Why EPIC-013 exists at all | `003/plan.md`: *"F-08.9 engine API and selection UI — split into EPIC-013 because it touches `projects.controller.ts` and therefore the held product surface"* |
+
+**The split that created EPIC-013 moved F-08.9 and missed `T138`, which sits in F-08.3.** Every
+sibling task went; this one stayed, in an epic that does not own its requirement, blocking that
+epic's closure for nine days.
+
+**This is `C-27` one level over.** `C-27` recorded three identifiers meaning different things in
+three epics — a *collision*. This is a task in the *wrong epic* — a **misfiling**. Both are the same
+underlying gap: nothing checks that a task's requirement is owned by the epic holding it. `C-27`'s
+resolution note said *"any `/speckit-converge` pass that appends IDs must check the corpus maximum,
+not the epic's"*; the equivalent rule here is that **a task must live in the epic that owns its
+requirement**, and neither rule has an executable check.
+
+**Resolution**: routed `T138` → **EPIC-013**, identifier unchanged, using the `D-19` precedent
+already applied twice (`T646`/`T647`/`T648` → EPIC-028). EPIC-003's row is struck through and marked
+routed; **its closure is not reopened**. EPIC-013 grows from 8 tasks to 9 and stays held. Exactly one
+epic owns the row.
+
+**No engineering is blocked by this.** The behaviour is built and tested — `EngineResolverService`
+(`T035`, tests `T034a`/`T135`) resolves a project's selection and refuses one naming an unregistered
+engine rather than falling back, because a silent fallback would change what the project produces
+while `FR-022` provenance recorded the run as ordinary. Only the HTTP surface waits, on
+`PMI-DOC-004`, with the rest of EPIC-013.
+
+**Follow-up, not taken here**: a conformance check asserting every task's epic owns the requirement
+it cites. It belongs with `D-9` (namespaced task IDs) and `D-39` (branch-vs-epic) in an EPIC-018
+follow-up — three governance gaps of one family, each currently defended by attention.
+
 ## Part 10 — The Augment/Cosmos Learnings Amendment (2026-08-14)
 
 A fifth amendment document: `SRS/AUg142026/PMI_Studio_Augment_Cosmos_Learnings_Amendment.docx`,

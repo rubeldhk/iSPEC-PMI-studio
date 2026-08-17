@@ -164,7 +164,147 @@ not a dependency (EPIC-004 `T013`). The shape is Prisma's own, so it drops in un
 **Still open**: `T138` (blocked), `T646`, `T647`, `T648`. The statement below is unchanged — the
 engine layer is now reachable, and still cannot run.
 
+---
+
+# Addendum — EPIC CLOSED, 2026-08-17
+
+**Session**: `EPIC-003 Specification Engine & Sandbox` · **Branch**: `epic/003-specification-engine`
+· **Date**: 2026-08-17
+
+> **Constitution VIII: the branch finally matches the epic.** For the first time this week the
+> session label, the branch and the epic being worked are the same thing — because this is the epic
+> the branch was named for. The five preceding sessions all breached VIII on this same branch, which
+> is what `D-39` exists to catch. Noted because a compliance that happens by coincidence is not a
+> control either.
+
+## Work Completed
+
+**39 of 39 tasks complete. Zero open.** The epic closes with no unbuilt work.
+
+The last open row, `T138`, was **not implemented — it was routed**, and that is the substance of
+this addendum.
+
+### `T138` · routed to EPIC-013, conflict `C-29`
+
+`T138` was the only thing standing between this epic and closure since 2026-08-08. It could not be
+built, **by design**:
+
+| | |
+|---|---|
+| Requirement it serves | `FR-019` — *register additional engines and select one per project* |
+| Epic that **owns** `FR-019` | **EPIC-013**, ⏸ **held** on `PMI-DOC-004` |
+| This epic's owned set | FR-016, FR-017, FR-018, FR-021, FR-022, FR-023 — **`FR-019` is absent** |
+| Why EPIC-013 exists | [`plan.md`](./plan.md): *"F-08.9 … split into EPIC-013 because it touches `projects.controller.ts` and therefore the held product surface"* |
+
+**The split that created EPIC-013 moved F-08.9 and missed `T138`, which sits in F-08.3.** Every
+sibling task went; this one stayed, in an epic that does not own its requirement.
+
+Implementing it would have created the repository's first held-product-surface file, satisfying a
+requirement this epic does not own and pre-empting a held epic — the boundary decision `D-10` draws,
+with 393 tasks behind it. **Routed instead**, identifier unchanged, using the `D-19` precedent this
+epic has already supplied twice (`T646`/`T647`/`T648` → EPIC-028). EPIC-013 grows to 9 tasks and
+stays held. Exactly one epic owns the row.
+
+**Nothing is blocked by this.** `EngineResolverService` (`T035`) already resolves a project's
+selection and **refuses** one naming an unregistered engine rather than falling back — a silent
+fallback would change what the project produces while `FR-022` provenance recorded the run as
+ordinary. `T034a` and `T135` cover it. Only the HTTP surface waits, on a business document.
+
+### The three routed tasks came back delivered
+
+`T646`, `T647` and `T648` were routed to EPIC-028 on 2026-08-14. EPIC-028 built them on 2026-08-17:
+
+| Row | Outcome | Note |
+|---|---|---|
+| `T646` | `T646a` **done**, `T646b` **NOT done** | It did *not* land as `engine-adapters/speckit/src/container-runtime.ts` as this epic's row proposed. Decision `D-21` moved it behind `ProjectExecutionEnvironment` into `execution-providers/docker`, because Native §4 forbids business logic depending directly on Docker. **This epic's original design was corrected, not implemented** |
+| `T647` | **done** | Spec Kit is the default engine. `FR-018` is satisfied in the running system for the first time |
+| `T648` | **done** | One implementation owns `FR-021` capability validation |
+
+EPIC-028 also replaced this epic's `ContainerRuntime` and `SandboxSession` declarations, and removed
+the four hardcoded `claude` strings from `speckit.adapter.ts` (`C-19`). **The `SpecificationEngine`
+contract itself is unchanged** — recorded as `PE-01` in
+[EPIC-028's preserved-elements record](../028-agent-execution-seam/preserved-elements.md), which is
+the row that matters most there.
+
+### The gap this epic stated plainly is now half-closed
+
+The original report said the engine layer was *"fully built, fully tested, and unreachable"*, and
+later *"the engine layer is now reachable, and still cannot run."*
+
+**Reachable and composable: yes.** Spec Kit resolves as the default engine and a generation runs
+through engine → agent → environment end to end (EPIC-028 `T572`).
+
+**Actually run in a real container: no.** `T646b` has never executed. **This epic's closing
+statement — *"No real container has ever started"* — remains true**, and this closure does not claim
+otherwise.
+
+## Verified — 2026-08-17
+
+| Gate | Command | Result |
+|---|---|---|
+| Package typecheck | `pnpm -r typecheck` | **pass** — 14 packages |
+| Governance typecheck | `pnpm typecheck:governance` | **pass** |
+| Lint | `pnpm lint` | **pass** — 0 errors, 0 warnings |
+| Unit tests | `pnpm test:unit` | **601 passed**, 53 files |
+| **This epic's adapter alone** | `vitest --project speckit-adapter` | **156 passed**, 10 files |
+| Architecture tests | `pnpm test:arch` | **22 passed** |
+| Governance checks | `pnpm test:governance` | **200 passed**, 14 files |
+
+**`defects/` is empty** — zero records raised against this epic across its whole life.
+
+## Not verified — 2026-08-17
+
+- **No real container has started.** `T646b` (EPIC-028) needs a Docker daemon; this machine has
+  none. `SC-AGT-001` is unverified, and so is any claim that the Spec Kit engine works end to end
+  against a live agent.
+- **CI has not run.** Every gate above was executed locally.
+- **`pnpm test:integration` fails** on `audit-immutability.spec.ts` — no container runtime. EPIC-004
+  `T649`, pre-existing, not this epic's gate.
+
+## Deferred
+
+| Item | Owner | Awaiting |
+|---|---|---|
+| `T138` | **EPIC-013** | `PMI-DOC-004`. Routed, not abandoned |
+| `T646b` — the real container run | operator | a machine with a Docker daemon (EPIC-028) |
+| Checklist item *"Requirement IDs conform to PMI-DOC-000 §3"* | as registered | decision **`D-1`**, open by design |
+| A check that a task's epic owns the requirement it cites | EPIC-018 follow-up | recorded under `C-29`, alongside `D-9` and `D-39` |
+
+## Epic Exit Criteria
+
+- [x] Every implementation task has a passing unit test (Constitution V) — 156 in this epic's adapter, 601 corpus-wide
+- [x] `/speckit-converge` reports no unbuilt work for this epic — 39/39, zero open
+- [x] `specs/003-specification-engine/defects/` contains no open defect records — folder empty
+- [x] Principle deltas still hold; every deferral retains a valid owner
+- [x] Epic closure recorded in `closure.md` — this document. **EPIC-003 is release-eligible**
+- [ ] Platform promotion `local → dev → stage → prod` — **not this epic's to discharge**; EPIC-014 F-11.2
+
+**EPIC-003 is CLOSED and release-eligible** — the third epic in this programme to close, after
+EPIC-001 and EPIC-018.
+
+Release-eligible is a claim about *this epic's* scope: the contract, the adapter, the sandbox design
+and the fixture are built, tested and converged. It is **not** a claim that a specification has ever
+been generated by a live engine. That is `T646b`, it belongs to EPIC-028, and it has not run.
+
 ## Recommended Next Task
+
+**`T646b` — run `node scripts/v6-real-run.mjs` on a machine with a Docker daemon**, then commit the
+transcript. It is one command. Everything around it is green, which was the point of sequencing it
+last: a failure now is unambiguously about the container or the vendor invocation, not the seam.
+
+It is also the task that would finally retire this epic's own most-repeated sentence.
+
+**Above it**: `PMI-DOC-004` and approved business scope. **393 tasks across 19 epics** wait on two
+owner deliverables — including `T138`, routed today. See
+[`_shared/programme-status.md`](../_shared/programme-status.md).
+
+---
+
+## Original recommendation, 2026-08-08 — superseded
+
+*Retained because a report that quietly rewrites its own history is the pattern
+[`closing-report.md`](../../governance/closing-report.md) exists to prevent. `T646`, `T647` and
+`T648` were routed to EPIC-028 and delivered there; `T013`/`T052` and the EPIC-001 sweep are done.*
 
 **`T646` — the production `ContainerRuntime`.** It is the single thing standing between a tested
 adapter and a working engine, and it is the last piece of "Spec Kit is Engine V1" that has never

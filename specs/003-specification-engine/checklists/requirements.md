@@ -30,10 +30,10 @@ what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] All tasks complete with tests passing
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `defects/` has no open records
-- [ ] Principle deltas still hold; deferrals retain valid owners
+- [x] All tasks complete with tests passing — 39/39; `speckit-adapter` 156 passed (2026-08-17)
+- [x] `/speckit-converge` reports no unbuilt work for this epic — `T138` routed to EPIC-013 (`C-29`)
+- [x] `defects/` has no open records — folder empty; zero raised across the epic
+- [x] Principle deltas still hold; deferrals retain valid owners
 
 ## Notes
 

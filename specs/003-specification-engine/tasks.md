@@ -46,13 +46,29 @@ collision.
 - [X] T035 Implement per-project engine resolution in `backend/src/modules/engines/engine-resolver.service.ts` (unit test: T034a)
 - [X] T035a Register the Spec Kit adapter as the default engine at the composition root in `worker/src/engine-composition.ts` (FR-018; unit test: T034a)
 - [X] T135 [P] [US8] Unit tests asserting per-project engine selection resolves the correct adapter in `backend/tests/unit/engines/engine-selection.spec.ts`
-- [ ] T138 [US8] Implement per-project engine selection endpoint in `backend/src/modules/projects/projects.controller.ts` (unit test: T135)
+- ~~[ ] T138~~ **ROUTED → EPIC-013** — Implement per-project engine selection endpoint in `backend/src/modules/projects/projects.controller.ts` (unit test: T135)
 
   > ⏸ **BLOCKED — held product surface.** `projects.controller.ts` does not exist and belongs to
   > **EPIC-006**, which is held pending `PMI-DOC-004`. `plan.md` already excluded F-08.9 from this
   > epic for exactly this reason ("it touches `projects.controller.ts` and therefore the held product
   > surface") — T138 sits in F-08.3 and was missed by that split. The *behaviour* is built and tested
   > (T135, `EngineResolverService`); only the HTTP surface waits.
+  >
+  > **Routed 2026-08-17, conflict `C-29`.** The note above diagnosed the problem and stopped short of
+  > acting on it, so the task sat in the wrong epic for nine days and blocked this epic's closure.
+  >
+  > **This epic does not own `FR-019`.** Its *Requirements owned* list is FR-016, FR-017, FR-018,
+  > FR-021, FR-022, FR-023. `FR-019` — *"register additional engines and select one per project"* —
+  > is owned by [**EPIC-013**](../013-engine-api-selection/), which was split out of this epic for
+  > precisely this reason and is **held** pending `PMI-DOC-004`.
+  >
+  > **Not reissued.** The identifier travels with the task, as `T646`/`T647`/`T648` did to EPIC-028
+  > (the `D-19` precedent). EPIC-013 now carries the row; exactly one epic owns it.
+  >
+  > The behaviour is already built: `EngineResolverService` resolves a project's selection and
+  > **refuses** one naming an unregistered engine rather than falling back — a silent fallback would
+  > change what the project produces while `FR-022` provenance recorded the run as ordinary. Only the
+  > HTTP surface waits, and it waits on a business document rather than on engineering.
 
 
 ## F-08.4 · Fixture adapter
@@ -155,9 +171,16 @@ are **not actionable in this epic**.
 *Appended by `/speckit-converge` on 2026-08-08, a second pass after the EPIC-003 implementation
 commit. No existing task modified. IDs continue from the repository maximum (`T460`).*
 
-*`T646`, `T647`, `T648` (now routed to EPIC-028) and `T138` remain open from the previous pass and are **deliberately not
+*`T646`, `T647`, `T648` and `T138` remained open from the previous pass and were **deliberately not
 repeated here** — re-appending a tracked finding manufactures duplicate work and makes the epic look
 like it is regressing.*
+
+> **All four are now resolved, and none of them here** (2026-08-17):
+> `T646`/`T647`/`T648` were routed to **EPIC-028** and delivered there — `T646a`, `T647` and `T648`
+> built; `T646b` (the real container run) still outstanding. `T138` was routed to **EPIC-013**
+> (conflict `C-29`), because this epic does not own `FR-019`.
+>
+> **This epic is CLOSED at 39/39 with zero open rows.** See [closure.md](./closure.md).
 
 - [X] T461 **CRITICAL** Add the session-label line `**Session label**: EPIC-003 Specification Engine` to this task document per Constitution VIII (missing) — required by `governance/document-structure.md`; EPIC-023/024/025 carry one and EPIC-001/003/004 do not
 - [X] T462 Create `backend/src/modules/engines/engines.module.ts` and import it in `backend/src/app.module.ts` per FR-019 (partial) — `EngineRegistryService` and `EngineResolverService` are built and tested but nothing outside their own directory constructs them, so they are unreachable from the running API

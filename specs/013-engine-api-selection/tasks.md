@@ -5,7 +5,7 @@ description: "Task list for EPIC-013 — Engine API & Selection"
 
 # Tasks: Engine API & Selection
 
-**Epic**: `EPIC-013` | **Module**: M-08 | **Tasks**: 8
+**Epic**: `EPIC-013` | **Module**: M-08 | **Tasks**: **9** *(8 + `T138`, routed in 2026-08-17)*
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -23,6 +23,27 @@ paired unit-test task, written to fail first.
 ---
 
 ## F-08.9 · Engine API and interface
+
+- [ ] T138 [US8] Implement per-project engine selection endpoint in `backend/src/modules/projects/projects.controller.ts` (unit test: T135) *(routed from EPIC-003, 2026-08-17)*
+
+  > **Routed in, not reissued** — the identifier travels with the task, as `T646`/`T647`/`T648` did
+  > from this same parent epic to EPIC-028 (the `D-19` precedent). EPIC-003's row is struck through
+  > and its closure is not reopened. Conflict **`C-29`**.
+  >
+  > **Why it belongs here.** This epic owns `FR-019` — *"register additional engines and select one
+  > per project"* — and EPIC-003 does not; its owned set is FR-016, FR-017, FR-018, FR-021, FR-022,
+  > FR-023. EPIC-013 was split out of EPIC-003 *"because it touches `projects.controller.ts` and
+  > therefore the held product surface"*, and `T138` is the one row that split missed. It sat in
+  > F-08.3 while every sibling moved to F-08.9.
+  >
+  > **The behaviour is already built and tested** — `EngineResolverService` (`T035`) resolves a
+  > project's selection and refuses one naming an unregistered engine, with `T034a` and `T135`
+  > covering it. Only the HTTP surface waits, and it waits on `PMI-DOC-004` like the rest of this
+  > epic. **No engineering is blocked by this routing.**
+  >
+  > ⚠️ Note for whoever unblocks this epic: `projects.controller.ts` is **EPIC-006's** file. Decide
+  > then whether this endpoint lands there or as a project-scoped route on
+  > `engines.controller.ts` (`T140`), which this epic already owns. Recorded rather than pre-decided.
 
 - [ ] T139a [P] [US8] Unit tests for the `/engines` listing endpoint asserting capabilities are returned in `backend/tests/unit/engines/engines.controller.spec.ts`
 - [ ] T140 [US8] Implement `/engines` listing endpoint in `backend/src/modules/engines/engines.controller.ts` (unit test: T139a)

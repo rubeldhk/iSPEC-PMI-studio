@@ -36,7 +36,7 @@ Buildable now. Nothing here depends on the Business Requirement Specification.
 | Epic | Title | Module | Tasks |
 |------|-------|--------|-------|
 | [EPIC-001](./001-platform-foundation/) | Platform Foundation | M-00 | 47 ✅ **CLOSED 2026-08-17** — [closure.md](./001-platform-foundation/closure.md) |
-| [EPIC-003](./003-specification-engine/) | Specification Engine & Sandbox | M-08 | 35 |
+| [EPIC-003](./003-specification-engine/) | Specification Engine & Sandbox | M-08 | 39 ✅ **CLOSED 2026-08-17** — [closure.md](./003-specification-engine/closure.md). `T138` routed to EPIC-013 (`C-29`) |
 | [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 19 |
 
 ### ⏸ Held — 199 tasks
@@ -55,7 +55,7 @@ complete, reviewed, and Constitution V compliant.
 | [EPIC-010](./010-specification-interface/) | Specification Interface | M-04 | 19 |
 | [EPIC-011](./011-traceability/) | Traceability | M-04 | 19 |
 | [EPIC-012](./012-workflow-tasks/) | Workflow & Tasks | M-06 | 16 |
-| [EPIC-013](./013-engine-api-selection/) | Engine API & Selection | M-08 | 8 |
+| [EPIC-013](./013-engine-api-selection/) | Engine API & Selection | M-08 | **9** *(+`T138` routed from EPIC-003, `C-29`)* |
 | [EPIC-014](./014-devops-release/) | DevOps & Release | M-11 | 17 |
 | [EPIC-015](./015-qa-validation/) | QA & Validation | M-12 | 9 |
 | [EPIC-016](./016-architecture-decision-records/) | Architecture Decision Records | M-13 | 12 |
