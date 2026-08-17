@@ -79,7 +79,15 @@ export default [
     // under delivery pressure") plays out. The production boundary is
     // unaffected and still enforced twice: by the rule above for
     // `backend/src/**`, and by tests/architecture/engine-independence.spec.ts.
-    files: ['backend/tests/integration/engine-swap.spec.ts'],
+    files: [
+      'backend/tests/integration/engine-swap.spec.ts',
+      // T561 — the same exception, for the same reason, on the agent axis.
+      // `agent-swap.spec.ts` is the acceptance test for SC-AGT-002: it drives
+      // one agent-agnostic caller against two adapters and cannot be written
+      // without touching both. Scoped to the single FILE, deliberately —
+      // widening it to `backend/tests/**` is how RAID R-05 plays out.
+      'backend/tests/integration/agent-swap.spec.ts',
+    ],
     rules: {
       'no-restricted-imports': 'off',
     },

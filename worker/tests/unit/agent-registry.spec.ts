@@ -110,18 +110,28 @@ describe('T555 · provider swap — the acceptance test (SC-AGT-002)', () => {
   });
 
   it('classifies failures from the same taxonomy', async () => {
-    // ClaudeAgent is descriptor-only until T564; its refusal is a NAMED reason
-    // from the shared enum, not an ad-hoc error. That is what makes the two
-    // interchangeable to a caller today.
-    const claude = await run(new ClaudeAgent());
-    expect(isAgentFailure(claude)).toBe(true);
-    if (isAgentFailure(claude)) expect(claude.failure.reason).toBe('agent_unavailable');
+    // **Updated by T564.** This previously asserted that `ClaudeAgent` returned
+    // `agent_unavailable`, because it was descriptor-only and its `execute()`
+    // refused by design. Now that it is implemented it succeeds against a
+    // working session, so the interchangeability claim is made the way it
+    // should be: drive BOTH adapters into the same failure and require the same
+    // named reason from the shared enum.
+    for (const agent of [new FixtureAgent(), new ClaudeAgent()]) {
+      const cancelled = await agent.execute({ capability: 'generate', command: 'x' }, session(), {
+        ...ctx,
+        signal: AbortSignal.abort(),
+      });
+      expect(isAgentFailure(cancelled)).toBe(true);
+      if (isAgentFailure(cancelled)) expect(cancelled.failure.reason).toBe('cancelled');
+    }
+  });
 
-    const cancelled = await new FixtureAgent().execute(
-      { capability: 'generate', command: 'x' },
-      session(),
-      { ...ctx, signal: AbortSignal.abort() },
-    );
-    expect(isAgentFailure(cancelled) && cancelled.failure.reason).toBe('cancelled');
+  it('both adapters now run — the swap is real, not descriptor-deep (T564)', async () => {
+    for (const agent of [new FixtureAgent(), new ClaudeAgent()]) {
+      const r = await agent.execute({ capability: 'generate', command: 'x' }, session(), ctx);
+      expect(isAgentFailure(r), `${agent.descriptor.name} failed against a working session`).toBe(
+        false,
+      );
+    }
   });
 });

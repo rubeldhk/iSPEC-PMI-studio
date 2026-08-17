@@ -117,6 +117,8 @@ class StepFailure extends Error {
 export class SpecKitEngine implements SpecificationEngine {
   readonly descriptor: EngineDescriptor;
   private readonly ceiling: number;
+  /** Distinguishes the several agent runs inside one correlation (DEF-028-002). */
+  private agentRunSequence = 0;
 
   constructor(private readonly options: SpecKitAdapterOptions) {
     this.descriptor = options.descriptor;
@@ -276,7 +278,17 @@ export class SpecKitEngine implements SpecificationEngine {
     const base = {
       provider: agent.descriptor.provider,
       model: agent.descriptor.model,
-      executionId: `${ctx.correlationId}:${command}`,
+      // DEF-028-002 — built from the CAPABILITY and a sequence, never the
+      // command. This was `${correlationId}:${command}`, and `command` is the
+      // prompt: `/speckit-specify Apollo: see pmi-input.md` put the customer's
+      // project name verbatim into a field designed to be logged, on both the
+      // success and failure paths.
+      //
+      // The field is called `executionId` and reads as opaque at every call
+      // site, which is exactly why nobody saw it. `capability` is a closed enum
+      // and the sequence is a counter, so this identifier cannot hold content
+      // by construction rather than by care.
+      executionId: `${ctx.correlationId}:${capability}:${++this.agentRunSequence}`,
       correlationId: ctx.correlationId,
       startedAt,
       endedAt: new Date().toISOString(),

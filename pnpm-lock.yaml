@@ -62,9 +62,15 @@ importers:
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
+      '@pmi/agent-contract':
+        specifier: workspace:*
+        version: link:../packages/agent-contract
       '@pmi/engine-contract':
         specifier: workspace:*
         version: link:../packages/engine-contract
+      '@pmi/execution-contract':
+        specifier: workspace:*
+        version: link:../packages/execution-contract
       '@pmi/observability':
         specifier: workspace:*
         version: link:../packages/observability
@@ -84,6 +90,9 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
     devDependencies:
+      '@pmi/agent-adapter-claude':
+        specifier: workspace:*
+        version: link:../agent-adapters/claude
       '@pmi/agent-adapter-fixture':
         specifier: workspace:*
         version: link:../agent-adapters/fixture

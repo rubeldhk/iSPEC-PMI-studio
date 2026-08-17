@@ -16,6 +16,7 @@ import {
   agentOk,
   assertAgentCapabilities,
   assertContextFits,
+  raceWallClock,
   type AgentContext,
   type AgentDescriptor,
   type AgentExecutionOutcome,
@@ -25,7 +26,9 @@ import {
   type AgentResult,
   type HealthStatus,
 } from '@pmi/agent-contract';
-import type { ExecutionSession } from '@pmi/execution-contract';
+import type { ExecResult, ExecutionSession } from '@pmi/execution-contract';
+
+type ExecResultLike = ExecResult;
 
 export interface FixtureAgentOptions {
   readonly descriptor?: Partial<AgentDescriptor>;
@@ -101,29 +104,35 @@ export class FixtureAgent implements AgentGateway {
       return agentFail(this.options.failWith, `Injected failure: ${this.options.failWith}.`);
     }
 
-    if (this.options.hang) {
-      // Self-terminate at the wall clock rather than waiting for a step that
-      // will not return — the second defect the EPIC-003 suite caught.
-      return new Promise((resolve) => {
-        const timer = setTimeout(
-          () => resolve(agentFail('timeout', 'The agent exceeded its wall-clock limit.')),
-          ctx.timeoutMs,
-        );
-        ctx.signal?.addEventListener(
-          'abort',
-          () => {
-            clearTimeout(timer);
-            resolve(agentFail('cancelled', 'Cancelled while running.'));
-          },
-          { once: true },
-        );
-      });
+    ctx.onProgress?.('agent_started');
+
+    // DEF-028-001 — the session is RACED, not awaited.
+    //
+    // This used to await `session.exec` directly, and the `hang` option took a
+    // separate branch that raced a `setTimeout`. So the conformance suite's C2
+    // case proved the adapter could report a timeout when told to simulate one,
+    // and never that it does when a step actually wedges. It did not: a hanging
+    // session hung the adapter forever, holding a generation job open past its
+    // own wall clock.
+    //
+    // `hang` is kept as a simulation knob. It is no longer what C2 asserts.
+    const work = this.options.hang
+      ? new Promise<ExecResultLike>(() => undefined)
+      : session.exec([invocation.command]);
+
+    const outcome = await raceWallClock(work, ctx);
+    if (outcome.kind !== 'value') {
+      return agentFail(
+        outcome.kind,
+        outcome.kind === 'timeout'
+          ? 'The agent exceeded its wall-clock limit.'
+          : 'Cancelled while running.',
+      );
     }
 
-    ctx.onProgress?.('agent_started');
-    const result = await session.exec([invocation.command]);
     ctx.onProgress?.('agent_finished');
 
+    const result = outcome.value;
     if (result.exitCode !== 0) {
       return agentFail('agent_error', `The agent exited ${result.exitCode}.`, result.stderr);
     }

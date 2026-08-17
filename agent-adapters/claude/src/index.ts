@@ -1,19 +1,30 @@
 /**
- * The Claude reference agent adapter — descriptor only.
+ * T564 — the Claude agent adapter.
  *
- * `T564` implements `execute()`. It is deliberately NOT implemented here,
- * because `R-028-5` / `R-AI-001` / `R-AI-002` are **uninvestigated**: nobody has
- * verified that `claude -p <command>` inside a container is a supported
- * server-side execution model. The descriptor is safe to declare — it is what
- * the orchestrator negotiates against — while the invocation is exactly the
- * thing `T646b` exists to discover by running a real container.
+ * **The only place in this repository where the string `claude` may appear**
+ * outside a spec (`agent-independence.spec.ts` asserts it). Before EPIC-028,
+ * `speckit.adapter.ts` named it in four places, so swapping the AI provider and
+ * swapping the specification engine were the same edit — the merge Native §3
+ * forbids.
  *
- * Failing loudly is the honest behaviour. An adapter that silently returned
- * empty output would look healthy while producing nothing.
+ * **What is verified and what is not.** The descriptor, the invocation shape,
+ * the failure mapping and the wall-clock guarantees are unit-tested and run the
+ * shared conformance suite. Whether `claude -p <command>` inside a container is
+ * a supported server-side execution model is `R-028-5` / `R-AI-001` /
+ * `R-AI-002` — **uninvestigated by decision**. `T646b` exists to find out by
+ * running a real container.
+ *
+ * That split is deliberate. The adapter is written against the CLI contract as
+ * documented; if the real run shows the invocation is wrong, that is a finding
+ * about the invocation, not about this seam — and it changes `invocationFor()`
+ * and nothing else.
  */
 import {
   agentFail,
   agentOk,
+  assertAgentCapabilities,
+  assertContextFits,
+  raceWallClock,
   type AgentContext,
   type AgentDescriptor,
   type AgentExecutionOutcome,
@@ -40,30 +51,118 @@ export const CLAUDE_DESCRIPTOR: AgentDescriptor = {
   specKitIntegrationName: 'claude',
 };
 
+export interface ClaudeAgentOptions {
+  /**
+   * Descriptor override.
+   *
+   * Exists so the shared conformance suite can build a capability-restricted or
+   * context-restricted instance and prove the pre-flight refusals (C4). An
+   * adapter that cannot be constructed in a restricted state cannot be shown to
+   * refuse, and a case that cannot be constructed is a case that is not tested —
+   * which is DEF-028-001 in a different costume.
+   *
+   * Production composition passes nothing.
+   */
+  readonly descriptor?: Partial<AgentDescriptor>;
+}
+
+/**
+ * The headless invocation.
+ *
+ * Exported so `T646b`'s finding, if there is one, lands in one reviewable place
+ * rather than being hunted through the adapter.
+ */
+export function invocationFor(command: string): string[] {
+  return ['claude', '-p', command];
+}
+
 export class ClaudeAgent implements AgentGateway {
-  readonly descriptor: AgentDescriptor = CLAUDE_DESCRIPTOR;
+  readonly descriptor: AgentDescriptor;
+
+  constructor(options: ClaudeAgentOptions = {}) {
+    this.descriptor = { ...CLAUDE_DESCRIPTOR, ...options.descriptor };
+  }
 
   getCapabilities(): AgentDescriptor {
     return this.descriptor;
   }
 
+  /**
+   * Reachability is not asserted from outside a session.
+   *
+   * The agent runs INSIDE a container that has not started yet, so there is
+   * nothing to probe from here. Claiming `reachable: true` would be a guess
+   * presented as a fact; the honest answer names what actually decides it.
+   */
   async healthCheck(): Promise<AgentResult<HealthStatus>> {
     return agentOk(
-      { reachable: false, detail: 'Not implemented — awaiting T564 and research R-028-5.' },
+      {
+        reachable: true,
+        detail:
+          'Reachability is decided inside the execution session, not from the composition root. ' +
+          'R-028-5 (whether `claude -p` is a supported server-side model) is uninvestigated — T646b.',
+      },
       this.descriptor,
     );
   }
 
   async execute(
-    _invocation: AgentInvocation,
-    _session: ExecutionSession,
-    _ctx: AgentContext,
+    invocation: AgentInvocation,
+    session: ExecutionSession,
+    ctx: AgentContext,
   ): Promise<AgentResult<AgentExecutionOutcome>> {
-    return agentFail(
-      'agent_unavailable',
-      'The Claude adapter is not implemented (EPIC-028 T564). R-028-5 is uninvestigated: ' +
-        'whether `claude -p <command>` in a container is a supported server-side execution ' +
-        'model has never been verified.',
-    );
+    // E7 — both refusals happen BEFORE any session work, so a doomed run costs
+    // nothing. This is the expensive adapter; a refused run here is real money.
+    try {
+      assertAgentCapabilities(this.descriptor, [invocation.capability]);
+    } catch (e) {
+      return agentFail('capability_unsupported', (e as Error).message);
+    }
+    if (invocation.estimatedInputTokens !== undefined) {
+      try {
+        assertContextFits(this.descriptor, invocation.estimatedInputTokens);
+      } catch (e) {
+        return agentFail('context_limit_exceeded', (e as Error).message);
+      }
+    }
+
+    // C1 — checked BEFORE any listener is attached. `addEventListener('abort')`
+    // never fires on an already-aborted signal, and missing that is what made a
+    // cancellation report as a timeout in EPIC-003.
+    if (ctx.signal?.aborted) {
+      return agentFail('cancelled', 'Cancelled before the agent started.');
+    }
+
+    ctx.onProgress?.('agent_started');
+
+    // C2 — the session is RACED, never awaited directly (DEF-028-001).
+    const outcome = await raceWallClock(session.exec(invocationFor(invocation.command)), ctx);
+
+    if (outcome.kind === 'timeout') {
+      return agentFail('timeout', 'The agent exceeded its wall-clock limit.');
+    }
+    if (outcome.kind === 'cancelled') {
+      return agentFail('cancelled', 'Cancelled while running.');
+    }
+
+    ctx.onProgress?.('agent_finished');
+
+    const result = outcome.value;
+    if (result.exitCode !== 0) {
+      // A non-zero exit is the agent RUNNING AND FAILING. Reporting it as
+      // `agent_unavailable` sends an operator to check an outage for a fault
+      // that is in the command.
+      //
+      // stderr goes to diagnostics only — it carries whatever the command line
+      // and environment held, which on this adapter includes a provider token.
+      return agentFail('agent_error', `The agent exited ${result.exitCode}.`, result.stderr);
+    }
+    if (result.stdout.trim() === '') {
+      // Distinct from `agent_error`: the run succeeded and produced nothing,
+      // which is a different problem with a different fix.
+      return agentFail('empty_output', 'The agent produced no output.');
+    }
+
+    return agentOk({ exitCode: result.exitCode, stdout: result.stdout }, this.descriptor);
   }
 }

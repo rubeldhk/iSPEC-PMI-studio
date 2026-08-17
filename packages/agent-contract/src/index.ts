@@ -209,6 +209,66 @@ export function assertAgentCapabilities(
   }
 }
 
+// ---------------------------------------------------------------- wall clock
+
+export type WallClockOutcome<T> =
+  | { readonly kind: 'value'; readonly value: T }
+  | { readonly kind: 'timeout' }
+  | { readonly kind: 'cancelled' };
+
+/**
+ * Bound a step by the wall clock and the abort signal — DEF-028-001.
+ *
+ * Lives in the CONTRACT rather than in each adapter on purpose. Every adapter
+ * owes conformance cases C1 and C2, and those two cases encode a subtlety that
+ * this programme has now got wrong three times:
+ *
+ *   - `addEventListener('abort')` never fires on an ALREADY-aborted signal, so
+ *     the check must come before the subscription. Missing it reports a
+ *     cancellation as a timeout.
+ *   - Cancellation and timeout must stay distinct all the way out. Collapsing
+ *     them makes a systemic problem look like ordinary user behaviour in every
+ *     metric that counts it.
+ *
+ * `FixtureAgent` had a race that only ran when a constructor flag was set, and
+ * its real path awaited the session directly — so a wedged step hung forever
+ * while the suite stayed green. One implementation, used by every adapter, is
+ * what stops that recurring per adapter.
+ *
+ * Mirrors `abandonOn()` in the Spec Kit engine adapter, which solves the same
+ * problem one layer up. A race at one layer does not bound a wedge at another.
+ */
+export async function raceWallClock<T>(
+  work: Promise<T>,
+  ctx: Pick<AgentContext, 'timeoutMs' | 'signal'>,
+): Promise<WallClockOutcome<T>> {
+  if (ctx.signal?.aborted) return { kind: 'cancelled' };
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: (() => void) | undefined;
+
+  const abandon = new Promise<WallClockOutcome<T>>((resolve) => {
+    timer = setTimeout(() => resolve({ kind: 'timeout' }), ctx.timeoutMs);
+    // A pending timer would keep the process alive after a fast success.
+    if (typeof timer === 'object' && 'unref' in timer) timer.unref();
+
+    if (ctx.signal) {
+      onAbort = () => resolve({ kind: 'cancelled' });
+      ctx.signal.addEventListener('abort', onAbort, { once: true });
+    }
+  });
+
+  try {
+    return await Promise.race([
+      work.then((value): WallClockOutcome<T> => ({ kind: 'value', value })),
+      abandon,
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    if (onAbort && ctx.signal) ctx.signal.removeEventListener('abort', onAbort);
+  }
+}
+
 /** A pre-flight refusal (the `E7` family): a doomed run is never billed. */
 export function assertContextFits(descriptor: AgentDescriptor, estimatedTokens: number): void {
   if (estimatedTokens > descriptor.contextLimitTokens) {
