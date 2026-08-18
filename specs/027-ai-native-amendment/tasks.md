@@ -115,10 +115,10 @@ artifact or `NO-EXISTING-COVERAGE`.
 
 **Independent Test**: re-run each search and confirm the register records the same count and locations.
 
-- [ ] T614 [P] [US2] Write the failing `G-27-05` check — every premise row carries a reproducible query, a count, and locations when the count is non-zero — in `tests/governance/g27-premises.spec.ts`
-- [ ] T615 [US2] Record a premise check for every capability the amendment calls *existing*, with the query as run, the occurrence count and the locations, in `register/premises.md` (conformance check: T614)
-- [ ] T616 [US2] Record the distinction between the product **Defect Room** and the Constitution VI **`defects/`** convention wherever either is referenced (`FR-AMD-007`), in `register/premises.md` (conformance check: T614)
-- [ ] T617 [US2] Record the EPIC-007 name collision with both scopes quoted from source, and `D-33`'s resolution, in `register/premises.md` (conformance check: T614)
+- [X] T614 [P] [US2] Write the failing `G-27-05` check — every premise row carries a reproducible query, a count, and locations when the count is non-zero — in `tests/governance/g27-premises.spec.ts`
+- [X] T615 [US2] Record a premise check for every capability the amendment calls *existing*, with the query as run, the occurrence count and the locations, in `register/premises.md` (conformance check: T614)
+- [X] T616 [US2] Record the distinction between the product **Defect Room** and the Constitution VI **`defects/`** convention wherever either is referenced (`FR-AMD-007`), in `register/premises.md` (conformance check: T614)
+- [X] T617 [US2] Record the EPIC-007 name collision with both scopes quoted from source, and `D-33`'s resolution, in `register/premises.md` (conformance check: T614)
 
   > Eight terms returned **zero** across all 26 other epic specs on 2026-08-13 and again on
   > 2026-08-14. The register records the evidence, not the conclusion — a claim that resizes a

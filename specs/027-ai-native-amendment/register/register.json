@@ -5,7 +5,7 @@
     "verdicts.md": "389a06366723aa8b9d0997f958ee5be5f64cf38892623e7007c62fca2ed838c2",
     "capabilities.md": "086d626050e4a1444b09d0cda8a6f95b09b4190d8aa3f9d3c91976a7fa4dbce9",
     "capability-areas.md": "2a77b1ad6ccde5d8893d7b26f0ebd1bab67dfcd4e3dca9706142f4a4f0b756ca",
-    "premises.md": "2beb828a72dfdd1e1372bbbbdf2366a1aefeef5a6c7efb22d2e78cd927b02481",
+    "premises.md": "f31542a037175598331f20e518fb3ad4459ee22d01b01e28757757a1c85951a9",
     "decisions.md": "13e5ee7b632ff8a0fafda2018d2c0367825eb3dd739391587445a14818276b6f",
     "research.md": "241f819e9609f021340c5f59ddf00a8f3ab26690871569bf0490cbd4db684e1c",
     "adrs.md": "2858c4ef76d21c9819fb6538f410af4ede4f6137f89702101bf0fe66cd541bf4",
@@ -11904,7 +11904,206 @@
   ],
   "capabilities": [],
   "capability_areas": [],
-  "premises": [],
+  "premises": [
+    {
+      "id": "PRE-001",
+      "claimed_capability": "the existing Change Room",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Change Room\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-002",
+      "claimed_capability": "the existing Defect Room (the PRODUCT capability)",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Defect Room\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-003",
+      "claimed_capability": "the existing Requirement Room",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Requirement Room\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-004",
+      "claimed_capability": "a Decision Room / Decision Center / Decision Intelligence capability",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Decision Room\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-005",
+      "claimed_capability": "an Agent Gateway (as the amendment spells it, with a space)",
+      "claim_source": "CLA-200",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Agent Gateway\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-006",
+      "claimed_capability": "an AgentGateway contract (the built spelling)",
+      "claim_source": "CLA-200",
+      "search_performed": "grep -rli --include=spec.md --include=index.ts --exclude-dir=027-ai-native-amendment \"AgentGateway\" specs/ packages/",
+      "occurrence_count": 2,
+      "locations": [
+        "specs/028-agent-execution-seam/spec.md",
+        "packages/agent-contract/src/index.ts"
+      ],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "PRE-007",
+      "claimed_capability": "a ProjectExecutionEnvironment abstraction",
+      "claim_source": "CLA-222",
+      "search_performed": "grep -rli --include=spec.md --include=index.ts --exclude-dir=027-ai-native-amendment \"ProjectExecutionEnvironment\" specs/ packages/",
+      "occurrence_count": 2,
+      "locations": [
+        "specs/028-agent-execution-seam/spec.md",
+        "packages/execution-contract/src/index.ts"
+      ],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "PRE-008",
+      "claimed_capability": "an Engineering Integration Hub",
+      "claim_source": "CLA-075",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Integration Hub\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-009",
+      "claimed_capability": "a centralized Engineering Context Engine",
+      "claim_source": "CLA-127",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Context Engine\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-010",
+      "claimed_capability": "an Engineering Evidence Package",
+      "claim_source": "CLA-135",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Evidence Package\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-011",
+      "claimed_capability": "a change request concept anywhere in the corpus",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"change request\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-012",
+      "claimed_capability": "Governed Learning (Cosmos 3.4)",
+      "claim_source": "CLA-559",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Governed Learning\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-013",
+      "claimed_capability": "a Specification Compliance Agent (Cosmos 3.5)",
+      "claim_source": "CLA-525",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Specification Compliance\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-014",
+      "claimed_capability": "a Workspace Fabric (Cosmos 6)",
+      "claim_source": "CLA-535",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Workspace Fabric\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-015",
+      "claimed_capability": "a Capability Resolver (Cosmos 5)",
+      "claim_source": "CLA-533",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"Capability Resolver\" specs/",
+      "occurrence_count": 0,
+      "locations": [],
+      "verdict": "refuted"
+    },
+    {
+      "id": "PRE-016",
+      "claimed_capability": "the existing Agent Registry, as an Engineering Expert model (Cosmos 3.3)",
+      "claim_source": "CLA-510",
+      "search_performed": "grep -rli \"AgentRegistry\" worker/src specs/028-agent-execution-seam/spec.md",
+      "occurrence_count": 2,
+      "locations": [
+        "worker/src/agent-composition.ts",
+        "specs/028-agent-execution-seam/spec.md"
+      ],
+      "verdict": "partial"
+    },
+    {
+      "id": "PRE-017",
+      "claimed_capability": "the Constitution VI defects/ CONVENTION — distinct from the product Defect Room",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"defect\" specs/",
+      "occurrence_count": 27,
+      "locations": [
+        "all 27 other epic spec.md files, always as the Constitution VI obligation that specs/<epic>/defects/ holds no open records"
+      ],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "PRE-018",
+      "claimed_capability": "EPIC-007 Requirement Intelligence — the NAME, not the capability (Finding B)",
+      "claim_source": "CLA-380",
+      "search_performed": "grep -l \"AI-assisted analysis\" specs/007-requirement-intelligence/spec.md",
+      "occurrence_count": 1,
+      "locations": [
+        "specs/007-requirement-intelligence/spec.md, which states AI-assisted analysis is Phase 2 and out of scope and owns six CRUD requirements FR-004 to FR-009"
+      ],
+      "verdict": "partial"
+    },
+    {
+      "id": "PRE-019",
+      "claimed_capability": "CONTROL — a term that SHOULD be present, proving the search works",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"traceability\" specs/",
+      "occurrence_count": 27,
+      "locations": [
+        "all 27 other epic spec.md files"
+      ],
+      "verdict": "confirmed"
+    },
+    {
+      "id": "PRE-020",
+      "claimed_capability": "CONTROL — a narrower term that should be present in a few specs only",
+      "claim_source": "CLA-003",
+      "search_performed": "grep -rli --include=spec.md --exclude-dir=027-ai-native-amendment \"engine adapter\" specs/",
+      "occurrence_count": 2,
+      "locations": [
+        "specs/003-specification-engine/spec.md",
+        "specs/013-engine-api-selection/spec.md"
+      ],
+      "verdict": "confirmed"
+    }
+  ],
   "decisions": [],
   "research": [],
   "adrs": [],
