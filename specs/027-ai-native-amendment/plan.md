@@ -1,7 +1,14 @@
 # Implementation Plan: AI-Native Amendment Reconciliation
 
-**Epic**: `EPIC-027` | **Module**: programme reconciliation (no product module) | **Date**: 2026-08-13 |
-**Spec**: [spec.md](./spec.md)
+**Epic**: `EPIC-027` | **Module**: programme reconciliation (no product module) | **Date**: 2026-08-13 ·
+**Revalidated**: 2026-08-17 | **Spec**: [spec.md](./spec.md)
+
+> **Revalidation, not regeneration.** `/speckit-plan` was re-run on 2026-08-17. Phase 0 and Phase 1
+> outputs already existed and were **not regenerated** — the design is sound and rewriting it would
+> destroy reviewed work. The Constitution Check was re-run (see below) and the plan's **status
+> claims** were brought current: EPIC-028 built three of the four proceeding capability areas,
+> EPIC-001/003/018 closed, and conflict `C-29` was raised and resolved. **No requirement, function,
+> contract or check changed.**
 
 **Posture**: ▶ **PROCEEDING** — analysis of held work is not held work.
 
@@ -82,8 +89,8 @@ the model-routing layer beneath the agent gateway (`D-30`). **None is installed 
 **Storage**: the git repository. The reconciliation register is a versioned markdown + machine-
 readable pair (see [contracts/reconciliation-register.md](./contracts/reconciliation-register.md)).
 
-**Testing**: executable conformance checks under `tests/governance/`, alongside the 159 checks
-EPIC-018 already runs. Constitution V (v1.2.0) covers document outputs through exactly this
+**Testing**: executable conformance checks under `tests/governance/`, alongside the **200** checks
+EPIC-018 and EPIC-028 now run (159 at the time of writing; revalidated 2026-08-17). Constitution V (v1.2.0) covers document outputs through exactly this
 mechanism; there is no exemption to argue.
 
 **Target Platform**: the repository and its specification corpus. No runtime, no deployment.
@@ -101,8 +108,12 @@ later work — knowledge-graph traversal and context assembly — and both are r
   capabilities that already exist under other names. Every classification must resolve to one owner.
 
 **Scale/Scope**: **5** source documents · **~470** substantive clauses · 26 existing epic specifications ·
-598 tracked tasks across 24 task lists · 5 ADRs (12 more required by Native §27) · 14 named research
-items · 22 decisions raised, 12 taken.
+**729** tracked tasks across **26** task lists · 5 ADRs (12 more required by Native §27, and 5 by
+Cosmos §9 — **17 total, 12 still missing**) · 14 named research
+items · 23 decisions raised, 15 taken.
+
+*Counts revalidated 2026-08-17. Task total rose from 598 as EPIC-026/027/028 were tasked and
+EPIC-028 converged; the ADR debt is unchanged, and it is this epic's `F-27.5` to discharge.*
 
 **NEEDS CLARIFICATION**: none. A clarification session on 2026-08-14 settled the register's
 granularity and two further decisions — see [spec.md](./spec.md) *Clarifications*. The **seven**
@@ -125,15 +136,55 @@ none blocks task generation.
 | V | Every task carries a unit test, or for document outputs an executable conformance check that can fail | **PASS** — every function below names its check. Ratified programme-wide in constitution **v1.2.0**; no reading to argue |
 | VI | `specs/027-ai-native-amendment/defects/` exists and is the sole defect intake | **PASS** — exists, empty |
 | VII | Changes land in local first; promotion local → dev → stage → prod | **PASS** — trivially; this epic ships no runtime artifact |
-| VIII | Session labelled with the working Epic | ⚠️ **DEVIATION** — the working branch is `epic/003-specification-engine`, not an EPIC-027 branch. Same lapse recorded in the EPIC-003 closure report; `G-08` passes because it checks branch-name *format*, not correspondence. Recorded, not hidden — see Complexity Tracking |
+| VIII | Session labelled with the working Epic | ⚠️ **DEVIATION, unchanged** — the working branch is still `epic/003-specification-engine`. `G-08` passes because it checks branch-name *format*, not correspondence. **Now the seventh occurrence**; EPIC-001, EPIC-018, EPIC-028 and EPIC-003 all recorded it in their closing reports, and EPIC-028's `tasks.md` predicted it in prose and it happened anyway. Decision **`D-39`** is the check that would catch it and remains untaken — see Complexity Tracking |
 | IX | Run closes with Work Completed + Recommended Next Task | **PASS** |
-| — | Repository synced from GitHub before work started | ⚠️ **NOT VERIFIED** — not checked this session. Stated rather than claimed |
+| — | Repository synced from GitHub before work started | ⚠️ **NOT VERIFIED** — still not checked. Nothing has been pushed; six commits sit ahead of `origin` on this branch. Stated rather than claimed |
 | — | No other Claude session active on this checkout | **PASS** — asserted by the operator, not independently verifiable |
 | — | **PMI-DOC-003 register** — deltas recorded per D-6 | **PASS** — 6 deltas in [spec.md](./spec.md); no principle weakened by the amendment |
 | — | **D-10 honoured** — held work stays held | **PASS** — `FR-AMD-017`. The amendment is not the BRS; the hold is untouched |
 | — | **D-13 not pre-empted** — the deferred 18-module re-cut is recorded, not resolved | **PASS** — `D-23` records the dependency ([srs-alignment.md](../srs-alignment.md) Part 8) |
 
 **One deviation (VIII), no FAIL.** Phase 0 proceeds.
+
+### Revalidation — 2026-08-17 (`/speckit-plan` re-run)
+
+*Constitution governance requires every `/speckit-plan` to complete its Constitution Check before
+Phase 0 and re-check after Phase 1. This plan's Phase 0 and Phase 1 outputs already exist and were
+**not regenerated** — regenerating 2,464 lines of complete, reviewed design would destroy work, and
+`FR-AMD-016` bounds this epic to analysis. What follows is the gate re-run against the repository as
+it stands today.*
+
+| # | Gate | Status 2026-08-17 | Changed since 2026-08-14? |
+|---|---|---|---|
+| I | Spec Kit command gate | **PASS** | No — outputs still land under `specs/027-*/` |
+| II | SRS traceability | **PASS** | No — 16 rows, zero untraced |
+| III | Epic → Feature → Task | **PASS** | No — 8 functions, 51 tasks generated |
+| IV | Convergence scheduled | **PASS** | No — Phase Z present in `tasks.md` |
+| V | Executable check per task | **PASS** | **Strengthened** — the pattern is now proven, not asserted: EPIC-018 and EPIC-028 shipped 41 further governance checks, and **four defects this week were found by checks written to this standard** |
+| VI | `defects/` is the sole intake | **PASS** | No — exists, still empty |
+| VII | Promotion pipeline | **PASS** | No — this epic ships no runtime artifact |
+| VIII | Session labelled with the working Epic | ⚠️ **DEVIATION** | **Worse** — seventh occurrence; `D-39` still untaken |
+| IX | Closing report | **PASS** | No |
+| — | Repo synced from GitHub | ⚠️ **NOT VERIFIED** | **Worse** — six commits now sit unpushed |
+| — | PMI-DOC-003 register | **PASS** | No — 6 deltas, no principle weakened |
+| — | **D-10 honoured** | **PASS** | No — sixteen areas still held; **nothing held was built** |
+| — | D-13 not pre-empted | **PASS** | No — `D-23` records the dependency |
+
+**One deviation (VIII), one unverified item, no FAIL. The plan stands and needs no redesign.**
+
+**What did change is the plan's *inputs*, not its design.** EPIC-028 built three of the four
+proceeding capability areas, EPIC-001/003/018 closed, and conflict **`C-29`** was raised and
+resolved. The currency updates in D.1, D.2, Technical Context and Complexity Tracking record that;
+the eight functions, the register contract and the check set are untouched because nothing
+invalidated them.
+
+**One new input this epic must now absorb** — recorded here so `/speckit-implement` does not have to
+rediscover it. `F-27.7` (decision register) and `F-27.8` (boundary & do-no-harm) should carry
+**`C-29`** and the four defects of 2026-08-17 (`DEF-001-001`, `DEF-018-001`, `DEF-028-001`,
+`DEF-028-003`). They share one shape — *a check that names the right condition and cannot observe
+it* — and that is a finding about **how this corpus verifies itself**, which is squarely §18's
+governance and traceability sections. It is analysis, not implementation, so `FR-AMD-016` is not
+strained.
 
 **Post-design re-check (after Phase 1)**: **PASS, and gate V is strengthened.** The register
 contract turns `SC-AMD-001` through `SC-AMD-012` from review items into machine-readable assertions
@@ -176,11 +227,11 @@ programme-wide consequences had the same problem in reverse: one epic holding wh
 
 | Capability area | Verdict | Home | Posture |
 |---|---|---|---|
-| Agent Gateway + agent contract | MISSING, urgent | **EPIC-028** ✅ created 2026-08-13 | ▶ proceeds — engine lane |
-| ProjectExecutionEnvironment | ENHANCE, urgent | **EPIC-028** via `T646` | ▶ proceeds |
-| EgressPolicy profiles | CONFLICT | **EPIC-028**, `ADR-0002` extension | ▶ proceeds |
-| Persistent project state | MISSING | **New epic — EPIC-029 (proposed)** | ▶ proceeds (no product surface) |
-| Agent-independence architecture test | MISSING | **EPIC-028** | ▶ proceeds |
+| Agent Gateway + agent contract | MISSING, urgent | **EPIC-028** | ✅ **BUILT 2026-08-17** — `packages/agent-contract`, two adapters, shared conformance suite |
+| ProjectExecutionEnvironment | ENHANCE, urgent | **EPIC-028** via `T646` | ✅ **BUILT** — port in `packages/execution-contract`, Docker provider behind it (`D-21`) |
+| EgressPolicy profiles | CONFLICT | **EPIC-028**, `ADR-0002` extension | ✅ **BUILT** — `generation` frozen by committed hash, `implementation` deliberately minimal |
+| Persistent project state | MISSING | **New epic — EPIC-029 (proposed)** | ▶ **the only proceeding area left unbuilt.** Still unspecified; `D-22` narrowed it to a git reference plus a cache policy |
+| Agent-independence architecture test | MISSING | **EPIC-028** | ✅ **BUILT** — a named provider outside an agent adapter now fails the build |
 | Execution job → AgentRun state machine | ENHANCE | **EPIC-012 Workflow & Tasks** | ⏸ held |
 | Requirement Room / Requirement Intelligence | MISSING | **New epic** — *not* EPIC-007 (Finding B) | ⏸ held |
 | Change Room / Change Intelligence | MISSING | New epic | ⏸ held |
@@ -197,9 +248,16 @@ programme-wide consequences had the same problem in reverse: one epic holding wh
 | **Governed Learning** *(Cosmos §3.4)* | MISSING | New epic — nothing in the August-11 set covers it | ⏸ held |
 | **Specification Compliance Agent** *(Cosmos §3.5)* | MISSING | New epic, or EPIC-015 QA extension | ⏸ held |
 
-**Twenty areas. Four proceed, sixteen are held.** That is the scope-creep answer in one table:
+**Twenty areas. Four proceeded, sixteen are held.** That is the scope-creep answer in one table:
 the amendment adds a small amount of *immediately buildable* architectural work and a long, sequenced
-queue behind a gate that already exists. The count is asserted by `G-27-13` so the table and
+queue behind a gate that already exists.
+
+> **Revalidated 2026-08-17: three of the four proceeding areas are now BUILT**, by EPIC-028 at 65/66.
+> The prediction this table made on 2026-08-13 — that the buildable slice was small and the queue was
+> long — held. The slice took four days; the queue is untouched because `PMI-DOC-004` has not arrived.
+> **This is the strongest available evidence that the scope-creep concern was answered correctly**: the
+> amendment's twenty areas did not expand the work in flight, and sixteen of them still cannot start.
+> The fourth area, persistent project state, is the one piece of Band 1 nobody has specified. The count is asserted by `G-27-13` so the table and
 `SC-AMD-011` cannot drift apart. The count rose from seventeen on 2026-08-14 when the
 Augment/Cosmos amendment added three areas the August-11 set does not cover.
 
@@ -217,15 +275,23 @@ EPIC-003 stays closed.
 
 ```text
 ✅ D-20  agent-contract package + fixture agent   ──┐
-✅ D-21  PEE port widened                          ─┼─► T646 against PEE, Docker provider
+✅ D-21  PEE port widened                          ─┼─► ✅ T646a Docker provider behind the PEE port
 ✅ D-28  EgressPolicy profiles (generation frozen)  ─┘        │
-                                                             └─► agent-independence.spec.ts
-                                                                     └─► T647 Spec Kit as default
-                                                                             └─► FIRST REAL RUN
+                                                             └─► ✅ agent-independence.spec.ts
+                                                                     └─► ✅ T647 Spec Kit as default
+                                                                             └─► 🔴 FIRST REAL RUN
 ```
 
 That last line matters: it is the first time in the programme's history that a real container starts
 and a real specification is generated. Everything in Band 1 is on the critical path to it.
+
+> **Revalidated 2026-08-17. Band 1 is built to its last line and stops there.** EPIC-028 delivered
+> 65 of 66 tasks: the agent contract, both adapters, the Docker provider, the architecture tests and
+> Spec Kit as the default engine. **`T646b` — the run itself — has not happened**, because it needs a
+> machine with a Docker daemon and RAID `R-04` blocks container-in-container in CI.
+>
+> So `SC-AGT-001` is unverified and EPIC-003's closing sentence still stands: *"No real container has
+> ever started."* Band 1 is one command from complete, and that command is not an engineering task.
 
 **Band 2 — near-term, unblocked by the BRS**: persistent project state (`D-22` — a git reference plus
 a cache policy, not a storage tier); BYOK credential intake (`D-41`); the agent-facing MCP context
@@ -268,7 +334,7 @@ least one executable check.** `/speckit-tasks` will size them; the checks are sp
 
 | Violation | Why needed | Simpler alternative rejected because |
 |---|---|---|
-| **Constitution VIII deviation** — work performed on `epic/003-specification-engine` | The branch was already checked out; branching mid-analysis would fragment an untracked epic across two branches | Branching first is genuinely simpler and should have happened. Recorded as a lapse, not justified. It is the third occurrence; `G-08` cannot catch it because it checks name *format*, not correspondence — a check that compares branch to working epic is worth adding to EPIC-018 |
+| **Constitution VIII deviation** — work performed on `epic/003-specification-engine` | The branch was already checked out; branching mid-analysis would fragment an untracked epic across two branches | Branching first is genuinely simpler and should have happened. Recorded as a lapse, not justified. **Seventh occurrence as of 2026-08-17**, across five closing reports; `G-08` cannot catch it because it checks name *format*, not correspondence. The check that compares branch to working epic is decision **`D-39`**, still untaken — and it now sits with `D-9` and `C-29` as three governance gaps of one family, each defended by attention rather than by a test |
 | **A second adapter family** (`agent-contract` alongside `engine-contract`) | Native §3 forbids merging them, and [`_shared/ai-native-architecture.md`](../_shared/ai-native-architecture.md) §A.3 shows the merge already exists in the tree | One combined contract is simpler and is what exists today. It makes `SpecKitEngine → Cursor` inexpressible, which is the exact configuration §3 names as required |
 | **EPIC-027 produces no product capability** | §17 makes reconciliation the precondition for new implementation tasks | Going straight to implementation epics. Rejected because Finding A shows the amendment's own premises are partly false — three "existing" Rooms do not exist. Planning against a false premise mis-sizes the programme |
 
@@ -280,8 +346,8 @@ least one executable check.** `/speckit-tasks` will size them; the checks are sp
 |---|---|---|
 | [research.md](./research.md) | ✅ written | `R-AI-001`–`014` registered with what each blocks; 8 new `R-027-*` items; 5 answerable now and answered |
 | [data-model.md](./data-model.md) | ✅ written | Reconciliation register entities; proposed platform entity deltas as *proposals* |
-| [contracts/agent-gateway.md](./contracts/agent-gateway.md) | ✅ drafted | Provider-neutral agent contract — target design, not built |
-| [contracts/project-execution-environment.md](./contracts/project-execution-environment.md) | ✅ drafted | PEE port widening `ContainerRuntime` |
+| [contracts/agent-gateway.md](./contracts/agent-gateway.md) | ✅ drafted → **BUILT** | Provider-neutral agent contract. **Implemented by EPIC-028 as `packages/agent-contract` on 2026-08-17.** This document remains the design record; the shipped contract is authoritative |
+| [contracts/project-execution-environment.md](./contracts/project-execution-environment.md) | ✅ drafted → **BUILT** | PEE port widening `ContainerRuntime`. **Implemented as `packages/execution-contract`**, with `ContainerRuntime`/`SandboxSession` deleted from the engine adapter |
 | [contracts/reconciliation-register.md](./contracts/reconciliation-register.md) | ✅ written | The machine-readable register schema the conformance checks read |
 | [quickstart.md](./quickstart.md) | ✅ written | 14 executable validation scenarios |
 
