@@ -82,15 +82,15 @@ artifact or `NO-EXISTING-COVERAGE`.
 
 ### Checks for User Story 1 (MANDATORY — Constitution V) ⚠️
 
-- [ ] T607 [P] [US1] Write the failing `G-27-01`, `G-27-02` and `G-27-03` checks — exactly one verdict per clause, non-empty owner or the sentinel, `necessity` present whenever `new_identifier` is set — in `tests/governance/g27-clauses.spec.ts`
+- [X] T607 [P] [US1] Write the failing `G-27-01`, `G-27-02` and `G-27-03` checks — exactly one verdict per clause, non-empty owner or the sentinel, `necessity` present whenever `new_identifier` is set — in `tests/governance/g27-clauses.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T608 [US1] Extract every substantive clause from `PMI Studio Plan Amendment` (§1–§19, ~150 rows) with document, section, quoted text and normativity, into `register/clauses.md` (conformance check: T607)
-- [ ] T609 [US1] Extract every substantive clause from `Native Spec-Kit Execution Environment` (§1–§30, ~120 rows) into `register/clauses.md` (conformance check: T607)
-- [ ] T610 [US1] Extract every substantive clause from `Recommended PMI Studio lifecycle` (§1–§13, ~45 rows) into `register/clauses.md` (conformance check: T607)
-- [ ] T611 [US1] Extract every substantive clause from `Defect Management governed intelligence workflow` (§1–§12, ~25 rows) into `register/clauses.md` (conformance check: T607)
-- [ ] T658 [US1] Extract every substantive clause from `SRS/AUg142026/PMI_Studio_Augment_Cosmos_Learnings_Amendment.docx` (§1–§13, ~130 rows) into `register/clauses.md` (conformance check: T607)
+- [X] T608 [US1] Extract every substantive clause from `PMI Studio Plan Amendment` (§1–§19, ~150 rows) with document, section, quoted text and normativity, into `register/clauses.md` (conformance check: T607)
+- [X] T609 [US1] Extract every substantive clause from `Native Spec-Kit Execution Environment` (§1–§30, ~120 rows) into `register/clauses.md` (conformance check: T607)
+- [X] T610 [US1] Extract every substantive clause from `Recommended PMI Studio lifecycle` (§1–§13, ~45 rows) into `register/clauses.md` (conformance check: T607)
+- [X] T611 [US1] Extract every substantive clause from `Defect Management governed intelligence workflow` (§1–§12, ~25 rows) into `register/clauses.md` (conformance check: T607)
+- [X] T658 [US1] Extract every substantive clause from `SRS/AUg142026/PMI_Studio_Augment_Cosmos_Learnings_Amendment.docx` (§1–§13, ~130 rows) into `register/clauses.md` (conformance check: T607)
 
   > **Added 2026-08-14.** A fifth document, and explicitly a *refinement* of the August-11 set rather
   > than a competing direction (§1, §11). Six of its eight architectural refinements enhance capability
@@ -99,7 +99,7 @@ artifact or `NO-EXISTING-COVERAGE`.
   > It was folded here rather than given its own epic because it demands the *same* reconciliation, and
   > §9 warns in its own words: *"Do not duplicate existing requirements or create replacement IDs
   > unnecessarily."* Two registers would have been exactly that.
-- [ ] T612 [US1] Cross-link `duplicates` across all five documents in `register/clauses.md` — the three Rooms appear in four of the five (conformance check: T607)
+- [X] T612 [US1] Cross-link `duplicates` across all five documents in `register/clauses.md` — the three Rooms appear in four of the five (conformance check: T607)
 - [ ] T613 [US1] Record one verdict per clause — one of the five values, with owner, reasoning and resulting action — in `register/verdicts.md` (conformance check: T607)
 
   > **Quote, never paraphrase** (`data-model.md`). Paraphrase is where premises get lost, and Finding
