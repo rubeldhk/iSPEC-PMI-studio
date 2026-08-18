@@ -9,7 +9,7 @@
     "decisions.md": "e975231d4ce85b170c5356b9fa99080428db881dff08e95325be74247f8b4b64",
     "research.md": "ca47a3808e2b3bef76941af2440f35d1c5bb357c8c38697bdde810ebc5e66a16",
     "adrs.md": "1b3b962c7485146ef251c39a59e83fe6483f5219d309ca99f85ef3c415e0c571",
-    "preserved-elements.md": "425a677ae1559d4a5b12a225c18b5ccae3099c8acf7d53901e5eec7ab6688dae"
+    "preserved-elements.md": "8d5ef343688d0113214f7c7ce27892d7285767ad984406252db426fd85c26c89"
   },
   "clauses": [
     {
@@ -13286,10 +13286,43 @@
       "superseded_reasoning": null
     }
   ],
-  "preserved_element_changes": [],
+  "preserved_element_changes": [
+    {
+      "element": "SpecificationEngine contract",
+      "reason": "UNCHANGED. Native §3 forbids merging SpecificationEngine and AgentExecutor, so EPIC-028 added a SECOND contract beside it rather than widening the first",
+      "affected_requirement": "FR-017, FR-021, FR-022, ADR-0001 — all preserved; ADR-0001 extended in principle to agents, never superseded",
+      "migration_impact": "None. Every existing caller compiles and passes unchanged, and engine-swap.spec.ts required no assertion change",
+      "compatibility_impact": "None. A third-party engine adapter written against the EPIC-003 contract still registers and still runs",
+      "alternative_considered": "Widening SpecificationEngine with agentProvider, agentModel and an invokeAgent method. Rejected: it is precisely the merge Native §3 forbids, and would make every engine adapter carry AI-provider concerns"
+    },
+    {
+      "element": "Docker isolation",
+      "reason": "WIDENED, not weakened. C-20 caught T646 about to hard-code Docker as the execution substrate, which Native §4 forbids; D-21 widened the port instead",
+      "affected_requirement": "ADR-0002 extended not superseded; FR-AGT-007, FR-AGT-009; decisions D-21, D-22, D-31",
+      "migration_impact": "SpecKitAdapterOptions.runtime became .environment; ContainerRuntime and SandboxSession deleted from the engine adapter and retained only as deprecated type aliases so existing tests compile. Six test files updated, no assertion weakened",
+      "compatibility_impact": "STRENGTHENED. Every ADR-0002 control — non-root, read-only rootfs, single tmpfs writable path, cpu/memory/pid caps, CapDrop ALL, no-new-privileges, non-bridge network — is now an assertion that fails a build rather than a line in a manifest nothing read at runtime",
+      "alternative_considered": "Implementing Docker directly against the engine adapter ContainerRuntime, as T646 originally planned. Rejected by D-21: it would have made Docker the abstraction, and D-31 makes the second provider near-certainly Kubernetes"
+    },
+    {
+      "element": "Sandbox credential model",
+      "reason": "UNCHANGED in use; the seam is prepared. aiProviderToken is still a single opaque string and still in use; ScopedCredentialRef is added to ExecutionRequest and is currently always empty",
+      "affected_requirement": "ADR-0002 (no platform credentials mounted — still true); decisions D-27, D-40, D-41",
+      "migration_impact": "None yet, and that is the point. ExecutionRequest.credentials is declared, validated and passed as an empty array. When the broker lands the call site changes and the contract does not",
+      "compatibility_impact": "None. The generation egress profile and its test are frozen by committed content hash, and T549a asserts sandbox.json and sandbox-config.spec.ts are unchanged",
+      "alternative_considered": "Implementing the credential broker in EPIC-028. Rejected: D-27 names the model but R-AI-011 has never been verified against what GitHub, GitLab and Bitbucket support, and a broker built on an unverified delegation model is worse than none because it would be trusted"
+    },
+    {
+      "element": "BullMQ asynchronous generation",
+      "reason": "UNCHANGED. Native §20 asks whether GenerationJob should become a more general ExecutionJob or AgentRun; D-25 kept BullMQ and put the run state machine in the database instead",
+      "affected_requirement": "FR-024 to FR-028; ADR-0003; conflict C-24; decision D-25",
+      "migration_impact": "None in this epic. GenerationJob to AgentRun is a schema change owned by EPIC-012, which is held. A run suspends by COMPLETING its queue job, so wall-clock timeout keeps meaning something",
+      "compatibility_impact": "None. BullMQ is preserved exactly as Native §28 requires, and its timeout semantics stay meaningful because they apply per compute segment",
+      "alternative_considered": "Adopting Temporal for multi-step compensation. Rejected with a recorded trigger: revisit when more than one capability needs compensation, or when run duration routinely exceeds a day. Under D-31 it would also be a service PMI Studio operates"
+    }
+  ],
   "epic_status_changes": [],
   "impact_report": {
-    "sections": 0,
+    "sections": 25,
     "empty_with_reason": [],
     "placeholders": 0
   }

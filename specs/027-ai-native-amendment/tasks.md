@@ -147,10 +147,10 @@ each carry a verdict consistent with §2.
 **⚠️ Depends on US1, US2 and US3.** The report summarises their registers; writing it first would
 mean writing it twice.
 
-- [ ] T622 [P] [US4] Write the failing `G-27-06` check — exactly 25 sections, zero placeholders, every empty section flagged `explicitly_empty` with a reason — in `tests/governance/g27-impact-report.spec.ts`
-- [ ] T623 [US4] Write §18 sections 1–12 (executive summary through Integration Hub impact) in `impact-report.md` (conformance check: T622)
-- [ ] T624 [US4] Write §18 sections 13–25 (AI Gateway through open decisions) in `impact-report.md` (conformance check: T622)
-- [ ] T625 [US4] Write the proposed implementation sequence separating immediate architectural corrections, near-term implementation and later platform capability (§17.11, `FR-AMD-011`) in `impact-report.md` (conformance check: T622)
+- [X] T622 [P] [US4] Write the failing `G-27-06` check — exactly 25 sections, zero placeholders, every empty section flagged `explicitly_empty` with a reason — in `tests/governance/g27-impact-report.spec.ts`
+- [X] T623 [US4] Write §18 sections 1–12 (executive summary through Integration Hub impact) in `impact-report.md` (conformance check: T622)
+- [X] T624 [US4] Write §18 sections 13–25 (AI Gateway through open decisions) in `impact-report.md` (conformance check: T622)
+- [X] T625 [US4] Write the proposed implementation sequence separating immediate architectural corrections, near-term implementation and later platform capability (§17.11, `FR-AMD-011`) in `impact-report.md` (conformance check: T622)
 
 ---
 
@@ -179,13 +179,13 @@ mean writing it twice.
 
 **Independent Test**: `git diff` touches no product source and no other epic's delivery posture.
 
-- [ ] T632 [P] [US6] Write the failing `G-27-09`, `G-27-12` and `G-27-14` checks — zero files changed under `backend/`, `worker/`, `packages/`, `engine-adapters/`, `frontend/`; every preserved-element row carrying all five §28 fields; no other epic's **Delivery posture** line modified without a matching `epic_status_changes` row — in `tests/governance/g27-boundary.spec.ts`
+- [X] T632 [P] [US6] Write the failing `G-27-09`, `G-27-12` and `G-27-14` checks — zero files changed under `backend/`, `worker/`, `packages/`, `engine-adapters/`, `frontend/`; every preserved-element row carrying all five §28 fields; no other epic's **Delivery posture** line modified without a matching `epic_status_changes` row — in `tests/governance/g27-boundary.spec.ts`
 
   > **`G-27-09` and `G-27-14` block CI.** They are the two constraints the project owner named as
   > the scope-creep concern, and a reporting-only check on either would leave the boundary defended
   > by good intentions.
 
-- [ ] T633 [US6] Record every preserved-element change with reason, affected requirement, migration impact, compatibility impact and alternative considered, in `register/preserved-elements.md` (conformance check: T632)
+- [X] T633 [US6] Record every preserved-element change with reason, affected requirement, migration impact, compatibility impact and alternative considered, in `register/preserved-elements.md` (conformance check: T632)
 - [X] T634 [US6] Record `epic_status_changes` as empty with the `FR-AMD-017` justification, or with a row per change citing the responsible clause, in `register/decisions.md` (conformance check: T632)
 - [X] T635 [US6] Confirm every verdict names the affected epic, module and requirement or states explicitly that none was found (`FR-AMD-005`) — depends on US1 (conformance check: T607)
 - [X] T636 [US6] Record any `srs-alignment.md` decision reopened by the amendment with the architectural conflict stated, or state that none was reopened (`FR-AMD-018`), in `register/decisions.md` (conformance check: T626)
