@@ -67,12 +67,46 @@ export function formatTranscript({ lines, digest, startedAt, outcome }) {
     '',
     '## What this transcript does and does not prove',
     '',
-    '- It proves a container started, the engine ran inside it, and what came back.',
+    ...provenBy(lines),
     '- It does **not** prove CI can do the same. RAID `R-04` blocks',
     '  container-in-container, so this is run by hand and committed as evidence.',
     '- A green CI run is **not** evidence for `T646b` and must never be reported as one.',
     '',
   ].join('\n');
+}
+
+/**
+ * What this particular run proves — derived from the steps, never asserted.
+ *
+ * The original wording was fixed text: *"It proves a container started, the
+ * engine ran inside it, and what came back."* On the first real run the engine
+ * refused before starting, so that sentence would have claimed something that
+ * did not happen — in the one document that is the sole evidence for
+ * `SC-AGT-001`. A transcript that overstates is worse than no transcript,
+ * because it reads as evidence.
+ */
+export function provenBy(lines) {
+  const passed = (step) => lines.some((line) => line.startsWith(`[PASS] ${step}`));
+  const proven = [];
+
+  proven.push(
+    passed('start_container')
+      ? '- It proves a **real container started** on a real daemon.'
+      : '- It does **not** prove a container started — the run failed before that.',
+  );
+
+  if (passed('record_image_digest')) {
+    proven.push('- It identifies **which image** ran, by digest, rather than by a moving tag.');
+  }
+
+  proven.push(
+    passed('generate_specification')
+      ? '- It proves the engine ran **inside that container** and produced a specification.'
+      : '- It does **not** prove a specification was generated. The engine did not complete, so ' +
+          '`SC-AGT-001` is **NOT** satisfied by this run — see the failing step above for where it stopped.',
+  );
+
+  return proven;
 }
 
 /**
@@ -102,8 +136,13 @@ export async function runV6({ environment, agent, engine, now, log = () => {} })
     session = await environment.start(engine.request);
     step('start_container', 'ok');
 
-    // The digest may arrive from the environment or from an in-container probe.
+    // DEF-028-010 — the session first: the provider is the only component that
+    // knows which image the daemon actually resolved. The other two sources are
+    // kept because a future provider may legitimately know its digest up front,
+    // but neither was ever populated here, which is how `T577`'s requirement
+    // came to have no source at all.
     digest =
+      extractImageDigest(session.imageDigest) ??
       extractImageDigest(environment.descriptor.imageDigest) ??
       extractImageDigest((await session.exec(['sh', '-c', 'echo "$PMI_IMAGE_DIGEST"'])).stdout);
     step(
@@ -133,4 +172,170 @@ export async function runV6({ environment, agent, engine, now, log = () => {} })
   }
 
   return { lines, digest, startedAt, outcome, transcript: formatTranscript({ lines, digest, startedAt, outcome }) };
+}
+
+/**
+ * DEF-028-005 — the entry point that makes `T646b` a thing you can do.
+ *
+ * `runV6` above was tested and **never called**. `T576a` supplies the
+ * dependencies itself, so no test could notice that nothing in the repository
+ * composed the real ones: `node scripts/v6-real-run.mjs` exited 0 having done
+ * nothing at all, for the entire period the epic reported the runner as built.
+ *
+ * The composition happens HERE and nowhere else. `runV6` is untouched, so every
+ * `T576a` assertion still applies to the path the real run takes — which is the
+ * whole reason the split exists.
+ *
+ * Dependencies come from `worker/src/*-composition.ts`, the real composition
+ * root, rather than being re-assembled locally. A runner that wires its own
+ * objects would prove that *a* container can start; this proves that the
+ * container **the worker would start** starts.
+ *
+ * Usage:
+ *   pnpm v6:real-run              # requires a Docker daemon
+ *   pnpm v6:real-run --dry-run    # prints the plan, starts nothing
+ */
+
+/** The one requirement `V6` generates from. Small on purpose: this is a smoke test of the seam, not of the model. */
+export const V6_INPUT = Object.freeze({
+  projectName: 'Apollo',
+  requirements: [
+    Object.freeze({
+      reference: 'FR-001',
+      description:
+        'A signed-in user can select requirements and generate a specification from them.',
+      type: 'functional',
+      priority: 'p1',
+    }),
+  ],
+});
+
+async function main(argv) {
+  const dryRun = argv.includes('--dry-run');
+  const { randomUUID } = await import('node:crypto');
+  const { writeFile, mkdtemp } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join, dirname, resolve } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const transcriptPath = join(root, 'specs/028-agent-execution-seam/v6-transcript.md');
+
+  const [{ composeExecutionRegistry }, { composeAgentRegistry }, { composeEngineRegistry }] =
+    await Promise.all([
+      import('../worker/src/execution-composition.ts'),
+      import('../worker/src/agent-composition.ts'),
+      import('../worker/src/engine-composition.ts'),
+    ]);
+  const { GENERATION_EGRESS_PROFILE } = await import('../packages/execution-contract/src/index.ts');
+  const { DEFAULT_ENGINE_IMAGE, DEFAULT_RESOURCE_LIMITS } = await import(
+    '../engine-adapters/speckit/src/index.ts'
+  );
+
+  const environment = composeExecutionRegistry().resolve();
+
+  // Resolved BY NAME, and then checked. `composeAgentRegistry` registers the
+  // fixture agent as default (`T564`), so a plain `.resolve()` here would run
+  // V6 against a fixture and write a transcript claiming a real agent run —
+  // the precise kind of evidence this task exists to stop being fabricated.
+  // The registry's `resolve` falls back silently when a name is unknown, so
+  // the fallback is caught here rather than trusted.
+  const wanted = process.env['V6_AGENT'] ?? 'claude';
+  const agent = composeAgentRegistry().resolve(wanted);
+  if (agent.descriptor.name !== wanted) {
+    throw new Error(
+      `V6 asked for the "${wanted}" agent and the registry returned "${agent.descriptor.name}". ` +
+        `A transcript produced by a fixture is not evidence for SC-AGT-001.`,
+    );
+  }
+
+  const speckit = composeEngineRegistry({ environment, agent }).resolve();
+
+  // T162/PC-3 — the engine refuses a correlation id that is not a UUID, because
+  // an unparseable id means a run nobody can trace back. A readable label like
+  // "v6-real-run" is exactly what it refuses, and rightly.
+  const correlationId = randomUUID();
+  const timeoutMs = Number(process.env['V6_TIMEOUT_MS'] ?? 10 * 60 * 1000);
+  const controller = new AbortController();
+  const scratchPath = await mkdtemp(join(tmpdir(), 'pmi-v6-'));
+
+  const engine = {
+    // The probe container: the same shape the engine builds internally, so the
+    // digest recorded is the digest generation actually ran on.
+    request: {
+      lifecycle: 'ephemeral',
+      image: process.env['ENGINE_IMAGE'] ?? DEFAULT_ENGINE_IMAGE,
+      env: { PMI_CORRELATION_ID: correlationId },
+      workspace: { kind: 'ephemeral', scratchPath },
+      egressProfile: GENERATION_EGRESS_PROFILE,
+      credentials: [],
+      resourceLimits: DEFAULT_RESOURCE_LIMITS,
+      timeoutMs,
+      signal: controller.signal,
+    },
+    input: V6_INPUT,
+    ctx: {
+      signal: controller.signal,
+      timeoutMs,
+      correlationId,
+      onProgress: (note) => console.log(`  · ${note}`),
+    },
+    generateSpecification: (input, ctx) => speckit.generateSpecification(input, ctx),
+  };
+
+  if (dryRun) {
+    console.log('V6 dry run — nothing will be started.\n');
+    console.log(`  environment : ${environment.descriptor.provider}`);
+    console.log(`  agent       : ${agent.descriptor.provider}/${agent.descriptor.model}`);
+    console.log(`  engine      : ${speckit.descriptor.name} ${speckit.descriptor.version}`);
+    console.log(`  image       : ${engine.request.image}`);
+    console.log(`  steps       : ${V6_STEPS.join(' → ')}`);
+    console.log(`  transcript  : ${transcriptPath}`);
+    return 0;
+  }
+
+  const run = await runV6({
+    environment,
+    agent,
+    engine,
+    now: () => new Date().toISOString(),
+    log: (line) => console.log(line),
+  });
+
+  await writeFile(transcriptPath, run.transcript, 'utf8');
+  console.log(`\nTranscript written to ${transcriptPath}`);
+  console.log(`Outcome: ${run.outcome}`);
+
+  // The exit status and the transcript must never disagree. A failed run that
+  // exits 0 is how "we ran it" becomes evidence for something that did not work.
+  return run.outcome === 'PASSED' ? 0 : 1;
+}
+
+/**
+ * Runs only when invoked directly, never on import — `T576a` imports this file.
+ */
+export function isDirectInvocation(argv1, moduleUrl) {
+  if (!argv1 || !moduleUrl) return false;
+  // Windows makes this comparison awkward: argv[1] is a backslash path and
+  // import.meta.url is `file:///C:/path/to/x.mjs`. Compare normalised tails
+  // rather than trusting either form.
+  const normalise = (value) =>
+    decodeURIComponent(String(value))
+      .toLowerCase()
+      .replace(/^file:\/\//, '')
+      .replace(/\\/g, '/')
+      .replace(/^\/*[a-z]:/, '')
+      .replace(/^\/+/, '');
+
+  return normalise(moduleUrl).endsWith(normalise(argv1));
+}
+
+if (isDirectInvocation(process.argv[1], import.meta.url)) {
+  main(process.argv.slice(2)).then(
+    (code) => process.exit(code),
+    (error) => {
+      console.error(error);
+      process.exit(1);
+    },
+  );
 }

@@ -37,7 +37,7 @@ Buildable now. Nothing here depends on the Business Requirement Specification.
 |------|-------|--------|-------|
 | [EPIC-001](./001-platform-foundation/) | Platform Foundation | M-00 | 47 ✅ **CLOSED 2026-08-17** — [closure.md](./001-platform-foundation/closure.md) |
 | [EPIC-003](./003-specification-engine/) | Specification Engine & Sandbox | M-08 | 39 ✅ **CLOSED 2026-08-17** — [closure.md](./003-specification-engine/closure.md). `T138` routed to EPIC-013 (`C-29`) |
-| [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 19 |
+| [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 19 — `T649` **verified 2026-08-17**: the migration ran against a real PostgreSQL and `reject_mutation()` raised. **`FR-033` and `SC-012` proven for the first time.** [closure.md](./004-workspace-tenancy-audit/closure.md) |
 
 ### ⏸ Held — 199 tasks
 
@@ -69,7 +69,7 @@ complete, reviewed, and Constitution V compliant.
 | [EPIC-024](./024-artifact-access-control/) | Artifact Access Control — M-13 Security & Governance | ⏸ Held · **21 tasks** · owns FR-021–FR-028 |
 | [EPIC-025](./025-external-storage-publishing/) | External Storage Publishing — M-11 DevOps | ⏸ Held · **32 tasks** · owns FR-029–FR-040 |
 | [EPIC-027](./027-ai-native-amendment/) | AI-Native Amendment Reconciliation | ✅ **CLOSED 2026-08-17** — 51/51. Analysis-only. Produced the §18 twenty-five-section [impact report](./027-ai-native-amendment/impact-report.md), a [599-clause register](./027-ai-native-amendment/register/) with one verdict each, 20 capability areas, and `ADR-0006`–`ADR-0022`. **No epic's posture changed.** [closure.md](./027-ai-native-amendment/closure.md) |
-| [EPIC-028](./028-agent-execution-seam/) | Agent & Execution Seam | 🟡 **65/66 · 2026-08-17** — the agent and execution seams are built and defended by build-failing tests. `T646b` (the first real container run) is deferred to an operator with a Docker daemon, so **`SC-AGT-001` is unverified and the epic is not release-eligible**. [closure.md](./028-agent-execution-seam/closure.md) |
+| [EPIC-028](./028-agent-execution-seam/) | Agent & Execution Seam | 🟡 **72/72 · 2026-08-17** — **`T646b` ran: a real container started, the first in this programme's history**, and it took seven defects (`DEF-028-004`–`010`) to get there, none of them findable by 658 passing unit tests. The run stops at a missing `AI_PROVIDER_TOKEN`, so **`SC-AGT-001` remains unmet and the epic is not release-eligible**. [transcript](./028-agent-execution-seam/v6-transcript.md) · [closure.md](./028-agent-execution-seam/closure.md) |
 | [EPIC-018](./018-repository-governance/) | Repository Governance Process | ✅ **RELEASE-ELIGIBLE 2026-08-17** — 36/37; the one open task (`T666`, the `V18-6` newcomer walkthrough) is explicitly deferred to the project owner. [closure.md](./018-repository-governance/closure.md) |
 
 ### The enhancement-model family — 87 tasks, all ⏸ held

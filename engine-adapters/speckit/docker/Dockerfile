@@ -16,7 +16,7 @@
 FROM python:3.12-slim-bookworm
 
 # Pinned toolchain versions (R-01). Bump deliberately, never automatically.
-ARG SPECIFY_VERSION=0.0.17
+ARG SPECIFY_VERSION=0.16.4
 ARG AGENT_CLI_VERSION=1.0.0
 ARG NODE_MAJOR=22
 

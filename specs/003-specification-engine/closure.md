@@ -317,3 +317,39 @@ unexecuted. Building `T646` is also what makes quickstart `V13` runnable, which 
 that has ever proven the sandbox works end to end.
 
 Then `T013`/`T052` to close EPIC-004, then the EPIC-001 closure sweep.
+
+---
+
+# Addendum — 2026-08-17. `T088`'s image had never been built.
+
+Recorded against this epic because this epic shipped it, and closed with it.
+
+`T088` — *"Build the engine container image"* — was marked `[X]` on 2026-08-08. The image
+**could not be built**, and had never been. `engine-adapters/speckit/docker/Dockerfile` pinned
+`ARG SPECIFY_VERSION=0.0.17`, and no such release exists; PyPI's `specify-cli` starts at `0.9.4`:
+
+```text
+ERROR: No matching distribution found for specify-cli==0.0.17
+```
+
+`docker build` fails at layer 6 of 9, and always did.
+
+`T088a` passed throughout, because it asserts `ARG SPECIFY_VERSION=\d+\.\d+\.\d+` — **the shape of a
+version, not the existence of one.** The fictional value also propagated outward: the worker's engine
+descriptor defaulted `specifyVersion` to `'0.0.17'`, which is what `FR-022` records as provenance
+against generated output.
+
+Found by EPIC-028 `T646b`, the first real run. Recorded as
+[`DEF-028-006`](../028-agent-execution-seam/defects/DEF-028-006-engine-image-has-never-been-built.md)
+and fixed there: the pin is now `0.16.4`, `pinned-versions.json` records the sha256 of the artifact
+actually resolved, and `T669` fails on any pin without one. **The image now builds** —
+`sha256:c9e1f7e4d95b…`.
+
+**This qualifies, but does not reopen, this epic's closure.** The Dockerfile is otherwise correct and
+its reasoning about pinning was right — *"a floating tag would mean the image silently changes"*. The
+concern was sound; the implementation left a pin nobody had ever resolved, which is a floating tag
+that floats to nothing.
+
+It also sharpens what this closure already said. *"No real container has ever started"* understated
+it: **no image had ever been built.** Both are now false — a container started on 2026-08-17, from an
+image that exists.

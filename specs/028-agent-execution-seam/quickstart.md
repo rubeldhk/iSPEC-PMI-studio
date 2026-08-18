@@ -115,9 +115,22 @@ pnpm test:unit --project execution-providers -t "validation"
 
 ```bash
 # Requires a Docker daemon. NOT run in CI (RAID R-04).
-pnpm --filter @pmi/execution-provider-docker build
-node scripts/v6-real-run.mjs        # created by T646b
+docker build -t pmi-studio/speckit-engine engine-adapters/speckit/docker/
+docker network create --internal pmi-egress-generation   # see the warning below
+export AI_PROVIDER_TOKEN=...                             # never committed (PC-3)
+pnpm v6:real-run --dry-run                               # prints the plan, starts nothing
+pnpm v6:real-run
 ```
+
+> **Three prerequisites this scenario did not have until `T646b` was actually run**, each of which
+> failed it: the image had never been built (`DEF-028-006`), the egress network is required and
+> nothing creates it (`DEF-028-007`), and the runner had no entry point (`DEF-028-005`).
+> Full setup: [`docs/operator-setup.md`](../../docs/operator-setup.md).
+>
+> ⚠️ `--internal` gives **containment with no egress**, so generation cannot reach the AI provider.
+> A network permitting exactly `api.anthropic.com` needs a proxy or CNI policy that does not exist
+> yet (`R-028-8`, `D-28`). Today you can have containment or reachability, not the profile as
+> specified — and a transcript produced on a bridge network must say so.
 
 **Expected**: a container starts, the five ordered invocation steps run, a specification is produced,
 and the container is destroyed. The transcript — including the **image digest** — is committed under

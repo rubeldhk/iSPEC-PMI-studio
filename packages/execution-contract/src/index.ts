@@ -168,6 +168,20 @@ export interface ExecResult {
 
 /** Unchanged from the `SandboxSession` this replaces — deliberately. */
 export interface ExecutionSession {
+  /**
+   * `DEF-028-010` — which image the provider actually resolved and ran.
+   *
+   * Belongs on the session, not the descriptor: the descriptor describes a
+   * provider's capabilities, and a per-run value there would be wrong for every
+   * concurrent session. `T577` requires the transcript to name a digest,
+   * because a tag is a moving target and cannot say six months later what
+   * produced a specification. Until this field existed, nothing in the system
+   * could answer that — the requirement had no source.
+   *
+   * Optional: a provider that genuinely cannot report one says so by omission
+   * rather than by inventing a value.
+   */
+  readonly imageDigest?: string;
   exec(command: readonly string[]): Promise<ExecResult>;
   writeFile(path: string, content: string): Promise<void>;
   listFiles(): Promise<string[]>;

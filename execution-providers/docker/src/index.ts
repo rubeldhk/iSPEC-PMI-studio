@@ -56,6 +56,24 @@ export interface DockerEngineApi {
   startContainer(id: string): Promise<void>;
   exec(id: string, command: readonly string[]): Promise<ExecResult>;
   removeContainer(id: string): Promise<void>;
+  /**
+   * `DEF-028-007` — does the egress network exist?
+   *
+   * Optional because a mocked daemon has no networks, and `T570` drives this
+   * provider against exactly that. A mock omits it and the preflight is
+   * skipped; a real daemon implements it and the preflight runs. Making it
+   * required would have forced every existing fixture to answer a question a
+   * mock cannot meaningfully be asked.
+   */
+  networkExists?(name: string): Promise<boolean>;
+  /**
+   * `DEF-028-010` — the daemon's own content address for the image it resolved.
+   *
+   * Optional for the same reason as `networkExists`: a mocked daemon has no
+   * images, and a provider that cannot report a digest says so by omission
+   * rather than inventing one.
+   */
+  inspectContainer?(id: string): Promise<{ imageDigest?: string }>;
 }
 
 export interface DockerProviderOptions {
@@ -110,6 +128,31 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
       );
     }
 
+    // DEF-028-007 — the network IS the egress control, so its absence is a
+    // policy failure, not an infrastructure hiccup. Checked BEFORE the
+    // container is created, so a doomed run still costs nothing.
+    //
+    // This provider deliberately does NOT create the network. A network created
+    // by default is a bridge network with unrestricted egress: the run would
+    // succeed, the profile would report as enforced, and the sandbox would have
+    // the whole internet. `SC-AGT-005` froze this boundary so that an epic
+    // could not widen it by accident — including this one.
+    const networkName = this.networkFor(request.egressProfile.name);
+    if (this.api.networkExists) {
+      const exists = await this.api.networkExists(networkName);
+      if (!exists) {
+        throw new ExecutionProviderError(
+          'policy_refused',
+          `Egress profile "${request.egressProfile.name}" requires the Docker network ` +
+            `"${networkName}", which does not exist. This provider does not create it: the network ` +
+            `IS the egress control, and one created by default would permit the whole internet ` +
+            `while reporting the profile as enforced. Create it permitting only ` +
+            `${request.egressProfile.allowedDestinations.join(', ')}, or, for a fully contained run ` +
+            `with no egress at all: docker network create --internal ${networkName}`,
+        );
+      }
+    }
+
     const config = this.buildCreateConfig(request);
 
     let id: string;
@@ -127,7 +170,19 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
       throw this.classify(error, 'The execution environment could not be started.');
     }
 
-    return this.session(id);
+    // DEF-028-010 — asked AFTER start, so it reports what actually ran rather
+    // than what was requested. A failure here must not fail the run: a missing
+    // digest degrades the transcript, and losing a live container over a
+    // reporting detail would be worse than the gap it fills.
+    let imageDigest: string | undefined;
+    if (this.api.inspectContainer) {
+      imageDigest = await this.api
+        .inspectContainer(id)
+        .then((info) => info.imageDigest)
+        .catch(() => undefined);
+    }
+
+    return this.session(id, imageDigest);
   }
 
   /** Idempotent, and never throws into a result (E8). */
@@ -153,6 +208,20 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
       Image: request.image,
       // Kept alive so `exec` has something to run in; the wall clock is enforced
       // by the caller and by `HostConfig` below, not by the entrypoint.
+      // DEF-028-009 — reset whatever the image declares.
+      //
+      // `pmi-studio/speckit-engine` declares ENTRYPOINT ["/bin/sh","-c"], which
+      // makes the FIRST Cmd element a shell script and the rest positional
+      // arguments: ['sleep','300'] became `sh -c "sleep" "300"` — sleep with no
+      // operand — and the container exited in milliseconds. The engine then
+      // execed into a container that was already gone. Neither the image nor the
+      // provider was wrong alone; only a real daemon composes the two, which is
+      // why `T646b` found it and no check on either side could.
+      //
+      // The provider owns the session lifecycle, so it states the process it
+      // needs instead of inheriting one. This also makes the provider correct
+      // against any image, not just this one.
+      Entrypoint: [],
       Cmd: ['sleep', String(Math.ceil(request.timeoutMs / 1000))],
       WorkingDir: WORKSPACE_PATH,
       User: `${SANDBOX_UID}:${SANDBOX_GID}`,
@@ -175,16 +244,17 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
         // The profile becomes an operator-defined network. `bridge` or `host`
         // here would hand the agent the open internet, which is the single
         // control standing between this container and exfiltration (RAID R-06).
-        NetworkMode: `${this.networkPrefix}${request.egressProfile.name}`,
+        NetworkMode: this.networkFor(request.egressProfile.name),
       },
     };
   }
 
-  private session(id: string): ExecutionSession {
+  private session(id: string, imageDigest?: string): ExecutionSession {
     const api = this.api;
 
     const session: DockerSession = {
       [CONTAINER_ID]: id,
+      ...(imageDigest ? { imageDigest } : {}),
 
       exec: (command) => api.exec(id, command),
 
@@ -247,6 +317,14 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
   }
 
   /**
+   * The network an egress profile maps to. One place, so the preflight
+   * (`DEF-028-007`) and the container config can never name different networks.
+   */
+  private networkFor(profileName: string): string {
+    return `${this.networkPrefix}${profileName}`;
+  }
+
+  /**
    * Which failure this was.
    *
    * `image_unavailable` and `provider_unavailable` are deliberately distinct:
@@ -257,9 +335,21 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
     const status = (error as { statusCode?: number }).statusCode;
     const code = (error as { code?: string }).code;
 
+    // DEF-028-008 — the daemon answers 404 for anything it cannot find: an
+    // image, a network, a container, a volume. Mapping every 404 to
+    // `image_unavailable` sent an operator to rebuild a correct image when a
+    // network was missing, which is the exact cost the comment above names.
+    // The daemon says which resource it could not find, so read it rather than
+    // assume. Anything unrecognised stays `image_unavailable`: that is the
+    // common case and the useful default.
+    const detail = String((error as { message?: string }).message ?? '');
+    const notFoundIsNetwork = /\bnetwork\b/i.test(detail);
+
     const reason =
       status === 404
-        ? 'image_unavailable'
+        ? notFoundIsNetwork
+          ? 'policy_refused'
+          : 'image_unavailable'
         : code === 'ENOENT' || code === 'ECONNREFUSED'
           ? 'provider_unavailable'
           : 'provider_error';
@@ -279,14 +369,52 @@ export function redactDiagnostics(error: unknown): string {
 }
 
 /**
- * The real daemon, over the unix socket.
+ * Where the Docker Engine API listens, resolved from platform and environment.
+ *
+ * **`DEF-028-004`.** The original default was `/var/run/docker.sock` with a
+ * `unix://` prefix stripped from `DOCKER_HOST` — both POSIX-only. On Windows the
+ * daemon listens on the named pipe `//./pipe/docker_engine` and `DOCKER_HOST` is
+ * set to `npipe://./pipe/docker_engine`, which survived that replace unchanged
+ * and was handed to `http.request` as a filesystem path. The provider could not
+ * reach a daemon on the platform `T646b` was waiting for, and `T570` could not
+ * see it because a mocked daemon replaces exactly this function.
+ *
+ * Pure and exported so `T668` can assert every branch without a daemon — the
+ * gap that let `DEF-028-004` through.
+ */
+export function resolveDockerSocketPath(
+  platform: string = process.platform,
+  env: Record<string, string | undefined> = process.env,
+  explicit?: string,
+): string {
+  if (explicit) return explicit;
+
+  const host = env['DOCKER_HOST'];
+  if (host) {
+    if (/^npipe:\/\//i.test(host)) {
+      // Docker writes this endpoint both ways — `npipe://./pipe/docker_engine`
+      // and `npipe:////./pipe/docker_engine`. A named pipe path must begin with
+      // `//`, so normalise rather than trust the form we happen to receive.
+      const rest = host.replace(/^npipe:\/\//i, '');
+      return rest.startsWith('//') || rest.startsWith('\\\\') ? rest : `//${rest.replace(/^\/+/, '')}`;
+    }
+    // Anything else (tcp://, ssh://) is not a socket path. Returned unchanged so
+    // the caller's error names the real cause instead of a mangled path.
+    return host.replace(/^unix:\/\//, '');
+  }
+
+  return platform === 'win32' ? '//./pipe/docker_engine' : '/var/run/docker.sock';
+}
+
+/**
+ * The real daemon, over its local socket — a unix socket on POSIX, a named pipe
+ * on Windows. Node's `http.request` accepts either as `socketPath`.
  *
  * Deliberately below the test boundary: everything above is asserted in CI, and
  * this is the layer `T646b` exists to exercise for the first time.
  */
-export function unixSocketDockerApi(
-  socketPath = process.env['DOCKER_HOST']?.replace(/^unix:\/\//, '') ?? '/var/run/docker.sock',
-): DockerEngineApi {
+export function unixSocketDockerApi(socketPathArg?: string): DockerEngineApi {
+  const socketPath = resolveDockerSocketPath(process.platform, process.env, socketPathArg);
   const request = async (
     method: string,
     path: string,
@@ -362,6 +490,35 @@ export function unixSocketDockerApi(
     async removeContainer(id) {
       const res = await request('DELETE', `/v1.43/containers/${id}?force=true&v=true`);
       if (res.status !== 404) expectOk(res, 'remove container');
+    },
+
+    /**
+     * `DEF-028-007` — the preflight's one question.
+     *
+     * A 404 is the answer "no", not a fault: this endpoint exists to be asked
+     * about a network that may be absent. Any other error status IS a fault and
+     * is raised, so a broken daemon is never reported as a missing network.
+     */
+    /**
+     * `DEF-028-010` — the image the daemon resolved for this container.
+     *
+     * `Image` on a container inspect is a sha256 content address, which is
+     * precisely what "which image produced this specification" needs. Read from
+     * the container rather than the image name so a retagged image cannot make
+     * the transcript lie.
+     */
+    async inspectContainer(id) {
+      const res = await request('GET', `/v1.43/containers/${id}/json`);
+      expectOk(res, 'inspect container');
+      const parsed = JSON.parse(res.text) as { Image?: string };
+      return parsed.Image ? { imageDigest: parsed.Image } : {};
+    },
+
+    async networkExists(name) {
+      const res = await request('GET', `/v1.43/networks/${encodeURIComponent(name)}`);
+      if (res.status === 404) return false;
+      expectOk(res, 'inspect network');
+      return true;
     },
   };
 }

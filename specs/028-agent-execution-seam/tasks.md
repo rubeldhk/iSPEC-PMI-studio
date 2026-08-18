@@ -179,7 +179,27 @@ end. Everything else in this phase is independently testable against a mocked da
   > application code and V is NON-NEGOTIABLE. The runner's *logic* — ordering, digest extraction,
   > transcript shape — is testable without a daemon; only `T646b`'s **execution** is not. Conflating
   > the two is how an untested script ends up as the sole evidence for `SC-AGT-001`.
-- [ ] T646b [US2] **MANUAL** — run `scripts/v6-real-run.mjs` on a machine with a Docker daemon; commit the transcript, including the image digest, to `specs/028-agent-execution-seam/v6-transcript.md` (conformance check: T577) *(routed from EPIC-003)*
+- [X] T646b [US2] **MANUAL** — run `scripts/v6-real-run.mjs` on a machine with a Docker daemon; commit the transcript, including the image digest, to `specs/028-agent-execution-seam/v6-transcript.md` (conformance check: T577) *(routed from EPIC-003)*
+
+  > **RUN 2026-08-17. A real container started — the first in this programme's history.**
+  > Transcript committed with its image digest, `sha256:c9e1f7e4d95b…`. Four of six steps pass:
+  > the environment and agent resolve, the container **starts**, and the image is identified by
+  > digest rather than tag. The run then stops at `generate_specification` with
+  > *"Refusing to start a sandbox without an AI provider credential"* — correct behaviour (E7
+  > refuses a doomed run before it is billed), and an environmental limit, not a defect.
+  >
+  > **`SC-AGT-001` is therefore NOT satisfied.** It requires a specification generated end to end,
+  > and none was. The task is complete because the task was *run it and commit the transcript*; the
+  > success criterion is not, and the transcript says so in its own words rather than in a comment
+  > somewhere else. EPIC-028 remains **not release-eligible**.
+  >
+  > **It took six defects to get this far**, every one invisible to 658 passing unit tests, because
+  > each lives at a seam a mock replaces — `DEF-028-004` through `DEF-028-010`. That is the return
+  > on splitting `T646b` out and refusing to let a green CI run stand in for it.
+  >
+  > Remaining, to satisfy `SC-AGT-001`: an `AI_PROVIDER_TOKEN`, and an egress network that permits
+  > exactly `api.anthropic.com` — which needs the proxy `D-28` records as undelivered (`R-028-8`).
+  > See [`docs/operator-setup.md`](../../docs/operator-setup.md).
 
   > **RAID R-04 blocks container-in-container in CI**, so this cannot run there. It is split from
   > `T646a` deliberately: EPIC-003 shipped 65 passing tests and an engine that cannot start, and its
@@ -253,6 +273,19 @@ never by editing business logic.
 - [X] T594 Triage `specs/028-agent-execution-seam/defects/`; every record closed or deferred to a named Epic
 - [X] T595 Annotate the routed rows in `specs/003-specification-engine/tasks.md` — `T646`, `T647`, `T648` now owned by EPIC-028 — without reopening EPIC-003's closure
 - [X] T596 Publish the Epic closing report: work completed, work deferred, `T646b`'s outcome stated plainly, and the recommended next command (Constitution IX)
+
+### Found by running it *(added 2026-08-17 — `T646b`)*
+
+*`T646b` was expected to be a formality: one command on a machine with a daemon. It found six
+defects, and not one of them was reachable by any check on either side of the seam it broke. These
+tasks are their fixes, each with a test confirmed red by mutation.*
+
+- [X] T668 Make the daemon socket resolution platform-aware and the runner executable — `resolveDockerSocketPath` in `execution-providers/docker/src/index.ts` and a CLI entry point in `scripts/v6-real-run.mjs` (`DEF-028-004`, `DEF-028-005`; unit tests: `execution-providers/docker/tests/unit/socket-resolution.spec.ts`, `scripts/tests/v6-entry-point.spec.mjs`)
+- [X] T669 Pin the engine image to a release that exists and record the resolved artifact digests in `engine-adapters/speckit/docker/pinned-versions.json` (`DEF-028-006`; unit test: `engine-adapters/speckit/tests/unit/pinned-versions.spec.ts`)
+- [X] T670 Preflight the egress network and classify a 404 by what the daemon says it could not find, in `execution-providers/docker/src/index.ts` (`DEF-028-007`, `DEF-028-008`; unit test: `execution-providers/docker/tests/unit/egress-network-preflight.spec.ts`)
+- [X] T671 Reset the image entrypoint so the container idles long enough to be exec-ed into (`DEF-028-009`; unit test: same file)
+- [X] T672 Report the image digest from the session the provider started, and make the transcript state only what the run proved (`DEF-028-010`; unit tests: same file and `scripts/tests/v6-entry-point.spec.mjs`)
+- [X] T673 Write `docs/operator-setup.md` and give quickstart `V6` the three prerequisites it never had (`DEF-028-006`, `DEF-028-007`; check: `T577`, which now finds a transcript)
 
 ---
 

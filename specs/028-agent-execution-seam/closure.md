@@ -15,7 +15,12 @@ Tasks `T592`–`T596` are discharged by the sections below.
 
 ## Work Completed
 
-**65 of 66 tasks complete.** The one open task is `T646b`, which cannot run on this machine.
+~~**65 of 66 tasks complete.** The one open task is `T646b`, which cannot run on this machine.~~
+
+> **Superseded 2026-08-17 — see the addendum at the foot of this document.** `T646b` **ran**: this
+> machine had a Docker daemon all along, and a real container started for the first time in the
+> programme. **72 of 72 tasks.** `SC-AGT-001` is still unmet — the run stops at a missing credential
+> — so the epic remains **not release-eligible**.
 
 | Task group | Outcome | Evidence |
 |---|---|---|
@@ -190,3 +195,88 @@ owner deliverables — see [`_shared/programme-status.md`](../_shared/programme-
 engineering sequence changes that number.
 
 Also worth taking now, on its sixth data point: **decision `D-39`**.
+
+---
+
+# Addendum — `T646b` ran. 2026-08-17.
+
+**A real container started. It is the first in this programme's history**, and it retires the
+sentence EPIC-003's closure has carried since 2026-08-08: *"No real container has ever started."*
+
+The machine had a Docker daemon all along. The assumption that it did not — carried for eleven days
+across two epics' closing reports — was never tested. That is worth recording on its own.
+
+## What the run did
+
+```text
+[PASS] resolve_environment — docker
+[PASS] resolve_agent — anthropic/claude-opus-5
+[PASS] start_container
+[PASS] record_image_digest — sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f
+[FAIL] generate_specification — Refusing to start a sandbox without an AI provider credential.
+[PASS] stop_container
+```
+
+**`SC-AGT-001` is still NOT satisfied**, and the epic is still **not release-eligible**. The
+criterion requires a specification generated end to end; none was. The run stops at a credential this
+machine does not hold — which is `E7` behaving correctly, refusing a doomed run before it is billed,
+not a defect.
+
+`T646b` itself is complete: the task was *run it and commit the transcript with the image digest*,
+and both are done. The distinction matters. A task and a success criterion are not the same claim,
+and collapsing them is how "we ran it" becomes evidence for something that did not work.
+
+## Six defects, none of which any test could have found
+
+`T646b` was expected to be a formality — one command on a machine with a daemon. It took **six
+rounds** of failure and fix to reach a container:
+
+| Defect | What it was | The seam it lived at |
+|---|---|---|
+| [`DEF-028-004`](./defects/DEF-028-004-docker-api-cannot-reach-a-windows-daemon.md) | the provider could not reach a daemon on Windows at all | the transport a mocked daemon stands in for |
+| [`DEF-028-005`](./defects/DEF-028-005-v6-runner-has-no-entry-point.md) | `runV6` was tested and **never called** — the script did nothing | the caller a test supplies itself |
+| [`DEF-028-006`](./defects/DEF-028-006-engine-image-has-never-been-built.md) | **the image had never been built**; `specify-cli==0.0.17` does not exist | a pin read from a file, never resolved |
+| [`DEF-028-007`](./defects/DEF-028-007-egress-network-is-required-and-never-created.md) | the egress network is required and nothing creates or documents it | a network name constructed correctly, never looked up |
+| [`DEF-028-008`](./defects/DEF-028-008-404-always-reads-as-a-missing-image.md) | every 404 reported as a missing image — including a missing network | a fixture labelled by the same assumption as the code |
+| [`DEF-028-009`](./defects/DEF-028-009-entrypoint-swallows-the-idle-command.md) | `ENTRYPOINT ["/bin/sh","-c"]` turned `['sleep','300']` into `sleep` with no operand | **neither artifact** — only their combination |
+| [`DEF-028-010`](./defects/DEF-028-010-nothing-can-report-the-image-digest.md) | nothing could report the image digest `T577` requires | a field the stub invented and the system lacked |
+
+All seven recorded **before** any fix (Constitution VI). All seven CLOSED, each with a unit test
+confirmed red by mutation (`T668`–`T673`).
+
+**Every one was invisible to 658 passing unit tests.** `DEF-028-009` is the sharpest: the image was
+right, the provider was right, and the two could not work together. No check on either side could
+have seen it, because the fault existed only in their combination. That is the answer to *"what does
+a manual run buy that CI does not"* — and it is why splitting `T646b` from `T646a` was correct.
+
+`DEF-028-006` reaches back further: `T088` was marked complete in EPIC-003 on an image that could
+never build, and EPIC-003 closed with it. An addendum records it there.
+
+## What still stands between here and `SC-AGT-001`
+
+1. **An `AI_PROVIDER_TOKEN`.** Owner: project-owner. Not obtainable by this session, and correctly
+   refused rather than worked around.
+2. **`R-028-8` — an egress network that permits exactly `api.anthropic.com`.** Not expressible with
+   `docker network create`; it needs the proxy `D-28` records as undelivered. Today an operator has
+   containment (`--internal`, no egress) **or** reachability (a bridge, full egress), never the
+   profile as specified. This run used `--internal`, so even with a credential it could not have
+   reached the provider.
+3. **`R-028-5`** — whether `claude -p <command>` works inside the sandbox — remains untested for the
+   same reason. It is now the *only* unknown left in the chain.
+
+## Gates re-run after the fixes
+
+| Gate | Result |
+|---|---|
+| `pnpm lint` | pass, 0 warnings |
+| `pnpm typecheck` | pass |
+| `pnpm test:unit` | **658 passed**, 58 files |
+| `pnpm test:arch` | 22 passed |
+| `pnpm test:governance` | **359 passed**, 24 files |
+| `pnpm test:integration` | 35 passed, 4 files — including a real PostgreSQL testcontainer |
+| `pnpm v6:real-run` | exits 1, transcript `FAILED` — **the exit status and the transcript agree** |
+
+`G-28-01` now finds a transcript and passes on its content rather than reporting an absence.
+
+**Tasks: 72 of 72.** `SC-AGT-001` is unmet, so the epic stays **not release-eligible** — unchanged,
+and for a reason that is now one credential and one proxy rather than an untested assumption.

@@ -35,7 +35,7 @@ import { composeExecutionRegistry } from './execution-composition.js';
  * refuses an incomplete set rather than inventing one.
  */
 const SPECKIT_DESCRIPTOR = buildEngineDescriptor({
-  specifyVersion: process.env['SPECIFY_VERSION'] ?? '0.0.17',
+  specifyVersion: process.env['SPECIFY_VERSION'] ?? '0.16.4',
   agentCliVersion: process.env['AGENT_CLI_VERSION'] ?? '1.0.0',
   agentModel: process.env['AGENT_MODEL'] ?? 'unknown',
 });

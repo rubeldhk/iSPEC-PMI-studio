@@ -1,0 +1,36 @@
+{
+  "$comment": [
+    "DEF-028-006 — a pin nobody ever resolved is not a pin.",
+    "SPECIFY_VERSION was 0.0.17 for nine days. No such release exists; PyPI's specify-cli starts at 0.9.4.",
+    "T088a asserted the pin matched a three-number version pattern, which 0.0.17 does. The image could never build.",
+    "Every pin in the Dockerfile must appear here with the sha256 of an artifact that was actually resolved.",
+    "A version invented at a keyboard has no digest, so T669 fails on it."
+  ],
+  "recorded": "2026-08-17",
+  "pins": {
+    "SPECIFY_VERSION": {
+      "value": "0.16.4",
+      "registry": "pypi",
+      "package": "specify-cli",
+      "published": "2026-08-14T15:50:55Z",
+      "artifacts": {
+        "wheel": "sha256:000d9732faf9eefa78782edb0805395a52c5f070914ce31c47193ead3116763c",
+        "sdist": "sha256:1b7118132869dce8d91163226cc809006253bf1cc3b81acd9be6bfcb411785e4"
+      },
+      "provenance_note": "PyPI metadata self-describes as 'Specify CLI, part of GitHub Spec Kit' (matches R-001) but carries no project_urls and no author. The digests pin WHICH artifact is installed; they do not attest WHO published it. Open as R-028-7."
+    },
+    "AGENT_CLI_VERSION": {
+      "value": "1.0.0",
+      "registry": "npm",
+      "package": "@anthropic-ai/claude-code",
+      "resolved": "npm view @anthropic-ai/claude-code@1.0.0 version -> 1.0.0",
+      "provenance_note": "Publisher is the AI provider named in ADR-0002. Latest at time of recording is 2.1.234; the pin is deliberate under RAID R-01 and is bumped by decision, never automatically."
+    },
+    "NODE_MAJOR": {
+      "value": "22",
+      "registry": "nodesource",
+      "package": "nodejs",
+      "provenance_note": "A major line, not a point release — matches the repository's own Node 22 target. Deliberately coarser than the two pins above, which decide what generates specifications."
+    }
+  }
+}

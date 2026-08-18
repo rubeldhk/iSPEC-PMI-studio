@@ -20,6 +20,8 @@ export {
 } from './descriptor.js';
 export { findSpecificationPath, parseSpecification, type ParseOutcome } from './parse.js';
 export {
+  DEFAULT_ENGINE_IMAGE,
+  DEFAULT_RESOURCE_LIMITS,
   INVOCATION_STEPS,
   SPECKIT_INPUT_CEILING,
   SpecKitEngine,
