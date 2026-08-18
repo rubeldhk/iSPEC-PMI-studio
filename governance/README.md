@@ -30,6 +30,9 @@ these documents from restating each other, which is the failure mode this epic e
 | Closing report format | Mandatory sections and the honesty rule; Constitution IX as an artifact | `governance/closing-report.md` | 1 | not exempt |
 | Steering register | Ten subjects of repository standards | `governance/steering/` | 1 | not exempt |
 | Check configuration | Review interval, subjects, section list | `governance/governance.config.json` | 1 | not exempt |
+| Epic stage model | Stage sequence, posture kinds, Epic kinds, `DOR-01`–`DOR-12`, waiver roles (`FR-ESK-015`) | `governance/epic-stage.config.json` | 1 | not exempt |
+| Epic declarations | Kind, posture and waivers — the only hand-authored register input (`DF-1`–`DF-7`) | `governance/epic-declarations.json` | 1 | not exempt |
+| Epic stage register | Every Epic's stage, posture and readiness (`FR-ESK-007`, `FR-ESK-021`) — **generated**, rebuild with `pnpm register:update` | `governance/epic-stage-register.md` | 1 | not exempt |
 | Conformance checks | Executable checks for everything above | `tests/governance/` | 1 | not exempt |
 
 ### The Constitution I column
@@ -68,6 +71,24 @@ rather than application code.
 | `G-08` | Session labels match the branch convention in use | fails |
 | `G-09` | The closing-report format states the honesty rule | fails |
 | `G-10` | The branch names the epic being worked (`D-39`) | **reports** |
+| `G-26-01` | The Epic stage model is configuration, not a literal in a check (`FR-ESK-015`) | fails |
+| `G-26-02` | Every check in the `epic-stage` group is capable of failing — no control characters, no tautology-only suite, no untested module | fails |
+| `G-26-03` | The committed Epic stage register lists every Epic (`FR-ESK-007`, `FR-ESK-008`) | fails |
+| `G-26-04` | The committed register agrees byte-for-byte with a fresh generation (`FR-ESK-021`, `RF-7`) | fails |
+| `G-26-05` | An analysis record, wherever present, is shaped so the DOR can read it (`FR-ESK-019`) | fails |
+| `G-26-06` | Both journey steps carry their recording instruction (`FR-ESK-018`, `FR-ESK-019`) | fails |
+| `G-26-07` | Register generation is deterministic (`SC-ESK-004`) | fails |
+| `G-26-08` | The declarations file declares nothing derivable (`DF-7`) | fails |
+| `G-26-09` | `specs/README.md` carries no stage, posture or task-count content (`FR-ESK-009`) | fails |
+| `G-26-10` | The register carries no convergence, defect, closure or promotion state (`FR-ESK-009`, `RF-6`) | fails |
+| `G-26-11` | The `epic-stage` group is collected by the `governance` project and needs no database, server or daemon (`SC-ESK-009`) | fails |
+
+> **Severity split for the `G-26-*` group** (`FR-ESK-016`, table in
+> [`tests/governance/epic-stage/severity.ts`](../tests/governance/epic-stage/severity.ts)):
+> a **false Ready**, **register drift** and an **expired waiver** fail the build — each is a claim
+> that is wrong and would be acted on. A **stalled** Epic, a **missing posture** and **out-of-order
+> artifacts** report without failing: 25 of 28 Epics read `stalled` today, and blocking on that
+> would put every build red for a state the register exists to display.
 
 **Why `G-04` is the one that fails CI.** The 2026-08-05 severity split reserved a hard CI failure
 for the check whose failure is otherwise *silent*. Duplicated text reads correctly on the day it is

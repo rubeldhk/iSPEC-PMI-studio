@@ -181,3 +181,39 @@ followed. Non-compliance is instead self-punishing — the Epic stays at a lower
 
 **That the register is correct about intent.** It is correct about artifacts. Whether an Epic
 *should* be held is a judgement the register records and never makes.
+
+---
+
+## Results — run 2026-08-18 (`T527`)
+
+All eight scenarios **executed**, not asserted. Each was run against the real repository, with
+faults injected and reverted where the scenario calls for one.
+
+| Scenario | Result | What was observed |
+|---|---|---|
+| **V26-1** register exists, covers every Epic | ✅ pass | **28 rows, 28 Epic directories**, ordered by identifier, `_shared` absent (0 mentions) |
+| **V26-2** the stage is derived, not hand-set | ✅ pass | Regeneration on an unchanged tree produced a **byte-identical** file. A hand edit of `Not ready` → `Ready` was **overwritten** by the next `pnpm register:update`, not adopted |
+| **V26-3** a stale register fails the build | ✅ pass | A new `specs/099-scratch/` without regenerating failed **4 assertions** across `G-26-03` and `G-26-04`, including the row count and the byte-for-byte comparison |
+| **V26-4** out-of-order artifacts are reported, not rewarded | ✅ pass | `099-scratch` with `spec.md` + `tasks.md` and no `plan.md` read **`Specified`**, and the finding *"Tasked evidence present without the stage before it — stage held at Specified"* appeared in the Findings section. The stage did **not** advance |
+| **V26-5** deliberate stops read differently from stalls | ✅ pass | EPIC-009 and EPIC-012 read **`Held — awaiting PMI-DOC-004…`**; EPIC-014 reads **`stalled`**; EPIC-017 reads **`parent-design · Planned · — · n/a`**. Three distinct readings, as `SC-ESK-005` requires |
+| **V26-6** the DOR reports every failure at once | ✅ pass | EPIC-014 returned **`DOR-05 DOR-08 DOR-09` — 3 failures out of 12 conditions evaluated**. No short-circuit: conditions after the first failure were still evaluated and reported |
+| **V26-7** waivers are visible, scoped, owned, expiring | ✅ pass | A valid waiver on `DOR-09` yielded **`Ready (waived)`** — never plain `Ready`. The same waiver with a past expiry yielded **`Not ready`** and **1 blocking** problem |
+| **V26-8** every step leaves evidence, nothing duplicates the README | ✅ pass | Both skill files carry their recording instruction. `specs/README.md` matched **0** stage/posture/task-count patterns and **1** link to the register |
+
+### What the run showed that the checks do not
+
+**`V26-5` is the scenario worth reading.** Before Phase 5 every Epic in this repository read the
+same way, and the three that now read differently do so because somebody declared an intent. That is
+the entire argument for the derived/declared split, visible in three rows.
+
+**`V26-6` returned three failures, not one.** `DOR-09` fails for every Epic in the repository —
+no `analysis.md` exists yet — so a short-circuiting evaluator would have reported EPIC-014 as one
+condition away from ready. It is three.
+
+### Not verified
+
+- **No Epic has ever reached `Ready` against the real corpus.** All 26 delivery Epics fail `DOR-09`.
+  `Ready` and `Ready (waived)` are verified against fixtures only, in `readiness.spec.ts` and
+  `V26-7` above.
+- **No real waiver exists.** `V26-7` was run against a constructed one; `governance/epic-declarations.json`
+  declares an empty `waivers` array.

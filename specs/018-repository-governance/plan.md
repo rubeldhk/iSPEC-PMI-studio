@@ -3,7 +3,7 @@
 **Epic**: `EPIC-018` | **Module**: governance (no product module) | **Date**: 2026-08-04 |
 **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 31 · [tasks.md](./tasks.md) · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
+**Tasks**: 38 · [tasks.md](./tasks.md) · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
 
 **Sibling**: [EPIC-017 Enhancement Model](../017-enhancement-model/plan.md) — the product half, held
 
@@ -61,7 +61,9 @@ Task figures are **estimates** — `/speckit-tasks` has not run.
 | F-18.8 Governance index | ~3 | One document naming every governance artifact and its version |
 | F-18.9 Constitutional process artifacts | ~4 | Session-labelling (VIII) and closing-report (IX) formats |
 
-**Actual total: 31 tasks** (T312–T336, T433–T434, plus Phase Z T407–T410). The ~48 estimate was
+**Actual total: 38 tasks.** 38 = the 31 originally planned (`T312`–`T336`, `T433`–`T434`, Phase Z `T407`–`T410`) + 3 from Phase 6 convergence + 3 from Phase 7 convergence (`DEF-018-001`) + `T667` (`D-39`, check `G-10`). Corrected by EPIC-026 `T529` on 2026-08-18 — **count it, do not quote it**.
+
+The 31 planned here were T312–T336, T433–T434, plus Phase Z T407–T410. The ~48 estimate was
 high: several functions collapsed into single documents rather than one task per artifact type.
 
 **Explicitly out of scope**: PMI Studio's product Steering Engine (EPIC-017 `FR-ENH-001`–`005`), which

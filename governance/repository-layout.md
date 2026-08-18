@@ -28,6 +28,9 @@ is how cross-references break.
 | Quickstart / validation guide | `specs/<epic>/quickstart.md` | `document-structure.md` | current |
 | Requirements checklist | `specs/<epic>/checklists/` | Spec Kit | current |
 | Defect record | `specs/<epic>/defects/` | Constitution VI | current |
+| Epic stage model | `governance/epic-stage.config.json` | EPIC-026 `FR-ESK-015` | current |
+| Epic declarations | `governance/epic-declarations.json` | EPIC-026 [`declarations-format.md`](../specs/026-epic-stage-kanban/contracts/declarations-format.md) | current |
+| Epic stage register | `governance/epic-stage-register.md` | EPIC-026 [`register-format.md`](../specs/026-epic-stage-kanban/contracts/register-format.md) — **generated**, `pnpm register:update` | current |
 | Epic closure report | `specs/<epic>/closure.md` | `closing-report.md` | current |
 | Cross-epic shared design | `specs/_shared/` | `PMI-DOC-000` | current |
 | Decision register | `specs/srs-alignment.md` | `PMI-DOC-000` §5 | current |
@@ -74,9 +77,34 @@ epic, and no path in the map above has moved.
 | Module-aligned spec grouping | `specs/<nnn>-<slug>/` flat | grouped under module | **D-13** |
 | Typed requirement identifiers | `FR-###`, `FR-RGP-###` | `REQ-nnnn` per `PMI-DOC-000` §3 | **D-1**, **D-9** |
 | Thirteen-section templates | current template sections | `PMI-DOC-000` §4 structure | **D-4** — see [`template-conformance.md`](./template-conformance.md) |
+| **Epic status out of `specs/README.md`** | Proceeding/Held groupings and per-Epic task counts, hand-maintained in `specs/README.md` | the generated [`epic-stage-register.md`](./epic-stage-register.md); the README keeps narrative, module mapping, build order and conventions | nothing — **executing now**, EPIC-026 `T517` |
 
 Each proposal is recorded **before** any migration executes (`SC-RGP-005`). A migration discovered
 after the fact is a broken cross-reference discovered by someone else.
+
+### Executing: Epic status out of `specs/README.md` *(EPIC-026 `T516`/`T517`, 2026-08-18)*
+
+**What moves.** The `▶ Proceeding` / `⏸ Held` section headings, the per-Epic task counts, and the
+`**Total: N tasks**` roll-up. These are *derivable*: stage, posture and readiness are computed from
+each Epic directory by `G-26-03`, and a count is arithmetic over `tasks.md`.
+
+**What stays.** Everything a person wrote because they knew something — the D-15/D-18/D-19
+restructure narrative, the `M-nn` module mapping, the build-order diagram, the conventions section,
+and the known-limitation note about `check-prerequisites.ps1` reporting a single feature directory.
+A migration that emptied the README would be a net loss.
+
+**Why now, and why recorded first.** The hand-maintained counts have already drifted twice within
+this repository's own history: EPIC-018 was recorded as **31** tasks in `plan.md`, **32** in
+`specs/README.md` and **34** in `tasks.md` — and by the time a remediation task came to reconcile
+them the real numbers were **31 / 37 / 38**. The remediation went stale before it ran. That is the
+argument for deriving rather than maintaining, made by the repository against itself.
+
+**Cross-references updated in the same change** (`FR-RGP-007`): `specs/README.md` gains a link to
+the register; no other tracked file references the removed groupings.
+
+**Reversibility.** The removed content is recoverable from git history, and the register reproduces
+its factual half on demand. What is not recoverable is the *hand-maintained* version, which is the
+point.
 
 ## D-13 dependency
 

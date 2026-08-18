@@ -5,7 +5,9 @@ description: "Task list for EPIC-018 — Repository Governance Process"
 
 # Tasks: Repository Governance Process
 
-**Epic**: `EPIC-018` | **Process, not product** | **Tasks**: 31
+**Epic**: `EPIC-018` | **Process, not product** | **Tasks**: 38
+
+> 38 = the 31 originally planned (`T312`–`T336`, `T433`–`T434`, Phase Z `T407`–`T410`) + 3 from Phase 6 convergence + 3 from Phase 7 convergence (`DEF-018-001`) + `T667` (`D-39`, check `G-10`). Corrected by EPIC-026 `T529` on 2026-08-18 — **count it, do not quote it**.
 
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Shared design**: [../_shared/](../_shared/)
 

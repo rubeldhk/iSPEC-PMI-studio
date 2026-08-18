@@ -61,7 +61,21 @@ Identify inconsistencies, duplications, ambiguities, and underspecified items ac
 
 ## Operating Constraints
 
-**STRICTLY READ-ONLY**: Do **not** modify any files. Output a structured analysis report. Offer an optional remediation plan (user must explicitly approve before any follow-up editing commands would be invoked manually).
+**STRICTLY READ-ONLY, WITH ONE NAMED EXCEPTION**: Do **not** modify any files, **except** the analysis record described below. Output a structured analysis report. Offer an optional remediation plan (user must explicitly approve before any follow-up editing commands would be invoked manually).
+
+**The exception, and why it exists** (`FR-ESK-019`, EPIC-026): every other step in the Spec Kit journey leaves an artifact — `spec.md`, `checklists/`, `plan.md`, `tasks.md`. This step printed its findings and left nothing behind, which made `Analyzed` the one stage in the journey that could only be *declared*, never derived. The clarification session that settled it put it plainly: *"making this one the sole hand-declared exception would carve a hole in FR-ESK-003 on the day it is written."*
+
+So this command writes **exactly one file** and no other:
+
+**MUST write `specs/<epic>/analysis.md`** after producing the report, containing:
+
+1. A first heading naming the analysis and the Epic — the record must carry its `EPIC-###` identifier so it can be attributed.
+2. A **dated session** line, `**Session**: YYYY-MM-DD`. Without a date, two runs are indistinguishable and nobody can tell whether the analysis predates the spec it analysed.
+3. A `## Findings` section holding the findings table from the report, using **only** the severities `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`. `DOR-09` reads these to decide whether findings are blocking; a word outside the vocabulary would be silently treated as non-blocking, which is the wrong default for a term nobody defined.
+
+**Write the record even when the analysis finds nothing** (`FR-ESK-017`). State "No findings." under the heading. The artifact records that the step **ran**, not that it found something — a step that writes only when it has news leaves an Epic indistinguishable from one where the step never ran.
+
+Writing this record is not a licence to edit anything else. `spec.md`, `plan.md` and `tasks.md` remain untouched by this command.
 
 **Constitution Authority**: The project constitution (`.specify/memory/constitution.md`) is **non-negotiable** within this analysis scope. Constitution conflicts are automatically CRITICAL and require adjustment of the spec, plan, or tasks—not dilution, reinterpretation, or silent ignoring of the principle. If a principle itself needs to change, that must occur in a separate, explicit constitution update outside `/speckit-analyze`.
 
