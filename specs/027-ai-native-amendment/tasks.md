@@ -100,7 +100,7 @@ artifact or `NO-EXISTING-COVERAGE`.
   > §9 warns in its own words: *"Do not duplicate existing requirements or create replacement IDs
   > unnecessarily."* Two registers would have been exactly that.
 - [X] T612 [US1] Cross-link `duplicates` across all five documents in `register/clauses.md` — the three Rooms appear in four of the five (conformance check: T607)
-- [ ] T613 [US1] Record one verdict per clause — one of the five values, with owner, reasoning and resulting action — in `register/verdicts.md` (conformance check: T607)
+- [X] T613 [US1] Record one verdict per clause — one of the five values, with owner, reasoning and resulting action — in `register/verdicts.md` (conformance check: T607)
 
   > **Quote, never paraphrase** (`data-model.md`). Paraphrase is where premises get lost, and Finding
   > A exists because the amendment's own paraphrase of the corpus was wrong.
@@ -187,7 +187,7 @@ mean writing it twice.
 
 - [ ] T633 [US6] Record every preserved-element change with reason, affected requirement, migration impact, compatibility impact and alternative considered, in `register/preserved-elements.md` (conformance check: T632)
 - [ ] T634 [US6] Record `epic_status_changes` as empty with the `FR-AMD-017` justification, or with a row per change citing the responsible clause, in `register/decisions.md` (conformance check: T632)
-- [ ] T635 [US6] Confirm every verdict names the affected epic, module and requirement or states explicitly that none was found (`FR-AMD-005`) — depends on US1 (conformance check: T607)
+- [X] T635 [US6] Confirm every verdict names the affected epic, module and requirement or states explicitly that none was found (`FR-AMD-005`) — depends on US1 (conformance check: T607)
 - [ ] T636 [US6] Record any `srs-alignment.md` decision reopened by the amendment with the architectural conflict stated, or state that none was reopened (`FR-AMD-018`), in `register/decisions.md` (conformance check: T626)
 
 ---
