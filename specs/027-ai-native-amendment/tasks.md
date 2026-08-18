@@ -45,12 +45,12 @@ because a clause nobody noticed is indistinguishable from one that is not there.
 projection. Writing 470 rows and *then* discovering the projection cannot parse them is the expensive
 order.
 
-- [ ] T597 [P] Write a failing conformance check asserting every `register/*.md` file exists and carries the required table header, in `tests/governance/register-structure.spec.ts`
-- [ ] T598 Create the register scaffold — `register/{clauses,verdicts,capabilities,capability-areas,premises,decisions,research,adrs,preserved-elements}.md`, headers only — under `specs/027-ai-native-amendment/` (conformance check: T597)
-- [ ] T599 [P] Write a failing conformance check asserting `register.json` validates against the schema in `contracts/reconciliation-register.md`, in `tests/governance/register-schema.spec.ts`
-- [ ] T600 [P] Write failing unit tests for the projection generator — table parsing, field extraction, malformed-row rejection — in `scripts/tests/build-register.spec.mjs`
-- [ ] T601 Implement the markdown → `register.json` projection generator in `scripts/build-register.mjs` (unit test: T600; conformance check: T599)
-- [ ] T602 Add the `register:build` script and register the governance test entries in `package.json` (conformance check: T597)
+- [X] T597 [P] Write a failing conformance check asserting every `register/*.md` file exists and carries the required table header, in `tests/governance/register-structure.spec.ts`
+- [X] T598 Create the register scaffold — `register/{clauses,verdicts,capabilities,capability-areas,premises,decisions,research,adrs,preserved-elements}.md`, headers only — under `specs/027-ai-native-amendment/` (conformance check: T597)
+- [X] T599 [P] Write a failing conformance check asserting `register.json` validates against the schema in `contracts/reconciliation-register.md`, in `tests/governance/register-schema.spec.ts`
+- [X] T600 [P] Write failing unit tests for the projection generator — table parsing, field extraction, malformed-row rejection — in `scripts/tests/build-register.spec.mjs`
+- [X] T601 Implement the markdown → `register.json` projection generator in `scripts/build-register.mjs` (unit test: T600; conformance check: T599)
+- [X] T602 Add the `register:build` script and register the governance test entries in `package.json` (conformance check: T597)
 
 **Checkpoint**: an empty register generates a valid, empty projection, and the checks fail loudly on a malformed row.
 
@@ -60,10 +60,10 @@ order.
 
 **Purpose**: the one property every later check depends on. **Blocks all six stories.**
 
-- [ ] T603 [P] Write the failing `G-27-11` check asserting each `generated_from` digest matches its source file, in `tests/governance/register-digest.spec.ts`
-- [ ] T604 Implement SHA-256 digest emission per source file in `scripts/build-register.mjs` (unit test: T600; conformance check: T603)
-- [ ] T605 [P] Write a failing check asserting a hand-edited `register.json` is detected — regenerate, diff, fail on any change — in `tests/governance/register-digest.spec.ts`
-- [ ] T606 Wire all register checks into `pnpm test:governance` and confirm the governance project collects them (conformance check: T597)
+- [X] T603 [P] Write the failing `G-27-11` check asserting each `generated_from` digest matches its source file, in `tests/governance/register-digest.spec.ts`
+- [X] T604 Implement SHA-256 digest emission per source file in `scripts/build-register.mjs` (unit test: T600; conformance check: T603)
+- [X] T605 [P] Write a failing check asserting a hand-edited `register.json` is detected — regenerate, diff, fail on any change — in `tests/governance/register-digest.spec.ts`
+- [X] T606 Wire all register checks into `pnpm test:governance` and confirm the governance project collects them (conformance check: T597)
 
   > **Regeneration is the step people skip.** A stale projection makes every check below test a
   > fiction while staying green — which is worse than no check, because it manufactures confidence.

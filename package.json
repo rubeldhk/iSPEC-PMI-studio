@@ -18,6 +18,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:governance": "vitest run --project governance",
+    "register:build": "node scripts/build-register.mjs",
     "typecheck:governance": "tsc -p tests/governance/tsconfig.json"
   },
   "devDependencies": {

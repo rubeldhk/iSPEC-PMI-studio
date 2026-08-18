@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "generated_from": {
+    "clauses.md": "25c9b8e689eec62c8d4bdd233b5e41cbf8a97587950d9c9ce8eddfc9d8109708",
+    "verdicts.md": "38d46acb7b7b3bb33fe054975792bc1f00ad8176102410dfab10ee00ca98cd00",
+    "capabilities.md": "086d626050e4a1444b09d0cda8a6f95b09b4190d8aa3f9d3c91976a7fa4dbce9",
+    "capability-areas.md": "2a77b1ad6ccde5d8893d7b26f0ebd1bab67dfcd4e3dca9706142f4a4f0b756ca",
+    "premises.md": "2beb828a72dfdd1e1372bbbbdf2366a1aefeef5a6c7efb22d2e78cd927b02481",
+    "decisions.md": "13e5ee7b632ff8a0fafda2018d2c0367825eb3dd739391587445a14818276b6f",
+    "research.md": "241f819e9609f021340c5f59ddf00a8f3ab26690871569bf0490cbd4db684e1c",
+    "adrs.md": "2858c4ef76d21c9819fb6538f410af4ede4f6137f89702101bf0fe66cd541bf4",
+    "preserved-elements.md": "425a677ae1559d4a5b12a225c18b5ccae3099c8acf7d53901e5eec7ab6688dae"
+  },
+  "clauses": [],
+  "verdicts": [],
+  "capabilities": [],
+  "capability_areas": [],
+  "premises": [],
+  "decisions": [],
+  "research": [],
+  "adrs": [],
+  "preserved_element_changes": [],
+  "epic_status_changes": [],
+  "impact_report": {
+    "sections": 0,
+    "empty_with_reason": [],
+    "placeholders": 0
+  }
+}
