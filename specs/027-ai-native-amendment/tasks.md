@@ -160,13 +160,13 @@ mean writing it twice.
 
 **Independent Test**: each of the twelve §27 subjects has a record; every `open` one names what it awaits.
 
-- [ ] T626 [P] [US5] Write the failing `G-27-07`, `G-27-08` and `G-27-10` checks — twelve ADR subjects present, `supersedes` carrying reasoning, every research item naming what it blocks, **no decision `decided` while its blocking research is unanswered**, every decision carrying ≥2 options and an owner — in `tests/governance/g27-decisions.spec.ts`
-- [ ] T627 [US5] Create the twelve Native §27 ADRs as `adr/ADR-0006` … `adr/ADR-0017` — seven decided from the 2026-08-13 session, five `open` naming what each awaits (`D-35`) (conformance check: T626)
-- [ ] T659 [US5] Create the five ADRs Cosmos §9 names — Governed Engineering Loops, Context Engine composition, Engineering Expert definition, Governed Learning, Specification Compliance/Evidence — as `adr/ADR-0018` … `adr/ADR-0022`, each decided or `open` naming what it awaits (conformance check: T626)
-- [ ] T628 [US5] Record all twelve ADR subjects, status and `awaits` in `register/adrs.md`, and confirm `ADR-0001`–`ADR-0005` are preserved with `ADR-0002` marked **extended, not superseded** (`D-36`) (conformance check: T626)
-- [ ] T629 [US5] Register `R-AI-001`–`R-AI-014` and `R-027-1`–`R-027-8` with what each blocks and its owner, in `register/research.md` (conformance check: T626)
-- [ ] T630 [US5] Record every open decision with question, ≥2 options, the consequence of each, owner, status and blocking research, in `register/decisions.md` — citing `srs-alignment.md` Part 8 rather than restating it (conformance check: T626)
-- [ ] T631 [US5] Record every conflict as a decision for a human — false premise, both name collisions, and any disagreement between two amendment documents (`FR-AMD-008`) (conformance check: T626)
+- [X] T626 [P] [US5] Write the failing `G-27-07`, `G-27-08` and `G-27-10` checks — twelve ADR subjects present, `supersedes` carrying reasoning, every research item naming what it blocks, **no decision `decided` while its blocking research is unanswered**, every decision carrying ≥2 options and an owner — in `tests/governance/g27-decisions.spec.ts`
+- [X] T627 [US5] Create the twelve Native §27 ADRs as `adr/ADR-0006` … `adr/ADR-0017` — seven decided from the 2026-08-13 session, five `open` naming what each awaits (`D-35`) (conformance check: T626)
+- [X] T659 [US5] Create the five ADRs Cosmos §9 names — Governed Engineering Loops, Context Engine composition, Engineering Expert definition, Governed Learning, Specification Compliance/Evidence — as `adr/ADR-0018` … `adr/ADR-0022`, each decided or `open` naming what it awaits (conformance check: T626)
+- [X] T628 [US5] Record all twelve ADR subjects, status and `awaits` in `register/adrs.md`, and confirm `ADR-0001`–`ADR-0005` are preserved with `ADR-0002` marked **extended, not superseded** (`D-36`) (conformance check: T626)
+- [X] T629 [US5] Register `R-AI-001`–`R-AI-014` and `R-027-1`–`R-027-8` with what each blocks and its owner, in `register/research.md` (conformance check: T626)
+- [X] T630 [US5] Record every open decision with question, ≥2 options, the consequence of each, owner, status and blocking research, in `register/decisions.md` — citing `srs-alignment.md` Part 8 rather than restating it (conformance check: T626)
+- [X] T631 [US5] Record every conflict as a decision for a human — false premise, both name collisions, and any disagreement between two amendment documents (`FR-AMD-008`) (conformance check: T626)
 
   > **Nine of the fourteen `R-AI-*` items are uninvestigated**, and the register records that rather
   > than filling them. §26: *"Do not make unsupported assumptions where research is required."*
@@ -186,9 +186,9 @@ mean writing it twice.
   > by good intentions.
 
 - [ ] T633 [US6] Record every preserved-element change with reason, affected requirement, migration impact, compatibility impact and alternative considered, in `register/preserved-elements.md` (conformance check: T632)
-- [ ] T634 [US6] Record `epic_status_changes` as empty with the `FR-AMD-017` justification, or with a row per change citing the responsible clause, in `register/decisions.md` (conformance check: T632)
+- [X] T634 [US6] Record `epic_status_changes` as empty with the `FR-AMD-017` justification, or with a row per change citing the responsible clause, in `register/decisions.md` (conformance check: T632)
 - [X] T635 [US6] Confirm every verdict names the affected epic, module and requirement or states explicitly that none was found (`FR-AMD-005`) — depends on US1 (conformance check: T607)
-- [ ] T636 [US6] Record any `srs-alignment.md` decision reopened by the amendment with the architectural conflict stated, or state that none was reopened (`FR-AMD-018`), in `register/decisions.md` (conformance check: T626)
+- [X] T636 [US6] Record any `srs-alignment.md` decision reopened by the amendment with the architectural conflict stated, or state that none was reopened (`FR-AMD-018`), in `register/decisions.md` (conformance check: T626)
 
 ---
 

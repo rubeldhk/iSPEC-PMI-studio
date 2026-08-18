@@ -6,9 +6,9 @@
     "capabilities.md": "d8eca76df02a76bfa070168e5609054f205d71559897982f0449999ad783fee6",
     "capability-areas.md": "b2392b6d1803517551cafc7282bb33c08a0045543f1ee85f96397427648f130f",
     "premises.md": "f31542a037175598331f20e518fb3ad4459ee22d01b01e28757757a1c85951a9",
-    "decisions.md": "13e5ee7b632ff8a0fafda2018d2c0367825eb3dd739391587445a14818276b6f",
-    "research.md": "241f819e9609f021340c5f59ddf00a8f3ab26690871569bf0490cbd4db684e1c",
-    "adrs.md": "2858c4ef76d21c9819fb6538f410af4ede4f6137f89702101bf0fe66cd541bf4",
+    "decisions.md": "e975231d4ce85b170c5356b9fa99080428db881dff08e95325be74247f8b4b64",
+    "research.md": "ca47a3808e2b3bef76941af2440f35d1c5bb357c8c38697bdde810ebc5e66a16",
+    "adrs.md": "1b3b962c7485146ef251c39a59e83fe6483f5219d309ca99f85ef3c415e0c571",
     "preserved-elements.md": "425a677ae1559d4a5b12a225c18b5ccae3099c8acf7d53901e5eec7ab6688dae"
   },
   "clauses": [
@@ -12631,9 +12631,661 @@
       "verdict": "confirmed"
     }
   ],
-  "decisions": [],
-  "research": [],
-  "adrs": [],
+  "decisions": [
+    {
+      "id": "D-23",
+      "question": "Does the amendment trigger the deferred 18-module re-cut (D-13)?",
+      "options": [
+        {
+          "label": "Re-cut now",
+          "consequence": "touches 729 tasks across 26 lists for a taxonomy change nothing currently blocks"
+        },
+        {
+          "label": "Record the dependency and re-cut once, folding in D-1 and D-9",
+          "consequence": "one pass over the corpus instead of three"
+        }
+      ],
+      "recommendation": "Record the dependency; re-cut once",
+      "owner": "project-owner",
+      "status": "open",
+      "blocking_research": []
+    },
+    {
+      "id": "D-24",
+      "question": "Adopt pgvector for similarity search?",
+      "options": [
+        {
+          "label": "Adopt now",
+          "consequence": "a database extension and an operational surface for a capability nothing yet requires"
+        },
+        {
+          "label": "Adopt when the first similarity requirement is planned",
+          "consequence": "the Context Engine epic decides it with a real requirement in hand"
+        }
+      ],
+      "recommendation": "Adopt when the first similarity requirement is planned",
+      "owner": "tech-lead",
+      "status": "open",
+      "blocking_research": [
+        "R-027-4",
+        "R-027-6"
+      ]
+    },
+    {
+      "id": "D-30",
+      "question": "Is the AI Gateway native or integrated?",
+      "options": [
+        {
+          "label": "Fully native",
+          "consequence": "PMI Studio builds model routing, cost attribution and failover itself"
+        },
+        {
+          "label": "Fully integrated",
+          "consequence": "an external gateway owns routing and PMI Studio loses per-tenant cost attribution"
+        },
+        {
+          "label": "Split — agent layer native, model routing integrable",
+          "consequence": "keeps authorization and provenance native while leaving routing replaceable"
+        }
+      ],
+      "recommendation": "Split: agent layer native, model routing integrable",
+      "owner": "tech-lead",
+      "status": "open",
+      "blocking_research": [
+        "R-AI-013"
+      ]
+    },
+    {
+      "id": "D-34",
+      "question": "Does the amendment release any part of the PMI-DOC-004 hold?",
+      "options": [
+        {
+          "label": "Release the held epics the amendment touches",
+          "consequence": "393 tasks proceed against business rules nobody approved"
+        },
+        {
+          "label": "Hold stands",
+          "consequence": "the amendment is architecture and positioning, not a Business Requirement Specification"
+        }
+      ],
+      "recommendation": "No — the hold stands",
+      "owner": "project-owner",
+      "status": "open",
+      "blocking_research": []
+    },
+    {
+      "id": "D-36",
+      "question": "Is ADR-0002 extended or superseded by the egress change?",
+      "options": [
+        {
+          "label": "Superseded",
+          "consequence": "discards a built, tested and still-correct control to record one addition"
+        },
+        {
+          "label": "Extended",
+          "consequence": "the generation profile and its test are unchanged, and the implementation profile is added beside them"
+        }
+      ],
+      "recommendation": "Extended — effectively settled by D-28",
+      "owner": "tech-lead",
+      "status": "open",
+      "blocking_research": []
+    },
+    {
+      "id": "D-37",
+      "question": "Does the Human/AI responsibility model become a platform-wide register in _shared/?",
+      "options": [
+        {
+          "label": "Per-epic",
+          "consequence": "each epic restates the split, and they diverge at the first amendment"
+        },
+        {
+          "label": "Platform-wide in _shared/",
+          "consequence": "cross-cutting, and it belongs where the principle register already lives"
+        }
+      ],
+      "recommendation": "Platform-wide in _shared/platform-spec.md",
+      "owner": "project-owner",
+      "status": "open",
+      "blocking_research": [
+        "R-027-8"
+      ]
+    },
+    {
+      "id": "D-39",
+      "question": "Should EPIC-018 gain a check comparing branch name to working epic?",
+      "options": [
+        {
+          "label": "No",
+          "consequence": "G-08 already checks the format, and the lapse has now occurred seven times"
+        },
+        {
+          "label": "Yes",
+          "consequence": "compare the branch to the epic being worked, which is what G-08 structurally cannot do"
+        }
+      ],
+      "recommendation": "Yes — seven occurrences is enough",
+      "owner": "project-owner",
+      "status": "open",
+      "blocking_research": []
+    },
+    {
+      "id": "C-19",
+      "question": "CONFLICT: engine independence is enforced by a build-time test; agent independence is not",
+      "options": [
+        {
+          "label": "Defer",
+          "consequence": "the violation stays invisible while every new adapter inherits it"
+        },
+        {
+          "label": "Land the agent contract now",
+          "consequence": "one file, 65 tests, no dependants — the cheapest moment it will ever be"
+        }
+      ],
+      "recommendation": "Land it now",
+      "owner": "tech-lead",
+      "status": "decided",
+      "blocking_research": [
+        "R-AI-008"
+      ]
+    },
+    {
+      "id": "C-20",
+      "question": "CONFLICT: T646 was about to hard-code Docker as the execution substrate",
+      "options": [
+        {
+          "label": "Implement ContainerRuntime in the engine adapter",
+          "consequence": "makes Docker the abstraction, which Native section 4 forbids"
+        },
+        {
+          "label": "Widen to ProjectExecutionEnvironment with a Docker provider",
+          "consequence": "Docker becomes Phase 1 provider behind a port"
+        }
+      ],
+      "recommendation": "Widen the port",
+      "owner": "tech-lead",
+      "status": "decided",
+      "blocking_research": [
+        "R-AI-010"
+      ]
+    },
+    {
+      "id": "C-22",
+      "question": "CONFLICT: the egress allow-list makes implementation agents impossible",
+      "options": [
+        {
+          "label": "Open general internet access",
+          "consequence": "Native section 19 forbids it outright"
+        },
+        {
+          "label": "Named profiles, proxy-enforced",
+          "consequence": "generation stays frozen, implementation is explicitly enumerated"
+        }
+      ],
+      "recommendation": "Named profiles",
+      "owner": "tech-lead",
+      "status": "decided",
+      "blocking_research": []
+    },
+    {
+      "id": "C-23",
+      "question": "CONFLICT: two sources of truth between PostgreSQL and repository markdown",
+      "options": [
+        {
+          "label": "Git authoritative for content",
+          "consequence": "approval state would point at content the governance store does not hold"
+        },
+        {
+          "label": "PostgreSQL authoritative, markdown a one-way projection",
+          "consequence": "the repo tree can visibly drift between regenerations"
+        }
+      ],
+      "recommendation": "PostgreSQL authoritative",
+      "owner": "tech-lead",
+      "status": "decided",
+      "blocking_research": []
+    },
+    {
+      "id": "C-26",
+      "question": "CONFLICT: the target market implies a hosting decision the corpus never made",
+      "options": [
+        {
+          "label": "Self-hosted first",
+          "consequence": "contradicts section 1 target market of organizations without platform teams"
+        },
+        {
+          "label": "Multi-tenant SaaS first",
+          "consequence": "escalates credentials, egress and cost, and makes the second execution provider near-certainly Kubernetes"
+        }
+      ],
+      "recommendation": "Multi-tenant SaaS first",
+      "owner": "project-owner",
+      "status": "decided",
+      "blocking_research": []
+    },
+    {
+      "id": "FINDING-A",
+      "question": "CONFLICT: the amendment calls the three Rooms existing and the corpus contains none of them",
+      "options": [
+        {
+          "label": "Treat as enhancements",
+          "consequence": "sizes three builds as modifications, a programme-level estimate error"
+        },
+        {
+          "label": "Treat as new capability",
+          "consequence": "sized as builds, held behind PMI-DOC-004 which is the document that should settle them"
+        }
+      ],
+      "recommendation": "New capability, sized as builds",
+      "owner": "project-owner",
+      "status": "decided",
+      "blocking_research": []
+    },
+    {
+      "id": "FINDING-B",
+      "question": "CONFLICT: EPIC-007 Requirement Intelligence is a name collision, not the amendment capability",
+      "options": [
+        {
+          "label": "Re-scope EPIC-007 to the amendment capability",
+          "consequence": "renumbering and re-scoping an epic mid-programme, and EPIC-007 owns six shipped CRUD requirements"
+        },
+        {
+          "label": "EPIC-007 keeps its identifier and scope; the Engine becomes a new held epic",
+          "consequence": "the collision is documented rather than latent"
+        }
+      ],
+      "recommendation": "EPIC-007 unchanged; new epic for the Engine",
+      "owner": "project-owner",
+      "status": "decided",
+      "blocking_research": []
+    },
+    {
+      "id": "DOC-CONFLICT-1",
+      "question": "CONFLICT: the lifecycle document and Native section 17 disagree on a passing defect test",
+      "options": [
+        {
+          "label": "Follow the lifecycle document",
+          "consequence": "every passing reproduction test becomes a Change Request, which Native section 17 explicitly forbids"
+        },
+        {
+          "label": "Follow Native section 17 and Defect section 7",
+          "consequence": "a PASS routes to an evidence check first, because the test may simply be wrong"
+        }
+      ],
+      "recommendation": "The later and more specific text governs — Native section 17",
+      "owner": "tech-lead",
+      "status": "decided",
+      "blocking_research": []
+    },
+    {
+      "id": "UNOWNED-1",
+      "question": "Who owns Governed Engineering Loops, Governed Learning and the Specification Compliance Agent?",
+      "options": [
+        {
+          "label": "Fold into existing held epics",
+          "consequence": "three genuinely new capabilities disappear into epics scoped before they existed"
+        },
+        {
+          "label": "Create three new held epics when PMI-DOC-004 lands",
+          "consequence": "they stay visible as unowned until someone decides"
+        }
+      ],
+      "recommendation": "Create new held epics; record as unowned until then",
+      "owner": "project-owner",
+      "status": "open",
+      "blocking_research": []
+    },
+    {
+      "id": "UNOWNED-2",
+      "question": "Who owns the SaaS hosting substrate, the egress proxy and the credential broker?",
+      "options": [
+        {
+          "label": "Assign to EPIC-014 DevOps",
+          "consequence": "EPIC-014 is held, so a live architectural dependency would be parked"
+        },
+        {
+          "label": "New infrastructure epic",
+          "consequence": "D-31, D-27, D-28 and D-41 are all decided and none has a home"
+        }
+      ],
+      "recommendation": "New infrastructure epic — all four decisions are taken and unbuilt",
+      "owner": "project-owner",
+      "status": "open",
+      "blocking_research": [
+        "R-AI-009",
+        "R-AI-011"
+      ]
+    }
+  ],
+  "research": [
+    {
+      "id": "R-AI-001",
+      "question": "What is the currently supported server-side Claude Code / Agent SDK execution model?",
+      "blocks": [
+        "ADR-0006",
+        "T646b"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-002",
+      "question": "Is Claude Code headless / container execution supported as a server-side model?",
+      "blocks": [
+        "ADR-0006",
+        "T646b"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-003",
+      "question": "How does Claude MCP integration and authorization work?",
+      "blocks": [
+        "ADR-0010"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-004",
+      "question": "Are Claude hooks and subagents applicable to PMI governance?",
+      "blocks": [
+        "ADR-0010",
+        "ADR-0015"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-005",
+      "question": "What remote, cloud, CLI and agent integration does Cursor support?",
+      "blocks": [
+        "ADR-0006"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-006",
+      "question": "How does Spec Kit behave inside persistent versus disposable repositories?",
+      "blocks": [
+        "ADR-0009"
+      ],
+      "owner": "tech-lead",
+      "status": "answered"
+    },
+    {
+      "id": "R-AI-007",
+      "question": "What is the best mechanism for preserving Spec Kit project state between agent runs?",
+      "blocks": [
+        "ADR-0009"
+      ],
+      "owner": "tech-lead",
+      "status": "answered"
+    },
+    {
+      "id": "R-AI-008",
+      "question": "What does a provider-neutral agent contract look like?",
+      "blocks": [
+        "ADR-0006"
+      ],
+      "owner": "tech-lead",
+      "status": "answered"
+    },
+    {
+      "id": "R-AI-009",
+      "question": "What sandbox network and credential isolation do coding agents need for package, repository and MCP access?",
+      "blocks": [
+        "ADR-0013"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-010",
+      "question": "Persistent workspace versus ephemeral worktree or container — what are the trade-offs?",
+      "blocks": [
+        "ADR-0008",
+        "ADR-0009"
+      ],
+      "owner": "tech-lead",
+      "status": "answered"
+    },
+    {
+      "id": "R-AI-011",
+      "question": "How is Git credential delegation to ephemeral agents done securely?",
+      "blocks": [
+        "ADR-0012"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-012",
+      "question": "What are the correct agent cancellation and timeout semantics?",
+      "blocks": [
+        "ADR-0006"
+      ],
+      "owner": "tech-lead",
+      "status": "answered"
+    },
+    {
+      "id": "R-AI-013",
+      "question": "What model, context and cost metadata is available across providers?",
+      "blocks": [
+        "ADR-0020"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-AI-014",
+      "question": "What is the MCP least-privilege authorization model?",
+      "blocks": [
+        "ADR-0010",
+        "ADR-0011"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-027-1",
+      "question": "How should the reconciliation register be machine-readable without being unreadable?",
+      "blocks": [
+        "T597",
+        "T601"
+      ],
+      "owner": "tech-lead",
+      "status": "answered"
+    },
+    {
+      "id": "R-027-2",
+      "question": "What grain should the clause register use — one row per clause, or per capability?",
+      "blocks": [
+        "T608",
+        "SC-AMD-001"
+      ],
+      "owner": "project-owner",
+      "status": "answered"
+    },
+    {
+      "id": "R-027-3",
+      "question": "Which of the fourteen conformance checks should block CI?",
+      "blocks": [
+        "T632",
+        "blocking policy"
+      ],
+      "owner": "project-owner",
+      "status": "answered"
+    },
+    {
+      "id": "R-027-4",
+      "question": "What knowledge-graph traversal performance is required for impact analysis?",
+      "blocks": [
+        "ADR-0019"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-027-5",
+      "question": "How should the three Rooms share a workflow engine without collapsing into one surface?",
+      "blocks": [
+        "ADR-0018"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-027-6",
+      "question": "What context-assembly latency and token budget is acceptable for curated agent context?",
+      "blocks": [
+        "ADR-0019"
+      ],
+      "owner": "tech-lead",
+      "status": "uninvestigated"
+    },
+    {
+      "id": "R-027-7",
+      "question": "Does self-hosted remain a supported deployment after the SaaS decision?",
+      "blocks": [
+        "D-40"
+      ],
+      "owner": "project-owner",
+      "status": "answered"
+    },
+    {
+      "id": "R-027-8",
+      "question": "Should the Human/AI responsibility model become a platform-wide register in _shared/?",
+      "blocks": [
+        "D-37"
+      ],
+      "owner": "project-owner",
+      "status": "uninvestigated"
+    }
+  ],
+  "adrs": [
+    {
+      "subject": "ADR-0006 AI Agent Gateway and provider independence",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0007 Spec Kit as an embedded engine, not an application dependency",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0008 ProjectExecutionEnvironment abstraction",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0009 Persistent project state versus ephemeral agent execution",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0010 PMI Studio MCP architecture",
+      "status": "open",
+      "awaits": "R-AI-014 and PMI-DOC-004",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0011 Agent context authorization",
+      "status": "open",
+      "awaits": "R-AI-014 and a Context Engine epic that does not exist",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0012 Agent credential isolation",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0013 Controlled network egress",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0014 Source-of-truth boundaries between PostgreSQL, Git, Spec Kit and the agent workspace",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0015 Requirement, Change and Defect governance authority",
+      "status": "open",
+      "awaits": "PMI-DOC-004 and the project owner confirming Finding A",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0016 TDD defect execution policy",
+      "status": "open",
+      "awaits": "the Defect Room epic, which does not exist",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0017 Interactive developer workspace versus autonomous agent sandbox",
+      "status": "open",
+      "awaits": "an interactive workspace epic, which does not exist",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0018 Governed Engineering Loops as a shared workflow abstraction",
+      "status": "open",
+      "awaits": "PMI-DOC-004 and the three Room epics",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0019 Context Engine composition — four capabilities, not one store",
+      "status": "open",
+      "awaits": "D-24 and a Context Engine epic",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0020 Engineering Expert model for registered agents",
+      "status": "decided",
+      "awaits": null,
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0021 Governed Learning — agent observations are not knowledge",
+      "status": "open",
+      "awaits": "PMI-DOC-004 and a Governed Learning epic",
+      "supersedes": null,
+      "superseded_reasoning": null
+    },
+    {
+      "subject": "ADR-0022 Specification compliance and evidence as the differentiator",
+      "status": "open",
+      "awaits": "PMI-DOC-004 and an owning epic for the compliance agent",
+      "supersedes": null,
+      "superseded_reasoning": null
+    }
+  ],
   "preserved_element_changes": [],
   "epic_status_changes": [],
   "impact_report": {
