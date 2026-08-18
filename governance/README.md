@@ -67,6 +67,7 @@ rather than application code.
 | `G-07` | Steering files record a review date | fails on absence, **reports** on staleness |
 | `G-08` | Session labels match the branch convention in use | fails |
 | `G-09` | The closing-report format states the honesty rule | fails |
+| `G-10` | The branch names the epic being worked (`D-39`) | **reports** |
 
 **Why `G-04` is the one that fails CI.** The 2026-08-05 severity split reserved a hard CI failure
 for the check whose failure is otherwise *silent*. Duplicated text reads correctly on the day it is

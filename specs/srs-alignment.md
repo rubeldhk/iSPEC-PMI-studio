@@ -1073,7 +1073,7 @@ across the other 26 epic specifications. Finding A holds.
 | **D-37** | Does the Human/AI responsibility model become a platform-wide register in `_shared/`? | Yes — it is cross-cutting and belongs where the principle register already lives |
 | ~~**D-38**~~ | ~~Is RAID **R-02** (AI cost) re-scored now?~~ | ✅ **Subsumed by `D-41`.** Re-scored, and mitigated structurally rather than by caps alone |
 | ~~**D-41**~~ | ~~SaaS + no BYOK leaves model spend unbounded on PMI Studio's account~~ | ✅ **DECIDED 2026-08-13 — BYOK becomes a near-term requirement.** Tenant-owned AI provider keys; repository access stays per-run minted (`D-27`). Removes the exposure structurally |
-| **D-39** | Should EPIC-018 gain a check comparing branch name to working epic? | Yes — the Constitution VIII lapse has now occurred three times and `G-08` structurally cannot catch it |
+| ~~**D-39**~~ | ~~Should EPIC-018 gain a check comparing branch name to working epic?~~ | ✅ **DECIDED 2026-08-17 — yes, and built.** Eight occurrences across six closing reports; EPIC-027's `plan.md` and `tasks.md` both predicted the eighth in prose and it happened anyway. Delivered as check `G-10` (EPIC-018 `T667`), which **reports** rather than blocks because Constitution VIII is a SHOULD — but names the specific mismatch, which is the sentence `G-08` structurally cannot produce |
 
 ---
 

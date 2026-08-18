@@ -28,7 +28,7 @@ paired unit-test task, written to fail first.
 - [X] T012a [P] Write failing unit tests asserting the generated migration applies the universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) to **every** table, not only `Workspace` and `User`, in `backend/tests/unit/core/universal-columns.spec.ts`
 - [X] T013 Add universal columns (`workspaceId`, `createdAt`) convention and first migration in `backend/prisma/migrations/20260814000000_init/` (unit test: T012a) — **done 2026-08-14**. Prisma installed (`prisma`, `@prisma/client` v5); migration generated **offline** via `prisma migrate diff --from-empty --to-schema-datamodel`, since `prisma migrate dev` needs a live database and none is available here.
 
-  > ⚠️ **The migration has never been applied to a real database.** Its *content* is asserted by `T012a`; its *execution* happens for the first time inside `T453`, which needs a container runtime. Do not report this as a working schema until `T649` runs.
+  > ⚠️ **The migration has never been applied to a real database.** Its *content* is asserted by `T012a`; its *execution* happens for the first time inside `T453`, which needs a container runtime. ~~Do not report this as a working schema until `T649` runs.~~ **`T649` ran 2026-08-17 — the migration has been applied to a real PostgreSQL and the trigger fires.**
   >
   > **Column naming is camelCase**, not the snake_case of `_shared/schema.sql`. `tech-stack.md` makes `schema.prisma` authoritative at implementation and the design DDL "design-level"; the built application reads `workspaceId` throughout. **`createdBy`/`updatedBy` are absent** — recorded as `defects/DEF-004-001-created-by-columns.md`, not invented here.
 
@@ -70,18 +70,21 @@ item nothing produced — and it is the half that survives a bug in the service 
 - [X] T453 [P] Write failing integration test asserting `UPDATE` and `DELETE` against `audit_entries` are rejected **by the database**, not merely absent from the service — issued as raw SQL against a real PostgreSQL via Testcontainers, since a mocked repository cannot fail this (**FR-033**, **SC-012**), in `backend/tests/integration/audit-immutability.spec.ts`
 - [X] T454 Add the shared `reject_mutation()` function and the `audit_entries_immutable` `BEFORE UPDATE OR DELETE` trigger, per `../_shared/schema.sql`, to the migration in `backend/prisma/migrations/` (**FR-033**; integration test: T453; depends on T013). The **function is shared** — EPIC-007 `requirement_versions` and EPIC-009 `specification_versions` attach their own triggers to it and must not redefine it
 
-  > **Written and never executed.** `T453` asserts the trigger against a real PostgreSQL via
-  > Testcontainers, and **no container runtime is available here** (RAID **R-04**). The suite is
-  > collected and skips *by name* under `DOCKER_UNAVAILABLE=1` — it is never silently passed. The
-  > trigger SQL is therefore unverified: `reject_mutation()` has never raised.
+  > ~~**Written and never executed.**~~ **Executed 2026-08-17 by `T649` — all six cases pass.** The
+  > suite was written to skip *by name* under `DOCKER_UNAVAILABLE=1` rather than pass silently, and
+  > that skip was never triggered: these are executions. `reject_mutation()` has now raised.
 
-- [ ] T649 **MANUAL** — run `pnpm test:integration` on a machine with a container runtime; confirm all
+- [X] T649 **MANUAL** — run `pnpm test:integration` on a machine with a container runtime; confirm all
   six `T453` cases pass and record the outcome in `specs/004-workspace-tenancy-audit/closure.md`
   (verifies T013, T454; **FR-033**, **SC-012**)
 
-  > This is the first execution of the migration against a real database and the first proof that
-  > audit immutability is enforced by PostgreSQL rather than asserted in a comment. Phase Z must not
-  > close without it.
+  > **Run 2026-08-17 — all six pass.** Docker 28.3.3 was found to be available on this machine after
+  > all; the suite ran against a real PostgreSQL via Testcontainers in 6.4s. `reject_mutation()` has
+  > now raised: a raw `UPDATE` and a raw `DELETE` issued outside the service layer were both rejected
+  > **by the database**, the row survived intact, and `INSERT` still succeeds — append-only, not
+  > read-only. **`FR-033` and `SC-012` are verified for the first time in this programme**, and the
+  > "written and never executed" warning on `T454` above is discharged. Outcome recorded in
+  > [`closure.md`](./closure.md).
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 

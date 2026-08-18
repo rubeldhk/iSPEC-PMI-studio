@@ -92,6 +92,21 @@ clause that makes a closing report worth reading.*
 - [X] T334 Define the session-labelling convention — label format, where it is applied (terminal, worktree, branch), and when to relabel — in `governance/session-labelling.md` (FR-RGP-014, Constitution VIII; check: T332)
 - [X] T335 Define the closing-report format — Work Completed and Recommended Next Task, plus the rule that unrun checks are never reported as passing and deferred work is never reported as complete — in `governance/closing-report.md` (FR-RGP-015, Constitution IX; check: T333)
 
+- [X] T667 Implement check `G-10` — the branch names the epic being worked — in `tests/governance/branch-epic-correspondence.spec.ts`, per decision **`D-39`** (taken 2026-08-17)
+
+  > **`D-39` taken after eight occurrences.** `G-08` checks a branch name's *format* and cannot check
+  > *correspondence*; every closing report that recorded the lapse said so in the same words. It was
+  > recorded in six closing reports — EPIC-001, EPIC-018, EPIC-028, EPIC-003, EPIC-027 — and EPIC-027's
+  > `plan.md` and `tasks.md` both predicted the eighth in prose before it happened. A prediction in
+  > prose is not a control.
+  >
+  > **Reports rather than blocks.** Constitution VIII is deliberately SHOULD, not MUST: *"the naming
+  > convention is mandatory, its mechanical application is best-effort."* Blocking CI on a SHOULD would
+  > halt unrelated work for a convention breach, which `governance/README.md` names as the condition
+  > that trains people to silence a check. What it does instead is print the specific mismatch —
+  > *"the branch is epic/003-specification-engine (EPIC-003) but the epic being worked is EPIC-027"* —
+  > which is the sentence no previous check could produce.
+
 ---
 
 ## Dependencies
