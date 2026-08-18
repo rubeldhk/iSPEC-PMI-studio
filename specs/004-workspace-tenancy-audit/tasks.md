@@ -40,7 +40,22 @@ paired unit-test task, written to fail first.
 - [X] T014 Implement workspace-scoping query helper enforcing `workspace_id` on every read in `backend/src/core/workspace-scope.ts` (**FR-002**; unit test: T011)
 - [X] T015 [P] Write failing unit tests asserting cross-workspace access returns not-found, never forbidden, in `backend/tests/unit/core/workspace-guard.spec.ts`
 - [X] T016 Implement workspace context guard in `backend/src/core/workspace.guard.ts` (unit test: T015)
-- [ ] T052 [P] [US1] Integration test asserting cross-workspace project access returns not-found and is audited, in `backend/tests/integration/workspace-isolation.spec.ts`
+- [X] T052 [P] [US1] Integration test asserting cross-workspace project access returns not-found and is audited, in `backend/tests/integration/workspace-isolation.spec.ts`
+
+  > **The helper's own output builds the SQL.** `selectWhere()` reads whatever keys `scoped()` put in
+  > `where` and emits one equality per key; nothing in the test knows the word *workspace*. So if the
+  > helper ever stops emitting `workspaceId`, the `WHERE` clause loses the filter and the test sees
+  > the other tenant's row — **it fails by leaking, not by shape**, which is the difference between
+  > this and the unit test.
+  >
+  > Three mutations confirm it: dropping the workspace filter from `scoped()` fails three assertions;
+  > silencing the guard's `onRefused` fails the two audit assertions; making the refusal message
+  > differ from a genuine absence fails the `SC-004` comparison.
+  >
+  > One assertion was wrong on the first run and is worth keeping in mind: asking for another
+  > workspace correctly returns **your own rows**, not an empty set, because the scope is applied
+  > last and wins. An empty-result assertion there would also have passed against a helper producing
+  > a query that matched nothing at all.
 
 ### Project scoping *(added 2026-08-08 — closes analysis finding **C4**)*
 
@@ -48,8 +63,20 @@ paired unit-test task, written to fail first.
 projects service; the generic mechanism that stops content leaking between projects belongs with the
 scoping helper, which lives in this epic.*
 
-- [ ] T455 [P] [US1] Write failing unit tests asserting the scoping helper enforces `project_id` on project-scoped reads with no leakage between projects, and that project scoping composes with workspace scoping rather than replacing it (**FR-003**), in `backend/tests/unit/core/project-scope.spec.ts`
-- [ ] T456 [US1] Extend the scoping query helper to apply project scoping alongside workspace scoping in `backend/src/core/workspace-scope.ts` (**FR-003**; unit test: T455)
+- [X] T455 [P] [US1] Write failing unit tests asserting the scoping helper enforces `project_id` on project-scoped reads with no leakage between projects, and that project scoping composes with workspace scoping rather than replacing it (**FR-003**), in `backend/tests/unit/core/project-scope.spec.ts`
+- [X] T456 [US1] Extend the scoping query helper to apply project scoping alongside workspace scoping in `backend/src/core/workspace-scope.ts` (**FR-003**; unit test: T455)
+
+  > **Composition, not substitution.** `projectScoped` delegates to `scoped()` rather than filtering
+  > on `projectId` beside it. The tempting implementation reasons that a project belongs to exactly
+  > one workspace, so the workspace filter is redundant — but tenancy is enforced by the filter,
+  > never by an id's provenance. A guessed, leaked or copied project id reaches another tenant's
+  > content with **no boundary at all**. Delegating means the workspace scope cannot be dropped
+  > without deleting a call.
+  >
+  > Two mutations confirm the tests can fail: making project scoping *replace* workspace scoping
+  > fails three assertions including the headline one; reversing the spread so a caller's `projectId`
+  > wins fails two. `projectScopedCreate` is included because a row is only reachable by a scoped
+  > read if something stamped both ids on it.
 
 ## F-13.1 · Audit trail
 
@@ -86,6 +113,21 @@ item nothing produced — and it is the half that survives a bug in the service 
   > "written and never executed" warning on `T454` above is discharged. Outcome recorded in
   > [`closure.md`](./closure.md).
 
+---
+
+## Phase 1: Convergence *(appended 2026-08-18 by `/speckit-converge`, task `T174`)*
+
+*Four findings, all `partial` — nothing in this epic is missing, and two things it built are
+unreachable. `F1` is the gap `EnginesModule` already names in its own header from `T462`:
+**"fully built, fully tested, and unreachable."* The audit layer is the same shape, still open, in
+the epic that owns `FR-033`.*
+
+- [X] T674 Provide `AuditService` and `AuditController` from `AuditModule` behind an injectable `AuditWriter` token, following the `EnginesModule`/`T462` factory-provider pattern, so the API exposes `/v1/audit` and only the persistence adapter remains outstanding, in `backend/src/modules/audit/audit.module.ts` per **FR-033** (partial) — HIGH
+- [X] T674a [P] Write failing unit tests asserting the module provides the service and registers the controller, and that the writer is supplied by token rather than constructed, in `backend/tests/unit/audit/audit.module.spec.ts` (Constitution V; covers T674)
+- [X] T675 Record that `assertSameWorkspace` has no production caller — no endpoint yet fetches a workspace-scoped resource — and name the epic that supplies the first one, in `specs/004-workspace-tenancy-audit/closure.md` per **FR-002**, **SC-004** (partial) — HIGH
+- [X] T676 Re-scope the `plan.md` definition-of-done items for quickstart `V2` and `V12` with a named owner: both need sign-in (EPIC-005, held) and a persistence adapter, so neither is dischargeable by this epic alone, in `specs/004-workspace-tenancy-audit/closure.md` per **plan: definition of done** (partial) — MEDIUM
+- [X] T677 Add the divergence note `DEF-004-001`'s recommended resolution calls for to `specs/_shared/schema.sql`, and close the defect as deferred to EPIC-005 with that owner recorded, per **Constitution VI** (partial) — MEDIUM
+
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
 *Per-epic gate, discharged by this epic **alone** — it waits on no other epic. Each task writes to
@@ -93,7 +135,7 @@ item nothing produced — and it is the half that survives a bug in the service 
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T173 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/004-workspace-tenancy-audit/closure.md`
-- [ ] T174 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/004-workspace-tenancy-audit/closure.md`
-- [ ] T175 Triage `specs/004-workspace-tenancy-audit/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/004-workspace-tenancy-audit/closure.md`
-- [ ] T176 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/004-workspace-tenancy-audit/closure.md`
+- [X] T173 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/004-workspace-tenancy-audit/closure.md`
+- [X] T174 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/004-workspace-tenancy-audit/closure.md`
+- [X] T175 Triage `specs/004-workspace-tenancy-audit/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/004-workspace-tenancy-audit/closure.md`
+- [X] T176 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/004-workspace-tenancy-audit/closure.md`

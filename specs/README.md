@@ -29,7 +29,7 @@ divergent truths.
 
 ## Epics
 
-### ▶ Proceeding — 89 tasks
+### ▶ Proceeding — 89 tasks *(EPIC-001, EPIC-003 and EPIC-004 all CLOSED 2026-08-17/18 — the foundation trio is complete)*
 
 Buildable now. Nothing here depends on the Business Requirement Specification.
 
@@ -37,7 +37,7 @@ Buildable now. Nothing here depends on the Business Requirement Specification.
 |------|-------|--------|-------|
 | [EPIC-001](./001-platform-foundation/) | Platform Foundation | M-00 | 47 ✅ **CLOSED 2026-08-17** — [closure.md](./001-platform-foundation/closure.md) |
 | [EPIC-003](./003-specification-engine/) | Specification Engine & Sandbox | M-08 | 39 ✅ **CLOSED 2026-08-17** — [closure.md](./003-specification-engine/closure.md). `T138` routed to EPIC-013 (`C-29`) |
-| [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 19 — `T649` **verified 2026-08-17**: the migration ran against a real PostgreSQL and `reject_mutation()` raised. **`FR-033` and `SC-012` proven for the first time.** [closure.md](./004-workspace-tenancy-audit/closure.md) |
+| [EPIC-004](./004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | M-01 / M-13 | 29 ✅ **CLOSED 2026-08-18** — 29/29 including 4 convergence findings. Project scoping (`FR-003`) built, cross-workspace isolation proven against a real PostgreSQL, and the audit layer made **reachable** — it was `@Module({})`, the same *"fully built, fully tested, and unreachable"* gap `T462` found in EnginesModule. [closure.md](./004-workspace-tenancy-audit/closure.md) |
 
 ### ⏸ Held — 199 tasks
 

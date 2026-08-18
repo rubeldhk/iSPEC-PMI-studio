@@ -1,4 +1,5 @@
-import { Controller, Get, Query, Req } from '@nestjs/common';
+import { Controller, Get, Inject, Query, Req } from '@nestjs/common';
+import { AUDIT_READER } from './audit.tokens.js';
 import { scoped } from '../../core/workspace-scope.js';
 import { requireWorkspaceContext, type WorkspaceContext } from '../../core/workspace.guard.js';
 
@@ -26,7 +27,12 @@ export interface AuditListFilters {
 
 @Controller('audit')
 export class AuditController {
-  constructor(private readonly reader: AuditReader) {}
+  // T674 — injected BY TOKEN. `AuditReader` is an interface and erases at
+  // compile time, so Nest has no metadata to resolve and would fail to
+  // instantiate this controller. Asserting the module's metadata alone would
+  // not have caught that: the wiring looks right and the container still
+  // cannot build it.
+  constructor(@Inject(AUDIT_READER) private readonly reader: AuditReader) {}
 
   @Get()
   async list(

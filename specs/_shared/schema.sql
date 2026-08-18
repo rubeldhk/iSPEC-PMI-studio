@@ -48,6 +48,21 @@ CREATE TYPE job_failure_reason      AS ENUM (
 -- Workspace & identity  (FR-002)
 -- Every table below carries workspace_id. Not a convention — the scoping
 -- helper enforces it on every read, so a missing filter fails a test.
+--
+-- KNOWN DIVERGENCE — created_by / updated_by  (DEF-004-001, deferred to EPIC-005)
+-- This file carries created_by / updated_by in 10 places. The implemented
+-- schema (backend/prisma/schema.prisma and migration 20260814000000_init)
+-- carries NONE of them, deliberately.
+--
+-- They are deferred to EPIC-005 (Identity), which supplies the actor that
+-- gives them a value. Adding them now would mean nullable provenance on every
+-- write path, revisited in full when identity lands — weak provenance recorded
+-- as if it were strong. audit_entries already answers "who" via actor_id; a
+-- created_by there would be a second answer to one question (PP-002).
+--
+-- This note exists so the next reader finds the decision instead of the gap,
+-- and does not re-raise it. Do not "fix" the divergence by editing this file
+-- alone: the columns land with EPIC-005's actor propagation or not at all.
 -- ---------------------------------------------------------------------
 CREATE TABLE workspaces (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

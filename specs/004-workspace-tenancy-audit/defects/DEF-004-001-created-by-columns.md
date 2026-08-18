@@ -1,6 +1,6 @@
 # DEF-004-001 — `created_by` / `updated_by` are in the design DDL and absent from the schema
 
-**Epic**: `EPIC-004` | **Raised**: 2026-08-14 | **Status**: OPEN
+**Epic**: `EPIC-004` | **Raised**: 2026-08-14 | **Status**: **CLOSED — DEFERRED 2026-08-18** (`T677`)
 **Originating task**: `T013` (first migration) · found while writing `T012a`
 **Severity**: MEDIUM — no current requirement fails, but the convention is stated in two places and honoured in one
 
@@ -66,3 +66,23 @@ carry a note saying so, otherwise the next reader finds the same gap and re-rais
 - Test that would have asserted it: `backend/tests/unit/core/universal-columns.spec.ts` (`T012a`) —
   deliberately does **not** assert these columns; the reason is in its header comment
 - Blocks: nothing. Recorded so it is not rediscovered.
+
+---
+
+## Resolution — 2026-08-18, task `T677`
+
+**Option C taken: deferred to EPIC-005 (Identity), which supplies the actor the columns need.**
+
+Owner: **EPIC-005**. The columns land together with actor propagation, or not at all — adding them
+first would mean nullable provenance on every write path, revisited in full when identity arrives.
+Weak provenance recorded as if it were strong is worse than a recorded gap.
+
+The defect's own recommendation asked for one thing beyond the decision: *"`_shared/schema.sql`
+should carry a note saying so, otherwise the next reader finds the same gap and re-raises it."*
+That note did not exist until now, which is what convergence finding `F4` caught. It is now in
+`specs/_shared/schema.sql` above the workspace tables, naming the divergence, the owner and the
+reason.
+
+**Closed as deferred, not as fixed.** The schema still diverges from the design DDL. What changed is
+that the divergence is now recorded in the file a reader consults, with a named owner — which is the
+condition Constitution VI sets for closing a record without changing the code.
