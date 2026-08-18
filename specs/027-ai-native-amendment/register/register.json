@@ -2,7 +2,7 @@
   "version": "1.0",
   "generated_from": {
     "clauses.md": "3a60edbd356ccbc8e6497c51463c098ebb65b7696c2223527cb5549680baca49",
-    "verdicts.md": "389a06366723aa8b9d0997f958ee5be5f64cf38892623e7007c62fca2ed838c2",
+    "verdicts.md": "425fc44dcae439a0f15e20bf1f40ce5a04811b0c781ec6d89feea6f0f02907a9",
     "capabilities.md": "d8eca76df02a76bfa070168e5609054f205d71559897982f0449999ad783fee6",
     "capability-areas.md": "b2392b6d1803517551cafc7282bb33c08a0045543f1ee85f96397427648f130f",
     "premises.md": "f31542a037175598331f20e518fb3ad4459ee22d01b01e28757757a1c85951a9",
@@ -6711,9 +6711,9 @@
     {
       "clause": "CLA-023",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-008",
+      "reasoning": "EPIC-008 Specification Authoring and Generation owns this and is held. The amendment widens the capability rather than introducing it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-008",
       "new_identifier": null,
       "necessity": null
     },
@@ -6729,18 +6729,18 @@
     {
       "clause": "CLA-025",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-016",
+      "reasoning": "EPIC-016 Architecture Decision Records owns the product capability and is held; this repository already keeps its own decisions in adr/",
+      "action": "held behind PMI-DOC-004; widen within EPIC-016",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-026",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-016",
+      "reasoning": "EPIC-016 Architecture Decision Records owns the product capability and is held; this repository already keeps its own decisions in adr/",
+      "action": "held behind PMI-DOC-004; widen within EPIC-016",
       "new_identifier": null,
       "necessity": null
     },
@@ -6756,54 +6756,54 @@
     {
       "clause": "CLA-028",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-008",
+      "reasoning": "EPIC-008 Specification Authoring and Generation owns this and is held. The amendment widens the capability rather than introducing it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-008",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-029",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-012",
+      "reasoning": "EPIC-012 Workflow and Tasks owns decomposition and task generation and is held. The amendment widens what the capability must do; it does not introduce it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-012",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-030",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-012",
+      "reasoning": "EPIC-012 Workflow and Tasks owns decomposition and task generation and is held. The amendment widens what the capability must do; it does not introduce it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-012",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-031",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-012",
+      "reasoning": "EPIC-012 Workflow and Tasks owns decomposition and task generation and is held. The amendment widens what the capability must do; it does not introduce it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-012",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-032",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-012",
+      "reasoning": "EPIC-012 Workflow and Tasks owns decomposition and task generation and is held. The amendment widens what the capability must do; it does not introduce it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-012",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-033",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-012",
+      "reasoning": "EPIC-012 Workflow and Tasks owns decomposition and task generation and is held. The amendment widens what the capability must do; it does not introduce it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-012",
       "new_identifier": null,
       "necessity": null
     },
@@ -6828,9 +6828,9 @@
     {
       "clause": "CLA-036",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-008",
+      "reasoning": "EPIC-008 Specification Authoring and Generation owns this and is held. The amendment widens the capability rather than introducing it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-008",
       "new_identifier": null,
       "necessity": null
     },
@@ -6873,9 +6873,9 @@
     {
       "clause": "CLA-041",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-012",
+      "reasoning": "EPIC-012 Workflow and Tasks owns decomposition and task generation and is held. The amendment widens what the capability must do; it does not introduce it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-012",
       "new_identifier": null,
       "necessity": null
     },
@@ -6945,9 +6945,9 @@
     {
       "clause": "CLA-049",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-021",
+      "reasoning": "EPIC-021 Review Gates and Roles owns approval gates and is held. PP-003 already binds the programme; Cosmos section 7 adds risk-adaptive banding",
+      "action": "held behind PMI-DOC-004; widen within EPIC-021",
       "new_identifier": null,
       "necessity": null
     },
@@ -6963,27 +6963,27 @@
     {
       "clause": "CLA-051",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-024",
+      "reasoning": "EPIC-024 Artifact Access Control owns authorization and is held. The amendment adds role definitions and organization-to-decision scoping",
+      "action": "held behind PMI-DOC-004; widen within EPIC-024",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-052",
       "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "owner": "EPIC-024",
+      "reasoning": "EPIC-024 Artifact Access Control owns authorization and is held. The amendment adds role definitions and organization-to-decision scoping",
+      "action": "held behind PMI-DOC-004; widen within EPIC-024",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-053",
-      "verdict": "needs-enhancement",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "A capability the amendment says PMI Studio SHOULD own. Most are specified somewhere in the held product surface; where nothing owns one it is recorded as native with no home rather than assumed covered",
-      "action": "classified in register/capabilities.md as native; owning epic named where one exists",
+      "verdict": "already-covered",
+      "owner": "EPIC-004",
+      "reasoning": "Append-only audit already exists and is asserted by FR-033. EPIC-004 built it; the amendment adds no obligation this does not already meet",
+      "action": "none; already delivered by EPIC-004",
       "new_identifier": null,
       "necessity": null
     },
@@ -8295,9 +8295,9 @@
     {
       "clause": "CLA-199",
       "verdict": "conflicting",
-      "owner": "EPIC-009",
-      "reasoning": "C-23, the deepest design question in the amendment: the same specification would exist as a PostgreSQL row and as tracked markdown. D-29 resolved it — Postgres authoritative, markdown a one-way projection, an agent editing markdown produces a proposal and never a fact. Accepted cost recorded: the repo tree can visibly drift between regenerations",
-      "action": "D-29 governs; EPIC-009 owns specification lifecycle and stays held",
+      "owner": "NO-EXISTING-COVERAGE",
+      "reasoning": "Part of the Defect Room workflow, which the amendment calls existing and the corpus does not contain (Finding A). Recorded as conflicting rather than missing because the premise is false, not merely unimplemented — and how that is resolved changes the size of the programme",
+      "action": "new held epic behind PMI-DOC-004; sized as a build",
       "new_identifier": null,
       "necessity": null
     },
@@ -8564,10 +8564,10 @@
     },
     {
       "clause": "CLA-229",
-      "verdict": "conflicting",
-      "owner": "EPIC-009",
-      "reasoning": "C-23, the deepest design question in the amendment: the same specification would exist as a PostgreSQL row and as tracked markdown. D-29 resolved it — Postgres authoritative, markdown a one-way projection, an agent editing markdown produces a proposal and never a fact. Accepted cost recorded: the repo tree can visibly drift between regenerations",
-      "action": "D-29 governs; EPIC-009 owns specification lifecycle and stays held",
+      "verdict": "needs-enhancement",
+      "owner": "NO-EXISTING-COVERAGE",
+      "reasoning": "No existing requirement covers this clause directly. Recorded as an enhancement of the surrounding capability rather than a new identifier, per FR-AMD-003",
+      "action": "named in the impact report; no new identifier created",
       "new_identifier": null,
       "necessity": null
     },
@@ -8915,10 +8915,10 @@
     },
     {
       "clause": "CLA-268",
-      "verdict": "conflicting",
-      "owner": "EPIC-009",
-      "reasoning": "C-23, the deepest design question in the amendment: the same specification would exist as a PostgreSQL row and as tracked markdown. D-29 resolved it — Postgres authoritative, markdown a one-way projection, an agent editing markdown produces a proposal and never a fact. Accepted cost recorded: the repo tree can visibly drift between regenerations",
-      "action": "D-29 governs; EPIC-009 owns specification lifecycle and stays held",
+      "verdict": "needs-enhancement",
+      "owner": "PP-003",
+      "reasoning": "The prohibition side of the same principle. PMI Studio controls state transitions and agents propose rather than approve. Enforceable only once the Rooms and the lifecycle exist, so it lands with them",
+      "action": "lands with the Rooms; recorded as a governance rule now",
       "new_identifier": null,
       "necessity": null
     },
@@ -9257,10 +9257,10 @@
     },
     {
       "clause": "CLA-306",
-      "verdict": "conflicting",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "Part of the Defect Room workflow, which the amendment calls existing and the corpus does not contain (Finding A). Recorded as conflicting rather than missing because the premise is false, not merely unimplemented — and how that is resolved changes the size of the programme",
-      "action": "new held epic behind PMI-DOC-004; sized as a build",
+      "verdict": "needs-enhancement",
+      "owner": "EPIC-012",
+      "reasoning": "EPIC-012 Workflow and Tasks owns decomposition and task generation and is held. The amendment widens what the capability must do; it does not introduce it",
+      "action": "held behind PMI-DOC-004; widen within EPIC-012",
       "new_identifier": null,
       "necessity": null
     },
@@ -9347,19 +9347,19 @@
     },
     {
       "clause": "CLA-316",
-      "verdict": "conflicting",
-      "owner": "EPIC-009",
-      "reasoning": "C-23, the deepest design question in the amendment: the same specification would exist as a PostgreSQL row and as tracked markdown. D-29 resolved it — Postgres authoritative, markdown a one-way projection, an agent editing markdown produces a proposal and never a fact. Accepted cost recorded: the repo tree can visibly drift between regenerations",
-      "action": "D-29 governs; EPIC-009 owns specification lifecycle and stays held",
+      "verdict": "needs-enhancement",
+      "owner": "NO-EXISTING-COVERAGE",
+      "reasoning": "No existing requirement covers this clause directly. Recorded as an enhancement of the surrounding capability rather than a new identifier, per FR-AMD-003",
+      "action": "named in the impact report; no new identifier created",
       "new_identifier": null,
       "necessity": null
     },
     {
       "clause": "CLA-317",
-      "verdict": "conflicting",
-      "owner": "EPIC-009",
-      "reasoning": "C-23, the deepest design question in the amendment: the same specification would exist as a PostgreSQL row and as tracked markdown. D-29 resolved it — Postgres authoritative, markdown a one-way projection, an agent editing markdown produces a proposal and never a fact. Accepted cost recorded: the repo tree can visibly drift between regenerations",
-      "action": "D-29 governs; EPIC-009 owns specification lifecycle and stays held",
+      "verdict": "needs-enhancement",
+      "owner": "NO-EXISTING-COVERAGE",
+      "reasoning": "No existing requirement covers this clause directly. Recorded as an enhancement of the surrounding capability rather than a new identifier, per FR-AMD-003",
+      "action": "named in the impact report; no new identifier created",
       "new_identifier": null,
       "necessity": null
     },
@@ -10330,8 +10330,8 @@
       "clause": "CLA-425",
       "verdict": "needs-enhancement",
       "owner": "PP-003",
-      "reasoning": "PP-003 Human-in-the-Loop already binds the programme. The amendment makes it CHECKABLE rather than aspirational by splitting Human Decision from AI Recommendation from AI Execution, and Cosmos 7 adds risk-adaptive banding so not every action needs approval",
-      "action": "record the Human/AI responsibility register in _shared/platform-spec.md (D-37, open)",
+      "reasoning": "The prohibition side of the same principle. PMI Studio controls state transitions and agents propose rather than approve. Enforceable only once the Rooms and the lifecycle exist, so it lands with them",
+      "action": "lands with the Rooms; recorded as a governance rule now",
       "new_identifier": null,
       "necessity": null
     },
@@ -10904,10 +10904,10 @@
     },
     {
       "clause": "CLA-489",
-      "verdict": "conflicting",
-      "owner": "NO-EXISTING-COVERAGE",
-      "reasoning": "Part of the Defect Room workflow, which the amendment calls existing and the corpus does not contain (Finding A). Recorded as conflicting rather than missing because the premise is false, not merely unimplemented — and how that is resolved changes the size of the programme",
-      "action": "new held epic behind PMI-DOC-004; sized as a build",
+      "verdict": "already-covered",
+      "owner": "FR-AMD-009",
+      "reasoning": "A documentation instruction about how the reconciliation should be recorded, not a product capability. FR-AMD-009 owns the impact report that discharges it, and the three Rooms it names are classified individually",
+      "action": "discharged by impact-report.md sections 16, 17 and 18",
       "new_identifier": null,
       "necessity": null
     },

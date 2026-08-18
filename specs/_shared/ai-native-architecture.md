@@ -483,3 +483,23 @@ Stated so nobody assumes oversight:
   re-scored — autonomous multi-agent execution raises the exposure materially, and this is the
   second epic to say so (EPIC-017 said it first).
 
+---
+
+## Reconciliation outcome — EPIC-027, 2026-08-17
+
+This document records the *target seams*. The **reconciliation** that classified the amendment against
+the corpus is EPIC-027, and its outputs are linked rather than restated here (PP-002):
+
+| Artifact | What it holds |
+|---|---|
+| [`impact-report.md`](../027-ai-native-amendment/impact-report.md) | The §18 twenty-five-section report, ending in the three-band sequence |
+| [`register/clauses.md`](../027-ai-native-amendment/register/clauses.md) | 599 clauses from five documents, one row each |
+| [`register/verdicts.md`](../027-ai-native-amendment/register/verdicts.md) | One verdict per clause, with owner and reasoning |
+| [`register/capability-areas.md`](../027-ai-native-amendment/register/capability-areas.md) | The twenty areas, each with a verdict, a home and a posture |
+| [`register/premises.md`](../027-ai-native-amendment/register/premises.md) | Finding A's evidence — the searches, counts and locations |
+| [`adr/`](../../adr/) | `ADR-0006`–`ADR-0022`, the seventeen subjects Native §27 and Cosmos §9 name |
+
+**Three findings bear directly on the architecture above**: three of the four proceeding capability
+areas are now BUILT by EPIC-028; three capability areas have **no owning epic** (Governed Engineering
+Loops, Governed Learning, Specification Compliance Agent); and four decided components have **no home**
+(SaaS substrate, egress proxy, credential broker, BYOK).

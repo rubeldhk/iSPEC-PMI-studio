@@ -194,10 +194,10 @@ mean writing it twice.
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T637 [P] **Mutation-test the register checks** — delete one verdict row from `register/verdicts.md`, confirm `G-27-01` names the orphaned `CLA-###` and turns red, restore it, and record the result
-- [ ] T638 [P] Cross-check the register against `specs/srs-alignment.md` Part 8 so `C-19`–`C-26` and `D-20`–`D-41` are **cited, not restated** (PP-002)
-- [ ] T639 Run quickstart `V1`–`V14` and record every result, distinguishing passes from unrun
-- [ ] T640 [P] Fold the report's conclusions into `specs/_shared/ai-native-architecture.md` and `specs/srs-alignment.md` — links only, no duplication
+- [X] T637 [P] **Mutation-test the register checks** — delete one verdict row from `register/verdicts.md`, confirm `G-27-01` names the orphaned `CLA-###` and turns red, restore it, and record the result
+- [X] T638 [P] Cross-check the register against `specs/srs-alignment.md` Part 8 so `C-19`–`C-26` and `D-20`–`D-41` are **cited, not restated** (PP-002)
+- [X] T639 Run quickstart `V1`–`V14` and record every result, distinguishing passes from unrun
+- [X] T640 [P] Fold the report's conclusions into `specs/_shared/ai-native-architecture.md` and `specs/srs-alignment.md` — links only, no duplication
 
   > **No conformance check, deliberately** — the same ruling EPIC-028 `T590` records. No
   > `specs/_shared/*.md` or `specs/srs-alignment.md` in this corpus has one; EPIC-018's suite covers
@@ -209,11 +209,11 @@ mean writing it twice.
 
 ## Phase Z: Epic Closure (MANDATORY — Constitution IV, VI, VII, IX)
 
-- [ ] T641 Confirm every task's conformance check passes, **and** that the governance project collects a non-zero test count
-- [ ] T642 Run `/speckit-converge`; append and complete any remaining unbuilt work
-- [ ] T643 Triage `specs/027-ai-native-amendment/defects/`; every record closed or deferred to a named Epic
-- [ ] T644 **Sample ten clauses spanning all five documents and confirm each verdict survives reading** — the one thing the checks cannot check
-- [ ] T645 Publish the Epic closing report: work completed, work deferred, and the recommended next command (Constitution IX)
+- [X] T641 Confirm every task's conformance check passes, **and** that the governance project collects a non-zero test count
+- [X] T642 Run `/speckit-converge`; append and complete any remaining unbuilt work
+- [X] T643 Triage `specs/027-ai-native-amendment/defects/`; every record closed or deferred to a named Epic
+- [X] T644 **Sample ten clauses spanning all five documents and confirm each verdict survives reading** — the one thing the checks cannot check
+- [X] T645 Publish the Epic closing report: work completed, work deferred, and the recommended next command (Constitution IX)
 
   > `T644` exists because the checks verify the register is **complete and internally consistent**,
   > never that a clause marked *already covered* is genuinely covered. If nine of ten hold, the

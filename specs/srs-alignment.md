@@ -1459,3 +1459,29 @@ Resolver is the same abstraction argument one layer up from `CreateImplementatio
 **Three of the twenty areas now have no owning epic** — Governed Engineering Loops, Governed
 Learning, Specification Compliance. All three are product surface and therefore **held** behind
 `PMI-DOC-004`, so nothing is blocked by leaving them unassigned until the reconciliation reports.
+
+## Part 11 — The reconciliation is complete (EPIC-027, 2026-08-17)
+
+`C-19`–`C-26` and `D-20`–`D-42` above were **raised** by the amendment and are **resolved or recorded
+as open** by EPIC-027. That epic produced the §18 report §17 requires before new implementation tasks
+exist.
+
+**Linked, not restated** — this register remains the authority on decisions; EPIC-027's register is the
+authority on clause-level classification:
+
+- [`impact-report.md`](027-ai-native-amendment/impact-report.md) — the twenty-five sections
+- [`register/`](027-ai-native-amendment/register/) — 599 clauses, 599 verdicts, 45 capabilities, 20
+  areas, 20 premises, 17 ADRs, 22 research items, 17 decisions
+- [`quickstart-results.md`](027-ai-native-amendment/quickstart-results.md) — all fourteen scenarios
+
+**What the reconciliation changed in this register**: nothing. No `C-` or `D-` row was reopened; the
+seven open decisions (`D-23`, `D-24`, `D-30`, `D-34`, `D-36`, `D-37`, `D-39`) remain open with their
+recommendations. `FR-AMD-018` permits reopening only on genuine architectural conflict, and none arose.
+
+**What it added**: two open decisions of its own — **`UNOWNED-1`** (three capability areas with no
+epic) and **`UNOWNED-2`** (four decided architectural components with no home). Both are §18.25
+material.
+
+**And one measured result worth recording here**: `epic_status_changes` is **empty**. 599 clauses
+classified, twenty capability areas assigned, and **no epic's delivery posture changed**. `G-27-14`
+blocks CI if that stops being true.

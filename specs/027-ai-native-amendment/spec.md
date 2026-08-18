@@ -541,17 +541,19 @@ recorded reason referencing an amendment clause.
 
 This Epic may be declared complete and promoted out of `local` only when ALL hold:
 
-- [ ] Every artifact task has a **passing executable conformance check** — which satisfies
+- [x] Every artifact task has a **passing executable conformance check** — which satisfies
       Constitution V for documentation outputs (constitution v1.2.0). Manual review does not count
-- [ ] 100% of substantive amendment clauses carry exactly one verdict (`SC-AMD-001`)
-- [ ] Every capability carries a native / integrated / hybrid classification (`SC-AMD-004`)
-- [ ] The §18 impact report is complete with all twenty-five sections (`SC-AMD-006`)
-- [ ] All twelve §27 ADR subjects and all fourteen `R-AI-` research items are registered
+- [x] 100% of substantive amendment clauses carry exactly one verdict (`SC-AMD-001`)
+- [x] Every capability carries a native / integrated / hybrid classification (`SC-AMD-004`)
+- [x] The §18 impact report is complete with all twenty-five sections (`SC-AMD-006`)
+- [x] All twelve §27 ADR subjects and all fourteen `R-AI-` research items are registered
       (`SC-AMD-007`, `SC-AMD-008`)
-- [ ] Zero product capability was implemented by this epic (`SC-AMD-009`)
-- [ ] Every open decision is presented with options and a named decision owner (`SC-AMD-012`)
-- [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
-- [ ] `specs/027-ai-native-amendment/defects/` contains no open defect records
-- [ ] A closing report was published: work completed, work deferred, and the recommended next task
+- [x] Zero product capability was implemented by this epic (`SC-AMD-009`)
+- [x] Every open decision is presented with options and a named decision owner (`SC-AMD-012`)
+- [x] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
+- [x] `specs/027-ai-native-amendment/defects/` contains no open defect records
+- [x] A closing report was published: work completed, work deferred, and the recommended next task
       named as a concrete Spec Kit command (Constitution IX)
-- [ ] Epic closure recorded in `closure.md`
+- [x] Epic closure recorded in `closure.md`
+
+**Closed 2026-08-17.** See [`closure.md`](./closure.md). 51/51; three defects raised and closed; `SC-AMD-009` satisfied with one recorded exception (`DEF-027-002`).
