@@ -3,8 +3,8 @@
   "generated_from": {
     "clauses.md": "3a60edbd356ccbc8e6497c51463c098ebb65b7696c2223527cb5549680baca49",
     "verdicts.md": "389a06366723aa8b9d0997f958ee5be5f64cf38892623e7007c62fca2ed838c2",
-    "capabilities.md": "086d626050e4a1444b09d0cda8a6f95b09b4190d8aa3f9d3c91976a7fa4dbce9",
-    "capability-areas.md": "2a77b1ad6ccde5d8893d7b26f0ebd1bab67dfcd4e3dca9706142f4a4f0b756ca",
+    "capabilities.md": "d8eca76df02a76bfa070168e5609054f205d71559897982f0449999ad783fee6",
+    "capability-areas.md": "b2392b6d1803517551cafc7282bb33c08a0045543f1ee85f96397427648f130f",
     "premises.md": "f31542a037175598331f20e518fb3ad4459ee22d01b01e28757757a1c85951a9",
     "decisions.md": "13e5ee7b632ff8a0fafda2018d2c0367825eb3dd739391587445a14818276b6f",
     "research.md": "241f819e9609f021340c5f59ddf00a8f3ab26690871569bf0490cbd4db684e1c",
@@ -11902,8 +11902,535 @@
       "necessity": null
     }
   ],
-  "capabilities": [],
-  "capability_areas": [],
+  "capabilities": [
+    {
+      "id": "CAP-001",
+      "capability": "Requirement gathering and capture",
+      "ownership": "native",
+      "reason": "PMI Studio must control the intake of business intent to maintain its end-to-end workflow; everything downstream traces to it",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-002",
+      "capability": "Requirement clarification and ambiguity detection",
+      "ownership": "native",
+      "reason": "The clarification loop is where governance begins; delegating it would put the decision record outside the platform that must answer for it",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-003",
+      "capability": "Requirement approval and baselining",
+      "ownership": "native",
+      "reason": "Approval state is governance state, and Native §22 makes PostgreSQL authoritative for it. Control is the whole point",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-004",
+      "capability": "Acceptance criteria",
+      "ownership": "native",
+      "reason": "Acceptance criteria are what specification compliance is evaluated against; an external owner would break the evidence chain",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-005",
+      "capability": "Specification management",
+      "ownership": "native",
+      "reason": "The differentiated capability. EPIC-008 and EPIC-009 own authoring and lifecycle",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-008",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-006",
+      "capability": "Constraint management",
+      "ownership": "native",
+      "reason": "Constraints bind specification generation and agent execution; both are PMI Studio surfaces",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-007",
+      "capability": "Decision records and architecture decisions",
+      "ownership": "native",
+      "reason": "ADRs are governance memory. EPIC-016 owns the product capability; this repository already keeps its own in adr/",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-016",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-008",
+      "capability": "Requirement-to-implementation traceability",
+      "ownership": "native",
+      "reason": "Traceability is the thing that makes impact analysis answerable from structured relationships rather than LLM inference (§10)",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-011",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-009",
+      "capability": "Specification-driven planning",
+      "ownership": "native",
+      "reason": "PMI Studio must control planning to keep plan, spec and task in one governed chain",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-008",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-010",
+      "capability": "Epic, feature and task decomposition",
+      "ownership": "native",
+      "reason": "Decomposition is where governance granularity is set; EPIC-012 owns workflow and tasks",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-012",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-011",
+      "capability": "Dependency analysis and implementation sequencing",
+      "ownership": "native",
+      "reason": "Sequencing decisions are programme decisions and must be answerable from the graph",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-012",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-012",
+      "capability": "AI-assisted estimation and risk analysis",
+      "ownership": "hybrid",
+      "reason": "PMI Studio owns the estimate of record and its evidence; the reasoning may come from any registered agent",
+      "abstraction_boundary": "AgentGateway.execute()",
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-013",
+      "capability": "Planning validation",
+      "ownership": "native",
+      "reason": "PMI Studio must control validation gates because they decide whether work is complete; a gate an external tool owns is a gate PMI Studio cannot enforce",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-015",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-014",
+      "capability": "Agent registry and agent assignment",
+      "ownership": "native",
+      "reason": "Which agent may do what is an authorization decision, so PMI Studio must own it. BUILT by EPIC-028 as AgentRegistry",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-028",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-015",
+      "capability": "AI code generation and reasoning",
+      "ownership": "integrated",
+      "reason": "PMI Studio does not need to generate code itself to maintain its workflow, and Cosmos §2 forbids competing as a coding IDE. Claude, Codex, Cursor and Augment are interchangeable execution engines",
+      "abstraction_boundary": "AgentGateway.execute()",
+      "existing_home": "EPIC-028",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-016",
+      "capability": "Model selection and multi-model routing",
+      "ownership": "hybrid",
+      "reason": "Selection policy is native because it encodes cost, security classification and task suitability; the routing mechanism beneath it may be an external gateway (D-30, open)",
+      "abstraction_boundary": "AgentGateway descriptor negotiation",
+      "existing_home": "EPIC-028",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-017",
+      "capability": "Agent permissions and execution policies",
+      "ownership": "native",
+      "reason": "Least privilege is a governance control and cannot be delegated to the thing being constrained",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-028",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-018",
+      "capability": "Agent context preparation",
+      "ownership": "native",
+      "reason": "Context curation decides what an agent may see, which is an access-control decision (Native §11)",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-019",
+      "capability": "Agent activity tracking and execution records",
+      "ownership": "native",
+      "reason": "Provenance is evidence. BUILT by EPIC-028 as AgentExecutionRecord, carrying no prompt and no model output",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-028",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-020",
+      "capability": "Human/AI responsibility boundaries",
+      "ownership": "native",
+      "reason": "The split between human decision, AI recommendation and AI execution is the governance model itself",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-021",
+      "capability": "Engineering and AI policies",
+      "ownership": "native",
+      "reason": "PMI Studio must control policy definition to maintain its end-to-end workflow — policy is what every other gate reads",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-022",
+      "capability": "Approval gates and human-in-the-loop controls",
+      "ownership": "native",
+      "reason": "PP-003 binds the programme; risk-adaptive banding (Cosmos §7) refines it rather than delegating it",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-021",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-023",
+      "capability": "Role-based and attribute-based authorization",
+      "ownership": "native",
+      "reason": "Authorization decides who may approve what, and approval is the governance act",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-024",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-024",
+      "capability": "Audit trails",
+      "ownership": "native",
+      "reason": "PMI Studio must control audit because it is the evidence of governance rather than an operational log; append-only audit already exists (FR-033)",
+      "abstraction_boundary": null,
+      "existing_home": "EPIC-004",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-025",
+      "capability": "Evidence requirements and completion gates",
+      "ownership": "native",
+      "reason": "Cosmos §3.5 makes evidence the differentiator: an agent reporting done is not sufficient",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-026",
+      "capability": "Exception management and risk controls",
+      "ownership": "native",
+      "reason": "PMI Studio must control exception handling because §12 names security exceptions as human-accountable decisions, and an exception granted elsewhere is a control bypassed",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-027",
+      "capability": "Requirement Room",
+      "ownership": "native",
+      "reason": "The governed intake workflow. PMI Studio must control it because approval state lives there. Corpus occurrences: zero (PRE-003)",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-028",
+      "capability": "Change Room",
+      "ownership": "native",
+      "reason": "Post-baseline change control. Zero corpus occurrences (PRE-001), so this is a build rather than the enhancement the amendment assumes",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-029",
+      "capability": "Defect Room and TDD remediation",
+      "ownership": "native",
+      "reason": "Defect governance with expectation verification. Zero corpus occurrences (PRE-002); distinct from the Constitution VI defects/ convention",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-030",
+      "capability": "Decision Intelligence / Decision Center",
+      "ownership": "native",
+      "reason": "Shared by all three Rooms. One capability, not three, which is why it carries its own row",
+      "abstraction_boundary": null,
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-031",
+      "capability": "Source control hosting",
+      "ownership": "integrated",
+      "reason": "PMI Studio does not need to host git to maintain its workflow. D-22 makes the git remote the durable substrate, which is a dependency on git the protocol, not on a vendor",
+      "abstraction_boundary": "CreateImplementationBranch()",
+      "existing_home": "EPIC-014",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-032",
+      "capability": "CI/CD execution",
+      "ownership": "integrated",
+      "reason": "Native §18 is explicit: integrate with CI/CD governance rather than duplicating it inside the agent. PMI Studio consumes results as evidence",
+      "abstraction_boundary": "Capability adapter per Cosmos §5",
+      "existing_home": "EPIC-014",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-033",
+      "capability": "Cloud and infrastructure provisioning",
+      "ownership": "integrated",
+      "reason": "Commodity. Becoming an infrastructure product would not strengthen the engineering workflow",
+      "abstraction_boundary": "ProjectExecutionEnvironment",
+      "existing_home": "EPIC-028",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-034",
+      "capability": "Communication channels",
+      "ownership": "integrated",
+      "reason": "PMI Studio surfaces decisions into Slack, Teams or email rather than replacing them",
+      "abstraction_boundary": "Notification capability adapter",
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-035",
+      "capability": "Observability and monitoring platforms",
+      "ownership": "hybrid",
+      "reason": "The tools are integrated; converting their signals into engineering context, evidence, defects and risks is native, because that conversion is governance",
+      "abstraction_boundary": "Signal ingestion adapter",
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-036",
+      "capability": "Generic deep code review",
+      "ownership": "integrated",
+      "reason": "Cosmos §3.5 and §8 both say specification compliance beats a generic review product, and that external tools MAY supply the evidence",
+      "abstraction_boundary": "Evidence submission contract",
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-037",
+      "capability": "Static analysis and security scanning",
+      "ownership": "integrated",
+      "reason": "PMI Studio does not need to control scanning to maintain its workflow; it needs the output as evidence, so the tool is integrated and the evidence contract is native",
+      "abstraction_boundary": "Evidence submission contract",
+      "existing_home": "EPIC-015",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-038",
+      "capability": "IDE and developer tooling",
+      "ownership": "integrated",
+      "reason": "Native §21: interactive IDE choice must not determine PMI Studio architecture. Cursor, VS Code and JetBrains are execution interfaces",
+      "abstraction_boundary": "Interactive workspace session",
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-039",
+      "capability": "Specification generation",
+      "ownership": "hybrid",
+      "reason": "PMI Studio owns the five ordered steps, the failure taxonomy and the provenance; Spec Kit performs the mechanics and an agent does the reasoning. This is the built seam",
+      "abstraction_boundary": "SpecificationEngine + AgentGateway",
+      "existing_home": "EPIC-003",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-040",
+      "capability": "Sandboxed execution",
+      "ownership": "hybrid",
+      "reason": "PMI Studio owns the policy — egress, resource caps, credentials, lifecycle — and Docker or Kubernetes performs the isolation",
+      "abstraction_boundary": "ProjectExecutionEnvironment",
+      "existing_home": "EPIC-028",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-041",
+      "capability": "Repository operations by agents",
+      "ownership": "hybrid",
+      "reason": "PMI Studio owns branch policy, credential scope and what may be pushed; git executes. Agents must not push to protected branches (Native §18)",
+      "abstraction_boundary": "CreateImplementationBranch(), CreatePullRequest()",
+      "existing_home": "EPIC-014",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-042",
+      "capability": "Impact analysis",
+      "ownership": "hybrid",
+      "reason": "The graph traversal and the evidence are native; the reasoning that explains them may come from any agent, and §10 says answer from structured relationships rather than LLM inference",
+      "abstraction_boundary": "AgentGateway.analyze()",
+      "existing_home": "EPIC-011",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-043",
+      "capability": "Test execution",
+      "ownership": "hybrid",
+      "reason": "PMI Studio owns which tests gate completion and what the evidence means; the runner is commodity",
+      "abstraction_boundary": "Evidence submission contract",
+      "existing_home": "EPIC-015",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-044",
+      "capability": "Semantic retrieval over project knowledge",
+      "ownership": "hybrid",
+      "reason": "Curation policy — role, permissions, token budget, security classification — is native. The retrieval mechanism, including any vector store, is an implementation choice (D-24, open)",
+      "abstraction_boundary": "Context Engine retrieval port",
+      "existing_home": "NO-EXISTING-COVERAGE",
+      "removed_because_external": false
+    },
+    {
+      "id": "CAP-045",
+      "capability": "MCP tool surface",
+      "ownership": "hybrid",
+      "reason": "The least-privilege authorization model is native; MCP is a transport over services that are already transport-independent (PC-1). D-26 split the agent-facing surface from the marketplace",
+      "abstraction_boundary": "MCP transport over existing services",
+      "existing_home": "EPIC-013",
+      "removed_because_external": false
+    }
+  ],
+  "capability_areas": [
+    {
+      "area": "Agent Gateway + agent contract",
+      "verdict": "missing",
+      "home": "EPIC-028",
+      "posture": "BUILT 2026-08-17"
+    },
+    {
+      "area": "ProjectExecutionEnvironment",
+      "verdict": "needs-enhancement",
+      "home": "EPIC-028",
+      "posture": "BUILT 2026-08-17"
+    },
+    {
+      "area": "EgressPolicy profiles",
+      "verdict": "conflicting",
+      "home": "EPIC-028",
+      "posture": "BUILT 2026-08-17"
+    },
+    {
+      "area": "Agent-independence architecture test",
+      "verdict": "missing",
+      "home": "EPIC-028",
+      "posture": "BUILT 2026-08-17"
+    },
+    {
+      "area": "Persistent project state",
+      "verdict": "missing",
+      "home": "EPIC-029 (proposed)",
+      "posture": "proceeds — unspecified"
+    },
+    {
+      "area": "Execution job to AgentRun state machine",
+      "verdict": "needs-enhancement",
+      "home": "EPIC-012",
+      "posture": "held"
+    },
+    {
+      "area": "Requirement Room / Requirement Intelligence",
+      "verdict": "conflicting",
+      "home": "new epic — NOT EPIC-007",
+      "posture": "held"
+    },
+    {
+      "area": "Change Room / Change Intelligence",
+      "verdict": "conflicting",
+      "home": "new epic",
+      "posture": "held"
+    },
+    {
+      "area": "Defect Room / TDD remediation",
+      "verdict": "conflicting",
+      "home": "new epic",
+      "posture": "held"
+    },
+    {
+      "area": "Decision Intelligence / Decision Center",
+      "verdict": "conflicting",
+      "home": "new epic — shared by three Rooms",
+      "posture": "held"
+    },
+    {
+      "area": "Engineering Context Engine",
+      "verdict": "missing",
+      "home": "new epic",
+      "posture": "held"
+    },
+    {
+      "area": "Knowledge Graph expansion",
+      "verdict": "needs-enhancement",
+      "home": "EPIC-011 + EPIC-022",
+      "posture": "held"
+    },
+    {
+      "area": "Evidence Package + completion gate",
+      "verdict": "missing",
+      "home": "new epic, or EPIC-015 extension",
+      "posture": "held"
+    },
+    {
+      "area": "Integration Hub + Capability Resolver",
+      "verdict": "missing",
+      "home": "new epic — M-16",
+      "posture": "held"
+    },
+    {
+      "area": "PMI Studio MCP surface",
+      "verdict": "conflicting",
+      "home": "EPIC-013 core, M-09 marketplace",
+      "posture": "held"
+    },
+    {
+      "area": "Spec Kit native lifecycle",
+      "verdict": "needs-enhancement",
+      "home": "EPIC-008 / EPIC-013",
+      "posture": "held"
+    },
+    {
+      "area": "Human/AI responsibility model",
+      "verdict": "needs-enhancement",
+      "home": "_shared/platform-spec.md",
+      "posture": "recordable now — D-37 open"
+    },
+    {
+      "area": "Governed Engineering Loops",
+      "verdict": "missing",
+      "home": "UNOWNED",
+      "posture": "held — no epic exists"
+    },
+    {
+      "area": "Governed Learning",
+      "verdict": "missing",
+      "home": "UNOWNED",
+      "posture": "held — no epic exists"
+    },
+    {
+      "area": "Specification Compliance Agent",
+      "verdict": "missing",
+      "home": "UNOWNED",
+      "posture": "held — no epic exists"
+    }
+  ],
   "premises": [
     {
       "id": "PRE-001",

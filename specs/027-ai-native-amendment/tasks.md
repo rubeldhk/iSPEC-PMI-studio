@@ -133,10 +133,10 @@ artifact or `NO-EXISTING-COVERAGE`.
 **Independent Test**: source control, CI/CD, AI coding engines, requirement approval and traceability
 each carry a verdict consistent with §2.
 
-- [ ] T618 [P] [US3] Write the failing `G-27-04` and `G-27-13` checks — ownership present, boundary named for every `integrated`/`hybrid`, `removed_because_external` false throughout, and exactly **twenty** capability areas — in `tests/governance/g27-capabilities.spec.ts`
-- [ ] T619 [US3] Classify every capability as native / integrated / hybrid with the reason and, where integrated, the abstraction boundary, in `register/capabilities.md` (conformance check: T618)
-- [ ] T620 [US3] Record the **twenty** capability areas with verdict, owning epic and posture in `register/capability-areas.md` (conformance check: T618)
-- [ ] T621 [US3] Record every existing requirement that should change from native implementation to integration (§18.9, `FR-AMD-010`) in `register/capabilities.md` (conformance check: T618)
+- [X] T618 [P] [US3] Write the failing `G-27-04` and `G-27-13` checks — ownership present, boundary named for every `integrated`/`hybrid`, `removed_because_external` false throughout, and exactly **twenty** capability areas — in `tests/governance/g27-capabilities.spec.ts`
+- [X] T619 [US3] Classify every capability as native / integrated / hybrid with the reason and, where integrated, the abstraction boundary, in `register/capabilities.md` (conformance check: T618)
+- [X] T620 [US3] Record the **twenty** capability areas with verdict, owning epic and posture in `register/capability-areas.md` (conformance check: T618)
+- [X] T621 [US3] Record every existing requirement that should change from native implementation to integration (§18.9, `FR-AMD-010`) in `register/capabilities.md` (conformance check: T618)
 
 ---
 

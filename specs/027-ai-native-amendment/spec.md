@@ -476,10 +476,17 @@ recorded reason referencing an amendment clause.
   names its owning epic.
 - **SC-AMD-010**: Zero epics in flight change status without a recorded reason citing a specific
   amendment clause.
-- **SC-AMD-011**: A reader can determine, for any of the **seventeen** capability areas the amendment
+- **SC-AMD-011**: A reader can determine, for any of the **twenty** capability areas the amendment
   introduces, whether it is new, an enhancement, or already covered — and which epic owns it — from a
   single document. The twenty are enumerated in the plan's capability-area table; the count is
   asserted by `G-27-13`, so the criterion and the table cannot drift apart again.
+
+  > **Corrected 2026-08-17** — this said *seventeen* in the first clause and *twenty* in the third,
+  > one sentence apart. `D-42` raised the count on 2026-08-14 and updated only the second half. The
+  > sentence names the mechanism that would have caught it, and the drift happened in the window
+  > before that mechanism was written. See
+  > [`DEF-027-001`](./defects/DEF-027-001-sc-amd-011-contradicts-itself.md); `G-27-13` now asserts
+  > that this figure and the table agree.
 - **SC-AMD-012**: Every conflict is presented as a decision with options; zero conflicts are resolved
   silently in the reconciliation itself.
 
