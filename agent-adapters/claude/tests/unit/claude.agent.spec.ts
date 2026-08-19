@@ -85,8 +85,39 @@ describe('T557 · the invocation', () => {
     // T693/DEF-028-004 — the CLI is still driven headlessly with `-p`; what
     // changed is that the credential it reads is bound first.
     const argv = invocationFor('/speckit-specify');
-    expect(argv.join(' ')).toContain('claude -p');
+    expect(argv[2] ?? '').toContain('claude --model "$1" -p "$2"');
     expect(argv).toContain('/speckit-specify');
+  });
+
+  it('requests the model the descriptor names (T694)', () => {
+    // DEF-028-005. The descriptor advertised `claude-opus-5` and the invocation
+    // never passed `--model`, so the CLI used its own pinned default —
+    // `claude-sonnet-4-20250514`, long retired, which the API answers with 404.
+    //
+    // The 404 is the smaller half. FR-022 requires the model to be recorded on
+    // every artifact, and a descriptor that names one model while the run
+    // requests another makes every provenance record wrong in a way nothing
+    // could detect: both halves are internally consistent and disagree only with
+    // reality.
+    const argv = invocationFor('/x', 'claude-opus-5');
+    // Positionally, like the command: the model is data, not script text.
+    expect(argv[2] ?? '').toContain('--model "$1"');
+    expect(argv[4]).toBe('claude-opus-5');
+  });
+
+  it('asks for the model by full name, never by a moving alias', () => {
+    // Verified against the image: `--model opus` resolves inside the pinned CLI
+    // to `claude-opus-4-20250514` and 404s, while the full name succeeds. An
+    // alias also makes the provenance record unfalsifiable — "opus" names
+    // whatever was latest on the day, which is not a fact anyone can check later.
+    expect(invocationFor('/x', 'claude-opus-5').join(' ')).not.toMatch(/--model (opus|sonnet)\b/);
+  });
+
+  it('records the same model it requested, so provenance is not a claim', async () => {
+    const s = session();
+    const agent = new ClaudeAgent();
+    await agent.execute({ capability: 'generate', command: '/speckit-tasks' }, s, ctx());
+    expect(s.commands[0]?.[4]).toBe(agent.descriptor.model);
   });
 
   it('binds ANTHROPIC_API_KEY from the token the sandbox already holds (T693)', () => {

@@ -72,7 +72,7 @@ export interface ClaudeAgentOptions {
  * Exported so `T646b`'s finding, if there is one, lands in one reviewable place
  * rather than being hunted through the adapter.
  */
-export function invocationFor(command: string): string[] {
+export function invocationFor(command: string, model: string = CLAUDE_DESCRIPTOR.model): string[] {
   // T693 / DEF-028-004 — bind the credential the CLI actually reads.
   //
   // The sandbox sets exactly `AI_PROVIDER_TOKEN` and `PMI_CORRELATION_ID`
@@ -94,11 +94,25 @@ export function invocationFor(command: string): string[] {
   //   · `command` carries customer text and is passed POSITIONALLY, referenced
   //     as "$1". Interpolating it into the script would make a quote in a
   //     project name into a shell command.
+  // T694 / DEF-028-005 — request the model the descriptor names.
+  //
+  // Without `--model` the CLI used its own pinned default, `claude-sonnet-4-
+  // 20250514`, which the API now answers with 404. The retired default is the
+  // smaller half: `FR-022` requires the model to be recorded on every artifact,
+  // and a descriptor advertising `claude-opus-5` while the run requested
+  // something else made every provenance record wrong in a way nothing could
+  // detect — both halves internally consistent, disagreeing only with reality.
+  //
+  // By FULL NAME, never an alias. Verified against the image: `--model opus`
+  // resolves inside the pinned CLI to `claude-opus-4-20250514` and 404s, while
+  // the full name succeeds. An alias would also make the record unfalsifiable —
+  // "opus" names whatever was latest that day, which nobody can check afterwards.
   return [
     'sh',
     '-c',
-    'ANTHROPIC_API_KEY="$AI_PROVIDER_TOKEN" exec claude -p "$1"',
+    'ANTHROPIC_API_KEY="$AI_PROVIDER_TOKEN" exec claude --model "$1" -p "$2"',
     'pmi-claude-agent',
+    model,
     command,
   ];
 }
@@ -163,7 +177,7 @@ export class ClaudeAgent implements AgentGateway {
     ctx.onProgress?.('agent_started');
 
     // C2 — the session is RACED, never awaited directly (DEF-028-001).
-    const outcome = await raceWallClock(session.exec(invocationFor(invocation.command)), ctx);
+    const outcome = await raceWallClock(session.exec(invocationFor(invocation.command, this.descriptor.model)), ctx);
 
     if (outcome.kind === 'timeout') {
       return agentFail('timeout', 'The agent exceeded its wall-clock limit.');
