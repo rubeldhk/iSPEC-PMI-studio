@@ -71,6 +71,95 @@ function hasHeading(text: string, pattern: RegExp): boolean {
 
 // ------------------------------------------------------------- conditions
 
+/**
+ * Where application code lives (`DEF-026-001`, `T679`).
+ *
+ * The same list `G-27-09` uses for product source, plus `scripts/` — which
+ * `T576`'s own note calls application code in as many words: *"`scripts/` is not
+ * on Constitution I's exempt list, so this is application code and V is
+ * NON-NEGOTIABLE."*
+ *
+ * `tests/**` is deliberately absent. Nothing in it ships; it IS the
+ * verification, and a check does not need a check. Constitution I's rule that
+ * `tests/governance/**` is not exempt concerns the COMMAND GATE — how a file may
+ * be authored — not Constitution V.
+ */
+const APPLICATION_CODE_PATHS = [
+  'backend/',
+  'worker/',
+  'packages/',
+  'engine-adapters/',
+  'agent-adapters/',
+  'execution-providers/',
+  'frontend/',
+  'scripts/',
+];
+
+const CODE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
+
+/**
+ * Does this task line produce or change application code?
+ *
+ * Constitution V's actual wording is *"every task producing or changing
+ * application code"*. `DOR-08` as first written applied to every task line, so
+ * registering a path in a markdown file and publishing a closing report both
+ * demanded a unit test — 12 false positives against EPIC-026, and a waiver to
+ * close the epic (`DEF-026-001`).
+ *
+ * The test is deliberately narrow: a path that both **lives under an
+ * application-code root** and **ends in a code extension**. A task citing a
+ * design document alongside the file it writes is still caught, because the
+ * document fails the extension test rather than excusing the file.
+ */
+function producesApplicationCode(line: string): boolean {
+  // Paths appear in backticks by convention, but do not require them — a task
+  // that omitted them would otherwise escape the condition entirely.
+  const candidates = line.match(/[\w./-]+\.[A-Za-z]{1,4}\b/g) ?? [];
+  return candidates.some((candidate) => {
+    const path = candidate.replace(/^`|`$/g, '');
+    if (!CODE_EXTENSIONS.some((extension) => path.endsWith(extension))) return false;
+    if (!APPLICATION_CODE_PATHS.some((root) => path.startsWith(root))) return false;
+    // A `.spec.ts` under `backend/tests/` is application-adjacent but is itself
+    // the verification. EPIC-004 `T052` — "Integration test asserting ... in
+    // backend/tests/integration/workspace-isolation.spec.ts" — is the test, and
+    // demanding it name another one is the unsatisfiable-by-construction case.
+    return !isTestArtifact(path);
+  });
+}
+
+/**
+ * A verification keyword followed by a real task reference.
+ *
+ * Not anchored to parentheses: this repository writes the pairing inside them,
+ * after an em dash, and occasionally neither.
+ */
+const PAIRING =
+  /(?:unit tests?|integration tests?|conformance(?:\s+checks?)?|checks?|tests?)\s*:\s*T\d{3}/i;
+
+/** A file that IS a test, wherever it lives. */
+function isTestArtifact(path: string): boolean {
+  return /\.(?:spec|test)\.[A-Za-z]+$/.test(path) || /(?:^|\/)tests?\//.test(path);
+}
+
+/**
+ * Which tasks a sibling test task declares it covers.
+ *
+ * This repository writes the pairing in **both** directions. EPIC-004 `T674`
+ * names no test on its own line; its sibling `T674a` ends *"(Constitution V;
+ * covers T674)"*. The pairing exists — it is recorded on the test rather than on
+ * the implementation — and a check reading only one direction reports a gap that
+ * is not there.
+ */
+function tasksCoveredBySiblings(lines: readonly string[]): Set<string> {
+  const covered = new Set<string>();
+  for (const line of lines) {
+    for (const match of line.matchAll(/\bcovers?\s+(T\d{3}[a-z]?)/gi)) {
+      if (match[1]) covered.add(match[1]);
+    }
+  }
+  return covered;
+}
+
 const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
   'DOR-01': (ctx) => {
     const passed = existsSync(join(ctx.epicPath, 'spec.md'));
@@ -158,11 +247,32 @@ const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
     }
     // A test-writing task IS the test; requiring it to reference another one
     // would make the condition unsatisfiable by construction. Everything else
-    // must name a unit test or a conformance check (constitution v1.2.0 accepts
-    // either).
+    // that produces APPLICATION CODE must name a unit test or a conformance
+    // check (constitution v1.2.0 accepts either).
+    const coveredBySibling = tasksCoveredBySiblings(lines);
+
     const unpaired = lines.filter((line) => {
       if (/write\s+(?:a\s+)?failing/i.test(line) || /\btests?\s+for\b/i.test(line)) return false;
-      return !/\((?:[^)]*(?:unit test|integration test|check|checks)\s*:)/i.test(line);
+      if (!producesApplicationCode(line)) return false;
+
+      // The pairing, in whatever form this repository writes it.
+      //
+      // Chasing formats one at a time is how a detector accumulates epicycles.
+      // Running the narrowed condition across all 28 Epics turned up four
+      // spellings in real task lines:
+      //
+      //   (unit test: T002)                  the common case
+      //   (unit tests: T053, T054)           plural
+      //   (conformance: T556)                EPIC-028 T563
+      //   … (partial) — unit test: T658      EPIC-001 T657, no parentheses
+      //
+      // So the rule is a verification keyword followed by a REAL task
+      // reference, anywhere in the line. Requiring the `Tnnn` is what keeps it
+      // precise: "check the output carefully" is prose, not a pairing.
+      if (PAIRING.test(line)) return false;
+
+      const id = /\bT\d{3}[a-z]?\b/.exec(line)?.[0];
+      return !(id && coveredBySibling.has(id));
     });
     return {
       id: 'DOR-08',

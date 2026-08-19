@@ -98,3 +98,29 @@ governance condition and deserves a task, not a closing-phase edit.
 **Closed as deferred, not as fixed.** The condition is still broader than the principle. What
 changed is that the exception is owned, dated, expiring and visible, rather than the gate being
 quietly narrowed by the epic it first inconvenienced.
+
+---
+
+## Follow-up completed — 2026-08-19 (`T678`–`T680`)
+
+`DOR-08` now applies to Constitution V's actual scope: tasks naming a source file under an
+application-code root (`backend/`, `worker/`, `packages/`, `engine-adapters/`, `agent-adapters/`,
+`execution-providers/`, `frontend/`, `scripts/`) with a code extension, excluding files that are
+themselves tests.
+
+**The waiver is retired**, one day into its ninety. EPIC-026 passes all twelve conditions cleanly and
+reads plain `Ready`. The exception is gone because the reason for it is.
+
+**Measured across all 28 Epics rather than against its author alone**: `DOR-08` went from 0 of 28
+passing to 23 of 28. Five detector faults surfaced during that measurement — the plural
+`unit tests:`, a task whose own artifact is a `.spec.ts`, a pairing declared on the sibling
+(`covers T674`), a pairing after an em dash, and `(conformance: T556)` — each a real line from this
+repository, each fixed with a red test first.
+
+**Five Epics still fail and were deliberately not tuned away.** EPIC-002 and EPIC-017 are parent
+designs carrying no tasks; their readiness is `n/a` and the verdict is unused. EPIC-001, EPIC-003 and
+EPIC-028 hold **eight tasks between them that write application code and name no verification in any
+form** — candidate Constitution V gaps in already-closed epics, now visible and reported.
+
+That is the condition doing its job. A narrowing that had left zero failures would have been a
+narrowing that removed the gate.

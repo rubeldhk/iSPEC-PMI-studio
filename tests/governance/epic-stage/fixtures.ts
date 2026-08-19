@@ -193,20 +193,27 @@ export const PLAN_WITH_FAILED_GATE = DOR_READY_PLAN.replace(
   '| V | Every implementation task carries a unit test | FAIL — three tasks have no test |',
 );
 
-/** `DOR-07` and `DOR-08` pass: every implementation task names its test. */
+/**
+ * `DOR-07` and `DOR-08` pass: every implementation task names its test.
+ *
+ * The widget lives under `backend/` deliberately. `DEF-026-001` narrowed
+ * `DOR-08` to Constitution V's actual scope — *application code* — so a fixture
+ * using a generic `src/widget.ts` would now be exempt, and `TASKS_UNPAIRED`
+ * below would silently stop asserting anything.
+ */
 export const DOR_READY_TASKS = [
   '# Tasks: Fixture',
   '',
-  '- [X] T001 [P] Write failing unit tests for the widget in `tests/widget.spec.ts`',
-  '- [X] T002 Implement the widget in `src/widget.ts` (unit test: T001)',
+  '- [X] T001 [P] Write failing unit tests for the widget in `backend/tests/widget.spec.ts`',
+  '- [X] T002 Implement the widget in `backend/src/widget.ts` (unit test: T001)',
   '- [ ] T003 Author the steering file in `governance/steering/x.md` (check: T001)',
   '',
 ].join('\n');
 
-/** `DOR-08` fails: an implementation task pairs with nothing. */
+/** `DOR-08` fails: a task writing application code pairs with nothing. */
 export const TASKS_UNPAIRED = DOR_READY_TASKS.replace(
-  '- [X] T002 Implement the widget in `src/widget.ts` (unit test: T001)',
-  '- [X] T002 Implement the widget in `src/widget.ts`',
+  '- [X] T002 Implement the widget in `backend/src/widget.ts` (unit test: T001)',
+  '- [X] T002 Implement the widget in `backend/src/widget.ts`',
 );
 
 /** `DOR-09` passes: an analysis record with no blocking findings. */

@@ -36,7 +36,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-023](../specs/023-unattended-runs-review/) | Unattended Runs & Team Review | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-024](../specs/024-artifact-access-control/) | Artifact Access Control | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-025](../specs/025-external-storage-publishing/) | External Storage Publishing | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Ready | — | Ready (waived) | `/speckit-implement` |
+| [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Tasked | stalled | Not ready | `/speckit-analyze` |
 | [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Tasked | stalled | Not ready | `/speckit-analyze` |
 
@@ -91,9 +91,3 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | EPIC-024 | Tasked evidence present without the stage before it — stage held at Specified | report |
 | EPIC-025 | Planned evidence present without the stage before it — stage held at Specified | report |
 | EPIC-025 | Tasked evidence present without the stage before it — stage held at Specified | report |
-
-## Active waivers
-
-| Epic | Condition | Owner | Expires | Reason |
-|---|---|---|---|---|
-| EPIC-026 | DOR-08 | project-owner | 2026-11-16 | DEF-026-001 — DOR-08 as implemented is broader than Constitution V: it demands a paired test for setup, polish and closure tasks that produce no application code, and reports 12 false positives against EPIC-026 itself. Narrowing the condition in the closing phase of the epic it first inconvenienced is the move the waiver mechanism exists to prevent, so the fix is deferred to a follow-up task with its own red test. |

@@ -459,6 +459,49 @@ files**, all collected by the existing `governance` project, needing no database
 
 ---
 
+## Phase 2: Convergence — `DEF-026-001` *(appended 2026-08-19)*
+
+*The deferred half of `DEF-026-001`. The waiver made the exception owned, dated and visible; it did
+not make `DOR-08` correct. This does, and retires the waiver.*
+
+- [X] T678 [P] Write failing unit tests asserting `DOR-08` requires a pairing only for tasks that name **application code** — Constitution V's actual wording — and still catches a genuinely unpaired implementation task, in `tests/governance/epic-stage/dor-08-scope.spec.ts`
+- [X] T679 Narrow `DOR-08` in `tests/governance/epic-stage/dor.ts` to tasks naming a source file under an application-code path (`FR-ESK-011`, `DEF-026-001`; unit test: T678)
+- [X] T680 Retire the `DOR-08` waiver from `governance/epic-declarations.json` once the condition is correct, so EPIC-026 reads plain `Ready` (`FR-ESK-023`; check: `G-26-03`)
+
+  > **EPIC-026 now passes all twelve conditions cleanly and reads plain `Ready`** — the first
+  > unqualified `Ready` produced against the real corpus. The Active-waivers section is gone from the
+  > register, omitted because it is empty (`RF-5`).
+  >
+  > **The narrowing was measured against all 28 Epics, not just its author's.** `DOR-08` went from
+  > **0 of 28 passing** to **23 of 28**, and each round of the remaining failures was inspected before
+  > being treated as a fault. Five distinct detector faults surfaced that way, every one a real task
+  > line from this repository:
+  >
+  > | Fault | Example |
+  > |---|---|
+  > | the plural `(unit tests: T053, T054)` | EPIC-006 `T054` |
+  > | a task whose own artifact is a `.spec.ts` | EPIC-004 `T052` |
+  > | the pairing declared on the sibling — `covers T674` | EPIC-004 `T674` |
+  > | the pairing after an em dash, not in parentheses | EPIC-001 `T657` |
+  > | `(conformance: T556)` | EPIC-028 `T563` |
+  >
+  > After the fourth, chasing formats one at a time was clearly accumulating epicycles, so the rule
+  > became **a verification keyword followed by a real `Tnnn` reference, anywhere in the line**.
+  > Requiring the task id is what keeps it precise: *"check the output carefully"* is prose, not a
+  > pairing, and a test asserts exactly that.
+  >
+  > **Two mutations confirm the gate survived**: making nothing count as application code fails six
+  > assertions, including every "still bites" case; dropping the `Tnnn` requirement from the pairing
+  > pattern fails the prose case.
+  >
+  > **Five Epics still fail, and they are NOT tuned away.** EPIC-002 and EPIC-017 are parent designs
+  > with no tasks by design — their readiness is `n/a`, so the verdict is unused. EPIC-001 (2),
+  > EPIC-003 (3) and EPIC-028 (3) carry tasks that write application code and name no verification in
+  > any form. Those are **candidate Constitution V gaps in closed epics**, reported for review rather
+  > than shaped out of existence — which is what the condition is for.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase dependencies
