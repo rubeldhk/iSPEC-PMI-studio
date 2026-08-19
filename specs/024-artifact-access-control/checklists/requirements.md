@@ -22,8 +22,9 @@ This records only what must hold **for this epic**.
 - [x] Dependencies on other epics stated — EPIC-004, EPIC-008, **EPIC-023**
 - [x] The dependency on EPIC-023 is **justified, not merely listed** — `FR-028` snapshots access at
       run start, and a snapshot cannot be taken against a `Run` that does not exist
-- [ ] Requirement IDs conform to PMI-DOC-000 §3 — **blocked on decision D-1** (conflict **C-01**;
-      `FR-021`–`FR-028` collide with the platform set)
+- [ ] Identifier collision **`C-01`**: this epic's `FR-021`–`FR-028` share identifiers with the
+      platform set. Live now — `D-1` was deferred on 2026-08-19 and does **not** cover this;
+      two requirements under one identifier is wrong today, not pending a scheme
 - [x] No SRS debt — unlike its siblings, this capability area is traced
 
 ## Split integrity *(ruling D-19)*

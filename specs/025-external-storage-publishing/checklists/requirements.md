@@ -22,8 +22,9 @@ This records only what must hold **for this epic**.
 - [x] Dependencies on other epics stated — EPIC-008, **EPIC-024**
 - [x] The dependency on EPIC-024 is **justified, not merely listed** — `FR-033` requires publish to
       exclude artifacts the publisher cannot access, so storage silently depends on access being real
-- [ ] Requirement IDs conform to PMI-DOC-000 §3 — **blocked on decision D-1** (conflict **C-01**;
-      `FR-029`–`FR-040` collide with the platform set)
+- [ ] Identifier collision **`C-01`**: this epic's `FR-029`–`FR-040` share identifiers with the
+      platform set. Live now — `D-1` was deferred on 2026-08-19 and does **not** cover this;
+      two requirements under one identifier is wrong today, not pending a scheme
 - [x] **SRS debt declared, not hidden** — `FR-029`–`FR-040` have no SRS source, re-verified against
       the MPS drop, with a named back-fill owner and `T439` gating **approval**
 

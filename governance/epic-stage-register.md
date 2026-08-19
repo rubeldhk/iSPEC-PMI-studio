@@ -11,22 +11,22 @@ a person never writes a stage, and a machine never infers intent.
 
 | Epic | Title | Kind | Stage | Posture | Readiness | Next |
 |---|---|---|---|---|---|---|
-| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Clarified | stalled | Not ready | `/speckit-checklist` |
+| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-002](../specs/002-team-review-access-storage/) | Unattended Runs with Team Review, Artifact Access Control & External Storage Integration | parent-design | Clarified | stalled | n/a | `/speckit-checklist` |
-| [EPIC-003](../specs/003-specification-engine/) | Specification Engine & Sandbox | delivery | Clarified | stalled | Not ready | `/speckit-checklist` |
-| [EPIC-004](../specs/004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | delivery | Clarified | stalled | Not ready | `/speckit-checklist` |
-| [EPIC-005](../specs/005-identity-signin/) | Identity & Sign-in | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-006](../specs/006-project-management/) | Project Management | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-007](../specs/007-requirement-intelligence/) | Requirement Intelligence | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-008](../specs/008-spec-authoring-generation/) | Specification Authoring & Generation | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-009](../specs/009-spec-lifecycle-versioning/) | Specification Lifecycle & Versioning | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification` | Not ready | `/speckit-checklist` |
-| [EPIC-010](../specs/010-specification-interface/) | Specification Interface | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-011](../specs/011-traceability/) | Traceability | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-012](../specs/012-workflow-tasks/) | Workflow & Tasks | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification` | Not ready | `/speckit-checklist` |
-| [EPIC-013](../specs/013-engine-api-selection/) | Engine API & Selection | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-014](../specs/014-devops-release/) | DevOps & Release | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-015](../specs/015-qa-validation/) | QA & Validation | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-016](../specs/016-architecture-decision-records/) | Architecture Decision Records | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
+| [EPIC-003](../specs/003-specification-engine/) | Specification Engine & Sandbox | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-004](../specs/004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-005](../specs/005-identity-signin/) | Identity & Sign-in | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-006](../specs/006-project-management/) | Project Management | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-007](../specs/007-requirement-intelligence/) | Requirement Intelligence | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-008](../specs/008-spec-authoring-generation/) | Specification Authoring & Generation | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-009](../specs/009-spec-lifecycle-versioning/) | Specification Lifecycle & Versioning | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification` | Not ready | `DOR evaluation` |
+| [EPIC-010](../specs/010-specification-interface/) | Specification Interface | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-011](../specs/011-traceability/) | Traceability | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-012](../specs/012-workflow-tasks/) | Workflow & Tasks | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification` | Not ready | `DOR evaluation` |
+| [EPIC-013](../specs/013-engine-api-selection/) | Engine API & Selection | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-014](../specs/014-devops-release/) | DevOps & Release | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-015](../specs/015-qa-validation/) | QA & Validation | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
+| [EPIC-016](../specs/016-architecture-decision-records/) | Architecture Decision Records | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
 | [EPIC-017](../specs/017-enhancement-model/) | Enhancement Model for Spec-Driven Engineering | parent-design | Planned | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | n/a | `/speckit-tasks` |
 | [EPIC-018](../specs/018-repository-governance/) | Repository Governance Process | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-019](../specs/019-steering-engine/) | Steering Engine | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
@@ -46,52 +46,7 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 
 | Epic | Finding | Severity |
 |---|---|---|
-| EPIC-001 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-001 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-001 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-003 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-003 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-003 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-004 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-004 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-004 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-005 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-005 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-005 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-006 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-006 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-006 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-007 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-007 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-007 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-008 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-008 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-008 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-009 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-009 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-009 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-010 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-010 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-010 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-011 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-011 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-011 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-012 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-012 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-012 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-013 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-013 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-013 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-014 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-014 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-014 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-015 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-015 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-015 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-016 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-016 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-016 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-019 | Planned evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-019 | Tasked evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-019 | Analyzed evidence present without the stage before it — stage held at Clarified | report |

@@ -20,9 +20,9 @@ This records only what must hold **for this epic**.
 - [x] Requirements owned are declared and trace to the parent spec
 - [x] SRS traceability inherited explicitly (Constitution II, D-12)
 - [x] Dependencies on other epics stated — EPIC-001, EPIC-008, EPIC-009
-- [ ] Requirement IDs conform to PMI-DOC-000 §3 — **blocked on decision D-1**. This epic's
-      `FR-001`–`FR-020` collide with the platform set (conflict **C-01**); unlike the EPIC-017
-      family, these are *not* namespaced
+- [ ] Identifier collision **`C-01`**: this epic's `FR-001`–`FR-020` share identifiers with the
+      platform set. Live now — `D-1` was deferred on 2026-08-19 and does **not** cover this;
+      two requirements under one identifier is wrong today, not pending a scheme
 - [x] **SRS debt declared, not hidden** — `FR-001`–`FR-020` have no SRS source, re-verified against
       the MPS drop, with a named back-fill owner and `T404` gating **approval**
 

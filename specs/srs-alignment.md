@@ -900,7 +900,7 @@ Nothing below can be resolved by reading the SRS; each needs an owner's decision
 
 | # | Decision | Blocks | Cost if adopted |
 |---|---|---|---|
-| **D-1** | Adopt PMI-DOC-000 identifier scheme (typed, 4-digit, corpus-unique)? | All future specs | Renumber + reclassify 74 requirements; update ~200 downstream citations |
+| ~~**D-1**~~ | ~~Adopt PMI-DOC-000 identifier scheme (typed, 4-digit, corpus-unique)?~~ | — | ✅ **DECIDED 2026-08-19 — defer, with a trigger.** Not *no*, and no longer open-ended: the pass runs when the MPS baseline releases `D-13`, folding in `D-9` — one sweep over 74 requirements, ~200 citations and 201 task IDs. Execution additionally requires PMI-DOC-000 §3 to be machine-readable (`D-5`). Owner: **project owner**. Ruling below |
 | **D-2** | Amend Constitution III to the 9-level chain, with Requirement **above** Epic? | Constitution | `/speckit-constitution` amendment; restructures how Epics are scoped. 🔵 **Scoped by D-16 (2026-08-04)** — applies to *repository* traceability only; PMI Studio's 12-link product chain is settled and out of D-2's reach |
 | ~~**D-3**~~ | ~~Which module taxonomy is authoritative?~~ | — | ✅ **DECIDED 2026-08-02** — Module-Based catalog (16 modules). `tasks.md` re-cut; 197 task IDs unchanged |
 | **D-4** | Amend `spec-template.md` to PMI-DOC-000's 13 sections? | Repository templates; **EPIC-018** | Template change + back-fill across 18 epic specs. 🔵 **Scoped by D-16 (2026-08-04)** — the enhancement model's 21-section structure does **not** bear on this; it governs product outputs only. D-4 remains a repository-only question, now owned by EPIC-018 `FR-RGP-010`/`FR-RGP-011` |
@@ -926,8 +926,38 @@ Nothing below can be resolved by reading the SRS; each needs an owner's decision
 > reading both. Twelve are decided, nine open, one subsumed.
 
 **Recommended order**: ~~D-3~~ ✅ done. Then **D-6 first among the rest** — it is a single ruling
-that resolves C-07 and C-09 at once and determines whether D-7 is even in scope. Then D-1 and D-2
-together (one coherent change), then D-7, D-8, D-4, and D-5 as its own Epic.
+that resolves C-07 and C-09 at once and determines whether D-7 is even in scope. ~~Then D-1 and D-2
+together (one coherent change)~~ — **superseded 2026-08-19**: D-1 is deferred to the D-13 pass, which
+decouples it from D-2. D-2 is now sequenced on its own. Then D-7, D-8, D-4, and D-5 as its own Epic.
+
+### D-1 ruling · Identifier scheme deferred to the D-13 pass ✅ DECIDED 2026-08-19
+
+**Ruling: defer, with a trigger and an owner.** The PMI-DOC-000 §3 scheme is not adopted today and
+is not left open-ended either. The renumbering executes as **one sweep** when the MPS baseline
+releases `D-13`, folding in `D-9`'s task-ID namespacing — 74 requirements, ~200 citations, 201 task
+IDs, touched once rather than three times. That sequencing is not new; `D-9`, `D-13` and `D-23` have
+each recorded it. What was missing was a decision saying so, which is why 18 Epics read *"blocked on
+decision D-1"* rather than *"deferred by D-1"*.
+
+**Why not adopt now.** Two blockers, both real. PMI-DOC-000 §3 is a `.docx` and its rules are not
+machine-readable, so the scheme cannot be applied without first resolving `D-5` — adopting a
+standard nobody can mechanically check is how a gate becomes decorative. And `D-13`'s re-cut will
+move the same identifiers again; running the pass first would touch 201 task IDs twice.
+
+**Why not ratify `FR-0nn` instead.** That would have unblocked the same 18 Epics in one line, by
+overriding a governing document to clear a gate. `D-12` gives PMI-DOC-000 authority over
+documentation standards, and a deferral records the debt where ratification would erase it.
+
+**What this does not resolve.** `C-01` is a *separate* live defect and is untouched by this ruling.
+EPIC-023's `FR-001`–`FR-020`, EPIC-024's `FR-021`–`FR-028` and EPIC-025's `FR-029`–`FR-040` collide
+with the platform set today, and those three checklists stay unchecked naming the collision rather
+than the deferral. Two requirements sharing an identifier is wrong now, not wrong pending a scheme.
+
+**Owner**: project owner — inferred from `T-004` *Define requirement ID conventions* being a
+PMI-TASK-001 task, the family this document already assigns to that role. Correct it here if the
+identifier scheme belongs to the tech lead instead.
+
+**Release condition**: the MPS baseline lands (`D-13`) **and** PMI-DOC-000 §3 is readable (`D-5`).
 
 ### What unblocks the held 135
 

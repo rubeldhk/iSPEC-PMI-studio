@@ -19,7 +19,8 @@ what must hold **for this epic**.
 - [x] Requirements owned are declared and trace to the platform spec
 - [x] SRS traceability inherited explicitly (Constitution II, D-12)
 - [x] Dependencies on other epics stated
-- [ ] Requirement IDs conform to PMI-DOC-000 §3 — **blocked on decision D-1**
+- [x] Identifier scheme: conformance to PMI-DOC-000 §3 is **deferred by `D-1`** (ruled 2026-08-19) —
+      trigger: the MPS baseline that releases `D-13`; owner: project owner
 
 ## Quality
 
