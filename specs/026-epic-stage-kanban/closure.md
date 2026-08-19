@@ -125,7 +125,7 @@ sessions is not this epic's work.
 - **~19 Epics carry a prose hold with no declaration.** EPIC-005–016 and EPIC-019–025 say
   "⏸ HELD pending `PMI-DOC-004`" in `spec.md` and read `stalled`. `T500` declared the four the task
   named; the rest is a governance gap the register now makes visible.
-- **CI has not run.** Every gate above was executed locally; nothing is pushed.
+- ~~**CI has not run.** Every gate above was executed locally; nothing is pushed.~~ **Corrected 2026-08-19: CI runs on every push**, and has since 2026-08-17.
 - **`G-26-06` proves an instruction exists, not that an agent followed it** (`R-026-4`), and says so
   in its own header.
 

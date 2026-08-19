@@ -105,7 +105,7 @@ Every check was **confirmed red before its data existed**.
 - **`quickstart.md`'s `V7` title still says "Twelve ADR subjects"** where the count is seventeen. The
   check is authoritative and asserts seventeen; the scenario title is stale prose. Recorded rather
   than silently edited.
-- **CI has not run.** Every gate above was executed locally, and nothing is pushed.
+- ~~**CI has not run.** Every gate above was executed locally, and nothing is pushed.~~ **Corrected 2026-08-19: CI runs on every push**, and has since 2026-08-17.
 - **The register's *judgements* are sampled, not exhaustively verified.** Twenty of 599 clauses were
   read by a human. The other 579 are checked for completeness and consistency only.
 

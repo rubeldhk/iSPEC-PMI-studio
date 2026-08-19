@@ -185,7 +185,7 @@ design DDL, and that is now recorded where a reader will find it.
   persistence adapter is still absent, and the default writer refuses. `SC-012` is verified at the
   unit and database levels — the trigger has raised (`T649`) — not end to end.
 - **`assertSameWorkspace` has never refused a real request**, because no request path calls it yet.
-- **CI has not run.** Every gate above was executed locally; nothing is pushed.
+- ~~**CI has not run.** Every gate above was executed locally; nothing is pushed.~~ **Corrected 2026-08-19: CI runs on every push**, and has since 2026-08-17.
 
 ## Deferred
 

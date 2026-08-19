@@ -71,8 +71,10 @@ All three are fixed and covered.
   asserts its contents. Building it in CI is RAID **R-04** (container-in-container), so the image is
   exercised nightly by EPIC-015 `T146`, which has not run. Nothing here proves the image builds or
   that `specify` and the agent CLI install at their pinned versions.
-- **No real container has ever started.** Every sandbox test drives a mocked runtime — see `T646`
-  below.
+- ~~**No real container has ever started.**~~ Every sandbox test drives a mocked runtime — see `T646`
+  below. **Superseded — see the addendum at the foot of this document**: a container has since
+  started, and the image digest is recorded in
+  [EPIC-028's `v6-transcript.md`](../028-agent-execution-seam/v6-transcript.md).
 - **Quickstart `V11` and `V13`** have not been run.
 - **The Prisma schema is unvalidated by Prisma.** Prisma is not a dependency in this repository yet
   (EPIC-004 `T013`), so `EngineRegistration` is verified by text assertions only.
@@ -234,9 +236,14 @@ later *"the engine layer is now reachable, and still cannot run."*
 **Reachable and composable: yes.** Spec Kit resolves as the default engine and a generation runs
 through engine → agent → environment end to end (EPIC-028 `T572`).
 
-**Actually run in a real container: no.** `T646b` has never executed. **This epic's closing
+~~**Actually run in a real container: no.** `T646b` has never executed. **This epic's closing
 statement — *"No real container has ever started"* — remains true**, and this closure does not claim
-otherwise.
+otherwise.~~
+
+> **Superseded — see the addendum at the foot of this document.** `T646b` executed and a real
+> container started. What it did **not** do is produce a specification: the run stops at the
+> `ADR-0002` credential refusal, so the end-to-end claim this paragraph was careful not to make is
+> still not made. The sentence was wrong; the caution behind it was right.
 
 ## Verified — 2026-08-17
 
@@ -254,12 +261,17 @@ otherwise.
 
 ## Not verified — 2026-08-17
 
-- **No real container has started.** `T646b` (EPIC-028) needs a Docker daemon; this machine has
-  none. `SC-AGT-001` is unverified, and so is any claim that the Spec Kit engine works end to end
-  against a live agent.
-- **CI has not run.** Every gate above was executed locally.
-- **`pnpm test:integration` fails** on `audit-immutability.spec.ts` — no container runtime. EPIC-004
-  `T649`, pre-existing, not this epic's gate.
+> **Corrected 2026-08-19.** All three below were true on 2026-08-17 and are not true now. Struck
+> rather than deleted — the record of what was unverified on the day is itself evidence.
+
+- ~~**No real container has started.** `T646b` (EPIC-028) needs a Docker daemon; this machine has
+  none.~~ `SC-AGT-001` is unverified, and so is any claim that the Spec Kit engine works end to end
+  against a live agent — **both still true, for a different reason**: the container starts, and the
+  run stops at *"Refusing to start a sandbox without an AI provider credential"* (`ADR-0002`).
+- ~~**CI has not run.** Every gate above was executed locally.~~ **CI runs on every push**, and since
+  2026-08-19 it runs the integration suite too.
+- ~~**`pnpm test:integration` fails** on `audit-immutability.spec.ts` — no container runtime. EPIC-004
+  `T649`, pre-existing, not this epic's gate.~~ **Passes** — 43 tests, 5 files, real PostgreSQL.
 
 ## Deferred
 

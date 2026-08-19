@@ -143,11 +143,16 @@ reported here rather than quietly fixed.
 
 ## Not verified
 
-- **The integration suite was not run.** `pnpm test:integration` requires a container runtime and
+- ~~**The integration suite was not run.** `pnpm test:integration` requires a container runtime and
   this machine has none: `audit-immutability.spec.ts` (`T453`, EPIC-004) fails with *"Could not find
   a working container runtime strategy."* Six append-only-audit assertions are **unverified**. This
   is EPIC-004's `T649`, not EPIC-001's, and it does not gate this epic — but `pnpm test` exits 1 on
-  this machine and that is stated rather than hidden.
+  this machine and that is stated rather than hidden.~~
+
+  > **Corrected 2026-08-19.** It runs and passes: 43 tests across 5 files against real PostgreSQL,
+  > including the six append-only-audit assertions named above. Since `T688`/`T689` it also runs in
+  > CI on every push. The care taken here — stating the exit code rather than hiding it — is why the
+  > gap was findable at all.
 - **The CI workflow has not run.** Every gate above was executed locally. The `.github/workflows/ci.yml`
   steps are wired and unexecuted until the next push.
 - **No process was started.** The interceptor, the worker bootstrap and the startup records are

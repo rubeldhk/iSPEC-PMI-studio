@@ -27,7 +27,7 @@ Tasks `T592`–`T596` are discharged by the sections below.
 | F-28.1 Setup (`T537`–`T544`) | done | `T539` completed here, once `T646a` gave `execution-providers` tests |
 | F-28.2 Contracts (`T545`–`T554`, `T648`) | done | `execution-contract` 33 tests, `agent-contract` 24 |
 | **US1** Agent swap (`T555`–`T569`) | **done** | `T557`, `T558`, `T559`, `T561`, `T564`, `T565` landed this session |
-| **US2** Real container (`T570`–`T577`, `T646a`, `T647`) | **done except `T646b`** | Docker provider 31 tests; `T646b` needs a daemon |
+| **US2** Real container (`T570`–`T577`, `T646a`, `T647`) | ~~**done except `T646b`**~~ **done** | Docker provider 31 tests; ~~`T646b` needs a daemon~~ `T646b` ran 2026-08-18, digest in [`v6-transcript.md`](./v6-transcript.md) |
 | **US3** Policy not code (`T578`–`T586`) | done | Prior session |
 | Polish (`T587`–`T591`) | done | Mutation tests, preserved-elements record, quickstart results |
 | Phase Z (`T592`–`T596`) | done | This document |
@@ -119,23 +119,51 @@ installation checks described above.
 
 ## Not verified
 
-- **`SC-AGT-001` — no real container has started.** `T646b` needs a Docker daemon and this machine
-  has none. `T646a` is complete and its request construction is asserted field-by-field against a
+> **Corrected 2026-08-19.** Every statement below was true when written; four have since been
+> overtaken, two of them by work done on 2026-08-19. **Struck rather than deleted** — a closure
+> report records what was verified on the day, and erasing the original would remove the evidence
+> that the question was ever open. Each correction names what changed and how it was checked.
+
+- ~~**`SC-AGT-001` — no real container has started.** `T646b` needs a Docker daemon and this machine
+  has none.~~ `T646a` is complete and its request construction is asserted field-by-field against a
   mocked daemon (31 assertions covering every `ADR-0002` control), which proves the request is the
-  one `ADR-0002` specifies and proves **nothing** about whether Docker accepts it. EPIC-003's
-  closure said *"No real container has ever started."* **That is still true.**
-- **`pnpm test:integration` fails** on `audit-immutability.spec.ts` — *"Could not find a working
-  container runtime strategy."* That is EPIC-004 `T649`, pre-existing and not this epic's gate.
-- **CI has not run.** Every gate above was executed locally.
-- **The `T549a` secondary `main` comparison still skips**, because `main` predates these files. The
+  one `ADR-0002` specifies and proves **nothing** about whether Docker accepts it. ~~EPIC-003's
+  closure said *"No real container has ever started."* **That is still true.**~~
+
+  > **A real container HAS started** — `T646b` ran 2026-08-18 and
+  > [`v6-transcript.md`](./v6-transcript.md) records the image digest
+  > `sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f`. The sentence carried
+  > down from EPIC-003's closure is no longer true.
+  >
+  > **`SC-AGT-001` is still NOT satisfied, for a different reason.** The transcript's outcome is
+  > `FAILED` at `generate_specification`: *"Refusing to start a sandbox without an AI provider
+  > credential."* The blocker moved from *no daemon* to *no `AI_PROVIDER_TOKEN`* — and the refusal is
+  > the sandbox behaving correctly under `ADR-0002`, not a fault. Owner: operator.
+
+- ~~**`pnpm test:integration` fails** on `audit-immutability.spec.ts` — *"Could not find a working
+  container runtime strategy."* That is EPIC-004 `T649`, pre-existing and not this epic's gate.~~
+
+  > **Passes.** 43 tests across 5 files, against real PostgreSQL via Testcontainers. The runtime this
+  > machine was said to lack is the same one that started the container above.
+
+- ~~**CI has not run.** Every gate above was executed locally.~~
+
+  > **CI runs on every push**, and since 2026-08-19 (`T688`/`T689`) it executes the integration suite
+  > too — the gap that let these five statements go stale unnoticed for two days.
+
+- ~~**The `T549a` secondary `main` comparison still skips**, because `main` predates these files.~~ The
   frozen-hash assertion runs and is authoritative; the secondary one activates after a merge.
+
+  > **It activated.** `main` now carries `packages/execution-contract/src/index.ts`, the suite reports
+  > no `SECONDARY CHECK SKIPPED`, and all 6 assertions run. This one needed no fix — it said it would
+  > activate after a merge, and it did.
 
 ## Deferred
 
 | Item | Owner | Awaiting |
 |---|---|---|
-| **`T646b`** — the real container run | operator | a machine with a Docker daemon. RAID `R-04` blocks it in CI by design |
-| `R-028-5` — is `claude -p <command>` a supported server-side model? | tech-lead | `T646b`. `invocationFor()` is exported so a finding lands in one reviewable place |
+| ~~**`T646b`** — the real container run~~ **ran 2026-08-18**; `SC-AGT-001` remains open | operator | ~~a machine with a Docker daemon~~ **`AI_PROVIDER_TOKEN`** — the container starts and the run stops at the credential refusal (`ADR-0002`). RAID `R-04` blocks it in CI by design |
+| `R-028-5` — is `claude -p <command>` a supported server-side model? | tech-lead | ~~`T646b`~~ **the credentialled run** — `T646b` reached the sandbox but not the vendor invocation, so the question is still unanswered. `invocationFor()` is exported so a finding lands in one reviewable place |
 | The egress **proxy** (`D-28`, `enforcement: 'proxy'`) | unowned | Not built by this epic; the Docker provider implements the network-policy half only |
 | The credential **broker** (`D-27`, `D-41` BYOK) | unowned | `R-AI-011`, uninvestigated. The `ScopedCredentialRef` seam is declared and validated; the array is empty |
 | A conformance check for `specs/_shared/*.md` | EPIC-018 follow-up | **Corpus-wide gap**, recorded in `T590` rather than fixed locally — no `_shared` document has one, and adding a check for one paragraph would create a standard seven siblings fail |
@@ -147,8 +175,8 @@ installation checks described above.
 |---|---|
 | I Spec Kit Command Gate | pass — executed via `/speckit-implement`; no code changed outside a task |
 | II SRS as Source of Truth | pass — every requirement traces to Native §2–§7, §28 via the epic spec |
-| III Epic → Feature → Task | pass — 3 user stories, 6 phases, 66 tasks |
-| IV Convergence Gate | pass — `T593` run; no unbuilt work remains except `T646b`, explicitly deferred to a named owner |
+| III Epic → Feature → Task | pass — 3 user stories, 6 phases, ~~66~~ **72** tasks *(count corrected 2026-08-19 by `T686`; [tasks.md](./tasks.md) is where it is counted, never restated)* |
+| IV Convergence Gate | pass — `T593` run; ~~no unbuilt work remains except `T646b`, explicitly deferred to a named owner~~ **no unbuilt work remains at all: `T646b` ran 2026-08-18 and the task list is 72/72** |
 | V Mandatory Unit Tests | pass — 601 unit tests; every new check confirmed red first and mutation-verified |
 | VI Defect Traceability | pass — 3 defects recorded **before** any fix, all CLOSED; `defects/` holds no open records |
 | VII Promotion Pipeline | not applicable — no promotion attempted |
@@ -162,14 +190,24 @@ installation checks described above.
 - [x] `/speckit-converge` reports no unbuilt work, or the remainder is deferred to a named owner
 - [x] `specs/028-agent-execution-seam/defects/` contains no open records — 3 raised, 3 CLOSED
 - [x] Preserved-element changes carry all five §28 fields (`SC-AGT-008`) — asserted by `G-28-02`
-- [ ] **`SC-AGT-001` — a real container produces a specification.** **NOT met.** `T646b` is deferred
-      to an operator with a Docker daemon
+- [ ] **`SC-AGT-001` — a real container produces a specification.** **NOT met.** ~~`T646b` is deferred
+      to an operator with a Docker daemon~~ **The container half is met**: `T646b` ran 2026-08-18 and
+      [`v6-transcript.md`](./v6-transcript.md) carries the image digest. The **specification** half is
+      not: the run stops at *"Refusing to start a sandbox without an AI provider credential"*. Awaiting
+      `AI_PROVIDER_TOKEN` (`ADR-0002`), owner operator
 - [x] Closing report published (Constitution IX) — this document
 
-**EPIC-028 is NOT release-eligible.** One success criterion is unmet and one task is outstanding.
-Constitution IV permits closure on an explicitly deferred remainder, and `T646b` is deferred with a
-named owner — but `SC-AGT-001` is the epic's headline outcome, and reporting the epic as complete
-while its headline outcome is unverified is exactly what EPIC-003's closure report warned against.
+**EPIC-028 is NOT release-eligible.** ~~One success criterion is unmet and one task is outstanding.~~
+**One success criterion is unmet; no task is outstanding** — the task list is 72/72 and the remaining
+gap is an input, not work. Constitution IV permits closure on an explicitly deferred remainder, and
+that remainder now has a name: a credential, owned by the operator. But `SC-AGT-001` is the epic's
+headline outcome, and reporting the epic as complete while its headline outcome is unverified is
+exactly what EPIC-003's closure report warned against.
+
+> **Corrected 2026-08-19.** The verdict is unchanged and deliberately so — what moved is the
+> *reason*, from "a task nobody could run" to "an input nobody has supplied". Both block release; only
+> one of them is work. Distinguishing them is the difference between an epic that is unfinished and
+> one that is waiting.
 **Recorded as 65/66, deliberately.**
 
 ## Recommended Next Task

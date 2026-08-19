@@ -220,8 +220,8 @@ by name — and **mutation-tested afterwards**.
 
 - **`V18-6` was not performed.** `SC-RGP-001` and `SC-RGP-007` remain unverified by the human test.
   The structural proxy above is not a substitute and is not counted as one.
-- **The integration suite was not run** — no container runtime on this machine. Not this epic's gate.
-- **CI has not run.** Every gate above was executed locally.
+- ~~**The integration suite was not run** — no container runtime on this machine.~~ Not this epic's gate. **Corrected 2026-08-19: it runs and passes** — 43 tests, 5 files, real PostgreSQL; in CI since `T688`/`T689`.
+- ~~**CI has not run.** Every gate above was executed locally.~~ **Corrected 2026-08-19: CI runs on every push**, and has since 2026-08-17.
 
 ## Deferred — restated as of 2026-08-17
 
