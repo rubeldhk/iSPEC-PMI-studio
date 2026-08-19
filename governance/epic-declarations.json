@@ -1,8 +1,6 @@
 {
   "$comment": "T500 — declared state for the EPIC-026 stage register. Derived state (stage, readiness, next command) lives in the file tree and NEVER here; G-26-08 fails on a stage, readiness or next key at any depth (DF-7). This file is the only hand-authored input to the register, and therefore the only place the register can be lied to.",
-
   "$listsExceptionsNotEpics": "An Epic absent from `epics` is a delivery Epic with no posture, which is the common case. Twenty-eight entries repeating the default would be a second registration step, which FR-ESK-008 forbids. Keys are DIRECTORY NAMES, not EPIC-### labels — one identity, one spelling (DF-1).",
-
   "epics": {
     "002-team-review-access-storage": {
       "kind": "parent-design",
@@ -13,7 +11,90 @@
       ],
       "reason": "Split 2026-08-07 by ruling D-19 into three module-aligned children. Holds their requirements, clarifications, SRS traceability and principle register; carries no tasks by design."
     },
-
+    "005-identity-signin": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "006-project-management": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "007-requirement-intelligence": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "008-spec-authoring-generation": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "009-spec-lifecycle-versioning": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "010-specification-interface": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "011-traceability": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "012-workflow-tasks": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "013-engine-api-selection": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "014-devops-release": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "015-qa-validation": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "016-architecture-decision-records": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
     "017-enhancement-model": {
       "kind": "parent-design",
       "children": [
@@ -22,27 +103,63 @@
         "021-review-gates-roles",
         "022-product-traceability"
       ],
-      "reason": "Split by ruling D-18 into four delivery children after ruling D-17 separated the product half from the repository process. Holds the spec, plan, research, data model, contracts and quickstart they share — the role _shared/ plays for the platform."
-    },
-
-    "009-spec-lifecycle-versioning": {
+      "reason": "Split by ruling D-18 into four delivery children after ruling D-17 separated the product half from the repository process. Holds the spec, plan, research, data model, contracts and quickstart they share — the role _shared/ plays for the platform.",
       "posture": {
         "kind": "Held",
-        "awaiting": "PMI-DOC-004 Business Requirement Specification",
-        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
       }
     },
-
-    "012-workflow-tasks": {
+    "019-steering-engine": {
       "posture": {
         "kind": "Held",
-        "awaiting": "PMI-DOC-004 Business Requirement Specification",
-        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "020-living-specifications": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "021-review-gates-roles": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "022-product-traceability": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "023-unattended-runs-review": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "024-artifact-access-control": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+    "025-external-storage-publishing": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification and approved business scope",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Recorded as '⏸ HELD' in this Epic's own spec.md and declared here by T684, so the hold is a declaration the register can read rather than prose it cannot. Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
       }
     }
   },
-
   "$waiverNote": "None active. The DOR-08 waiver taken 2026-08-18 was RETIRED 2026-08-19 when T679 narrowed the condition to Constitution V's actual scope — the exception is gone because the reason for it is. A waiver covers exactly one DOR condition for one Epic, is owned by a programme role, carries a reason, and expires. It makes the Epic read 'Ready (waived)' and never plain 'Ready' — which is what stops an exception costing nothing. An expired waiver FAILS THE BUILD.",
-
   "waivers": []
 }

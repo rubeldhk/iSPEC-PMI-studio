@@ -20,6 +20,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildRegisterModel } from './build';
 import { enumerateEpics } from './derive';
+import { loadDeclarations } from './declarations';
 import { SEVERITY_BY_KIND } from './severity';
 
 const MODEL = buildRegisterModel(undefined, '2026-08-18');
@@ -59,9 +60,35 @@ describe('T528 · declarations reach the rows they belong to', () => {
   });
 
   it('applies a declared posture to the right Epic and nothing else', () => {
+    // This once asserted the held set was exactly EPIC-009 and EPIC-012 — true
+    // when two Epics were declared, and stale the moment `T684` declared the
+    // other eighteen. The durable assertion is the PROPERTY: an Epic reads
+    // `Held` if and only if a posture was declared for it, and every hold names
+    // what would release it (`DF-3`).
+    const declared = new Set(
+      Object.entries(loadDeclarations().epics ?? {})
+        .filter(([, entry]) => entry.posture?.kind === 'Held')
+        .map(([directory]) => directory),
+    );
     const held = MODEL.rows.filter((row) => row.posture?.startsWith('Held'));
-    expect(held.map((row) => row.epic).sort()).toEqual(['EPIC-009', 'EPIC-012']);
-    for (const row of held) expect(row.posture).toContain('PMI-DOC-004');
+
+    expect(held.length, 'no Epic reads Held, so this assertion proves nothing').toBeGreaterThan(0);
+    expect(new Set(held.map((row) => row.directory))).toEqual(declared);
+    for (const row of held) {
+      expect(row.posture, `${row.epic} is Held and names no releasing input`).toContain('PMI-DOC-004');
+    }
+  });
+
+  it('never shows a held Epic as ready to implement', () => {
+    // The hazard `T684` closed. Before the postures were declared, `DOR-12`
+    // passed for eighteen held Epics — so back-filling their analysis records
+    // would have made the register say `Ready` and point an implementer at work
+    // decision D-10 blocks.
+    for (const row of MODEL.rows) {
+      if (!row.posture?.startsWith('Held')) continue;
+      expect(row.readiness, `${row.epic} is Held and reads ${row.readiness}`).not.toBe('Ready');
+      expect(row.readiness).not.toBe('Ready (waived)');
+    }
   });
 
   it('never evaluates a parent design for readiness', () => {

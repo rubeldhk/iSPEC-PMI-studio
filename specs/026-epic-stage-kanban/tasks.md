@@ -550,6 +550,38 @@ not make `DOR-08` correct. This does, and retires the waiver.*
   >
   > `DOR-08` now reads **28 of 28** passing-or-not-applicable.
 
+- [X] T684 Declare the eighteen held postures in `governance/epic-declarations.json` — every Epic whose own `spec.md` records `⏸ HELD` under decision `D-10` — so a hold is a declaration rather than prose, and no held Epic can read `Ready` (`FR-ESK-004`, `FR-ESK-020`; check: `G-26-08`, `G-26-03`)
+
+- [X] T685 Write check `G-26-12` asserting every Epic whose own `spec.md` states `⏸ HELD` carries a declared posture, and that no `▶ PROCEEDING` Epic is declared Held, in `tests/governance/epic-stage/posture-consistency.spec.ts` (`FR-ESK-004`, `SC-ESK-010`)
+
+  > **Requested as "back-fill the clarification sessions and analysis records" — which I declined to
+  > do as asked, and did the prerequisite instead.**
+  >
+  > A clarification session and an analysis record are evidence that a step **ran**. Writing 22 and
+  > 27 of them without running the steps fabricates that evidence and inverts `FR-ESK-017` — the one
+  > rule this epic exists to enforce. The register's value is that it measures what an Epic can
+  > *prove*; generating the proof would make it measure nothing.
+  >
+  > **And the order would have misled.** Eighteen held Epics had no declared posture, so `DOR-12`
+  > passed for them. Back-filling their analyses would have let several read **`Ready` →
+  > `/speckit-implement`** — the register pointing an implementer at work decision `D-10` blocks.
+  >
+  > `T684` declared those eighteen. That invents nothing: `D-10` made the decision and each
+  > `spec.md` already records `⏸ HELD`; declaring transcribes a sourced decision into the form the
+  > register can read. **`stalled` fell from 25 Epics to 7**, and those seven are genuinely short of
+  > their terminal stage with nothing declared — which is what the word is for.
+  >
+  > **A loose scan nearly declared a proceeding Epic as held.** Matching any `⏸ HELD` in a spec
+  > caught EPIC-026, whose text *quotes* EPIC-009 and EPIC-012's hold. The first marker in a
+  > document is the Epic's own posture; later ones are commentary. Caught before it landed, and
+  > `G-26-12` now asserts the inverse directly.
+  >
+  > **`T685` exists because a mutation survived.** Removing a held Epic's declaration left every test
+  > green: `build.spec.ts` compares the register's held set against the *declared* set, and those two
+  > move together. It can see a declaration reaching the wrong Epic; it cannot see one that should
+  > exist and does not — which is exactly the gap `T684` had just spent a task fixing by hand.
+  > `G-26-12` compares the declarations against each `spec.md`, and both mutations now fail.
+
 ---
 
 ## Dependencies & Execution Order

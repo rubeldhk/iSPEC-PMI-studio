@@ -82,6 +82,7 @@ rather than application code.
 | `G-26-09` | `specs/README.md` carries no stage, posture or task-count content (`FR-ESK-009`) | fails |
 | `G-26-10` | The register carries no convergence, defect, closure or promotion state (`FR-ESK-009`, `RF-6`) | fails |
 | `G-26-11` | The `epic-stage` group is collected by the `governance` project and needs no database, server or daemon (`SC-ESK-009`) | fails |
+| `G-26-12` | An Epic whose `spec.md` states `⏸ HELD` carries a declared posture, and no `▶ PROCEEDING` Epic is declared Held (`SC-ESK-010`) | fails |
 
 > **Severity split for the `G-26-*` group** (`FR-ESK-016`, table in
 > [`tests/governance/epic-stage/severity.ts`](../tests/governance/epic-stage/severity.ts)):

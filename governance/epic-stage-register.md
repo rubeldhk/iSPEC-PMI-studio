@@ -15,27 +15,27 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-002](../specs/002-team-review-access-storage/) | Unattended Runs with Team Review, Artifact Access Control & External Storage Integration | parent-design | Clarified | stalled | n/a | `/speckit-checklist` |
 | [EPIC-003](../specs/003-specification-engine/) | Specification Engine & Sandbox | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-004](../specs/004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-005](../specs/005-identity-signin/) | Identity & Sign-in | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-006](../specs/006-project-management/) | Project Management | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-007](../specs/007-requirement-intelligence/) | Requirement Intelligence | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-008](../specs/008-spec-authoring-generation/) | Specification Authoring & Generation | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-005](../specs/005-identity-signin/) | Identity & Sign-in | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-006](../specs/006-project-management/) | Project Management | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-007](../specs/007-requirement-intelligence/) | Requirement Intelligence | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-008](../specs/008-spec-authoring-generation/) | Specification Authoring & Generation | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
 | [EPIC-009](../specs/009-spec-lifecycle-versioning/) | Specification Lifecycle & Versioning | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification` | Not ready | `/speckit-clarify` |
-| [EPIC-010](../specs/010-specification-interface/) | Specification Interface | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-011](../specs/011-traceability/) | Traceability | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-010](../specs/010-specification-interface/) | Specification Interface | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-011](../specs/011-traceability/) | Traceability | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
 | [EPIC-012](../specs/012-workflow-tasks/) | Workflow & Tasks | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification` | Not ready | `/speckit-clarify` |
-| [EPIC-013](../specs/013-engine-api-selection/) | Engine API & Selection | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-014](../specs/014-devops-release/) | DevOps & Release | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-015](../specs/015-qa-validation/) | QA & Validation | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-016](../specs/016-architecture-decision-records/) | Architecture Decision Records | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-017](../specs/017-enhancement-model/) | Enhancement Model for Spec-Driven Engineering | parent-design | Planned | — | n/a | `/speckit-tasks` |
+| [EPIC-013](../specs/013-engine-api-selection/) | Engine API & Selection | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-014](../specs/014-devops-release/) | DevOps & Release | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-015](../specs/015-qa-validation/) | QA & Validation | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-016](../specs/016-architecture-decision-records/) | Architecture Decision Records | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-017](../specs/017-enhancement-model/) | Enhancement Model for Spec-Driven Engineering | parent-design | Planned | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | n/a | `/speckit-tasks` |
 | [EPIC-018](../specs/018-repository-governance/) | Repository Governance Process | delivery | Tasked | stalled | Not ready | `/speckit-analyze` |
-| [EPIC-019](../specs/019-steering-engine/) | Steering Engine | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-020](../specs/020-living-specifications/) | Living Specifications & Impact | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-021](../specs/021-review-gates-roles/) | Review Gates & Roles | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-022](../specs/022-product-traceability/) | Product Structure & Traceability | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-023](../specs/023-unattended-runs-review/) | Unattended Runs & Team Review | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-024](../specs/024-artifact-access-control/) | Artifact Access Control | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
-| [EPIC-025](../specs/025-external-storage-publishing/) | External Storage Publishing | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-019](../specs/019-steering-engine/) | Steering Engine | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-020](../specs/020-living-specifications/) | Living Specifications & Impact | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-021](../specs/021-review-gates-roles/) | Review Gates & Roles | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-022](../specs/022-product-traceability/) | Product Structure & Traceability | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-023](../specs/023-unattended-runs-review/) | Unattended Runs & Team Review | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-024](../specs/024-artifact-access-control/) | Artifact Access Control | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
+| [EPIC-025](../specs/025-external-storage-publishing/) | External Storage Publishing | delivery | Specified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-clarify` |
 | [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Tasked | stalled | Not ready | `/speckit-analyze` |
 | [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Tasked | stalled | Not ready | `/speckit-analyze` |
