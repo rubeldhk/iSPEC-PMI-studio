@@ -1,15 +1,15 @@
 {
   "version": "1.0",
   "generated_from": {
-    "clauses.md": "3a60edbd356ccbc8e6497c51463c098ebb65b7696c2223527cb5549680baca49",
-    "verdicts.md": "425fc44dcae439a0f15e20bf1f40ce5a04811b0c781ec6d89feea6f0f02907a9",
-    "capabilities.md": "d8eca76df02a76bfa070168e5609054f205d71559897982f0449999ad783fee6",
-    "capability-areas.md": "b2392b6d1803517551cafc7282bb33c08a0045543f1ee85f96397427648f130f",
-    "premises.md": "f31542a037175598331f20e518fb3ad4459ee22d01b01e28757757a1c85951a9",
-    "decisions.md": "e975231d4ce85b170c5356b9fa99080428db881dff08e95325be74247f8b4b64",
-    "research.md": "ca47a3808e2b3bef76941af2440f35d1c5bb357c8c38697bdde810ebc5e66a16",
-    "adrs.md": "1b3b962c7485146ef251c39a59e83fe6483f5219d309ca99f85ef3c415e0c571",
-    "preserved-elements.md": "8d5ef343688d0113214f7c7ce27892d7285767ad984406252db426fd85c26c89"
+    "clauses.md": "a14129d7b62076217cb412f50c8ff9097411664a35a67c28d4cca0114ea2a27d",
+    "verdicts.md": "c88a514dd2c7dc79637f9cc22d019a0c895d82042c2ed7349165dc8d326eaff4",
+    "capabilities.md": "f54ac90c0cb703e160e6883f4312c8fea2a31584be633002c852622e304e10fb",
+    "capability-areas.md": "ff42cf01e63db78317f5d74b12419fc45bc4454d4d60281df5dfb4096bfbbc05",
+    "premises.md": "077020efcdd8390b9900188967b4e8fd0826ace33da6f59bd7607b6242fe361a",
+    "decisions.md": "1c158babcbfeadaeceb1e61123fed285aeff28839a336631b37562311f2072fe",
+    "research.md": "36599a7513730c4e22f5a68d3734c0992e3bff04b1f18f848a6351534449961e",
+    "adrs.md": "76c4f11bd30ca2e76c18b0d9021c76c904b3bcefaba4bb34a5eca08a50b186c6",
+    "preserved-elements.md": "ef54fe5edfa6a3c3a799b5ffb8e86daf094032a78b5f94fd057c730efa3d90ed"
   },
   "clauses": [
     {

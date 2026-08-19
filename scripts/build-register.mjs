@@ -153,7 +153,24 @@ const SOURCES = {
   'preserved-elements.md': 'preserved_element_changes',
 };
 
-const sha256 = (text) => createHash('sha256').update(text).digest('hex');
+/**
+ * DEF-027-004 — line endings are normalised before hashing.
+ *
+ * This repository has no `.gitattributes` and `core.autocrlf=true` on Windows,
+ * so the working copy holds CRLF while a Linux CI checkout holds LF. Hashing raw
+ * bytes made every digest platform-dependent: all nine matched locally and none
+ * matched in CI, which `G-27-11` correctly reported as nine files "changed since
+ * the last build" that nobody had touched.
+ *
+ * Line endings are decided by git and the checkout platform, not by anything a
+ * person wrote — the same reasoning EPIC-026's `RF-7` records. Nothing else is
+ * normalised: a digest that ignored whitespace could not detect a whitespace
+ * edit, which is a real edit.
+ */
+const sha256 = (text) =>
+  createHash('sha256')
+    .update(String(text).replace(/\r\n/g, '\n'))
+    .digest('hex');
 
 /**
  * The §18 report's own shape.

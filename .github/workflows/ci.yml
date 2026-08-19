@@ -16,7 +16,24 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
+      # DEF-027-005 — full history, deliberately.
+      #
+      # `actions/checkout@v4` defaults to `fetch-depth: 1`, a shallow clone of a
+      # single commit. Two governance checks walk git history and are starved by
+      # that:
+      #
+      #   G-27-09  proves EPIC-027 shipped no product source (SC-AMD-009) by
+      #            walking `git log --all`. On a shallow clone it finds zero
+      #            commits. It FAILS rather than passing, because T632 added an
+      #            anti-vacuity assertion — without which it would have reported
+      #            green in CI forever while examining nothing.
+      #   G-10     compares the branch name to the epic being worked (D-39). On a
+      #            shallow clone it degrades quietly to "no epic determinable".
+      #
+      # Do not "optimise" this back to a shallow clone without reading those two.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
         with:

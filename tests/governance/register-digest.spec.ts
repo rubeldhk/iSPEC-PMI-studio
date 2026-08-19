@@ -32,7 +32,24 @@ import { buildRegister } from '../../scripts/build-register.mjs';
 const REGISTER_DIR = join(REPO_ROOT, 'specs/027-ai-native-amendment/register');
 const PROJECTION = join(REGISTER_DIR, 'register.json');
 
-const sha256 = (text: string): string => createHash('sha256').update(text).digest('hex');
+/**
+ * DEF-027-004 — line endings are normalised before hashing.
+ *
+ * This repository has no `.gitattributes` and `core.autocrlf=true` on Windows,
+ * so the working copy holds CRLF while a Linux CI checkout holds LF. Hashing raw
+ * bytes made every digest platform-dependent: all nine matched locally and none
+ * matched in CI, which `G-27-11` correctly reported as nine files "changed since
+ * the last build" that nobody had touched.
+ *
+ * Line endings are decided by git and the checkout platform, not by anything a
+ * person wrote — the same reasoning EPIC-026's `RF-7` records. Nothing else is
+ * normalised: a digest that ignored whitespace could not detect a whitespace
+ * edit, which is a real edit.
+ */
+const sha256 = (text: string): string =>
+  createHash('sha256')
+    .update(text.replace(/\r\n/g, '\n'))
+    .digest('hex');
 
 const present = existsSync(PROJECTION);
 const committed = present
