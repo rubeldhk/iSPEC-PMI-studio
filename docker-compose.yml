@@ -1,0 +1,43 @@
+# T009 — local services.
+#
+# Valkey rather than Redis: Redis relicensed away from BSD in 2024, which is a
+# commercial-redistribution exposure for this platform. Valkey is the BSD fork
+# and speaks the same protocol, so BullMQ and ioredis are unchanged.
+# See ADR-0003 and RAID R-03.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pmi-postgres
+    environment:
+      POSTGRES_USER: pmi
+      POSTGRES_PASSWORD: pmi_local_dev
+      POSTGRES_DB: pmi_studio
+    ports:
+      # Host port is configurable: developer machines often already run a
+      # Postgres. The container port never changes.
+      - '${PMI_POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pmi-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pmi -d pmi_studio']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:7-alpine
+    container_name: pmi-valkey
+    ports:
+      - '${PMI_VALKEY_PORT:-6379}:6379'
+    volumes:
+      - pmi-valkey-data:/data
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pmi-postgres-data:
+  pmi-valkey-data:

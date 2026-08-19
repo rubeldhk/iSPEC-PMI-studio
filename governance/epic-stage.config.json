@@ -1,0 +1,153 @@
+{
+  "_comment": "T470 — the Epic stage model as CONFIGURATION (FR-ESK-015). Same pattern as governance.config.json: a stage sequence hard-coded in a check is a process nobody agreed to. The counts here are fixed by the specification — seven stages (FR-ESK-001), three posture kinds (FR-ESK-020), two Epic kinds (FR-ESK-024), twelve DOR conditions (FR-ESK-012) — and G-26-01 asserts them. The contents are configuration and are asserted for structure only, so this file can change without editing a test.",
+
+  "_derivedVsDeclared": "Stage and DOR results are DERIVED from the file tree. Epic kind, posture and waivers are DECLARED by a person in governance/epic-declarations.json. Nothing crosses that line: a person never writes a stage, a machine never infers intent.",
+
+  "epicDirectoryPattern": "^\\d{3}-",
+
+  "stages": [
+    {
+      "order": 1,
+      "name": "Specified",
+      "evidence": "spec.md exists",
+      "next": "/speckit-clarify"
+    },
+    {
+      "order": 2,
+      "name": "Clarified",
+      "evidence": "spec.md contains a '## Clarifications' heading and at least one '### Session <date>'",
+      "_why": "FR-ESK-018. Derived from a recorded session, NOT from the absence of [NEEDS CLARIFICATION] markers — absence would mark every freshly written spec as clarified before the step ever ran. A session that asked nothing still counts: the artifact records that the step RAN, not that it found something (FR-ESK-017).",
+      "next": "/speckit-checklist"
+    },
+    {
+      "order": 3,
+      "name": "Checklisted",
+      "evidence": "at least one file in checklists/ and zero unchecked items across them",
+      "next": "/speckit-plan"
+    },
+    {
+      "order": 4,
+      "name": "Planned",
+      "evidence": "plan.md exists",
+      "next": "/speckit-tasks"
+    },
+    {
+      "order": 5,
+      "name": "Tasked",
+      "evidence": "tasks.md exists",
+      "next": "/speckit-analyze"
+    },
+    {
+      "order": 6,
+      "name": "Analyzed",
+      "evidence": "analysis.md exists",
+      "_why": "FR-ESK-019. The analysis step used to print its findings and leave nothing behind, which would have made this the one stage in the journey with no artifact — a hole in FR-ESK-003 on the day it was written.",
+      "next": "DOR evaluation"
+    },
+    {
+      "order": 7,
+      "name": "Ready",
+      "evidence": "every DOR condition passes, or is covered by a valid waiver",
+      "next": "/speckit-implement"
+    }
+  ],
+
+  "postureKinds": {
+    "Held": {
+      "meaning": "Awaiting a named input",
+      "requires": "awaiting"
+    },
+    "Blocked": {
+      "meaning": "Awaiting another Epic",
+      "requires": "blockedBy"
+    },
+    "Superseded": {
+      "meaning": "Replaced by another Epic",
+      "requires": "replacedBy"
+    }
+  },
+
+  "_postureNote": "FR-ESK-004 — posture is an OVERLAY on the derived stage, never a replacement for it: an Epic that is Held is still at whatever stage its artifacts prove, and clearing the posture resumes it there with no stage information lost. All three block readiness. Keeping every kind blocking means a recorded stop always means not Ready, so no reader has to remember which kinds are which. A non-blocking 'Deferred' was rejected: an Epic simultaneously postponed and Ready is a contradiction the register would have to explain every time it was read. Absence is not a posture — an Epic stopped with nothing declared reads 'stalled' (FR-ESK-006).",
+
+  "epicKinds": {
+    "delivery": {
+      "meaning": "Produces tasks and is implemented. The default when nothing is declared",
+      "terminalStage": "Ready",
+      "evaluatesDor": true
+    },
+    "parent-design": {
+      "meaning": "Holds requirements and design for child Epics; deliberately carries no tasks",
+      "terminalStage": "Planned",
+      "evaluatesDor": false,
+      "requires": "children"
+    }
+  },
+
+  "dorConditions": [
+    { "id": "DOR-01", "condition": "Specification exists", "reads": "spec.md", "principle": "III" },
+    {
+      "id": "DOR-02",
+      "condition": "No unresolved clarification markers",
+      "reads": "spec.md — no '[NEEDS CLARIFICATION' outside inline code"
+    },
+    {
+      "id": "DOR-03",
+      "condition": "SRS traceability populated; uncovered requirements name a back-fill owner",
+      "reads": "spec.md §SRS Traceability",
+      "principle": "II"
+    },
+    {
+      "id": "DOR-04",
+      "condition": "Principle conformance position recorded",
+      "reads": "spec.md §Principle Conformance",
+      "principle": "PMI-DOC-003, D-6"
+    },
+    {
+      "id": "DOR-05",
+      "condition": "Requirements checklist present and fully resolved",
+      "reads": "checklists/*.md — zero '- [ ]'"
+    },
+    {
+      "id": "DOR-06",
+      "condition": "Plan exists and its Constitution Check records no FAIL",
+      "reads": "plan.md §Constitution Check",
+      "principle": "I–IX"
+    },
+    { "id": "DOR-07", "condition": "Task list exists", "reads": "tasks.md", "principle": "III" },
+    {
+      "id": "DOR-08",
+      "condition": "Every implementation task pairs with a test or conformance check",
+      "reads": "tasks.md",
+      "principle": "V"
+    },
+    {
+      "id": "DOR-09",
+      "condition": "Analysis recorded with zero blocking findings",
+      "reads": "analysis.md"
+    },
+    {
+      "id": "DOR-10",
+      "condition": "Epic Exit Criteria stated",
+      "reads": "spec.md §Epic Exit Criteria",
+      "principle": "IV, V, VI, IX"
+    },
+    {
+      "id": "DOR-11",
+      "condition": "defects/ exists with no open records",
+      "reads": "defects/",
+      "principle": "VI"
+    },
+    {
+      "id": "DOR-12",
+      "condition": "No blocking posture declared",
+      "reads": "declarations",
+      "principle": "D-10"
+    }
+  ],
+
+  "_dorNote": "FR-ESK-010 — this list IS the written Definition of Ready: the complete set of conditions an Epic must satisfy before /speckit-implement may run against it. Evaluation is TOTAL, not short-circuiting (FR-ESK-013): every condition is evaluated and every failure listed, so one pass tells a reader everything outstanding. It is also FRESH, never stamped — amending a spec after the DOR passed withdraws readiness on the next run, with no explicit invalidation step.",
+
+  "waiverRoles": ["tech-lead", "product-owner", "project-owner"],
+
+  "_waiverNote": "Reused from governance.config.json 'owners', not re-declared — a second list would drift and authorise owners governance did not. A waiver covers exactly one DOR condition for one Epic, carries a reason and an expiry, and makes the Epic read 'Ready (waived)' and never plain Ready (FR-ESK-023). An expired waiver FAILS THE BUILD. Waivers exist because a gate with no legitimate exception path is the kind that gets edited rather than obeyed."
+}

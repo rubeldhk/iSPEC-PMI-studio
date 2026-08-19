@@ -240,6 +240,26 @@ Behavior rules:
 
 Context for prioritization: $ARGUMENTS
 
+## Recording the session — MANDATORY on every run
+
+**`FR-ESK-018` (EPIC-026). A dated session is recorded every time this command runs, including when it asks nothing.**
+
+Before finishing, `spec.md` MUST contain a `## Clarifications` heading with a `### Session YYYY-MM-DD` beneath it for this run. If the run asked no questions — because the specification was already unambiguous — still write the session and state:
+
+```markdown
+## Clarifications
+
+### Session 2026-08-18
+
+- No questions required.
+```
+
+**Why this is not optional.** The Epic Stage Register derives the `Clarified` stage from a recorded session, and deliberately **not** from the absence of `[NEEDS CLARIFICATION]` markers. Deriving it from absence would mark every freshly written specification as clarified before this step had ever run — the stage would measure how clean a document looks rather than whether anyone examined it.
+
+The general rule, stated as `FR-ESK-017`: **an artifact records that a step ran, not that it found something.** A clarification that changes nothing still happened, and an Epic must be able to leave `Specified` after one.
+
+---
+
 ## Mandatory Post-Execution Hooks
 
 **You MUST complete this section before reporting completion to the user.**

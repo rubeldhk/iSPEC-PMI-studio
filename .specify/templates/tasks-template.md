@@ -5,13 +5,31 @@ description: "Task list template for feature implementation"
 
 # Tasks: [FEATURE NAME]
 
-**Input**: Design documents from `/specs/[###-feature-name]/`
+**Epic**: `[EPIC-###]`
+
+**Input**: Design documents from `/specs/[epic-id]/`
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: MANDATORY (Constitution V). Every task that produces or changes application code MUST
+have at least one accompanying unit-test task. Unit tests are written FIRST and MUST fail before
+the implementing code is written. A task is not complete until its tests pass. Tests are never
+optional in this project.
+
+**Non-code outputs count too** (Constitution V, v1.2.0). A task whose output is a document, a
+configuration file, or any other non-executable artifact MUST be paired with an **executable
+conformance check** that reads the artifact and fails when it drifts from its governing standard.
+Manual review does not satisfy the gate, and a check that cannot fail is decoration.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+
+**Before starting**: sync the repository from GitHub, and confirm no other Claude session is
+active on this checkout (if one is, work in a separate clone). Label the session with this Epic —
+`EPIC-### <short name>` (Constitution VIII). See Constitution §Repository & Environment Governance.
+
+**Before finishing**: close with a report — what was done (artifacts by path, plus anything in
+scope that was not done and why) and the recommended next task as a concrete Spec Kit command
+(Constitution IX).
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -80,21 +98,24 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 1 (MANDATORY - Constitution V) ⚠️
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T010 [P] [US1] Unit tests for [Entity1]/[Service] in tests/unit/test_[name].py
+- [ ] T011 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T012 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
-- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T016 [US1] Add validation and error handling
-- [ ] T017 [US1] Add logging for user story 1 operations
+Each task below is complete only when its paired unit test passes.
+
+- [ ] T013 [P] [US1] Create [Entity1] model in src/models/[entity1].py (unit test: T010)
+- [ ] T014 [P] [US1] Create [Entity2] model in src/models/[entity2].py (unit test: T010)
+- [ ] T015 [US1] Implement [Service] in src/services/[service].py (depends on T013, T014)
+- [ ] T016 [US1] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T017 [US1] Add validation and error handling
+- [ ] T018 [US1] Add logging for user story 1 operations
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -106,17 +127,18 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 2 (MANDATORY - Constitution V) ⚠️
 
-- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T019 [P] [US2] Unit tests for [Entity]/[Service] in tests/unit/test_[name].py
+- [ ] T020 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T021 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
-- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
-- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T022 [P] [US2] Create [Entity] model in src/models/[entity].py (unit test: T019)
+- [ ] T023 [US2] Implement [Service] in src/services/[service].py (unit test: T019)
+- [ ] T024 [US2] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T025 [US2] Integrate with User Story 1 components (if needed)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -128,16 +150,17 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 3 (MANDATORY - Constitution V) ⚠️
 
-- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
-- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
+- [ ] T026 [P] [US3] Unit tests for [Entity]/[Service] in tests/unit/test_[name].py
+- [ ] T027 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T028 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
-- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T029 [P] [US3] Create [Entity] model in src/models/[entity].py (unit test: T026)
+- [ ] T030 [US3] Implement [Service] in src/services/[service].py (unit test: T026)
+- [ ] T031 [US3] Implement [endpoint/feature] in src/[location]/[file].py
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -154,9 +177,23 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
+- [ ] TXXX [P] Fill remaining unit-test gaps in tests/unit/ (Constitution V)
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+
+---
+
+## Phase Z: Epic Closure (MANDATORY - Constitution IV, VI, VII, IX)
+
+**Purpose**: Gate the Epic before it may be promoted out of `local`
+
+- [ ] TXXX Confirm every implementation task has a passing unit test
+- [ ] TXXX Run `/speckit-converge`; append and complete any remaining unbuilt work
+- [ ] TXXX Triage `specs/[epic-id]/defects/`; every record closed or deferred to a named Epic
+- [ ] TXXX Re-run full test suite green after defect fixes
+- [ ] TXXX Promote `local → dev` (then dev → stage → prod; no environment skipped)
+- [ ] TXXX Publish the Epic closing report: work completed, work deferred, and the recommended
+      next Epic/command (Constitution IX)
 
 ---
 
@@ -179,7 +216,7 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Within Each User Story
 
-- Tests (if included) MUST be written and FAIL before implementation
+- Tests MUST be written and MUST FAIL before implementation (mandatory — Constitution V)
 - Models before services
 - Services before endpoints
 - Core implementation before integration
@@ -199,7 +236,7 @@ Examples of foundational tasks (adjust based on your project):
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch all tests for User Story 1 together (if tests requested):
+# Launch all tests for User Story 1 together (mandatory, written first):
 Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
 Task: "Integration test for [user journey] in tests/integration/test_[name].py"
 
@@ -249,4 +286,10 @@ With multiple developers:
 - Verify tests fail before implementing
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
+- Never edit code outside a Spec Kit command (Constitution I) — defects become new tasks, not
+  direct patches (Constitution VI)
+- Every command run ends with a closing report: what was done + recommended next task
+  (Constitution IX); unrun tests are never reported as passing
+- Document and configuration tasks pair with an executable conformance check, not a unit test
+  (Constitution V); whether it blocks CI or only reports is recorded in the epic's spec
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

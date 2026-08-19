@@ -1,0 +1,35 @@
+# Node / TypeScript
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Environment & secrets — never commit AI provider credentials (ADR-0002)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Prisma
+backend/prisma/*.db
+
+# Engine sandbox scratch — ephemeral workspaces are never committed
+.engine-workspaces/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+# Word/Excel lock files — created beside any open SRS/*.docx, never source material
+~$*
+.vscode/
+.idea/
+
+# Claude Code local settings — machine-specific, not shared
+.claude/settings.local.json
+.claude/settings.local.json.tmp.*

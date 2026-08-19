@@ -1,0 +1,56 @@
+{
+  "$comment": "T500 — declared state for the EPIC-026 stage register. Derived state (stage, readiness, next command) lives in the file tree and NEVER here; G-26-08 fails on a stage, readiness or next key at any depth (DF-7). This file is the only hand-authored input to the register, and therefore the only place the register can be lied to.",
+
+  "$listsExceptionsNotEpics": "An Epic absent from `epics` is a delivery Epic with no posture, which is the common case. Twenty-eight entries repeating the default would be a second registration step, which FR-ESK-008 forbids. Keys are DIRECTORY NAMES, not EPIC-### labels — one identity, one spelling (DF-1).",
+
+  "epics": {
+    "002-team-review-access-storage": {
+      "kind": "parent-design",
+      "children": [
+        "023-unattended-runs-review",
+        "024-artifact-access-control",
+        "025-external-storage-publishing"
+      ],
+      "reason": "Split 2026-08-07 by ruling D-19 into three module-aligned children. Holds their requirements, clarifications, SRS traceability and principle register; carries no tasks by design."
+    },
+
+    "017-enhancement-model": {
+      "kind": "parent-design",
+      "children": [
+        "019-steering-engine",
+        "020-living-specifications",
+        "021-review-gates-roles",
+        "022-product-traceability"
+      ],
+      "reason": "Split by ruling D-18 into four delivery children after ruling D-17 separated the product half from the repository process. Holds the spec, plan, research, data model, contracts and quickstart they share — the role _shared/ plays for the platform."
+    },
+
+    "009-spec-lifecycle-versioning": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    },
+
+    "012-workflow-tasks": {
+      "posture": {
+        "kind": "Held",
+        "awaiting": "PMI-DOC-004 Business Requirement Specification",
+        "reason": "Awaits approved business scope (PMI-TASK-001 T-101, T-106; decision D-10; RAID D-K). Held is not cancelled — the tasks are complete, reviewed and Constitution V compliant."
+      }
+    }
+  },
+
+  "$waiverNote": "A waiver covers exactly one DOR condition for one Epic, is owned by a programme role, carries a reason, and expires. It makes the Epic read 'Ready (waived)' and never plain 'Ready' — which is what stops an exception costing nothing. An expired waiver FAILS THE BUILD.",
+
+  "waivers": [
+    {
+      "epic": "026-epic-stage-kanban",
+      "condition": "DOR-08",
+      "owner": "project-owner",
+      "reason": "DEF-026-001 — DOR-08 as implemented is broader than Constitution V: it demands a paired test for setup, polish and closure tasks that produce no application code, and reports 12 false positives against EPIC-026 itself. Narrowing the condition in the closing phase of the epic it first inconvenienced is the move the waiver mechanism exists to prevent, so the fix is deferred to a follow-up task with its own red test.",
+      "expires": "2026-11-16"
+    }
+  ]
+}

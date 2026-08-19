@@ -2,11 +2,61 @@
 
 **Feature Branch**: `[###-feature-name]`
 
+**Epic**: `[EPIC-###]` — [Epic name]
+
 **Created**: [DATE]
 
 **Status**: Draft
 
 **Input**: User description: "$ARGUMENTS"
+
+## SRS Traceability *(mandatory — Constitution II)*
+
+<!--
+  Every requirement below MUST trace to a document in SRS/. List the sources here.
+  Requirements with no SRS source MUST be listed under Assumptions and flagged for
+  SRS back-fill. Where spec and SRS disagree, the SRS wins.
+-->
+
+| Source | Section | Covers |
+|--------|---------|--------|
+| `SRS/[document]` | [§ / heading] | [FR-00X, FR-00Y] |
+
+**Requirements not yet covered by SRS**: [none | list + back-fill owner]
+
+## Principle Conformance & Deferrals *(mandatory — PMI-DOC-003, decision D-6)*
+
+<!--
+  PMI-DOC-003 principles bind the PROGRAMME, not each Epic individually (decision D-6).
+  Every Epic MUST therefore declare its position on all twenty. A deferral is a debt with a
+  named owner, reviewed at the Epic's convergence gate — not permission to skip.
+  Status: Satisfied | Partial | Deferred | Not applicable.
+-->
+
+| ID | Principle | Status | Evidence, or reason for deferral + where it lands |
+|----|-----------|--------|---------------------------------------------------|
+| PP-001 | Specification First, AI Second | | |
+| PP-002 | Single Source of Truth | | |
+| PP-003 | Human-in-the-Loop | | |
+| PP-004 | End-to-End Traceability | | |
+| PP-005 | Modular Architecture | | |
+| PP-006 | Engine Independence | | |
+| PP-007 | API & MCP First | | |
+| PP-008 | Security by Design | | |
+| PP-009 | Quality by Design | | |
+| PP-010 | Observability by Default | | |
+| PP-011 | Documentation as Code | | |
+| PP-012 | Everything Versioned | | |
+| PP-013 | Knowledge-Driven Engineering | | |
+| PP-014 | Configuration over Customization | | |
+| PP-015 | Open Standards | | |
+| PP-016 | Explainable AI | | |
+| PP-017 | Cost-Aware AI | | |
+| PP-018 | Scalability First | | |
+| PP-019 | Continuous Improvement (DORA/SPACE) | | |
+| PP-020 | Customer Value | | |
+
+**Deferral count**: [n] — each carries an owner and a discharging module or phase.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -129,3 +179,16 @@
 - [Assumption about scope boundaries, e.g., "Mobile support is out of scope for v1"]
 - [Assumption about data/environment, e.g., "Existing authentication system will be reused"]
 - [Dependency on existing system/service, e.g., "Requires access to the existing user profile API"]
+- [Any requirement above with no SRS source — restate it here and name the back-fill owner]
+
+## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
+
+This Epic may be declared complete and promoted out of `local` only when ALL hold:
+
+- [ ] Every implementation task has a passing unit test — or, for document/configuration outputs,
+      a passing executable conformance check (Constitution V)
+- [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
+- [ ] `specs/[epic-id]/defects/` contains no open defect records
+- [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
+- [ ] A closing report was published: work completed, work deferred, and the recommended next
+      task named as a concrete Spec Kit command (Constitution IX)

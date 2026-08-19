@@ -1,0 +1,85 @@
+# T010 + T048 — CI pipeline.
+#
+# test:arch is a first-class gate, not an afterthought: it is what keeps
+# engine-independence (FR-017) and service/transport separation (PC-1) true.
+# If it fails, the build fails.
+
+name: CI
+
+on:
+  push:
+    branches: [main, 'feature/**', 'epic/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      # DEF-027-005 — full history, deliberately.
+      #
+      # `actions/checkout@v4` defaults to `fetch-depth: 1`, a shallow clone of a
+      # single commit. Two governance checks walk git history and are starved by
+      # that:
+      #
+      #   G-27-09  proves EPIC-027 shipped no product source (SC-AMD-009) by
+      #            walking `git log --all`. On a shallow clone it finds zero
+      #            commits. It FAILS rather than passing, because T632 added an
+      #            anti-vacuity assertion — without which it would have reported
+      #            green in CI forever while examining nothing.
+      #   G-10     compares the branch name to the epic being worked (D-39). On a
+      #            shallow clone it degrades quietly to "no epic determinable".
+      #
+      # Do not "optimise" this back to a shallow clone without reading those two.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # Constitution V — mandatory, never optional.
+      - name: Unit tests
+        run: pnpm test:unit
+
+      # FR-017 / PC-1 — a violation fails the build, not a review.
+      - name: Architecture tests
+        run: pnpm test:arch
+
+      - name: Contract tests
+        run: pnpm test:contract
+
+      # EPIC-018 T336 — governance conformance.
+      #
+      # These checks are what make Constitution V satisfiable for an epic that produces
+      # documents rather than application code: a governance document no check reads is a
+      # document that silently rots. Without this step the checks exist but never run.
+      #
+      # G-04 (no steering file restates constitution or template text) is the check that
+      # earns a hard CI failure — duplicated text reads correctly the day it is written
+      # and forks at the next amendment, leaving two sources of truth and no signal that
+      # they disagree. G-07 staleness reports in the log and does not fail; see
+      # governance/README.md for the severity split.
+      #
+      # The checks live outside every workspace package, so `pnpm -r typecheck` does not
+      # reach them. Typechecking them explicitly is the same rule they assert of everything
+      # else — see steering/technology-stack.md TS-004.
+      - name: Governance checks
+        run: |
+          pnpm typecheck:governance
+          pnpm test:governance

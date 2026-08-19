@@ -1,0 +1,8 @@
+packages:
+  - 'backend'
+  - 'frontend'
+  - 'worker'
+  - 'packages/*'
+  - 'engine-adapters/*'
+  - 'agent-adapters/*'
+  - 'execution-providers/*'

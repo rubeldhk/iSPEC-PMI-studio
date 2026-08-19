@@ -2,7 +2,9 @@
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Epic**: `[EPIC-###]` | **SRS References**: [SRS/<file> § <section>, ...]
+
+**Input**: Feature specification from `/specs/[epic-id]/spec.md`
 
 **Note**: This template is filled in by the `/speckit-plan` command; its definition describes the execution workflow.
 
@@ -40,19 +42,34 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+| # | Gate | Status |
+|---|------|--------|
+| I | All code changes in this plan will be produced only via Spec Kit commands — no direct edits | [PASS/FAIL] |
+| II | Every requirement traces to a cited `SRS/` document; untraced items listed in Assumptions | [PASS/FAIL] |
+| III | Work is decomposed Epic → Feature → Task; Epic ID assigned and `specs/<epic-id>/` exists | [PASS/FAIL] |
+| IV | `/speckit-converge` is scheduled as the Epic exit gate before any promotion | [PASS/FAIL] |
+| V | Every implementation task carries a mandatory unit-test task, written to fail first — or, for document/configuration outputs, an executable conformance check that can fail | [PASS/FAIL] |
+| VI | `specs/<epic-id>/defects/` exists and is the sole intake for defects in this Epic | [PASS/FAIL] |
+| VII | Changes land in the local Claude repo first; promotion follows local → dev → stage → prod | [PASS/FAIL] |
+| VIII | Session/clone is labelled with the working Epic (`EPIC-### <name>`), or the first command | [PASS/FAIL] |
+| IX | This run will close with a Work Completed + Recommended Next Task report | [PASS/FAIL] |
+| — | Repository was synced from GitHub before this work started | [PASS/FAIL] |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | [PASS/FAIL] |
+
+Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking below.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
+specs/[epic-id]/
 ├── plan.md              # This file (/speckit-plan command output)
 ├── research.md          # Phase 0 output (/speckit-plan command)
 ├── data-model.md        # Phase 1 output (/speckit-plan command)
 ├── quickstart.md        # Phase 1 output (/speckit-plan command)
 ├── contracts/           # Phase 1 output (/speckit-plan command)
+├── defects/             # MANDATORY per-Epic defect records (Constitution VI)
 └── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
 ```
 
