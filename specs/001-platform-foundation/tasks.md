@@ -67,14 +67,14 @@ Feature → requirement link mandatory, carried in this framing note.*
 
 ## F-00.5 · Observability
 
-- [X] T157 [P] Unit tests for structured log emission, asserting every record carries workspace, actor, and correlation identifiers and that no credential or engine output is logged, in `backend/tests/unit/observability/logging.spec.ts`
-- [X] T158 Implement structured logging with request and job context in `backend/src/core/observability/logger.ts` (unit test: T157)
-- [X] T159 [P] Unit tests for correlation identifier propagation across API → queue → worker in `backend/tests/unit/observability/correlation.spec.ts`
-- [X] T160 Implement correlation identifier generation and propagation through BullMQ job payloads in `backend/src/core/observability/correlation.ts` (unit test: T159)
+- [X] T157 [P] Unit tests for structured log emission, asserting every record carries workspace, actor, and correlation identifiers and that no credential or engine output is logged, in `packages/observability/tests/unit/logging.spec.ts`
+- [X] T158 Implement structured logging with request and job context in `packages/observability/src/logger.ts` (unit test: T157)
+- [X] T159 [P] Unit tests for correlation identifier propagation across API → queue → worker in `packages/observability/tests/unit/correlation.spec.ts`
+- [X] T160 Implement correlation identifier generation and propagation through BullMQ job payloads in `packages/observability/src/correlation.ts` (unit test: T159)
 - [X] T161 [P] Unit tests asserting the sandbox receives and returns a correlation identifier without widening its egress allow-list, in `engine-adapters/speckit/tests/unit/correlation.spec.ts`
 - [X] T162 Implement correlation propagation across the sandbox boundary in `engine-adapters/speckit/src/correlation.ts` (PC-3; unit test: T161)
-- [X] T163 [P] Unit tests for job and request metrics — counts, durations, terminal-state breakdown — in `backend/tests/unit/observability/metrics.spec.ts`
-- [X] T164 Implement metrics emission for API requests and generation jobs in `backend/src/core/observability/metrics.ts` (unit test: T163)
+- [X] T163 [P] Unit tests for job and request metrics — counts, durations, terminal-state breakdown — in `packages/observability/tests/unit/metrics.spec.ts`
+- [X] T164 Implement metrics emission for API requests and generation jobs in `packages/observability/src/metrics.ts` (unit test: T163)
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 

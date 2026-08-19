@@ -272,7 +272,7 @@ reads `Ready (waived)`; an expired waiver fails the build.
 - [X] T503 [P] [US4] Write failing unit test asserting evaluation is total — every failing condition is listed and evaluation never short-circuits — in `tests/governance/epic-stage/dor-total.spec.ts`
 - [X] T504 [P] [US4] Write failing unit test asserting no Epic reads Ready with an uncovered failure and that a blocking posture defeats completeness, in `tests/governance/epic-stage/readiness.spec.ts`
 - [X] T505 [P] [US4] Write failing unit tests for waiver validation — exactly one condition, an owner from the three programme roles, a non-empty reason, a future expiry; invalid and expired handling — in `tests/governance/epic-stage/waivers.spec.ts`
-- [X] T506 [P] [US4] Write failing conformance check asserting a waived Epic reads `Ready (waived)` and never plain `Ready`, and that an expired waiver fails the build, in `tests/governance/epic-stage/waiver-readiness.spec.ts`
+- [X] T506 [P] [US4] Write failing conformance check asserting a waived Epic reads `Ready (waived)` and never plain `Ready`, and that an expired waiver fails the build, in `tests/governance/epic-stage/readiness.spec.ts` and `tests/governance/epic-stage/waivers.spec.ts`
 
 ### Implementation for User Story 4
 

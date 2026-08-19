@@ -83,7 +83,7 @@ would make the execution layer depend on the AI layer — the coupling this epic
   > state"* structural rather than conventional. An untested type claim is a comment.
 - [X] T546 Define `ProjectExecutionEnvironment`, `ExecutionEnvironmentDescriptor`, `ExecutionRequest`, `ExecutionSession`, `ExecResult`, `ResourceLimits` and the failure taxonomy (closed enum, no `unknown` member) in `packages/execution-contract/src/index.ts` (unit test: T545)
 - [X] T547 Define the `WorkspaceBinding` discriminated union, `EgressProfile` and `ScopedCredentialRef` in `packages/execution-contract/src/index.ts` (unit test: T545)
-- [X] T548 [P] Write failing unit tests asserting the frozen `generation` profile matches `ADR-0002` exactly — AI provider endpoint only — in `packages/execution-contract/tests/unit/generation-profile.spec.ts`
+- [X] T548 [P] Write failing unit tests asserting the frozen `generation` profile matches `ADR-0002` exactly — AI provider endpoint only — in `packages/execution-contract/tests/unit/validation.spec.ts`
 - [X] T549 Define `GENERATION_EGRESS_PROFILE` as a frozen constant in `packages/execution-contract/src/profiles.ts` (unit test: T548)
 - [X] T549a Write a conformance check asserting `engine-adapters/speckit/tests/unit/sandbox-config.spec.ts` and `engine-adapters/speckit/docker/sandbox.json` are **unchanged from `main`** — content hash comparison — in `tests/governance/generation-egress-frozen.spec.ts`
 
@@ -94,7 +94,7 @@ would make the execution layer depend on the AI layer — the coupling this epic
   > nothing; a hash comparison is the only form of that assertion that works.
 - [X] T550 [P] Write failing unit tests for `AgentResult` narrowing, `AGENT_FAILURE_REASONS` completeness (closed enum, no `unknown` member), and **`AgentDescriptor` carrying every field Native §7 names (`FR-AGT-002`)** in `packages/agent-contract/tests/unit/contract.spec.ts`
 - [X] T551 Define `AgentGateway`, `AgentDescriptor`, `AgentInvocation`, `AgentContext`, `AgentExecutionRecord` and `AGENT_FAILURE_REASONS` in `packages/agent-contract/src/index.ts` (unit test: T550)
-- [X] T552 [P] Write failing unit tests asserting `assertAgentCapabilities` refuses and names **every** missing capability in `packages/agent-contract/tests/unit/capabilities.spec.ts`
+- [X] T552 [P] Write failing unit tests asserting `assertAgentCapabilities` refuses and names **every** missing capability in `packages/agent-contract/tests/unit/contract.spec.ts`
 - [X] T553 Implement `assertAgentCapabilities` and `MissingAgentCapabilityError` in `packages/agent-contract/src/index.ts` (unit test: T552)
 - [X] T554 [P] Write failing unit tests asserting exactly one implementation owns `FR-021` capability validation in `backend/tests/unit/engines/registry-ownership.spec.ts`
 - [X] T648 Remove the duplicate registry — `worker/src/engine-composition.ts` delegates capability validation to `backend/src/modules/engines/engine-registry.service.ts` (unit test: T554) *(routed from EPIC-003)*
@@ -139,8 +139,8 @@ engines, applied to the axis the amendment cares about.
 ### Implementation for User Story 1
 
 - [X] T562 [US1] Implement `AgentRegistry` and `composeAgentRegistry()` in `worker/src/agent-composition.ts`, delegating capability validation per T648 (unit test: T555)
-- [X] T563 [US1] Implement `FixtureAgent` in `agent-adapters/fixture/src/fixture.agent.ts` (conformance: T556)
-- [X] T564 [US1] Implement `ClaudeAgent` in `agent-adapters/claude/src/claude.agent.ts`, carrying `specKitIntegrationName: 'claude'` — **the only place that string may now appear** (unit test: T557)
+- [X] T563 [US1] Implement `FixtureAgent` in `agent-adapters/fixture/src/index.ts` (conformance: T556)
+- [X] T564 [US1] Implement `ClaudeAgent` in `agent-adapters/claude/src/index.ts`, carrying `specKitIntegrationName: 'claude'` — **the only place that string may now appear** (unit test: T557)
 - [X] T565 [US1] Run the shared conformance suite against `ClaudeAgent` in `agent-adapters/claude/tests/conformance.spec.ts` (suite: T556)
 - [X] T566 [US1] Refactor `SpecKitEngine` to take an injected `AgentGateway` — replace `--integration claude` with `agent.descriptor.specKitIntegrationName` and the four `claude` command invocations with `agent.execute()` — in `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
 - [X] T567 [US1] Record `AgentExecutionRecord` (provider, model, agent version, execution id, correlation id, timestamps, status, cost metadata) in `engine-adapters/speckit/src/speckit.adapter.ts` (unit tests: T558, T559)
@@ -169,8 +169,8 @@ end. Everything else in this phase is independently testable against a mocked da
 
 ### Implementation for User Story 2
 
-- [X] T646a [US2] Implement `DockerExecutionEnvironment` against the Docker Engine HTTP API over its unix socket — **no `dockerode`, no `docker` CLI** — in `execution-providers/docker/src/docker.provider.ts` (unit test: T570) *(routed from EPIC-003)*
-- [X] T573 [US2] Declare `supportedLifecycles: ['ephemeral']` and implement the persistent-binding refusal in `execution-providers/docker/src/docker.provider.ts` (unit test: T571)
+- [X] T646a [US2] Implement `DockerExecutionEnvironment` against the Docker Engine HTTP API over its unix socket — **no `dockerode`, no `docker` CLI** — in `execution-providers/docker/src/index.ts` (unit test: T570) *(routed from EPIC-003)*
+- [X] T573 [US2] Declare `supportedLifecycles: ['ephemeral']` and implement the persistent-binding refusal in `execution-providers/docker/src/index.ts` (unit test: T571)
 - [X] T574 [US2] Register the Docker provider at the worker composition root in `worker/src/execution-composition.ts` (unit test: T570)
 - [X] T575 [US2] Replace `ContainerRuntime` with `ProjectExecutionEnvironment` in `SpecKitEngine` and **delete the local `ContainerRuntime` declaration** from `engine-adapters/speckit/src/speckit.adapter.ts` (unit test: T558)
 - [X] T647 [US2] Register `SpecKitEngine` as the default engine in `worker/src/engine-composition.ts`, satisfying `FR-018` (integration test: T572) *(routed from EPIC-003)*
@@ -225,9 +225,9 @@ never by editing business logic.
 
 ### Tests for User Story 3 (MANDATORY — Constitution V) ⚠️
 
-- [X] T578 [P] [US3] Write failing unit tests asserting `*`, `0.0.0.0/0`, `::/0` and an empty destination list are each rejected, in `packages/execution-contract/tests/unit/egress-validation.spec.ts`
-- [X] T579 [P] [US3] Write failing unit tests asserting a provider with `supportsNetworkPolicy: false` cannot accept any egress profile, in `packages/execution-contract/tests/unit/policy-capability.spec.ts`
-- [X] T580 [P] [US3] Write failing unit tests asserting a `ScopedCredentialRef` without `expiresAt` is rejected, that `env` contains no credential value, **and that an unresolvable credential ref fails the run before any container starts** (spec Edge Cases), in `packages/execution-contract/tests/unit/credential-validation.spec.ts`
+- [X] T578 [P] [US3] Write failing unit tests asserting `*`, `0.0.0.0/0`, `::/0` and an empty destination list are each rejected, in `packages/execution-contract/tests/unit/validation.spec.ts`
+- [X] T579 [P] [US3] Write failing unit tests asserting a provider with `supportsNetworkPolicy: false` cannot accept any egress profile, in `packages/execution-contract/tests/unit/validation.spec.ts`
+- [X] T580 [P] [US3] Write failing unit tests asserting a `ScopedCredentialRef` without `expiresAt` is rejected, that `env` contains no credential value, **and that an unresolvable credential ref fails the run before any container starts** (spec Edge Cases), in `packages/execution-contract/tests/unit/validation.spec.ts`
 - [X] T581 [P] [US3] Write the failing architecture rule — no component outside the worker composition root reaches a container runtime directly — appended to `backend/tests/architecture/agent-independence.spec.ts`
 
 ### Implementation for User Story 3
@@ -249,7 +249,7 @@ never by editing business logic.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [X] T587 **Mutation-test the agent conformance suite** — break one assertion in `agent-adapters/fixture/src/fixture.agent.ts`, confirm `agent-adapters/fixture/tests/conformance.spec.ts` turns red, restore it, and record the result in the closing report
+- [X] T587 **Mutation-test the agent conformance suite** — break one assertion in `agent-adapters/fixture/src/index.ts`, confirm `agent-adapters/fixture/tests/conformance.spec.ts` turns red, restore it, and record the result in the closing report
 
   > EPIC-003 did this and it is the only evidence a conformance suite tests anything: *"dropping
   > `location` from a fixture finding turned `C11` red, so the suite is not vacuous."* A suite nobody
