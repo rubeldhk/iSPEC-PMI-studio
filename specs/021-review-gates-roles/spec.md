@@ -55,6 +55,20 @@ specifications PMI Studio *produces*; `PMI-DOC-000` governs this repository's ow
 - EPIC-009 — the six-state lifecycle these gates bind to
 - EPIC-003 — the engine contract this epic extends with `reviewSpecification`
 
+## Clarifications
+
+### Session 2026-08-19
+
+- Q: When a transition is configured with no explicit role list, how many roles should its gate run? → A: **None — the gate fails closed.** Configuration is required; there is no implicit default. Chosen because this Epic already carries the whole `PP-017` cost exposure of the family with M-07 optimisation controls deferred, and a default of twelve would bill the maximum for a transition nobody had configured. Failing closed makes the expensive case one a person opted into, and surfaces a missing configuration immediately rather than as a cost report later.
+
+Scanned against the twenty-category ambiguity taxonomy. **13** categories are not answered in this document, of which **10** — *Out of Scope*, *Domain & Data*, *Scale assumptions*, *UX Flow*, *Performance*, *Reliability*, *Compliance*, *External deps*, *Edge cases*, *Constraints* — are answered up the chain from the [parent](../017-enhancement-model/spec.md) (via 2 levels of inheritance) and inherited here under Constitution II. Asking those again per Epic would require this document to restate what the parent owns, which is the duplication `T686` removed from the task counts.
+
+**3** are answered nowhere in that chain:
+
+- *Error / empty states* — **Outstanding** — a plan-level concern that changes no requirement this Epic owns, recorded rather than asked
+- *Accessibility / i18n* — settled in this session as **WCAG 2.2 Level AA** — automated checks in CI plus a manual keyboard and screen-reader pass at Epic exit — recorded against [EPIC-010](../010-specification-interface/spec.md)
+- *Terminology* — **Outstanding** — no canonical glossary exists programme-wide; naming has held without one so far
+
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 
 The platform baseline is in [`_shared/platform-spec.md`](../_shared/platform-spec.md); the
@@ -70,6 +84,12 @@ records only where it differs:
 ## Notes
 
 ⚠️ **This epic carries the whole PP-017 cost exposure of the family.** Twelve roles per gate is twelve model invocations, with M-07's optimisation controls deferred by the 2026-08-04 ruling. **Gates should be configured with the roles a transition actually needs — twelve is the maximum, not the default.**
+
+✅ **The default settled 2026-08-19: there is none — a gate with no configured roles fails closed.**
+The sentence above said what the maximum was and left the default unstated, which meant the
+cheapest thing to implement was also the most expensive to run. Requiring configuration makes the
+twelve-role case one a person opted into, and turns a missing configuration into an immediate
+refusal rather than a cost report at the end of the month.
 
 ✅ **A1 resolved 2026-08-07.** `FR-011` now enumerates the **eight permitted transitions** across six endpoints, so a gate binds to a defined set and `T277` can assert refusal by name.
 

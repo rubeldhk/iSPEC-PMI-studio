@@ -57,6 +57,20 @@ this epic **owns** the following and is where they are satisfied:
 - **EPIC-023** — the `Run` model, which carries the `access_snapshot` column `T381` writes (FR-028).
   A run-start snapshot cannot be taken against a `Run` that does not exist
 
+## Clarifications
+
+### Session 2026-08-19
+
+- No questions required.
+
+Scanned against the twenty-category ambiguity taxonomy. **11** categories are not answered in this document, of which **8** — *Out of Scope*, *Domain & Data*, *Scale assumptions*, *UX Flow*, *Reliability*, *External deps*, *Edge cases*, *Constraints* — are answered up the chain from the [parent](../002-team-review-access-storage/spec.md) and inherited here under Constitution II. Asking those again per Epic would require this document to restate what the parent owns, which is the duplication `T686` removed from the task counts.
+
+**3** are answered nowhere in that chain:
+
+- *Error / empty states* — **Outstanding** — a plan-level concern that changes no requirement this Epic owns, recorded rather than asked
+- *Performance* — **Outstanding** — recorded, not asked
+- *Terminology* — **Outstanding** — no canonical glossary exists programme-wide; naming has held without one so far
+
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 
 The platform-wide register is in [`_shared/platform-spec.md`](../_shared/platform-spec.md); the

@@ -29,8 +29,13 @@ documentation standards, PMI-DOC-003 governs principles.
 Requirements are defined once in the [parent product spec](../_shared/platform-spec.md); this
 epic **owns** the following and is where they are satisfied:
 
-*None directly.* This epic delivers infrastructure or governance rather than a numbered
-functional requirement. See Purpose and Exit Criteria.
+| Requirement |
+|---|
+| FR-000 sign-in and an authenticated session; governed actions refused to an unauthenticated actor · *provisional, superseded when `PMI-DOC-004` lands* |
+
+*Until 2026-08-19 this read "none directly" — sign-in descended from a clarification and traced to
+no requirement at all. `FR-000` is provisional, not a discovery: it holds the trace open until the
+BRS supersedes it.*
 
 ## User stories owned
 
@@ -44,6 +49,20 @@ functional requirement. See Purpose and Exit Criteria.
 
 - EPIC-004 — workspace and user data foundation
 
+## Clarifications
+
+### Session 2026-08-19
+
+- Q: Until the Business Requirement Specification lands, how should sign-in be traced when no functional requirement covers it? → A: **Mint a provisional requirement in the parent spec, marked provisional and owned, superseded when `PMI-DOC-004` lands.** Sign-in currently descends from the clarification *"basic sign-in"* rather than from a requirement, which makes it the one delivered capability tracing to nothing while EPIC-011 builds requirement → spec → task traceability. A provisional requirement closes the hole now and turns the BRS into a supersession rather than a discovery — the shape EPIC-023 and EPIC-025 already use to carry their SRS debt with an owner and a before-approval gate.
+
+Scanned against the twenty-category ambiguity taxonomy. **11** categories are not answered in this document, of which **8** — *Out of Scope*, *Lifecycle / States*, *Scale assumptions*, *UX Flow*, *Performance*, *Reliability*, *Edge cases*, *Constraints* — are answered up the chain from the [parent](../_shared/platform-spec.md) and inherited here under Constitution II. Asking those again per Epic would require this document to restate what the parent owns, which is the duplication `T686` removed from the task counts.
+
+**3** are answered nowhere in that chain:
+
+- *Error / empty states* — **Outstanding** — a plan-level concern that changes no requirement this Epic owns, recorded rather than asked
+- *Accessibility / i18n* — settled in this session as **WCAG 2.2 Level AA** — automated checks in CI plus a manual keyboard and screen-reader pass at Epic exit — recorded against [EPIC-010](../010-specification-interface/spec.md)
+- *Terminology* — **Outstanding** — no canonical glossary exists programme-wide; naming has held without one so far
+
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 
 The platform-wide register lives in the [parent product spec](../_shared/platform-spec.md).
@@ -53,7 +72,15 @@ This epic records only where it **differs** or is the place a principle is satis
 
 ## Notes
 
-⚠️ **No functional requirement covers sign-in.** It derives from the clarification *"basic sign-in"*, not from an SRS requirement. `PMI-DOC-004` should establish one — this epic is a candidate for early rework when the BRS lands.
+⚠️ **Sign-in descends from a clarification, not from an SRS requirement.** It derives from the
+clarification *"basic sign-in"*, which left it the one delivered capability tracing to nothing while
+EPIC-011 builds requirement → spec → task traceability.
+
+✅ **Settled 2026-08-19: carried by a provisional requirement, `FR-000`,** minted in the
+[parent product spec](../_shared/platform-spec.md) and owned there. It is marked provisional and is
+**superseded when `PMI-DOC-004` lands** — the BRS then replaces it rather than discovering the gap.
+This is the shape EPIC-023 and EPIC-025 already use for their SRS debt: a named owner and a gate at
+approval, not a warning that waits for someone to notice it.
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI)*
 

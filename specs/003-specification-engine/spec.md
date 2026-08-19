@@ -50,6 +50,21 @@ epic **owns** the following and is where they are satisfied:
 
 - EPIC-001 — job orchestration and failure taxonomy
 
+## Clarifications
+
+### Session 2026-08-19
+
+- No questions required.
+
+Scanned against the twenty-category ambiguity taxonomy. **12** categories are not answered in this document, of which **8** — *Out of Scope*, *Scale assumptions*, *UX Flow*, *Performance*, *Reliability*, *Edge cases*, *Constraints*, *Tradeoffs* — are answered up the chain from the [parent](../_shared/platform-spec.md) and inherited here under Constitution II. Asking those again per Epic would require this document to restate what the parent owns, which is the duplication `T686` removed from the task counts.
+
+**4** are answered nowhere in that chain:
+
+- *Error / empty states* — **Outstanding** — a plan-level concern that changes no requirement this Epic owns, recorded rather than asked
+- *Accessibility / i18n* — settled in this session as **WCAG 2.2 Level AA** — automated checks in CI plus a manual keyboard and screen-reader pass at Epic exit — recorded against [EPIC-010](../010-specification-interface/spec.md)
+- *Compliance* — settled in this session as **indefinite audit retention with append-only redaction** rather than deletion, recorded against [EPIC-004](../004-workspace-tenancy-audit/spec.md)
+- *Terminology* — **Outstanding** — no canonical glossary exists programme-wide; naming has held without one so far
+
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 
 The platform-wide register lives in the [parent product spec](../_shared/platform-spec.md).

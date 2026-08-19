@@ -65,6 +65,20 @@ this epic **owns** the following and is where they are satisfied:
 - EPIC-008 — artifacts to publish
 - EPIC-024 — access control, because publish must exclude what the publisher cannot see (FR-033)
 
+## Clarifications
+
+### Session 2026-08-19
+
+- No questions required.
+
+Scanned against the twenty-category ambiguity taxonomy. **12** categories are not answered in this document, of which **9** — *Out of Scope*, *Domain & Data*, *Scale assumptions*, *UX Flow*, *Accessibility / i18n*, *Reliability*, *Edge cases*, *Constraints*, *Tradeoffs* — are answered up the chain from the [parent](../002-team-review-access-storage/spec.md) and inherited here under Constitution II. Asking those again per Epic would require this document to restate what the parent owns, which is the duplication `T686` removed from the task counts.
+
+**3** are answered nowhere in that chain:
+
+- *Error / empty states* — **Outstanding** — a plan-level concern that changes no requirement this Epic owns, recorded rather than asked
+- *Performance* — **Outstanding** — recorded, not asked
+- *Terminology* — **Outstanding** — no canonical glossary exists programme-wide; naming has held without one so far
+
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*
 
 The platform-wide register is in [`_shared/platform-spec.md`](../_shared/platform-spec.md); the

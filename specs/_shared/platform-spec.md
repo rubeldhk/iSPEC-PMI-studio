@@ -406,6 +406,12 @@ adapter layer.
 
 #### Workspace, identity & projects
 
+- **FR-000** *(provisional — clarified 2026-08-19)*: Users MUST be able to sign in and hold an
+  authenticated session, and the system MUST refuse every governed action to an unauthenticated
+  actor. **Provisional**: this requirement has no SRS source. It is minted so that sign-in — which
+  EPIC-005 delivers from the clarification *"basic sign-in"* — traces to something rather than to
+  nothing while EPIC-011 builds requirement → spec → task traceability. **Superseded when
+  `PMI-DOC-004` lands**; the BRS replaces it rather than discovering the gap. Owner: project owner.
 - **FR-001**: Users MUST be able to create, view, rename, and archive projects.
 - **FR-002**: System MUST associate every stored artifact with a workspace and an owning user, and
   MUST prevent access to artifacts belonging to another workspace.
