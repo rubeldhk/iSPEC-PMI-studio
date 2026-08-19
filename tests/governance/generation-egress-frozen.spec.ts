@@ -48,7 +48,23 @@ const FROZEN: readonly { path: string; sha256: string }[] = [
   },
 ];
 
-const sha = (buf: string | Buffer): string => createHash('sha256').update(buf).digest('hex');
+/**
+ * DEF-018-002 — line endings are normalised before hashing.
+ *
+ * The frozen hashes below are LF-based, because git stores blobs with LF. With
+ * no `.gitattributes` and `core.autocrlf=true`, a Windows checkout writes CRLF,
+ * so hashing raw bytes made this check depend on how the file happened to land
+ * on disk: green in CI, red on the machine it was written on the next time
+ * anyone switched branches.
+ *
+ * Measured when it surfaced: sandbox.json hashed to 70f93ff8 raw and 389daa73
+ * LF-normalised, and 389daa73 is the frozen constant.
+ *
+ * Nothing else is normalised. A comparison that ignored whitespace could not
+ * detect a whitespace edit, and this check exists to detect edits.
+ */
+const sha = (buf: string | Buffer): string =>
+  createHash('sha256').update(buf.toString('utf8').replace(/\r\n/g, '\n')).digest('hex');
 
 /** Contents at `main`, or null when the ref is unavailable (shallow clone, CI). */
 function atMain(path: string): string | null {

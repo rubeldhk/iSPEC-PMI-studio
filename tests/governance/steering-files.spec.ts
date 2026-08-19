@@ -111,7 +111,19 @@ describe('G-02b · a content change carries a version increment (FR-RGP-003)', (
     }
 
     const previous = parseFrontMatter(committed);
-    if (previous.body.trim() === file.body.trim()) return; // unchanged
+
+    // DEF-018-002 — compare line endings normalised, on both sides.
+    //
+    // `git show` returns the blob as stored, with LF. With `core.autocrlf=true`
+    // and no `.gitattributes`, the working copy holds CRLF after any checkout,
+    // so every steering file read as "changed" and demanded a version increment
+    // nobody had earned. Nothing else is normalised: `.trim()` on the ends is
+    // deliberate and pre-existing, and interior whitespace still counts as a
+    // change, because it is one.
+    const sameContent = (left: string, right: string): boolean =>
+      left.replace(/\r\n/g, '\n').trim() === right.replace(/\r\n/g, '\n').trim();
+
+    if (sameContent(previous.body, file.body)) return; // unchanged
 
     expect(
       Number(file.front.version),
