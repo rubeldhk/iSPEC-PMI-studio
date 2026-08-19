@@ -26,8 +26,8 @@ paired unit-test task, written to fail first.
 - [X] T001 Create pnpm workspace root in `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`
 - [X] T002 [P] Scaffold NestJS API package in `backend/` with `src/main.ts` and `src/app.module.ts`
 - [X] T003 [P] Scaffold React + Vite web package in `frontend/`
-- [X] T004 [P] Scaffold BullMQ worker package in `worker/src/main.ts`
-- [X] T005 [P] Scaffold engine contract package in `packages/engine-contract/src/index.ts`
+- [X] T004 [P] Scaffold BullMQ worker package in `worker/src/main.ts` (unit tests: `worker/tests/unit/worker-bootstrap.spec.ts`, `worker/tests/unit/observability-installation.spec.ts`)
+- [X] T005 [P] Scaffold engine contract package in `packages/engine-contract/src/index.ts` (unit test: `packages/engine-contract/tests/unit/contract.spec.ts`)
 - [X] T006 [P] Scaffold adapter packages `engine-adapters/speckit/` and `engine-adapters/fixture/`
 - [X] T007 [P] Configure Vitest across all packages in `vitest.workspace.ts`
 - [X] T008 [P] Configure ESLint + Prettier, including a dependency-boundary rule forbidding `backend/**` from importing `engine-adapters/**`, in `eslint.config.js`

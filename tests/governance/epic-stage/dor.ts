@@ -136,6 +136,21 @@ function producesApplicationCode(line: string): boolean {
 const PAIRING =
   /(?:unit tests?|integration tests?|conformance(?:\s+checks?)?|checks?|tests?)\s*:\s*T\d{3}/i;
 
+/**
+ * A test named by its path rather than by a task id (`DEF-026-004`).
+ *
+ * Running the narrowed condition across all 28 Epics reported eight unpaired
+ * tasks, and every one already had a real test. Three name that test in the task
+ * line itself, as a path:
+ *
+ *     … ; unit test: `execution-providers/docker/tests/unit/egress-network-preflight.spec.ts`
+ *
+ * The `Tnnn` requirement exists to reject prose. A `.spec.ts` path is not prose
+ * — it is a **stronger** reference than an id, naming the artifact instead of a
+ * number that has to be looked up. Naming a second non-test file still fails.
+ */
+const PAIRING_BY_PATH = /[\w./-]+\.(?:spec|test)\.[A-Za-z]+\b/;
+
 /** A file that IS a test, wherever it lives. */
 function isTestArtifact(path: string): boolean {
   return /\.(?:spec|test)\.[A-Za-z]+$/.test(path) || /(?:^|\/)tests?\//.test(path);
@@ -269,7 +284,7 @@ const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
       // So the rule is a verification keyword followed by a REAL task
       // reference, anywhere in the line. Requiring the `Tnnn` is what keeps it
       // precise: "check the output carefully" is prose, not a pairing.
-      if (PAIRING.test(line)) return false;
+      if (PAIRING.test(line) || PAIRING_BY_PATH.test(line)) return false;
 
       const id = /\bT\d{3}[a-z]?\b/.exec(line)?.[0];
       return !(id && coveredBySibling.has(id));

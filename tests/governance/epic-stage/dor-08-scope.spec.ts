@@ -269,3 +269,54 @@ describe('T678 · the pairing may be written in any of the forms this repository
     ).toBe(false);
   });
 });
+
+describe('T681 · a test named by PATH is a pairing (DEF-026-004)', () => {
+  // Running the narrowed condition across all 28 Epics reported eight unpaired
+  // tasks. Every one already had a real test. Three of them name that test in
+  // the task line itself — as a file path rather than a task id:
+  //
+  //   … ; unit test: `execution-providers/docker/tests/unit/egress-network-preflight.spec.ts`
+  //
+  // The `Tnnn` requirement exists to reject prose. A `.spec.ts` path is not
+  // prose; it is a STRONGER reference than an id, because it names the artifact
+  // instead of a number someone must look up.
+
+  it('accepts a test named by path', () => {
+    expect(
+      dor08(
+        '- [X] T670 Preflight the egress network in `execution-providers/docker/src/index.ts` (unit test: `execution-providers/docker/tests/unit/egress-network-preflight.spec.ts`)',
+      ).passed,
+    ).toBe(true);
+  });
+
+  it('accepts several tests named by path', () => {
+    // EPIC-028 T668's actual shape: two implementations, two named tests.
+    expect(
+      dor08(
+        '- [X] T668 Make the socket resolution platform-aware in `execution-providers/docker/src/index.ts` and add a CLI entry point in `scripts/v6-real-run.mjs` (unit tests: `execution-providers/docker/tests/unit/socket-resolution.spec.ts`, `scripts/tests/v6-entry-point.spec.mjs`)',
+      ).passed,
+    ).toBe(true);
+  });
+
+  it('accepts a conformance spec named by path', () => {
+    // EPIC-028 T587: a mutation-testing task that names the suite it turns red.
+    expect(
+      dor08(
+        '- [X] T587 Mutation-test the suite — break one assertion in `agent-adapters/fixture/src/fixture.agent.ts`, confirm `agent-adapters/fixture/tests/conformance.spec.ts` turns red',
+      ).passed,
+    ).toBe(true);
+  });
+
+  it('still rejects a path that is not a test', () => {
+    // The narrowing must not become "naming any second file excuses the task".
+    expect(
+      dor08('- [X] T001 Implement a in `backend/src/a.ts` alongside `backend/src/b.ts`').passed,
+    ).toBe(false);
+  });
+
+  it('still rejects prose', () => {
+    expect(
+      dor08('- [X] T001 Implement it in `backend/src/a.ts` and check the output carefully').passed,
+    ).toBe(false);
+  });
+});

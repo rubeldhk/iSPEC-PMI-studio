@@ -500,6 +500,27 @@ not make `DOR-08` correct. This does, and retires the waiver.*
   > any form. Those are **candidate Constitution V gaps in closed epics**, reported for review rather
   > than shaped out of existence — which is what the condition is for.
 
+- [X] T681 Recognise a test named by **path** as a pairing, and cite the tests that already verified `T004`, `T005`, `T462`, `T463` and `T465` (`DEF-026-004`; unit test: `tests/governance/epic-stage/dor-08-scope.spec.ts`)
+
+  > **Eight tasks were reported unpaired. Eight tests already existed.** Each was read before being
+  > cited — a filename match would have been wrong at least once: `T004` names `worker/src/main.ts`,
+  > and `worker-bootstrap.spec.ts` imports `worker-bootstrap.js`, not `main.ts`. Two files reference
+  > `src/main`, so both are cited.
+  >
+  > Two faults, not one. **Three tasks named their test by file path** — a stronger reference than a
+  > task id, since it names the artifact rather than a number to look up — and the pattern required
+  > `Tnnn`. **Five had the traceability running one way only**: the test knew the task and the task
+  > did not know the test. `engines.module.spec.ts` is literally headed *"T462 — the engine layer is
+  > actually reachable from the application."*
+  >
+  > **`DOR-08` now passes 26 of 28.** The two remaining are EPIC-002 and EPIC-017, parent designs
+  > carrying no tasks by design, whose readiness is `n/a` and whose verdict is unused.
+  >
+  > **What was not done**: relaxing the condition until the eight disappeared. Seven would have gone
+  > by dropping the application-code requirement and the eighth by dropping the pairing requirement,
+  > leaving a check that reports nothing and a repository that looks compliant. A mutation confirms
+  > the line held — accepting *any* second file as a pairing fails five assertions.
+
 ---
 
 ## Dependencies & Execution Order
