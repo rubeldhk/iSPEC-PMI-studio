@@ -141,3 +141,9 @@ NOT part of this phase.*
 - [X] T174 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/004-workspace-tenancy-audit/closure.md`
 - [X] T175 Triage `specs/004-workspace-tenancy-audit/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/004-workspace-tenancy-audit/closure.md`
 - [X] T176 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/004-workspace-tenancy-audit/closure.md`
+
+## Phase 2: Convergence *(appended 2026-08-19 by `/speckit-converge`)*
+
+- [ ] T689 Run the integration suite in CI, or record a decision with a named owner for why it is not run, per `SC-004`, `SC-012` and `FR-033` (partial) — this epic's stated purpose is "audit immutability enforced by the database rather than by convention", and the `audit_entries_immutable` trigger (`BEFORE UPDATE OR DELETE`, `backend/prisma/migrations/20260814000000_init`) is exercised only by `backend/tests/integration/audit-immutability.spec.ts`. A unit test cannot execute a database trigger, so no CI-run suite can cover it. `workspace-isolation.spec.ts` (`SC-004`) is in the same position. Both passed at closure against real PostgreSQL; neither runs on a push (unit test: n/a — pipeline configuration, verified by the workflow running green with the suite included)
+- [ ] T690 Add the Feature → requirement framing note to `F-01.1 · Workspace and user data foundation`, naming `FR-002`, per `traceability-convention.md` (missing) — the link is mandatory and this section carries none; `F-01.2` already models the form
+- [ ] T691 Add the Feature → requirement framing note to `F-13.1 · Audit trail`, naming `FR-033`, per `traceability-convention.md` (missing) — the link is mandatory and this section carries none
