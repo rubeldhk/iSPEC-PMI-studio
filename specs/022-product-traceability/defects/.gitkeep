@@ -1,0 +1,2 @@
+# Constitution VI requires this folder to exist. Git does not track empty
+# directories, so DOR-11 saw it locally and never in CI (DEF-026-005).
