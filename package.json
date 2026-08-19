@@ -20,7 +20,7 @@
     "test:governance": "vitest run --project governance",
     "register:build": "node scripts/build-register.mjs",
     "typecheck:governance": "tsc -p tests/governance/tsconfig.json",
-    "v6:real-run": "tsx scripts/v6-real-run.mjs",
+    "v6:real-run": "tsx --env-file-if-exists=.env scripts/v6-real-run.mjs",
     "register:update": "node scripts/update-register.mjs"
   },
   "devDependencies": {
