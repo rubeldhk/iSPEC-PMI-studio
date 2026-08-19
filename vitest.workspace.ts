@@ -37,8 +37,13 @@ export default defineWorkspace([
       root: './backend',
       include: ['tests/integration/**/*.spec.ts'],
       environment: 'node',
-      // Empty until T052 lands (needs a generated Prisma client + migrations).
-      passWithNoTests: true,
+      // `passWithNoTests` was set here while this directory was empty, waiting on
+      // T052. T052 landed, five files live here, and EPIC-003 T688 / EPIC-004 T689
+      // put them in CI — so the tolerance now protects nothing and hides something:
+      // if this glob ever stops matching, the CI step would go green having run no
+      // test at all. That is exactly how "two Vitest projects passed with no test
+      // files" happened in EPIC-003, recorded in `epic-stage/harness.spec.ts`.
+      // Vitest exits non-zero on an empty run, which is the anti-vacuity guard.
     },
   },
   {

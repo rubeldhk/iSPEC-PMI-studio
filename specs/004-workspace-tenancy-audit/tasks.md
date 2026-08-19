@@ -25,6 +25,10 @@ paired unit-test task, written to fail first.
 
 ## F-01.1 · Workspace and user data foundation
 
+*Satisfies **FR-002**. Every table carries `workspaceId` from the first migration — the tenancy
+boundary is a schema property, not a query convention, so no later code can forget it. Recorded by
+`T690`; `traceability-convention.md` makes the Feature → requirement link mandatory.*
+
 - [X] T011a [P] Write failing unit tests asserting `Workspace`/`User` schema constraints — required `workspace_id`, unique email, `password_hash` never selected — in `backend/tests/unit/core/schema-constraints.spec.ts`
 - [X] T012 Initialise Prisma and define `Workspace` and `User` models in `backend/prisma/schema.prisma` (unit test: T011a)
 - [X] T012a [P] Write failing unit tests asserting the generated migration applies the universal columns (`workspace_id`, `created_at/by`, `updated_at/by`) to **every** table, not only `Workspace` and `User`, in `backend/tests/unit/core/universal-columns.spec.ts`
@@ -81,6 +85,11 @@ scoping helper, which lives in this epic.*
   > read if something stamped both ids on it.
 
 ## F-13.1 · Audit trail
+
+*Satisfies **FR-033**, and **SC-012** rests on it. The audit entry is written in the caller's
+transaction, and `audit_entries` rejects `UPDATE` and `DELETE` at the database — so an action cannot
+succeed without its entry, and no code path can quietly remove one. Recorded by `T691`;
+`traceability-convention.md` makes the Feature → requirement link mandatory.*
 
 - [X] T027 [P] Write failing unit tests asserting an audit entry is written in the same transaction and that no update or delete path exists, in `backend/tests/unit/audit/audit.spec.ts`
 - [X] T028 Define `AuditEntry` model in `backend/prisma/schema.prisma` and implement the append-only audit service in `backend/src/modules/audit/audit.service.ts` (unit test: T027)
@@ -144,6 +153,6 @@ NOT part of this phase.*
 
 ## Phase 2: Convergence *(appended 2026-08-19 by `/speckit-converge`)*
 
-- [ ] T689 Run the integration suite in CI, or record a decision with a named owner for why it is not run, per `SC-004`, `SC-012` and `FR-033` (partial) — this epic's stated purpose is "audit immutability enforced by the database rather than by convention", and the `audit_entries_immutable` trigger (`BEFORE UPDATE OR DELETE`, `backend/prisma/migrations/20260814000000_init`) is exercised only by `backend/tests/integration/audit-immutability.spec.ts`. A unit test cannot execute a database trigger, so no CI-run suite can cover it. `workspace-isolation.spec.ts` (`SC-004`) is in the same position. Both passed at closure against real PostgreSQL; neither runs on a push (unit test: n/a — pipeline configuration, verified by the workflow running green with the suite included)
-- [ ] T690 Add the Feature → requirement framing note to `F-01.1 · Workspace and user data foundation`, naming `FR-002`, per `traceability-convention.md` (missing) — the link is mandatory and this section carries none; `F-01.2` already models the form
-- [ ] T691 Add the Feature → requirement framing note to `F-13.1 · Audit trail`, naming `FR-033`, per `traceability-convention.md` (missing) — the link is mandatory and this section carries none
+- [X] T689 Run the integration suite in CI, or record a decision with a named owner for why it is not run, per `SC-004`, `SC-012` and `FR-033` (partial) — this epic's stated purpose is "audit immutability enforced by the database rather than by convention", and the `audit_entries_immutable` trigger (`BEFORE UPDATE OR DELETE`, `backend/prisma/migrations/20260814000000_init`) is exercised only by `backend/tests/integration/audit-immutability.spec.ts`. A unit test cannot execute a database trigger, so no CI-run suite can cover it. `workspace-isolation.spec.ts` (`SC-004`) is in the same position. Both passed at closure against real PostgreSQL; neither runs on a push (unit test: n/a — pipeline configuration, verified by the workflow running green with the suite included)
+- [X] T690 Add the Feature → requirement framing note to `F-01.1 · Workspace and user data foundation`, naming `FR-002`, per `traceability-convention.md` (missing) — the link is mandatory and this section carries none; `F-01.2` already models the form
+- [X] T691 Add the Feature → requirement framing note to `F-13.1 · Audit trail`, naming `FR-033`, per `traceability-convention.md` (missing) — the link is mandatory and this section carries none

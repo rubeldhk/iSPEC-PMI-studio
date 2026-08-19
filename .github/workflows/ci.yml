@@ -64,6 +64,26 @@ jobs:
       - name: Contract tests
         run: pnpm test:contract
 
+      # EPIC-003 T688 / EPIC-004 T689 — the guarantees no unit test can reach.
+      #
+      # Convergence found these five files demonstrating criteria that nothing on a push
+      # re-verified. EPIC-004's purpose is "audit immutability enforced by the database
+      # rather than by convention": the `audit_entries_immutable` trigger fires inside
+      # PostgreSQL, so a unit test CANNOT execute it — mocking the database would assert
+      # the mock. `workspace-isolation.spec.ts` builds its SQL from the scoping helper's
+      # own output so it fails by leaking rather than by shape, and `engine-swap.spec.ts`
+      # is the only demonstration of SC-008.
+      #
+      # All five passed at each epic's closure and then went unrun for weeks. A regression
+      # in tenancy isolation or audit immutability would have reached the default branch
+      # green — the two failures a governed repository can least afford to discover late.
+      #
+      # Testcontainers needs a container runtime; GitHub-hosted runners provide one. Two of
+      # the five files start a PostgreSQL container (~15s each); the other three need no
+      # container and finish in milliseconds. Measured locally at 37s for the suite.
+      - name: Integration tests
+        run: pnpm test:integration
+
       # EPIC-018 T336 — governance conformance.
       #
       # These checks are what make Constitution V satisfiable for an epic that produces
