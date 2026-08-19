@@ -73,7 +73,34 @@ export interface ClaudeAgentOptions {
  * rather than being hunted through the adapter.
  */
 export function invocationFor(command: string): string[] {
-  return ['claude', '-p', command];
+  // T693 / DEF-028-004 — bind the credential the CLI actually reads.
+  //
+  // The sandbox sets exactly `AI_PROVIDER_TOKEN` and `PMI_CORRELATION_ID`
+  // (`buildSandboxEnvironment`, `sandbox.json` allowedKeys). Claude Code reads
+  // `ANTHROPIC_API_KEY`, and nothing mapped between them — so every real run
+  // exited 1 with "Invalid API key · Please run /login", against a genuine CLI
+  // and a valid token.
+  //
+  // The rename belongs HERE and not in the sandbox. Teaching a provider-neutral
+  // environment an Anthropic variable name would couple it to one vendor, which
+  // Native §30 and `FR-AGT-004` exist to prevent; this adapter is already the
+  // vendor-specific component. No NEW credential crosses the boundary: the value
+  // is already inside the container, and is dereferenced under a second name at
+  // the point of use.
+  //
+  // Two properties the tests pin, both easy to lose in a later edit:
+  //   · the token VALUE never appears in argv — only `$AI_PROVIDER_TOKEN`, so it
+  //     cannot reach a process list, a log or a diagnostic (PC-3);
+  //   · `command` carries customer text and is passed POSITIONALLY, referenced
+  //     as "$1". Interpolating it into the script would make a quote in a
+  //     project name into a shell command.
+  return [
+    'sh',
+    '-c',
+    'ANTHROPIC_API_KEY="$AI_PROVIDER_TOKEN" exec claude -p "$1"',
+    'pmi-claude-agent',
+    command,
+  ];
 }
 
 export class ClaudeAgent implements AgentGateway {

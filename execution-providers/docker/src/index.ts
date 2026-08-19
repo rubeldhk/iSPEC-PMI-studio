@@ -478,7 +478,7 @@ export function unixSocketDockerApi(socketPathArg?: string): DockerEngineApi {
 
       const inspect = await request('GET', `/v1.43/exec/${execId}/json`);
       expectOk(inspect, 'inspect exec');
-      const exitCode = (JSON.parse(inspect.text) as { ExitCode: number }).ExitCode ?? 0;
+      const exitCode = parseExecExitCode(inspect.text);
 
       // Docker multiplexes stdout and stderr into 8-byte-framed chunks unless a
       // TTY is attached. Demultiplexed here so stderr never reaches stdout —
@@ -521,6 +521,34 @@ export function unixSocketDockerApi(socketPathArg?: string): DockerEngineApi {
       return true;
     },
   };
+}
+
+/**
+ * The exit status of a finished exec — or a refusal (`DEF-028-004`, `T692`).
+ *
+ * This was `ExitCode ?? 0`. Docker reports `ExitCode: null` while an exec has
+ * not finished, so the default answered **unknown** with **succeeded** — and on
+ * 2026-08-19 that reported a failing agent as a succeeding one. `claude` exited
+ * 1 on an invalid key; the adapter recorded `agent_finished`, and the real cause
+ * surfaced three steps later as "the engine produced no output".
+ *
+ * An unknown status now throws. A caller cannot act correctly on a status nobody
+ * knows, and of the two ways to be wrong, reporting failure as success is the
+ * one that lets a broken run be believed.
+ *
+ * Exported for testing, like `demultiplex`: `ExitCode` appeared exactly once in
+ * this repository and in no test, which is precisely how it stayed wrong.
+ */
+export function parseExecExitCode(inspectText: string): number {
+  const parsed = JSON.parse(inspectText) as { ExitCode?: number | null };
+  const code = parsed.ExitCode;
+  if (typeof code !== 'number') {
+    throw new Error(
+      'Docker reported no exit status for this exec — it has not finished, or the response ' +
+        'omitted one. Refusing to report an unknown status as success (DEF-028-004).',
+    );
+  }
+  return code;
 }
 
 /** Split Docker's framed stream into stdout and stderr. Exported for testing. */

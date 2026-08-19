@@ -82,13 +82,54 @@ describe('T557 · the descriptor (FR-AGT-002)', () => {
 
 describe('T557 · the invocation', () => {
   it('runs the command headlessly through `claude -p`', () => {
-    expect(invocationFor('/speckit-specify')).toEqual(['claude', '-p', '/speckit-specify']);
+    // T693/DEF-028-004 — the CLI is still driven headlessly with `-p`; what
+    // changed is that the credential it reads is bound first.
+    const argv = invocationFor('/speckit-specify');
+    expect(argv.join(' ')).toContain('claude -p');
+    expect(argv).toContain('/speckit-specify');
+  });
+
+  it('binds ANTHROPIC_API_KEY from the token the sandbox already holds (T693)', () => {
+    // The sandbox sets AI_PROVIDER_TOKEN and nothing else; Claude Code reads
+    // ANTHROPIC_API_KEY. Nothing mapped between them, so the CLI exited 1 with
+    // "Invalid API key" on every real run (DEF-028-004).
+    //
+    // The rename happens HERE, in the vendor-specific adapter, and not in
+    // `buildSandboxEnvironment` — a provider-neutral sandbox that knows an
+    // Anthropic variable name is a sandbox coupled to one vendor, which Native
+    // §30 and FR-AGT-004 exist to prevent.
+    const argv = invocationFor('/speckit-specify');
+    expect(argv.join(' ')).toContain('ANTHROPIC_API_KEY="$AI_PROVIDER_TOKEN"');
+  });
+
+  it('never puts the credential VALUE on the command line', () => {
+    // Only the variable NAME is written. The value is dereferenced inside the
+    // container, so it cannot reach a process list, a log or a diagnostic.
+    const argv = invocationFor('/speckit-specify');
+    expect(argv.join(' ')).not.toMatch(/AI_PROVIDER_TOKEN=[^"$]/);
+  });
+
+  it('passes the command as an argument, never interpolated into the script', () => {
+    // The command carries customer text. Interpolating it into a shell script
+    // would make `"; rm -rf / #` a command rather than a string, so it is passed
+    // positionally and referenced as "$1".
+    const hostile = '/speckit-specify "; touch /tmp/pwned #';
+    const argv = invocationFor(hostile);
+    const script = argv[2] ?? '';
+    expect(script).not.toContain('touch /tmp/pwned');
+    expect(script).toContain('"$1"');
+    expect(argv.at(-1)).toBe(hostile);
   });
 
   it('hands the session exactly that, and nothing else', async () => {
+    // Asserted against `invocationFor` rather than a literal argv. The literal
+    // was a second copy of the invocation, and when `T693` bound the credential
+    // it was this test that disagreed — not the seam it was guarding. What
+    // matters is that the session receives the adapter's invocation unchanged
+    // and receives it once.
     const s = session();
     await new ClaudeAgent().execute({ capability: 'generate', command: '/speckit-tasks' }, s, ctx());
-    expect(s.commands).toEqual([['claude', '-p', '/speckit-tasks']]);
+    expect(s.commands).toEqual([invocationFor('/speckit-tasks')]);
   });
 
   it('returns the agent as the producer, so provenance names who reasoned', async () => {

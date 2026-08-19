@@ -1,7 +1,7 @@
 # DEF-028-004 — the sandbox passes a credential the agent does not read, and the failure was masked
 
 **Epic**: `EPIC-028` · blocks **`SC-AGT-001`** · answers research item **`R-028-5`**
-**Raised**: 2026-08-19 | **Status**: **OPEN** — the fix is an architectural choice, recorded below
+**Raised**: 2026-08-19 | **Status**: **CLOSED — FIXED 2026-08-19** (both defects; `SC-AGT-001` still blocked, see below)
 **Found by**: `T646b`, the first run with a real credential present
 **Severity**: **HIGH** — two defects, and the second hid the first
 
@@ -88,3 +88,36 @@ it on the way in is the question, and it is the owner's.
 - `T692` — assert exit-code propagation from a real exec, including the `ExitCode: null` case, and
   decide whether the default should be a failure rather than `0`
 - `T693` — wire the credential the agent actually reads, at the seam the decision above settles
+
+## Outcome — 2026-08-19
+
+Both defects are fixed and both fixes are verified against a real daemon.
+
+`T692` — an unknown exit status now throws instead of defaulting to `0`.
+`parseExecExitCode` is extracted and tested: six assertions covering a real
+status, a `null` status with `Running: true` and with `Running: false`, an absent
+field, and a malformed response. Written to fail first, and it did.
+
+`T693` — the credential is bound in the **agent adapter**, per the owner's ruling.
+`invocationFor` returns `sh -c 'ANTHROPIC_API_KEY="$AI_PROVIDER_TOKEN" exec claude
+-p "$1"' …`, which renames a value already inside the container rather than
+letting a second credential cross the boundary. Two properties are pinned by
+tests: the token **value** never appears in argv, only the variable name (PC-3);
+and the command is passed **positionally** and referenced as `"$1"`, so customer
+text containing a quote is a string and not a shell command.
+
+**The binding is proven to work**, by the error changing:
+
+| | before `T693` | after `T693` |
+|---|---|---|
+| CLI response | `Invalid API key · Please run /login` | `API Error: 401 … "API key is invalid."` |
+| meaning | no credential was found at all | the credential was found, sent, and **rejected by Anthropic** |
+
+**`SC-AGT-001` remains unmet, and no longer for any reason in this repository.**
+The token in `.env` begins `sk-` but not `sk-ant-`; Anthropic API keys begin
+`sk-ant-api03-`. It is a credential for a different provider. Determined from the
+prefix alone — the value was never read, and its length and prefix category
+answered the question without it.
+
+The remaining step is an operator supplying an Anthropic API key from
+`console.anthropic.com`. No code change is outstanding.
