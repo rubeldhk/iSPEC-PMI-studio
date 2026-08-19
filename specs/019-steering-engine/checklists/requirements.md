@@ -43,12 +43,14 @@ This records only what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] All tasks complete with tests passing
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `defects/` has no open records
-- [ ] Principle deltas still hold; deferrals retain valid owners
 - [ ] Conformance cases **C-14** to **C-16** green against both adapters
 - [ ] `pnpm test:arch` green including `T246a`
+
+*Exit readiness is not a checklist concern.* A checklist validates the quality of what is
+**written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit
+Criteria**, which owns it. Four items duplicating that section were removed on 2026-08-19 — they
+restated another document’s gate, and because the `Checklisted` stage reads this file, the
+duplicate made a stage-3 gate wait for stage-7 evidence.
 
 ## Validation iteration — 2026-08-10
 

@@ -10,7 +10,7 @@ what must hold **for this epic**.
 
 - [x] `spec.md` present, declaring requirements, stories, and criteria owned
 - [x] `tasks.md` present with Epic → Function → Task grouping
-- [ ] `plan.md` present — **not yet planned**
+- [x] `plan.md` present
 - [x] `defects/` folder exists (Constitution VI)
 - [x] Delivery posture stated (proceeding or held, decision D-10)
 
@@ -30,10 +30,11 @@ what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] All tasks complete with tests passing
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `defects/` has no open records
-- [ ] Principle deltas still hold; deferrals retain valid owners
+*Exit readiness is not a checklist concern.* A checklist validates the quality of what is
+**written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit
+Criteria**, which owns it. Four items duplicating that section were removed on 2026-08-19 — they
+restated another document’s gate, and because the `Checklisted` stage reads this file, the
+duplicate made a stage-3 gate wait for stage-7 evidence.
 
 ## Notes
 

@@ -50,14 +50,16 @@ This records only what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] All tasks complete with tests passing
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `defects/` has no open records
-- [ ] Principle deltas still hold; deferrals retain valid owners
 - [ ] **Epic closure recorded in `closure.md` (Phase Z); this epic is release-eligible** —
       ⚠️ **not currently listed in `spec.md` Epic Exit Criteria**, though `T435`–`T438` write it
 - [ ] Platform promotion is gated separately by EPIC-014 `F-11.2` — ⚠️ **`spec.md` currently claims
       this epic discharges promotion**, contradicting `/speckit-analyze` finding **C1**
+
+*Exit readiness is not a checklist concern.* A checklist validates the quality of what is
+**written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit
+Criteria**, which owns it. Four items duplicating that section were removed on 2026-08-19 — they
+restated another document’s gate, and because the `Checklisted` stage reads this file, the
+duplicate made a stage-3 gate wait for stage-7 evidence.
 
 ## Validation iteration — 2026-08-10
 

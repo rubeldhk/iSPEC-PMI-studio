@@ -30,7 +30,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-017](../specs/017-enhancement-model/) | Enhancement Model for Spec-Driven Engineering | parent-design | Planned | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | n/a | `/speckit-tasks` |
 | [EPIC-018](../specs/018-repository-governance/) | Repository Governance Process | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-019](../specs/019-steering-engine/) | Steering Engine | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
-| [EPIC-020](../specs/020-living-specifications/) | Living Specifications & Impact | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
+| [EPIC-020](../specs/020-living-specifications/) | Living Specifications & Impact | delivery | Analyzed | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `DOR evaluation` |
 | [EPIC-021](../specs/021-review-gates-roles/) | Review Gates & Roles | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
 | [EPIC-022](../specs/022-product-traceability/) | Product Structure & Traceability | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
 | [EPIC-023](../specs/023-unattended-runs-review/) | Unattended Runs & Team Review | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
@@ -95,9 +95,6 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | EPIC-019 | Planned evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-019 | Tasked evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-019 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-020 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-020 | Tasked evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-020 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-021 | Planned evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-021 | Tasked evidence present without the stage before it — stage held at Clarified | report |
 | EPIC-021 | Analyzed evidence present without the stage before it — stage held at Clarified | report |
