@@ -375,3 +375,8 @@ about the seam.
 - Unrun tests are never reported as passing (Constitution IX). **`T646b` is the task most likely to
   be misreported** — a green CI run says nothing about it
 - Commit after each task or logical group
+
+## Phase 7: Convergence *(appended 2026-08-19 — `T646b` run with a credential, `DEF-028-004`)*
+
+- [ ] T692 Assert exit-code propagation from a real container exec, including Docker's `ExitCode: null` while an exec is unfinished, and decide whether an unknown exit status should default to failure rather than `0`, in `execution-providers/docker/tests/unit/exec-exit-code.spec.ts` per `DEF-028-004` (contradicts) — `ExitCode` appears once in the repository, at `execution-providers/docker/src/index.ts:481`, and in no test; `?? 0` reads unknown as success, which reported a failing agent as a succeeding one
+- [ ] T693 Wire the credential the agent CLI actually reads, at the seam the `DEF-028-004` decision settles, per `SC-AGT-001` and `R-028-5` (missing) — the sandbox sets `AI_PROVIDER_TOKEN`, Claude Code reads `ANTHROPIC_API_KEY`, and nothing maps between them; verified against the image digest by replicating the sandbox environment (unit test: T692 covers the masking; the mapping needs its own)

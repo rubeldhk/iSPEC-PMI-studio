@@ -1,6 +1,6 @@
 # V6 — real container run transcript
 
-**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-18T03:41:52.654Z
+**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-19T20:06:37.257Z
 
 **Image digest**: `sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f`
 
@@ -10,7 +10,7 @@
 - [PASS] resolve_agent — anthropic/claude-opus-5
 - [PASS] start_container
 - [PASS] record_image_digest — sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f
-- [FAIL] generate_specification — Refusing to start a sandbox without an AI provider credential.
+- [FAIL] generate_specification — empty_output: The engine produced no output.
 - [PASS] stop_container
 
 ## What this transcript does and does not prove
