@@ -55,9 +55,31 @@ a comparison that ignored whitespace could not detect a whitespace edit, which i
 The frozen hashes are **unchanged**: they were always LF-based, and `SC-AGT-005` freezes
 `sandbox.json` and `sandbox-config.spec.ts`, neither of which is touched. Only the checkers change.
 
-## The wider gap this leaves
+## The wider gap — closed 2026-08-19
 
-A `.gitattributes` declaring `* text=auto eol=lf` would remove the whole class rather than treating
-it three times. Not done here: it rewrites line endings across every tracked file in the repository,
-which is a change that deserves its own task and its own review rather than riding along with a
-merge. **Recorded as the recommended follow-up.**
+A `.gitattributes` declaring `* text=auto eol=lf` removes the whole class rather than treating it
+three times. It was deliberately **not** done in the merge commit — rewriting line endings across
+every tracked file deserves its own change and its own review — and was done immediately after, as
+its own commit.
+
+**What `git add --renormalize .` found: nothing.** Not one tracked file changed in the index,
+because `core.autocrlf=true` already converted CRLF to LF *on commit*. The repository content was
+always LF. Only the **working tree** was CRLF — which is exactly what the three checks tripped over,
+since each compared git-stored bytes against working-copy bytes.
+
+`eol=lf` fixes the other half: the working tree now materialises as LF on every platform. After
+refreshing it, `sandbox.json` hashes to `389daa738f82bd34` from **raw bytes** — identical to the
+frozen constant that previously required normalisation to reach.
+
+**Verified by mutation.** Removing the per-check normalisation from `T549a` — reverting it to hash
+raw bytes, the exact code that failed 14 tests an hour earlier — now leaves all six green. The
+config change alone is sufficient.
+
+The per-check normalisations are **kept anyway**. They are two lines each, and a check that works
+only because a config file is present is a check with a hidden dependency. Belt and braces is
+justified where the alternative is a security control silently comparing operating systems.
+
+The 43 SRS `.docx` files are declared `binary` explicitly rather than left to `text=auto`. Detection
+would classify them correctly; they are also the source material every requirement traces to under
+Constitution II, and an unreviewable corruption there is not a risk worth carrying on a heuristic.
+Verified after the refresh: byte-identical to `HEAD`, and still valid zip archives.
