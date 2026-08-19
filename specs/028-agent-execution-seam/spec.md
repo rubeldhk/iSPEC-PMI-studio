@@ -45,6 +45,38 @@ work that cannot be proven separately.
 
 ## Clarifications
 
+### Session 2026-08-19 — four questions, asked after the first real run
+
+The first session (below) was asked before anything had run. This one was asked *after* a real
+container executed the chain end to end, which is why every question here is about something the run
+revealed rather than something the design anticipated.
+
+- Q: How should the Spec Kit scaffold get what it needs, given the generation egress profile permits
+  only `api.anthropic.com`? → A: **Pre-bake the scaffold into the container image at build time.**
+  Generation then needs no network beyond the AI provider, so `ADR-0002`'s frozen profile keeps
+  exactly the promise it makes. The alternatives — a second, wider posture for scaffolding, or
+  widening the generation profile itself — each add a way for a generation run to reach further than
+  the provider, which is the one thing that profile exists to prevent. Pre-baking is also what an
+  air-gapped generation environment would require regardless, so it is the option that stays correct
+  under the strictest future constraint rather than the loosest. Settles `T699`.
+
+- Q: Should EPIC-028 be able to close while `SC-AGT-001` is unmet? → A: **No — it stays not
+  release-eligible.** Constitution IV would permit closure on an explicitly deferred remainder with a
+  named owner, and the remainder is now a posture decision rather than unbuilt work, so the door is
+  open. It stays shut because this epic's own closing report already answered the question: reporting
+  an epic complete while its headline outcome is unverified is precisely what EPIC-003's closure
+  warned against. A rule is worth what it costs to keep on the day it is inconvenient.
+
+- Q: With 19 Epics held on `PMI-DOC-004`, what should be worked on next? → A: **Finish the
+  `SC-AGT-001` chain — `T698`, then `T699`.** It is the only unmet headline outcome in the
+  programme, the capability is already demonstrated by a probe, and it is one posture decision from
+  done. Sequencing answer; changes no requirement here.
+
+- Q: What should happen to the 26 of 87 feature sections that cite no requirement? → A: **Add
+  framing notes only where a feature genuinely satisfies an owned requirement**, leaving closure
+  phases and scaffolding uncited. A false trace is worse than a missing one, because it gets
+  believed. Programme-level; recorded here because it was asked in this session.
+
 ### Session 2026-08-14 — four questions, four confirmations, zero changes
 
 Unusual and worth recording as such: every answer confirmed the plan's stated recommendation. That is
