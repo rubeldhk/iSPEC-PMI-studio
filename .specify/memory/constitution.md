@@ -1,40 +1,55 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.1.0 → 1.2.0
-Bump rationale: MINOR — two existing principles materially expanded. Nothing removed, renamed,
-or redefined incompatibly; every prior obligation still holds. Both amendments ratify rulings
-made in the EPIC-018 clarification session of 2026-08-05.
+Version change: 1.2.0 → 1.3.0
+Bump rationale: MINOR — one new principle added (X. Interaction Discipline by Phase) and one
+existing principle materially expanded (IX now governs EVERY stop, not only command/session
+ends). Nothing removed, renamed, or redefined incompatibly; every prior obligation still holds.
+Both amendments respond to the project owner's 2026-08-19 ruling: development sessions were
+too lengthy, with too many mid-run interruptions and stops that ended without a clear next
+action.
 
 Modified principles:
-  - I. Spec Kit Command Gate — `governance/**` added to the exempt list; the constitution
-    itself explicitly declared NOT exempt
-  - V. Mandatory Task-Level Unit Tests — extended to non-code outputs, which are satisfied by
-    an executable conformance check
+  - IX. Mandatory Closing Report — scope widened from "command run / session end" to every
+    stop, including mid-work blocks; the next action must now be immediately executable (a
+    concrete command, or a question with quick-select options and a recommended default)
 
-Added principles: none
+Added principles:
+  - X. Interaction Discipline by Phase (NON-NEGOTIABLE) — decision phases batch ALL questions
+    into one consolidated questionnaire; execution phases run autonomously and, when genuinely
+    blocked, present quick-select options with a recommended default (or proceed on the default
+    when the choice is low-risk and reversible, recording the assumption)
+
 Added sections: none
 Removed sections: none
 
-MIGRATION NOTE (required — Principle V is NON-NEGOTIABLE):
-Principle V is *broadened*, not relaxed. Tasks that already carry unit tests are unaffected.
-  • EPIC-018 — all 29 tasks already pair with conformance checks; compliant as written.
-  • EPIC-003 T088/T089, EPIC-004 T013, EPIC-014 T149, EPIC-016 — already given paired unit
-    tests by the remediation of 2026-08-03/05. Not affected by this amendment.
-  • No in-flight epic becomes non-compliant. Any FUTURE task whose output is a document or
-    configuration file now requires an executable check where previously the obligation was
-    arguable. `/speckit-tasks` MUST emit one.
-  • The one new obligation on existing work: EPIC-018 T336 must land, since a conformance
-    check that is never wired into CI does not satisfy the principle.
+MIGRATION NOTE (required — Principle X is NON-NEGOTIABLE):
+No artifact becomes non-compliant; the principle governs agent conduct, not delivered work.
+  • In-flight epics: no spec.md/plan.md/tasks.md change is required.
+  • Command behavior that hard-coded the old style is corrected in this propagation:
+    speckit-clarify no longer asks one question at a time (batched questionnaire), and
+    speckit-implement no longer halts on incomplete checklists (recommended-default flow).
+  • Sessions already open on the old rules simply adopt the new interaction budget from
+    their next stop onward.
 
 Templates requiring updates:
-  ✅ .specify/templates/tasks-template.md  — Tests header and Notes extended to non-code outputs
-  ✅ .specify/templates/plan-template.md   — gate V row covers conformance checks
-  ✅ .specify/templates/spec-template.md   — Epic Exit Criteria unit-test item widened
-  ✅ .claude/skills/speckit-*/SKILL.md     — reviewed; generic guidance, no outdated refs
-  ✅ specs/018-repository-governance/**    — already consistent; this ratifies its assumptions
+  ✅ .specify/templates/plan-template.md   — Constitution Check gains gate X row; IX row rewritten
+  ✅ .specify/templates/tasks-template.md  — Before-finishing/Notes extended with Principle X budget
+  ✅ .specify/templates/spec-template.md   — reviewed; no change required (exit criteria unaffected)
+  ✅ .claude/skills/speckit-clarify/SKILL.md   — sequential questioning replaced with batched
+     questionnaire per Principle X
+  ✅ .claude/skills/speckit-implement/SKILL.md — checklist STOP-and-wait replaced with
+     recommended-default quick-select per Principle X
+  ✅ .claude/skills/speckit-* (others)     — reviewed; no contrary hard-coded behavior found;
+     Principle X binds them via the constitution they load
 
 Follow-up TODOs: none
+
+--- previous report (v1.2.0) ---
+MINOR — two existing principles materially expanded, ratifying the EPIC-018 clarification
+session of 2026-08-05: I. Spec Kit Command Gate (`governance/**` exempt; constitution itself
+NOT exempt) and V. Mandatory Task-Level Unit Tests (extended to non-code outputs via
+executable conformance checks). Propagated to all three templates.
 
 --- previous report (v1.1.0) ---
 MINOR — two new principles added governing agent session conduct: VIII Session Labelling by
@@ -196,20 +211,72 @@ condition that produces interleaved edits and corrupted task state.
 
 ### IX. Mandatory Closing Report (NON-NEGOTIABLE)
 
-Every Spec Kit command run, and every working session, MUST end with a closing report containing
-both of these sections — never one without the other:
+**Every stop MUST end with a clear next action.** This applies to every Spec Kit command run,
+every working session, AND every intermediate halt — a mid-work block, an error, a pause awaiting
+input. The agent is PROHIBITED from stopping with analysis, findings, or narrative alone.
+
+A full stop (command end, session end) MUST produce a closing report containing both of these
+sections — never one without the other:
 
 - **Work Completed** — what was actually done, listing the artifacts created or modified by path,
   and explicitly naming anything in scope that was NOT done and why.
 - **Recommended Next Task** — the single next action, named as a concrete Spec Kit command with its
   argument (e.g. ``/speckit-plan for EPIC-004``), plus any lower-priority alternatives.
 
+An intermediate stop (blocked, awaiting input) MUST end with the exact thing the user should do
+next, in immediately executable form:
+
+- the concrete command to run, OR
+- the question(s) to answer — presented with numbered/lettered quick-select options and a
+  **Recommended:** default, so a one-word reply resumes the work.
+
 The report MUST distinguish verified outcomes from unverified ones: a test suite that was not run
 MUST NOT be reported as passing, and deferred work MUST NOT be reported as complete.
 
 **Rationale**: The Epic → Feature → Task → Defect loop is long-running and is resumed across many
 sessions. A closing report is the handoff record that makes the next session's entry point
-unambiguous, and the honest statement of what was skipped is what keeps convergence trustworthy.
+unambiguous. A stop without a next action forces the user to reverse-engineer what to type next —
+that reconstruction cost, multiplied across hundreds of stops, is a dominant tax on delivery speed.
+
+### X. Interaction Discipline by Phase (NON-NEGOTIABLE)
+
+Spec Kit commands divide into two interaction modes with different interruption budgets. The goal
+is fixed: minimize round trips without hiding decisions.
+
+**Decision phases** — `/speckit-specify`, `/speckit-clarify`, `/speckit-plan`, `/speckit-tasks`,
+`/speckit-checklist`, `/speckit-constitution` — where Product Owner / Project Manager / Tech Lead
+judgment shapes scope:
+
+- All questions for the phase MUST be gathered first and presented as ONE consolidated
+  questionnaire: every question numbered, each with lettered options and a
+  **Recommended:** default, answerable in a single reply (e.g. `1A 2B 3-recommended`).
+- One-question-at-a-time round trips are PROHIBITED.
+- At most ONE follow-up round is permitted, and only for answers that were ambiguous or that
+  genuinely spawned a new decision — never for questions that could have been asked in round one.
+
+**Execution phases** — `/speckit-implement`, `/speckit-converge`, `/speckit-analyze`,
+`/speckit-taskstoissues` — where the decisions were already made upstream:
+
+- The command MUST run autonomously from start to finish. Pausing for confirmation, permission,
+  or progress acknowledgment is PROHIBITED — including on warnings, incomplete checklists, or
+  non-blocking findings, which are reported in the closing report instead.
+- If genuinely blocked (a missing input that materially changes the outcome), present a quick
+  multiple-choice option set with a **Recommended:** default so one keystroke resumes the work,
+  then continue immediately on the answer.
+- If the blocking choice is low-risk and reversible, do NOT stop: proceed on the recommended
+  default and record the assumption in the affected artifact's Assumptions section and in the
+  closing report.
+
+**Universal rules, both modes:**
+
+- Every pause MUST state its reason. A pause with no stated blocking reason is a violation.
+- "Shall I continue?", "Do you want me to proceed?", and equivalent permission-seeking questions
+  are PROHIBITED. The default is always to continue.
+
+**Rationale**: Round trips, not compute, dominate wall-clock delivery time in this project.
+Batching converts N interruptions into one sitting where the PO/PM/TL answers everything with
+full context; recommended defaults keep execution moving at machine speed while every assumption
+stays on the audit trail.
 
 ## Repository & Environment Governance
 
@@ -272,6 +339,12 @@ records → promote.
 task named as a concrete Spec Kit command. This applies to each step individually, not only to the
 Epic exit gate.
 
+**Interaction budget per step** (Principle X): steps 1–3 before implementation are decision
+phases — all PO/PM/TL questions are batched into one questionnaire with options and recommended
+defaults. Steps 3 (execution via `/speckit-implement`) through 7 are execution phases — they run
+without pausing; a genuine block surfaces as a quick-select question, and low-risk reversible
+choices proceed on the recommended default with the assumption recorded.
+
 ## Governance
 
 This constitution supersedes all other development practices, conventions, and habits in this
@@ -294,7 +367,8 @@ Epics comply.
 Phase 0 research and re-check it after Phase 1 design. Every `/speckit-analyze` MUST report
 constitution violations as blocking findings. Every Epic convergence MUST confirm Principles I,
 IV, V, VI, and VII were honored. Every command run MUST end with the closing report required by
-Principle IX. Complexity or deviation MUST be justified in the plan's Complexity Tracking table,
-or the work MUST be simplified.
+Principle IX and MUST honor the interaction budget of Principle X for its phase. Complexity or
+deviation MUST be justified in the plan's Complexity Tracking table, or the work MUST be
+simplified.
 
-**Version**: 1.2.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-05
+**Version**: 1.3.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-19

@@ -139,8 +139,14 @@ Execution steps:
     - Favor clarifications that reduce downstream rework risk or prevent misaligned acceptance tests.
     - If more than 5 categories remain unresolved, select the top 5 by (Impact * Uncertainty) heuristic.
 
-5. Sequential questioning loop (interactive):
-    - Present EXACTLY ONE question at a time.
+5. Batched questionnaire (Constitution X — decision phase; one-question-at-a-time round trips
+   are PROHIBITED):
+    - Present ALL queued questions (up to 5) AT ONCE, as a single numbered questionnaire the
+      user can answer in one reply (e.g. `1A 2B 3 recommended 4: OAuth 5A`). State that
+      convention at the top of the questionnaire.
+    - After the user replies, at most ONE follow-up round is permitted, and only for answers
+      that were ambiguous or that genuinely spawned a new decision — batch those follow-ups
+      too. Never introduce a question that could have been asked in round one.
     - **Question writing quality (applies to every question, MC or short-answer):**
        - Lead with `**Question:**` followed by a full interrogative that ends with `?`. The question text before the `?` must make sense on its own.
        - NEVER use a topic label, section heading, or requirement id as the question itself. For example, `Acceptance device/runtime matrix (FR-023)` is INVALID — it is a label, not a question.
@@ -169,16 +175,17 @@ Execution steps:
        - Provide your **suggested answer** based on best practices and context.
        - Format as: `**Suggested:** <your proposed answer> - <brief reasoning>`
        - Then output: `Format: Short answer (<=5 words). You can accept the suggestion by saying "yes" or "suggested", or provide your own answer.`
-    - After the user answers:
-       - If the user replies with "yes", "recommended", or "suggested", use your previously stated recommendation/suggestion as the answer.
-       - Otherwise, validate the answer maps to one option or fits the <=5 word constraint.
-       - If ambiguous, ask for a quick disambiguation (count still belongs to same question; do not advance).
-       - Once satisfactory, record it in working memory (do not yet write to disk) and move to the next queued question.
-    - Stop asking further questions when:
-       - All critical ambiguities resolved early (remaining queued items become unnecessary), OR
-       - User signals completion ("done", "good", "no more"), OR
-       - You reach 5 asked questions.
-    - Never reveal future queued questions in advance.
+    - After the user replies to the batch:
+       - For any question answered "yes", "recommended", or "suggested" (or left unanswered),
+         use your previously stated recommendation/suggestion as the answer, and say so in the
+         completion report.
+       - Otherwise, validate each answer maps to one option or fits the <=5 word constraint.
+       - Collect every ambiguous or newly-spawned item into the single permitted follow-up
+         round; do not ask them one at a time.
+       - Once satisfactory, record all answers in working memory and proceed to integration.
+    - Respect user completion signals ("done", "good", "no more") — treat remaining unanswered
+      questions as accepting the recommended defaults.
+    - Never exceed 5 questions in the initial batch.
     - If no valid questions exist at start, immediately report no critical ambiguities.
 
 6. Integration after EACH accepted answer (incremental update approach):

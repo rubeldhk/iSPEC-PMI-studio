@@ -31,6 +31,11 @@ active on this checkout (if one is, work in a separate clone). Label the session
 scope that was not done and why) and the recommended next task as a concrete Spec Kit command
 (Constitution IX).
 
+**Interaction budget** (Constitution X): implementation is an execution phase — run tasks without
+pausing for confirmation. If genuinely blocked, ask via quick-select options with a recommended
+default; if the choice is low-risk and reversible, proceed on the default and record the
+assumption. Never ask "shall I continue".
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -290,6 +295,9 @@ With multiple developers:
   direct patches (Constitution VI)
 - Every command run ends with a closing report: what was done + recommended next task
   (Constitution IX); unrun tests are never reported as passing
+- Execution runs autonomously (Constitution X): warnings and non-blocking findings go in the
+  closing report, not into mid-run confirmation pauses; genuine blocks become quick-select
+  questions with a recommended default
 - Document and configuration tasks pair with an executable conformance check, not a unit test
   (Constitution V); whether it blocks CI or only reports is recorded in the epic's spec
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

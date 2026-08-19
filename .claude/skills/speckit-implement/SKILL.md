@@ -79,12 +79,16 @@ You **MUST** consider the user input before proceeding (if not empty).
      - **PASS**: All checklists have 0 incomplete items
      - **FAIL**: One or more checklists have incomplete items
 
-   - **If any checklist is incomplete**:
+   - **If any checklist is incomplete** (Constitution X — execution phase; do NOT stop and wait):
      - Display the table with incomplete item counts
-     - **STOP** and ask: "Some checklists are incomplete. Do you want to proceed with implementation anyway? (yes/no)"
-     - Wait for user response before continuing
-     - If user says "no" or "wait" or "stop", halt execution
-     - If user says "yes" or "proceed" or "continue", proceed to step 3
+     - Proceeding is the recommended default: incomplete checklist items are a non-blocking
+       warning, not a block. Record the incomplete items as a noted assumption, continue to
+       step 3, and restate the incomplete checklists in the closing report so they are not lost.
+     - Halt only if the user has explicitly said in this session to stop on incomplete
+       checklists, or if an incomplete item makes a task in tasks.md impossible to execute
+       correctly — in that case present a quick-select question
+       (`A: proceed anyway (Recommended)  B: halt so checklists can be completed`) and continue
+       immediately on the answer.
 
    - **If all checklists are complete**:
      - Display the table showing all checklists passed
@@ -168,7 +172,10 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Halt execution if any non-parallel task fails
    - For parallel tasks [P], continue with successful tasks, report failed ones
    - Provide clear error messages with context for debugging
-   - Suggest next steps if implementation cannot proceed
+   - If implementation cannot proceed, never stop with analysis alone (Constitution IX/X): end
+     with the exact next command to run, or a quick-select question with a **Recommended:**
+     default so one keystroke resumes the work; low-risk reversible choices proceed on the
+     default with the assumption recorded
    - **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file.
 
 9. Completion validation:
@@ -216,7 +223,10 @@ Check if `.specify/extensions.yml` exists in the project root.
 
 ## Completion Report
 
-Report final status with summary of completed work.
+Report final status per Constitution IX: **Work Completed** (artifacts by path, plus anything in
+scope NOT done and why, including any checklist items or assumptions carried past a warning) and
+**Recommended Next Task** as a concrete Spec Kit command with its argument. Unrun tests are never
+reported as passing.
 
 ## Done When
 
