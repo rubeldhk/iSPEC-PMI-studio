@@ -22,6 +22,7 @@ import {
   MINIMAL_SPEC,
   PLAN_WITH_FAILED_GATE,
   RESOLVED_CHECKLIST,
+  SPEC_COVERAGE_DECLARED_NONE,
   SPEC_UNCOVERED_NO_OWNER,
   SPEC_UNCOVERED_WITH_OWNER,
   SPEC_WITH_MARKER,
@@ -103,6 +104,27 @@ describe('DOR-03 · SRS traceability populated, uncovered requirements owned', (
 
   it('passes when uncovered requirements name a back-fill owner', () => {
     expect(check('DOR-03', { ...READY, spec: SPEC_UNCOVERED_WITH_OWNER })).toBe(true);
+  });
+
+  it('passes when the coverage question is answered "none" (DEF-026-006)', () => {
+    // The branch that had no fixture, and so had no opinion. The two cases above
+    // both contain a real gap, which means both agree with an implementation
+    // that merely matched the field LABEL — only this case separates them.
+    //
+    // It refused EPIC-017, EPIC-027 and EPIC-028 for answering honestly, while
+    // an Epic that simply omitted the sentence passed. The cheapest way to
+    // satisfy the condition was to delete the evidence.
+    expect(check('DOR-03', { ...READY, spec: SPEC_COVERAGE_DECLARED_NONE })).toBe(true);
+  });
+
+  it('still refuses an Epic that declares a gap, so "none" is not a skeleton key', () => {
+    // The narrowing must not become a way through. Asserted beside the fix
+    // because loosening a gate and repairing one look identical in a diff.
+    const listed = SPEC_COVERAGE_DECLARED_NONE.replace(
+      '**Requirements not yet covered by SRS**: none.',
+      '**Requirements not yet covered by SRS**: FR-FIX-002, FR-FIX-003.',
+    );
+    expect(check('DOR-03', { ...READY, spec: listed })).toBe(false);
   });
 });
 

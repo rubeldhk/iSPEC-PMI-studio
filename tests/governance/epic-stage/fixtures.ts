@@ -168,6 +168,20 @@ export const SPEC_UNCOVERED_NO_OWNER = DOR_READY_SPEC.replace(
   '**Requirements not yet covered by SRS**: all of FR-FIX-001 to FR-FIX-009.',
 );
 
+/**
+ * `DOR-03` passes: the coverage question is ANSWERED, and the answer is none.
+ *
+ * `DEF-026-006` — the branch that had no fixture, and therefore no opinion. The
+ * two cases below both contain a real gap, so both agree with an implementation
+ * that merely matched the field label; only a spec declaring "none" can tell the
+ * two implementations apart. EPIC-017, EPIC-027 and EPIC-028 were refused
+ * readiness for months because this case was never written down.
+ */
+export const SPEC_COVERAGE_DECLARED_NONE = DOR_READY_SPEC.replace(
+  '| `SRS/PMI-DOC-003.docx` | PP-011 | FR-FIX-001 |',
+  '| `SRS/PMI-DOC-003.docx` | PP-011 | FR-FIX-001 |\n\n**Requirements not yet covered by SRS**: none.',
+);
+
 /** `DOR-03` passes: uncovered requirements, but an owner is named. */
 export const SPEC_UNCOVERED_WITH_OWNER = SPEC_UNCOVERED_NO_OWNER.replace(
   '**Requirements not yet covered by SRS**: all of FR-FIX-001 to FR-FIX-009.',

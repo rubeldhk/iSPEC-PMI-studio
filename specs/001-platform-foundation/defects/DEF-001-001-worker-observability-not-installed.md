@@ -1,6 +1,12 @@
 # DEF-001-001 — `T657` wired observability into the API and not into the worker
 
-**Epic**: `EPIC-001` | **Raised**: 2026-08-17 | **Status**: OPEN
+**Epic**: `EPIC-001` | **Raised**: 2026-08-17 | **Status**: CLOSED 2026-08-17
+
+> **Header corrected 2026-08-19.** This line read `OPEN` while the resolution below read
+> `**Status**: CLOSED 2026-08-17` — one record asserting both. `DOR-11` scans for an open status and
+> found this one, so EPIC-001 was held out of `Ready` by a stale header rather than by an open
+> defect. The body is the truth: `T660` and `T661` are complete and `worker/src/main.ts` calls
+> `buildObservability`, both verified before this line was changed.
 **Originating task**: `T657` (convergence, 2026-08-14) · found while executing `T165` Phase Z closure
 **Severity**: HIGH — `spec.md` asserts a principle is satisfied platform-wide, and it is satisfied in
 one of the platform's two long-running processes

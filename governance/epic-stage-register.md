@@ -11,7 +11,7 @@ a person never writes a stage, and a machine never infers intent.
 
 | Epic | Title | Kind | Stage | Posture | Readiness | Next |
 |---|---|---|---|---|---|---|
-| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-002](../specs/002-team-review-access-storage/) | Unattended Runs with Team Review, Artifact Access Control & External Storage Integration | parent-design | Clarified | stalled | n/a | `/speckit-checklist` |
 | [EPIC-003](../specs/003-specification-engine/) | Specification Engine & Sandbox | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-004](../specs/004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | delivery | Ready | — | Ready | `/speckit-implement` |
@@ -37,8 +37,8 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-024](../specs/024-artifact-access-control/) | Artifact Access Control | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
 | [EPIC-025](../specs/025-external-storage-publishing/) | External Storage Publishing | delivery | Clarified | Held — awaiting `PMI-DOC-004 Business Requirement Specification and approved business scope` | Not ready | `/speckit-checklist` |
 | [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
-| [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Ready | — | Ready | `/speckit-implement` |
 
 ## Findings
 

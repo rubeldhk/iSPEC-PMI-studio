@@ -14,7 +14,7 @@
  * `defects/` first reached readiness.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { enumerateEpics } from './derive';
@@ -49,6 +49,33 @@ describe('G-26-13 · DOR-11 reads something git can carry (DEF-026-005)', () => 
       ).toBeGreaterThan(0);
     },
   );
+
+  it('finds no defect record asserting both OPEN and CLOSED (DEF-001-001)', () => {
+    // `DOR-11` scans a record for an open status. `DEF-001-001` carried
+    // `**Status**: OPEN` in its header and `**Status**: CLOSED 2026-08-17` in its
+    // resolution — one document answering the question twice, differently. The
+    // check believed the first, and EPIC-001 sat out of `Ready` on a stale line
+    // while the work had been done, tested and merged.
+    //
+    // Neither status is wrong to write; asserting both is. A record that
+    // contradicts itself has no status at all, and every reader — human or
+    // check — picks whichever half they meet first.
+    const conflicted: string[] = [];
+    for (const epic of EPICS) {
+      const dir = join('specs', epic.directory, 'defects');
+      if (!existsSync(dir)) continue;
+      for (const file of readdirSync(dir).filter((name) => name.endsWith('.md'))) {
+        const source = readFileSync(join(dir, file), 'utf8');
+        const statuses = [...source.matchAll(/\*\*Status\*\*:\s*\**\s*(OPEN|CLOSED)\b/gi)].map(
+          (match) => match[1]?.toUpperCase(),
+        );
+        if (statuses.includes('OPEN') && statuses.includes('CLOSED')) {
+          conflicted.push(`${epic.id} ${file} declares both OPEN and CLOSED`);
+        }
+      }
+    }
+    expect(conflicted, conflicted.join('\n')).toEqual([]);
+  });
 
   it('never reports a folder as carried on the strength of the filesystem alone', () => {
     // The mutation this suite must survive: swapping `git ls-files` for

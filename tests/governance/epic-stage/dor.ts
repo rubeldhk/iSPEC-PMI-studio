@@ -208,14 +208,26 @@ const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
     // Constitution II's escape hatch, closed. "Not yet covered" is legitimate —
     // EPIC-018 and EPIC-026 are both owner-originated — but only with a name
     // against it, or the gap has no route back.
-    const uncovered = /not yet covered by SRS/i.test(spec);
+    //
+    // DEF-026-006 — read the ANSWER, not the label. This tested
+    // `/not yet covered by SRS/` against the whole document, which matches the
+    // field heading whatever follows it. A spec answering "none" scored exactly
+    // like one listing sixteen uncovered requirements with nobody named, so
+    // EPIC-017, EPIC-027 and EPIC-028 were refused for declaring full coverage.
+    // The incentive ran backwards: deleting the sentence passed, answering it
+    // honestly failed.
+    const declared = /not yet covered by SRS\**\s*:\s*(.*)/i.exec(spec);
+    const declaresNone = /^\**\s*(none|n\/a)\b/i.test(declared?.[1]?.trim() ?? '');
+    const uncovered = declared !== null && !declaresNone;
     const owned = /back-fill owner/i.test(spec);
     const passed = !uncovered || owned;
     return {
       id: 'DOR-03',
       passed,
       detail: passed
-        ? 'traceability populated'
+        ? declaresNone
+          ? 'traceability populated; no uncovered requirements declared'
+          : 'traceability populated'
         : 'requirements are uncovered and no back-fill owner is named',
     };
   },
