@@ -110,7 +110,35 @@ export function invocationFor(command: string, model: string = CLAUDE_DESCRIPTOR
   return [
     'sh',
     '-c',
-    'ANTHROPIC_API_KEY="$AI_PROVIDER_TOKEN" exec claude --model "$1" -p "$2"',
+    // T696 / DEF-028-005 — the tool grant, at the scope the project owner set on
+    // 2026-08-19 and no wider.
+    //
+    // Headless Claude Code declines Bash by default, so the agent could not run
+    // Spec Kit's scripts and could not write `spec.md`; the engine then read back
+    // an empty workspace and reported `empty_output` — accurate, and three steps
+    // from the cause.
+    //
+    // NOT `--dangerously-skip-permissions`. That flag exists, it would have made
+    // this work with less thought, and it grants the model everything. The grant
+    // was Bash and Write. A model running unattended inside a sandbox is already
+    // contained by `ADR-0002` — frozen egress, resource limits, an ephemeral
+    // workspace — and the containment is what makes a NARROW grant reasonable
+    // rather than what makes a broad one safe.
+    // T697 / DEF-028-006 — a writable HOME.
+    //
+    // The sandbox is `ReadonlyRootfs: true` with a tmpfs on the workspace, so
+    // `HOME=/home/engine` cannot be written. Claude Code writes `~/.claude.json`
+    // on startup and threw `EROFS: read-only file system` — then **exited 0**,
+    // because the rejection was unhandled and never set a status. The adapter
+    // read that zero as success, and the real fault surfaced two steps later as
+    // an empty read-back.
+    //
+    // `$PWD` rather than a literal: this says "HOME is the working directory",
+    // which is true in any provider, instead of teaching the agent adapter where
+    // Docker mounts things. The config lands in the ephemeral workspace and is
+    // destroyed with it, which is better than a HOME that outlives the run.
+    'HOME="$PWD" ANTHROPIC_API_KEY="$AI_PROVIDER_TOKEN" exec claude --model "$1" ' +
+      '--allowedTools Bash,Write -p "$2"',
     'pmi-claude-agent',
     model,
     command,

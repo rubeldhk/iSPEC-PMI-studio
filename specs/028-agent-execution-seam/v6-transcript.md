@@ -1,6 +1,6 @@
 # V6 — real container run transcript
 
-**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-19T21:43:22.922Z
+**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-19T23:06:09.666Z
 
 **Image digest**: `sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f`
 
@@ -10,7 +10,7 @@
 - [PASS] resolve_agent — anthropic/claude-opus-5
 - [PASS] start_container
 - [PASS] record_image_digest — sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f
-- [FAIL] generate_specification — empty_output: The engine produced no output.
+- [FAIL] generate_specification — engine_error: The engine ran and failed.
 - [PASS] stop_container
 
 ## What this transcript does and does not prove

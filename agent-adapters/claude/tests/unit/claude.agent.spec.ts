@@ -85,7 +85,7 @@ describe('T557 · the invocation', () => {
     // T693/DEF-028-004 — the CLI is still driven headlessly with `-p`; what
     // changed is that the credential it reads is bound first.
     const argv = invocationFor('/speckit-specify');
-    expect(argv[2] ?? '').toContain('claude --model "$1" -p "$2"');
+    expect(argv[2] ?? '').toMatch(/claude --model "\$1".*-p "\$2"/);
     expect(argv).toContain('/speckit-specify');
   });
 
@@ -118,6 +118,45 @@ describe('T557 · the invocation', () => {
     const agent = new ClaudeAgent();
     await agent.execute({ capability: 'generate', command: '/speckit-tasks' }, s, ctx());
     expect(s.commands[0]?.[4]).toBe(agent.descriptor.model);
+  });
+
+  it('grants exactly Bash and Write, and nothing else (T696)', () => {
+    // DEF-028-005. Headless Claude Code declines Bash by default, so the agent
+    // could not run Spec Kit's scripts and could not write spec.md — the engine
+    // read back an empty workspace and reported `empty_output`, three steps from
+    // the cause.
+    //
+    // Granted by the project owner on 2026-08-19, at this scope and no wider.
+    const script = invocationFor('/x')[2] ?? '';
+    expect(script).toContain('--allowedTools Bash,Write');
+  });
+
+  it('points HOME at the working directory, the one writable path (T697)', () => {
+    // DEF-028-006. The sandbox is `ReadonlyRootfs: true` with a tmpfs on
+    // /workspace, so `HOME=/home/engine` cannot be written. Claude Code writes
+    // `~/.claude.json` on startup and threw:
+    //
+    //   Error: EROFS: read-only file system, open '/home/engine/.claude.json'
+    //
+    // and then **exited 0** — an unhandled promise rejection that never set a
+    // status. That zero is why the adapter believed the agent had succeeded and
+    // the failure surfaced as `empty_output` from the read-back.
+    //
+    // `$PWD`, not a literal path: the adapter states "HOME is the working
+    // directory", which is true in any provider, rather than knowing Docker's
+    // mount point. The config lands in the ephemeral workspace and dies with it.
+    const script = invocationFor('/x')[2] ?? '';
+    expect(script).toContain('HOME="$PWD"');
+  });
+
+  it('never bypasses the permission system wholesale', () => {
+    // The CLI offers `--dangerously-skip-permissions`, which would have made the
+    // run work with less thought and granted the model everything. The grant was
+    // Bash and Write; a flag that skips the question entirely is not that grant,
+    // and PP-003 is a principle this programme enforces rather than assumes.
+    const script = invocationFor('/x')[2] ?? '';
+    expect(script).not.toContain('dangerously-skip-permissions');
+    expect(script).not.toMatch(/--allowedTools\s+["']?\*/);
   });
 
   it('binds ANTHROPIC_API_KEY from the token the sandbox already holds (T693)', () => {
