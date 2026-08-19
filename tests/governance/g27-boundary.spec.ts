@@ -51,6 +51,20 @@ const ALLOWED_PATHS = [
   'pnpm-lock.yaml',
   'vitest.workspace.ts',
   '.gitignore',
+  // DEF-027-005 — CI configuration, added 2026-08-19.
+  //
+  // The same category as `package.json`, `vitest.workspace.ts` and `.gitignore`
+  // above: repository infrastructure, not product source. `PRODUCT_PATHS` is the
+  // boundary `SC-AMD-009` and `FR-AMD-016` actually draw, and `.github/` is not
+  // in it — so this completes a list of non-product paths rather than widening
+  // the product one.
+  //
+  // Needed because fixing `G-27-09` itself required setting `fetch-depth: 0`,
+  // and that commit — correctly labelled `fix(EPIC-027)` — was then judged by
+  // the very check it repaired. Relabelling the commit to dodge the rule was
+  // the alternative, and renaming a commit to satisfy a gate is worse than
+  // naming the path.
+  '.github/workflows/',
 ];
 
 /**

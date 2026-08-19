@@ -51,3 +51,26 @@ comment naming the two checks that require history (`G-27-09` and `G-10`) so the
 > **`G-10` is affected the same way** and was silently degraded rather than failing: it reads
 > `git log -1` and `git status`, so on a shallow clone it reports *"no epic determinable"* and
 > stays quiet. Fixing the depth restores both.
+
+---
+
+## Addendum — the fix was judged by the check it repaired
+
+Setting `fetch-depth: 0` restored the history, and `G-27-09`'s *"this epic has commits to inspect"*
+passed. Its sibling assertion then failed:
+
+```text
+48507642 -> .github/workflows/ci.yml
+```
+
+The commit that fixed `G-27-09` was labelled `fix(EPIC-027)` — correctly, since it repairs EPIC-027's
+checks — so `G-27-09` selected it as an EPIC-027 commit and applied the epic's write boundary to it.
+`.github/workflows/` was absent from `ALLOWED_PATHS`.
+
+**Resolved by naming the path, not by renaming the commit.** `.github/workflows/` is repository
+infrastructure, the same category as `package.json`, `vitest.workspace.ts` and `.gitignore` which the
+list already carries. `PRODUCT_PATHS` — the boundary `SC-AMD-009` and `FR-AMD-016` actually draw — is
+untouched, and `RECORDED_EXCEPTIONS` remains exactly one entry.
+
+The alternative was to relabel the commit so the check would not select it. That would have been a
+gate satisfied by renaming, which is worse than the gap it hid.
