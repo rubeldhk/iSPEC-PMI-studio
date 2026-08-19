@@ -7,6 +7,8 @@ description: "Task list for EPIC-025 — External Storage Publishing"
 
 **Epic**: `EPIC-025` | **Module**: M-11 DevOps | **Tasks**: 37
 
+> **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
+
 **Parent design**: [../002-team-review-access-storage/](../002-team-review-access-storage/) — requirements, clarifications, SRS traceability and the principle register live there
 **Shared design**: [../_shared/](../_shared/)
 
@@ -27,6 +29,9 @@ description: "Task list for EPIC-025 — External Storage Publishing"
 ---
 
 ## F-02.6 · External storage integration
+
+*Satisfies **FR-029**, **FR-029a**, **FR-029b**, **FR-030**, **FR-031**, **FR-032**, **FR-033**, **FR-034**, **FR-035**, **FR-036**, **FR-037**, **FR-038**, **FR-039** and **FR-040**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note. This Epic carries one delivery feature, so it satisfies the whole owned set; the interface half is F-025.UI.*
 
 - [ ] T382 [P] [US5] Unit tests asserting a connection reports healthy, needs-reauthorisation and unavailable as distinct states, in `backend/tests/unit/storage/connection.spec.ts`
 - [ ] T383 [P] [US5] Unit tests asserting a provider missing a required capability is refused, naming it, in `backend/tests/unit/storage/capability-refusal.spec.ts`
@@ -67,6 +72,9 @@ per call — preserving contract rule **S7** and the ADR-0002 sandbox posture.*
 - [ ] T432 [US7] Implement the architecture test failing the build if `backend/src/**` names any storage provider SDK, package, or provider string — the guarantee behind SC-011, mirroring T047 for engines — in `backend/tests/architecture/storage-independence.spec.ts`
 
 ## F-025.UI · Interface
+
+*Satisfies **FR-031** and **FR-036**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 - [ ] T401 [P] [US5] Component unit tests for storage connection and publish status in `frontend/tests/unit/pages/StorageConnections.spec.tsx`
 - [ ] T402 [P] [US5] Implement the storage connections page in `frontend/src/pages/StorageConnections.tsx` (unit test: T401)

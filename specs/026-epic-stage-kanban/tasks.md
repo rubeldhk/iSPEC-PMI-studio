@@ -5,7 +5,9 @@ description: "Task list for EPIC-026 — Epic Stage Register & Definition of Rea
 
 # Tasks: Epic Stage Register & Definition of Ready
 
-**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 71 (T466–T536)
+**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 81 (T466–T536)
+
+> **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Research**: [research.md](./research.md)
 **Model**: [data-model.md](./data-model.md) | **Contracts**: [contracts/](./contracts/) | **Validation**: [quickstart.md](./quickstart.md)
@@ -581,6 +583,36 @@ not make `DOR-08` correct. This does, and retires the waiver.*
   > move together. It can see a declaration reaching the wrong Epic; it cannot see one that should
   > exist and does not — which is exactly the gap `T684` had just spent a task fixing by hand.
   > `G-26-12` compares the declarations against each `spec.md`, and both mutations now fail.
+
+## Phase 3: Convergence — the `/speckit-analyze` sweep *(appended 2026-08-19)*
+
+*Findings `A1` and `A2` from the 25-Epic analysis pass. Both are traceability faults in task records,
+not defects in the work.*
+
+- [X] T686 Correct the drifted task counts, and remove `plan.md`'s duplicate of a number `tasks.md` owns, across EPIC-001, 003, 004, 013, 014, 025, 026 and 028 (finding `A1`; check: the counts are recomputed by `/speckit-analyze`)
+- [X] T687 Add the mandatory **Feature → requirements it satisfies** citation to the `F-<epic>.<n>` framing notes of the ten Epics whose notes carry none (finding `A2`, `governance/traceability-convention.md`)
+
+  > **`T686` removed the duplicate rather than synchronising it.** Eight Epics had a drifted count;
+  > every `plan.md` in the repository restated a number `tasks.md` owns. Syncing them would have
+  > reset the clock — `T529` proved that, correcting EPIC-018's 31/32/34 only for the real figures
+  > to be 31/37/38 by the time it ran. **17 further `plan.md` duplicates were removed beyond the
+  > eight the finding named**, because leaving known-latent duplication while fixing the same fault
+  > next door is half a fix. Zero drift, zero plans restating a count.
+  >
+  > **EPIC-026's own count moved while the fix was being written** — appending `T686` and `T687`
+  > took it from 79 to 81. Recorded because it is the argument, demonstrated on the task that makes
+  > it: a count restated by hand is stale the moment anything is added.
+  >
+  > **`T687` cited nothing it could not derive.** Each mapping came from reading that Epic's
+  > *Requirements owned* table against its own feature names. Where a feature satisfies no owned
+  > requirement — EPIC-021's cost re-scoring, EPIC-024's closure phase, EPIC-001's scaffolding — it
+  > was **left uncited**. A false trace is worse than a missing one, because it is believed.
+  > EPIC-013 was skipped for the opposite reason: `F-08.9` already names `FR-019` inline.
+  >
+  > **31 framing notes across 14 Epics**, and the finding as scoped is closed: every Epic that owns
+  > requirements now cites at least one. A stricter per-section measure shows **26 of 87 feature
+  > sections still cite nothing** — roughly a third of them legitimately, being closure phases or
+  > scaffolding that satisfy no owned requirement. Reported rather than folded into this task.
 
 ---
 

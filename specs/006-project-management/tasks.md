@@ -24,6 +24,9 @@ paired unit-test task, written to fail first.
 
 ## F-02.1 · Project data and service
 
+*Satisfies **FR-001** and **FR-003**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T049 [P] [US1] Unit tests for project creation validation and unique-name-within-workspace rule in `backend/tests/unit/projects/projects.service.spec.ts`
 - [ ] T050 [P] [US1] Unit tests for archive preserving all content in `backend/tests/unit/projects/project-archive.spec.ts`
 - [ ] T053 [US1] Define `Project` model with workspace, owner, status, and engine reference in `backend/prisma/schema.prisma` (unit test: T049)
@@ -31,11 +34,17 @@ paired unit-test task, written to fail first.
 
 ## F-02.2 · Project API
 
+*Satisfies **FR-001**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T051 [P] [US1] Contract tests for `/projects` endpoints in `backend/tests/contract/projects.spec.ts`
 - [ ] T054a [P] [US1] Unit tests for the projects controller with a mocked service, covering route wiring and cross-workspace not-found, in `backend/tests/unit/projects/projects.controller.spec.ts`
 - [ ] T055 [US1] Implement projects controller per `contracts/platform-api.md` in `backend/src/modules/projects/projects.controller.ts` (unit test: T054a; contract test: T051)
 
 ## F-02.3 · Project interface
+
+*Satisfies **FR-001**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 - [ ] T055a [P] [US1] Component unit tests for the projects pages in `frontend/tests/unit/pages/Projects.spec.tsx`
 - [ ] T056 [P] [US1] Implement project list and detail pages in `frontend/src/pages/Projects.tsx` (unit test: T055a)

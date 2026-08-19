@@ -44,6 +44,9 @@ description: "Task list for EPIC-024 — Artifact Access Control"
 
 ## F-024.UI · Interface
 
+*Satisfies **FR-024**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T399 [P] [US4] Component unit tests for access grant management in `frontend/tests/unit/components/AccessGrants.spec.tsx`
 - [ ] T400 [P] [US4] Implement the access grant control in `frontend/src/components/AccessGrants.tsx` (unit test: T399)
 

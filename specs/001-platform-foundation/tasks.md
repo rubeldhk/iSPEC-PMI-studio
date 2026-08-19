@@ -5,7 +5,9 @@ description: "Task list for EPIC-001 — Platform Foundation"
 
 # Tasks: Platform Foundation
 
-**Epic**: `EPIC-001` | **Module**: M-00 | **Tasks**: 35
+**Epic**: `EPIC-001` | **Module**: M-00 | **Tasks**: 47
+
+> **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -48,6 +50,9 @@ paired unit-test task, written to fail first.
 - [X] T020 Implement the failure taxonomy enum and mapper in `backend/src/core/failure-taxonomy.ts` (unit test: T019)
 
 ## F-00.4 · Generation job orchestration
+
+*Satisfies **FR-024**, **FR-025**, **FR-027** and **FR-028**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 *Cross-cutting: serves specification generation, task generation, and validation alike.*
 

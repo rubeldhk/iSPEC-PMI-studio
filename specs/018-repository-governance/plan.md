@@ -3,7 +3,7 @@
 **Epic**: `EPIC-018` | **Module**: governance (no product module) | **Date**: 2026-08-04 |
 **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 38 · [tasks.md](./tasks.md) · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
+**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
 
 **Sibling**: [EPIC-017 Enhancement Model](../017-enhancement-model/plan.md) — the product half, held
 

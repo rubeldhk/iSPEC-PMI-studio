@@ -7,6 +7,8 @@ description: "Task list for EPIC-014 — DevOps & Release"
 
 **Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 18
 
+> **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
+
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
 > ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` Business Requirement Specification

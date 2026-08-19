@@ -24,6 +24,9 @@ paired unit-test task, written to fail first.
 
 ## F-04.12 · Traceability link model and writing
 
+*Satisfies **FR-029**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *Catalog epic: Specification Management → **Traceability**. Absorbed from the former M-07.*
 
 - [ ] T077a [P] [US3] Unit tests asserting `TraceabilityLink` permits only the two Phase 1 edge types and rejects duplicates, in `backend/tests/unit/traceability/link-constraints.spec.ts`
@@ -32,27 +35,42 @@ paired unit-test task, written to fail first.
 
 ## F-04.13 · Bidirectional traversal
 
+*Satisfies **FR-030**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T125 [P] [US7] Unit tests for forward traversal from a requirement to all derived artifacts in `backend/tests/unit/traceability/forward-trace.spec.ts`
 - [ ] T126 [P] [US7] Unit tests for reverse traversal from a task to originating requirements in `backend/tests/unit/traceability/reverse-trace.spec.ts`
 - [ ] T130 [US7] Implement forward and reverse traversal in `backend/src/modules/traceability/traceability.service.ts` (unit tests: T125, T126)
 
 ## F-04.14 · Retired-requirement flagging
 
+*Satisfies **FR-029**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T127 [P] [US7] Unit tests asserting links from retired requirements are returned and flagged, never omitted, in `backend/tests/unit/traceability/retired-links.spec.ts`
 - [ ] T131 [US7] Implement retired-requirement flagging on returned links in `backend/src/modules/traceability/retired-flag.ts` (unit test: T127)
 
 ## F-04.15 · Coverage reporting
+
+*Satisfies **FR-031**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 - [ ] T128 [P] [US7] Unit tests for coverage gap detection in `backend/tests/unit/traceability/coverage.spec.ts`
 - [ ] T132 [US7] Implement coverage gap reporting in `backend/src/modules/traceability/coverage.service.ts` (unit test: T128)
 
 ## F-04.16 · Traceability API
 
+*Satisfies **FR-029**, **FR-030** and **FR-031**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T129 [P] [US7] Contract tests for trace and coverage endpoints in `backend/tests/contract/traceability.spec.ts`
 - [ ] T132a [P] [US7] Unit tests for trace and coverage endpoints with a mocked service in `backend/tests/unit/traceability/traceability.controller.spec.ts`
 - [ ] T133 [US7] Implement trace and coverage endpoints in `backend/src/modules/traceability/traceability.controller.ts` (unit test: T132a; contract test: T129)
 
 ## F-04.17 · Traceability interface
+
+*Satisfies **FR-029**, **FR-030** and **FR-031**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 - [ ] T133a [P] [US7] Component unit tests asserting both traversal directions render and retired links are flagged in `frontend/tests/unit/pages/Traceability.spec.tsx`
 - [ ] T134 [P] [US7] Implement traceability and coverage views in `frontend/src/pages/Traceability.tsx` (unit test: T133a)

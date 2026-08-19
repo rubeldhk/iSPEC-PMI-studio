@@ -41,3 +41,19 @@ A systematic pass will not catch what only a careful human read of this Epic's s
 EPIC-027's own closure records exactly that limit, where eight of ten sampled clause verdicts held
 and two were wrong in ways no completeness check could see. This record claims the passes ran and
 what they returned; it does not claim a domain expert read the specification.
+
+## Remediation — 2026-08-19
+
+Findings from this session were acted on the same day by EPIC-026 `T686` and `T687`:
+
+- **Task-count drift** — the count in `tasks.md` was corrected against a recount, and `plan.md`'s
+  duplicate was **removed** rather than synchronised. A number restated in two documents is the
+  PP-002 fault itself; only `tasks.md` now carries it, marked *counted, not quoted*.
+- **Feature → requirement links** — the mandatory citation now sits in the `F-<epic>.<n>` framing
+  notes (`traceability-convention.md`).
+- **No clarification session** — unremediated. It needs `/speckit-clarify` to actually run, and
+  writing the session without running it would fabricate the evidence `FR-ESK-017` exists to
+  guarantee.
+
+The findings above are left as recorded. They state what the pass returned on the day it ran; a
+later fix does not change what was found.

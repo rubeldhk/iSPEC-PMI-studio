@@ -3,7 +3,7 @@
 **Epic**: `EPIC-026` | **Module**: governance (no product module) | **Date**: 2026-08-09 |
 **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 71 (`T466`–`T536`) · [tasks.md](./tasks.md) · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
+**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) (`T466`–`T536`) · [tasks.md](./tasks.md) · **Posture**: ▶ **PROCEEDING** (decision D-10) — process, not product
 
 **Sibling**: [EPIC-018 Repository Governance Process](../018-repository-governance/plan.md) — whose
 `governance/`, config pattern, and check harness this epic extends rather than duplicates

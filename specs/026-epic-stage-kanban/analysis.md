@@ -45,3 +45,19 @@ findings are blocking, so "severity" there must mean *severity now*, not *severi
 - Tasks: **71**
 - Ambiguity findings: **0** — no vague adjectives, no unresolved placeholders in any artifact
 - Duplication findings: **0**
+
+## Remediation — 2026-08-19
+
+Findings from this session were acted on the same day by EPIC-026 `T686` and `T687`:
+
+- **Task-count drift** — the count in `tasks.md` was corrected against a recount, and `plan.md`'s
+  duplicate was **removed** rather than synchronised. A number restated in two documents is the
+  PP-002 fault itself; only `tasks.md` now carries it, marked *counted, not quoted*.
+- **Feature → requirement links** — the mandatory citation now sits in the `F-<epic>.<n>` framing
+  notes (`traceability-convention.md`).
+- **No clarification session** — unremediated. It needs `/speckit-clarify` to actually run, and
+  writing the session without running it would fabricate the evidence `FR-ESK-017` exists to
+  guarantee.
+
+The findings above are left as recorded. They state what the pass returned on the day it ran; a
+later fix does not change what was found.

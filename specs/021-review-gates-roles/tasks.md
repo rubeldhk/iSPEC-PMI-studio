@@ -30,6 +30,9 @@ paired unit-test task, written to fail first.
 
 ## F-17.11 · Reviewing and authoring roles
 
+*Satisfies **FR-ENH-023** and **FR-ENH-024**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *Roles precede gates. A gate names the roles that must run; building gate configuration against roles
 that do not exist produces a configuration model with nothing to configure.*
 
@@ -40,12 +43,18 @@ that do not exist produces a configuration model with nothing to configure.*
 
 ## F-17.7 · Gate configuration
 
+*Satisfies **FR-ENH-012**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T277 [P] [US4] Write failing unit tests asserting a gate binds only to a permitted M08 lifecycle transition and that an unknown transition is refused by name, in `backend/tests/unit/reviews/gate-config.spec.ts`
 - [ ] T278 [US4] Define `ReviewGate` model with `transition`, `required_roles`, and `blocking` in `backend/prisma/schema.prisma` (unit test: T277)
 - [ ] T279 [P] [US4] Write failing unit tests asserting a gate configured against an engine lacking `reviewSpecification` fails at gate time with a named reason — and that such an engine still **registers** successfully (contract rule E-R5), in `backend/tests/unit/reviews/gate-capability.spec.ts`
 - [ ] T280 [US4] Implement gate configuration and capability checking in `backend/src/modules/reviews/gate-config.service.ts` (unit tests: T277, T279)
 
 ## F-17.8 · Gate execution, findings and human decision
+
+*Satisfies **FR-ENH-013**, **FR-ENH-014**, **FR-ENH-015** and **FR-ENH-016**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 *Gate arbitration is a pure function — "does this outcome permit advancement?" — which is what makes
 `SC-ENH-004` testable without invoking a model.*

@@ -5,7 +5,9 @@ description: "Task list for EPIC-003 — Specification Engine & Sandbox"
 
 # Tasks: Specification Engine & Sandbox
 
-**Epic**: `EPIC-003` | **Module**: M-08 | **Tasks**: 35
+**Epic**: `EPIC-003` | **Module**: M-08 | **Tasks**: 39
+
+> **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
@@ -30,10 +32,16 @@ collision.
 
 ## F-08.1 · Engine contract
 
+*Satisfies **FR-016**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [X] T031 [P] Write failing unit tests for contract type guards and result narrowing in `packages/engine-contract/tests/unit/contract.spec.ts`
 - [X] T032 Define `SpecificationEngine`, `EngineDescriptor`, `EngineResult`, `EngineFailureReason`, and all input/output types per `contracts/specification-engine.md` in `packages/engine-contract/src/index.ts` (unit test: T031)
 
 ## F-08.2 · Engine registry and capability validation
+
+*Satisfies **FR-021**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 - [X] T033 [P] Write failing unit tests asserting registration is refused, naming the missing capability, in `backend/tests/unit/engines/registry.spec.ts`
 - [X] T034 Define `EngineRegistration` model in `backend/prisma/schema.prisma` and implement the engine registry with capability validation in `backend/src/modules/engines/engine-registry.service.ts` (unit test: T033)
@@ -73,12 +81,18 @@ collision.
 
 ## F-08.4 · Fixture adapter
 
+*Satisfies **FR-016**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *Catalog epic: **Future engine adapter**. Deliberately trivial — proves the contract is engine-neutral and keeps the test suite fast, deterministic, and free of AI agent calls.*
 
 - [X] T036 [P] Write failing unit tests for deterministic fixture output and failure injection in `engine-adapters/fixture/tests/unit/fixture.spec.ts`
 - [X] T037 Implement the fixture adapter with injectable failure modes for every reason in the taxonomy in `engine-adapters/fixture/src/fixture.adapter.ts` (unit test: T036)
 
 ## F-08.5 · Conformance suite
+
+*Satisfies **FR-016** and **FR-021**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 *One suite, run against every adapter. An adapter is not conformant until all 13 cases pass.*
 
@@ -87,6 +101,9 @@ collision.
 - [X] T093 [US3] Run the shared conformance suite against the Spec Kit adapter in `engine-adapters/speckit/tests/conformance.spec.ts`
 
 ## F-08.6 · Spec Kit sandbox
+
+*Satisfies **FR-018**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 *Untrusted execution. The largest single component in the Epic — a sandboxed runtime, not an integration client.*
 
@@ -99,6 +116,9 @@ collision.
 
 ## F-08.7 · Spec Kit invocation and parsing
 
+*Satisfies **FR-018**, **FR-022** and **FR-023**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *The five-step sequence from research R-001: `specify` scaffolds, an AI agent generates.*
 
 - [X] T087 [P] [US3] Unit tests for Spec Kit output parsing against recorded fixtures in `engine-adapters/speckit/tests/unit/parse.spec.ts`
@@ -108,6 +128,9 @@ collision.
 - [X] T092 [US3] Implement descriptor version capturing both Spec Kit and AI model identity in `engine-adapters/speckit/src/descriptor.ts` (unit test: T091a)
 
 ## F-08.8 · Architecture enforcement
+
+*Satisfies **FR-017**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 - [X] T047 Implement the architecture test failing the build if `backend/src/**` references any Spec Kit symbol, package, or string identifier, in `backend/tests/architecture/engine-independence.spec.ts`
 - [X] T142 [US8] Extend the architecture test to cover string identifiers and dynamic imports in `backend/tests/architecture/engine-independence.spec.ts`

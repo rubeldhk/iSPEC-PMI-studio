@@ -31,6 +31,9 @@ FR-034 had no quickstart scenario. No existing task ID was reused or renumbered.
 
 ## F-13.2 · Architecture Decision Records
 
+*Satisfies **FR-034**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *SRS PMI-DOC-000 §9 and the Product Charter both mandate ADRs from day one. Entity, tables, enum, and
 all four endpoints are already specified in [`../_shared/`](../_shared/) — this epic implements them
 and adds no design.*

@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-024` | **Module**: M-13 Security & Governance | **Date**: 2026-08-08 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 21 · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
+**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
 
 **Parent design** — not duplicated here: [`../002-team-review-access-storage/`](../002-team-review-access-storage/)
 ([plan](../002-team-review-access-storage/plan.md) ·

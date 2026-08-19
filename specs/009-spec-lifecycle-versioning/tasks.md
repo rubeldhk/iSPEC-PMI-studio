@@ -36,6 +36,9 @@ paired unit-test task, written to fail first.
 
 ## F-04.9 · Versioning and comparison
 
+*Satisfies **FR-013** and **FR-015**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 - [ ] T105 [P] [US5] Unit tests asserting each meaningful change creates a version and prior versions stay unaltered in `backend/tests/unit/specifications/versioning.spec.ts`
 - [ ] T107 [P] [US5] Unit tests for version comparison output in `backend/tests/unit/specifications/version-diff.spec.ts`
 - [ ] T110 [US5] Implement append-only version creation on meaningful change in `backend/src/modules/specifications/version.service.ts` (unit test: T105)
@@ -53,6 +56,9 @@ attaches to.*
 - [ ] T112 [US5] Implement version comparison in `backend/src/modules/specifications/version-diff.service.ts` (unit test: T107)
 
 ## F-04.10 · Lifecycle, versioning and validation APIs
+
+*Satisfies **FR-011**, **FR-013**, **FR-015** and **FR-023**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 - [ ] T108 [P] [US5] Contract tests covering all six lifecycle transition endpoints — `submit-for-review`, `reject`, `approve`, `baseline`, `mark-implemented`, `archive` — plus version endpoints, in `backend/tests/contract/specification-lifecycle.spec.ts`
 - [ ] T112a [P] [US5] Unit tests for lifecycle and version endpoints with a mocked service in `backend/tests/unit/specifications/lifecycle.controller.spec.ts`

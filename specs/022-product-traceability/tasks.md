@@ -42,6 +42,9 @@ whether or not they apply — which is how box-ticking documents get made.*
 
 ## F-17.10 · Product traceability chain
 
+*Satisfies **FR-ENH-021** and **FR-ENH-022**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *The twelve-link chain **widens** `TraceabilityLink` rather than adding a second table — the chain
 **is** derivation, extended (research **R-017-7**). Note this is the opposite conclusion to
 `DependencyEdge` in EPIC-020, and deliberately so: the distinguishing test is not "is it a link?" but

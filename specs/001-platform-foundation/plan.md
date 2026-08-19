@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-001` | **Module**: M-00 | **Date**: 2026-08-03 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: 35 · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
+**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (decision D-10)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([platform plan](../_shared/plan.md) · [system-design](../_shared/system-design.md) ·

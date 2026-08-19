@@ -28,6 +28,9 @@ Cross-references such as
 
 ## F-17.1 · Steering scopes and hierarchy
 
+*Satisfies **FR-ENH-001** and **FR-ENH-005**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *The organization tier. `organization_id` goes on `workspaces` **only** — every artifact reaches its
 organization by one join, and a second denormalised tenancy column is a second thing to get wrong in
 a security boundary (R-017-1).*
@@ -51,6 +54,9 @@ a security boundary (R-017-1).*
 - [ ] T238 [US1] Implement the steering controller in `backend/src/modules/steering/steering.controller.ts` (unit test: T237; contract test: T236)
 
 ## F-17.3 · Steering application, provenance and engine contract
+
+*Satisfies **FR-ENH-004**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 *Resolution is a pure function — which is what makes SC-ENH-001 testable without generating anything.
 Provenance is stamped at generation time, never recomputed: recomputing returns **current** steering,

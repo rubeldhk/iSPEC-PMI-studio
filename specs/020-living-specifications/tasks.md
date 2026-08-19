@@ -25,6 +25,9 @@ paired unit-test task, written to fail first.
 
 ## F-17.5 · Dependency graph
 
+*Satisfies **FR-ENH-008**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
 *`DependencyEdge` is a **separate table** from `TraceabilityLink` (research **R-017-3**). Derivation
 links are system-written, acyclic, and immutable; dependency edges are user-maintained, cyclic-checked,
 and mutable. One table with a discriminator makes every query filter by kind.*
@@ -37,6 +40,9 @@ and mutable. One table with a discriminator makes every query filter by kind.*
 - [ ] T256 [US3] Implement the dependency service in `backend/src/modules/dependencies/dependencies.service.ts` (unit tests: T253, T255)
 
 ## F-17.6 · Impact analysis
+
+*Satisfies **FR-ENH-009**, **FR-ENH-010** and **FR-ENH-011**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
 
 *A recursive database query with a depth bound, not a materialised closure table (research
 **R-017-5**). A closure table trades a trivial write path for write amplification on every edge
@@ -53,7 +59,8 @@ change — worth it at a scale this epic does not target.*
 
 *Extends FR-032 rather than duplicating it. The platform already flags a specification out of date
 when a **source requirement** changes; `currency_status` generalises that trigger to any upstream
-artifact. **One field, wider trigger** — two independent staleness flags would disagree.*
+artifact. Satisfies **FR-ENH-006** and **FR-ENH-007** (`T687`); the FR-032 reference above
+is the platform behaviour this extends, not a requirement this Epic owns. **One field, wider trigger** — two independent staleness flags would disagree.*
 
 - [ ] T263 [P] [US2] Write failing unit tests asserting a change to any upstream artifact marks the specification `stale` with `stale_reason` naming what changed, and that FR-032's existing requirement-change trigger continues to work through the same field, in `backend/tests/unit/specifications/currency.spec.ts`
 - [ ] T264 [US2] Add `currency_status`, `stale_reason`, `reconciled_at/by` to `Specification` in `backend/prisma/schema.prisma` (unit test: T263)
