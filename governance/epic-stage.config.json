@@ -113,12 +113,21 @@
       "reads": "plan.md §Constitution Check",
       "principle": "I–IX"
     },
-    { "id": "DOR-07", "condition": "Task list exists", "reads": "tasks.md", "principle": "III" },
+    {
+      "id": "DOR-07",
+      "condition": "Task list exists",
+      "reads": "tasks.md",
+      "principle": "III",
+      "appliesTo": ["delivery"],
+      "_why": "FR-ESK-024 — a parent design deliberately carries no tasks and is never evaluated for readiness. Judging it on a task list it is defined not to have produced a permanent non-finding on every run. Reported NOT APPLICABLE rather than passed: Constitution IX forbids reporting an unrun check as passing, and a parent design has not satisfied this condition — the condition does not reach it."
+    },
     {
       "id": "DOR-08",
       "condition": "Every implementation task pairs with a test or conformance check",
       "reads": "tasks.md",
-      "principle": "V"
+      "principle": "V",
+      "appliesTo": ["delivery"],
+      "_why": "Same as DOR-07 — it reads tasks.md, which a parent design does not have."
     },
     {
       "id": "DOR-09",

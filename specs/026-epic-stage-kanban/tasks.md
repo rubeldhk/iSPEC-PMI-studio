@@ -521,6 +521,35 @@ not make `DOR-08` correct. This does, and retires the waiver.*
   > leaving a check that reports nothing and a repository that looks compliant. A mutation confirms
   > the line held — accepting *any* second file as a pairing fails five assertions.
 
+- [X] T682 [P] Write failing unit tests asserting `DOR-07` and `DOR-08` are reported **not applicable** — never passed, never failed — for an Epic kind whose `evaluatesDor` is false, in `tests/governance/epic-stage/dor-applicability.spec.ts`
+- [X] T683 Declare per-condition applicability in `governance/epic-stage.config.json` and honour it in `tests/governance/epic-stage/dor.ts`, so a parent design stops reporting two permanent non-findings (`FR-ESK-015`, `FR-ESK-024`; unit test: T682)
+
+  > **Requested as "implement EPIC-002 and EPIC-017" — which cannot be done.** Both are parent
+  > designs with no `tasks.md`, by rulings `D-19` and `D-18`, and `/speckit-implement` requires a
+  > task list. Writing tasks into them would contradict the rulings that moved delivery into their
+  > seven children, all of which are `HELD` on `PMI-DOC-004`. What *was* available is the reason
+  > those two Epics kept appearing in reports at all.
+  >
+  > **A third result state, not a pass.** `DOR-07` and `DOR-08` read `tasks.md`, so they reported
+  > *"tasks.md is absent"* against a kind `FR-ESK-024` defines as carrying none — a permanent
+  > non-finding on every run, forever. They now report **not applicable**.
+  >
+  > Marking them `passed` would have been the convenient lie and is explicitly refused: Constitution
+  > IX forbids reporting an unrun check as passing, and a parent design has not *satisfied* `DOR-07`
+  > — the condition does not reach it. A count of passing conditions would have been wrong the moment
+  > it included these two.
+  >
+  > **The carve-out is narrow, and stays narrow.** Applicability is declared in
+  > `epic-stage.config.json` (`FR-ESK-015`), only two conditions declare it, and **absence is not an
+  > exemption** — the other ten reach every kind. Both parent designs are still judged on everything
+  > else and still fail real conditions: EPIC-002 on `DOR-05` and `DOR-09`, EPIC-017 on `DOR-03` and
+  > `DOR-09`.
+  >
+  > **Three mutations, all caught**: ignoring applicability (4 red); reporting not-applicable as
+  > passing (1 red — the Constitution IX assertion); treating a silent condition as exempt (3 red).
+  >
+  > `DOR-08` now reads **28 of 28** passing-or-not-applicable.
+
 ---
 
 ## Dependencies & Execution Order

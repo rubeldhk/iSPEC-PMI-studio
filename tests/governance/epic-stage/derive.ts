@@ -35,6 +35,11 @@ export interface DorConditionDefinition {
   readonly id: string;
   readonly condition: string;
   readonly reads: string;
+  /**
+   * Epic kinds this condition reaches. Absent means **every** kind — absence is
+   * not an exemption, which is what keeps the carve-out narrow (`FR-ESK-015`).
+   */
+  readonly appliesTo?: readonly string[];
 }
 
 export interface StageConfig {

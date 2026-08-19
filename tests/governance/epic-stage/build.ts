@@ -103,12 +103,15 @@ export function buildRegisterModel(specsDir?: string, today?: string): RegisterM
 
     // Evaluated for every Epic, including parent designs — `resolveReadiness`
     // returns `n/a` for those, but the conditions are still computed so a
-    // contradiction (a parent design that somehow has tasks) still surfaces.
-    const dor = evaluateDor({
-      epicPath: epic.path,
-      directory: epic.directory,
-      declarations,
-    });
+    // contradiction (a parent design that somehow HAS tasks) still surfaces.
+    //
+    // T683 — the kind decides which conditions reach it. A parent design is not
+    // judged on a task list `FR-ESK-024` defines it not to have; `DOR-07` and
+    // `DOR-08` report not applicable rather than failing forever.
+    const dor = evaluateDor(
+      { epicPath: epic.path, directory: epic.directory, declarations },
+      kind,
+    );
 
     const resolved = resolveReadiness({
       directory: epic.directory,

@@ -35,6 +35,16 @@ export interface ConditionResult {
   readonly id: string;
   readonly passed: boolean;
   readonly detail: string;
+  /**
+   * False when this Epic's kind is outside the condition's declared scope
+   * (`T683`).
+   *
+   * Deliberately a **third state**, not a pass. `FR-ESK-024` defines a parent
+   * design as carrying no tasks, so `DOR-07` and `DOR-08` do not reach it — but
+   * Constitution IX forbids reporting an unrun check as passing, and a count of
+   * passing conditions would be wrong the moment it included these.
+   */
+  readonly applicable?: boolean;
 }
 
 // ------------------------------------------------------------- file access
@@ -388,10 +398,25 @@ export interface DorResult {
  * rounds — fix one, rerun, find the next — and the natural response is to stop
  * asking until the end, which is when the answer is most expensive.
  */
-export function evaluateDor(ctx: DorContext): DorResult {
+export function evaluateDor(ctx: DorContext, kind: EpicKind = 'delivery'): DorResult {
   const config = loadStageConfig();
-  const results = config.dorConditions.map((definition) => evaluateCondition(definition.id, ctx));
-  const failed = results.filter((result) => !result.passed);
+
+  const results = config.dorConditions.map((definition) => {
+    // T683 — a condition declares which Epic kinds it reaches. Absence means
+    // every kind: absence is not an exemption, or any Epic could escape a
+    // condition by saying nothing.
+    if (definition.appliesTo && !definition.appliesTo.includes(kind)) {
+      return {
+        id: definition.id,
+        passed: false,
+        applicable: false,
+        detail: `not applicable to a ${kind} Epic — ${definition.reads} is not part of this kind`,
+      };
+    }
+    return evaluateCondition(definition.id, ctx);
+  });
+
+  const failed = results.filter((result) => !result.passed && result.applicable !== false);
   return {
     results,
     failed: failed.map((result) => result.id),
