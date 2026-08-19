@@ -1,0 +1,53 @@
+# Line endings — DEF-018-002, DEF-027-004.
+#
+# Three governance checks compared file content and were, in effect, comparing
+# operating systems:
+#
+#   G-02b     steering currency — `git show HEAD:<file>` (LF) vs the working copy
+#   T549a     the frozen egress control — a recorded sha256 vs a hash of the file
+#   G-27-11   the EPIC-027 register digests
+#
+# Git stores blobs with LF. Without this file and with `core.autocrlf=true`, a
+# Windows checkout writes CRLF, so both sides differed for a reason no person
+# introduced. The checks passed in CI, where a Linux checkout is LF, and failed
+# on the machine they were authored on the next time anyone switched branches.
+#
+# Each was fixed by normalising line endings at the comparison. This file removes
+# the class instead of treating it a fourth time: every text file is stored AND
+# checked out as LF, on every platform, so a hash means "this content" rather
+# than "this content on this operating system".
+#
+# The per-check normalisations stay. They are cheap, and a check that only works
+# because a config file is present is a check with a hidden dependency.
+
+# Detect text automatically; store and check out with LF everywhere.
+* text=auto eol=lf
+
+# ---------------------------------------------------------------- binary
+#
+# Declared explicitly rather than left to detection. `text=auto` would classify
+# these correctly, but the SRS `.docx` files are the source material this entire
+# programme traces to (Constitution II) — an unreviewable corruption there is not
+# a risk worth carrying on a heuristic.
+
+*.docx binary
+*.doc  binary
+*.xlsx binary
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.zip  binary
+*.woff binary
+*.woff2 binary
+
+# ---------------------------------------------------------------- diffs
+#
+# Generated and lock files: still LF, but not worth reading in a review.
+
+pnpm-lock.yaml linguist-generated=true -diff
+governance/epic-stage-register.md linguist-generated=true
+specs/027-ai-native-amendment/register/register.json linguist-generated=true
