@@ -29,7 +29,9 @@ active on this checkout (if one is, work in a separate clone). Label the session
 
 **Before finishing**: close with a report — what was done (artifacts by path, plus anything in
 scope that was not done and why) and the recommended next task as a concrete Spec Kit command
-(Constitution IX).
+(Constitution IX). If the work changed anything the Delivery Board displays (task completions,
+epic stage, blockers, decisions), refresh the board artifact at its recorded URL — or declare it
+stale and name what changed (Constitution IX, v1.4.0).
 
 **Interaction budget** (Constitution X): implementation is an execution phase — run tasks without
 pausing for confirmation. If genuinely blocked, ask via quick-select options with a recommended

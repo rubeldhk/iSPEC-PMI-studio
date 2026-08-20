@@ -1,6 +1,31 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.3.0 → 1.4.0
+Bump rationale: MINOR — Principle IX materially expanded with a Delivery Board synchronization
+obligation, per the project owner's 2026-08-20 instruction: the published Delivery Board artifact
+must be refreshed whenever completed work changes what it displays.
+
+Modified principles:
+  - IX. Mandatory Closing Report — gains "Delivery Board synchronization": stops whose Work
+    Completed changes anything the board displays MUST refresh the board artifact at its
+    recorded URL (same URL, never a new one), with counts derived from the repository; a
+    session that cannot reach the artifact must declare the board stale and name what changed
+
+Added principles: none
+Added sections: none
+Removed sections: none
+
+Templates requiring updates:
+  ✅ .specify/templates/tasks-template.md  — Before-finishing extended with the board refresh
+  ✅ .specify/templates/plan-template.md   — gate IX row extended to cover the board
+  ✅ .specify/templates/spec-template.md   — reviewed; no change required
+  ✅ .claude/skills/speckit-*/SKILL.md     — reviewed; closing-report guidance is generic and
+     inherits IX from the constitution; no contrary hard-coded behavior
+
+Follow-up TODOs: none
+
+--- previous report (v1.3.0) ---
 Version change: 1.2.0 → 1.3.0
 Bump rationale: MINOR — one new principle added (X. Interaction Discipline by Phase) and one
 existing principle materially expanded (IX now governs EVERY stop, not only command/session
@@ -233,10 +258,29 @@ next, in immediately executable form:
 The report MUST distinguish verified outcomes from unverified ones: a test suite that was not run
 MUST NOT be reported as passing, and deferred work MUST NOT be reported as complete.
 
+**Delivery Board synchronization (added v1.4.0).** The programme publishes its status as the
+**PMI Studio Delivery Board** artifact at
+`https://claude.ai/code/artifact/6c7e9b43-721b-4847-b612-1e43378cec0f`. Whenever a stop's Work
+Completed changes anything the board displays — a task completed, an Epic's stage or readiness
+changed, a blocker or decision opened or resolved, task counts moved — the closing report MUST
+include refreshing the board:
+
+- Republish to that SAME artifact URL, never a new one; the board's identity is its address.
+- Counts and stages on the board are DERIVED from the repository (task lists, stage register,
+  defect folders), never hand-quoted — the same rule the board's own footer states.
+- A session that cannot reach the artifact (offline, headless, unauthenticated) MUST state in its
+  closing report that the board is stale and name exactly what changed, so the next session can
+  refresh it without re-deriving the delta.
+
+A board contradicting the repository is treated exactly like a stale defect record (Principle VI's
+reasoning): worse than no board, because it is trusted.
+
 **Rationale**: The Epic → Feature → Task → Defect loop is long-running and is resumed across many
 sessions. A closing report is the handoff record that makes the next session's entry point
 unambiguous. A stop without a next action forces the user to reverse-engineer what to type next —
 that reconstruction cost, multiplied across hundreds of stops, is a dominant tax on delivery speed.
+The board extends the same handoff to people who read status without opening the repository; it is
+the closing report's public face, and it rots by the identical mechanism.
 
 ### X. Interaction Discipline by Phase (NON-NEGOTIABLE)
 
@@ -371,4 +415,4 @@ Principle IX and MUST honor the interaction budget of Principle X for its phase.
 deviation MUST be justified in the plan's Complexity Tracking table, or the work MUST be
 simplified.
 
-**Version**: 1.3.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-19
+**Version**: 1.4.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-20

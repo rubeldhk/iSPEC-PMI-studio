@@ -52,7 +52,7 @@
 | VI | `specs/<epic-id>/defects/` exists and is the sole intake for defects in this Epic | [PASS/FAIL] |
 | VII | Changes land in the local Claude repo first; promotion follows local → dev → stage → prod | [PASS/FAIL] |
 | VIII | Session/clone is labelled with the working Epic (`EPIC-### <name>`), or the first command | [PASS/FAIL] |
-| IX | Every stop in this run ends with an executable next action; full stops close with a Work Completed + Recommended Next Task report | [PASS/FAIL] |
+| IX | Every stop in this run ends with an executable next action; full stops close with a Work Completed + Recommended Next Task report, and the Delivery Board is refreshed (or declared stale) when displayed state changed | [PASS/FAIL] |
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | [PASS/FAIL] |
 | — | Repository was synced from GitHub before this work started | [PASS/FAIL] |
 | — | No other Claude session is active on this checkout (else: work in a separate clone) | [PASS/FAIL] |
