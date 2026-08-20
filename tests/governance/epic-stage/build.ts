@@ -83,7 +83,12 @@ export function buildRegisterModel(specsDir?: string, today?: string): RegisterM
       findings.push({ epic: epic.id, finding, severity: severityOf('invalidEpicDirectory') });
     }
 
-    const derived = deriveStage(epic.path, config);
+    // DEF-026-007 — kind is resolved BEFORE stage derivation, because the
+    // next-command half of the derivation takes it: a parent design must not
+    // be told to run a command FR-ESK-024 defines it as never running.
+    const kind = epicKindOf(epic.directory, declarations);
+
+    const derived = deriveStage(epic.path, config, kind);
     for (const outOfOrder of derived.outOfOrder) {
       findings.push({
         epic: epic.id,
@@ -91,8 +96,6 @@ export function buildRegisterModel(specsDir?: string, today?: string): RegisterM
         severity: severityOf('outOfOrderArtifact'),
       });
     }
-
-    const kind = epicKindOf(epic.directory, declarations);
     const declaration = declarations.epics?.[epic.directory];
     const posture = derivePosture({
       directory: epic.directory,

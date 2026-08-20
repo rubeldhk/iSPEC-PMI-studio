@@ -47,10 +47,19 @@ describe('G-26-04 · exact-text comparison (RF-7)', () => {
   });
 
   it('rejects a single changed character', () => {
-    // The assertion that makes "exact" mean exact. A hand edit changing
-    // `Specified` to `Ready` is a one-word change and must not survive.
+    // The assertion that makes "exact" mean exact. A hand edit changing one
+    // word must not survive.
+    //
+    // The mutation target is the document heading, which the renderer ALWAYS
+    // emits — not a status word whose presence depends on the programme's
+    // current state. The original target was `Not ready`, and the day the last
+    // not-ready Epic cleared (DEF-026-007's own remediation), the replace
+    // matched nothing, `edited === generated`, and this test failed with the
+    // register perfectly healthy — the zero-held lesson of `build.spec`
+    // repeating one file over.
     const generated = buildRegister();
-    const edited = generated.replace('Not ready', 'Ready');
+    expect(generated).toContain('# Epic Stage Register');
+    const edited = generated.replace('# Epic Stage Register', '# Epic Stage Regster');
     expect(edited).not.toBe(generated);
     expect(compareRegister(edited, generated).matches).toBe(false);
   });
@@ -79,8 +88,12 @@ describe('G-26-04 · exact-text comparison (RF-7)', () => {
 
   it('names what to run when it fails, rather than only that it failed', () => {
     // A drift failure with no remedy is a failure people learn to skip.
+    // Heading mutation for the same reason as above: always present.
     const generated = buildRegister();
-    const result = compareRegister(generated.replace('Not ready', 'Ready'), generated);
+    const result = compareRegister(
+      generated.replace('# Epic Stage Register', '# Epic Stage Regster'),
+      generated,
+    );
     expect(result.message).toMatch(/pnpm register:update/);
   });
 

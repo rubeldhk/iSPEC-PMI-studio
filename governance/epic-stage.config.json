@@ -29,26 +29,31 @@
       "order": 4,
       "name": "Planned",
       "evidence": "plan.md exists",
-      "next": "/speckit-tasks"
+      "next": "/speckit-tasks",
+      "_nextWhy": "DEF-026-007 — a parent design carries no tasks (FR-ESK-024); telling it to generate them re-creates the duplication D-18/D-19 exist to prevent. Same appliesTo semantics as the DOR conditions: absence means every kind.",
+      "nextAppliesTo": ["delivery"]
     },
     {
       "order": 5,
       "name": "Tasked",
       "evidence": "tasks.md exists",
-      "next": "/speckit-analyze"
+      "next": "/speckit-analyze",
+      "nextAppliesTo": ["delivery"]
     },
     {
       "order": 6,
       "name": "Analyzed",
       "evidence": "analysis.md exists",
       "_why": "FR-ESK-019. The analysis step used to print its findings and leave nothing behind, which would have made this the one stage in the journey with no artifact — a hole in FR-ESK-003 on the day it was written.",
-      "next": "DOR evaluation"
+      "next": "DOR evaluation",
+      "nextAppliesTo": ["delivery"]
     },
     {
       "order": 7,
       "name": "Ready",
       "evidence": "every DOR condition passes, or is covered by a valid waiver",
-      "next": "/speckit-implement"
+      "next": "/speckit-implement",
+      "nextAppliesTo": ["delivery"]
     }
   ],
 

@@ -29,6 +29,13 @@ export interface StageDefinition {
   readonly name: string;
   readonly evidence: string;
   readonly next: string;
+  /**
+   * Epic kinds this stage's next command reaches — the T683 `appliesTo` shape,
+   * absence means **every** kind (DEF-026-007). A stage whose command does not
+   * reach the epic's kind answers `—`: naming a command that must not run is
+   * Constitution IX's honesty error in the opposite direction.
+   */
+  readonly nextAppliesTo?: readonly string[];
 }
 
 export interface DorConditionDefinition {
@@ -213,7 +220,21 @@ export interface StageResult {
  * register would show progress past a step that never happened, which is the
  * one thing a stage register must never do.
  */
-export function deriveStage(epicPath: string, config: StageConfig = loadStageConfig()): StageResult {
+/** DEF-026-007 — does this stage's next command reach an epic of this kind? */
+function nextReaches(stage: StageDefinition, kind: string | undefined): boolean {
+  // Absence filters nothing, on BOTH sides: a stage without nextAppliesTo
+  // addresses every kind, and a caller without a kind gets the old behaviour.
+  return kind === undefined || !stage.nextAppliesTo || stage.nextAppliesTo.includes(kind);
+}
+
+export function deriveStage(
+  epicPath: string,
+  config: StageConfig = loadStageConfig(),
+  // The same parameter DOR evaluation has received since T683 — kind reaches
+  // the next-command derivation through the identical seam, not a second
+  // mechanism (DEF-026-007).
+  kind?: string,
+): StageResult {
   const evidence = evidenceFor(epicPath);
   const ordered = [...config.stages].sort((a, b) => a.order - b.order);
 
@@ -244,5 +265,13 @@ export function deriveStage(epicPath: string, config: StageConfig = loadStageCon
   // config table reads "Specified → /speckit-clarify". Looking up the following
   // stage's `next` instead is an off-by-one that tells a reader to skip a step,
   // which is precisely the error this register exists to catch. Caught by T475.
-  return { stage: highest.name, next: highest.next, outOfOrder };
+  //
+  // DEF-026-007: and the command must REACH the epic's kind. A parent design's
+  // real next action is about its children, so `—` — as Readiness already
+  // renders — is more honest than a command that would damage it.
+  return {
+    stage: highest.name,
+    next: nextReaches(highest, kind) ? highest.next : '—',
+    outOfOrder,
+  };
 }

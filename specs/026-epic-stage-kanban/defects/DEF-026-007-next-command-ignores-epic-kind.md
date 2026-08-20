@@ -1,7 +1,7 @@
 # DEF-026-007 — the register tells a parent design to generate tasks it must never have
 
 **Epic**: `EPIC-026` (owns the register's `Next` column) · affects **EPIC-017**, **EPIC-002**
-**Raised**: 2026-08-20 | **Status**: **OPEN**
+**Raised**: 2026-08-20 | **Status**: **RESOLVED 2026-08-20** — by T851–T853 exactly as this record suggested: `nextAppliesTo` (the T683 `appliesTo` shape) on `Planned`/`Tasked`/`Analyzed`/`Ready`, `deriveStage` given the `kind` parameter DOR evaluation already receives, `—` as the honest answer. Verifying check: `tests/governance/epic-stage/next-command-kind.spec.ts` (observed red first: 3 failures — derivation twice, committed register once). Register regenerated (T854): EPIC-017 reads `—`; EPIC-002 keeps `/speckit-checklist` at `Clarified` as judged correct; no delivery row changed
 **Found by**: a `/speckit-tasks 017` invocation made *because the register recommended it*
 **Severity**: MEDIUM — no wrong artifact was produced, but the register instructed one to be
 

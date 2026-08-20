@@ -634,7 +634,7 @@ the opposite direction. `Planned`, `Analyzed`, and `Ready` (`/speckit-tasks`, `D
 `/speckit-implement`) reach `delivery` only; `Specified`/`Clarified`/`Checklisted` reach every
 kind, so EPIC-002 at `Clarified` keeps `/speckit-checklist` — the defect judged that correct.*
 
-- [ ] T851 [P] Write the failing regression check `DEF-026-007` names as its own root cause — in
+- [X] T851 [P] Write the failing regression check `DEF-026-007` names as its own root cause — in
       `tests/governance/epic-stage/next-command-kind.spec.ts`: (a) the derivation returns `—` for
       a `parent-design` at its terminal `Planned` stage and at any stage whose next command does
       not reach its kind, unchanged for `delivery`; (b) the COMMITTED register contains no
@@ -642,18 +642,18 @@ kind, so EPIC-002 at `Clarified` keeps `/speckit-checklist` — the defect judge
       the register-level assertion whose absence let 28 rows render unnoticed. Honour the G-26-11
       harness rules (no database, server, or framework imports; fixture trees cleaned up).
       **Must FAIL against the current derivation before T852/T853** (Constitution V)
-- [ ] T852 Add the optional `nextAppliesTo` kind-list to the `Planned`, `Analyzed`, and `Ready`
+- [X] T852 Add the optional `nextAppliesTo` kind-list to the `Planned`, `Analyzed`, and `Ready`
       stage entries in `governance/epic-stage.config.json` (semantics identical to DOR
       `appliesTo`: absent = every kind), and extend `StageDefinition` in
       `tests/governance/epic-stage/derive.ts` to carry it; verify the G-26-01 structure assertions
       in `config.spec.ts` tolerate the optional field, extending them only if they refuse it
       (governance check: T851)
-- [ ] T853 Give the next-command derivation the `kind` parameter DOR evaluation already receives:
+- [X] T853 Give the next-command derivation the `kind` parameter DOR evaluation already receives:
       in `tests/governance/epic-stage/derive.ts`, `deriveStage` (and its call site in `build.ts`)
       resolves `next` to `—` when the reached stage's `nextAppliesTo` excludes the epic's kind —
       the same threading `evaluateDor(ctx, kind)` uses, not a second mechanism (governance check:
       T851)
-- [ ] T854 Regenerate the register (`pnpm register:update`) and confirm by reading the diff that
+- [X] T854 Regenerate the register (`pnpm register:update`) and confirm by reading the diff that
       EPIC-017 `Planned` and EPIC-002's terminal row now read `—` in `Next` while EPIC-002 at
       `Clarified` keeps `/speckit-checklist` and no `delivery` row changed; then close
       `DEF-026-007` naming T851–T853 as resolving tasks and
@@ -753,6 +753,13 @@ Each step is independently valuable and none breaks the previous.
 ---
 
 ## Notes
+
+- **T854 outcome (2026-08-20)**: the regen surfaced one thing unexpected, as the task anticipated.
+  `drift.spec.ts`'s single-character-mutation probe targeted the literal `Not ready` — and the day
+  DEF-026-007's remediation returned EPIC-026 to Ready, no row read `Not ready` any more, the
+  replace matched nothing, and G-26-04 failed with the register perfectly healthy. The zero-held
+  lesson `build.spec` learned on 2026-08-20, repeating one file over. Fixed in the same pass: the
+  probe now mutates the document heading (always rendered) and asserts its target exists first.
 
 - **T466 is not optional housekeeping.** `G-05d` has been red since this epic's directory was
   created. Constitution I forbids fixing it outside a covering task — this is that task.
