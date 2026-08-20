@@ -154,3 +154,32 @@ runs per request. See
 
 - [X] T662 [P] Write failing unit tests asserting the HTTP interceptor adopts a valid inbound `x-correlation-id` and mints one otherwise, records `http.request` and `http.duration_ms` with a templated route and status, measures failed requests too, and is installed globally by `backend/src/main.ts`, in `backend/tests/unit/observability/http-interceptor.spec.ts` per PP-010, PC-3
 - [X] T663 [US-] Implement `HttpObservabilityInterceptor` in `backend/src/modules/observability/http-observability.interceptor.ts` and install it in `backend/src/main.ts` — placed in `modules/` not `core/`, because PC-1 forbids `core/**` from importing HTTP types and an interceptor is transport (unit test: T662)
+
+---
+
+## Phase 8: Convergence — `DEF-001-004` *(appended 2026-08-20 by the first local UAT)*
+
+**Why this phase exists**: the first UAT run watched a 401 and a 500 leave the API and be recorded
+as `"status":200` at `info` level.
+[`DEF-001-004`](./defects/DEF-001-004-failed-requests-are-logged-as-200.md) has the verbatim log
+lines beside the `curl -i` responses. The interceptor's error arm is deliberate and its reasoning
+is right — *"the requests worth measuring most are the ones that failed"* — but `finish()` reads
+`response.statusCode` before Nest's exception filter has mapped the exception onto the response,
+so the one number it exists to report is wrong on exactly the requests it was extended to cover.
+
+- [ ] T834 Write a failing test that drives a **real failing request** through the interceptor and
+      the exception filter together — asserting a `PlatformError` mapped to 401 is metered and
+      logged as 401, and a non-platform error as 500 at `error` level — in
+      `backend/tests/integration/http-observability-status.spec.ts`, per `DEF-001-004` and `PP-010`.
+      **A unit test with a fake response provably cannot fail for this reason**: it reports whatever
+      status the fake carries, which is why `T663`'s tests passed while the defect shipped
+- [ ] T835 Derive the status on the error arm from the exception rather than from a response the
+      filter has not touched yet — `toHttpStatus` in `backend/src/core/errors.ts` already computes
+      it, and using it keeps the interceptor and the filter answering with one rule — in
+      `backend/src/modules/observability/http-observability.interceptor.ts` (test: T834)
+- [ ] T836 [P] Confirm the log **level** follows the corrected status, so a 500 is logged at
+      `error` and a 401 stays `info`, in `backend/tests/unit/observability/http-observability.interceptor.spec.ts`
+      (the level is chosen from the same value the defect corrupted, so it is a second symptom of
+      one cause and must be asserted separately)
+- [ ] T837 Close `DEF-001-004` with its resolving tasks and verifying test named, and record the
+      outcome in [`closure.md`](./closure.md) as a dated addendum (Constitution VI, IX)
