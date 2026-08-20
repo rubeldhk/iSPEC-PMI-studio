@@ -152,12 +152,18 @@ describe('T561 · the same caller runs against both adapters (SC-AGT-002)', () =
     // `--integration` used to be the literal `claude`. It now comes from the
     // descriptor, so it differs per adapter — the observable proof the string
     // left the engine.
+    //
+    // T699 moved WHERE that name appears: the scaffold is baked into the image
+    // and copied from `/opt/pmi/scaffold/<integration>`, rather than fetched by
+    // `specify init`. The property under test is untouched — the name still
+    // comes from the agent — so this reads the new location and asserts the same
+    // thing.
     const names: (string | undefined)[] = [];
     for (const [, make] of ADAPTERS) {
       const { engine, runtime: rt } = engineWith(make());
       await engine.generateSpecification(input as never, ctx());
-      const init = rt.commands.find((c) => c[0] === 'specify');
-      names.push(init?.[init.indexOf('--integration') + 1]);
+      const init = rt.commands.find((c) => c.some((a) => a.startsWith('/opt/pmi/scaffold/')));
+      names.push(init?.at(-1)?.replace('/opt/pmi/scaffold/', ''));
     }
     expect(names).toEqual(['fixture', 'claude']);
   });
