@@ -26,20 +26,20 @@ paired unit-test task, written to fail first.
 
 *Catalog epic overlap: Security & Governance → Authentication. Behind an identity-provider boundary so Phase 3 SSO replaces an adapter, not the request pipeline.*
 
-- [ ] T021 [P] Write failing unit tests for Argon2id hashing and verification in `backend/tests/unit/auth/password.spec.ts`
-- [ ] T022 Implement password hashing service in `backend/src/modules/auth/password.service.ts` (unit test: T021)
-- [ ] T023 [P] Write failing unit tests for the identity-provider boundary interface in `backend/tests/unit/auth/identity-provider.spec.ts`
-- [ ] T024 Implement identity-provider interface and local implementation in `backend/src/modules/auth/identity-provider.ts` (unit test: T023)
-- [ ] T024a [P] Write failing unit tests for the auth controller with a mocked identity provider, covering sign-in success, rejection, and session teardown, in `backend/tests/unit/auth/auth.controller.spec.ts`
-- [ ] T025 Implement session sign-in, sign-out, and `me` endpoints in `backend/src/modules/auth/auth.controller.ts` (unit test: T024a)
-- [ ] T026 [P] Write contract tests for `/auth/*` against `contracts/platform-api.md` in `backend/tests/contract/auth.spec.ts`
+- [X] T021 [P] Write failing unit tests for Argon2id hashing and verification in `backend/tests/unit/auth/password.spec.ts`
+- [X] T022 Implement password hashing service in `backend/src/modules/auth/password.service.ts` (unit test: T021)
+- [X] T023 [P] Write failing unit tests for the identity-provider boundary interface in `backend/tests/unit/auth/identity-provider.spec.ts`
+- [X] T024 Implement identity-provider interface and local implementation in `backend/src/modules/auth/identity-provider.ts` (unit test: T023)
+- [X] T024a [P] Write failing unit tests for the auth controller with a mocked identity provider, covering sign-in success, rejection, and session teardown, in `backend/tests/unit/auth/auth.controller.spec.ts`
+- [X] T025 Implement session sign-in, sign-out, and `me` endpoints in `backend/src/modules/auth/auth.controller.ts` (unit test: T024a)
+- [X] T026 [P] Write contract tests for `/auth/*` against `contracts/platform-api.md` in `backend/tests/contract/auth.spec.ts`
 
 ## F-01.4 · Sign-in experience and API client
 
-- [ ] T056a [P] [US1] Component unit tests for the sign-in page covering submit, error, and redirect in `frontend/tests/unit/pages/SignIn.spec.tsx`
-- [ ] T057 [P] [US1] Implement sign-in page and session handling in `frontend/src/pages/SignIn.tsx` (unit test: T056a)
-- [ ] T057a [P] [US1] Unit tests for the API client covering error-shape parsing and session expiry in `frontend/tests/unit/services/api.spec.ts`
-- [ ] T058 [US1] Implement API client for auth and projects in `frontend/src/services/api.ts` (unit test: T057a)
+- [X] T056a [P] [US1] Component unit tests for the sign-in page covering submit, error, and redirect in `frontend/tests/unit/pages/SignIn.spec.tsx`
+- [X] T057 [P] [US1] Implement sign-in page and session handling in `frontend/src/pages/SignIn.tsx` (unit test: T056a)
+- [X] T057a [P] [US1] Unit tests for the API client covering error-shape parsing and session expiry in `frontend/tests/unit/services/api.spec.ts`
+- [X] T058 [US1] Implement API client for auth and projects in `frontend/src/services/api.ts` (unit test: T057a)
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
@@ -48,7 +48,7 @@ paired unit-test task, written to fail first.
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T177 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/005-identity-signin/closure.md`
-- [ ] T178 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/005-identity-signin/closure.md`
-- [ ] T179 Triage `specs/005-identity-signin/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/005-identity-signin/closure.md`
-- [ ] T180 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/005-identity-signin/closure.md`
+- [X] T177 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/005-identity-signin/closure.md`
+- [X] T178 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/005-identity-signin/closure.md`
+- [X] T179 Triage `specs/005-identity-signin/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/005-identity-signin/closure.md`
+- [X] T180 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/005-identity-signin/closure.md`

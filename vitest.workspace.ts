@@ -142,6 +142,18 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-005 T056a — the first frontend tests. The product-surface epics were
+    // held on PMI-DOC-004 until 2026-08-20; this project registers the moment
+    // the first component test exists, per the T537/T539 rule that a project is
+    // added only once it collects something.
+    test: {
+      name: 'frontend',
+      root: './frontend',
+      include: ['tests/unit/**/*.spec.{ts,tsx}'],
+      environment: 'jsdom',
+    },
+  },
+  {
     test: {
       name: 'governance',
       root: '.',

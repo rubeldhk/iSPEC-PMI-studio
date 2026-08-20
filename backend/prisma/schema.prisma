@@ -24,10 +24,12 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users          User[]
-  projects       Project[]
-  generationJobs GenerationJob[]
-  auditEntries   AuditEntry[]
+  users               User[]
+  projects            Project[]
+  generationJobs      GenerationJob[]
+  auditEntries        AuditEntry[]
+  requirements        Requirement[]
+  requirementVersions RequirementVersion[]
 
   @@map("workspaces")
 }
@@ -48,31 +50,125 @@ model User {
   @@map("users")
 }
 
-// ---------------------------------------------------------------- project stub
+// ---------------------------------------------------------------- projects
 //
-// STRUCTURAL ONLY — decided in specs/001-platform-foundation/plan.md.
+// T053 (EPIC-006) — ownership taken 2026-08-20, the day PMI-DOC-004 v1.0
+// discharged the D-10 hold. Until then this was EPIC-001's structural stub;
+// the behavioural columns below are exactly the set the stub deliberately
+// withheld (FR-001, FR-019).
 //
-// GenerationJob needs a project to belong to, and "a job belongs to a project"
-// is structural rather than behavioural: no BRS will remove it. What a BRS WILL
-// settle — naming rules, archival, templates, health, engine selection — is
-// deliberately absent.
-//
-// EPIC-006 takes ownership and extends this when it unfreezes.
-// **This table must not grow before then.** Asserted by T011a.
+// `engineName` is the per-project engine selection (FR-019): null means
+// inherit the deployment default, which is `EngineResolverService`'s existing
+// contract — `ProjectEngineSelectionPort` returns null to inherit. A name
+// rather than an id, matching `GenerationJob.engineName` and the registry,
+// which keys engines by name.
+
+enum ProjectStatus {
+  active
+  archived
+}
 
 model Project {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   workspaceId String
   name        String
+  description String?
+  status      ProjectStatus @default(active)
+  // FR-019: null = inherit the registered default engine.
+  engineName  String?
   ownerUserId String
-  createdAt   DateTime @default(now())
+  // FR-001: archive is a status, never a delete. Content is preserved intact.
+  archivedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id])
   generationJobs GenerationJob[]
+  requirements   Requirement[]
 
   @@unique([workspaceId, name])
   @@index([workspaceId])
+  @@index([workspaceId, status])
   @@map("projects")
+}
+
+// ---------------------------------------------------------------- requirements
+//
+// T064 (EPIC-007) — the head of the traceability chain (FR-004 to FR-009).
+//
+// Indexes on (projectId, type/priority/status): FR-008 is a list operation on
+// a register that grows with the project, and SC-009's 1-second p95 applies to
+// listing views — filtered reads must be indexed, not scanned.
+
+enum RequirementType {
+  business
+  functional
+  non_functional
+  constraint
+}
+
+enum RequirementPriority {
+  p1
+  p2
+  p3
+}
+
+enum RequirementStatus {
+  active
+  retired
+}
+
+model Requirement {
+  id          String              @id @default(uuid())
+  workspaceId String
+  projectId   String
+  // FR-005: human-facing identifier, unique within the project.
+  reference   String
+  // FR-007: required non-empty — refused with the field named, and a CHECK
+  // constraint in the migration backs the service-level refusal.
+  description String
+  type        RequirementType
+  priority    RequirementPriority
+  status      RequirementStatus   @default(active)
+  // FR-032 seam to EPIC-008: detects material change for out-of-date flagging.
+  contentHash String
+  // FR-006: soft retire, never delete.
+  retiredAt   DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  workspace Workspace            @relation(fields: [workspaceId], references: [id])
+  project   Project              @relation(fields: [projectId], references: [id])
+  versions  RequirementVersion[]
+
+  @@unique([projectId, reference])
+  @@index([workspaceId])
+  @@index([projectId, type])
+  @@index([projectId, priority])
+  @@index([projectId, status])
+  @@map("requirements")
+}
+
+// FR-009: append-only edit history. No update or delete path exists in code,
+// and the database rejects both via the `requirement_versions_immutable`
+// trigger (T458, attached to EPIC-004's shared `reject_mutation()`).
+model RequirementVersion {
+  id            String              @id @default(uuid())
+  workspaceId   String
+  requirementId String
+  // The text as it stood (data-model.md): prior state, retrievable forever.
+  description   String
+  type          RequirementType
+  priority      RequirementPriority
+  authoredById  String
+  authoredAt    DateTime            @default(now())
+
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id])
+  requirement Requirement @relation(fields: [requirementId], references: [id])
+
+  @@index([workspaceId])
+  @@index([requirementId, authoredAt(sort: Desc)])
+  @@map("requirement_versions")
 }
 
 // ---------------------------------------------------------------- jobs

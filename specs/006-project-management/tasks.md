@@ -27,27 +27,27 @@ paired unit-test task, written to fail first.
 *Satisfies **FR-001** and **FR-003**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T049 [P] [US1] Unit tests for project creation validation and unique-name-within-workspace rule in `backend/tests/unit/projects/projects.service.spec.ts`
-- [ ] T050 [P] [US1] Unit tests for archive preserving all content in `backend/tests/unit/projects/project-archive.spec.ts`
-- [ ] T053 [US1] Define `Project` model with workspace, owner, status, and engine reference in `backend/prisma/schema.prisma` (unit test: T049)
-- [ ] T054 [US1] Implement projects service with create, list, get, rename, archive in `backend/src/modules/projects/projects.service.ts` (unit tests: T049, T050)
+- [X] T049 [P] [US1] Unit tests for project creation validation and unique-name-within-workspace rule in `backend/tests/unit/projects/projects.service.spec.ts`
+- [X] T050 [P] [US1] Unit tests for archive preserving all content in `backend/tests/unit/projects/project-archive.spec.ts`
+- [X] T053 [US1] Define `Project` model with workspace, owner, status, and engine reference in `backend/prisma/schema.prisma` (unit test: T049)
+- [X] T054 [US1] Implement projects service with create, list, get, rename, archive in `backend/src/modules/projects/projects.service.ts` (unit tests: T049, T050)
 
 ## F-02.2 · Project API
 
 *Satisfies **FR-001**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T051 [P] [US1] Contract tests for `/projects` endpoints in `backend/tests/contract/projects.spec.ts`
-- [ ] T054a [P] [US1] Unit tests for the projects controller with a mocked service, covering route wiring and cross-workspace not-found, in `backend/tests/unit/projects/projects.controller.spec.ts`
-- [ ] T055 [US1] Implement projects controller per `contracts/platform-api.md` in `backend/src/modules/projects/projects.controller.ts` (unit test: T054a; contract test: T051)
+- [X] T051 [P] [US1] Contract tests for `/projects` endpoints in `backend/tests/contract/projects.spec.ts`
+- [X] T054a [P] [US1] Unit tests for the projects controller with a mocked service, covering route wiring and cross-workspace not-found, in `backend/tests/unit/projects/projects.controller.spec.ts`
+- [X] T055 [US1] Implement projects controller per `contracts/platform-api.md` in `backend/src/modules/projects/projects.controller.ts` (unit test: T054a; contract test: T051)
 
 ## F-02.3 · Project interface
 
 *Satisfies **FR-001**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T055a [P] [US1] Component unit tests for the projects pages in `frontend/tests/unit/pages/Projects.spec.tsx`
-- [ ] T056 [P] [US1] Implement project list and detail pages in `frontend/src/pages/Projects.tsx` (unit test: T055a)
+- [X] T055a [P] [US1] Component unit tests for the projects pages in `frontend/tests/unit/pages/Projects.spec.tsx`
+- [X] T056 [P] [US1] Implement project list and detail pages in `frontend/src/pages/Projects.tsx` (unit test: T055a)
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
@@ -56,7 +56,7 @@ Feature → requirement link mandatory, carried in this framing note.*
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T181 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/006-project-management/closure.md`
-- [ ] T182 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/006-project-management/closure.md`
-- [ ] T183 Triage `specs/006-project-management/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/006-project-management/closure.md`
-- [ ] T184 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/006-project-management/closure.md`
+- [X] T181 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/006-project-management/closure.md`
+- [X] T182 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/006-project-management/closure.md`
+- [X] T183 Triage `specs/006-project-management/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/006-project-management/closure.md`
+- [X] T184 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/006-project-management/closure.md`

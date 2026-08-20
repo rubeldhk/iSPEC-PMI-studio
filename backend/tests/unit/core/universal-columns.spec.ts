@@ -62,11 +62,15 @@ const tenantScoped = [...tables.keys()].filter((t) => !NOT_TENANT_SCOPED.has(t))
 
 describe('T012a · universal columns reach the database (FR-002)', () => {
   it('creates the Phase 1 table set', () => {
+    // requirements + requirement_versions arrived with EPIC-007 T064, the
+    // first product-surface tables after the PMI-DOC-004 hold discharged.
     expect([...tables.keys()].sort()).toEqual([
       'audit_entries',
       'engine_registrations',
       'generation_jobs',
       'projects',
+      'requirement_versions',
+      'requirements',
       'users',
       'workspaces',
     ]);
@@ -97,6 +101,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     const CREATION_COLUMN: Record<string, string> = {
       engine_registrations: 'registeredAt',
       audit_entries: 'occurredAt',
+      // A version row is *authored* — its timestamp is part of the history it
+      // records, not bookkeeping about the row (EPIC-007 T064).
+      requirement_versions: 'authoredAt',
     };
 
     const missing = [...tables.entries()]

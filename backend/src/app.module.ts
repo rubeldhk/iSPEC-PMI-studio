@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from './modules/audit/audit.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 import { EnginesModule } from './modules/engines/engines.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
+import { ProjectsModule } from './modules/projects/projects.module.js';
+import { RequirementsModule } from './modules/requirements/requirements.module.js';
 
 /**
  * Application composition root.
@@ -11,6 +14,6 @@ import { JobsModule } from './modules/jobs/jobs.module.js';
  * concrete engine (FR-017). Enforced by the architecture test.
  */
 @Module({
-  imports: [AuditModule, EnginesModule, JobsModule],
+  imports: [AuthModule, AuditModule, EnginesModule, JobsModule, ProjectsModule, RequirementsModule],
 })
 export class AppModule {}
