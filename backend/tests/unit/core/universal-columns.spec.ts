@@ -90,6 +90,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'requirements',
       'specification_versions',
       'specifications',
+      'tasks',
       'traceability_links',
       'users',
       'validation_findings',

@@ -2,6 +2,7 @@ packages:
   - 'backend'
   - 'frontend'
   - 'worker'
+  - 'e2e'
   - 'packages/*'
   - 'engine-adapters/*'
   - 'agent-adapters/*'

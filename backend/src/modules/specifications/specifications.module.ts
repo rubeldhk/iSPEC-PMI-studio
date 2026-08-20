@@ -224,6 +224,7 @@ export class JobsValidationSubmission implements ValidationSubmissionPort {
     OutOfDateService,
     SPECIFICATION_STORE,
     GENERATION_JOB_LEDGER,
+    GENERATION_JOBS_SERVICE,
     TRANSITION_RECORDER,
     SPEC_FINDING_STORE,
   ],

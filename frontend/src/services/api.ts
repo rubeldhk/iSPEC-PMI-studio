@@ -97,6 +97,79 @@ export interface CoverageReport {
   specificationCount: number;
 }
 
+/** A generated specification (FR-010, FR-022, FR-032 surface). */
+export interface Specification {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+  title: string;
+  lifecycleState: 'draft' | 'review' | 'approved' | 'baselined' | 'implemented' | 'archived';
+  currentVersionId: string | null;
+  engineName: string;
+  engineVersion: string;
+  generatedAt: string;
+  isOutOfDate: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SpecificationPage {
+  rows: Specification[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface SpecificationVersionInfo {
+  id: string;
+  versionNumber: number;
+  lifecycleStateAtCreation: string;
+  authoredById: string;
+  authoredAt: string;
+}
+
+export interface VersionDiffResult {
+  fromVersion: number;
+  toVersion: number;
+  added: string[];
+  removed: string[];
+  unchanged: number;
+  identical: boolean;
+}
+
+export interface Finding {
+  id: string;
+  location: string;
+  severity: 'info' | 'warning' | 'error';
+  message: string;
+}
+
+export interface Job {
+  id: string;
+  kind: string;
+  state: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'timed_out';
+  failureReason: string | null;
+  startedAt: string | null;
+  resultRef: string | null;
+}
+
+export interface Task {
+  id: string;
+  specificationId: string;
+  description: string;
+  status: 'not_started' | 'in_progress' | 'done';
+  engineName: string;
+  engineVersion: string;
+}
+
+export interface ProjectProgress {
+  total: number;
+  done: number;
+  inProgress: number;
+  notStarted: number;
+  percentComplete: number;
+}
+
 /** A registered engine, with what it can do (FR-019/FR-021 surface). */
 export interface Engine {
   name: string;
@@ -227,6 +300,67 @@ export class ApiClient {
 
   async listRequirementVersions(id: string): Promise<RequirementVersion[]> {
     return this.request('GET', `/requirements/${encodeURIComponent(id)}/versions`);
+  }
+
+  // ---- specifications (US3, US5, US6) ----
+
+  async listSpecifications(projectId: string): Promise<SpecificationPage> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/specifications`);
+  }
+
+  async getSpecification(id: string): Promise<Specification> {
+    return this.request('GET', `/specifications/${encodeURIComponent(id)}`);
+  }
+
+  async listSpecificationVersions(id: string): Promise<SpecificationVersionInfo[]> {
+    return this.request('GET', `/specifications/${encodeURIComponent(id)}/versions`);
+  }
+
+  async diffSpecificationVersions(id: string, a: number, b: number): Promise<VersionDiffResult> {
+    return this.request('GET', `/specifications/${encodeURIComponent(id)}/versions/${a}/diff/${b}`);
+  }
+
+  /** The six lifecycle transitions (FR-011). */
+  async transitionSpecification(
+    id: string,
+    action: 'submit-for-review' | 'reject' | 'approve' | 'baseline' | 'mark-implemented' | 'archive',
+  ): Promise<{ lifecycleState?: string; specification?: Specification; outstandingFindings?: Finding[] }> {
+    return this.request('POST', `/specifications/${encodeURIComponent(id)}/${action}`);
+  }
+
+  async getFindings(id: string): Promise<Finding[]> {
+    return this.request('GET', `/specifications/${encodeURIComponent(id)}/findings`);
+  }
+
+  async validateSpecification(id: string): Promise<Job> {
+    return this.request('POST', `/specifications/${encodeURIComponent(id)}/jobs/validate`);
+  }
+
+  // ---- jobs (US3) ----
+
+  async getJob(id: string): Promise<Job> {
+    return this.request('GET', `/jobs/${encodeURIComponent(id)}`);
+  }
+
+  // ---- tasks (US4) ----
+
+  async generateTasks(specificationId: string): Promise<Job> {
+    return this.request(
+      'POST',
+      `/specifications/${encodeURIComponent(specificationId)}/jobs/generate-tasks`,
+    );
+  }
+
+  async listTasks(specificationId: string): Promise<Task[]> {
+    return this.request('GET', `/specifications/${encodeURIComponent(specificationId)}/tasks`);
+  }
+
+  async updateTaskStatus(id: string, status: Task['status']): Promise<Task> {
+    return this.request('PATCH', `/tasks/${encodeURIComponent(id)}`, { status });
+  }
+
+  async getProjectProgress(projectId: string): Promise<ProjectProgress> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/progress`);
   }
 
   // ---- traceability (US7) ----

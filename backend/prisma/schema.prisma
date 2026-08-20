@@ -36,6 +36,7 @@ model Workspace {
   decisionRecords       ArchitectureDecisionRecord[]
   lifecycleTransitions  LifecycleTransition[]
   validationFindings    ValidationFinding[]
+  tasks                 Task[]
 
   @@map("workspaces")
 }
@@ -238,6 +239,7 @@ model Specification {
   lifecycleTransitions LifecycleTransition[]
   validationFindings   ValidationFinding[]
   adrLinks             AdrSpecificationLink[]
+  tasks                Task[]
 
   @@index([workspaceId])
   // SC-009's 1-second p95 applies to listing views, and the list is filtered by
@@ -330,6 +332,37 @@ model ValidationFinding {
   @@index([workspaceId])
   @@index([specificationVersionId])
   @@map("validation_findings")
+}
+
+// ---------------------------------------------------------------- tasks
+//
+// T100 (EPIC-012) — tasks generated from an APPROVED specification (FR-020).
+// Three states only; richer workflow states arrive with the Phase 2 workflow
+// engine (spec Assumptions). Engine identity is stamped per row (FR-022).
+
+enum TaskStatus {
+  not_started
+  in_progress
+  done
+}
+
+model Task {
+  id              String     @id @default(uuid())
+  workspaceId     String
+  specificationId String
+  description     String
+  status          TaskStatus @default(not_started)
+  engineName      String
+  engineVersion   String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
+  specification Specification @relation(fields: [specificationId], references: [id])
+
+  @@index([workspaceId])
+  @@index([specificationId, status])
+  @@map("tasks")
 }
 
 // ---------------------------------------------------------------- traceability

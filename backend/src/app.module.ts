@@ -9,6 +9,7 @@ import { JobsModule } from './modules/jobs/jobs.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
+import { TasksModule } from './modules/tasks/tasks.module.js';
 import { TraceabilityModule } from './modules/traceability/traceability.module.js';
 
 /**
@@ -42,6 +43,7 @@ import { TraceabilityModule } from './modules/traceability/traceability.module.j
     ProjectsModule,
     RequirementsModule,
     SpecificationsModule,
+    TasksModule,
     TraceabilityModule,
     DecisionsModule,
   ],

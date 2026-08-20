@@ -64,6 +64,7 @@ describe('universal columns (T013)', () => {
     'SpecificationVersion',
     'LifecycleTransition',
     'ValidationFinding',
+    'Task',
   ];
 
   it.each(tenantScoped)('%s carries workspaceId', (name) => {
