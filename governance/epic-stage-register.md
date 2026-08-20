@@ -18,7 +18,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-005](../specs/005-identity-signin/) | Identity & Sign-in | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-006](../specs/006-project-management/) | Project Management | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-007](../specs/007-requirement-intelligence/) | Requirement Intelligence | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-008](../specs/008-spec-authoring-generation/) | Specification Authoring & Generation | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-008](../specs/008-spec-authoring-generation/) | Specification Authoring & Generation | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-009](../specs/009-spec-lifecycle-versioning/) | Specification Lifecycle & Versioning | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-010](../specs/010-specification-interface/) | Specification Interface | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-011](../specs/011-traceability/) | Traceability | delivery | Ready | — | Ready | `/speckit-implement` |
