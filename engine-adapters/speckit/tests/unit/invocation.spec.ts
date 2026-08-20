@@ -157,7 +157,7 @@ describe('the five steps, in order (R-001)', () => {
     const h = harness();
     await h.engine.generateSpecification(input, ctx());
     const gitIndex = h.commands.findIndex((c) => c[0] === 'git');
-    const specifyIndex = h.commands.findIndex((c) => c[0] === 'specify');
+    const specifyIndex = h.commands.findIndex((c) => c.some((a) => a.startsWith('/opt/pmi/scaffold/')));
     expect(gitIndex).toBeGreaterThanOrEqual(0);
     expect(specifyIndex).toBeGreaterThan(gitIndex);
   });
@@ -165,21 +165,21 @@ describe('the five steps, in order (R-001)', () => {
   it('scaffolds with the exact documented flags', async () => {
     const h = harness();
     await h.engine.generateSpecification(input, ctx());
-    const specify = h.commands.find((c) => c[0] === 'specify');
-    expect(specify).toEqual([
-      'specify',
-      'init',
-      '--here',
-      '--force',
-      '--integration',
-      // T566: the name comes from the AGENT's descriptor, not a literal here.
-      // That single substitution is what makes SpecKitEngine -> Cursor
-      // expressible, which Native §3 names as a required configuration.
-      new FixtureAgent().descriptor.specKitIntegrationName,
-      '--script',
-      'sh',
-      '--ignore-agent-tools',
-    ]);
+    // T699 — `specify init` fetched templates over the network, which the
+    // generation egress profile forbids. The scaffold is baked into the image at
+    // build time and copied in here, so generation needs no network beyond the
+    // AI provider.
+    //
+    // T566's property survives intact and is what this still asserts: the
+    // integration name comes from the AGENT's descriptor, never a literal. That
+    // single substitution is what makes SpecKitEngine -> Cursor expressible.
+    const specify = h.commands.find((c) => c.some((a) => a.startsWith('/opt/pmi/scaffold/')));
+    expect(specify?.[0]).toBe('sh');
+    expect(specify?.at(-1)).toBe(
+      `/opt/pmi/scaffold/${new FixtureAgent().descriptor.specKitIntegrationName}`,
+    );
+    // The path is a positional argument, never interpolated into the script.
+    expect(specify?.[2]).toContain('"$1"');
   });
 
   it('writes the requirement input BEFORE running the agent', async () => {
@@ -190,7 +190,7 @@ describe('the five steps, in order (R-001)', () => {
     expect(h.written).toHaveLength(1);
     expect(h.written[0]?.content).toContain('FR-001');
     const agentIndex = h.commands.findIndex((c) => c[0]?.startsWith('/speckit-'));
-    const specifyIndex = h.commands.findIndex((c) => c[0] === 'specify');
+    const specifyIndex = h.commands.findIndex((c) => c.some((a) => a.startsWith('/opt/pmi/scaffold/')));
     expect(agentIndex).toBeGreaterThan(specifyIndex);
   });
 
@@ -224,7 +224,7 @@ describe('the five steps, in order (R-001)', () => {
 describe('a failure at ANY step yields the right reason', () => {
   it.each([
     ['git', 'git_init'],
-    ['specify', 'specify_init'],
+    ['sh', 'specify_init'],
     ['/speckit-specify', 'agent_run'],
   ])('a non-zero exit from %s is engine_error naming the step', async (failing, step) => {
     const h = harness({

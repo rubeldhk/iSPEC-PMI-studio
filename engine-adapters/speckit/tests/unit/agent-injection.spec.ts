@@ -126,11 +126,12 @@ describe('T558 · the Spec Kit integration name comes from the agent', () => {
       aiProviderToken: 'sk-test-not-real',
     }).generateSpecification(input as never, ctx());
 
-    const init = rt.commands.find((c) => c[0] === 'specify');
+    // T699 — the scaffold is copied from the image, not fetched, and the path is
+    // keyed by the integration name. The property under test is unchanged: the
+    // name comes from the AGENT. If it were hardcoded this would say claude.
+    const init = rt.commands.find((c) => c.some((arg) => arg.startsWith('/opt/pmi/scaffold/')));
     expect(init).toBeDefined();
-    expect(init).toContain('--integration');
-    // The fixture declares `fixture`. If this were hardcoded it would say claude.
-    expect(init?.[init.indexOf('--integration') + 1]).toBe('fixture');
+    expect(init?.at(-1)).toBe('/opt/pmi/scaffold/fixture');
   });
 
   it('changes with the agent — the acceptance criterion for provider independence', async () => {
@@ -144,8 +145,8 @@ describe('T558 · the Spec Kit integration name comes from the agent', () => {
       aiProviderToken: 'sk-test-not-real',
     }).generateSpecification(input as never, ctx());
 
-    const init = rt.commands.find((c) => c[0] === 'specify');
-    expect(init?.[init.indexOf('--integration') + 1]).toBe('somethingelse');
+    const init = rt.commands.find((c) => c.some((arg) => arg.startsWith('/opt/pmi/scaffold/')));
+    expect(init?.at(-1)).toBe('/opt/pmi/scaffold/somethingelse');
   });
 
   it('refuses an agent that declares no integration name, naming the agent', async () => {

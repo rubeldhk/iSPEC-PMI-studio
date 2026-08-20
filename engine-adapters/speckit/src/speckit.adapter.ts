@@ -122,6 +122,15 @@ export interface SpecKitAdapterOptions {
   onTeardownFailure?: (path: string, error: unknown) => void;
 }
 
+/**
+ * Where the image keeps the scaffolds it baked at build time (T699).
+ *
+ * One directory per Spec Kit integration, because `--integration claude` writes
+ * Claude's command files and a run asking for another agent must not silently
+ * receive them.
+ */
+const SCAFFOLD_ROOT = '/opt/pmi/scaffold';
+
 /** Raised internally to carry a step failure to the single mapping point below. */
 class StepFailure extends Error {
   constructor(
@@ -172,17 +181,7 @@ export class SpecKitEngine implements SpecificationEngine {
 
     return this.runInSandbox(ctx, async (session) => {
       await this.step('git_init', session, ['git', 'init']);
-      await this.step('specify_init', session, [
-        'specify',
-        'init',
-        '--here',
-        '--force',
-        '--integration',
-        this.integrationName(),
-        '--script',
-        'sh',
-        '--ignore-agent-tools',
-      ]);
+      await this.scaffold(session);
 
       ctx.onProgress?.('scaffolded');
 
@@ -212,17 +211,7 @@ export class SpecKitEngine implements SpecificationEngine {
   ): Promise<EngineResult<GeneratedTask[]>> {
     return this.runInSandbox(ctx, async (session) => {
       await this.step('git_init', session, ['git', 'init']);
-      await this.step('specify_init', session, [
-        'specify',
-        'init',
-        '--here',
-        '--force',
-        '--integration',
-        this.integrationName(),
-        '--script',
-        'sh',
-        '--ignore-agent-tools',
-      ]);
+      await this.scaffold(session);
       await this.write(session, 'pmi-spec.md', input.specificationContent);
       await this.runAgent(session, ctx, 'generate', '/speckit-tasks');
 
@@ -277,6 +266,40 @@ export class SpecKitEngine implements SpecificationEngine {
       );
     }
     return name;
+  }
+
+  /**
+   * T699 / `DEF-028-013` — copy the scaffold the image already carries.
+   *
+   * This used to run `specify init`, which fetches its templates over the
+   * network. At run time the generation egress profile permits
+   * `api.anthropic.com` and nothing else (`ADR-0002`), so the fetch could not
+   * succeed and the agent was asked to run `/speckit-specify` against a
+   * workspace with no `.specify/` in it.
+   *
+   * The scaffold is now baked into the image at build time, when a network is
+   * legitimately available, and copied in here. Generation needs no network
+   * beyond the AI provider — which is the promise the profile makes, kept rather
+   * than widened.
+   *
+   * Keyed by integration name, so an agent still cannot scaffold without
+   * declaring one, and a second agent gets its own baked scaffold rather than
+   * silently receiving Claude's.
+   *
+   * The path is passed POSITIONALLY and read as `"$1"`, for the same reason the
+   * agent command is: it is interpolated into no shell text. A missing scaffold
+   * fails loudly, because a silent skip would hand the agent an empty workspace
+   * and produce exactly the empty read-back this replaced.
+   */
+  private async scaffold(session: ExecutionSession): Promise<void> {
+    const path = `${SCAFFOLD_ROOT}/${this.integrationName()}`;
+    await this.step('specify_init', session, [
+      'sh',
+      '-c',
+      'test -d "$1" || { echo "no baked scaffold at $1" >&2; exit 66; }; cp -a "$1"/. .',
+      'pmi-scaffold',
+      path,
+    ]);
   }
 
   /**

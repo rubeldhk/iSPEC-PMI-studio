@@ -1,15 +1,15 @@
 # V6 — real container run transcript
 
-**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-20T00:00:28.555Z
+**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-20T00:11:52.966Z
 
-**Image digest**: `sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f`
+**Image digest**: `sha256:5fbd6aefd23d9fc244a6957f6d3192eaaac8f86693849cc1c8773d4b0edb6dad`
 
 ## Steps
 
 - [PASS] resolve_environment — docker
 - [PASS] resolve_agent — anthropic/claude-opus-5
 - [PASS] start_container
-- [PASS] record_image_digest — sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f
+- [PASS] record_image_digest — sha256:5fbd6aefd23d9fc244a6957f6d3192eaaac8f86693849cc1c8773d4b0edb6dad
 - [FAIL] generate_specification — engine_error: The engine ran and failed.
 - [PASS] stop_container
 

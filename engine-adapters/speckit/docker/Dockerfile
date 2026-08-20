@@ -48,6 +48,36 @@ RUN pip install --no-cache-dir "specify-cli==${SPECIFY_VERSION}"
 RUN npm install -g --no-fund --no-audit "@anthropic-ai/claude-code@${AGENT_CLI_VERSION}" \
     && npm cache clean --force
 
+# T699 / DEF-028-013 — the Spec Kit scaffold, baked at BUILD time.
+#
+# `specify init` fetches its templates over the network. At run time the
+# generation egress profile permits `api.anthropic.com` and nothing else
+# (ADR-0002), so the scaffold could not be fetched and the agent was asked to run
+# `/speckit-specify` against a workspace that had no `.specify/` in it.
+#
+# Baking it here means generation needs no network beyond the AI provider, which
+# is exactly the promise that profile makes. The alternatives — a second, wider
+# posture for scaffolding, or widening the generation profile — each add a way
+# for a generation run to reach further than the provider, which is the one thing
+# the profile exists to prevent. This is also what an air-gapped generation
+# environment requires, so it stays correct under the strictest future constraint
+# rather than the loosest.
+#
+# Keyed by INTEGRATION, because the scaffold differs per agent: `--integration
+# claude` writes Claude's command files, and a run asking for a different agent
+# must not silently receive Claude's. A second agent means a second baked
+# scaffold — a build-time cost, never a run-time network hole.
+#
+# The `.git` directory is removed: the adapter runs `git init` in the workspace
+# itself, and shipping a build-time repository would put this image's history
+# inside every customer workspace.
+RUN mkdir -p /opt/pmi/scaffold/claude \
+    && cd /opt/pmi/scaffold/claude \
+    && git init -q . \
+    && specify init --here --force --integration claude --script sh --ignore-agent-tools \
+    && rm -rf /opt/pmi/scaffold/claude/.git \
+    && chmod -R a+rX /opt/pmi/scaffold
+
 # Non-root by default (sandbox.json user.nonRoot). The uid is fixed so the
 # workspace mount's ownership is predictable rather than resolved at run time.
 RUN groupadd --gid 10001 engine \
