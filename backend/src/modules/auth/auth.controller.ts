@@ -59,9 +59,13 @@ function toWhoAmI(identity: Identity): WhoAmI {
 @Controller('auth')
 export class AuthController {
   constructor(
-    // Injected BY TOKEN — the interface erases at compile time (T674 precedent).
+    // BOTH injected BY TOKEN (T674/T674a precedent): the interface erases at
+    // compile time, and the class parameter needs `design:paramtypes` — which
+    // esbuild-based runners (vitest, tsx) never emit. Under those, an implicit
+    // class injection resolves to UNDEFINED and only throws when used — found
+    // by T830 booting the real graph (DEF-005-001's investigation).
     @Inject(IDENTITY_PROVIDER) private readonly identities: IdentityProvider,
-    private readonly sessions: SessionService,
+    @Inject(SessionService) private readonly sessions: SessionService,
   ) {}
 
   @Post('sign-in')

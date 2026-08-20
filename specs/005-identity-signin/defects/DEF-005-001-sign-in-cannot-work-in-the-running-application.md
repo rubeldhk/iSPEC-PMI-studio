@@ -1,7 +1,7 @@
 # DEF-005-001 — sign-in cannot work in the running application
 
 **Epic**: `EPIC-005` · blocks **`BR-0002`** and every authenticated journey in local UAT
-**Raised**: 2026-08-20 | **Status**: **OPEN** — found by local UAT after the epic closed 15/15
+**Raised**: 2026-08-20 | **Status**: **RESOLVED 2026-08-20** — by Phase D (T830–T833); verifying test `backend/tests/integration/sign-in.spec.ts` (4/4 on real PostgreSQL). A second cause was found beneath the recorded one: two implicit class-typed injections resolved undefined under esbuild runners (fixed by explicit @Inject — T674a's lesson). Full record: closure.md addendum 2026-08-20
 **Found by**: the first local UAT run of the delivered product surface
 **Severity**: **CRITICAL** — the epic's headline capability does not function; every other
 delivered epic's UI is unreachable behind it
