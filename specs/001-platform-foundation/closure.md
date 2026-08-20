@@ -214,3 +214,27 @@ engineering sequence changes that number — see [`_shared/programme-status.md`]
 
 Also worth taking now, because today produced its fourth data point: **decision `D-39`**, the
 branch-vs-epic conformance check.
+
+---
+
+## Addendum — 2026-08-20: `DEF-001-004` found by the first local UAT, fixed the same day
+
+The application was run on local Docker for the first time. Two of its requests — a 401 and a
+500 — were recorded by this epic's own observability as `"status":200` at `info` level. The
+interceptor's error arm read `response.statusCode` before Nest's exception filter had set it, so
+the metric that exists to show an error rate read flat at zero while the API refused every call.
+
+Fixed by **Phase 8, `T834`–`T837`**: the error arm now derives its status from the exception via
+`toHttpStatus` — the same mapping the filter applies — while the success arm still reads the
+response, which is authoritative there. Recorded in
+[`DEF-001-004`](./defects/DEF-001-004-failed-requests-are-logged-as-200.md), closed with its
+resolving tasks and verifying tests named.
+
+**What this says about the epic's original verification.** `T663`'s unit suite asserted that a
+failed request is measured, and passed — because its fake context was constructed as
+`ctx({ status: 500 })`, handing the stand-in response the answer before the handler threw. Express
+never does that. The corrected fake now carries what a real response carries at that moment, and
+the case fails against the old implementation. **A fake given the answer cannot ask the question**,
+and that is the reusable lesson from this defect, not the two-line fix.
+
+Mutation-verified: reverting the derivation turns 3 unit and 4 integration assertions red.
