@@ -1,7 +1,7 @@
 # DEF-001-004 — every failed HTTP request is recorded as status 200
 
 **Epic**: `EPIC-001` · affects `T663` / `PP-010` observability · relates to `DEF-001-002`
-**Raised**: 2026-08-20 | **Status**: **OPEN** — found by local UAT, not fixed here
+**Raised**: 2026-08-20 | **Status**: **FIXED** 2026-08-20 by `T834`–`T837`; see Resolution
 **Found by**: first local UAT run of the API (`backend/src/main.ts` against the compose stack)
 **Severity**: **HIGH** — telemetry reports failures as successes; the metric that exists to
 show error rate cannot show one
@@ -65,3 +65,30 @@ alone, only their composition, and only a real run composes them.
 - Add a test that drives a **real** failing request end to end, since the unit-level fake
   provably cannot fail on this.
 - Both belong to a task; this record exists so the fix enters through one (Constitution VI).
+
+## Resolution (2026-08-20)
+
+Fixed by EPIC-001 Phase 8, tests first and mutation-verified.
+
+- **`T834`** — `backend/tests/integration/http-observability-status.spec.ts` drives real HTTP
+  requests through the interceptor **and** `ErrorFilter` together, over a listening Nest app.
+  Confirmed failing first, reproducing the defect exactly: `expected 200 to be 401`,
+  `expected 200 to be 500`, the metric carrying `status: '200'`, and `expected 'info' to be
+  'error'`.
+- **`T835`** — the error arm now derives the status from the exception via `toHttpStatus`, the
+  same function `ErrorFilter` uses, so the two cannot drift. The success arm still reads the
+  response, which *is* authoritative there; the asymmetry is the fix and is asserted. The failure
+  is signalled by a wrapper object rather than an optional argument, because `throw undefined` is
+  legal JavaScript and an `undefined` check would read it as success.
+- **`T836`** — the log level is asserted separately at unit level (500 → `error`, 401 → `info`,
+  and the success arm unchanged), since the level is a second symptom of the one corrupted value.
+  **The old unit case was itself corrected**: it passed `ctx({ status: 500 })`, pre-setting the
+  fake response to the answer Express would not yet hold. With the fake carrying what a real
+  response actually carries on that arm, the case now fails against the old implementation.
+
+**Mutation-verified**: reverting the derivation to `response?.statusCode ?? 0` turns **3 unit and
+4 integration assertions red**. Both checks can fail for this defect's own reason, which is what
+the original `T663` suite could not do.
+
+Suites after the fix: 10 / 10 interceptor unit, 5 / 5 new integration, full integration suite
+green when run without container contention.

@@ -11,7 +11,7 @@ a person never writes a stage, and a machine never infers intent.
 
 | Epic | Title | Kind | Stage | Posture | Readiness | Next |
 |---|---|---|---|---|---|---|
-| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-002](../specs/002-team-review-access-storage/) | Unattended Runs with Team Review, Artifact Access Control & External Storage Integration | parent-design | Clarified | stalled | n/a | `/speckit-checklist` |
 | [EPIC-003](../specs/003-specification-engine/) | Specification Engine & Sandbox | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-004](../specs/004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | delivery | Ready | — | Ready | `/speckit-implement` |

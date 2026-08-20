@@ -65,7 +65,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // requirements + requirement_versions arrived with EPIC-007 T064, the
     // first product-surface tables after the PMI-DOC-004 hold discharged.
     // traceability_links (EPIC-011 T078) and architecture_decision_records
-    // (EPIC-016 T143) arrived with the lifecycle wave.
+    // (EPIC-016 T143) arrived with the lifecycle wave. specifications +
+    // specification_versions join when EPIC-008's migration commit lands —
+    // its branch carries that half.
     expect([...tables.keys()].sort()).toEqual([
       'architecture_decision_records',
       'audit_entries',
@@ -106,8 +108,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       engine_registrations: 'registeredAt',
       audit_entries: 'occurredAt',
       // A version row is *authored* — its timestamp is part of the history it
-      // records, not bookkeeping about the row (EPIC-007 T064).
+      // records, not bookkeeping about the row (EPIC-007 T064, EPIC-008 T077).
       requirement_versions: 'authoredAt',
+      specification_versions: 'authoredAt',
     };
 
     const missing = [...tables.entries()]

@@ -23,6 +23,9 @@ import { Injectable } from '@nestjs/common';
 import { tap } from 'rxjs/operators';
 import type { Observable } from 'rxjs';
 import { CORRELATION_FIELD, type Observability } from '@pmi/observability';
+// The same mapping `ErrorFilter` applies, so the status this interceptor
+// reports and the status the caller receives cannot disagree (DEF-001-004).
+import { toHttpStatus } from '../../core/errors.js';
 
 /** The shape this interceptor needs from a request. Not Express-specific. */
 interface ObservedRequest {
@@ -62,9 +65,26 @@ export class HttpObservabilityInterceptor implements NestInterceptor {
      */
     const route = request.route?.path ?? request.url ?? 'unknown';
 
-    const finish = (): void => {
+    /**
+     * `T835` / `DEF-001-004` — where the status comes from, and why it differs
+     * per arm.
+     *
+     * On success the response is authoritative: the handler has run and Nest
+     * has set the code. On failure it is **not yet**. The error arm runs before
+     * `ErrorFilter` maps the exception, so `statusCode` still holds Express's
+     * default 200 — and this interceptor reported that, turning every 401 and
+     * 500 into a recorded success. A 500 was additionally logged at `info`,
+     * because the level is derived from this same number.
+     *
+     * The exception is authoritative on that arm, and `toHttpStatus` is the
+     * function the filter itself uses — so both answer with one rule rather
+     * than two that can drift.
+     */
+    // A wrapper rather than an optional argument: `throw undefined` is legal
+    // JavaScript, and an `error === undefined` test would read that as success.
+    const finish = (failure: { error: unknown } | null): void => {
       const durationMs = Date.now() - startedAt;
-      const status = response?.statusCode ?? 0;
+      const status = failure === null ? (response?.statusCode ?? 0) : toHttpStatus(failure.error);
 
       this.observability.metrics.requestFinished({ route, status, durationMs });
 
@@ -81,6 +101,8 @@ export class HttpObservabilityInterceptor implements NestInterceptor {
     // Both arms, deliberately. The requests worth measuring most are the ones
     // that failed, and an interceptor that only reports success produces a
     // latency distribution with the slow half missing.
-    return next.handle().pipe(tap({ next: finish, error: finish }));
+    return next
+      .handle()
+      .pipe(tap({ next: () => finish(null), error: (error: unknown) => finish({ error }) }));
   }
 }

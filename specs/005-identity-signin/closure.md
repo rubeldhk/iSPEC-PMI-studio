@@ -107,59 +107,23 @@ T011a; **G-05.1 resolved** — the provisional FR-000 minted 2026-08-19 is super
 `/speckit-implement EPIC-008` — specification authoring, the next epic in the US-order build
 (EPIC-006 and EPIC-007 close in this same session; EPIC-008 consumes EPIC-007's content hash).
 
+
 ---
 
-# Addendum 2026-08-20 (later session) — Phase D: DEF-005-001 remediated
+## Addendum — 2026-08-20: `DEF-005-001` found by the first local UAT, fixed the same day
 
-**Session**: `/speckit-implement for EPIC-005 Phase D — T830–T833`, executed in the isolated
-worktree `epic/009-011-016-lifecycle-wave` (concurrent-session rule; EPIC-008 in flight in a
-sibling session).
+The first UAT run of the delivered surface could not sign in: the composed application resolved
+the deliberately-refusing `UnconfiguredUserDirectory`, because nothing anywhere performed the
+override every module comment promised. Fixing it (Phase D, `T830`–`T833`) surfaced a second
+latent break: two type-annotated injection sites resolved to `undefined` under tsx/esbuild, which
+emits no `design:paramtypes` — proof that this epic's green suite never once exercised its own
+dependency injection.
 
-## What UAT found, and what was actually wrong
+Both are fixed, both are pinned by tests that were observed failing first and mutation-verified.
+Live UAT now passes end to end: sign-in 200, session carried into `/me`, wrong password 401.
 
-`DEF-005-001` proved sign-in returned **500** in the running application because nothing bound
-`PrismaUserDirectory`. T830 — an integration test booting the REAL module graph over real HTTP
-against a real PostgreSQL — reproduced that exactly (500 `internal_error`, the defect's own
-probe), and then found a **second cause underneath the first**:
-
-1. **`USER_DIRECTORY` unbound** — the defect's recorded cause. Fixed by T831: the factory binds
-   `PrismaUserDirectory(new PrismaClient().user)` whenever `DATABASE_URL` is configured, and the
-   deliberately-refusing default remains when it is not.
-2. **Two implicit class-typed injections resolved to `undefined`** under esbuild-based runners
-   (vitest, tsx), which emit no `design:paramtypes`: `AuthController`'s `SessionService`
-   parameter and `AuthModule`'s own constructor. Sign-in then threw
-   `TypeError: Cannot read properties of undefined (reading 'create')` AFTER the directory fix.
-   This is **T674a's exact lesson recurring** (EPIC-004 closure: "the test was measuring 'did it
-   return an object' and reporting it as 'is it wired'"). Fixed by explicit
-   `@Inject(SessionService)` at both sites.
-
-## Verification (executed, not asserted)
-
-- **T830** `backend/tests/integration/sign-in.spec.ts` — 4/4 against PostgreSQL 16
-  (Testcontainers): sign-in 200 + HttpOnly cookie · wrong password 401 (never 500, never 200) ·
-  the cookie carries into `GET /v1/auth/me` 200 · no hash in any response. Observed RED first
-  with the defect's exact 500 before T831.
-- **T832** `backend/tests/unit/auth/composition.spec.ts` — resolves `USER_DIRECTORY` from the
-  composed DI graph: `PrismaUserDirectory` with `DATABASE_URL`, the refusing default without.
-- Full suites: 53 integration (7 files) · 495 unit+contract+frontend — green.
-
-## T833 — the UAT path, re-run
-
-The defect's own reproduction path — seeded workspace/user, `POST /v1/auth/sign-in`, session
-into `/v1/auth/me` — now **passes end to end over real HTTP** (T830's live run is the record).
-**Honest limit**: the browser hop through the web client was NOT driven — the Vite dev server
-has no `/v1` proxy configured, so the shell cannot reach the API cross-origin in local dev. The
-`ApiClient` layer is unit-verified; the proxy belongs to the interface epic (**owner:
-EPIC-010**), recorded here rather than silently absorbed.
-
-## Residual, named
-
-- **The same latent hazard exists wherever a controller uses implicit class-typed constructor
-  injection** (projects, requirements, engines, decisions, traceability): correct under `tsc`
-  builds, `undefined` under esbuild runners, throwing only on first use. T830/T832 cover auth;
-  a platform-wide conformance check (assert every controller resolves its dependencies from the
-  composed graph) is the generalisation — candidate task for the epic that owns the harness
-  (EPIC-015 QA or EPIC-014), flagged for `/speckit-tasks`.
-
-**`DEF-005-001` is CLOSED** — resolving tasks T830–T833, verifying test
-`backend/tests/integration/sign-in.spec.ts` (Constitution VI).
+**What this says about the epic's original verification** — the same sentence EPIC-001's addendum
+earned today: a mocked collaborator proves behaviour *given* the wiring, and only booting the
+composed application proves the wiring. This is the programme's fourth
+built-tested-called-by-nothing; the proposed smoke gate before product-epic closure is recorded in
+the defect and awaits a ruling.

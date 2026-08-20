@@ -46,7 +46,8 @@ describe('User', () => {
 describe('universal columns (T013)', () => {
   // FR-002: every tenant-scoped row carries its workspace, from migration 1,
   // so Phase 3 row-level security is a switch and not a data migration.
-  // Requirement + RequirementVersion joined the list with EPIC-007 T064.
+  // Requirement + RequirementVersion joined the list with EPIC-007 T064;
+  // Specification + SpecificationVersion with EPIC-008 T077.
   const tenantScoped = [
     'User',
     'Project',
@@ -56,6 +57,10 @@ describe('universal columns (T013)', () => {
     'RequirementVersion',
     'TraceabilityLink',
     'ArchitectureDecisionRecord',
+    // Specification + SpecificationVersion join this list when EPIC-008's
+    // schema commit lands — its branch carries that half; the model is not in
+    // this tree yet and listing it here would fail on a model that is
+    // deliberately still in flight.
   ];
 
   it.each(tenantScoped)('%s carries workspaceId', (name) => {

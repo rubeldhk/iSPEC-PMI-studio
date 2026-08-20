@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HttpObservabilityInterceptor } from '../../../src/modules/observability/http-observability.interceptor.js';
+import { UnauthenticatedError } from '../../../src/core/errors.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -109,10 +110,52 @@ describe('T662 · request metrics reach the sink', () => {
     const { interceptor, sink } = harness();
     const boom = new Error('handler exploded');
 
-    await expect(run(interceptor, ctx({ status: 500 }), boom)).rejects.toThrow('handler exploded');
+    // T836 / DEF-001-004 — the response is left at 200 ON PURPOSE. This case
+    // previously passed `ctx({ status: 500 })`, pre-setting the fake to the
+    // answer; Express never does that, because on the error arm the exception
+    // filter has not run yet. With the fake corrected to what a real response
+    // actually holds at that moment, the assertion below fails against the old
+    // implementation and passes against the fixed one.
+    await expect(run(interceptor, ctx({ status: 200 }), boom)).rejects.toThrow('handler exploded');
 
     // The requests worth measuring most are the ones that failed.
     expect(sink.recorded[0]?.attrs).toMatchObject({ status: '500' });
+  });
+});
+
+describe('T836 · DEF-001-004 · the log level follows the status the caller received', () => {
+  // The level is derived from the same number the defect corrupted, so it is a
+  // second symptom of one cause — asserted separately so a future change cannot
+  // fix the status and silently leave the level reading `info` on a 500.
+
+  it('logs an unexpected failure at error level, with the response still at 200', async () => {
+    const { interceptor, lines } = harness();
+
+    await expect(
+      run(interceptor, ctx({ status: 200 }), new Error('handler exploded')),
+    ).rejects.toThrow();
+
+    expect(JSON.parse(lines[0] as string)).toMatchObject({ level: 'error', status: 500 });
+  });
+
+  it('keeps a refused request at info, since a 401 is not an outage', async () => {
+    const { interceptor, lines } = harness();
+
+    await expect(
+      run(interceptor, ctx({ status: 200 }), new UnauthenticatedError('Invalid email or password.')),
+    ).rejects.toThrow();
+
+    expect(JSON.parse(lines[0] as string)).toMatchObject({ level: 'info', status: 401 });
+  });
+
+  it('still trusts the response on the SUCCESS arm, where Nest has set it', async () => {
+    // The asymmetry is the fix: authoritative on success, not yet authoritative
+    // on failure. A change that read the exception on both arms would break this.
+    const { interceptor, lines } = harness();
+
+    await run(interceptor, ctx({ status: 201 }));
+
+    expect(JSON.parse(lines[0] as string)).toMatchObject({ level: 'info', status: 201 });
   });
 });
 

@@ -38,7 +38,10 @@ const moduleSource = readFileSync(
 describe('T650 · the module is composed into the application', () => {
   it('AppModule imports JobsModule', () => {
     expect(appModule).toMatch(/import\s*\{\s*JobsModule\s*\}/);
-    expect(appModule).toMatch(/imports:\s*\[[^\]]*JobsModule/);
+    // [\s\S]*? rather than [^\]]*: T831 put process.env['DATABASE_URL'] inside
+    // the imports array, and a bracket there must not make this check stop
+    // seeing the module it asserts.
+    expect(appModule).toMatch(/imports:\s*\[[\s\S]*?JobsModule/);
   });
 
   it('JobsModule is no longer empty', () => {

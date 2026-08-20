@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { PrismaUserDirectory, UnconfiguredUserDirectory } from './modules/auth/identity-provider.js';
+import { prismaClient } from './persistence/prisma.js';
 import { DecisionsModule } from './modules/decisions/decisions.module.js';
 import { EnginesModule } from './modules/engines/engines.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
+import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TraceabilityModule } from './modules/traceability/traceability.module.js';
 
 /**
@@ -17,12 +20,28 @@ import { TraceabilityModule } from './modules/traceability/traceability.module.j
  */
 @Module({
   imports: [
-    AuthModule,
+    // T831 / DEF-005-001 — the composition root supplies the REAL directory,
+    // which is the act every module comment promised and nothing performed:
+    // the composed graph resolved the refusing default, and sign-in was a 500
+    // in the running application while 15/15 tasks were green (the fourth
+    // built-tested-called-by-nothing, after DEF-001-001/002 and DEF-028-005).
+    //
+    // The conditional is configuration, not caution: with no DATABASE_URL
+    // there is no directory to consult, and the refusing default is the honest
+    // answer — it names the missing configuration instead of telling every
+    // caller "wrong password".
+    AuthModule.register({
+      directory: () =>
+        process.env['DATABASE_URL']
+          ? new PrismaUserDirectory(prismaClient().user)
+          : new UnconfiguredUserDirectory(),
+    }),
     AuditModule,
     EnginesModule,
     JobsModule,
     ProjectsModule,
     RequirementsModule,
+    SpecificationsModule,
     TraceabilityModule,
     DecisionsModule,
   ],
