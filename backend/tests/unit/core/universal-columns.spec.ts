@@ -64,8 +64,12 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
   it('creates the Phase 1 table set', () => {
     // requirements + requirement_versions arrived with EPIC-007 T064, the
     // first product-surface tables after the PMI-DOC-004 hold discharged.
-    // specifications + specification_versions with EPIC-008 T077.
+    // traceability_links (EPIC-011 T078) and architecture_decision_records
+    // (EPIC-016 T143) arrived with the lifecycle wave. specifications +
+    // specification_versions (EPIC-008 T077) joined when the two lines were
+    // integrated — the case this list was already written to expect.
     expect([...tables.keys()].sort()).toEqual([
+      'architecture_decision_records',
       'audit_entries',
       'engine_registrations',
       'generation_jobs',
@@ -74,6 +78,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'requirements',
       'specification_versions',
       'specifications',
+      'traceability_links',
       'users',
       'workspaces',
     ]);

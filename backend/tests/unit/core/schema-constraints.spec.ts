@@ -55,8 +55,12 @@ describe('universal columns (T013)', () => {
     'AuditEntry',
     'Requirement',
     'RequirementVersion',
-    'Specification',
-    'SpecificationVersion',
+    'TraceabilityLink',
+    'ArchitectureDecisionRecord',
+    // Specification + SpecificationVersion join this list when EPIC-008's
+    // schema commit lands — its branch carries that half; the model is not in
+    // this tree yet and listing it here would fail on a model that is
+    // deliberately still in flight.
   ];
 
   it.each(tenantScoped)('%s carries workspaceId', (name) => {

@@ -3,11 +3,13 @@ import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { PrismaUserDirectory, UnconfiguredUserDirectory } from './modules/auth/identity-provider.js';
 import { prismaClient } from './persistence/prisma.js';
+import { DecisionsModule } from './modules/decisions/decisions.module.js';
 import { EnginesModule } from './modules/engines/engines.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
+import { TraceabilityModule } from './modules/traceability/traceability.module.js';
 
 /**
  * Application composition root.
@@ -40,6 +42,8 @@ import { SpecificationsModule } from './modules/specifications/specifications.mo
     ProjectsModule,
     RequirementsModule,
     SpecificationsModule,
+    TraceabilityModule,
+    DecisionsModule,
   ],
 })
 export class AppModule {}

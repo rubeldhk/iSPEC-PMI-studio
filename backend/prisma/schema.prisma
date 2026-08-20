@@ -32,6 +32,8 @@ model Workspace {
   requirementVersions   RequirementVersion[]
   specifications        Specification[]
   specificationVersions SpecificationVersion[]
+  traceabilityLinks     TraceabilityLink[]
+  decisionRecords       ArchitectureDecisionRecord[]
 
   @@map("workspaces")
 }
@@ -84,10 +86,11 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
-  generationJobs GenerationJob[]
-  requirements   Requirement[]
-  specifications Specification[]
+  workspace       Workspace                    @relation(fields: [workspaceId], references: [id])
+  generationJobs  GenerationJob[]
+  requirements    Requirement[]
+  specifications  Specification[]
+  decisionRecords ArchitectureDecisionRecord[]
 
   @@unique([workspaceId, name])
   @@index([workspaceId])
@@ -263,6 +266,87 @@ model SpecificationVersion {
   @@index([workspaceId])
   @@index([specificationId, versionNumber(sort: Desc)])
   @@map("specification_versions")
+}
+
+// ---------------------------------------------------------------- traceability
+//
+// T078 (EPIC-011) — the graph that makes the artifacts a system (FR-029 to
+// FR-031). POLYMORPHIC on purpose: source/target are (type, id) pairs with no
+// FK, because the two Phase 1 edges span three tables and Phase 2 adds more.
+// The permitted-edge rule lives in code (link-writer) and in the migration's
+// CHECK — same two-layer pattern as the lifecycle.
+//
+// Indexed BOTH ways: both traversal directions are first-class (FR-030) and
+// must stay fast at 500 specifications per project (SC-009).
+
+enum TraceArtifactType {
+  requirement
+  specification
+  task
+}
+
+enum TraceRelationship {
+  generated_from
+  derived_from
+}
+
+model TraceabilityLink {
+  id           String            @id @default(uuid())
+  workspaceId  String
+  sourceType   TraceArtifactType
+  sourceId     String
+  targetType   TraceArtifactType
+  targetId     String
+  relationship TraceRelationship
+  createdAt    DateTime          @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([sourceType, sourceId, targetType, targetId, relationship])
+  @@index([workspaceId])
+  @@index([targetType, targetId])
+  @@index([sourceType, sourceId])
+  @@map("traceability_links")
+}
+
+// ---------------------------------------------------------------- decisions
+//
+// T143 (EPIC-016) — Architecture Decision Records (FR-034). Status is a
+// three-value enum with no transition guards — deliberately unlike the
+// specification lifecycle. Superseding is a status, not a deletion.
+//
+// The many-to-many to specifications (`adr_specification_links`) arrives with
+// EPIC-008's `Specification` model — it cannot reference a table that does
+// not exist yet. Recorded here so its absence reads as sequenced, not
+// forgotten.
+
+enum AdrStatus {
+  proposed
+  accepted
+  superseded
+}
+
+model ArchitectureDecisionRecord {
+  id           String    @id @default(uuid())
+  workspaceId  String
+  projectId    String
+  // Unique per project, not globally: two projects may each hold ADR-0001.
+  reference    String
+  title        String
+  status       AdrStatus @default(proposed)
+  context      String
+  decision     String
+  consequences String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, reference])
+  @@index([workspaceId])
+  @@index([projectId, status])
+  @@map("architecture_decision_records")
 }
 
 // ---------------------------------------------------------------- jobs
