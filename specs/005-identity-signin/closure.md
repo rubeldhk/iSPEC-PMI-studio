@@ -106,3 +106,24 @@ T011a; **G-05.1 resolved** — the provisional FR-000 minted 2026-08-19 is super
 
 `/speckit-implement EPIC-008` — specification authoring, the next epic in the US-order build
 (EPIC-006 and EPIC-007 close in this same session; EPIC-008 consumes EPIC-007's content hash).
+
+
+---
+
+## Addendum — 2026-08-20: `DEF-005-001` found by the first local UAT, fixed the same day
+
+The first UAT run of the delivered surface could not sign in: the composed application resolved
+the deliberately-refusing `UnconfiguredUserDirectory`, because nothing anywhere performed the
+override every module comment promised. Fixing it (Phase D, `T830`–`T833`) surfaced a second
+latent break: two type-annotated injection sites resolved to `undefined` under tsx/esbuild, which
+emits no `design:paramtypes` — proof that this epic's green suite never once exercised its own
+dependency injection.
+
+Both are fixed, both are pinned by tests that were observed failing first and mutation-verified.
+Live UAT now passes end to end: sign-in 200, session carried into `/me`, wrong password 401.
+
+**What this says about the epic's original verification** — the same sentence EPIC-001's addendum
+earned today: a mocked collaborator proves behaviour *given* the wiring, and only booting the
+composed application proves the wiring. This is the programme's fourth
+built-tested-called-by-nothing; the proposed smoke gate before product-epic closure is recorded in
+the defect and awaits a ruling.

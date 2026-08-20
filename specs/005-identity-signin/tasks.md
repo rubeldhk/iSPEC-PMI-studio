@@ -67,21 +67,21 @@ the proof: `PrismaUserDirectory` is built, unit-tested, and bound at no composit
 stands today** — a test that passes before the fix would be re-proving what `T024a` already
 proves with a mocked directory, which is precisely the check that could not see this defect.
 
-- [ ] T830 Write a failing integration test that boots the **real module graph** (`AppModule`, no
+- [X] T830 Write a failing integration test that boots the **real module graph** (`AppModule`, no
       mocked identity provider) against a Testcontainers PostgreSQL, seeds a workspace and user
       with an Argon2id hash, and asserts `POST /v1/auth/sign-in` returns **200** with a session
       cookie — plus a wrong-password case returning 401 — in
       `backend/tests/integration/sign-in.spec.ts`, per `DEF-005-001` and `BR-0002`.
       **Confirm it fails with `UserDirectoryUnavailableError` before T831.** Guard with
       `DOCKER_UNAVAILABLE=1` like its siblings (RAID `R-04`)
-- [ ] T831 Bind `USER_DIRECTORY` to `PrismaUserDirectory` at the composition root — the same seam
+- [X] T831 Bind `USER_DIRECTORY` to `PrismaUserDirectory` at the composition root — the same seam
       `AUDIT_WRITER` and `JOB_STORE` already use — so the adapter the epic built is the adapter the
       application runs, per `DEF-005-001` (integration test: T830)
-- [ ] T832 [P] Assert the wiring itself, so a future refactor cannot silently unbind it: resolve
+- [X] T832 [P] Assert the wiring itself, so a future refactor cannot silently unbind it: resolve
       `USER_DIRECTORY` from the composed graph and assert it is **not** `UnconfiguredUserDirectory`,
       in `backend/tests/unit/auth/composition.spec.ts` (this is the check whose absence let a
       15 / 15 epic ship an unusable capability)
-- [ ] T833 Re-run the local UAT path end to end — sign in through the web client, confirm the
+- [X] T833 Re-run the local UAT path end to end — sign in through the web client, confirm the
       session cookie carries into `GET /v1/auth/me` — and record the outcome in
       [`closure.md`](./closure.md) as a dated addendum; close `DEF-005-001` with its resolving
       tasks and verifying test named (Constitution VI)

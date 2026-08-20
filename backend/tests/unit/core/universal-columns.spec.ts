@@ -64,6 +64,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
   it('creates the Phase 1 table set', () => {
     // requirements + requirement_versions arrived with EPIC-007 T064, the
     // first product-surface tables after the PMI-DOC-004 hold discharged.
+    // specifications + specification_versions with EPIC-008 T077.
     expect([...tables.keys()].sort()).toEqual([
       'audit_entries',
       'engine_registrations',
@@ -71,6 +72,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'projects',
       'requirement_versions',
       'requirements',
+      'specification_versions',
+      'specifications',
       'users',
       'workspaces',
     ]);
@@ -102,8 +105,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       engine_registrations: 'registeredAt',
       audit_entries: 'occurredAt',
       // A version row is *authored* — its timestamp is part of the history it
-      // records, not bookkeeping about the row (EPIC-007 T064).
+      // records, not bookkeeping about the row (EPIC-007 T064, EPIC-008 T077).
       requirement_versions: 'authoredAt',
+      specification_versions: 'authoredAt',
     };
 
     const missing = [...tables.entries()]

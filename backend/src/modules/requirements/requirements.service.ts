@@ -78,13 +78,34 @@ export interface RequirementStore {
 
 const OPAQUE = 'Not found.';
 
+/**
+ * T829 — the FR-032 signal (EPIC-008 F-04.7, added by its convergence pass).
+ *
+ * Carries BOTH hashes rather than a boolean: the consumer decides what counts
+ * as a material change, so there is one definition of "changed" and it is the
+ * hash, not this service's opinion of it.
+ */
+export interface RequirementContentChange {
+  workspaceId: string;
+  requirementId: string;
+  previousContentHash: string;
+  currentContentHash: string;
+}
+
 export interface RequirementsServiceOptions {
   /** Refusal hook (FR-033): wired to the audit service at the composition root. */
   onRefused?: (record: RefusalRecord) => void;
+  /**
+   * Content-change hook (FR-032): wired to EPIC-008's `OutOfDateService` at the
+   * composition root. A HOOK, not a call — the requirement register must not
+   * depend on the specification module, exactly as it does not depend on audit.
+   */
+  onContentChanged?: (change: RequirementContentChange) => void;
 }
 
 export class RequirementsService {
   private readonly onRefused: ((record: RefusalRecord) => void) | undefined;
+  private readonly onContentChanged: ((change: RequirementContentChange) => void) | undefined;
 
   constructor(
     private readonly store: RequirementStore,
@@ -92,6 +113,7 @@ export class RequirementsService {
     options: RequirementsServiceOptions = {},
   ) {
     this.onRefused = options.onRefused;
+    this.onContentChanged = options.onContentChanged;
   }
 
   async create(
@@ -184,10 +206,26 @@ export class RequirementsService {
       authoredById: ctx.userId,
     });
 
-    return this.store.update(ctx.workspaceId, id, {
+    const currentContentHash = requirementContentHash(next);
+    const updated = await this.store.update(ctx.workspaceId, id, {
       ...next,
-      contentHash: requirementContentHash(next),
+      contentHash: currentContentHash,
     });
+
+    // FR-032 — announced AFTER the record has moved, so a consumer that reads
+    // the requirement back sees the new text rather than the old. Only when the
+    // hash actually moved: a re-space is not a change, and flagging every
+    // derived specification for one would train people to ignore the flag.
+    if (currentContentHash !== existing.contentHash) {
+      this.onContentChanged?.({
+        workspaceId: existing.workspaceId,
+        requirementId: existing.id,
+        previousContentHash: existing.contentHash,
+        currentContentHash,
+      });
+    }
+
+    return updated;
   }
 
   /** Edit history, newest first (FR-009). */

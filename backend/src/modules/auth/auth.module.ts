@@ -13,7 +13,7 @@
  * `USER_DIRECTORY` at the composition root — the same seam as `AUDIT_WRITER`
  * and `JOB_STORE`.
  */
-import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
+import { Inject, Module, type DynamicModule, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
 import { AuthController } from './auth.controller.js';
 import {
   LocalIdentityProvider,
@@ -28,23 +28,47 @@ import { IDENTITY_PROVIDER, PASSWORD_HASHER, USER_DIRECTORY } from './auth.token
 
 export { IDENTITY_PROVIDER, PASSWORD_HASHER, USER_DIRECTORY } from './auth.tokens.js';
 
-@Module({
-  controllers: [AuthController],
-  providers: [
-    { provide: PASSWORD_HASHER, useFactory: (): PasswordHasher => new Argon2PasswordService() },
-    { provide: USER_DIRECTORY, useFactory: (): UserDirectory => new UnconfiguredUserDirectory() },
-    {
-      provide: IDENTITY_PROVIDER,
-      inject: [USER_DIRECTORY, PASSWORD_HASHER],
-      useFactory: (directory: UserDirectory, passwords: PasswordHasher): IdentityProvider =>
-        new LocalIdentityProvider(directory, passwords),
-    },
-    { provide: SessionService, useFactory: (): SessionService => new SessionService() },
-  ],
-  exports: [SessionService, IDENTITY_PROVIDER, PASSWORD_HASHER, USER_DIRECTORY],
-})
+/**
+ * `T831` / `DEF-005-001` — the directory seam the module always promised.
+ *
+ * The comment above says the Prisma adapter "is supplied by overriding
+ * `USER_DIRECTORY` at the composition root", and for the epic's whole life
+ * nothing could actually do that: a static module's binding is not
+ * overridable from outside, so the composed application resolved the refusing
+ * default and every sign-in was a 500. `register()` makes the promise real —
+ * the root passes a factory, and omitting it keeps the refusing default, so an
+ * unconfigured environment still fails loudly rather than answering "no such
+ * user" to everyone.
+ */
+@Module({})
 export class AuthModule implements NestModule {
-  constructor(private readonly sessions: SessionService) {}
+  // @Inject for the same reason as the controller: tsx/esbuild emits no
+  // design:paramtypes, so without the token this is undefined and the session
+  // middleware silently guards every route with a service that is not there.
+  constructor(@Inject(SessionService) private readonly sessions: SessionService) {}
+
+  static register(options: { directory?: () => UserDirectory } = {}): DynamicModule {
+    return {
+      module: AuthModule,
+      controllers: [AuthController],
+      providers: [
+        { provide: PASSWORD_HASHER, useFactory: (): PasswordHasher => new Argon2PasswordService() },
+        {
+          provide: USER_DIRECTORY,
+          useFactory: (): UserDirectory =>
+            options.directory ? options.directory() : new UnconfiguredUserDirectory(),
+        },
+        {
+          provide: IDENTITY_PROVIDER,
+          inject: [USER_DIRECTORY, PASSWORD_HASHER],
+          useFactory: (directory: UserDirectory, passwords: PasswordHasher): IdentityProvider =>
+            new LocalIdentityProvider(directory, passwords),
+        },
+        { provide: SessionService, useFactory: (): SessionService => new SessionService() },
+      ],
+      exports: [SessionService, IDENTITY_PROVIDER, PASSWORD_HASHER, USER_DIRECTORY],
+    };
+  }
 
   configure(consumer: MiddlewareConsumer): void {
     const sessions = this.sessions;

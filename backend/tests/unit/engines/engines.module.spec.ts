@@ -37,7 +37,10 @@ describe('the module is composed into the application', () => {
   it('AppModule imports EnginesModule', () => {
     // The whole finding: without this line the engine layer is dead code.
     expect(appModule).toMatch(/import\s*\{\s*EnginesModule\s*\}/);
-    expect(appModule).toMatch(/imports:\s*\[[^\]]*EnginesModule/);
+    // [\s\S]*? rather than [^\]]*: T831 put process.env['DATABASE_URL'] inside
+    // the imports array, and a bracket there must not make this check stop
+    // seeing the module it asserts.
+    expect(appModule).toMatch(/imports:\s*\[[\s\S]*?EnginesModule/);
   });
 
   it('AppModule still imports no engine adapter (FR-017)', () => {

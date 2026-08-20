@@ -61,7 +61,12 @@ export class AuthController {
   constructor(
     // Injected BY TOKEN — the interface erases at compile time (T674 precedent).
     @Inject(IDENTITY_PROVIDER) private readonly identities: IdentityProvider,
-    private readonly sessions: SessionService,
+    // Also by token, and not as a nicety: the runtime is tsx/esbuild, which
+    // emits no design:paramtypes, so a type-annotated parameter resolves to
+    // UNDEFINED and the first call throws. Invisible until T831 — sign-in
+    // always failed earlier, at the unwired directory (DEF-005-001), and
+    // T024a constructs this class manually, so DI itself was never exercised.
+    @Inject(SessionService) private readonly sessions: SessionService,
   ) {}
 
   @Post('sign-in')
