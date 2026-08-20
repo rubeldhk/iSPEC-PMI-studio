@@ -211,3 +211,130 @@ export class SpecificationsController {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// T113 + T123 (EPIC-009) — the six lifecycle transitions, the version
+// endpoints, and the validation endpoints. Exactly the extension the header
+// above reserved: "they extend this same controller when their epics run."
+//
+// A second @Controller class in the same file, not new methods on the first:
+// the generation surface and the lifecycle surface have different service
+// dependencies, and keeping them separate keeps each constructor honest.
+// ---------------------------------------------------------------------------
+
+import { SpecificationLifecycleService } from './lifecycle-api.service.js';
+import type {
+  ApproveOutcome,
+  SpecificationLifecycleApi,
+  ValidationJobBody,
+} from './lifecycle-api.service.js';
+import type { VersionDiff } from './version-diff.service.js';
+import type { StoredFinding } from './validate-specification.service.js';
+import type { SpecificationVersionRecord } from './specifications-read.service.js';
+
+@Controller()
+export class SpecificationLifecycleController {
+  constructor(
+    // @Inject by token: esbuild/tsx emits no design:paramtypes (DEF-001-005).
+    @Inject(SpecificationLifecycleService)
+    private readonly lifecycle: SpecificationLifecycleApi,
+  ) {}
+
+  private acting(ctx: WorkspaceContext | undefined): { workspaceId: string; userId: string } {
+    const auth = requireAuth(ctx);
+    return { workspaceId: auth.workspaceId, userId: auth.userId };
+  }
+
+  @Post('specifications/:id/submit-for-review')
+  @HttpCode(200)
+  async submitForReview(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<SpecificationRecord> {
+    return this.lifecycle.transition(this.acting(ctx), id, 'review');
+  }
+
+  @Post('specifications/:id/reject')
+  @HttpCode(200)
+  async reject(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<SpecificationRecord> {
+    // review -> draft: rejection returns it for rework (FR-011).
+    return this.lifecycle.transition(this.acting(ctx), id, 'draft');
+  }
+
+  @Post('specifications/:id/approve')
+  @HttpCode(200)
+  async approve(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<ApproveOutcome> {
+    // Outstanding findings ride the response (US6 scenario 3).
+    return this.lifecycle.approve(this.acting(ctx), id);
+  }
+
+  @Post('specifications/:id/baseline')
+  @HttpCode(200)
+  async baseline(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<SpecificationRecord> {
+    return this.lifecycle.transition(this.acting(ctx), id, 'baselined');
+  }
+
+  @Post('specifications/:id/mark-implemented')
+  @HttpCode(200)
+  async markImplemented(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<SpecificationRecord> {
+    return this.lifecycle.transition(this.acting(ctx), id, 'implemented');
+  }
+
+  @Post('specifications/:id/archive')
+  @HttpCode(200)
+  async archive(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<SpecificationRecord> {
+    // FR-011b: from approved, baselined, or implemented — the guard names the set.
+    return this.lifecycle.archive(this.acting(ctx), id);
+  }
+
+  @Get('specifications/:id/versions')
+  async versions(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<SpecificationVersionRecord[]> {
+    return this.lifecycle.versions(requireAuth(ctx).workspaceId, id);
+  }
+
+  @Get('specifications/:id/versions/:a/diff/:b')
+  async diff(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Param('a') a: string,
+    @Param('b') b: string,
+  ): Promise<VersionDiff> {
+    return this.lifecycle.diff(requireAuth(ctx).workspaceId, id, Number(a), Number(b));
+  }
+
+  @Get('specifications/:id/findings')
+  async findings(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<StoredFinding[]> {
+    return this.lifecycle.findings(requireAuth(ctx).workspaceId, id);
+  }
+
+  @Post('specifications/:id/jobs/validate')
+  @HttpCode(202)
+  async validate(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<ValidationJobBody> {
+    // Always asynchronous (R-001): a job, never a synchronous result.
+    return this.lifecycle.submitValidation(this.acting(ctx), id);
+  }
+}

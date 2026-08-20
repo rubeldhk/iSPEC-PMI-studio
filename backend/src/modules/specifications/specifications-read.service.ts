@@ -166,6 +166,19 @@ export interface SpecificationStore {
     data: Partial<Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById'>>,
   ): Promise<SpecificationRecord>;
 
+  /**
+   * T113 (EPIC-009) — the ONE write path for lifecycle state. Deliberately not
+   * part of `updateSpecification`: PATCH strips `lifecycleState` because state
+   * moves only through the transition endpoints, where the permitted set and
+   * the FR-014 record are enforced. A second writer would bypass both.
+   */
+  setLifecycleState(
+    workspaceId: string,
+    id: string,
+    state: SpecificationRecord['lifecycleState'],
+    actorId: string,
+  ): Promise<SpecificationRecord>;
+
   /** Search scope, applied BEFORE matching (T083f). */
   findScoped(workspaceId: string, projectId: string | null): Promise<SearchCandidate[]>;
 
@@ -468,6 +481,24 @@ export class InMemorySpecificationStore implements SpecificationStore {
     return updated;
   }
 
+  async setLifecycleState(
+    workspaceId: string,
+    id: string,
+    state: SpecificationRecord['lifecycleState'],
+    actorId: string,
+  ): Promise<SpecificationRecord> {
+    const row = this.specifications.get(id);
+    if (!row || row.workspaceId !== workspaceId) throw new NotFoundError(OPAQUE);
+    const updated: SpecificationRecord = {
+      ...row,
+      lifecycleState: state,
+      updatedById: actorId,
+      updatedAt: this.tick(),
+    };
+    this.specifications.set(id, updated);
+    return updated;
+  }
+
   async findScoped(workspaceId: string, projectId: string | null): Promise<SearchCandidate[]> {
     this.scopedCalls.push({ workspaceId, projectId });
     return [...this.specifications.values()]
@@ -531,11 +562,6 @@ export class InMemorySpecificationStore implements SpecificationStore {
   async touch(id: string, updatedAt: Date): Promise<void> {
     const row = this.specifications.get(id);
     if (row) this.specifications.set(id, { ...row, updatedAt });
-  }
-
-  async setLifecycleState(id: string, lifecycleState: SpecLifecycleState): Promise<void> {
-    const row = this.specifications.get(id);
-    if (row) this.specifications.set(id, { ...row, lifecycleState });
   }
 
   /** Monotonic instants so ordering is deterministic in tests. */
@@ -718,6 +744,23 @@ export class PrismaSpecificationStore implements SpecificationStore {
   ): Promise<SpecificationRecord> {
     // updateMany so the workspace filter participates in the WRITE (T456).
     const { count } = await this.db.specification.updateMany({ where: { workspaceId, id }, data });
+    if (count === 0) throw new NotFoundError(OPAQUE);
+    const updated = await this.findById(id);
+    /* c8 ignore next — the row was just written under this scope. */
+    if (updated === null) throw new NotFoundError(OPAQUE);
+    return updated;
+  }
+
+  async setLifecycleState(
+    workspaceId: string,
+    id: string,
+    state: SpecificationRecord['lifecycleState'],
+    actorId: string,
+  ): Promise<SpecificationRecord> {
+    const { count } = await this.db.specification.updateMany({
+      where: { workspaceId, id },
+      data: { lifecycleState: state, updatedById: actorId },
+    });
     if (count === 0) throw new NotFoundError(OPAQUE);
     const updated = await this.findById(id);
     /* c8 ignore next — the row was just written under this scope. */

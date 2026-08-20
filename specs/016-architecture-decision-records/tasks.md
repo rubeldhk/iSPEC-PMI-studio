@@ -40,23 +40,23 @@ and adds no design.*
 
 ### Model
 
-- [ ] T144 [P] Write failing unit tests for the ADR model — required `context`, `decision`, `consequences`; `UNIQUE (project_id, reference)` so two projects may each hold `ADR-0001`; `adr_status` defaulting to `proposed` — in `backend/tests/unit/decisions/adr-model.spec.ts`
-- [ ] T143 Define the `ArchitectureDecisionRecord` model and the `adr_specification_links` join table per `../_shared/schema.sql` in `backend/prisma/schema.prisma` (unit test: T144)
+- [X] T144 [P] Write failing unit tests for the ADR model — required `context`, `decision`, `consequences`; `UNIQUE (project_id, reference)` so two projects may each hold `ADR-0001`; `adr_status` defaulting to `proposed` — in `backend/tests/unit/decisions/adr-model.spec.ts`
+- [X] T143 Define the `ArchitectureDecisionRecord` model and the `adr_specification_links` join table per `../_shared/schema.sql` in `backend/prisma/schema.prisma` (unit test: T144)
 
 ### Service
 
-- [ ] T144a [P] Write failing unit tests for the ADR service — creation, status change `proposed → accepted → superseded`, a superseded record staying readable rather than removed, and linking/unlinking affected specifications — in `backend/tests/unit/decisions/decisions.service.spec.ts`
-- [ ] T143a Implement the ADR service with create, list, update, status change, and specification linking in `backend/src/modules/decisions/decisions.service.ts` (unit test: T144a)
+- [X] T144a [P] Write failing unit tests for the ADR service — creation, status change `proposed → accepted → superseded`, a superseded record staying readable rather than removed, and linking/unlinking affected specifications — in `backend/tests/unit/decisions/decisions.service.spec.ts`
+- [X] T143a Implement the ADR service with create, list, update, status change, and specification linking in `backend/src/modules/decisions/decisions.service.ts` (unit test: T144a)
 
 ### API
 
-- [ ] T144b [P] Write failing unit tests for the ADR controller with a mocked service, covering route wiring and cross-workspace access returning **not-found, never forbidden**, in `backend/tests/unit/decisions/decisions.controller.spec.ts`
-- [ ] T144c [P] Contract tests for the four ADR endpoints — `GET` and `POST /projects/{id}/decisions`, `PATCH /decisions/{id}`, `POST /decisions/{id}/links` — against `../_shared/contracts/platform-api.md` in `backend/tests/contract/decisions.spec.ts`
-- [ ] T143b Implement the ADR controller exposing those four endpoints in `backend/src/modules/decisions/decisions.controller.ts` (unit test: T144b; contract test: T144c)
+- [X] T144b [P] Write failing unit tests for the ADR controller with a mocked service, covering route wiring and cross-workspace access returning **not-found, never forbidden**, in `backend/tests/unit/decisions/decisions.controller.spec.ts`
+- [X] T144c [P] Contract tests for the four ADR endpoints — `GET` and `POST /projects/{id}/decisions`, `PATCH /decisions/{id}`, `POST /decisions/{id}/links` — against `../_shared/contracts/platform-api.md` in `backend/tests/contract/decisions.spec.ts`
+- [X] T143b Implement the ADR controller exposing those four endpoints in `backend/src/modules/decisions/decisions.controller.ts` (unit test: T144b; contract test: T144c)
 
 ### Validation
 
-- [ ] T143c Add quickstart scenario **V14 — Architecture Decision Records (FR-034)** to `specs/_shared/quickstart.md`: create an ADR against a project, move it `proposed → accepted → superseded`, link it to a specification, and confirm the superseded record is still readable
+- [X] T143c Add quickstart scenario **V14 — Architecture Decision Records (FR-034)** to `specs/_shared/quickstart.md`: create an ADR against a project, move it `proposed → accepted → superseded`, link it to a specification, and confirm the superseded record is still readable
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
@@ -65,10 +65,10 @@ and adds no design.*
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T221 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/016-architecture-decision-records/closure.md`
-- [ ] T222 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/016-architecture-decision-records/closure.md`
-- [ ] T223 Triage `specs/016-architecture-decision-records/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/016-architecture-decision-records/closure.md`
-- [ ] T224 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/016-architecture-decision-records/closure.md`
+- [X] T221 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/016-architecture-decision-records/closure.md`
+- [X] T222 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/016-architecture-decision-records/closure.md`
+- [X] T223 Triage `specs/016-architecture-decision-records/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/016-architecture-decision-records/closure.md`
+- [X] T224 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/016-architecture-decision-records/closure.md`
 
 ---
 

@@ -34,6 +34,8 @@ model Workspace {
   specificationVersions SpecificationVersion[]
   traceabilityLinks     TraceabilityLink[]
   decisionRecords       ArchitectureDecisionRecord[]
+  lifecycleTransitions  LifecycleTransition[]
+  validationFindings    ValidationFinding[]
 
   @@map("workspaces")
 }
@@ -229,10 +231,13 @@ model Specification {
   updatedAt        DateTime           @updatedAt
   updatedById      String
 
-  workspace      Workspace              @relation(fields: [workspaceId], references: [id])
-  project        Project                @relation(fields: [projectId], references: [id])
-  versions       SpecificationVersion[] @relation("SpecificationVersions")
-  currentVersion SpecificationVersion?  @relation("SpecificationCurrentVersion", fields: [currentVersionId], references: [id])
+  workspace            Workspace              @relation(fields: [workspaceId], references: [id])
+  project              Project                @relation(fields: [projectId], references: [id])
+  versions             SpecificationVersion[] @relation("SpecificationVersions")
+  currentVersion       SpecificationVersion?  @relation("SpecificationCurrentVersion", fields: [currentVersionId], references: [id])
+  lifecycleTransitions LifecycleTransition[]
+  validationFindings   ValidationFinding[]
+  adrLinks             AdrSpecificationLink[]
 
   @@index([workspaceId])
   // SC-009's 1-second p95 applies to listing views, and the list is filtered by
@@ -258,14 +263,73 @@ model SpecificationVersion {
   authoredById             String
   authoredAt               DateTime           @default(now())
 
-  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
-  specification Specification  @relation("SpecificationVersions", fields: [specificationId], references: [id])
-  currentOf     Specification? @relation("SpecificationCurrentVersion")
+  workspace          Workspace           @relation(fields: [workspaceId], references: [id])
+  specification      Specification       @relation("SpecificationVersions", fields: [specificationId], references: [id])
+  currentOf          Specification?      @relation("SpecificationCurrentVersion")
+  validationFindings ValidationFinding[]
 
   @@unique([specificationId, versionNumber])
   @@index([workspaceId])
   @@index([specificationId, versionNumber(sort: Desc)])
   @@map("specification_versions")
+}
+
+// ---------------------------------------------------------------- lifecycle
+//
+// T109 (EPIC-009) — who transitioned a specification, and when (FR-014).
+// Storing only the current state cannot satisfy FR-014; each move is its own
+// append-only row. The permitted set is enforced twice: `assertTransition` in
+// code (T099/T106) and the `lifecycle_permitted_transition` CHECK in the
+// migration — plus the `lifecycle_transitions_immutable` trigger, because
+// lifecycle history that can be edited is not history.
+
+model LifecycleTransition {
+  id              String             @id @default(uuid())
+  workspaceId     String
+  specificationId String
+  fromState       SpecLifecycleState
+  toState         SpecLifecycleState
+  actorId         String
+  occurredAt      DateTime           @default(now())
+
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
+  specification Specification @relation(fields: [specificationId], references: [id])
+
+  @@index([workspaceId])
+  @@index([specificationId, occurredAt(sort: Desc)])
+  @@map("lifecycle_transitions")
+}
+
+// ---------------------------------------------------------------- findings
+//
+// T120 (EPIC-009) — validation findings, bound to the VERSION validated
+// (FR-023). A finding without a location is malformed engine output and is
+// refused before storage (T121); the migration's CHECK backs that refusal.
+
+enum FindingSeverity {
+  info
+  warning
+  error
+}
+
+model ValidationFinding {
+  id                     String           @id @default(uuid())
+  workspaceId            String
+  specificationId        String
+  specificationVersionId String
+  // FR-023: must identify the part of the specification concerned.
+  location               String
+  severity               FindingSeverity
+  message                String
+  createdAt              DateTime         @default(now())
+
+  workspace            Workspace            @relation(fields: [workspaceId], references: [id])
+  specification        Specification        @relation(fields: [specificationId], references: [id])
+  specificationVersion SpecificationVersion @relation(fields: [specificationVersionId], references: [id])
+
+  @@index([workspaceId])
+  @@index([specificationVersionId])
+  @@map("validation_findings")
 }
 
 // ---------------------------------------------------------------- traceability
@@ -315,10 +379,9 @@ model TraceabilityLink {
 // three-value enum with no transition guards — deliberately unlike the
 // specification lifecycle. Superseding is a status, not a deletion.
 //
-// The many-to-many to specifications (`adr_specification_links`) arrives with
-// EPIC-008's `Specification` model — it cannot reference a table that does
-// not exist yet. Recorded here so its absence reads as sequenced, not
-// forgotten.
+// The many-to-many to specifications (`adr_specification_links`) waited for
+// EPIC-008's `Specification` model and landed with the integration — the
+// sequencing this comment used to record is complete.
 
 enum AdrStatus {
   proposed
@@ -340,13 +403,28 @@ model ArchitectureDecisionRecord {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  project   Project   @relation(fields: [projectId], references: [id])
+  workspace          Workspace              @relation(fields: [workspaceId], references: [id])
+  project            Project                @relation(fields: [projectId], references: [id])
+  specificationLinks AdrSpecificationLink[]
 
   @@unique([projectId, reference])
   @@index([workspaceId])
   @@index([projectId, status])
   @@map("architecture_decision_records")
+}
+
+// FR-034: decisions link to the specifications they affect. An explicit join
+// model rather than an implicit m2m so the composite key matches the design
+// DDL exactly and the link rows stay visible to the store ports.
+model AdrSpecificationLink {
+  adrId           String
+  specificationId String
+
+  adr           ArchitectureDecisionRecord @relation(fields: [adrId], references: [id])
+  specification Specification              @relation(fields: [specificationId], references: [id])
+
+  @@id([adrId, specificationId])
+  @@map("adr_specification_links")
 }
 
 // ---------------------------------------------------------------- jobs

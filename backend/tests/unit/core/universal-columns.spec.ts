@@ -34,7 +34,14 @@ const MIGRATIONS = resolve(here, '../../../prisma/migrations');
  * exception is asserted deliberately in `schema-constraints.spec.ts` so that a
  * future reader knows it was decided rather than forgotten.
  */
-const NOT_TENANT_SCOPED = new Set(['workspaces', 'engine_registrations', '_prisma_migrations']);
+const NOT_TENANT_SCOPED = new Set([
+  'workspaces',
+  'engine_registrations',
+  '_prisma_migrations',
+  // A pure join row (EPIC-016 T143): its tenancy derives from BOTH endpoints,
+  // each of which carries workspaceId — a third copy could only disagree.
+  'adr_specification_links',
+]);
 
 function migrationSql(): string {
   expect(existsSync(MIGRATIONS), `no migrations directory at ${MIGRATIONS}`).toBe(true);
@@ -68,11 +75,16 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // (EPIC-016 T143) arrived with the lifecycle wave. specifications +
     // specification_versions (EPIC-008 T077) joined when the two lines were
     // integrated — the case this list was already written to expect.
+    // lifecycle_transitions + validation_findings (EPIC-009 T109/T120) and
+    // adr_specification_links (EPIC-016 T143's deferred half) complete the
+    // lifecycle wave's schema.
     expect([...tables.keys()].sort()).toEqual([
+      'adr_specification_links',
       'architecture_decision_records',
       'audit_entries',
       'engine_registrations',
       'generation_jobs',
+      'lifecycle_transitions',
       'projects',
       'requirement_versions',
       'requirements',
@@ -80,6 +92,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'specifications',
       'traceability_links',
       'users',
+      'validation_findings',
       'workspaces',
     ]);
   });
@@ -113,6 +126,11 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // records, not bookkeeping about the row (EPIC-007 T064, EPIC-008 T077).
       requirement_versions: 'authoredAt',
       specification_versions: 'authoredAt',
+      // A transition *occurs* (FR-014) — its timestamp IS the history.
+      lifecycle_transitions: 'occurredAt',
+      // The join row records a relationship, not an event; neither the design
+      // DDL nor the model gives it a timestamp of its own (EPIC-016 T143).
+      adr_specification_links: 'adrId',
     };
 
     const missing = [...tables.entries()]

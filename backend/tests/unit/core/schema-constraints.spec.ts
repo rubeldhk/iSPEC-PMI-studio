@@ -57,10 +57,13 @@ describe('universal columns (T013)', () => {
     'RequirementVersion',
     'TraceabilityLink',
     'ArchitectureDecisionRecord',
-    // Specification + SpecificationVersion join this list when EPIC-008's
-    // schema commit lands — its branch carries that half; the model is not in
-    // this tree yet and listing it here would fail on a model that is
-    // deliberately still in flight.
+    // The deferred half arrived: Specification + SpecificationVersion with the
+    // EPIC-008 integration, LifecycleTransition + ValidationFinding with
+    // EPIC-009 T109/T120.
+    'Specification',
+    'SpecificationVersion',
+    'LifecycleTransition',
+    'ValidationFinding',
   ];
 
   it.each(tenantScoped)('%s carries workspaceId', (name) => {

@@ -207,7 +207,9 @@ describe('search · filtering and paging', () => {
     const { service: svc, store } = service();
     const id = await seed(store, { title: 'Payments A', contentRaw: 'x' });
     await seed(store, { title: 'Payments B', contentRaw: 'x' });
-    await store.setLifecycleState(id, 'approved');
+    // The interface form (T113): workspace-scoped, actor-stamped — the old
+    // two-argument test helper was absorbed by the real write path.
+    await store.setLifecycleState(WS, id, 'approved', 'u_search');
 
     const page = await svc.search(WS, { term: 'payments', lifecycleState: 'approved' });
     expect(page.rows.map((r) => r.title)).toEqual(['Payments A']);

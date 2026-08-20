@@ -29,51 +29,51 @@ Feature → requirement link mandatory, carried in this framing note.*
 
 *Catalog epic: Specification Management → **Traceability**. Absorbed from the former M-07.*
 
-- [ ] T077a [P] [US3] Unit tests asserting `TraceabilityLink` permits only the two Phase 1 edge types and rejects duplicates, in `backend/tests/unit/traceability/link-constraints.spec.ts`
-- [ ] T078 [US3] Define `TraceabilityLink` model with indexes on both traversal directions in `backend/prisma/schema.prisma` (unit test: T077a)
-- [ ] T081 [US3] Implement traceability link creation on successful generation in `backend/src/modules/traceability/link-writer.service.ts` (unit test: T073 — **defined in EPIC-008**)
+- [X] T077a [P] [US3] Unit tests asserting `TraceabilityLink` permits only the two Phase 1 edge types and rejects duplicates, in `backend/tests/unit/traceability/link-constraints.spec.ts`
+- [X] T078 [US3] Define `TraceabilityLink` model with indexes on both traversal directions in `backend/prisma/schema.prisma` (unit test: T077a)
+- [X] T081 [US3] Implement traceability link creation on successful generation in `backend/src/modules/traceability/link-writer.service.ts` (unit test: T073 — **defined in EPIC-008**)
 
 ## F-04.13 · Bidirectional traversal
 
 *Satisfies **FR-030**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T125 [P] [US7] Unit tests for forward traversal from a requirement to all derived artifacts in `backend/tests/unit/traceability/forward-trace.spec.ts`
-- [ ] T126 [P] [US7] Unit tests for reverse traversal from a task to originating requirements in `backend/tests/unit/traceability/reverse-trace.spec.ts`
-- [ ] T130 [US7] Implement forward and reverse traversal in `backend/src/modules/traceability/traceability.service.ts` (unit tests: T125, T126)
+- [X] T125 [P] [US7] Unit tests for forward traversal from a requirement to all derived artifacts in `backend/tests/unit/traceability/forward-trace.spec.ts`
+- [X] T126 [P] [US7] Unit tests for reverse traversal from a task to originating requirements in `backend/tests/unit/traceability/reverse-trace.spec.ts`
+- [X] T130 [US7] Implement forward and reverse traversal in `backend/src/modules/traceability/traceability.service.ts` (unit tests: T125, T126)
 
 ## F-04.14 · Retired-requirement flagging
 
 *Satisfies **FR-029**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T127 [P] [US7] Unit tests asserting links from retired requirements are returned and flagged, never omitted, in `backend/tests/unit/traceability/retired-links.spec.ts`
-- [ ] T131 [US7] Implement retired-requirement flagging on returned links in `backend/src/modules/traceability/retired-flag.ts` (unit test: T127)
+- [X] T127 [P] [US7] Unit tests asserting links from retired requirements are returned and flagged, never omitted, in `backend/tests/unit/traceability/retired-links.spec.ts`
+- [X] T131 [US7] Implement retired-requirement flagging on returned links in `backend/src/modules/traceability/retired-flag.ts` (unit test: T127)
 
 ## F-04.15 · Coverage reporting
 
 *Satisfies **FR-031**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T128 [P] [US7] Unit tests for coverage gap detection in `backend/tests/unit/traceability/coverage.spec.ts`
-- [ ] T132 [US7] Implement coverage gap reporting in `backend/src/modules/traceability/coverage.service.ts` (unit test: T128)
+- [X] T128 [P] [US7] Unit tests for coverage gap detection in `backend/tests/unit/traceability/coverage.spec.ts`
+- [X] T132 [US7] Implement coverage gap reporting in `backend/src/modules/traceability/coverage.service.ts` (unit test: T128)
 
 ## F-04.16 · Traceability API
 
 *Satisfies **FR-029**, **FR-030** and **FR-031**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T129 [P] [US7] Contract tests for trace and coverage endpoints in `backend/tests/contract/traceability.spec.ts`
-- [ ] T132a [P] [US7] Unit tests for trace and coverage endpoints with a mocked service in `backend/tests/unit/traceability/traceability.controller.spec.ts`
-- [ ] T133 [US7] Implement trace and coverage endpoints in `backend/src/modules/traceability/traceability.controller.ts` (unit test: T132a; contract test: T129)
+- [X] T129 [P] [US7] Contract tests for trace and coverage endpoints in `backend/tests/contract/traceability.spec.ts`
+- [X] T132a [P] [US7] Unit tests for trace and coverage endpoints with a mocked service in `backend/tests/unit/traceability/traceability.controller.spec.ts`
+- [X] T133 [US7] Implement trace and coverage endpoints in `backend/src/modules/traceability/traceability.controller.ts` (unit test: T132a; contract test: T129)
 
 ## F-04.17 · Traceability interface
 
 *Satisfies **FR-029**, **FR-030** and **FR-031**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T133a [P] [US7] Component unit tests asserting both traversal directions render and retired links are flagged in `frontend/tests/unit/pages/Traceability.spec.tsx`
-- [ ] T134 [P] [US7] Implement traceability and coverage views in `frontend/src/pages/Traceability.tsx` (unit test: T133a)
+- [X] T133a [P] [US7] Component unit tests asserting both traversal directions render and retired links are flagged in `frontend/tests/unit/pages/Traceability.spec.tsx`
+- [X] T134 [P] [US7] Implement traceability and coverage views in `frontend/src/pages/Traceability.tsx` (unit test: T133a)
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
@@ -82,7 +82,7 @@ Feature → requirement link mandatory, carried in this framing note.*
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T201 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/011-traceability/closure.md`
-- [ ] T202 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/011-traceability/closure.md`
-- [ ] T203 Triage `specs/011-traceability/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/011-traceability/closure.md`
-- [ ] T204 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/011-traceability/closure.md`
+- [X] T201 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/011-traceability/closure.md`
+- [X] T202 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/011-traceability/closure.md`
+- [X] T203 Triage `specs/011-traceability/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/011-traceability/closure.md`
+- [X] T204 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/011-traceability/closure.md`
