@@ -202,6 +202,21 @@ itself emits nothing — the worker records on its behalf, so the egress allow-l
 audit exists.**
 **Proves**: FR-033, SC-012
 
+### V14 — Architecture Decision Records (FR-034)
+
+*Added by EPIC-016 `T143c`. EPIC-014 `T153` executes `V1–V12 and V14` as the release gate.*
+
+1. Create an ADR against a project with title, context, decision, and consequences.
+2. Move it `proposed → accepted → superseded`.
+3. Link it to a specification it affects (`POST /decisions/{id}/links`).
+4. Read the superseded record.
+
+**Expected**: The ADR carries a per-project reference (a second project can hold its own
+`ADR-0001` without collision); a record missing context, decision, or consequences is refused
+naming every missing field; the superseded record is **still readable** with its links intact —
+status, never deletion. Cross-workspace access returns 404.
+**Proves**: FR-034
+
 ### V13 — Real engine smoke test (nightly, not per-commit)
 
 Requires AI provider credentials.

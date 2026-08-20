@@ -68,6 +68,35 @@ export interface RequirementFilters {
   sortDir?: string;
 }
 
+/** Forward trace: everything derived from a requirement (FR-030). */
+export interface ForwardTrace {
+  requirementId: string;
+  specifications: { specificationId: string; retired?: boolean; taskIds: string[] }[];
+}
+
+/** Reverse trace: a task back to its originating requirements (FR-030). */
+export interface ReverseTrace {
+  taskId: string;
+  specifications: {
+    specificationId: string;
+    requirements: { requirementId: string; retired: boolean }[];
+  }[];
+}
+
+export interface SpecificationTrace {
+  specificationId: string;
+  requirementIds: string[];
+  taskIds: string[];
+}
+
+/** Coverage gaps, derived from absence (FR-031). */
+export interface CoverageReport {
+  uncoveredRequirementIds: string[];
+  specificationsWithoutTasks: string[];
+  requirementCount: number;
+  specificationCount: number;
+}
+
 /** A registered engine, with what it can do (FR-019/FR-021 surface). */
 export interface Engine {
   name: string;
@@ -198,6 +227,24 @@ export class ApiClient {
 
   async listRequirementVersions(id: string): Promise<RequirementVersion[]> {
     return this.request('GET', `/requirements/${encodeURIComponent(id)}/versions`);
+  }
+
+  // ---- traceability (US7) ----
+
+  async getRequirementTrace(id: string): Promise<ForwardTrace> {
+    return this.request('GET', `/requirements/${encodeURIComponent(id)}/trace`);
+  }
+
+  async getTaskTrace(id: string): Promise<ReverseTrace> {
+    return this.request('GET', `/tasks/${encodeURIComponent(id)}/trace`);
+  }
+
+  async getSpecificationTrace(id: string): Promise<SpecificationTrace> {
+    return this.request('GET', `/specifications/${encodeURIComponent(id)}/trace`);
+  }
+
+  async getProjectCoverage(projectId: string): Promise<CoverageReport> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/coverage`);
   }
 
   // ---- engines (US8) ----

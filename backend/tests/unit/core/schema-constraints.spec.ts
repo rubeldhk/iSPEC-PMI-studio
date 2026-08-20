@@ -54,6 +54,8 @@ describe('universal columns (T013)', () => {
     'AuditEntry',
     'Requirement',
     'RequirementVersion',
+    'TraceabilityLink',
+    'ArchitectureDecisionRecord',
   ];
 
   it.each(tenantScoped)('%s carries workspaceId', (name) => {
