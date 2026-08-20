@@ -10,13 +10,14 @@
 import { Controller, Get, Inject, Optional, Param, Req } from '@nestjs/common';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
-import type { CoverageReport, CoverageService } from './coverage.service.js';
+// Value imports: these classes are the DI TOKENS the module provides. The
+// interfaces/types stay the declared shapes, so the controller still depends on
+// the narrow contract and not on the implementation (PC-1, DEF-001-005).
+import { CoverageService } from './coverage.service.js';
+import type { CoverageReport } from './coverage.service.js';
 import { flagRetiredLinks, type RequirementStatusSource } from './retired-flag.js';
-import type {
-  ForwardTrace,
-  SpecificationTrace,
-  TraceabilityService,
-} from './traceability.service.js';
+import { TraceabilityService } from './traceability.service.js';
+import type { ForwardTrace, SpecificationTrace } from './traceability.service.js';
 
 function requireAuth(ctx: WorkspaceContext | undefined | null): WorkspaceContext {
   if (!ctx?.workspaceId || !ctx.userId) throw new UnauthenticatedError('No valid session.');
@@ -49,8 +50,10 @@ export class AllActiveRequirementStatusSource implements RequirementStatusSource
 @Controller()
 export class TraceabilityController {
   constructor(
-    private readonly trace: TraceabilityService,
-    private readonly coverage: CoverageService,
+    // @Inject by token: esbuild/tsx emits no `design:paramtypes`, so a
+    // class-typed parameter resolves to undefined at runtime (DEF-001-005).
+    @Inject(TraceabilityService) private readonly trace: TraceabilityService,
+    @Inject(CoverageService) private readonly coverage: CoverageService,
     @Optional()
     @Inject(REQUIREMENT_STATUS_SOURCE)
     private readonly statuses: RequirementStatusSource = new AllActiveRequirementStatusSource(),

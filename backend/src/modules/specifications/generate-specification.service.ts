@@ -35,7 +35,12 @@ import type {
   RequirementType,
   SpecificationEngine,
 } from '@pmi/engine-contract';
-import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
+import {
+  ConflictError,
+  EngineUnavailableError,
+  NotFoundError,
+  ValidationFailedError,
+} from '../../core/errors.js';
 import { FAILURE_MESSAGES } from '../../core/failure-taxonomy.js';
 import { runWithLimits } from '../jobs/job-runner.service.js';
 import { applyTransition, InvalidJobTransitionError, type JobState } from '../jobs/job-state.machine.js';
@@ -111,8 +116,33 @@ export interface JobView {
 export interface JobStateUpdate {
   state: JobState;
   failureReason?: EngineFailureReason;
+  /** T839 — stamped once, when the run is claimed. */
+  startedAt?: Date;
   endedAt?: Date;
   resultRef?: string;
+}
+
+/**
+ * T839 — the job could not be claimed for this run.
+ *
+ * Raised when `queued → running` is refused: the job is already being run by
+ * another consumer, or it has already finished. This is NOT a generation
+ * outcome — no run happened, so there is no terminal state to report and
+ * nothing to name a failure reason for. The caller decides whether to look for
+ * different work or to stop.
+ */
+export class JobNotClaimableError extends Error {
+  readonly code = 'job_not_claimable' as const;
+  constructor(
+    readonly jobId: string,
+    readonly state: JobState,
+  ) {
+    super(
+      `Job "${jobId}" cannot be claimed for a run: it is "${state}", and only a queued job ` +
+        `can be started.`,
+    );
+    this.name = 'JobNotClaimableError';
+  }
 }
 
 /**
@@ -132,6 +162,21 @@ export interface GenerationJobLedger {
 /** Just enough of `JobsService`: creation, idempotency, enqueue. */
 export interface JobSubmitPort {
   submit(order: JobRequest): Promise<SubmitResult>;
+}
+
+/**
+ * T843 — the selection scope check (FR-002, SC-004).
+ *
+ * A narrow READ port rather than an import of the requirement register: the
+ * specification module must not depend on EPIC-007's service, for the same
+ * reason the register does not depend on this one.
+ *
+ * Returns the subset of `ids` that exist, belong to `projectId`, AND belong to
+ * `workspaceId` — one answer covering both scopes, so a caller cannot check one
+ * and forget the other.
+ */
+export interface RequirementSelectionPort {
+  findSelectable(workspaceId: string, projectId: string, ids: string[]): Promise<string[]>;
 }
 
 export interface GenerationJobApi {
@@ -156,6 +201,7 @@ const MAX_REQUIREMENTS_DEFAULT = 500;
 export interface GenerateSpecificationOptions {
   jobs?: JobSubmitPort;
   ledger?: GenerationJobLedger;
+  requirements?: RequirementSelectionPort;
   maxRequirements?: number;
   now?: () => Date;
   newCorrelationId?: () => string;
@@ -173,6 +219,7 @@ function stateFor(reason: EngineFailureReason): 'failed' | 'cancelled' | 'timed_
 export class GenerateSpecificationService implements GenerationJobApi {
   private readonly jobs: JobSubmitPort | undefined;
   private readonly ledger: GenerationJobLedger | undefined;
+  private readonly requirements: RequirementSelectionPort | undefined;
   private readonly maxRequirements: number;
   private readonly now: () => Date;
   private readonly correlate: () => string;
@@ -184,6 +231,7 @@ export class GenerateSpecificationService implements GenerationJobApi {
   ) {
     this.jobs = options.jobs;
     this.ledger = options.ledger;
+    this.requirements = options.requirements;
     this.maxRequirements = options.maxRequirements ?? MAX_REQUIREMENTS_DEFAULT;
     this.now = options.now ?? ((): Date => new Date());
     this.correlate = options.newCorrelationId ?? newCorrelationId;
@@ -219,9 +267,42 @@ export class GenerateSpecificationService implements GenerationJobApi {
       });
     }
 
+    // FR-002 / SC-004 — the one input this endpoint takes is scoped before it
+    // becomes a job. Runs BEFORE the engine lookup: a caller-fixable refusal
+    // should not depend on the deployment's engine state, and an invalid
+    // selection should not cost a registry round-trip.
+    if (!this.requirements) {
+      throw new Error('No requirement selection source is configured for generation.');
+    }
+    const selectable = new Set(
+      await this.requirements.findSelectable(ctx.workspaceId, projectId, selection),
+    );
+    const unavailable = selection.filter((id) => !selectable.has(id));
+    if (unavailable.length > 0) {
+      // ONE refusal for absent and for another tenant's row. A caller able to
+      // tell them apart has an oracle for "does this id exist somewhere else".
+      // The ids echoed back are the caller's own, so nothing is disclosed.
+      throw new ValidationFailedError('Specification cannot be generated.', {
+        fields: [{ field: 'requirementIds', reason: 'not found in this project' }],
+        unavailable,
+      });
+    }
+
     // FR-022 is decided here, not at the end: the job records WHICH engine it
     // will be run by, so a later registry change cannot rewrite history.
-    const { descriptor } = await this.engines.resolveForProject(projectId);
+    //
+    // US3 scenario 4 — a deployment with no engine, or a project selecting one
+    // that is not registered, is REFUSED BY NAME. Letting these escape produced
+    // `internal_error` / "An unexpected error occurred.", which is the generic
+    // error the scenario forbids.
+    let descriptor;
+    try {
+      ({ descriptor } = await this.engines.resolveForProject(projectId));
+    } catch {
+      throw new EngineUnavailableError(FAILURE_MESSAGES.engine_unavailable, {
+        reason: 'engine_unavailable',
+      });
+    }
     const submitted = await this.jobs.submit({
       workspaceId: ctx.workspaceId,
       projectId,
@@ -285,12 +366,25 @@ export class GenerateSpecificationService implements GenerationJobApi {
    * merely tested.
    */
   async run(order: GenerationOrder): Promise<GenerationOutcome> {
-    // E7 — pre-flight, before an engine is resolved or touched.
+    // Abandoned before anything began. `queued -> cancelled` is a permitted
+    // move and this is the ONLY refusal that can be made without claiming the
+    // job first, which is why it comes before the claim.
+    if (order.signal?.aborted) return this.terminal(order, 'cancelled');
+
+    // T839 / US3 scenario 2 — claim the job and stamp `startedAt` BEFORE any
+    // work, so a caller polling the job sees that it is running.
+    //
+    // The order below is forced by the state machine, not by preference:
+    // `queued -> failed` is not a permitted transition, so a job must be
+    // claimed before it can be failed for an empty or oversized selection.
+    // Rule E7 is still honoured in the way that matters — the ENGINE is not
+    // invoked, so no refusal becomes a billed run.
+    await this.claim(order.jobId);
+
     if (order.requirements.length === 0) return this.terminal(order, 'empty_selection');
     if (order.requirements.length > this.maxRequirements) {
       return this.terminal(order, 'input_too_large');
     }
-    if (order.signal?.aborted) return this.terminal(order, 'cancelled');
 
     let engine: SpecificationEngine;
     try {
@@ -371,11 +465,21 @@ export class GenerateSpecificationService implements GenerationJobApi {
         authoredById: order.requestedById,
       },
       links: linksFor(order.workspaceId, specificationId, order.requirements),
-      job: { id: order.jobId, state: 'succeeded' },
+      job: { id: order.jobId, state: 'succeeded', resultRef: specificationId },
     };
 
     try {
       const specification = await this.store.commitGeneration(commit);
+      // T845 — the read surface learns what the run produced, so a client can
+      // open it (contract job body `resultRef`, Quickstart V4 step 4). In a
+      // composed deployment the ledger and the store address the same
+      // `generation_jobs` row, so this repeats the value the commit already
+      // wrote; in the database-less posture it is the only writer.
+      await this.settle(order.jobId, {
+        state: 'succeeded',
+        endedAt: this.now(),
+        resultRef: specification.id,
+      });
       return { state: 'succeeded', specification };
     } catch {
       // The commit is all-or-nothing, so nothing survives this. The job is
@@ -395,7 +499,38 @@ export class GenerateSpecificationService implements GenerationJobApi {
   ): Promise<GenerationOutcome> {
     const state = stateFor(reason);
     await this.store.recordJobOutcome({ jobId: order.jobId, state, failureReason: reason });
+    await this.settle(order.jobId, { state, failureReason: reason, endedAt: this.now() });
     return { state, failureReason: reason };
+  }
+
+  /**
+   * Move the job to `running`, or refuse.
+   *
+   * Goes through `applyTransition` rather than writing the state directly: a
+   * second consumer claiming a job that is already running — or re-running one
+   * that has finished — is refused by the machine, not by a check someone has
+   * to remember to write. A run with no ledger configured is unclaimed by
+   * design; the ledger is a seam, not a dependency.
+   */
+  private async claim(jobId: string): Promise<void> {
+    if (!this.ledger) return;
+    const job = await this.ledger.findById(jobId);
+    if (!job) return;
+    if (job.state !== 'queued') throw new JobNotClaimableError(jobId, job.state);
+
+    const transition = applyTransition(job.state, 'running');
+    await this.ledger.updateState(jobId, { state: transition.state, startedAt: this.now() });
+  }
+
+  /** Record a terminal state on the ledger, when one is configured. */
+  private async settle(jobId: string, next: JobStateUpdate): Promise<void> {
+    if (!this.ledger) return;
+    const job = await this.ledger.findById(jobId);
+    if (!job) return;
+    // Validated by the machine, so an impossible terminal write fails here
+    // rather than silently producing a job whose history cannot have happened.
+    applyTransition(job.state, next.state, next.failureReason);
+    await this.ledger.updateState(jobId, next);
   }
 }
 
@@ -491,10 +626,87 @@ export class InMemoryGenerationJobLedger implements JobStore, GenerationJobLedge
       ...row,
       state: next.state,
       failureReason: next.failureReason ?? row.failureReason,
+      // Stamped once. A later transition carries no `startedAt`, so the moment
+      // the run actually began survives every subsequent write.
+      startedAt: next.startedAt ?? row.startedAt,
       endedAt: next.endedAt ?? row.endedAt,
       resultRef: next.resultRef ?? row.resultRef,
     };
     this.rows.set(id, updated);
     return updated;
+  }
+}
+
+// --------------------------------------------------- requirement selection
+
+export interface SelectableRequirement {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+}
+
+/**
+ * T843 — an in-memory selection source, for tests and database-less runs.
+ *
+ * Both scopes are applied in ONE filter. Checking the project and forgetting
+ * the workspace is the mistake this port exists to make impossible, and two
+ * separate predicates are how that mistake gets made.
+ */
+export class InMemoryRequirementSelection implements RequirementSelectionPort {
+  constructor(private readonly rows: SelectableRequirement[] = []) {}
+
+  async findSelectable(workspaceId: string, projectId: string, ids: string[]): Promise<string[]> {
+    const wanted = new Set(ids);
+    return this.rows
+      .filter((r) => wanted.has(r.id) && r.workspaceId === workspaceId && r.projectId === projectId)
+      .map((r) => r.id);
+  }
+}
+
+/** The subset of a Prisma delegate the selection source uses (T651 precedent). */
+export interface RequirementScopeDelegate {
+  findMany(args: { where: Record<string, unknown>; select: { id: true } }): Promise<{ id: string }[]>;
+}
+
+export class PrismaRequirementSelection implements RequirementSelectionPort {
+  constructor(private readonly requirement: RequirementScopeDelegate) {}
+
+  async findSelectable(workspaceId: string, projectId: string, ids: string[]): Promise<string[]> {
+    if (ids.length === 0) return [];
+    // Both scopes in the WHERE clause, so a row outside them is never returned
+    // and cannot be filtered wrongly afterwards.
+    const rows = await this.requirement.findMany({
+      where: { workspaceId, projectId, id: { in: ids } },
+      select: { id: true },
+    });
+    return rows.map((r) => r.id);
+  }
+}
+
+/**
+ * The narrow slice of a requirement store the scope check needs.
+ *
+ * `RequirementStore` (EPIC-007) satisfies this structurally, which is how the
+ * two modules meet at the composition root without either importing the other.
+ */
+export interface RequirementLookupPort {
+  findById(id: string): Promise<{ id: string; workspaceId: string; projectId: string } | null>;
+}
+
+/**
+ * T843 — the selection source a running deployment uses: it asks the live
+ * requirement register, rather than holding a copy that can drift from it.
+ */
+export class LookupRequirementSelection implements RequirementSelectionPort {
+  constructor(private readonly lookup: RequirementLookupPort) {}
+
+  async findSelectable(workspaceId: string, projectId: string, ids: string[]): Promise<string[]> {
+    const found = await Promise.all(ids.map(async (id) => this.lookup.findById(id)));
+    return found
+      .filter(
+        (r): r is { id: string; workspaceId: string; projectId: string } =>
+          r !== null && r.workspaceId === workspaceId && r.projectId === projectId,
+      )
+      .map((r) => r.id);
   }
 }

@@ -62,7 +62,7 @@ async function seed(
       targetId,
       relationship: 'generated_from' as const,
     })),
-    job: { id: `job_${id}`, state: 'succeeded' },
+    job: { id: `job_${id}`, state: 'succeeded', resultRef: id },
   });
   return id;
 }

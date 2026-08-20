@@ -22,6 +22,7 @@ import { JobsService } from '../../src/modules/jobs/jobs.service.js';
 import {
   GenerateSpecificationService,
   InMemoryGenerationJobLedger,
+  InMemoryRequirementSelection,
 } from '../../src/modules/specifications/generate-specification.service.js';
 import { SpecificationSearchService } from '../../src/modules/specifications/specification-search.service.js';
 import { SpecificationsController } from '../../src/modules/specifications/specifications.controller.js';
@@ -51,7 +52,17 @@ function controller(): SpecificationsController {
   const generation = new GenerateSpecificationService(
     { resolveForProject: async () => StubEngine.returning() },
     store,
-    { jobs: new JobsService(ledger), ledger },
+    {
+      jobs: new JobsService(ledger),
+      ledger,
+      // T843 — the selection is scoped before it becomes a job (FR-002). The
+      // contract's own examples select `req_1` and `req_2`, so the register
+      // this controller is pointed at holds exactly those.
+      requirements: new InMemoryRequirementSelection([
+        { id: 'req_1', workspaceId: CTX.workspaceId, projectId: PROJECT },
+        { id: 'req_2', workspaceId: CTX.workspaceId, projectId: PROJECT },
+      ]),
+    },
   );
   return new SpecificationsController(
     generation,

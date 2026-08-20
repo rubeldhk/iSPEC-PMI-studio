@@ -102,7 +102,13 @@ export interface GenerationCommit {
   specification: Omit<SpecificationRecord, 'createdAt' | 'updatedAt'>;
   version: Omit<SpecificationVersionRecord, 'authoredAt'>;
   links: SpecificationTraceLink[];
-  job: { id: string; state: 'succeeded' };
+  /**
+   * T845 — `resultRef` points the job at what it produced, which is what the
+   * contract's job body promises and Quickstart V4 step 4 ("open the resulting
+   * specification") depends on. It is written in the SAME transaction as the
+   * artifact, so a job can never claim a result that was rolled back.
+   */
+  job: { id: string; state: 'succeeded'; resultRef: string };
 }
 
 export interface JobOutcomeRecord {
@@ -644,7 +650,11 @@ export class PrismaSpecificationStore implements SpecificationStore {
       });
       await tx.generationJob.updateMany({
         where: { id: commit.job.id },
-        data: { state: commit.job.state, endedAt: new Date() },
+        data: {
+          state: commit.job.state,
+          resultRef: commit.job.resultRef,
+          endedAt: new Date(),
+        },
       });
       return specification;
     });

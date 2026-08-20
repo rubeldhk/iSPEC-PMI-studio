@@ -66,8 +66,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // first product-surface tables after the PMI-DOC-004 hold discharged.
     // traceability_links (EPIC-011 T078) and architecture_decision_records
     // (EPIC-016 T143) arrived with the lifecycle wave. specifications +
-    // specification_versions join when EPIC-008's migration commit lands —
-    // its branch carries that half.
+    // specification_versions (EPIC-008 T077) joined when the two lines were
+    // integrated — the case this list was already written to expect.
     expect([...tables.keys()].sort()).toEqual([
       'architecture_decision_records',
       'audit_entries',
@@ -76,6 +76,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'projects',
       'requirement_versions',
       'requirements',
+      'specification_versions',
+      'specifications',
       'traceability_links',
       'users',
       'workspaces',

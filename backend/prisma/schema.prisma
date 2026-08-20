@@ -24,14 +24,16 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users               User[]
-  projects            Project[]
-  generationJobs      GenerationJob[]
-  auditEntries        AuditEntry[]
-  requirements        Requirement[]
-  requirementVersions RequirementVersion[]
-  traceabilityLinks   TraceabilityLink[]
-  decisionRecords     ArchitectureDecisionRecord[]
+  users                 User[]
+  projects              Project[]
+  generationJobs        GenerationJob[]
+  auditEntries          AuditEntry[]
+  requirements          Requirement[]
+  requirementVersions   RequirementVersion[]
+  specifications        Specification[]
+  specificationVersions SpecificationVersion[]
+  traceabilityLinks     TraceabilityLink[]
+  decisionRecords       ArchitectureDecisionRecord[]
 
   @@map("workspaces")
 }
@@ -87,6 +89,7 @@ model Project {
   workspace       Workspace                    @relation(fields: [workspaceId], references: [id])
   generationJobs  GenerationJob[]
   requirements    Requirement[]
+  specifications  Specification[]
   decisionRecords ArchitectureDecisionRecord[]
 
   @@unique([workspaceId, name])
@@ -172,6 +175,97 @@ model RequirementVersion {
   @@index([workspaceId])
   @@index([requirementId, authoredAt(sort: Desc)])
   @@map("requirement_versions")
+}
+
+// ---------------------------------------------------------------- specifications
+//
+// T077 (EPIC-008) — the generated artifact and its immutable version history
+// (FR-010, FR-012, FR-013, FR-022, FR-032).
+//
+// Both raw and parsed engine output are stored (R-007). An AI agent's output is
+// prose against a template, not a guaranteed schema: storing only the parsed
+// form makes any future parser bug permanent data loss, because re-deriving it
+// would mean paying for the engine run again.
+//
+// `engineName` + `engineVersion` rather than the design DDL's `engine_id` FK —
+// the same T012a convention EPIC-007 recorded: schema.prisma is authoritative
+// at implementation, the design DDL is design-level. A name matches
+// `GenerationJob.engineName`, `Project.engineName`, and the registry, which
+// keys engines by name. Neither column is nullable, which is what makes FR-022
+// checkable rather than assumed (T082).
+//
+// The lifecycle STATE lives here because a specification always has one; the
+// transition rules and the `LifecycleTransition` record are EPIC-009 (T099,
+// T109). Storing a state is not the same as owning the machine that moves it.
+
+enum SpecLifecycleState {
+  draft
+  review
+  approved
+  baselined
+  implemented
+  archived
+}
+
+model Specification {
+  id               String             @id @default(uuid())
+  workspaceId      String
+  // FR-010: exactly one project. Singular by construction — a list here would
+  // make the requirement unenforceable at the schema.
+  projectId        String
+  title            String
+  lifecycleState   SpecLifecycleState @default(draft)
+  currentVersionId String?            @unique
+  // FR-022: engine identity, never null. Version identifies BOTH tool and
+  // model (R-001) — same engine, different model is a different version.
+  engineName       String
+  engineVersion    String
+  generatedAt      DateTime
+  // FR-032: set when a source requirement changes; NEVER auto-corrected, and
+  // never a trigger to regenerate. A human decides.
+  isOutOfDate      Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  createdById      String
+  updatedAt        DateTime           @updatedAt
+  updatedById      String
+
+  workspace      Workspace              @relation(fields: [workspaceId], references: [id])
+  project        Project                @relation(fields: [projectId], references: [id])
+  versions       SpecificationVersion[] @relation("SpecificationVersions")
+  currentVersion SpecificationVersion?  @relation("SpecificationCurrentVersion", fields: [currentVersionId], references: [id])
+
+  @@index([workspaceId])
+  // SC-009's 1-second p95 applies to listing views, and the list is filtered by
+  // lifecycle state — so the filtered read is indexed, not scanned.
+  @@index([projectId, lifecycleState])
+  @@map("specifications")
+}
+
+// FR-013 / SC-007: immutable snapshots, append-only. No update or delete path
+// exists in code; the database rejects both via the
+// `specification_versions_immutable` trigger — EPIC-009 T460, attached to
+// EPIC-004's shared `reject_mutation()`.
+model SpecificationVersion {
+  id                       String             @id @default(uuid())
+  workspaceId              String
+  specificationId          String
+  versionNumber            Int
+  // R-007: the engine's output VERBATIM, always kept.
+  contentRaw               String
+  contentParsed            Json
+  lifecycleStateAtCreation SpecLifecycleState
+  // FR-014: who, and when.
+  authoredById             String
+  authoredAt               DateTime           @default(now())
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
+  specification Specification  @relation("SpecificationVersions", fields: [specificationId], references: [id])
+  currentOf     Specification? @relation("SpecificationCurrentVersion")
+
+  @@unique([specificationId, versionNumber])
+  @@index([workspaceId])
+  @@index([specificationId, versionNumber(sort: Desc)])
+  @@map("specification_versions")
 }
 
 // ---------------------------------------------------------------- traceability
@@ -300,6 +394,11 @@ model GenerationJob {
   inputRefs      Json
   state          JobState          @default(queued)
   failureReason  JobFailureReason?
+  // T845 (EPIC-008) — the artifact a succeeded job produced. Null until there
+  // is one, and null forever on a job that failed, was cancelled, or timed out:
+  // there is nothing to point at (FR-027, SC-006). Written in the same
+  // transaction as the specification itself.
+  resultRef      String?
   startedAt      DateTime?
   endedAt        DateTime?
   createdAt      DateTime          @default(now())

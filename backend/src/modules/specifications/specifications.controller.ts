@@ -11,9 +11,15 @@
  * endpoints (EPIC-009 `T113`), and the validation endpoints (EPIC-009 `T123`).
  * They extend this same controller when their epics run.
  */
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
+// Value imports: these classes are the DI TOKENS the module provides. The
+// interfaces above them stay the declared types, so the controller still
+// depends on the narrow contract and not on the implementation (PC-1).
+import { GenerateSpecificationService } from './generate-specification.service.js';
+import { SpecificationSearchService } from './specification-search.service.js';
+import { SpecificationsReadService } from './specifications-read.service.js';
 import type { GenerationJobApi, JobView } from './generate-specification.service.js';
 import type {
   SpecificationSearchApi,
@@ -87,9 +93,16 @@ export interface SpecificationListQuery {
 @Controller()
 export class SpecificationsController {
   constructor(
-    private readonly generation: GenerationJobApi,
-    private readonly reads: SpecificationReadApi,
-    private readonly search: SpecificationSearchApi,
+    // @Inject by token, not by type — twice over. esbuild/tsx emits no
+    // design:paramtypes, AND these parameters are INTERFACES, which erase
+    // entirely: there is no class for Nest to find even in principle. The
+    // module's factory provider for this controller looked like the wiring
+    // but is never used — Nest builds controllers from `controllers:` by DI
+    // and ignores a same-token entry in `providers:`. Guarded by
+    // controller-composition.spec.ts (DEF-001-005).
+    @Inject(GenerateSpecificationService) private readonly generation: GenerationJobApi,
+    @Inject(SpecificationsReadService) private readonly reads: SpecificationReadApi,
+    @Inject(SpecificationSearchService) private readonly search: SpecificationSearchApi,
   ) {}
 
   // ------------------------------------------------------------------- jobs

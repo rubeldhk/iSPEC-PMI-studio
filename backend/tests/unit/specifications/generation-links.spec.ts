@@ -171,7 +171,14 @@ describe('one commit, or nothing (SC-002)', () => {
     expect(commit!.version.specificationId).toBe(outcome.specification!.id);
     expect(commit!.version.versionNumber).toBe(1);
     expect(commit!.links).toHaveLength(3);
-    expect(commit!.job).toEqual({ id: 'job_1', state: 'succeeded' });
+    // `resultRef` joined the commit with T845: the job is pointed at the
+    // artifact in the SAME transaction that creates it, so a job can never
+    // reference a specification that was rolled back.
+    expect(commit!.job).toEqual({
+      id: 'job_1',
+      state: 'succeeded',
+      resultRef: outcome.specification!.id,
+    });
   });
 
   it('stores nothing at all when the commit fails — no half-written specification', async () => {

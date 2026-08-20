@@ -4,15 +4,11 @@
  *
  * PC-1: a transport.
  */
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
-import type {
-  AdrRecord,
-  CreateAdrInput,
-  DecisionsService,
-  UpdateAdrInput,
-} from './decisions.service.js';
+import { DecisionsService } from './decisions.service.js';
+import type { AdrRecord, CreateAdrInput, UpdateAdrInput } from './decisions.service.js';
 
 function requireAuth(ctx: WorkspaceContext | undefined | null): WorkspaceContext {
   if (!ctx?.workspaceId || !ctx.userId) throw new UnauthenticatedError('No valid session.');
@@ -30,7 +26,11 @@ export interface LinkBody {
 
 @Controller()
 export class DecisionsController {
-  constructor(private readonly decisions: DecisionsService) {}
+  constructor(
+    // @Inject by token: esbuild/tsx emits no `design:paramtypes`, so a
+    // class-typed parameter resolves to undefined at runtime (DEF-001-005).
+    @Inject(DecisionsService) private readonly decisions: DecisionsService,
+  ) {}
 
   @Get('projects/:projectId/decisions')
   async list(

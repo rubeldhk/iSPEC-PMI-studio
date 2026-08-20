@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-008` | **Module**: M-04 | **Date**: 2026-08-07 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
+**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (PMI-DOC-004 v1.0, 2026-08-20 — D-10 discharged)
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([platform-spec](../_shared/platform-spec.md) · [system-design](../_shared/system-design.md) · [data-model](../_shared/data-model.md) · [schema](../_shared/schema.sql) · [platform-api](../_shared/contracts/platform-api.md)))
@@ -33,7 +33,7 @@ defended by cleanup jobs.
 | F-04.4 Engine provenance stamping | 2 | Engine name and version on every artifact, never null |
 | F-04.5 Generation job API | 3 | 202-with-job endpoints |
 | F-04.6 Specification read surface | 6 | List, detail, edit, plus specification search |
-| F-04.7 Out-of-date detection | 2 | Flag on source-requirement change, never regenerate |
+| F-04.7 Out-of-date detection | 2 (+2) | Flag on source-requirement change, never regenerate — `T828`/`T829` added by `T190` convergence |
 | Phase Z Epic closure | 4 | Per-epic gate (Constitution IV, V, VI, IX) |
 
 ## Technical Context
@@ -62,9 +62,9 @@ decides.
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — FR-010, FR-012, FR-029, FR-032 cite the Specification Manager and Traceability Model sections |
-| III | Epic → Feature → Task decomposition | PASS — 7 functions, 23 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 7 functions, 25 tasks (23 + 2 from `T190` convergence) |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `Phase Z` in [tasks.md](./tasks.md) |
-| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | PASS — 0 gaps; 9 implementation tasks, 9 paired tests |
+| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | PASS — 0 gaps; 10 implementation tasks, 10 paired tests (`T829` added with `T828`) |
 | VI | `specs/008-spec-authoring-generation/defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | PASS — via EPIC-014 F-11.2 |
 | VIII | Session labelled with the working Epic, or the first command | PASS — session labelled `speckit-constitution` (its first command); stated in the closing report |
@@ -117,9 +117,9 @@ plan made.
 
 ## Definition of done
 
-- [ ] 23 tasks complete, every unit test passing (Constitution V)
-- [ ] A failed, cancelled, or timed-out job leaves **no** artifact behind (`SC-006`)
-- [ ] Every generated specification links to at least one originating requirement (`SC-002`)
-- [ ] Quickstart **V4** (generate a specification) and **V5** (failure handling) pass
-- [ ] `/speckit-converge` reports no unbuilt work
-- [ ] `defects/` has no open records
+- [x] 25 tasks complete, every unit test passing (Constitution V) — see [closure.md](./closure.md)
+- [x] A failed, cancelled, or timed-out job leaves **no** artifact behind (`SC-006`)
+- [x] Every generated specification links to at least one originating requirement (`SC-002`)
+- [ ] Quickstart **V4** (generate a specification) and **V5** (failure handling) pass — composed runtime; deferred to EPIC-014 F-11.2
+- [x] `/speckit-converge` reports no unbuilt work in scope (`T190`; two tasks appended and completed)
+- [x] `defects/` has no open records — `DEF-008-001` **closed on deferral to EPIC-003** with an owner (D-6)

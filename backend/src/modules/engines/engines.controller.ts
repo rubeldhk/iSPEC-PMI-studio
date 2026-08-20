@@ -12,10 +12,12 @@
  * Per-project SELECTION is not here — the contract routes it through
  * `PATCH /projects/{id}` ("see Projects"), owned by EPIC-006's controller.
  */
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Inject, Req } from '@nestjs/common';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
-import type { EngineRegistryService } from './engine-registry.service.js';
+// Value import: the class is the DI TOKEN. A `import type` here erases at
+// compile time, and @Inject would reference nothing (DEF-001-005).
+import { EngineRegistryService } from './engine-registry.service.js';
 
 export interface EngineListing {
   name: string;
@@ -26,7 +28,12 @@ export interface EngineListing {
 
 @Controller('engines')
 export class EnginesController {
-  constructor(private readonly registry: EngineRegistryService) {}
+  constructor(
+    // @Inject by token, not by type: esbuild/tsx emits no design:paramtypes,
+    // so a class-typed parameter resolves to UNDEFINED and the first call
+    // throws. Guarded by controller-composition.spec.ts (DEF-001-005).
+    @Inject(EngineRegistryService) private readonly registry: EngineRegistryService,
+  ) {}
 
   @Get()
   async list(@Req() ctx: WorkspaceContext | undefined): Promise<EngineListing[]> {
