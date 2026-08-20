@@ -41,6 +41,31 @@ export function extractImageDigest(text) {
 }
 
 /** One transcript line per step. Deterministic, so the test can assert it. */
+/**
+ * T698 / DEF-028-013 — the operator-facing half of a failure.
+ *
+ * `agentFail` and `engineFail` carry a `diagnostics` field holding the agent's
+ * stderr, and the runner printed only `reason: message`. So every failing run
+ * said WHAT failed and never WHY, and three separate causes in one day —
+ * an unreadable credential, a retired model, a read-only HOME — each had to be
+ * reproduced by hand against the image to be named.
+ *
+ * Redacted, because stderr carries whatever the command line and environment
+ * held, which on this adapter includes a provider token (PC-3). Printed to the
+ * CONSOLE and deliberately never written to the transcript: the transcript is
+ * committed as evidence, so a redaction bug there is a credential in git
+ * history, while the same bug on a terminal is a line that scrolls away. Only
+ * one of those is recoverable.
+ */
+export function redactDiagnostics(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\bsk-[A-Za-z0-9_-]{8,}/g, 'sk-[redacted]')
+    .replace(/\bBearer\s+[A-Za-z0-9._-]{8,}/gi, 'Bearer [redacted]')
+    .replace(/\b(AI_PROVIDER_TOKEN|DATABASE_URL|SESSION_SECRET|JWT_SECRET)\s*=\s*\S+/gi, '$1=[redacted]')
+    .replace(/\b(password|token|secret|apikey|api_key)\s*[=:]\s*\S+/gi, '$1=[redacted]');
+}
+
 export function formatStep(step, outcome, detail) {
   const mark = outcome === 'ok' ? 'PASS' : outcome === 'skip' ? 'SKIP' : 'FAIL';
   return detail ? `[${mark}] ${step} — ${detail}` : `[${mark}] ${step}`;
@@ -157,6 +182,13 @@ export async function runV6({ environment, agent, engine, now, log = () => {} })
       result.ok ? 'ok' : 'fail',
       result.ok ? `produced "${result.value.title}"` : `${result.failure.reason}: ${result.failure.message}`,
     );
+
+    // T698 — the diagnostics go to the operator, never to the committed transcript.
+    if (!result.ok) {
+      const why = redactDiagnostics(result.failure.diagnostics);
+      console.log(why ? ['', '  diagnostics (redacted):', why, ''].join('\n') : '');
+      if (!why) console.log('  no diagnostics were carried with this failure.');
+    }
 
     outcome = result.ok && digest ? 'PASSED' : 'FAILED';
   } catch (error) {

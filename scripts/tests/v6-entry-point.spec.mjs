@@ -13,7 +13,13 @@
  * container during `pnpm test:unit`.
  */
 import { describe, expect, it } from 'vitest';
-import { isDirectInvocation, V6_INPUT, V6_STEPS } from '../v6-real-run.mjs';
+import {
+  formatTranscript,
+  isDirectInvocation,
+  redactDiagnostics,
+  V6_INPUT,
+  V6_STEPS,
+} from '../v6-real-run.mjs';
 
 const BACKSLASH = String.fromCharCode(92);
 
@@ -117,5 +123,45 @@ describe('T672 · the transcript reports only what happened (DEF-028-010)', () =
     const { provenBy } = await import('../v6-real-run.mjs');
     const text = provenBy(['[FAIL] start_container — network missing']).join('\n');
     expect(text).toContain('does **not** prove a container started');
+  });
+});
+
+describe('T698 · the failing run says WHY (DEF-028-013)', () => {
+  it('redacts a credential out of diagnostics', () => {
+    // The agent's stderr carries whatever the command line and environment held,
+    // which on this adapter includes a provider token. PC-3.
+    const raw = 'AI_PROVIDER_TOKEN=sk-ant-api03-abcdefghijklmnop failed to reach github.com';
+    const out = redactDiagnostics(raw);
+    expect(out).not.toContain('sk-ant-api03-abcdefghijklmnop');
+    expect(out).toContain('[redacted]');
+    // The useful half survives — a redaction that removed the cause too would
+    // leave the operator exactly where they started.
+    expect(out).toContain('github.com');
+  });
+
+  it('redacts a bare sk- key anywhere in the text', () => {
+    expect(redactDiagnostics('Error: key sk-ant-api03-zzzzzzzzzzzz rejected')).not.toContain(
+      'sk-ant-api03-zzzzzzzzzzzz',
+    );
+  });
+
+  it('returns nothing for an absent diagnostic, rather than the string "undefined"', () => {
+    expect(redactDiagnostics(undefined)).toBe('');
+    expect(redactDiagnostics('')).toBe('');
+  });
+
+  it('keeps diagnostics OUT of the transcript, which is committed', () => {
+    // The transcript is committed to the repository as T646b's evidence. Console
+    // output is operator-facing and ephemeral; a redaction bug in the first is a
+    // credential in git history, and in the second it is a line in a terminal.
+    // Only one of those is recoverable.
+    const text = formatTranscript({
+      lines: ['[FAIL] generate_specification — engine_error: The engine ran and failed.'],
+      digest: 'sha256:abc',
+      startedAt: '2026-08-19T00:00:00.000Z',
+      outcome: 'FAILED',
+    });
+    expect(text).not.toContain('AI_PROVIDER_TOKEN');
+    expect(text).not.toMatch(/sk-[A-Za-z0-9_-]{8,}/);
   });
 });

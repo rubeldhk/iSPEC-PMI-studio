@@ -14,7 +14,7 @@
  * Cheap to check, and the failure mode is silent: two lines that each look
  * correct on their own.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { enumerateEpics } from './derive';
@@ -39,9 +39,10 @@ function allTaskLines(): TaskLine[] {
   return found;
 }
 
+const EPICS = enumerateEpics();
 const TASKS = allTaskLines();
 
-describe('G-26-15 · task identifiers are unique across the corpus (DEF-028-007)', () => {
+describe('G-26-15 · task identifiers are unique across the corpus (DEF-028-014)', () => {
   it('reads a substantial number of tasks, or this check proves nothing', () => {
     // Anti-vacuity: a regex that silently matched nothing would make the
     // assertion below pass over an empty list forever.
@@ -76,5 +77,40 @@ describe('G-26-15 · task identifiers are unique across the corpus (DEF-028-007)
     ];
     const ids = sample.map((task) => task.id);
     expect(new Set(ids).size, 'the duplicate detection keys on something other than the id').toBe(1);
+  });
+});
+
+describe('G-26-15 · defect identifiers are unique within their Epic (DEF-028-014)', () => {
+  // The same fault as the duplicate task id, and worse: on 2026-08-19 four new
+  // defect records were filed as DEF-028-004 … 007 when all four already
+  // existed. A reference like `DEF-028-005` then resolved to two different
+  // defects — one about a missing entry point, one about a model never
+  // requested — and those references live in source comments, task lines and
+  // test headers, not just in the folder.
+  //
+  // Filed under G-26-15 with the task ids because it is one rule: an identifier
+  // names one thing.
+  const records = EPICS.flatMap((epic) => {
+    const dir = join('specs', epic.directory, 'defects');
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir)
+      .filter((name) => /^DEF-\d{3}-\d{3}/.test(name))
+      .map((name) => ({ epic: epic.id, file: name, id: name.slice(0, 11) }));
+  });
+
+  it('finds defect records to check, or this proves nothing', () => {
+    expect(records.length, 'no defect records were read').toBeGreaterThan(10);
+  });
+
+  it('never files two records under one identifier', () => {
+    const seen = new Map<string, string[]>();
+    for (const record of records) {
+      seen.set(record.id, [...(seen.get(record.id) ?? []), record.file]);
+    }
+    const duplicated = [...seen.entries()].filter(([, files]) => files.length > 1);
+    expect(
+      duplicated.map(([id]) => id),
+      duplicated.map(([id, files]) => `${id} filed ${files.length}× — ${files.join(' | ')}`).join('\n'),
+    ).toEqual([]);
   });
 });

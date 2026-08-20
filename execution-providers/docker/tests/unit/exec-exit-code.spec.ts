@@ -1,5 +1,5 @@
 /**
- * T692 — an unknown exit status is not success (`DEF-028-004`).
+ * T692 — an unknown exit status is not success (`DEF-028-011`).
  *
  * `exec` read the status as `ExitCode ?? 0`. Docker reports `ExitCode: null`
  * while an exec has not finished, so the default turned **unknown** into
@@ -58,7 +58,7 @@ describe('T692 · an unknown status is refused, never defaulted to success', () 
     } catch (error) {
       message = error instanceof Error ? error.message : String(error);
     }
-    expect(message).toContain('DEF-028-004');
+    expect(message).toContain('DEF-028-011');
   });
 
   it('does not swallow a malformed response into a status', () => {

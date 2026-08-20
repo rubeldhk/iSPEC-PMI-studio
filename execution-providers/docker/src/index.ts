@@ -524,7 +524,7 @@ export function unixSocketDockerApi(socketPathArg?: string): DockerEngineApi {
 }
 
 /**
- * The exit status of a finished exec — or a refusal (`DEF-028-004`, `T692`).
+ * The exit status of a finished exec — or a refusal (`DEF-028-011`, `T692`).
  *
  * This was `ExitCode ?? 0`. Docker reports `ExitCode: null` while an exec has
  * not finished, so the default answered **unknown** with **succeeded** — and on
@@ -545,7 +545,7 @@ export function parseExecExitCode(inspectText: string): number {
   if (typeof code !== 'number') {
     throw new Error(
       'Docker reported no exit status for this exec — it has not finished, or the response ' +
-        'omitted one. Refusing to report an unknown status as success (DEF-028-004).',
+        'omitted one. Refusing to report an unknown status as success (DEF-028-011).',
     );
   }
   return code;

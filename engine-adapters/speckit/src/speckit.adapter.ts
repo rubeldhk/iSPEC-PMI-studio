@@ -128,6 +128,15 @@ class StepFailure extends Error {
     readonly step: InvocationStep,
     readonly reason: EngineFailureReason,
     readonly detail: string,
+    /**
+     * T698 / DEF-028-013 — the agent's stderr, when it had any.
+     *
+     * Dropped before this: the engine reported `step=agent_run` and nothing
+     * else, so three separate causes in one day each had to be reproduced by
+     * hand against the image because the one field that knew the answer was
+     * being discarded at the mapping point below.
+     */
+    readonly diagnostics?: string,
   ) {
     super(`${step}: ${detail}`);
     this.name = 'StepFailure';
@@ -336,7 +345,7 @@ export class SpecKitEngine implements SpecificationEngine {
           ? 'engine_unavailable'
           : 'engine_error';
 
-    throw new StepFailure('agent_run', engineReason, result.failure.message);
+    throw new StepFailure('agent_run', engineReason, result.failure.message, result.failure.diagnostics);
   }
 
   // ------------------------------------------------------------------ plumbing
@@ -450,7 +459,12 @@ export class SpecKitEngine implements SpecificationEngine {
       return engineFail<T>('cancelled', 'Generation was cancelled.');
     }
     if (error instanceof StepFailure) {
-      return engineFail<T>(error.reason, FAILURE_MESSAGE[error.reason], `step=${error.step}`);
+      // Redacted: the agent's stderr carries whatever the command line and
+      // environment held, which includes a provider token (PC-3).
+      const why = [`step=${error.step}`, error.detail, error.diagnostics]
+        .filter((part) => Boolean(part))
+        .join('\n');
+      return engineFail<T>(error.reason, FAILURE_MESSAGE[error.reason], redact(why));
     }
     return engineFail<T>('engine_error', FAILURE_MESSAGE.engine_error, redact(error));
   }

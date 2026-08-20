@@ -1,6 +1,6 @@
 # V6 — real container run transcript
 
-**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-19T23:06:09.666Z
+**Task**: `T646b` · **Outcome**: FAILED · **Started**: 2026-08-20T00:00:28.555Z
 
 **Image digest**: `sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f`
 

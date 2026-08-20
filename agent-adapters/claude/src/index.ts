@@ -73,7 +73,7 @@ export interface ClaudeAgentOptions {
  * rather than being hunted through the adapter.
  */
 export function invocationFor(command: string, model: string = CLAUDE_DESCRIPTOR.model): string[] {
-  // T693 / DEF-028-004 — bind the credential the CLI actually reads.
+  // T693 / DEF-028-011 — bind the credential the CLI actually reads.
   //
   // The sandbox sets exactly `AI_PROVIDER_TOKEN` and `PMI_CORRELATION_ID`
   // (`buildSandboxEnvironment`, `sandbox.json` allowedKeys). Claude Code reads
@@ -94,7 +94,7 @@ export function invocationFor(command: string, model: string = CLAUDE_DESCRIPTOR
   //   · `command` carries customer text and is passed POSITIONALLY, referenced
   //     as "$1". Interpolating it into the script would make a quote in a
   //     project name into a shell command.
-  // T694 / DEF-028-005 — request the model the descriptor names.
+  // T694 / DEF-028-012 — request the model the descriptor names.
   //
   // Without `--model` the CLI used its own pinned default, `claude-sonnet-4-
   // 20250514`, which the API now answers with 404. The retired default is the
@@ -110,7 +110,7 @@ export function invocationFor(command: string, model: string = CLAUDE_DESCRIPTOR
   return [
     'sh',
     '-c',
-    // T696 / DEF-028-005 — the tool grant, at the scope the project owner set on
+    // T696 / DEF-028-012 — the tool grant, at the scope the project owner set on
     // 2026-08-19 and no wider.
     //
     // Headless Claude Code declines Bash by default, so the agent could not run
@@ -124,7 +124,7 @@ export function invocationFor(command: string, model: string = CLAUDE_DESCRIPTOR
     // contained by `ADR-0002` — frozen egress, resource limits, an ephemeral
     // workspace — and the containment is what makes a NARROW grant reasonable
     // rather than what makes a broad one safe.
-    // T697 / DEF-028-006 — a writable HOME.
+    // T697 / DEF-028-013 — a writable HOME.
     //
     // The sandbox is `ReadonlyRootfs: true` with a tmpfs on the workspace, so
     // `HOME=/home/engine` cannot be written. Claude Code writes `~/.claude.json`

@@ -191,3 +191,62 @@ describe('T558 · the agent failure taxonomy maps onto the engine taxonomy', () 
     if (!r.ok) expect(r.failure.reason).toBe(engineReason);
   });
 });
+
+describe('T698 · a failing agent says WHY, not just where (DEF-028-013)', () => {
+  /** An agent that fails the way the real one did, carrying stderr. */
+  const failingAgent = (diagnostics?: string): AgentGateway => ({
+    descriptor: {
+      name: 'fake', provider: 'fake', model: 'fake-1', executionType: 'headless',
+      capabilities: ['generate'], contextLimitTokens: 1000, toolCapabilities: [],
+      supportsMcp: false, repositoryCapabilities: [], securityClassification: 'internal',
+      supportsUnattended: true, specKitIntegrationName: 'fake',
+    } as never,
+    getCapabilities() { return this.descriptor; },
+    healthCheck: async () => ({ ok: true, value: { reachable: true } }) as never,
+    execute: async () =>
+      ({
+        ok: false,
+        failure: diagnostics
+          ? { reason: 'agent_error', message: 'The agent exited 1.', diagnostics }
+          : { reason: 'agent_error', message: 'The agent exited 1.' },
+      }) as never,
+  });
+
+  it('carries the agent stderr into the engine failure', async () => {
+    // Before this, the engine reported `step=agent_run` and nothing else. Three
+    // separate causes in one day — an unreadable credential, a retired model, a
+    // read-only HOME — each had to be reproduced by hand against the image
+    // because the one field that knew the answer was being discarded here.
+    const result = await engine(failingAgent('EROFS: read-only file system')).generateSpecification(
+      { projectName: 'Apollo', requirements: [{ id: 'FR-1', description: 'x', type: 'functional', priority: 'p1' }] } as never,
+      { correlationId: '00000000-0000-4000-8000-000000000000', timeoutMs: 5000, signal: new AbortController().signal } as never,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failure.diagnostics).toContain('step=agent_run');
+    expect(result.failure.diagnostics).toContain('EROFS: read-only file system');
+  });
+
+  it('redacts a credential out of what it carries', async () => {
+    const result = await engine(
+      failingAgent('AI_PROVIDER_TOKEN=sk-ant-api03-abcdefghijkl rejected'),
+    ).generateSpecification(
+      { projectName: 'Apollo', requirements: [{ id: 'FR-1', description: 'x', type: 'functional', priority: 'p1' }] } as never,
+      { correlationId: '00000000-0000-4000-8000-000000000000', timeoutMs: 5000, signal: new AbortController().signal } as never,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failure.diagnostics).not.toContain('sk-ant-api03-abcdefghijkl');
+    expect(result.failure.diagnostics).toContain('[redacted]');
+  });
+
+  it('still names the step when the agent carried no stderr', async () => {
+    const result = await engine(failingAgent()).generateSpecification(
+      { projectName: 'Apollo', requirements: [{ id: 'FR-1', description: 'x', type: 'functional', priority: 'p1' }] } as never,
+      { correlationId: '00000000-0000-4000-8000-000000000000', timeoutMs: 5000, signal: new AbortController().signal } as never,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failure.diagnostics).toContain('step=agent_run');
+  });
+});

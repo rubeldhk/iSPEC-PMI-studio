@@ -68,3 +68,37 @@ would want anyway. Either answer changes what `ADR-0002` promises, so it is the 
   than inferring it from the difference between two environments
 - `T699` — settle whether the scaffold is pre-baked into the image or granted an earlier network
   posture, once `T698` names the cause
+
+## `T698` outcome — the chain now carries what it legitimately can
+
+Diagnostics were being dropped at **two** links, both now fixed:
+
+- `runAgent` threw `StepFailure('agent_run', reason, message)` and discarded
+  `result.failure.diagnostics`, so the agent's stderr never reached the engine.
+- The engine's mapping point built its diagnostics as `step=${error.step}` alone, discarding the
+  detail as well. Every failing run said *what* failed and never *why* — which is why three separate
+  causes in one day each had to be reproduced by hand against the image.
+
+Both now propagate, redacted, and the runner prints them to the **console only**, never to the
+committed transcript: a redaction bug in a committed file is a credential in git history, while the
+same bug on a terminal is a line that scrolls away.
+
+**And the chain stops there, correctly.** The failing run now reports:
+
+```
+step=agent_run
+The agent exited 1.
+```
+
+The reason is not there because **the Claude CLI writes its errors to stdout, not stderr** —
+measured: `stderr bytes=0` in every probe, with `API Error: 404 …` on stdout. The adapter carries
+stderr and deliberately never carries stdout, because stdout is model output (PC-3, `FR-AGT-012`).
+
+So the last hop is closed by a privacy rule rather than by a defect, and widening it would mean
+routing model output into a diagnostic — the exact thing `DEF-028-002` was raised to stop. `T698` is
+complete: it isolated the failure as far as the rule permits and named why it stops.
+
+**What that leaves.** The same chain, under identical constraints but with open networking, exits 0
+and produces a specification; under `GENERATION_EGRESS_PROFILE` it exits 1. The egress hypothesis is
+now the only surviving explanation, and `T699`'s pre-baked scaffold tests it directly: if the
+scaffold needs no network, a run that still fails proves the hypothesis wrong.

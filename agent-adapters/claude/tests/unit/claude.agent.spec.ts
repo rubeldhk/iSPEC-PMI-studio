@@ -82,7 +82,7 @@ describe('T557 · the descriptor (FR-AGT-002)', () => {
 
 describe('T557 · the invocation', () => {
   it('runs the command headlessly through `claude -p`', () => {
-    // T693/DEF-028-004 — the CLI is still driven headlessly with `-p`; what
+    // T693/DEF-028-011 — the CLI is still driven headlessly with `-p`; what
     // changed is that the credential it reads is bound first.
     const argv = invocationFor('/speckit-specify');
     expect(argv[2] ?? '').toMatch(/claude --model "\$1".*-p "\$2"/);
@@ -90,7 +90,7 @@ describe('T557 · the invocation', () => {
   });
 
   it('requests the model the descriptor names (T694)', () => {
-    // DEF-028-005. The descriptor advertised `claude-opus-5` and the invocation
+    // DEF-028-012. The descriptor advertised `claude-opus-5` and the invocation
     // never passed `--model`, so the CLI used its own pinned default —
     // `claude-sonnet-4-20250514`, long retired, which the API answers with 404.
     //
@@ -121,7 +121,7 @@ describe('T557 · the invocation', () => {
   });
 
   it('grants exactly Bash and Write, and nothing else (T696)', () => {
-    // DEF-028-005. Headless Claude Code declines Bash by default, so the agent
+    // DEF-028-012. Headless Claude Code declines Bash by default, so the agent
     // could not run Spec Kit's scripts and could not write spec.md — the engine
     // read back an empty workspace and reported `empty_output`, three steps from
     // the cause.
@@ -132,7 +132,7 @@ describe('T557 · the invocation', () => {
   });
 
   it('points HOME at the working directory, the one writable path (T697)', () => {
-    // DEF-028-006. The sandbox is `ReadonlyRootfs: true` with a tmpfs on
+    // DEF-028-013. The sandbox is `ReadonlyRootfs: true` with a tmpfs on
     // /workspace, so `HOME=/home/engine` cannot be written. Claude Code writes
     // `~/.claude.json` on startup and threw:
     //
@@ -162,7 +162,7 @@ describe('T557 · the invocation', () => {
   it('binds ANTHROPIC_API_KEY from the token the sandbox already holds (T693)', () => {
     // The sandbox sets AI_PROVIDER_TOKEN and nothing else; Claude Code reads
     // ANTHROPIC_API_KEY. Nothing mapped between them, so the CLI exited 1 with
-    // "Invalid API key" on every real run (DEF-028-004).
+    // "Invalid API key" on every real run (DEF-028-011).
     //
     // The rename happens HERE, in the vendor-specific adapter, and not in
     // `buildSandboxEnvironment` — a provider-neutral sandbox that knows an
