@@ -27,11 +27,14 @@ filter rather than a boundary, it passes every unit test and leaks in production
 
 ## Scope
 
-| Function | Tasks | What it delivers |
-|---|---|---|
-| F-02.5 Artifact access control | 15 | Grants, enforcement, hiding, inheritance, last-editor guarantee, snapshots, access API, integration tests |
-| F-024.UI Interface | 2 | Access grant control |
-| F-024.Z Epic closure | 4 | Per-epic gate |
+| Function | What it delivers |
+|---|---|
+| F-02.5 Artifact access control | Grants, enforcement, hiding, inheritance, last-editor guarantee, snapshots, access API, integration tests |
+| F-024.6 Reviewer visibility uses current grants | Open-time evaluation, separated from the run snapshot (`FR-028a`) |
+| F-024.UI Interface | Access grant control |
+| F-024.Z Epic closure | Per-epic gate |
+
+Task counts live in [tasks.md](./tasks.md) and are not restated here (`T686`, PP-002).
 
 ## Technical Context
 
@@ -62,9 +65,9 @@ check-then-revoke sequence races past it.
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | PASS — `FR-021`–`FR-028` cite SRS 11 Security (RBAC, Authorization, Audit_Log) and the Security & Governance module |
-| III | Epic → Feature → Task decomposition | PASS — 2 functions, 21 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 4 sections, listed in the Scope table; tasks counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002) |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `F-024.Z` in [tasks.md](./tasks.md) |
-| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | PASS — 0 gaps after the 2026-08-05 remediation |
+| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` findings **C1** and **C2** (2026-08-19) found `T374` asserting `FR-025`'s pre-clarification single-source case and `FR-026` with no asserting test at all. Closed by the `T374` rewrite and `T826` |
 | VI | `specs/024-artifact-access-control/defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | PASS — via EPIC-014 F-11.2 |
 | VIII | Session labelled with the working Epic, or the first command | PASS — session labelled `speckit-constitution` (its first command); stated in the closing report |
@@ -160,7 +163,7 @@ exists to hold once.
 
 ## Definition of done
 
-- [ ] 21 tasks complete, every unit test passing (Constitution V)
+- [ ] Every task in [tasks.md](./tasks.md) complete, every unit test passing (Constitution V)
 - [ ] `T427` green against a **real** PostgreSQL — an ungranted artifact is absent, not forbidden
 - [ ] `T428` green — the last-editor invariant holds under concurrent revocation
 - [ ] Quickstart **V02-7** passes

@@ -43,7 +43,7 @@
 ## Clarification Coverage
 
 - [x] Clarifications section present with a dated session
-- [x] Every accepted answer recorded exactly once (8 answers, 8 bullets across 2 sessions: 5 on 2026-08-02, 3 on 2026-08-08)
+- [x] Every accepted answer recorded exactly once (13 answers, 13 bullets across 3 sessions: 5 on 2026-08-02, 3 on 2026-08-08, 5 on 2026-08-19)
 - [x] No superseded or contradictory text left behind (Outstanding Clarifications section removed)
 
 ## Validation History
@@ -53,6 +53,7 @@
 | 1 | 2026-08-02 | 4 fails | See below |
 | 2 | 2026-08-02 | 22/23 pass | 1 item deliberately left unchecked |
 | 3 | 2026-08-02 | 25/26 pass | Re-validated after `/speckit-clarify`; no marker toggled, 3 Clarification Coverage items added |
+| 4 | 2026-08-19 | 25/26 pass | Re-validated after the third `/speckit-clarify` session; no marker toggled. The five new answers strengthened items already passing rather than rescuing a failing one — see below |
 
 ### Iteration 1 findings (resolved in iteration 2)
 
@@ -85,6 +86,29 @@ unattended execution mode, nor a deferred question queue, nor any cloud file-sto
 Constitution Principle II requires requirements to trace to the SRS, with uncovered items flagged
 for back-fill. They are flagged, and the back-fill itself is listed in this Epic's exit criteria.
 
+### Iteration 4 findings (2026-08-19)
+
+No marker changed state. The session of 2026-08-19 answered five questions that were open without
+being *marked* open — the spec had no `[NEEDS CLARIFICATION]` placeholders for them, which is
+exactly why they survived three prior validations. Each strengthened an item that was already
+passing:
+
+1. **"Requirements are testable and unambiguous"** — FR-013 required a conflict to be "resolved"
+   without saying by whom, so SC-005 had no writable test. FR-013a now names the resolver.
+2. **"Requirements are testable and unambiguous"** — FR-019 said the system must "warn" about stale
+   answers but never said what the re-run then does with them. FR-019a now says.
+3. **"Success criteria are measurable"** — PP-018 carried "review sessions at scale untested" with
+   no ceiling to test against. SC-017 now states 200 questions and 500 artifacts, and PP-018 moves
+   from ⚠️ Partial to ✅ Satisfied.
+4. **"Scope is clearly bounded"** — whether a publish could cover a chosen subset was never stated
+   either way. Now bounded: whole project only, with the reason recorded in Out of Scope.
+5. **"No superseded or contradictory text left behind"** — FR-028's run snapshot and the edge case
+   hiding restricted questions from a reviewer implied two different access sets without ever
+   saying so. FR-028a separates them: snapshot governs the run, current grants govern the reviewer.
+
+**The unchecked item is unaffected.** SRS back-fill for the two uncovered capability areas remains
+outstanding and nothing in this session touched it.
+
 ## Notes
 
 - **All scope questions are resolved.** The `/speckit-clarify` session of 2026-08-02 settled five
@@ -103,3 +127,8 @@ for back-fill. They are flagged, and the back-fill itself is listed in this Epic
 - Provider names (Google Drive, Dropbox, S3) appear as examples only. FR-030 requires the
   integration boundary to accept new provider types without changes elsewhere, mirroring the
   adapter pattern the SRS mandates for specification engines.
+- **Tasking of the 2026-08-19 requirements is partly discharged.** FR-013a and FR-019a are now
+  carried by EPIC-023 (`T800`–`T810`) and FR-028a by EPIC-024 (`T811`–`T816`), both tasked
+  2026-08-19. **EPIC-025 remains outstanding**: FR-032 was narrowed to whole-project publishing and
+  SC-017 set a 500-artifact publish ceiling, neither of which its 37 tasks reflect. A tasking debt,
+  not a specification gap — recorded here so it is not mistaken for one.

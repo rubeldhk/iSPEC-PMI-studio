@@ -27,11 +27,13 @@ staged simplification. Nothing at a provider can alter a platform artifact.
 
 ## Scope
 
-| Function | Tasks | What it delivers |
-|---|---|---|
-| F-02.6 External storage integration | 26 | Provider contract, fixture, connections, publish, failure taxonomy, switching, conformance suite, architecture test |
-| F-025.UI Interface | 2 | Storage connections page |
-| F-025.Z Epic closure | 5 | Per-epic gate **including the SRS back-fill approval gate** (`T439`) |
+| Function | What it delivers |
+|---|---|
+| F-02.6 External storage integration | Provider contract, fixture, connections, publish, failure taxonomy, switching, conformance suite, architecture test |
+| F-025.UI Interface | Storage connections page |
+| F-025.Z Epic closure | Per-epic gate **including the SRS back-fill approval gate** (`T439`) |
+
+Task counts live in [tasks.md](./tasks.md) and are not restated here (`T686`, PP-002).
 
 ## Technical Context
 
@@ -65,9 +67,9 @@ conflicts, which are surfaced.
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | ⚠️ **PASS WITH DEBT** — third-party storage (`FR-029`–`FR-040`) has **no SRS source**; no cloud file-storage provider appears in any of the 24 modules or 20 volumes. `T439` gates **approval** |
-| III | Epic → Feature → Task decomposition | PASS — 2 functions, 32 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 3 functions: F-02.6, F-025.UI, F-025.Z; tasks counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002) |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `F-025.Z` in [tasks.md](./tasks.md) |
-| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | PASS — 0 gaps after the 2026-08-05 remediation |
+| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` finding **A1** (2026-08-19) found `T391` paired to `T384`, which asserts the failure taxonomy and nothing about `FR-034`'s publish record. The pairing existed; the assertion did not. Closed by `T817` |
 | VI | `specs/025-external-storage-publishing/defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | PASS — via EPIC-014 F-11.2 |
 | VIII | Session labelled with the working Epic, or the first command | PASS — session labelled `speckit-constitution` (its first command); stated in the closing report |
@@ -97,8 +99,14 @@ more, preserving contract rule **S7** and the ADR-0002 sandbox posture. `T390` i
 ### G-025.2 · Publish depends on EPIC-024's grants ⚠️ open, sequencing
 
 `T392` excludes artifacts the publishing user cannot access (`FR-033`). Without EPIC-024 there is
-nothing to exclude *by*, and the task silently becomes a no-op that passes its test. Not recorded in
-this epic's `Depends on`.
+nothing to exclude *by*, and the task silently becomes a no-op **that passes its test** — the
+dangerous shape, because a green suite reads as coverage.
+
+**Restated 2026-08-19** by `/speckit-analyze` finding **A7**. The original entry closed on "Not
+recorded in this epic's `Depends on`", which both [spec.md](./spec.md) and [tasks.md](./tasks.md)
+now do. That half is discharged. What remains is the sequencing risk itself, which the dependency
+edge records but does not remove: EPIC-024 is also ⏸ HELD under D-10, so `T392` must not be marked
+complete on a passing test alone while there are no grants to exclude by.
 
 **Otherwise complete.** The storage API (`T421`–`T426`), conformance suite (`T430`, `T431`),
 architecture test (`T432`), and concurrency integration test (`T429`) were added on 2026-08-05 and
@@ -111,9 +119,13 @@ platform's `FR-001`–`FR-034`. Checking the split surfaced that **the success c
 and that was never recorded:
 
 ```text
-EPIC-002 family:  SC-001 … SC-013
+EPIC-002 family:  SC-001 … SC-018   (SC-013 before 2026-08-19)
 platform:         SC-001 … SC-012
 ```
+
+**Widened 2026-08-19** by `/speckit-analyze` finding **A9**: the parent's third clarification
+session added `SC-015`–`SC-018`, so the family range now extends five past the platform's rather
+than one. The overlap is unchanged in kind and larger in extent.
 
 Every identifier overlaps. `SC-001` here means one thing; `SC-001` in `_shared/platform-spec.md`
 means another, and EPIC-010 owns that one. Before the split this was contained in a single spec.
@@ -169,7 +181,7 @@ exists to hold once.
 
 ## Definition of done
 
-- [ ] 32 tasks complete, every unit test passing (Constitution V)
+- [ ] Every task in [tasks.md](./tasks.md) complete, every unit test passing (Constitution V)
 - [ ] **SRS back-fill complete** for `FR-029`–`FR-040` (`T439`) — gates approval
 - [ ] Zero passwords accepted or stored; zero tokens in any response, log, or error (`SC-014`)
 - [ ] `pnpm test:arch` green — no provider SDK named outside the adapter layer (`T432`)

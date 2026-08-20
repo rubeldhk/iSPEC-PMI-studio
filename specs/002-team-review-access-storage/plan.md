@@ -56,8 +56,8 @@ That is what makes this the programme's strongest expression of **PP-003 Human-i
 
 **68 → 87 tasks** on 2026-08-05, closing G-02.3, G-02.4 and G-02.5. **Split 2026-08-07 (D-19)** into
 [EPIC-023](../023-unattended-runs-review/tasks.md), [EPIC-024](../024-artifact-access-control/tasks.md), [EPIC-025](../025-external-storage-publishing/tasks.md) — 87 IDs preserved, 9 closure tasks added, 96 total.
-**Now 101** — the clarification session of 2026-08-08 added `T447`–`T451` to EPIC-025 for FR-029a and
-FR-029b. Current split: **EPIC-023 43 · EPIC-024 21 · EPIC-025 37**.
+**Now 128** — the clarification session of 2026-08-08 added `T447`–`T451` to EPIC-025 for FR-029a and
+FR-029b. Current split: **EPIC-023 58 · EPIC-024 28 · EPIC-025 42**.
 
 ## Technical Context
 
@@ -313,7 +313,7 @@ change, then change it" is only true if the preview is not itself the first writ
 
 ## Definition of done
 
-- [ ] All **101** tasks complete across EPIC-023/024/025, every unit test passing (Constitution V)
+- [ ] All **128** tasks complete across EPIC-023/024/025, every unit test passing (Constitution V)
 - [ ] **SRS back-fill complete** for FR-001–FR-020 (`T404`) and FR-029–FR-040 incl. FR-029a/b
       (`T439`) — each gates *approval* of its own child epic
 - [ ] Quickstart **V02-1** to **V02-9** pass

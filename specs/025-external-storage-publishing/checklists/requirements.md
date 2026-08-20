@@ -1,6 +1,6 @@
 # Epic Quality Checklist: External Storage Publishing
 
-**Epic**: `EPIC-025` | **Tasks**: 37 | **Created**: 2026-08-10
+**Epic**: `EPIC-025` | **Tasks**: 42 | **Created**: 2026-08-10
 
 Per-epic instance. The family baseline is
 [../../002-team-review-access-storage/checklists/requirements.md](../../002-team-review-access-storage/checklists/requirements.md);

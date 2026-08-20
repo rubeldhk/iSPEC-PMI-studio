@@ -22,7 +22,7 @@ Tasks `T592`–`T596` are discharged by the sections below.
 > programme. ~~**72 of 72 tasks.** `SC-AGT-001` is still unmet — the run stops at a missing credential
 > — so the epic remains **not release-eligible**.~~
 >
-> **Superseded again 2026-08-20 — see the final addendum.** **82 of 82 tasks** (Phases 7–9 added).
+> **Superseded again 2026-08-20 — see the final addendum.** **96 of 96 tasks** (Phases 7–9 added; count machine-derived by the register, correcting a hand-quoted "82" — the exact drift this repo derives counts to prevent).
 > **`SC-AGT-001` is SATISFIED**: a specification was generated through the `D-28`-enforced proxy,
 > transcript committed. The epic is **release-eligible** pending the Constitution IV exit gate,
 > whose convergence run produced only the record corrections this addendum is part of.
@@ -354,7 +354,7 @@ committed with its egress-enforcement derivation, gated by `G-28-01` and `G-28-0
 the first transcript of the day for not naming the enforced shape — the gate worked before it was a
 day old).
 
-**Tasks: 82 of 82** (Phase 7 convergence `T692`–`T699`, Phase 8 delivery `T700`–`T710`, Phase 9
+**Tasks: 96 of 96** (Phase 7 convergence `T692`–`T699`, Phase 8 delivery `T700`–`T710`, Phase 9
 record corrections `T711`–`T715`). Gates re-run 2026-08-20: 738 unit / 762 governance / 22
 architecture, typecheck and lint clean. The 2026-08-20 convergence run found **zero code gaps**;
 its five findings were these records lagging the code, corrected by Phase 9 and guarded by

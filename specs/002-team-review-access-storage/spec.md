@@ -6,7 +6,7 @@
 
 **Created**: 2026-08-02
 
-**Status**: Clarified — **8 questions** answered across two sessions (5 on 2026-08-02, 3 on 2026-08-08); zero unresolved markers. Tasked 2026-08-05, planned 2026-08-05, **split into EPIC-023/024/025 on 2026-08-07 (D-19)**. Now a parent design carrying no tasks.
+**Status**: Clarified — **13 questions** answered across three sessions (5 on 2026-08-02, 3 on 2026-08-08, 5 on 2026-08-19); zero unresolved markers. Tasked 2026-08-05, planned 2026-08-05, **split into EPIC-023/024/025 on 2026-08-07 (D-19)**. Now a parent design carrying no tasks.
 
 **Input**: User description: "1. executing command should have option to set run all and keep
 qustions and suggesions recordet all togather for the team to disscus and select ans and submit.
@@ -23,9 +23,9 @@ manager third pary solution like google drive, dropbox, s3 etc"
 >
 > | Child epic | Module | Requirements owned | Tasks |
 > |---|---|---|---|
-> | [EPIC-023 Unattended Runs & Team Review](../023-unattended-runs-review/) | M-06 Workflow | FR-001–FR-020, FR-005a–c, FR-008a, FR-015a | 43 |
-> | [EPIC-024 Artifact Access Control](../024-artifact-access-control/) | M-13 Security & Governance | FR-021–FR-028 | 21 |
-> | [EPIC-025 External Storage Publishing](../025-external-storage-publishing/) | M-11 DevOps | FR-029–FR-040, FR-029a–b | 37 |
+> | [EPIC-023 Unattended Runs & Team Review](../023-unattended-runs-review/) | M-06 Workflow | FR-001–FR-020, FR-005a–c, FR-008a, FR-013a, FR-015a, FR-019a | 58 |
+> | [EPIC-024 Artifact Access Control](../024-artifact-access-control/) | M-13 Security & Governance | FR-021–FR-028, FR-028a | 28 |
+> | [EPIC-025 External Storage Publishing](../025-external-storage-publishing/) | M-11 DevOps | FR-029–FR-040, FR-029a–b | 42 |
 >
 > **Why split**: this epic spanned **three modules**, and MPS Volume 6 §1 places epics *below*
 > modules. An epic covering three inverts the hierarchy — the same defect D-15 corrected when
@@ -39,6 +39,24 @@ manager third pary solution like google drive, dropbox, s3 etc"
 > independently (Constitution IV) — **96 at the split**. The clarification session of **2026-08-08**
 > then added **5 tasks** to EPIC-025 (`T447`–`T451`) for the new token-lifecycle requirements
 > **FR-029a** and **FR-029b**, bringing the current total to **101** (43 + 21 + 37).
+>
+> The clarification session of **2026-08-19** then added **11 tasks** to EPIC-023 (`T800`–`T810`)
+> for **FR-013a** and **FR-019a** plus the review half of **SC-017**, and **6 tasks** to EPIC-024
+> (`T811`–`T816`) for **FR-028a** — bringing the total to **118** (54 + 27 + 37).
+>
+> **EPIC-025 reconciled 2026-08-19.** `/speckit-analyze` found the narrowed **FR-032** and the
+> publish half of **SC-017** untasked, along with **SC-012** owned since the split with no task and
+> **FR-034** implemented against a test that asserted something else. Closed by `T817`–`T821`,
+> taking EPIC-025 to **42** and the family to **123** (54 + 27 + 42).
+>
+> A re-task pass across all three children the same day audited every owned requirement and success
+> criterion. All **50** functional requirements were covered; **7** success criteria were cited by no
+> task. Six were covered by content and are now cited; `SC-002` had no assertion at all and gained
+> `T822` in EPIC-023 — total **124** (55 + 27 + 42).
+>
+> `/speckit-analyze` then read EPIC-023 and EPIC-024 the same day and found five requirements whose
+> cited unit test asserted something else — `FR-008`, `FR-015`, `FR-020` in EPIC-023, `FR-025` and
+> `FR-026` in EPIC-024. Closed by `T823`–`T826` and a rewrite of `T374`: **128** (58 + 28 + 42).
 **Depends on**: `EPIC-001` — PMI Studio Phase 1 Platform Core. This Epic extends the projects,
 requirements, specifications, tasks, and generation jobs that EPIC-001 establishes.
 
@@ -81,6 +99,32 @@ requirements, specifications, tasks, and generation jobs that EPIC-001 establish
 - Q: When an administrator disconnects a storage provider, what happens to the files the platform already published there? → A: **A — leave them untouched.** The platform records that the connection was removed and stops tracking them. Consistent with ADR-0004's one-way boundary: the files are copies in storage the customer owns, and putting them there gives the platform no standing to remove them. Keeps `deleteFile` an **optional** capability, so a write-only provider stays supportable.
 
 - Q: When an artifact is derived from two sources with different access restrictions, which one applies? → A: **A — most restrictive wins.** A user needs a grant on **every** source to see the derived artifact. The only reading that cannot leak: under any other rule, a specification generated from one open and one restricted requirement becomes a way to read the restricted one indirectly. Derivation must not launder access.
+
+### Session 2026-08-19
+
+- Q: When two reviewers give different answers to the same question, who decides which answer wins,
+  and how? → A: **B — the project owner or the run's starter picks the winner.** Every competing
+  answer is retained with its author. Reuses the authority boundary FR-015a already draws, and keeps
+  the record showing that the disagreement happened rather than erasing it (PP-004).
+- Q: When a reviewer opens a review session, is what they can see decided by the grants captured
+  when the run started, or by the grants in force at that moment? → A: **A — current grants,
+  re-evaluated on every open.** FR-028's snapshot exists to stop a *run* half-applying a mid-flight
+  change, a consistency concern measured in minutes. A review session sits open for days, so a
+  snapshot there becomes a read capability that outlives a revoke — which FR-023 and PP-008 forbid.
+- Q: When a re-run finds the work underneath a submitted answer changed after that answer was given,
+  does it apply the answer anyway or ask again? → A: **B — re-raise it as a fresh question in the
+  new session.** Non-stale answers still apply. Routes the decision back through machinery that
+  already exists (FR-018, FR-005, FR-017) and gets a human decision (PP-003). Blocking the re-run
+  instead would break SC-001, which requires an unattended run to finish without input.
+- Q: When someone publishes to connected storage, do they publish the whole project or choose which
+  artifacts go out? → A: **A — whole project every time.** Artifact selection is out of scope here.
+  FR-036's "added, replaced, or left alone" comparison is only unambiguous against a whole-project
+  baseline: with subsets, a deselected file is indistinguishable from a deleted one.
+- Q: How large must one review session and one publish be able to get before the platform may slow
+  down or page the work? → A: **A — 200 questions per session, 500 artifacts per publish.** An
+  order of magnitude above SC-003's twenty, which covers a long unattended run over a real project,
+  without committing Phase 2 to the paging and streaming that enterprise-scale numbers would force.
+  Converts PP-018 from an untested claim into a testable ceiling.
 
 ## SRS Traceability *(mandatory — Constitution II)*
 
@@ -156,7 +200,7 @@ Principles bind the programme, not each Epic individually. This Epic's position 
 | PP-015 | Open Standards | ✅✅ Satisfied | FR-030 and FR-038 require provider interchangeability and loss-free switching — no storage vendor lock-in |
 | PP-016 | Explainable AI | ✅✅ **Central** | Every deferred question records the options considered and the suggested answer with its context (FR-003, FR-007), so an AI suggestion is reviewable before it becomes a decision |
 | PP-017 | Cost-Aware AI | 🔶 **Deferred** | → M-07 AI Platform. Unattended runs *increase* AI spend, so RAID **R-02** applies with more force here than in EPIC-001. Owner: tech lead |
-| PP-018 | Scalability First | ⚠️ Partial | Workspace-scoped throughout; concurrent publish prevented (FR-040). Review sessions at scale untested |
+| PP-018 | Scalability First | ✅ Satisfied | Workspace-scoped throughout; concurrent publish prevented (FR-040). Scale ceiling now stated and testable — 200 questions per review session, 500 artifacts per publish (SC-017, clarified 2026-08-19) |
 | PP-019 | Continuous Improvement (DORA/SPACE) | 🔶 **Deferred** | → M-14 Reporting. Owner: product owner |
 | PP-020 | Customer Value | ✅ Satisfied | 14 measurable criteria, including a 20-question review inside 60 minutes (SC-003) |
 
@@ -234,12 +278,16 @@ submit the batch, and confirm all answers and notes are stored against the run.
 5. **Given** a review with unanswered questions, **When** a member attempts to submit, **Then** the
    submission is refused and the unanswered questions are named.
 6. **Given** two members answer the same question differently, **When** the second answer is
-   recorded, **Then** the conflict is shown and must be resolved before submission.
+   recorded, **Then** the conflict is shown, and only the project owner or the person who started
+   the run may select which answer stands; the answer not selected is kept with its author.
 7. **Given** a submitted review, **When** anyone views it later, **Then** they see each answer, who
    chose it, when, and any note attached.
 8. **Given** a fully answered review, **When** a member who is neither the project owner nor the
    person who started the run attempts to submit, **Then** the submission is refused with the
    reason and their answers remain saved as drafts.
+9. **Given** a member's access to an artifact is revoked while the review is open, **When** they
+   next open the review, **Then** the questions concerning that artifact are shown as restricted
+   rather than readable, even though the run that raised them ran under their earlier access.
 
 ---
 
@@ -266,7 +314,11 @@ outputs reflect the team's answers and no longer carry provisional markings.
 4. **Given** a re-run raises new questions, **When** it completes, **Then** those are recorded in a
    new review rather than reopening the submitted one.
 5. **Given** the underlying work changed after answers were submitted, **When** the lead re-runs,
-   **Then** they are warned which answers may no longer apply.
+   **Then** they are warned which answers may no longer apply, and each of those questions is asked
+   again in the new review rather than being answered from the stale decision.
+6. **Given** a re-run carrying both stale and unaffected answers, **When** it executes, **Then** it
+   completes without stopping for input — the unaffected answers are applied, and the stale ones
+   proceed provisionally.
 
 ---
 
@@ -361,6 +413,9 @@ destination organised by project, and confirm the platform records what was publ
    **Then** the platform's own copy of the artifact is unaffected.
 7. **Given** a previously published project, **When** the member publishes again, **Then** they are
    told what will be added, replaced, or left alone before it happens.
+8. **Given** a project of many artifacts, **When** the member publishes, **Then** the whole project
+   goes out — they are offered no way to publish a chosen subset, so the comparison in scenario 7
+   always runs against the whole project.
 
 ---
 
@@ -404,7 +459,8 @@ confirm both publishes succeeded and no platform artifact changed.
 - **Neither the project owner nor the run's starter is available to submit**: the session stays open
   with answers preserved as drafts; ownership must change for it to be submitted.
 - **Two reviewers answer the same question differently**: shown as a conflict; submission is blocked
-  until resolved.
+  until the project owner or the run's starter selects which answer stands. The answer not selected
+  is kept, with its author, as part of the record.
 - **Someone tries to edit a submitted review**: refused; a new review must be opened instead.
 - **Provisional specification approved by override, then the question is answered later**: the
   provisional marking clears and the recorded override remains as history.
@@ -412,7 +468,8 @@ confirm both publishes succeeded and no platform artifact changed.
   restricted, and approval by override is refused until someone with access accepts it.
 - **Run is cancelled while in flight**: questions recorded so far are preserved.
 - **Underlying work changes between submission and re-run**: the affected answers are flagged as
-  possibly stale.
+  stale and their questions are asked again in the re-run's review session. The re-run does not stop
+  for them — it proceeds provisionally, as it would for any unanswered question.
 
 **Access control**
 
@@ -427,7 +484,11 @@ confirm both publishes succeeded and no platform artifact changed.
 - **Access changes during a run**: the run uses the access in force when it started and reports
   anything it could not use.
 - **Reviewer lacks access to an artifact a question concerns**: the question is hidden from them
-  and shown as restricted rather than silently omitted.
+  and shown as restricted rather than silently omitted. Judged against the grants they hold when the
+  session is opened, not those in force when the run started.
+- **Reviewer's access is revoked while a review session is open**: the newly restricted questions
+  are hidden on their next open of the session. Answers they already gave remain, attributed to
+  them, and stay visible to those who still hold access.
 
 **External storage**
 
@@ -488,6 +549,10 @@ confirm both publishes succeeded and no platform artifact changed.
 - **FR-012**: System MUST record who provided each answer and when.
 - **FR-013**: System MUST show a conflict when two users record different answers to the same
   question, and MUST block submission until it is resolved.
+- **FR-013a**: System MUST restrict resolution of a conflict to the project owner or the user who
+  started the run (clarified 2026-08-19), who selects which of the competing answers stands. Every
+  competing answer MUST be retained with its author and time, so the record shows the disagreement
+  occurred and who resolved it. Selecting a winner MUST NOT delete the answers not chosen.
 - **FR-014**: System MUST refuse submission of a review session with unanswered questions, naming
   them.
 - **FR-015**: System MUST commit all answers in a session together as one submission, after which
@@ -503,6 +568,11 @@ confirm both publishes succeeded and no platform artifact changed.
   than reopening a submitted one.
 - **FR-019**: System MUST warn, when re-running, if the underlying work changed after answers were
   submitted, naming the answers that may no longer apply.
+- **FR-019a**: System MUST, for each answer identified as stale under FR-019, raise the governing
+  question again as a new question in the re-run's review session rather than applying the stale
+  answer (clarified 2026-08-19). Answers not identified as stale MUST still be applied. The re-run
+  MUST NOT block or wait for input on account of a stale answer — it proceeds under FR-004 with a
+  provisional answer, and the artifacts it produces are marked provisional under FR-005.
 - **FR-020**: System MUST retain submitted review sessions as a permanent record of what was
   decided, by whom, and why.
 
@@ -523,7 +593,12 @@ confirm both publishes succeeded and no platform artifact changed.
 - **FR-027**: System MUST prevent an artifact from reaching a state where no user holds edit access
   to it.
 - **FR-028**: System MUST evaluate access using the grants in force when a run started, and MUST
-  report anything a run could not use because of access.
+  report anything a run could not use because of access. This snapshot governs **what a run may read
+  and produce**, and nothing else.
+- **FR-028a**: System MUST evaluate what a reviewer may see in a review session against the grants
+  in force **at the moment the session is opened**, not against the run's access snapshot (clarified
+  2026-08-19). A revocation MUST take effect on the next open of any session, so no run snapshot can
+  keep an artifact readable to a user whose grant has been withdrawn.
 
 #### External storage integration
 
@@ -542,7 +617,10 @@ confirm both publishes succeeded and no platform artifact changed.
 - **FR-031**: System MUST report the status of each connection, distinguishing healthy, needing
   re-authorisation, and unavailable.
 - **FR-032**: Users MUST be able to publish a project's artifacts as files to the connected
-  destination, organised by project.
+  destination, organised by project. A publish MUST cover the **whole project** (clarified
+  2026-08-19); the system MUST NOT offer selection of an artifact subset, so that FR-036's
+  added / replaced / left-alone comparison always runs against a whole-project baseline. The only
+  artifacts omitted are those excluded by FR-033 for access reasons, and those are reported.
 - **FR-033**: System MUST exclude from a publish any artifact the publishing user cannot access,
   and MUST report the exclusion.
 - **FR-034**: System MUST record, for each publish, what was published, when, by whom, and where it
@@ -573,7 +651,9 @@ confirm both publishes succeeded and no platform artifact changed.
 - **Review Session**: The collection of questions from one run. Attributes: identifier, run, state
   (open / submitted), opened and submitted times, participants.
 - **Answer**: A team decision on one question. Attributes: question, selected or written value,
-  author, timestamp, note, draft or committed state, conflict flag.
+  author, timestamp, note, draft or committed state, conflict flag, selected-as-winner flag,
+  conflict resolver and resolution time. Competing answers to one question are retained rather than
+  overwritten.
 - **Provisional Marking**: The link between an artifact and the unanswered question that governs
   it. Attributes: artifact, question, cleared timestamp.
 - **Provisional Approval Override**: A record that an approver knowingly accepted provisional items.
@@ -622,6 +702,14 @@ confirm both publishes succeeded and no platform artifact changed.
 - **SC-014**: Zero provider account passwords are accepted or stored; zero stored tokens appear in
   any endpoint response, log entry, or error message.
 - **SC-013**: Every access grant, revocation, and refusal appears in the audit record.
+- **SC-015**: Zero review-session conflicts are resolved by anyone other than the project owner or
+  the run's starter; 100% of competing answers remain retrievable with their author after resolution.
+- **SC-016**: Zero stale answers are applied to a re-run; 100% of them reappear as questions in the
+  re-run's review session.
+- **SC-017**: A review session of **200 questions** and a publish of **500 artifacts** each complete
+  without failure and without degrading the review and publish flows.
+- **SC-018**: A user whose grant is revoked while a review session is open sees zero restricted
+  questions on their next open of that session.
 
 ## Out of Scope
 
@@ -637,6 +725,9 @@ confirm both publishes succeeded and no platform artifact changed.
 - **Encryption key management for published files**, retention policies, and legal hold.
 - **Editing artifacts inside the external provider's own interface.**
 - **Automatic scheduled publishing** — publishing is user-initiated in this Epic.
+- **Publishing a chosen subset of a project's artifacts** — a publish covers the whole project.
+  Confirmed by clarification: subset selection would make FR-036's republish comparison ambiguous,
+  because a deselected file could not be told apart from a deleted one.
 - **Deferred contract capabilities from EPIC-001** (improve specification, generate acceptance
   criteria, estimate complexity, analyze dependencies) remain out of scope.
 

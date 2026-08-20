@@ -1,15 +1,16 @@
 # Epic Specification: Artifact Access Control
 
-**Epic**: `EPIC-024` | **Module**: M-13 Security & Governance | **Tasks**: 21
+**Epic**: `EPIC-024` | **Module**: M-13 Security & Governance | **Tasks**: counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002)
 
 **Parent design**: [../002-team-review-access-storage/](../002-team-review-access-storage/)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
 
 **Delivery posture** (decision D-10):
 
-> ⏸ **HELD** pending `PMI-DOC-004` Business Requirement Specification and approved business
-> scope (PMI-TASK-001 T-101, T-106). Held is not cancelled — the tasks are complete, reviewed,
-> and Constitution V compliant. They await an input, not more design.
+> ▶ **PROCEEDING** — released 2026-08-20 by **PMI-DOC-004 v1.0** (Business Requirement
+> Specification, APPROVED; scope ruling T-106). This Epic implements **BR-0003, BR-0062**. The prior
+> hold (decision D-10, PMI-TASK-001 T-101/T-106) is discharged; resumption goes through the
+> Definition-of-Ready gate, not by declaration (EPIC-026).
 
 ## Purpose
 
@@ -38,7 +39,8 @@ this epic **owns** the following and is where they are satisfied:
 | FR-025 — a derived artifact is at least as restricted as its source |
 | FR-026 — every grant and revocation audited |
 | FR-027 — no artifact may reach a state with no user holding edit access |
-| FR-028 — access evaluated against the grants in force when a run started |
+| FR-028 — access evaluated against the grants in force when a run started, governing what that run may read and produce |
+| FR-028a — what a reviewer may see in a review session is evaluated against the grants held when the session is opened, so a revocation takes effect on the next open |
 
 ## User stories owned
 
@@ -49,6 +51,7 @@ this epic **owns** the following and is where they are satisfied:
 - SC-007 — zero artifacts visible to a user holding no grant; every refusal recorded
 - SC-008 — zero artifacts can reach a state with no editor
 - SC-013 — every grant, revocation and refusal appears in the audit record
+- SC-018 — a user whose grant is revoked while a review session is open sees zero restricted questions on their next open
 
 ## Depends on
 

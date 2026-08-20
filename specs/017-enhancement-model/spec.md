@@ -35,9 +35,10 @@
 
 **Delivery posture** (decision D-10):
 
-> ⏸ **HELD** pending `PMI-DOC-004` Business Requirement Specification and approved business scope
-> (PMI-TASK-001 T-101, T-106). This epic delivers PMI Studio **product capability**, which is the
-> held surface. Held is not cancelled — it awaits an input, not more design.
+> ▶ **PROCEEDING** — released 2026-08-20 by **PMI-DOC-004 v1.0** (Business Requirement
+> Specification, APPROVED; scope ruling T-106). This Epic implements **BR-0070, BR-0033, BR-0060, BR-0041 (via children)**. The prior
+> hold (decision D-10, PMI-TASK-001 T-101/T-106) is discharged; resumption goes through the
+> Definition-of-Ready gate, not by declaration (EPIC-026).
 
 > ⚠️ **This epic is expected to split further.** Even after the process half moved to EPIC-018, what
 > remains is five enhancement areas across two modules. That is closer to a module group than an

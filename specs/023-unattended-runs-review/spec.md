@@ -1,15 +1,16 @@
 # Epic Specification: Unattended Runs & Team Review
 
-**Epic**: `EPIC-023` | **Module**: M-06 Workflow & Tasks | **Tasks**: 43
+**Epic**: `EPIC-023` | **Module**: M-06 Workflow & Tasks | **Tasks**: counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002)
 
 **Parent design**: [../002-team-review-access-storage/](../002-team-review-access-storage/)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
 
 **Delivery posture** (decision D-10):
 
-> ⏸ **HELD** pending `PMI-DOC-004` Business Requirement Specification and approved business
-> scope (PMI-TASK-001 T-101, T-106). Held is not cancelled — the tasks are complete, reviewed,
-> and Constitution V compliant. They await an input, not more design.
+> ▶ **PROCEEDING** — released 2026-08-20 by **PMI-DOC-004 v1.0** (Business Requirement
+> Specification, APPROVED; scope ruling T-106). This Epic implements **BR-0061**. The prior
+> hold (decision D-10, PMI-TASK-001 T-101/T-106) is discharged; resumption goes through the
+> Definition-of-Ready gate, not by declaration (EPIC-026).
 
 ## Purpose
 
@@ -41,8 +42,10 @@ this epic **owns** the following and is where they are satisfied:
 | FR-005a to FR-005c — provisional approval by explicit, recorded override |
 | FR-008a — the run stops at the range the user selected and reports that it did |
 | FR-009 to FR-015 — review sessions, draft answers, conflict detection, atomic submission |
+| FR-013a — a conflict is resolved by the project owner or the run initiator, and every competing answer is retained with its author |
 | FR-015a — submission restricted to the project owner or the run initiator |
 | FR-016 to FR-020 — re-run with submitted answers, marking clearance, and stale-answer warning |
+| FR-019a — a stale answer is asked again as a fresh question rather than applied, and the re-run never blocks for one |
 
 ## User stories owned
 
@@ -55,6 +58,10 @@ this epic **owns** the following and is where they are satisfied:
 - SC-001, SC-002 — every question lands in exactly one review session
 - SC-003 — 20 questions reviewed in a single sitting under 60 minutes
 - SC-004, SC-005, SC-006 — provisional marking, submission gating, attribution
+- SC-005a — zero provisional specifications approved without a recorded, attributable override
+- SC-015 — conflicts resolved only by the owner or initiator; competing answers stay retrievable
+- SC-016 — zero stale answers applied to a re-run
+- SC-017 — a review session of 200 questions; the publish half of that ceiling is EPIC-025's
 
 ## Depends on
 

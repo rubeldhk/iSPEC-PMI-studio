@@ -1,15 +1,16 @@
 # Epic Specification: External Storage Publishing
 
-**Epic**: `EPIC-025` | **Module**: M-11 DevOps | **Tasks**: 37
+**Epic**: `EPIC-025` | **Module**: M-11 DevOps | **Tasks**: 42
 
 **Parent design**: [../002-team-review-access-storage/](../002-team-review-access-storage/)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
 
 **Delivery posture** (decision D-10):
 
-> ⏸ **HELD** pending `PMI-DOC-004` Business Requirement Specification and approved business
-> scope (PMI-TASK-001 T-101, T-106). Held is not cancelled — the tasks are complete, reviewed,
-> and Constitution V compliant. They await an input, not more design.
+> ▶ **PROCEEDING** — released 2026-08-20 by **PMI-DOC-004 v1.0** (Business Requirement
+> Specification, APPROVED; scope ruling T-106). This Epic implements **BR-0063**. The prior
+> hold (decision D-10, PMI-TASK-001 T-101/T-106) is discharged; resumption goes through the
+> Definition-of-Ready gate, not by declaration (EPIC-026).
 
 ## Purpose
 
@@ -59,6 +60,7 @@ this epic **owns** the following and is where they are satisfied:
 - SC-011 — a new provider type with zero change outside the storage boundary
 - SC-012 — provider-side deletion has zero effect on platform artifacts
 - SC-014 — zero provider passwords accepted or stored; zero stored tokens in any response, log or error
+- SC-017 — a publish of 500 artifacts completes without failure or degradation (added 2026-08-19; the parent's ceiling covers 200 questions per review session, whose half EPIC-023 owns)
 
 ## Depends on
 
@@ -76,7 +78,7 @@ Scanned against the twenty-category ambiguity taxonomy. **12** categories are no
 **3** are answered nowhere in that chain:
 
 - *Error / empty states* — **Outstanding** — a plan-level concern that changes no requirement this Epic owns, recorded rather than asked
-- *Performance* — **Outstanding** — recorded, not asked
+- *Performance* — **Resolved 2026-08-19** — the parent set a scale ceiling the same day: `SC-017`, 500 artifacts per publish, owned here and tested by `T820`
 - *Terminology* — **Outstanding** — no canonical glossary exists programme-wide; naming has held without one so far
 
 ## Principle conformance — deltas *(PMI-DOC-003, decision D-6)*

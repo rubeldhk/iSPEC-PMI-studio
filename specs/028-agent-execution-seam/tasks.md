@@ -5,7 +5,7 @@ description: "Task list for EPIC-028 — Agent & Execution Seam"
 
 # Tasks: Agent & Execution Seam
 
-**Epic**: `EPIC-028` | **Module**: M-08 (execution half) | **Tasks**: 82
+**Epic**: `EPIC-028` | **Module**: M-08 (execution half) | **Tasks**: 96
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -386,7 +386,7 @@ about the seam.
 - [X] T697 Bind `HOME="$PWD"` in the invocation per `DEF-028-013` (contradicts) — the sandbox is `ReadonlyRootfs`, Claude Code writes `~/.claude.json` at startup and threw `EROFS`, then exited 0 from an unhandled rejection so the adapter read success from a crashed process (unit test: `agent-adapters/claude/tests/unit/claude.agent.spec.ts`)
 - [X] T698 Capture the agent's stderr from the failing sandbox run and isolate why it exits non-zero under `GENERATION_EGRESS_PROFILE`, per `DEF-028-013` (partial) — the same chain succeeds with open networking and produces a specification, so the cause is inferred from a difference rather than observed; a diagnostic that names it is worth more than another guess
 - [X] T699 Pre-bake the Spec Kit scaffold into the container image at build time, so generation needs no network beyond the AI provider, per `ADR-0002` (missing) — **settled 2026-08-19**: pre-baking over a second network posture or a widened generation profile, because both alternatives add a way for a generation run to reach further than the provider, which is the one thing that profile prevents — the generation profile permits `api.anthropic.com` only, by design; if `specify init` needs GitHub then scaffolding and generation want different postures, and that changes what `ADR-0002` promises. Owner: project-owner
-- [X] T700 Assert the egress network CONFORMS to the profile rather than merely existing, in `execution-providers/docker/src/index.ts` per `SC-AGT-005` and `DEF-028-015` (partial) — refuse an `internal` network for a profile that names permitted destinations, and refuse one permitting more than the profile names; the second half needs `D-28` to say how enforcement is expressed. Existence is not conformance, and the silent direction is the dangerous one: a plain bridge network permits the whole internet while the profile reports as enforced
+- [X] T700 Assert the egress network CONFORMS to the profile rather than merely existing, in `execution-providers/docker/src/index.ts` per `SC-AGT-005` and `DEF-028-015` (partial) — refuse an `internal` network for a profile that names permitted destinations, and refuse one permitting more than the profile names; the second half needs `D-28` to say how enforcement is expressed. Existence is not conformance, and the silent direction is the dangerous one: a plain bridge network permits the whole internet while the profile reports as enforced (unit test: `execution-providers/docker/tests/unit/egress-network-preflight.spec.ts`, whose `T706` block asserts both refusals; the second half was completed by `T706` under the `D-28` ruling)
 
   > **`D-28` decided 2026-08-19 (project owner): Option A — own the proxy.** Enforcement is
   > expressed as: the profile's network is `--internal`, **plus** a proxy sidecar dual-homed

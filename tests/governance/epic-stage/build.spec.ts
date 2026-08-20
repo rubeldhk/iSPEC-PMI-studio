@@ -65,6 +65,13 @@ describe('T528 · declarations reach the rows they belong to', () => {
     // other eighteen. The durable assertion is the PROPERTY: an Epic reads
     // `Held` if and only if a posture was declared for it, and every hold names
     // what would release it (`DF-3`).
+    //
+    // 2026-08-20: the fixture-adequacy guard ("held.length > 0") expired the
+    // day PMI-DOC-004 v1.0 was approved and every hold was legitimately
+    // discharged. Zero held is now a REAL state the property must hold in, not
+    // an inadequate fixture — the biconditional below asserts it in both
+    // directions either way, and goes back to proving posture PLUMBING the
+    // moment any future hold is declared.
     const declared = new Set(
       Object.entries(loadDeclarations().epics ?? {})
         .filter(([, entry]) => entry.posture?.kind === 'Held')
@@ -72,10 +79,9 @@ describe('T528 · declarations reach the rows they belong to', () => {
     );
     const held = MODEL.rows.filter((row) => row.posture?.startsWith('Held'));
 
-    expect(held.length, 'no Epic reads Held, so this assertion proves nothing').toBeGreaterThan(0);
     expect(new Set(held.map((row) => row.directory))).toEqual(declared);
     for (const row of held) {
-      expect(row.posture, `${row.epic} is Held and names no releasing input`).toContain('PMI-DOC-004');
+      expect(row.posture, `${row.epic} is Held and names no releasing input`).toMatch(/PMI-DOC|D-\d+/);
     }
   });
 

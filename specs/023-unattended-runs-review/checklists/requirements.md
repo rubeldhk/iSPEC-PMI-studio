@@ -1,6 +1,6 @@
 # Epic Quality Checklist: Unattended Runs & Team Review
 
-**Epic**: `EPIC-023` | **Tasks**: 43 | **Created**: 2026-08-10
+**Epic**: `EPIC-023` | **Tasks**: 58 | **Created**: 2026-08-10
 
 Per-epic instance. The family baseline is
 [../../002-team-review-access-storage/checklists/requirements.md](../../002-team-review-access-storage/checklists/requirements.md);

@@ -29,14 +29,19 @@ programme's strongest expression of **PP-003 Human-in-the-Loop** and **PP-016 Ex
 
 ## Scope
 
-| Function | Tasks | What it delivers |
-|---|---|---|
-| F-02.1 Unattended run mode | 11 | Run modes, stop-point range, question deferral, provisional marking, runs API |
-| F-02.2 Provisional approval override | 4 | Warn-and-override approval; attributed override records |
-| F-02.3 Team review and answer submission | 15 | Sessions, draft answers, conflicts, atomic submission, authority, review API |
-| F-02.4 Re-run with submitted answers | 6 | Answer application, marking clearance, new-session rule, stale warnings |
-| F-023.UI Interface | 2 | Review session page |
-| F-023.Z Epic closure | 5 | Per-epic gate **including the SRS back-fill approval gate** (`T404`) |
+| Function | What it delivers |
+|---|---|
+| F-02.1 Unattended run mode | Run modes, stop-point range, question deferral, provisional marking, runs API |
+| F-02.2 Provisional approval override | Warn-and-override approval; attributed override records |
+| F-02.3 Team review and answer submission | Sessions, draft answers, conflicts, atomic submission, authority, review API |
+| F-02.4 Re-run with submitted answers | Answer application, marking clearance, new-session rule, stale warnings |
+| F-023.5 Conflict resolution authority | Who resolves a conflict, and retention of the answer not chosen (`FR-013a`) |
+| F-023.6 Stale answers are asked again | Re-raise rather than apply, without blocking the re-run (`FR-019a`) |
+| F-023.7 Review session scale ceiling | 200 questions in one session (`SC-017`) |
+| F-023.UI Interface | Review session page |
+| F-023.Z Epic closure | Per-epic gate **including the SRS back-fill approval gate** (`T404`) |
+
+Task counts live in [tasks.md](./tasks.md) and are not restated here (`T686`, PP-002).
 
 ## Technical Context
 
@@ -71,9 +76,9 @@ real cross-epic dependency.
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
 | II | Requirements trace to cited SRS documents | ⚠️ **PASS WITH DEBT** — unattended runs (`FR-001`–`FR-020`) have **no SRS source**. `T404` gates **approval**, not merely closure |
-| III | Epic → Feature → Task decomposition | PASS — 5 functions, 43 tasks |
+| III | Epic → Feature → Task decomposition | PASS — 9 sections, listed in the Scope table; tasks counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002) |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `F-023.Z` in [tasks.md](./tasks.md) |
-| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | PASS — 0 gaps after the 2026-08-05 remediation |
+| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` finding **B1** (2026-08-19) found `T347`, `T361` and `T363` paired to tests that asserted something else. Closed by `T823`–`T825` |
 | VI | `specs/023-unattended-runs-review/defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | PASS — via EPIC-014 F-11.2 |
 | VIII | Session labelled with the working Epic, or the first command | PASS — session labelled `speckit-constitution` (its first command); stated in the closing report |
@@ -91,19 +96,29 @@ real cross-epic dependency.
 
 ### G-023.1 · Still the largest child, and still splittable ⚠️ open, low urgency
 
-43 tasks across five functions. `F-02.1` (unattended runs) and `F-02.3` (team review) are coupled —
+The largest of the three children by some way. `F-02.1` (unattended runs) and `F-02.3` (team review) are coupled —
 review exists because runs defer questions — so this is a weaker split case than EPIC-002 was. But it
 is twice the size of its siblings, and `F-02.4` (re-run) depends on both. Recorded so the size is a
 decision rather than an accident.
 
-### G-023.2 · The access snapshot depends on an epic that may land later ⚠️ open
+### G-023.2 · Sequencing — ✅ corrected 2026-08-19
 
-`T381` builds run-time access snapshotting, but grants themselves are **EPIC-024's** `F-02.5`. If
-this epic is built first, `T381` has nothing to snapshot. The dependency is real and one-directional:
-**EPIC-024 should land before this epic's `F-02.1` completes**.
+**This section had the dependency backwards, and said so for eleven days after its sibling fixed it.**
+It claimed `T381` builds run-time access snapshotting *here* and that EPIC-024 must land before this
+epic's `F-02.1`. Both halves were wrong:
+
+- `T381` lives in **EPIC-024**, not here. It writes the `access_snapshot` column on `Run`, and
+  **`Run` is defined by this epic's `T343`** — so EPIC-024 depends on this epic, not the reverse.
+- EPIC-024's `G-024.1` established exactly this on **2026-08-08**. This plan was never updated, so
+  the two sibling plans stated opposite build orders until `/speckit-analyze` finding **B2** caught
+  it.
+
+**Corrected order**: EPIC-023 → EPIC-024 → EPIC-025. Nothing in this epic's tasks references a grant.
 
 **Otherwise clean.** The runs API (`T415`–`T417`) and review controller unit test (`T364a`) were
-added on 2026-08-05 and migrated here intact; every implementation task pairs with a test.
+added on 2026-08-05 and migrated here intact. Every implementation task pairs with a test — though
+finding **B1** showed that three of those pairings asserted the wrong thing, now closed by
+`T823`–`T825`.
 
 ### G-02F.1 · The identifier collision extends to success criteria ⚠️ new finding, family-wide
 
@@ -131,8 +146,11 @@ F-02.1 run mode ──► runs API (T415–T417)
         └─► F-02.2 provisional approval override
                  └─► F-02.3 review sessions ──► review API (T364a, T365)
                           └─► F-02.4 re-run ──► F-023.UI ──► F-023.Z closure
+                 ├─► F-023.5 conflict resolution authority (T800–T805)
+                 ├─► F-023.6 stale answers re-raised (T806–T809)
+                 └─► F-023.7 review session scale ceiling (T810)
 
-⚠️ T381 access snapshotting needs EPIC-024's grants to exist first.
+This epic lands FIRST of the three: T343 defines `Run`, which EPIC-024's T381 snapshots onto.
 ```
 
 ## Design notes specific to this epic
@@ -167,7 +185,7 @@ exists to hold once.
 
 ## Definition of done
 
-- [ ] 43 tasks complete, every unit test passing (Constitution V)
+- [ ] Every task in [tasks.md](./tasks.md) complete, every unit test passing (Constitution V)
 - [ ] **SRS back-fill complete** for `FR-001`–`FR-020` (`T404`) — gates approval, not just closure
 - [ ] Quickstart **V02-1** to **V02-6** pass
 - [ ] A run in unattended mode completes without human input regardless of question count
