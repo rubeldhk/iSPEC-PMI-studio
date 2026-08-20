@@ -169,6 +169,7 @@ path added or removed without updating this document fails the build.
 - `specs/026-epic-stage-kanban/`
 - `specs/027-ai-native-amendment/`
 - `specs/028-agent-execution-seam/`
+- `specs/029-design-system/`
 
 ## Deliberately not covered here
 
