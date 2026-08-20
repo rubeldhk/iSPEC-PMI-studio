@@ -68,7 +68,7 @@ async function seed(
         relationship: 'generated_from',
       },
     ],
-    job: { id: `job_${id}`, state: 'succeeded' },
+    job: { id: `job_${id}`, state: 'succeeded', resultRef: id },
   });
   if (fields.updatedAt) await store.touch(id, fields.updatedAt);
   return id;

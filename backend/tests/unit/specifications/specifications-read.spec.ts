@@ -60,7 +60,7 @@ async function seed(
         relationship: 'generated_from',
       },
     ],
-    job: { id: `job_${specificationId}`, state: 'succeeded' },
+    job: { id: `job_${specificationId}`, state: 'succeeded', resultRef: specificationId },
   });
   return specificationId;
 }

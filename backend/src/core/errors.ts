@@ -14,6 +14,7 @@ export type ErrorCode =
   | 'conflict'
   | 'invalid_lifecycle_transition'
   | 'specification_not_approved'
+  | 'engine_unavailable'
   | 'internal_error';
 
 export interface ErrorBody {
@@ -81,6 +82,25 @@ export class SpecificationNotApprovedError extends PlatformError {
   }
 }
 
+/**
+ * T841 (EPIC-008) — FR-018 / US3 scenario 4.
+ *
+ * The scenario is explicit: a user whose generation cannot start because no
+ * engine is available is *"told the engine is unavailable rather than shown a
+ * generic error"*. Without this code, `NoDefaultEngineError` and
+ * `EngineSelectionUnavailableError` — neither of which is a `PlatformError` —
+ * fell through `toErrorBody` to `internal_error` and the fixed text "An
+ * unexpected error occurred.", which is the generic error the scenario forbids.
+ *
+ * The registered engine set is deliberately NOT carried into the message.
+ * `EngineSelectionUnavailableError` names it for an operator; a user learning a
+ * deployment's engine inventory from a refusal is an information leak (research
+ * R-011, contract rule E9).
+ */
+export class EngineUnavailableError extends PlatformError {
+  readonly code = 'engine_unavailable' as const;
+}
+
 const STATUS: Record<ErrorCode, number> = {
   validation_failed: 400,
   unauthenticated: 401,
@@ -88,6 +108,11 @@ const STATUS: Record<ErrorCode, number> = {
   conflict: 409,
   invalid_lifecycle_transition: 422,
   specification_not_approved: 422,
+  // 422, not 503. The contract's status table lists no 5xx for a refusal, and
+  // defines 422 as "well-formed but semantically refused" — which this is. The
+  // CODE carries the meaning; inventing an undocumented status from an epic
+  // that does not own `platform-api.md` is the mistake DEF-008-001 records.
+  engine_unavailable: 422,
   internal_error: 500,
 };
 
