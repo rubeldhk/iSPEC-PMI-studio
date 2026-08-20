@@ -22,7 +22,17 @@ const DIGEST = 'sha256:' + 'a'.repeat(64);
 
 function stub(over = {}) {
   const session = {
-    exec: async () => ({ exitCode: 0, stdout: over.probeDigest ?? '', stderr: '' }),
+    // Routed by command: the digest probe answers with stdout, the egress
+    // probe answers with an exit code — non-zero (refused) by default, because
+    // a stub whose network is reachable would make every PASSED assertion
+    // depend on the wrong half of the control (T710).
+    exec: async (command) => {
+      const cmd = command.join(' ');
+      if (cmd.includes('example.com')) {
+        return { exitCode: over.egressProbeExit ?? 7, stdout: '', stderr: '' };
+      }
+      return { exitCode: 0, stdout: over.probeDigest ?? '', stderr: '' };
+    },
     writeFile: async () => undefined,
     listFiles: async () => [],
     readFile: async () => '',
@@ -93,10 +103,30 @@ describe('T576a · transcript formatting', () => {
 });
 
 describe('T576a · step sequencing', () => {
-  it('runs the six steps in the documented order', async () => {
+  it('runs the documented steps in the documented order', async () => {
     const { lines } = await runV6(stub({ imageDigest: DIGEST }));
     const names = lines.map((l) => l.replace(/^\[\w+\]\s*/, '').split(' — ')[0]);
     expect(names).toEqual(V6_STEPS);
+    expect(V6_STEPS).toContain('probe_refused_destination');
+  });
+
+  it('records a refused egress probe as a PASS, in words T710 can hold to', async () => {
+    // T709/T710 (D-28) — reachability of the provider proves the allowlist
+    // permits enough; only a REFUSED probe proves it permits nothing more.
+    const { lines } = await runV6(stub({ imageDigest: DIGEST }));
+    const probe = lines.find((l) => l.includes('probe_refused_destination'));
+    expect(probe).toMatch(/^\[PASS\]/);
+    expect(probe).toMatch(/probe .*refused/i);
+  });
+
+  it('FAILS the run when the probe reaches a non-allowlisted destination', async () => {
+    // The dangerous direction (DEF-028-015): a bridge network lets everything
+    // else pass too, and before this step the transcript could not tell.
+    const { lines, outcome } = await runV6(stub({ imageDigest: DIGEST, egressProbeExit: 0 }));
+    expect(outcome).toBe('FAILED');
+    const probe = lines.find((l) => l.includes('probe_refused_destination'));
+    expect(probe).toMatch(/^\[FAIL\]/);
+    expect(probe).toMatch(/reached/i);
   });
 
   it('falls back to an in-container probe when the descriptor carries no digest', async () => {

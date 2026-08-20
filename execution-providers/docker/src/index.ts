@@ -27,6 +27,7 @@ import {
   type ExecutionSession,
   type ProjectExecutionEnvironment,
 } from '@pmi/execution-contract';
+import { proxyContainerNameFor, proxyUrlFor } from './proxy-config.js';
 
 export const DOCKER_DESCRIPTOR: ExecutionEnvironmentDescriptor = {
   provider: 'docker',
@@ -66,6 +67,17 @@ export interface DockerEngineApi {
    * mock cannot meaningfully be asked.
    */
   networkExists?(name: string): Promise<boolean>;
+  /**
+   * `DEF-028-015` / `D-28` — does the network CONFORM, not merely exist?
+   *
+   * Optional for the same reason as `networkExists`: a mocked daemon has no
+   * networks to describe. A daemon that can answer enables the conformance
+   * half of the preflight; one that cannot skips it, exactly as before.
+   */
+  inspectNetwork?(name: string): Promise<{
+    internal: boolean;
+    attachedContainerNames: readonly string[];
+  }>;
   /**
    * `DEF-028-010` — the daemon's own content address for the image it resolved.
    *
@@ -146,9 +158,40 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
           `Egress profile "${request.egressProfile.name}" requires the Docker network ` +
             `"${networkName}", which does not exist. This provider does not create it: the network ` +
             `IS the egress control, and one created by default would permit the whole internet ` +
-            `while reporting the profile as enforced. Create it permitting only ` +
-            `${request.egressProfile.allowedDestinations.join(', ')}, or, for a fully contained run ` +
-            `with no egress at all: docker network create --internal ${networkName}`,
+            `while reporting the profile as enforced. Create it and its proxy sidecar — the ` +
+            `enforcement D-28 decided, permitting only ` +
+            `${request.egressProfile.allowedDestinations.join(', ')} — with: ` +
+            `node scripts/egress-proxy-up.mjs ${request.egressProfile.name}`,
+        );
+      }
+    }
+
+    // DEF-028-015 / D-28 — existence is not conformance. The enforced shape is
+    // an INTERNAL network (no route out) carrying the proxy sidecar (the only
+    // way out, whitelisted from the profile). Both halves are checked, because
+    // each fails differently: a routable network is the whole internet
+    // reporting as enforced; a bare internal network is containment reporting
+    // as reachability, which is R-028-8's exact confusion.
+    if (this.api.inspectNetwork) {
+      const info = await this.api.inspectNetwork(networkName);
+      if (!info.internal) {
+        throw new ExecutionProviderError(
+          'policy_refused',
+          `Network "${networkName}" exists but is not internal, so it routes past the proxy and ` +
+            `permits the whole internet while egress profile "${request.egressProfile.name}" ` +
+            `reports as enforced (DEF-028-015). Remove it (docker network rm ${networkName}) and ` +
+            `recreate the conformant shape with: node scripts/egress-proxy-up.mjs ` +
+            `${request.egressProfile.name}`,
+        );
+      }
+      const sidecar = proxyContainerNameFor(request.egressProfile.name);
+      if (!info.attachedContainerNames.includes(sidecar)) {
+        throw new ExecutionProviderError(
+          'policy_refused',
+          `Network "${networkName}" is internal but carries no proxy sidecar "${sidecar}", so the ` +
+            `sandbox could reach nothing at all — containment, not the enforced profile ` +
+            `"${request.egressProfile.name}" (D-28). Bring the sidecar up with: ` +
+            `node scripts/egress-proxy-up.mjs ${request.egressProfile.name}`,
         );
       }
     }
@@ -227,7 +270,20 @@ export class DockerExecutionEnvironment implements ProjectExecutionEnvironment {
       User: `${SANDBOX_UID}:${SANDBOX_GID}`,
       // Exhaustive by construction: whatever the request does not carry does not
       // exist inside the container. No DATABASE_URL, no queue URL, no secret.
-      Env: Object.entries(request.env).map(([k, v]) => `${k}=${v}`),
+      //
+      // Plus exactly three variables the request does NOT carry: the proxy
+      // plumbing (D-28). They are the egress control stating where it is
+      // enforced — derived from the profile, an internal DNS name, no secret —
+      // and they belong to the provider because only the provider knows which
+      // network, and therefore which sidecar, this container is attached to.
+      // sandbox.json's allowedKeys (frozen, SC-AGT-005) governs the request's
+      // application env and is untouched by this.
+      Env: [
+        ...Object.entries(request.env).map(([k, v]) => `${k}=${v}`),
+        `HTTP_PROXY=${proxyUrlFor(request.egressProfile.name)}`,
+        `HTTPS_PROXY=${proxyUrlFor(request.egressProfile.name)}`,
+        `NO_PROXY=localhost,127.0.0.1`,
+      ],
       HostConfig: {
         ReadonlyRootfs: true,
         // The ONLY writable path, and it is memory-backed so it cannot survive
@@ -519,6 +575,28 @@ export function unixSocketDockerApi(socketPathArg?: string): DockerEngineApi {
       if (res.status === 404) return false;
       expectOk(res, 'inspect network');
       return true;
+    },
+
+    /**
+     * `DEF-028-015` / `D-28` — the conformance half of the preflight.
+     *
+     * `Internal` is the daemon's own flag; the attached names come from the
+     * network's `Containers` map, so the answer describes what is actually
+     * wired, not what a script intended.
+     */
+    async inspectNetwork(name) {
+      const res = await request('GET', `/v1.43/networks/${encodeURIComponent(name)}`);
+      expectOk(res, 'inspect network');
+      const parsed = JSON.parse(res.text) as {
+        Internal?: boolean;
+        Containers?: Record<string, { Name?: string }>;
+      };
+      return {
+        internal: parsed.Internal === true,
+        attachedContainerNames: Object.values(parsed.Containers ?? {})
+          .map((c) => c.Name)
+          .filter((n): n is string => typeof n === 'string'),
+      };
     },
   };
 }

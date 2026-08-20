@@ -1,0 +1,26 @@
+{
+  "$comment": [
+    "T703 — pins for the egress proxy sidecar image (D-28, ADR-0013).",
+    "Same conventions as engine-adapters/speckit/docker/pinned-versions.json (DEF-028-006):",
+    "every pin was actually resolved, and each records where its digest came from.",
+    "The pin lives beside the Dockerfile it pins, not in the engine's file — the engine",
+    "image and this sidecar are bumped by different decisions."
+  ],
+  "recorded": "2026-08-19",
+  "pins": {
+    "ALPINE_BASE": {
+      "value": "3.22",
+      "registry": "docker-hub",
+      "package": "library/alpine",
+      "digest": "sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce",
+      "resolved": "hub.docker.com/v2/repositories/library/alpine/tags/3.22, last_updated 2026-06-22T20:24:38Z, fetched 2026-08-19",
+      "provenance_note": "Docker Official Image. The digest is the multi-arch manifest list; the FROM line in the Dockerfile must carry this exact digest — tests/governance/egress-proxy-image.spec.ts fails on drift."
+    },
+    "TINYPROXY_LINE": {
+      "value": "1.11",
+      "registry": "alpine-3.22",
+      "package": "tinyproxy",
+      "provenance_note": "A minor line, asserted AT BUILD by `tinyproxy -v | grep '^tinyproxy 1.11.'` rather than digest-pinned: apk resolves within the digest-pinned 3.22 branch, and Alpine purges point releases, so an exact -rN pin would rot into an unbuildable image (the DEF-028-006 failure in the other direction). Filter semantics (FilterDefaultDeny whitelist, domain-regex rules, ConnectPort) verified against 1.11 docs via Context7 /tinyproxy/tinyproxy.github.io on 2026-08-19."
+    }
+  }
+}

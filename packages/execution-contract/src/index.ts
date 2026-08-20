@@ -216,3 +216,10 @@ export interface ProjectExecutionEnvironment {
  * so the cycle is erased at runtime.
  */
 export * from './profiles.js';
+
+/**
+ * The refusals, exported with the contract they guard. T702 (D-28): the proxy
+ * allowlist generator applies `assertEgressProfile` before emitting a filter,
+ * so a profile the contract would refuse can never become a running proxy.
+ */
+export * from './validation.js';

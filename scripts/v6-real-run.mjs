@@ -25,6 +25,7 @@ export const V6_STEPS = [
   'start_container',
   'record_image_digest',
   'generate_specification',
+  'probe_refused_destination',
   'stop_container',
 ];
 
@@ -190,7 +191,28 @@ export async function runV6({ environment, agent, engine, now, log = () => {} })
       if (!why) console.log('  no diagnostics were carried with this failure.');
     }
 
-    outcome = result.ok && digest ? 'PASSED' : 'FAILED';
+    // T709 / T710 (D-28) — reachability alone is half the control. The agent
+    // reaching api.anthropic.com proves the allowlist permits enough; only a
+    // REFUSED probe of something else proves it permits nothing more. On the
+    // enforced shape (internal network, proxy sidecar) a direct fetch has no
+    // route out and fails; on a bridge network it succeeds — which is exactly
+    // the run that must not read as enforced (DEF-028-015). Node is in the
+    // engine image by pin (NODE_MAJOR), so the probe assumes no other tool.
+    const probe = await session.exec([
+      'node',
+      '-e',
+      "fetch('https://example.com',{signal:AbortSignal.timeout(5000)}).then(()=>process.exit(0),()=>process.exit(7))",
+    ]);
+    const probeRefused = probe.exitCode !== 0;
+    step(
+      'probe_refused_destination',
+      probeRefused ? 'ok' : 'fail',
+      probeRefused
+        ? 'probe of https://example.com was refused — no direct route out; the profile is enforced (D-28)'
+        : 'probe of https://example.com was REACHED — the network permits general egress and the profile is NOT enforced (DEF-028-015)',
+    );
+
+    outcome = result.ok && digest && probeRefused ? 'PASSED' : 'FAILED';
   } catch (error) {
     step('generate_specification', 'fail', error instanceof Error ? error.message : String(error));
   } finally {

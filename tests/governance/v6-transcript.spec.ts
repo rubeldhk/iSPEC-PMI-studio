@@ -84,3 +84,49 @@ describe('G-28-01 · the V6 real-run transcript (SC-AGT-001, gates T646b)', () =
     ).toBe(true);
   });
 });
+
+describe('G-28-02 · a PASSED transcript proves the profile was ENFORCED (T710, D-28)', () => {
+  // Same severity split as G-28-01: REPORTS while the proxy run has not
+  // happened, FAILS on a claim. The claim that matters here is **Outcome:
+  // PASSED** — the moment a transcript asserts SC-AGT-001 evidence, it must
+  // also prove the egress profile was enforced, or it is the DEF-028-015
+  // failure in document form: a bridge-network run reading as an enforced one.
+  const claimsPassed = present && /\*\*Outcome\*\*:\s*PASSED/.test(content);
+
+  it('reports until a proxy-enforced run is recorded', () => {
+    if (present && !claimsPassed && !content.includes('pmi-egress-proxy-generation')) {
+      console.warn(
+        '[G-28-02] REPORTS — the committed transcript predates the D-28 proxy run (T709). ' +
+          'The egress proxy is delivered but no proxy-enforced run is recorded yet; ' +
+          'SC-AGT-001 remains UNVERIFIED. Bring the proxy up ' +
+          '(node scripts/egress-proxy-up.mjs generation) and rerun pnpm v6:real-run.',
+      );
+    }
+    expect(true).toBe(true);
+  });
+
+  it('a PASSED transcript names the enforced network shape', () => {
+    if (!claimsPassed) return;
+    expect(
+      content.includes('pmi-egress-proxy-generation'),
+      'the transcript claims PASSED but never names the proxy sidecar, so it cannot show the ' +
+        'profile was enforced rather than the network merely existing (DEF-028-015)',
+    ).toBe(true);
+    expect(
+      /\binternal\b/i.test(content),
+      'the transcript claims PASSED but does not state the network was internal',
+    ).toBe(true);
+  });
+
+  it('a PASSED transcript records one refused non-allowlisted probe', () => {
+    if (!claimsPassed) return;
+    // Reachability of api.anthropic.com proves the allowlist permits enough;
+    // only a refused probe proves it permits nothing MORE. Both halves are the
+    // control (Native §19), and the second is the one a bridge network fakes.
+    expect(
+      /refused probe|probe .*refused|denied probe|probe .*denied/i.test(content),
+      'the transcript claims PASSED but records no refused probe of a non-allowlisted ' +
+        'destination, so it proves reachability without proving restriction',
+    ).toBe(true);
+  });
+});

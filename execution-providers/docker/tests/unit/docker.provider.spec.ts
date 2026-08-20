@@ -127,13 +127,23 @@ describe('T570 · every ADR-0002 control appears in the create request', () => {
     expect(config.HostConfig.Privileged).toBe(false);
   });
 
-  it('passes only the environment keys the request carries', async () => {
+  it('passes the request keys plus ONLY the proxy plumbing the profile requires', async () => {
     // sandbox.json calls its allowed list exhaustive: "whatever is not listed
-    // does not exist inside the container". The provider must not add to it.
+    // does not exist inside the container". That list governs what the REQUEST
+    // may carry, and the request still adds nothing. The three proxy variables
+    // are the egress control's own plumbing (D-28): derived from the profile
+    // at the provider seam, carrying an internal DNS name and no secret — the
+    // network policy stating where it is enforced. Asserted exhaustively so a
+    // fourth variable cannot arrive unreviewed.
     const d = daemon();
     await new DockerExecutionEnvironment(d).start(REQUEST);
     const config = createdConfig(d) as unknown as { Env: string[] };
-    expect(config.Env).toEqual(['PMI_CORRELATION_ID=00000000-0000-4000-8000-000000000000']);
+    expect(config.Env).toEqual([
+      'PMI_CORRELATION_ID=00000000-0000-4000-8000-000000000000',
+      'HTTP_PROXY=http://pmi-egress-proxy-generation:8888',
+      'HTTPS_PROXY=http://pmi-egress-proxy-generation:8888',
+      'NO_PROXY=localhost,127.0.0.1',
+    ]);
   });
 
   it('applies the egress profile rather than leaving the network open', async () => {

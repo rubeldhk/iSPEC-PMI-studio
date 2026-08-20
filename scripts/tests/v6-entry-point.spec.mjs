@@ -88,8 +88,11 @@ describe('T668 · the input the entry point composes', () => {
     expect(text).not.toMatch(/AI_PROVIDER_TOKEN\s*[:=]\s*["'][^"']+/);
   });
 
-  it('still declares the six V6 steps', () => {
-    expect(V6_STEPS).toHaveLength(6);
+  it('still declares the seven V6 steps', () => {
+    // Was six; T709/T710 (D-28) added probe_refused_destination — the half of
+    // the control that proves the allowlist permits nothing MORE.
+    expect(V6_STEPS).toHaveLength(7);
+    expect(V6_STEPS).toContain('probe_refused_destination');
   });
 });
 

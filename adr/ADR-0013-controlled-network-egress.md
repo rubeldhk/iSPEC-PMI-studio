@@ -38,8 +38,29 @@ declaring `supportsNetworkPolicy: false` cannot accept any profile at all.
 under `D-31` because the sandbox host is shared between tenants.
 
 **Negative** — a proxy is a new operational component, and it lands on the SaaS platform rather than
-on a customer. **It is not built**, and the concrete destination list stays open (`R-AI-009`).
+on a customer. The concrete destination list for `implementation` stays open (`R-AI-009`).
+
+## Delivery (amended 2026-08-19 — D-28 Option A, decided by the project owner)
+
+**The proxy is delivered** (EPIC-028 Phase 8, `T701`–`T708`), and enforcement is expressed as:
+
+- the profile's network `pmi-egress-<profile>` is **`--internal`** — the sandbox has no route out;
+- a **proxy sidecar** (`pmi-egress-proxy-<profile>`, Tinyproxy in whitelist mode) is dual-homed
+  between that network and a routable one, its allowlist **generated from the profile's
+  `allowedDestinations`** (`proxy-config.ts`) — never written by hand, so filter and profile
+  cannot drift;
+- the sandbox is pointed at the sidecar via `HTTPS_PROXY`/`HTTP_PROXY`, injected at the provider
+  seam from the profile name — `sandbox.json` and `GENERATION_EGRESS_PROFILE` stay frozen
+  (`SC-AGT-005`);
+- the provider's preflight refuses a network that merely exists: non-internal, or missing its
+  sidecar, is `policy_refused` (`DEF-028-015`).
+
+Operators bring the shape up with `node scripts/egress-proxy-up.mjs <profile>`. The alternative —
+amending `ADR-0002`'s promise instead of building the enforcement — was considered and rejected:
+the 2026-08-14 session had already refused to widen the generation posture, and a rule is worth
+what it costs to keep on the day it is inconvenient.
 
 ## Traceability
 
-C-22 · D-28 · D-36 · R-AI-009 · SC-AGT-005 · extends ADR-0002
+C-22 · D-28 · D-36 · R-AI-009 · R-028-8 · DEF-028-015 · SC-AGT-005 · extends ADR-0002 ·
+delivered by EPIC-028 `T701`–`T708`

@@ -59,15 +59,19 @@ describe('T670 · egress network preflight (DEF-028-007)', () => {
     expect(api.created).toHaveLength(0);
   });
 
-  it('names the network, the profile and how to create a contained one', async () => {
-    // A refusal an operator cannot act on is only a slower failure.
+  it('names the network, the profile and the bring-up that creates a conformant one', async () => {
+    // A refusal an operator cannot act on is only a slower failure. The
+    // guidance changed with D-28: `docker network create --internal` alone is
+    // no longer a passing configuration (a profile that names destinations
+    // needs the proxy, DEF-028-015), so the message names the script that
+    // creates the network AND its sidecar together.
     const env = new DockerExecutionEnvironment(fakeApi({ networkExists: async () => false }));
     const error = await env.start(REQUEST).catch((e: Error) => e);
     const message = String((error as Error).message);
     expect(message).toContain('pmi-egress-generation');
     expect(message).toContain('generation');
     expect(message).toContain('api.anthropic.com');
-    expect(message).toContain('docker network create --internal pmi-egress-generation');
+    expect(message).toContain('node scripts/egress-proxy-up.mjs generation');
   });
 
   it('never offers to create the network itself', async () => {
@@ -108,6 +112,112 @@ describe('T670 · egress network preflight (DEF-028-007)', () => {
     // meaningfully asked.
     const env = new DockerExecutionEnvironment(fakeApi());
     await expect(env.start(REQUEST)).resolves.toBeTruthy();
+  });
+});
+
+describe('T706 · existence is not conformance (DEF-028-015, D-28)', () => {
+  const SIDECAR = 'pmi-egress-proxy-generation';
+
+  it('refuses a network that exists but is not internal', async () => {
+    // The silent direction DEF-028-015 names: a plain bridge network under the
+    // profile's name permits the whole internet while the profile reports as
+    // enforced. Existence passed the old preflight; conformance must not.
+    const env = new DockerExecutionEnvironment(
+      fakeApi({
+        networkExists: async () => true,
+        inspectNetwork: async () => ({ internal: false, attachedContainerNames: [SIDECAR] }),
+      }),
+    );
+    await expect(env.start(REQUEST)).rejects.toMatchObject({ reason: 'policy_refused' });
+  });
+
+  it('refuses an internal network with no proxy sidecar attached', async () => {
+    // D-28: enforcement is internal PLUS the sidecar. A bare internal network
+    // is containment — the sandbox cannot reach the destinations the profile
+    // promises — and reporting it as the enforced profile is R-028-8's exact
+    // confusion.
+    const env = new DockerExecutionEnvironment(
+      fakeApi({
+        networkExists: async () => true,
+        inspectNetwork: async () => ({ internal: true, attachedContainerNames: [] }),
+      }),
+    );
+    await expect(env.start(REQUEST)).rejects.toMatchObject({ reason: 'policy_refused' });
+  });
+
+  it('tells the operator which sidecar is missing and how to bring it up', async () => {
+    const env = new DockerExecutionEnvironment(
+      fakeApi({
+        networkExists: async () => true,
+        inspectNetwork: async () => ({ internal: true, attachedContainerNames: [] }),
+      }),
+    );
+    const error = await env.start(REQUEST).catch((e: Error) => e);
+    const message = String((error as Error).message);
+    expect(message).toContain(SIDECAR);
+    expect(message).toContain('node scripts/egress-proxy-up.mjs generation');
+  });
+
+  it('creates no container when conformance fails', async () => {
+    const api = fakeApi({
+      networkExists: async () => true,
+      inspectNetwork: async () => ({ internal: false, attachedContainerNames: [] }),
+    });
+    await new DockerExecutionEnvironment(api).start(REQUEST).catch(() => undefined);
+    expect(api.created).toHaveLength(0);
+  });
+
+  it('proceeds when the network is internal and the sidecar is attached', async () => {
+    const api = fakeApi({
+      networkExists: async () => true,
+      inspectNetwork: async () => ({ internal: true, attachedContainerNames: ['other', SIDECAR] }),
+    });
+    await expect(new DockerExecutionEnvironment(api).start(REQUEST)).resolves.toBeTruthy();
+    expect(api.created).toHaveLength(1);
+  });
+
+  it('skips conformance against a daemon that cannot answer, rather than refusing', async () => {
+    // Same reasoning as networkExists (T670): a mocked daemon has no networks
+    // to describe, and T570's fixtures must not fail on a question a mock
+    // cannot meaningfully be asked.
+    const env = new DockerExecutionEnvironment(fakeApi({ networkExists: async () => true }));
+    await expect(env.start(REQUEST)).resolves.toBeTruthy();
+  });
+});
+
+describe('T707 · the sandbox is pointed at the proxy (D-28)', () => {
+  async function createdEnv(profile = REQUEST.egressProfile): Promise<string[]> {
+    const api = fakeApi({ networkExists: async () => true });
+    await new DockerExecutionEnvironment(api).start({
+      ...REQUEST,
+      env: { PMI_CORRELATION_ID: 'cid-1' },
+      egressProfile: profile,
+    });
+    return (api.created[0] as { Env: string[] }).Env;
+  }
+
+  it('injects HTTPS_PROXY, HTTP_PROXY and NO_PROXY derived from the profile', async () => {
+    // These are the egress control's own plumbing (D-28), derived from the
+    // profile at the provider seam. They carry no secret — an internal DNS
+    // name — and sandbox.json (frozen, SC-AGT-005) is untouched: allowedKeys
+    // governs what the REQUEST may carry, and the request carries nothing new.
+    const env = await createdEnv();
+    expect(env).toContain('HTTPS_PROXY=http://pmi-egress-proxy-generation:8888');
+    expect(env).toContain('HTTP_PROXY=http://pmi-egress-proxy-generation:8888');
+    expect(env).toContain('NO_PROXY=localhost,127.0.0.1');
+  });
+
+  it('keeps every key the request carries', async () => {
+    expect(await createdEnv()).toContain('PMI_CORRELATION_ID=cid-1');
+  });
+
+  it('derives the proxy URL from the profile it enforces, not from a constant', async () => {
+    const env = await createdEnv({
+      name: 'implementation',
+      allowedDestinations: ['api.anthropic.com'],
+      enforcement: 'proxy',
+    });
+    expect(env).toContain('HTTPS_PROXY=http://pmi-egress-proxy-implementation:8888');
   });
 });
 

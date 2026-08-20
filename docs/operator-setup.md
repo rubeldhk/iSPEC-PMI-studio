@@ -41,21 +41,26 @@ to create that network**, and the refusal is deliberate: the network *is* the eg
 created by default would be a bridge network with unrestricted egress, and the run would report the
 profile as enforced while the sandbox had the whole internet.
 
-For a **fully contained** run — no egress at all:
+The network must permit **exactly** the profile's destinations (`api.anthropic.com` for
+`generation`) and nothing else. `R-028-8` recorded why `docker network create` alone cannot express
+that; **`D-28` delivered the shape that can** (EPIC-028 Phase 8). One command creates both halves —
+the `--internal` network (no route out) and the proxy sidecar whose whitelist is *generated from
+the profile*:
 
 ```console
-$ docker network create --internal pmi-egress-generation
+$ docker build -t pmi-studio/egress-proxy execution-providers/docker/proxy
+$ node scripts/egress-proxy-up.mjs generation
 ```
 
-For a run that can actually reach the AI provider, the network must permit **exactly** the profile's
-destinations (`api.anthropic.com` for `generation`) and nothing else.
+The sandbox reaches the sidecar via `HTTPS_PROXY` (injected by the provider) and the sidecar
+tunnels CONNECT/443 to the allowlisted hosts only. Re-run the script after any profile change; it
+converges rather than erroring.
 
-> ⚠️ **`R-028-8` — that network cannot be created with `docker network create` alone.** Restricting
-> egress to one hostname needs a proxy or a CNI policy. `D-28` records the proxy as undelivered, and
-> `IMPLEMENTATION_EGRESS_PROFILE` already carries `enforcement: 'proxy'` for the same reason. So
-> today an operator can have **containment** (`--internal`, no egress) or **reachability** (a normal
-> bridge, full egress) — **not the profile as specified**. Any transcript produced on a bridge
-> network must say so; the profile is not being enforced.
+> The provider's preflight now refuses a network that merely *exists* (`DEF-028-015`): one that is
+> not internal routes past the proxy and is refused; an internal one without the sidecar is
+> containment, not the profile, and is also refused. A bare
+> `docker network create --internal pmi-egress-generation` therefore no longer passes — run the
+> bring-up script instead.
 
 ## 4. The AI provider credential
 
