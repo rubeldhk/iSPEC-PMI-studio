@@ -9,9 +9,9 @@ description: "Task list for EPIC-013 — Engine API & Selection"
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
-> ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` Business Requirement Specification
-> and approved business scope (PMI-TASK-001 T-101, T-106). Held is not cancelled — these
-> tasks are complete, reviewed, and Constitution V compliant. They await an input.
+> ▶ **PROCEEDING** — released 2026-08-20 by **PMI-DOC-004 v1.0** (BR-0030; scope ruling
+> T-106). The prior hold (decision D-10) is discharged; posture authority is
+> [spec.md](./spec.md).
 
 
 **Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a
@@ -24,7 +24,7 @@ paired unit-test task, written to fail first.
 
 ## F-08.9 · Engine API and interface
 
-- [ ] T138 [US8] Implement per-project engine selection endpoint in `backend/src/modules/projects/projects.controller.ts` (unit test: T135) *(routed from EPIC-003, 2026-08-17)*
+- [X] T138 [US8] Implement per-project engine selection endpoint in `backend/src/modules/projects/projects.controller.ts` (unit test: T135) *(routed from EPIC-003, 2026-08-17)*
 
   > **Routed in, not reissued** — the identifier travels with the task, as `T646`/`T647`/`T648` did
   > from this same parent epic to EPIC-028 (the `D-19` precedent). EPIC-003's row is struck through
@@ -45,10 +45,10 @@ paired unit-test task, written to fail first.
   > then whether this endpoint lands there or as a project-scoped route on
   > `engines.controller.ts` (`T140`), which this epic already owns. Recorded rather than pre-decided.
 
-- [ ] T139a [P] [US8] Unit tests for the `/engines` listing endpoint asserting capabilities are returned in `backend/tests/unit/engines/engines.controller.spec.ts`
-- [ ] T140 [US8] Implement `/engines` listing endpoint in `backend/src/modules/engines/engines.controller.ts` (unit test: T139a)
-- [ ] T140a [P] [US8] Component unit tests for the engine selection control in `frontend/tests/unit/components/EngineSelector.spec.tsx`
-- [ ] T141 [P] [US8] Implement engine selection control in `frontend/src/components/EngineSelector.tsx` (unit test: T140a)
+- [X] T139a [P] [US8] Unit tests for the `/engines` listing endpoint asserting capabilities are returned in `backend/tests/unit/engines/engines.controller.spec.ts`
+- [X] T140 [US8] Implement `/engines` listing endpoint in `backend/src/modules/engines/engines.controller.ts` (unit test: T139a)
+- [X] T140a [P] [US8] Component unit tests for the engine selection control in `frontend/tests/unit/components/EngineSelector.spec.tsx`
+- [X] T141 [P] [US8] Implement engine selection control in `frontend/src/components/EngineSelector.tsx` (unit test: T140a)
 
 ## Phase Z · Epic closure (MANDATORY — Constitution IV, V, VI, IX)
 
@@ -57,7 +57,7 @@ paired unit-test task, written to fail first.
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T209 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/013-engine-api-selection/closure.md`
-- [ ] T210 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/013-engine-api-selection/closure.md`
-- [ ] T211 Triage `specs/013-engine-api-selection/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/013-engine-api-selection/closure.md`
-- [ ] T212 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/013-engine-api-selection/closure.md`
+- [X] T209 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/013-engine-api-selection/closure.md`
+- [X] T210 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/013-engine-api-selection/closure.md`
+- [X] T211 Triage `specs/013-engine-api-selection/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/013-engine-api-selection/closure.md`
+- [X] T212 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/013-engine-api-selection/closure.md`

@@ -9,6 +9,7 @@
  */
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
+import { EngineSelector } from './components/EngineSelector';
 import { RequirementEditor } from './components/RequirementEditor';
 import { ProjectDetail, ProjectsPage } from './pages/Projects';
 import { RequirementsPage } from './pages/Requirements';
@@ -68,6 +69,7 @@ function App(): ReactElement {
       return (
         <ProjectDetail api={api} projectId={view.projectId} onBack={(): void => setView({ kind: 'projects' })}>
           <>
+            <EngineSelector api={api} projectId={view.projectId} value={null} />
             <RequirementsPage
               api={api}
               projectId={view.projectId}

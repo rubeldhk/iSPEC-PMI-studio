@@ -68,6 +68,14 @@ export interface RequirementFilters {
   sortDir?: string;
 }
 
+/** A registered engine, with what it can do (FR-019/FR-021 surface). */
+export interface Engine {
+  name: string;
+  version: string;
+  capabilities: string[];
+  isDefault: boolean;
+}
+
 export interface FieldError {
   field: string;
   reason: string;
@@ -190,6 +198,12 @@ export class ApiClient {
 
   async listRequirementVersions(id: string): Promise<RequirementVersion[]> {
     return this.request('GET', `/requirements/${encodeURIComponent(id)}/versions`);
+  }
+
+  // ---- engines (US8) ----
+
+  async listEngines(): Promise<Engine[]> {
+    return this.request('GET', '/engines');
   }
 
   // ---- transport ----

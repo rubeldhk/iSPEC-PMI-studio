@@ -17,6 +17,7 @@
  */
 import { Module } from '@nestjs/common';
 import { EngineRegistryService } from './engine-registry.service.js';
+import { EnginesController } from './engines.controller.js';
 import {
   EngineResolverService,
   type ProjectEngineSelectionPort,
@@ -40,6 +41,9 @@ export class InheritDefaultEngineSelection implements ProjectEngineSelectionPort
 }
 
 @Module({
+  // T140 (EPIC-013) — the one runtime surface: read-only listing. Registration
+  // stays composition-time; selection stays on PATCH /projects/{id} (EPIC-006).
+  controllers: [EnginesController],
   providers: [
     {
       provide: EngineRegistryService,
