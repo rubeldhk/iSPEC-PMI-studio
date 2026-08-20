@@ -5,7 +5,7 @@ description: "Task list for EPIC-022 — Product Structure & Traceability"
 
 # Tasks: Product Structure & Traceability
 
-**Epic**: `EPIC-022` | **Module**: M-04 | **Tasks**: 16
+**Epic**: `EPIC-022` | **Module**: M-04 | **Tasks**: 17
 
 **Spec**: [spec.md](./spec.md) | **Parent design**: [../017-enhancement-model/](../017-enhancement-model/) | **Shared design**: [../_shared/](../_shared/)
 
@@ -15,7 +15,9 @@ description: "Task list for EPIC-022 — Product Structure & Traceability"
 **Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a
 paired unit-test task, written to fail first.
 
-**Task IDs are invariant** — allocated `T296`–`T311` at the split.
+**Task IDs are invariant** — allocated `T296`–`T311` at the split, plus **`T827`** added 2026-08-20
+by the EPIC-017 family re-task pass for `SC-ENH-010`, which no task asserted. Allocated from the
+corpus maximum rather than inside the split's range, so the invariant holds.
 
 > 🔀 **Fold candidate.** This epic extends **EPIC-011**'s link model rather than standing fully
 > apart, and the split recorded it as a candidate for folding into EPIC-011 instead of remaining a
@@ -37,8 +39,9 @@ whether or not they apply — which is how box-ticking documents get made.*
 
 - [ ] T296 [P] [US5] Write failing unit tests for structure conformance as a pure function, asserting a missing required section produces a finding that names it, in `backend/tests/unit/specifications/structure-conformance.spec.ts`
 - [ ] T297 [US5] Define `StructureDefinition` model — versioned, ordered sections with required flags, `applies_to = product outputs` — in `backend/prisma/schema.prisma` (unit test: T296)
-- [ ] T298 [US5] Seed the twenty-one-section structure from the source document in `backend/prisma/seed-structures.ts` (unit test: T296)
+- [ ] T298 [US5] Seed the twenty-one-section structure from the source document — the standard shape for specifications PMI Studio generates or manages, never this repository's own documents (**FR-ENH-020**) — in `backend/prisma/seed-structures.ts` (unit test: T296)
 - [ ] T299 [US5] Implement structure conformance checking, reusing the existing validation-finding shape (FR-023), in `backend/src/modules/specifications/structure-conformance.service.ts` (unit test: T296)
+- [ ] T827 **HUMAN** [US5] — perform the `SC-ENH-010` walkthrough: give a specification author new to the organization the structure definition and nothing else, ask them to produce a conforming specification unaided, and record the outcome in `specs/022-product-traceability/closure.md`. **Owner: project-owner.** Added 2026-08-20 by the EPIC-017 family re-task pass: every other criterion in this Epic is asserted by a unit test, but this one claims a *person* succeeds without help — a conformance checker passing proves the rule is enforceable, not that anyone can follow it. Only the walkthrough can verify it, exactly as `T666` verified `SC-RGP-001`
 
 ## F-17.10 · Product traceability chain
 
@@ -56,7 +59,7 @@ Feature → requirement link mandatory, carried in this framing note.*
 - [ ] T303 [P] [US5] Write failing unit tests for full-chain traversal in both directions, asserting every intermediate link returns in order and that an artifact with multiple parents returns all of them, in `backend/tests/unit/traceability/chain-traversal.spec.ts`
 - [ ] T304 [US5] Implement twelve-link bidirectional chain traversal in `backend/src/modules/traceability/chain-traversal.service.ts` (unit test: T303; extends EPIC-011 `T130`)
 - [ ] T305 [P] [US5] Write failing unit tests asserting traversal reports the **first missing link type** by name rather than returning a silently shortened chain, in `backend/tests/unit/traceability/chain-gaps.spec.ts`
-- [ ] T306 [US5] Implement first-missing-link reporting in `backend/src/modules/traceability/chain-gap.service.ts` (unit test: T305)
+- [ ] T306 [US5] Implement first-missing-link reporting in `backend/src/modules/traceability/chain-gap.service.ts` — so a traversal from any operational artifact either reaches its originating vision statement or names the link that breaks the chain (**SC-ENH-007**, with T304) — (unit test: T305)
 - [ ] T307 [US5] Extend the traceability endpoints to expose full-chain traversal and gap reporting per `contracts/platform-api.md` in `backend/src/modules/traceability/traceability.controller.ts` (unit tests: T303, T305; extends EPIC-011 `T133`)
 
 ---

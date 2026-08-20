@@ -46,7 +46,7 @@ a security boundary (R-017-1).*
 
 - [ ] T231 [P] [US1] Write failing unit tests asserting a meaningful change creates a new version, prior versions stay retrievable, and retire marks rather than deletes, in `backend/tests/unit/steering/steering-document.spec.ts`
 - [ ] T232 [US1] Define `SteeringDocument` model with `subject`, `scope_id`, `content`, `version`, `status`, and a unique `(subject, scope_id, version)` constraint in `backend/prisma/schema.prisma` (unit test: T231)
-- [ ] T233 [US1] Implement the steering service — create, edit, version, retire, with append-only edit history — in `backend/src/modules/steering/steering.service.ts` (unit test: T231)
+- [ ] T233 [US1] Implement the steering service — create, edit, version, retire, with append-only edit history (**FR-ENH-003**) — in `backend/src/modules/steering/steering.service.ts` (unit test: T231)
 - [ ] T234 [P] [US1] Write failing unit tests asserting the ten subjects of FR-ENH-002 are accepted and any other subject is refused by name, in `backend/tests/unit/steering/steering-subjects.spec.ts`
 - [ ] T235 [US1] Implement subject validation for the ten named subjects in `backend/src/modules/steering/steering.validation.ts` (unit test: T234)
 - [ ] T236 [P] [US1] Contract tests for `/steering` endpoints against `contracts/platform-api.md` in `backend/tests/contract/steering.spec.ts`

@@ -59,7 +59,7 @@ Feature → requirement link mandatory, carried in this framing note.*
 *Gate arbitration is a pure function — "does this outcome permit advancement?" — which is what makes
 `SC-ENH-004` testable without invoking a model.*
 
-- [ ] T281 [P] [US4] Write failing unit tests asserting every finding carries a `location` and a `role_id`, and that a finding missing either is treated as `malformed_output` rather than stored, in `backend/tests/unit/reviews/review-finding.spec.ts`
+- [ ] T281 [P] [US4] Write failing unit tests asserting every finding carries a `location` and a `role_id`, and that a finding missing either is treated as `malformed_output` rather than stored — leaving zero unattributed findings (**SC-ENH-005**) — in `backend/tests/unit/reviews/review-finding.spec.ts`
 - [ ] T282 [US4] Define `ReviewFinding` model bound to a gate outcome in `backend/prisma/schema.prisma` (unit test: T281)
 - [ ] T283 [P] [US4] Write failing unit tests asserting **empty findings is a pass**, distinguishable from a failed call — the deliberate divergence from the base contract's empty-output rule (contract rule E-R4) — in `backend/tests/unit/reviews/empty-findings.spec.ts`
 - [ ] T284 [P] [US4] Write failing unit tests asserting an unavailable or malformed reviewing role **fails** the gate and never passes by default (contract rule E-R3), in `backend/tests/unit/reviews/role-unavailable.spec.ts`

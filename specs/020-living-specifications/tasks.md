@@ -36,7 +36,7 @@ and mutable. One table with a discriminator makes every query filter by kind.*
 - [ ] T252 [US3] Define `DependencyEdge` model with `dependency_type` and indexes on **both** traversal directions in `backend/prisma/schema.prisma` (unit test: T251)
 - [ ] T253 [P] [US3] Write failing unit tests for cycle detection as a pure function, covering direct, two-hop, and multi-hop cycles, in `backend/tests/unit/dependencies/cycle-detection.spec.ts`
 - [ ] T254 [US3] Implement multi-hop cycle detection running on the path, not only the direct edge, in `backend/src/modules/dependencies/cycle-detector.ts` (unit test: T253)
-- [ ] T255 [P] [US3] Write failing unit tests for the dependency service — create, list, delete — asserting a cycle-forming edge is refused before storage, in `backend/tests/unit/dependencies/dependencies.service.spec.ts`
+- [ ] T255 [P] [US3] Write failing unit tests for the dependency service — create, list, delete — asserting a cycle-forming edge is refused before storage — direct, two-hop and multi-hop alike, so detection is complete rather than merely present (**SC-ENH-009**, with T253) — in `backend/tests/unit/dependencies/dependencies.service.spec.ts`
 - [ ] T256 [US3] Implement the dependency service in `backend/src/modules/dependencies/dependencies.service.ts` (unit tests: T253, T255)
 
 ## F-17.6 · Impact analysis
@@ -53,7 +53,7 @@ change — worth it at a scale this epic does not target.*
 - [ ] T259 [P] [US3] Write failing unit tests asserting a truncated traversal returns `bounded = true` and never silently shortens the result, in `backend/tests/unit/dependencies/impact-bounded.spec.ts`
 - [ ] T260 [US3] Implement the recursive impact query with a configured depth bound in `backend/src/modules/dependencies/impact.service.ts` (unit tests: T257, T259)
 - [ ] T261 [P] [US3] Integration test running impact analysis against a real PostgreSQL via Testcontainers, asserting multi-hop dependents resolve and that a dependency on a retired or archived artifact is returned and marked, in `backend/tests/integration/impact-analysis.spec.ts`
-- [ ] T262 [US3] Implement dependency and impact endpoints per `contracts/platform-api.md` in `backend/src/modules/dependencies/dependencies.controller.ts` (unit test: T255; integration test: T261)
+- [ ] T262 [US3] Implement dependency and impact endpoints per `contracts/platform-api.md` in `backend/src/modules/dependencies/dependencies.controller.ts` — one request returns every affected specification, so no caller opens a specification to learn it is affected (**SC-ENH-002**) — (unit test: T255; integration test: T261)
 
 ## F-17.4 · Living specification currency
 
@@ -67,7 +67,7 @@ is the platform behaviour this extends, not a requirement this Epic owns. **One 
 - [ ] T265 [US2] Implement currency detection driven by the dependency graph in `backend/src/modules/specifications/currency.service.ts` (unit tests: T263; depends on T256)
 - [ ] T266 [P] [US2] Write failing unit tests asserting reconciliation clears the mark with attribution, and that a **baselined** specification is reconciled by forking a new `draft` rather than by alteration, in `backend/tests/unit/specifications/reconciliation.spec.ts`
 - [ ] T267 [US2] Implement reconciliation preserving baseline immutability (FR-011a) in `backend/src/modules/specifications/reconciliation.service.ts` (unit test: T266)
-- [ ] T268 [P] [US2] Component unit tests asserting staleness renders **on the specification itself**, not only in a report, in `frontend/tests/unit/components/StalenessBanner.spec.tsx`
+- [ ] T268 [P] [US2] Component unit tests asserting staleness renders **on the specification itself**, not only in a report — so no specification is silently stale (**SC-ENH-006**, with T263) — in `frontend/tests/unit/components/StalenessBanner.spec.tsx`
 
 ---
 
