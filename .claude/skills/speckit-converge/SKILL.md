@@ -164,6 +164,15 @@ For each item in the intent inventory, inspect the current code in scope and pro
 Each `Finding` records: a stable id, the `source-ref` it traces to, the `gap-type`, a
 severity, and a short human-readable description with the evidence (the file/area observed).
 
+**Current-docs discipline (Context7 MCP — when available)**: before classifying code that
+uses an external library, framework, SDK, or cloud service API as `partial` or
+`contradicts`, verify the expected API behavior against current documentation rather than
+training knowledge — a "wrong" usage may simply be a newer API. Reuse the library IDs
+recorded in the feature's `research.md` ("Docs consulted"); `resolve-library-id` only when
+none was recorded. Query once per disputed concept, not per finding. If Context7 is
+unavailable, note in the findings summary that external-API findings are unverified against
+current docs.
+
 **Edge cases:**
 
 - **Little or no code yet**: treat the entire specified scope as `missing` remaining work

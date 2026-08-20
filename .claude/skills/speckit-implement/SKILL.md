@@ -162,6 +162,17 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 7. Implementation execution rules:
    - **Setup first**: Initialize project structure, dependencies, configuration
+   - **Current docs before external-API code (Context7 MCP — MANDATORY when available)**:
+     before writing or changing code against any external library, framework, SDK, or cloud
+     service API, fetch current documentation via Context7 — even for well-known libraries,
+     since training data may be stale:
+     - Reuse the library IDs recorded in research.md ("Docs consulted"); `resolve-library-id`
+       only for dependencies research.md missed.
+     - `query-docs` scoped to the exact API/config being implemented, once per concept —
+       cache the answer mentally for the rest of the run; do not re-query the same concept
+       per task.
+     - If Context7 is unavailable, proceed on training knowledge but record the affected
+       tasks as "unverified against current docs" in the closing report.
    - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
    - **Core development**: Implement models, services, CLI commands, endpoints
    - **Integration work**: Database connections, middleware, logging, external services

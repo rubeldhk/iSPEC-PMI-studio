@@ -126,12 +126,27 @@ Command ends after Phase 1 design. Report branch, IMPL_PLAN path, and generated 
      Task: "Find best practices for {tech} in {domain}"
    ```
 
-3. **Consolidate findings** in `research.md` using format:
+3. **Current-docs discipline (Context7 MCP — MANDATORY when available)**: for every external
+   library, framework, SDK, API, or cloud service named in Technical Context or chosen during
+   research, fetch current documentation instead of relying on training knowledge:
+   - `resolve-library-id` with the library name → pick the best `/org/project` match
+     (version-specific when the plan pins a version).
+   - `query-docs` scoped to the concept being decided (API shape, configuration, migration,
+     setup) — one call per concept.
+   - Record the resolved library ID next to the dependency in `research.md` so downstream
+     commands (`/speckit-implement`, `/speckit-converge`) can query the same source without
+     re-resolving.
+   - If the Context7 MCP is unavailable in this session, state so in `research.md` and mark
+     the affected decisions "unverified against current docs" — do not silently fall back.
+
+4. **Consolidate findings** in `research.md` using format:
    - Decision: [what was chosen]
    - Rationale: [why chosen]
    - Alternatives considered: [what else evaluated]
+   - Docs consulted: [Context7 library ID(s) + topic, or "none needed" / "Context7 unavailable"]
 
-**Output**: research.md with all NEEDS CLARIFICATION resolved
+**Output**: research.md with all NEEDS CLARIFICATION resolved and external-dependency
+decisions grounded in current docs (library IDs recorded)
 
 ### Phase 1: Design & Contracts
 
