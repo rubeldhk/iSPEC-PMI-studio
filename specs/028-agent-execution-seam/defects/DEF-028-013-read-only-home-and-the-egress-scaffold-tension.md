@@ -1,7 +1,7 @@
 # DEF-028-006 — a read-only HOME, and the scaffold the egress profile may forbid
 
 **Epic**: `EPIC-028` · blocks **`SC-AGT-001`**
-**Raised**: 2026-08-19 | **Status**: **PARTIALLY FIXED** — HOME fixed (`T697`); the egress tension is open
+**Raised**: 2026-08-19 | **Status**: **FIXED** 2026-08-20 — HOME fixed (`T697`); the egress half resolved by `D-28` delivery; see Resolution
 **Found by**: `T646b`, once `T696` granted the agent tools
 **Severity**: **HIGH**
 
@@ -102,3 +102,18 @@ complete: it isolated the failure as far as the rule permits and named why it st
 and produces a specification; under `GENERATION_EGRESS_PROFILE` it exits 1. The egress hypothesis is
 now the only surviving explanation, and `T699`'s pre-baked scaffold tests it directly: if the
 scaffold needs no network, a run that still fails proves the hypothesis wrong.
+
+## Resolution (2026-08-20)
+
+The pre-baked scaffold ran and the failure persisted, which disproved the scaffold hypothesis and
+re-raised the cause as **`DEF-028-015`** (the network was `--internal`: containment, not the
+profile). That defect is now FIXED — `D-28` Option A delivered the proxy sidecar (EPIC-028
+Phase 8), so the profile's one destination is reachable and nothing else is.
+
+Both of this record's halves are therefore closed:
+
+- **HOME**: fixed by `T697` (`HOME="$PWD"`), unchanged.
+- **The egress/scaffold tension**: dissolved rather than chosen — the pre-baked scaffold (`T699`)
+  needs no network, generation needs only `api.anthropic.com`, and the proxy provides exactly that.
+  Proven by the 2026-08-20 `V6` run: specification generated through the enforced shape,
+  `v6-transcript.md` Outcome PASSED, `.specify/` produced in the session workspace (`T695`).

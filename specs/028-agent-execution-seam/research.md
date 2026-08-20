@@ -12,7 +12,7 @@ assumptions where research is required."* They are marked open with what they bl
 | **R-028-2** | How is `T646` verified when CI cannot run a container? | 🟢 Answered | Phase Z closure |
 | **R-028-3** | Where does capability validation live, given two registries exist? | 🟢 Answered | `T648`, then everything |
 | **R-028-4** | What does the agent conformance suite need on day one? | 🟢 Answered | `F-28.3` |
-| **R-028-5** | Is `claude -p <command>` in a container a supported execution model? | 🔴 **OPEN — not investigated** | `SC-AGT-001`, the Claude adapter's capability |
+| **R-028-5** | Is `claude -p <command>` in a container a supported execution model? | 🟢 **Answered YES — by execution, 2026-08-20** | `SC-AGT-001` satisfied; see below |
 | **R-028-6** | What belongs in the `implementation` egress profile? | 🟡 Partial | `FR-AGT-011`; deferred, not guessed |
 
 ---
@@ -127,6 +127,20 @@ inside them.
 **Deliberately not resolved by assumption.** If `T646b` reveals the invocation does not work as
 mocked, that is a finding this programme has been unable to produce for eleven days, and it arrives
 in the epic designed to surface it.
+
+**Resolved by execution — 2026-08-20.** Every unknown above now has a measured answer:
+
+- **Supported server-side**: YES. `claude -p <command>` inside the sandbox produced a real
+  specification twice — 2026-08-19 (open network, Phase 7) and 2026-08-20 (through the `D-28`
+  proxy, all seven steps PASS; [`v6-transcript.md`](./v6-transcript.md)).
+- **Authentication without an interactive session**: `ANTHROPIC_API_KEY`, bound from
+  `AI_PROVIDER_TOKEN` at the adapter seam (`T693`) — after `DEF-028-011` showed nothing mapped the
+  two names.
+- **What it took beyond the invocation itself**: an explicit `--model` (`T694`, `DEF-028-012` — the
+  CLI's pinned default was retired and 404ed), a narrow tool grant (`T696`), and a writable HOME
+  (`T697`, `DEF-028-013`).
+- **Still unmeasured**: cost per run and multi-turn mechanics — neither blocks anything this epic
+  claims; they belong to the epic that operationalizes generation at volume.
 
 ## R-028-6 · Contents of the `implementation` egress profile — partial 🟡
 

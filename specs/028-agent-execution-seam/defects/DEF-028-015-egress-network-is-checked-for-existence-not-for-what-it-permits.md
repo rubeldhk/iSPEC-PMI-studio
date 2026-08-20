@@ -1,7 +1,7 @@
 # DEF-028-015 — the egress network is checked for existence, never for what it permits
 
 **Epic**: `EPIC-028` · blocks **`SC-AGT-001`** · relates to decision **`D-28`** (proxy enforcement)
-**Raised**: 2026-08-19 | **Status**: **OPEN** — the fix needs `D-28`, which is unowned
+**Raised**: 2026-08-19 | **Status**: **FIXED** 2026-08-20 — `D-28` decided (Option A) and delivered; see Resolution
 **Found by**: `T699`, after pre-baking the scaffold disproved the hypothesis it was built to test
 **Severity**: **HIGH** — the profile reports as enforced while permitting something else entirely
 
@@ -76,3 +76,23 @@ anything remaining in this epic's code.
   expressed before it can be checked.
 - `D-28` — own and build the egress proxy, or amend `ADR-0002` to state what the Docker provider can
   actually enforce alone. Owner: unowned. **This is what `SC-AGT-001` now waits on.**
+
+## Resolution (2026-08-20)
+
+**`D-28` was decided 2026-08-19 by the project owner — Option A, own the proxy** — and delivered by
+EPIC-028 Phase 8. Both directions of the table above are now closed:
+
+- **Enforcement exists**: the proxy sidecar (`T701`–`T705`) is dual-homed between the `--internal`
+  network and a routable one, its Tinyproxy whitelist *generated from* the profile's
+  `allowedDestinations` (`proxy-config.ts`), so the sandbox reaches exactly `api.anthropic.com`
+  and nothing else. This resolves the `--internal` row: the one permitted destination is reachable.
+- **Conformance is checked**: `T706` completed `T700`'s second half. The preflight now refuses a
+  non-internal network (the silent, dangerous row) AND an internal network missing its sidecar,
+  each as `policy_refused` naming the fix. Verified by
+  `execution-providers/docker/tests/unit/egress-network-preflight.spec.ts` (T706 describe block).
+- **Proven end to end**: the 2026-08-20 `V6` run generated a specification through the enforced
+  shape, with the probe of a non-allowlisted destination refused — `v6-transcript.md`, Outcome
+  PASSED. `SC-AGT-001` is no longer blocked.
+
+Continuously guarded by `tests/governance/epic-028-record-coherence.spec.ts` and `G-28-02` in
+`tests/governance/v6-transcript.spec.ts`.

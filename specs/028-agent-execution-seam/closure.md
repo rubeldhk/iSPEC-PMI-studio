@@ -19,8 +19,13 @@ Tasks `T592`–`T596` are discharged by the sections below.
 
 > **Superseded 2026-08-17 — see the addendum at the foot of this document.** `T646b` **ran**: this
 > machine had a Docker daemon all along, and a real container started for the first time in the
-> programme. **72 of 72 tasks.** `SC-AGT-001` is still unmet — the run stops at a missing credential
-> — so the epic remains **not release-eligible**.
+> programme. ~~**72 of 72 tasks.** `SC-AGT-001` is still unmet — the run stops at a missing credential
+> — so the epic remains **not release-eligible**.~~
+>
+> **Superseded again 2026-08-20 — see the final addendum.** **82 of 82 tasks** (Phases 7–9 added).
+> **`SC-AGT-001` is SATISFIED**: a specification was generated through the `D-28`-enforced proxy,
+> transcript committed. The epic is **release-eligible** pending the Constitution IV exit gate,
+> whose convergence run produced only the record corrections this addendum is part of.
 
 | Task group | Outcome | Evidence |
 |---|---|---|
@@ -115,7 +120,11 @@ installation checks described above.
 
 `FR-AGT-001` … `FR-AGT-013`: **all satisfied**, each by a named test.
 `SC-AGT-002`, `003`, `004`, `005`, `006`, `007`, `008`: **satisfied and asserted**.
-**`SC-AGT-001`: NOT satisfied** — it requires a real container. See below.
+~~**`SC-AGT-001`: NOT satisfied** — it requires a real container. See below.~~
+
+> **Corrected 2026-08-20**: **`SC-AGT-001`: SATISFIED** — a real container generated a
+> specification through the enforced egress proxy; [`v6-transcript.md`](./v6-transcript.md),
+> Outcome PASSED, gated by `G-28-01`/`G-28-02`. See the final addendum.
 
 ## Not verified
 
@@ -135,10 +144,11 @@ installation checks described above.
   > `sha256:c9e1f7e4d95b3414b1be2be83be3f6e76dcc6e39eead4f9b1bec926a9f00e16f`. The sentence carried
   > down from EPIC-003's closure is no longer true.
   >
-  > **`SC-AGT-001` is still NOT satisfied, for a different reason.** The transcript's outcome is
-  > `FAILED` at `generate_specification`: *"Refusing to start a sandbox without an AI provider
+  > ~~**`SC-AGT-001` is still NOT satisfied, for a different reason.**~~ The transcript's outcome
+  > was `FAILED` at `generate_specification`: *"Refusing to start a sandbox without an AI provider
   > credential."* The blocker moved from *no daemon* to *no `AI_PROVIDER_TOKEN`* — and the refusal is
-  > the sandbox behaving correctly under `ADR-0002`, not a fault. Owner: operator.
+  > the sandbox behaving correctly under `ADR-0002`, not a fault. Owner: operator. *(Discharged
+  > 2026-08-20 — see the final addendum.)*
 
 - ~~**`pnpm test:integration` fails** on `audit-immutability.spec.ts` — *"Could not find a working
   container runtime strategy."* That is EPIC-004 `T649`, pre-existing and not this epic's gate.~~
@@ -255,10 +265,11 @@ across two epics' closing reports — was never tested. That is worth recording 
 [PASS] stop_container
 ```
 
-**`SC-AGT-001` is still NOT satisfied**, and the epic is still **not release-eligible**. The
-criterion requires a specification generated end to end; none was. The run stops at a credential this
-machine does not hold — which is `E7` behaving correctly, refusing a doomed run before it is billed,
-not a defect.
+~~**`SC-AGT-001` is still NOT satisfied**, and the epic is still **not release-eligible**.~~ The
+criterion requires a specification generated end to end; none was *by this run*. The run stops at a
+credential this machine does not hold — which is `E7` behaving correctly, refusing a doomed run
+before it is billed, not a defect. *(Both struck claims were overtaken on 2026-08-20 — see the
+final addendum.)*
 
 `T646b` itself is complete: the task was *run it and commit the transcript with the image digest*,
 and both are done. The distinction matters. A task and a success criterion are not the same claim,
@@ -316,5 +327,38 @@ never build, and EPIC-003 closed with it. An addendum records it there.
 
 `G-28-01` now finds a transcript and passes on its content rather than reporting an absence.
 
-**Tasks: 72 of 72.** `SC-AGT-001` is unmet, so the epic stays **not release-eligible** — unchanged,
-and for a reason that is now one credential and one proxy rather than an untested assumption.
+~~**Tasks: 72 of 72.** `SC-AGT-001` is unmet, so the epic stays **not release-eligible** —
+unchanged, and for a reason that is now one credential and one proxy rather than an untested
+assumption.~~ *(Superseded by the final addendum below.)*
+
+---
+
+## Final addendum — 2026-08-20: `SC-AGT-001` SATISFIED
+
+Everything "What still stands" listed was discharged, in order:
+
+1. **The credential** — provisioned by the project owner in `.env` (never committed, never logged;
+   the runner reads it by composition) and used by the Phase 7 run of 2026-08-19, which surfaced
+   and fixed `DEF-028-011`–`DEF-028-013` (`T692`–`T698`).
+2. **The proxy** — `D-28` decided 2026-08-19 (Option A, project owner) and delivered by Phase 8
+   (`T701`–`T708`): a Tinyproxy sidecar whose whitelist is generated from the profile, dual-homed
+   between the now-conformance-checked `--internal` network and a routable one. `DEF-028-015`
+   closed; the preflight refuses existence-without-conformance.
+3. **`R-028-5`** — answered YES by execution: `claude -p <command>` in the sandbox produced a real
+   specification on 2026-08-19 (open network) and again on **2026-08-20 through the enforced
+   proxy**, with the probe of a non-allowlisted destination refused.
+
+**The 2026-08-20 run**: all seven steps PASS — including the new `probe_refused_destination` —
+image digest `sha256:5fbd6aefd23d9fc244a6957f6d3192eaaac8f86693849cc1c8773d4b0edb6dad`, transcript
+committed with its egress-enforcement derivation, gated by `G-28-01` and `G-28-02` (which rejected
+the first transcript of the day for not naming the enforced shape — the gate worked before it was a
+day old).
+
+**Tasks: 82 of 82** (Phase 7 convergence `T692`–`T699`, Phase 8 delivery `T700`–`T710`, Phase 9
+record corrections `T711`–`T715`). Gates re-run 2026-08-20: 738 unit / 762 governance / 22
+architecture, typecheck and lint clean. The 2026-08-20 convergence run found **zero code gaps**;
+its five findings were these records lagging the code, corrected by Phase 9 and guarded by
+`tests/governance/epic-028-record-coherence.spec.ts`.
+
+**The epic is release-eligible.** Constitution IV's gate: convergence clean on code ✓, unit tests
+green ✓, defect folder carries no open records ✓. Next: promotion `local → dev` (Constitution VII).

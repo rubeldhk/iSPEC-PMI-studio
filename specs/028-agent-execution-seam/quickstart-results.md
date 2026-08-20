@@ -1,10 +1,10 @@
 # Quickstart Results — EPIC-028
 
-**Task**: `T591` · **Run**: 2026-08-17 · **Machine**: Windows 11, Node 22, pnpm 9.15.9,
-**no container runtime**
+**Task**: `T591` · **Run**: 2026-08-17, V6 updated 2026-08-20 · **Machine**: Windows 11, Node 22,
+pnpm 9.15.9, Docker 28.3.3 *(recorded as "no container runtime" on 2026-08-17 — disproved by
+`DEF-028-004`'s fix; the daemon was unreachable, not absent)*
 
-Every scenario in [quickstart.md](./quickstart.md) except `V6`, which is `T646b` and needs a Docker
-daemon this machine does not have.
+Every scenario in [quickstart.md](./quickstart.md), including `V6` as of 2026-08-20.
 
 **Passes and unrun are distinguished throughout** (Constitution IX). A scenario is recorded as
 passing only if its assertions actually executed.
@@ -17,7 +17,7 @@ passing only if its assertions actually executed.
 | **V3** Capability negotiation refuses before it runs | `FR-AGT-003`, E7 | `vitest --project agent-adapters` (conformance C4) | ✅ **PASS** — refusal names the missing capability, and the session records zero commands |
 | **V4** Cancellation is never reported as a timeout | `FR-AGT-006`, C1/C2 | `vitest --project agent-adapters` (conformance C1, C2) | ✅ **PASS** — 38 assertions, run against **both** adapters. See the note below: this scenario found `DEF-028-001` |
 | **V5** Egress and workspace bindings are validated, not trusted | `FR-AGT-010`, `FR-AGT-011` | `vitest --project execution-contract` | ✅ **PASS** — 33 assertions: wildcard and empty destination lists rejected, a provider without network-policy support cannot accept a profile, a credential ref without `expiresAt` rejected |
-| **V6** A real container produces a specification | `SC-AGT-001` | `node scripts/v6-real-run.mjs` | 🔴 **NOT RUN** — no Docker daemon on this machine. `T646b`. See below |
+| **V6** A real container produces a specification | `SC-AGT-001` | `pnpm v6:real-run` | ✅ **PASS** — run 2026-08-20 through the `D-28`-enforced proxy; all seven steps including a refused non-allowlisted probe. Transcript committed. *(Recorded as unrun on 2026-08-17; the daemon existed after all — see below)* |
 | **V7** Spec Kit is the default engine, and it resolves | `FR-018` | `vitest --project backend-integration -t T572` | ✅ **PASS** — 9 assertions. Resolves to `speckit`; the composed chain generates a specification through engine → agent → environment |
 | **V8** The `generation` egress control is untouched | `SC-AGT-005` | `pnpm test:governance` (`generation-egress-frozen.spec.ts`) | ✅ **PASS** — **but only after `DEF-028-003` was fixed.** See below |
 
@@ -46,20 +46,26 @@ content hashes as committed constants.
 **Mutation-verified**: changing `"policy": "deny-all"` to `"allow-all"` in `sandbox.json` now turns
 the check red. Before the fix it did not.
 
-## V6 — not run, and what that means
+## V6 — run and PASSED (updated 2026-08-20; original 2026-08-17 record struck below)
 
-`T646b` requires a machine with a Docker daemon. This one has none: `pnpm test:integration` fails at
-`audit-immutability.spec.ts` with *"Could not find a working container runtime strategy."*
+~~`T646b` requires a machine with a Docker daemon. This one has none. **`SC-AGT-001` is
+UNVERIFIED.** No real container has started in this programme, and this epic has not changed
+that.~~ *(The daemon was present all along — `DEF-028-004` was the transport, not the absence. The
+original wording is kept struck because it records what was believed and verified on the day.)*
 
-- **`SC-AGT-001` is UNVERIFIED.** No real container has started in this programme, and this epic has
-  not changed that.
-- `T646a` (the provider) is complete and its request construction is asserted field-by-field against
-  a mocked daemon — **31 assertions covering every `ADR-0002` control**. That proves the request is
-  the one `ADR-0002` specifies. It proves nothing about whether Docker accepts it.
-- `T576`/`T576a` (the runner and its tests) are complete, so the moment a daemon is available the
-  run is one command.
-- Governance check `G-28-01` reports the absence loudly on every run and will fail if a transcript
-  is ever committed without an image digest.
+What actually happened, across three run days:
+
+- **2026-08-17** — first real container in the programme's history; stopped at the missing
+  credential (correct `E7` refusal). Six defects found and fixed on the way (`DEF-028-004`–`010`).
+- **2026-08-19** — credential provisioned; the run surfaced `DEF-028-011`–`013` (masked exit codes,
+  wrong model, read-only HOME), each fixed with tests (`T692`–`T698`).
+- **2026-08-20** — `D-28` proxy delivered (Phase 8). **All seven steps PASS**: specification
+  generated through the enforced `--internal` + sidecar shape, probe of a non-allowlisted
+  destination **refused**, image digest recorded. [`v6-transcript.md`](./v6-transcript.md),
+  Outcome PASSED. **`SC-AGT-001` is SATISFIED.**
+- Governance: `G-28-01` gates the transcript's form; `G-28-02` (new) fails any PASSED transcript
+  that does not prove enforcement — it rejected the first 2026-08-20 transcript for exactly that,
+  and the evidence was regenerated by a second real run rather than edited.
 
 **A green CI run is not evidence for `T646b` and must not be reported as one.**
 

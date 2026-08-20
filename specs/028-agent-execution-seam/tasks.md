@@ -5,7 +5,7 @@ description: "Task list for EPIC-028 — Agent & Execution Seam"
 
 # Tasks: Agent & Execution Seam
 
-**Epic**: `EPIC-028` | **Module**: M-08 (execution half) | **Tasks**: 72
+**Epic**: `EPIC-028` | **Module**: M-08 (execution half) | **Tasks**: 82
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -424,3 +424,19 @@ transcript names the enforced network. That transcript is the evidence for `SC-A
 
 **Checkpoint**: `SC-AGT-001` satisfied with a proxy-enforced transcript — or a real finding recorded
 naming which seam refused. `/speckit-converge` after this phase per Constitution IV.
+
+## Phase 9: Convergence *(appended 2026-08-20 — post-`T709` run; code converged, records drifted)*
+
+The convergence run found **zero code gaps**: every FR, SC, acceptance scenario and edge case is
+satisfied and verified (738 unit + 762 governance + 22 architecture tests green; `v6-transcript.md`
+PASSED, proxy-enforced). Every finding below is an epic governance document now **contradicting**
+the delivered state — the audit trail lagging the code it audits (Constitution VI).
+
+- [X] T711 Close `specs/028-agent-execution-seam/defects/DEF-028-015-egress-network-is-checked-for-existence-not-for-what-it-permits.md` — status OPEN says "the fix needs `D-28`, which is unowned"; `D-28` was decided 2026-08-19 (Option A) and delivered by `T706` (conformance preflight refuses non-internal networks and missing sidecars) — record resolution, resolving tasks, and the verifying test file per Constitution VI (contradicts)
+- [X] T712 Close `specs/028-agent-execution-seam/defects/DEF-028-013-read-only-home-and-the-egress-scaffold-tension.md` — status PARTIALLY FIXED says "the egress tension is open"; resolved by `T699` (pre-baked scaffold) plus the Phase 8 proxy, proven by the 2026-08-20 PASSED run — record resolution per Constitution VI (contradicts)
+- [X] T713 Update `specs/028-agent-execution-seam/closure.md` — it reports "72 of 72 tasks", `SC-AGT-001` "still unmet", and "not release-eligible", all three now false (82/82, satisfied with committed evidence, convergence clean on code) — rewrite the closing state per `SC-AGT-001` and Constitution IX's honesty rule (contradicts)
+- [X] T714 Update `specs/028-agent-execution-seam/quickstart-results.md` — the `V6` row reads "🔴 NOT RUN — no Docker daemon on this machine" and the verdict "`SC-AGT-001` is UNVERIFIED"; `V6` ran 2026-08-20 and PASSED through the enforced proxy per `SC-AGT-001` (contradicts)
+- [X] T715 Close risk `R-028-5` in `specs/028-agent-execution-seam/research.md` — "OPEN — not investigated" asks whether `claude -p <command>` in a container is a supported execution model; two real runs (2026-08-19 open-network, 2026-08-20 proxy-enforced) each produced a specification, so the answer is recorded as YES with the transcript as evidence (partial)
+
+**Checkpoint**: the epic's record agrees with the epic's code. Then Constitution IV's exit gate is
+met and promotion `local → dev` is unblocked (Constitution VII).
