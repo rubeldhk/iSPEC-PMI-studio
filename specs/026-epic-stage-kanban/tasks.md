@@ -5,7 +5,7 @@ description: "Task list for EPIC-026 — Epic Stage Register & Definition of Rea
 
 # Tasks: Epic Stage Register & Definition of Ready
 
-**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 81 (T466–T536)
+**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 85 (T466–T536, T851–T854)
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -615,6 +615,51 @@ not defects in the work.*
   > scaffolding that satisfy no owned requirement. Reported rather than folded into this task.
 
 ---
+
+## Phase 4: Defect remediation — `DEF-026-007` *(appended 2026-08-20 by `/speckit-tasks`)*
+
+*The register's `Next` column recommends `/speckit-tasks` to a parent design — the one command
+`FR-ESK-024` defines that kind as never running. The cause is a missing input, not a wrong rule:
+the next-command derivation is a pure function of stage, and epic **kind** — which DOR evaluation
+already receives (`T683`) — is not a parameter. The near miss is on record: a `/speckit-tasks 017`
+run was made because the register recommended it, and was stopped by a human reading the spec, not
+by any check.*
+
+*Design, per the defect's suggested resolution (both rulings adopted): reuse the `appliesTo`
+SHAPE `T683` introduced for DOR conditions — a kind list where **absence means every kind** — as
+an optional `nextAppliesTo` on each stage in `governance/epic-stage.config.json`; when a stage's
+next command does not reach the epic's kind, the honest answer is `—`, exactly as the Readiness
+column already renders. Naming a command that must not run is Constitution IX's honesty error in
+the opposite direction. `Planned`, `Analyzed`, and `Ready` (`/speckit-tasks`, `DOR evaluation`,
+`/speckit-implement`) reach `delivery` only; `Specified`/`Clarified`/`Checklisted` reach every
+kind, so EPIC-002 at `Clarified` keeps `/speckit-checklist` — the defect judged that correct.*
+
+- [ ] T851 [P] Write the failing regression check `DEF-026-007` names as its own root cause — in
+      `tests/governance/epic-stage/next-command-kind.spec.ts`: (a) the derivation returns `—` for
+      a `parent-design` at its terminal `Planned` stage and at any stage whose next command does
+      not reach its kind, unchanged for `delivery`; (b) the COMMITTED register contains no
+      `parent-design` row naming `/speckit-tasks`, `/speckit-analyze`, or `/speckit-implement` —
+      the register-level assertion whose absence let 28 rows render unnoticed. Honour the G-26-11
+      harness rules (no database, server, or framework imports; fixture trees cleaned up).
+      **Must FAIL against the current derivation before T852/T853** (Constitution V)
+- [ ] T852 Add the optional `nextAppliesTo` kind-list to the `Planned`, `Analyzed`, and `Ready`
+      stage entries in `governance/epic-stage.config.json` (semantics identical to DOR
+      `appliesTo`: absent = every kind), and extend `StageDefinition` in
+      `tests/governance/epic-stage/derive.ts` to carry it; verify the G-26-01 structure assertions
+      in `config.spec.ts` tolerate the optional field, extending them only if they refuse it
+      (governance check: T851)
+- [ ] T853 Give the next-command derivation the `kind` parameter DOR evaluation already receives:
+      in `tests/governance/epic-stage/derive.ts`, `deriveStage` (and its call site in `build.ts`)
+      resolves `next` to `—` when the reached stage's `nextAppliesTo` excludes the epic's kind —
+      the same threading `evaluateDor(ctx, kind)` uses, not a second mechanism (governance check:
+      T851)
+- [ ] T854 Regenerate the register (`pnpm register:update`) and confirm by reading the diff that
+      EPIC-017 `Planned` and EPIC-002's terminal row now read `—` in `Next` while EPIC-002 at
+      `Clarified` keeps `/speckit-checklist` and no `delivery` row changed; then close
+      `DEF-026-007` naming T851–T853 as resolving tasks and
+      `next-command-kind.spec.ts` as the verifying check (Constitution VI), and record the outcome
+      in `specs/026-epic-stage-kanban/tasks.md`'s Notes if the register regen surfaces anything
+      unexpected
 
 ## Dependencies & Execution Order
 
