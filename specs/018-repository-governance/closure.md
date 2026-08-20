@@ -21,7 +21,7 @@ plus `T444` from convergence. Two remain open and are named under *Deferred*.
 | Convergence `T444` | done | `G-02b` version-increment check |
 | Convergence `T445`, `T446` | **done 2026-08-17** | see *Addendum* below |
 | Convergence `T664`, `T665` | **done 2026-08-17** | `DEF-018-001`; `pnpm test:governance` 184 passed |
-| Convergence `T666` | **not done** | `V18-6` needs a reader new to the programme; owner project-owner |
+| Convergence `T666` | ✅ **done 2026-08-20** | `V18-6` performed by a reader new to the programme; `SC-RGP-001` and `SC-RGP-007` both PASS |
 
 The epic produced **26 files**: 10 steering files plus a register index, 6 governance documents, 1
 configuration file, 9 check suites and a tsconfig. Requirement coverage is 16 of 16 functional
@@ -70,10 +70,14 @@ and it becomes live on the first commit.
 
 ## Not verified
 
-- **`SC-RGP-001` and `SC-RGP-007`** — the `V18-5` and `V18-6` walkthroughs in
+- ~~**`SC-RGP-001` and `SC-RGP-007`** — the `V18-5` and `V18-6` walkthroughs in
   [quickstart.md](./quickstart.md). Neither can be automated: one needs a reader new to the
-  programme, the other is a judgement about whether a single index answers the question. The design
-  acknowledged this rather than writing a check that pretends to test it.
+  programme, the other is a judgement about whether a single index answers the question.~~
+
+  > **Both verified 2026-08-20.** `V18-5` was performed 2026-08-17 and `V18-6` on 2026-08-20; both
+  > criteria **PASS**, with no friction reported. The sentence above remains true about what a check
+  > can do — neither criterion became automatable, and neither should be. They were answered by the
+  > only method that could answer them. See the `V18-6` section.
 - **The CI step itself has not run.** `pnpm test:governance` and `pnpm typecheck:governance` were
   verified locally; the `.github/workflows/ci.yml` step is wired but unexecuted until the next push.
 
@@ -168,7 +172,47 @@ exact cell.
 **D-4 is still open and still the product owner's call.** This corrected the evidence; it did not
 take the decision. The recommendation in the record stands, and is now supported by true numbers.
 
-## V18-6 · A newcomer can find the standards — **NOT PERFORMED**
+## V18-6 · A newcomer can find the standards — **PERFORMED 2026-08-20, PASSED**
+
+`T666` was carried out by the project owner with a reader new to the programme, given the repository
+root and nothing else, per the scenario.
+
+| Criterion | Asks | Outcome |
+|---|---|---|
+| `SC-RGP-001` | name the coding, security and architecture standards by reading one file each, without asking anyone | **PASS** — all three named unaided |
+| `SC-RGP-007` | determine what governs this repository from a single index | **PASS** — one index sufficed |
+
+**No friction was reported.** The reader did not backtrack, did not start elsewhere, and asked
+nothing. The failure signal the scenario named — *"if they navigate by searching the file tree
+rather than by following the index, the index has failed"* — did not occur.
+
+**Both criteria move from unverified to verified**, and they are verified by the only method that
+could verify them. The structural proxy below was always the weaker claim; it is retained because it
+is still true and because the distinction is the point.
+
+### What the proxy proved, and what it did not
+
+A structural check was run at the original closure and reported as a proxy, not as the scenario:
+`governance/README.md` answers each of the three questions in one hop, and the ten steering subjects
+in `governance.config.json` each resolve to a file. **That proved the index is complete. It did not
+prove it is findable**, which is the whole of what `V18-6` asks — and that gap is exactly what this
+walkthrough closed.
+
+### Why this could not have been done here
+
+Kept for the record, because it explains the four-day gap rather than excusing it:
+
+> **This session is not a newcomer** — it has read the constitution, the governance index, the
+> steering files and `srs-alignment.md`. Any walkthrough it performed would measure recall, not
+> discoverability, and its failure signal cannot be observed from the inside.
+
+The task was deferred on that reasoning and not deprioritised. Deferring it cost four days and one
+open task on an otherwise complete Epic; performing it from the inside would have produced a green
+result that meant nothing. **The cost was the right one to pay**, and it is worth recording that the
+answer came back clean — a deferral that ends in a pass is still evidence the deferral was honest,
+not evidence it was unnecessary.
+
+## V18-6 — original entry, superseded
 
 The scenario says what it needs: *"Give someone unfamiliar with the programme the repository root
 and nothing else"*, and *"'Can someone new find this?' is answered by someone new, not by a script."*
@@ -218,7 +262,7 @@ by name — and **mutation-tested afterwards**.
 
 ## Not verified — 2026-08-17
 
-- **`V18-6` was not performed.** `SC-RGP-001` and `SC-RGP-007` remain unverified by the human test.
+- ~~**`V18-6` was not performed.** `SC-RGP-001` and `SC-RGP-007` remain unverified by the human test.~~ **Performed 2026-08-20 — both PASS.** See the `V18-6` section above.
   The structural proxy above is not a substitute and is not counted as one.
 - ~~**The integration suite was not run** — no container runtime on this machine.~~ Not this epic's gate. **Corrected 2026-08-19: it runs and passes** — 43 tests, 5 files, real PostgreSQL; in CI since `T688`/`T689`.
 - ~~**CI has not run.** Every gate above was executed locally.~~ **Corrected 2026-08-19: CI runs on every push**, and has since 2026-08-17.
@@ -227,7 +271,7 @@ by name — and **mutation-tested afterwards**.
 
 | Item | Owner | Awaiting |
 |---|---|---|
-| `T666` — the `V18-6` newcomer walkthrough | project-owner | a reader new to the programme |
+| ~~`T666` — the `V18-6` newcomer walkthrough~~ ✅ **discharged 2026-08-20** | project-owner | ~~a reader new to the programme~~ — performed, both criteria PASS |
 | `governance/steering/business-rules.md` content | product-owner | `PMI-DOC-004` |
 | UI standards specifics | product-owner | SRS Volume 8 |
 | Decision **D-4** | product-owner | now answerable on corrected evidence |
@@ -238,9 +282,15 @@ by name — and **mutation-tested afterwards**.
 
 ## Epic status
 
-**34 of 35 tasks complete.** The one open task, `T666`, is explicitly deferred to a named owner —
-which Constitution IV permits as an alternative to no remaining work. **EPIC-018 is
-release-eligible**, with `SC-RGP-001` and `SC-RGP-007` stated as unverified rather than assumed.
+~~**34 of 35 tasks complete.** The one open task, `T666`, is explicitly deferred to a named owner —~~
+~~which Constitution IV permits as an alternative to no remaining work.~~ **EPIC-018 is
+release-eligible**, ~~with `SC-RGP-001` and `SC-RGP-007` stated as unverified rather than assumed.~~
+
+> **Updated 2026-08-20.** **38 of 38 tasks complete** — `T666` discharged, nothing deferred and
+> nothing open. EPIC-018 no longer closes on Constitution IV's deferred-remainder allowance; it
+> closes on having finished. `SC-RGP-001` and `SC-RGP-007` are **verified**, not assumed, and every
+> success criterion this epic owns is now either checked by an executable conformance check or
+> answered by a walkthrough that a check could not have replaced.
 
 ---
 
