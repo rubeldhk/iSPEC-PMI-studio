@@ -100,6 +100,24 @@ describe('T576a · transcript formatting', () => {
     expect(text).toMatch(/does \*\*not\*\* prove|R-04/);
     expect(text).toContain('A green CI run is **not** evidence');
   });
+
+  it('a PASSED transcript names the enforced network shape it ran on (T710)', () => {
+    // The derivation is sound because it is the preflight's contrapositive:
+    // since T706, start() refuses a non-internal network or a missing sidecar,
+    // so a started container IS the evidence the shape conformed. The
+    // transcript states that derivation; G-28-02 holds it to it.
+    const text = formatTranscript({ lines: [], digest: DIGEST, startedAt: 'x', outcome: 'PASSED' });
+    expect(text).toContain('pmi-egress-generation');
+    expect(text).toContain('pmi-egress-proxy-generation');
+    expect(text).toMatch(/internal/i);
+  });
+
+  it('a FAILED transcript makes no enforcement claim', () => {
+    // A run that never started (or failed its probe) must not carry a section
+    // implying the shape was verified.
+    const text = formatTranscript({ lines: [], digest: null, startedAt: 'x', outcome: 'FAILED' });
+    expect(text).not.toContain('pmi-egress-proxy-generation');
+  });
 });
 
 describe('T576a · step sequencing', () => {

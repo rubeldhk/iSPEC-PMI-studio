@@ -91,6 +91,23 @@ export function formatTranscript({ lines, digest, startedAt, outcome }) {
     '',
     ...lines.map((line) => `- ${line}`),
     '',
+    // T710 / D-28 — stated only on a PASSED run, and it is a derivation, not
+    // an assertion: since T706 the provider REFUSES to start on a non-internal
+    // network or one missing its sidecar (DEF-028-015), so a container that
+    // started is itself the evidence the shape conformed. The refused probe in
+    // the steps above is the other half: the allowlist permits nothing more.
+    ...(outcome === 'PASSED'
+      ? [
+          '## Egress enforcement (D-28)',
+          '',
+          '- The run rode `pmi-egress-generation`, which the provider verified **internal** with',
+          '  the proxy sidecar `pmi-egress-proxy-generation` attached — the preflight refuses to',
+          '  start otherwise (`DEF-028-015`), so the started container is the proof of shape.',
+          '- The agent reached `api.anthropic.com` only through the sidecar, whose whitelist is',
+          '  generated from the profile; the refused probe above shows there was no other way out.',
+          '',
+        ]
+      : []),
     '## What this transcript does and does not prove',
     '',
     ...provenBy(lines),
