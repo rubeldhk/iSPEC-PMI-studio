@@ -18,9 +18,18 @@ import type { WorkspaceContext } from '../../core/workspace.guard.js';
 // interfaces above them stay the declared types, so the controller still
 // depends on the narrow contract and not on the implementation (PC-1).
 import { GenerateSpecificationService } from './generate-specification.service.js';
+import { SpecificationLifecycleService } from './lifecycle.service.js';
 import { SpecificationSearchService } from './specification-search.service.js';
 import { SpecificationsReadService } from './specifications-read.service.js';
 import type { GenerationJobApi, JobView } from './generate-specification.service.js';
+import type {
+  LifecycleAction,
+  LifecycleOutcome,
+  SpecificationLifecycleApi,
+} from './lifecycle.service.js';
+import type { OutstandingFinding } from './approval.service.js';
+import type { VersionDiff } from './version-diff.service.js';
+import type { SpecificationVersionRecord } from './specifications-read.service.js';
 import type {
   SpecificationSearchApi,
   SpecificationSearchHit,
@@ -103,7 +112,132 @@ export class SpecificationsController {
     @Inject(GenerateSpecificationService) private readonly generation: GenerationJobApi,
     @Inject(SpecificationsReadService) private readonly reads: SpecificationReadApi,
     @Inject(SpecificationSearchService) private readonly search: SpecificationSearchApi,
+    @Inject(SpecificationLifecycleService) private readonly lifecycle: SpecificationLifecycleApi,
   ) {}
+
+  // -------------------------------------------------------------- lifecycle
+  //
+  // T113 — the six transitions of SRS M08 §8, one route each. Six routes
+  // rather than one `PATCH {state}`: the contract names them individually, and
+  // a single state-setting endpoint would invite a client to choose the
+  // destination rather than the ACTION, which is how `approved -> draft` gets
+  // attempted in the first place (US5 scenario 4).
+
+  @Post('specifications/:id/submit-for-review')
+  @HttpCode(200)
+  async submitForReview(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<LifecycleOutcome> {
+    return this.move(ctx, id, 'submit-for-review');
+  }
+
+  /** `review -> draft`: rejection returns it for rework, it does not archive it. */
+  @Post('specifications/:id/reject')
+  @HttpCode(200)
+  async reject(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<LifecycleOutcome> {
+    return this.move(ctx, id, 'reject');
+  }
+
+  /** Returns outstanding validation findings before proceeding (US6 scenario 3). */
+  @Post('specifications/:id/approve')
+  @HttpCode(200)
+  async approve(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<LifecycleOutcome> {
+    return this.move(ctx, id, 'approve');
+  }
+
+  /** The baseline is immutable — a later edit forks a new version in draft (FR-011a). */
+  @Post('specifications/:id/baseline')
+  @HttpCode(200)
+  async baseline(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<LifecycleOutcome> {
+    return this.move(ctx, id, 'baseline');
+  }
+
+  @Post('specifications/:id/mark-implemented')
+  @HttpCode(200)
+  async markImplemented(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<LifecycleOutcome> {
+    return this.move(ctx, id, 'mark-implemented');
+  }
+
+  /** FR-011b: retains the specification and its traceability links — not a delete. */
+  @Post('specifications/:id/archive')
+  @HttpCode(200)
+  async archive(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<LifecycleOutcome> {
+    return this.move(ctx, id, 'archive');
+  }
+
+  /**
+   * T123 — 202 and a job, never a verdict. Validation is an engine capability,
+   * so it is asynchronous for the same reason generation is (R-001).
+   */
+  @Post('specifications/:id/jobs/validate')
+  @HttpCode(202)
+  async validate(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<JobBody> {
+    const acting = requireAuth(ctx);
+    const submitted = await this.generation.submitValidation(
+      { workspaceId: acting.workspaceId, userId: acting.userId },
+      id,
+    );
+    return toJobBody(submitted.job);
+  }
+
+  @Get('specifications/:id/versions')
+  async versions(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<SpecificationVersionRecord[]> {
+    return this.lifecycle.versions(requireAuth(ctx).workspaceId, id);
+  }
+
+  @Get('specifications/:id/versions/:a/diff/:b')
+  async diff(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Param('a') a: string,
+    @Param('b') b: string,
+  ): Promise<VersionDiff> {
+    return this.lifecycle.diff(requireAuth(ctx).workspaceId, id, Number(a), Number(b));
+  }
+
+  /** FR-023: each finding carries the part of the specification it concerns. */
+  @Get('specifications/:id/findings')
+  async findings(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<OutstandingFinding[]> {
+    return this.lifecycle.findings(requireAuth(ctx).workspaceId, id);
+  }
+
+  private async move(
+    ctx: WorkspaceContext | undefined,
+    id: string,
+    action: LifecycleAction,
+  ): Promise<LifecycleOutcome> {
+    const acting = requireAuth(ctx);
+    return this.lifecycle.move(
+      { workspaceId: acting.workspaceId, userId: acting.userId },
+      id,
+      action,
+    );
+  }
 
   // ------------------------------------------------------------------- jobs
 

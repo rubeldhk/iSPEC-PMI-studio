@@ -185,6 +185,11 @@ export interface GenerationJobApi {
     projectId: string,
     requirementIds: string[],
   ): Promise<{ job: JobView; joinedExisting: boolean }>;
+  /** T123 (EPIC-009) — validation is an engine capability, so it is a job too. */
+  submitValidation(
+    ctx: ActingContext,
+    specificationId: string,
+  ): Promise<{ job: JobView; joinedExisting: boolean }>;
   job(workspaceId: string, id: string): Promise<JobView>;
   cancel(workspaceId: string, id: string): Promise<JobView>;
   jobsForProject(workspaceId: string, projectId: string): Promise<JobView[]>;
@@ -313,6 +318,47 @@ export class GenerateSpecificationService implements GenerationJobApi {
       // PC-3: generated once, at the API edge, then carried — never regenerated.
       correlationId: this.correlate(),
       inputRefs: { requirementIds: selection },
+    });
+
+    const job = await this.ledger.findById(submitted.job.id);
+    /* c8 ignore next — the row was just created through the same ledger. */
+    if (!job) throw new NotFoundError(OPAQUE);
+    return { job, joinedExisting: submitted.joinedExisting };
+  }
+
+  /**
+   * T123 — submit a validation run for a specification (US6).
+   *
+   * The same 202-with-a-job shape as generation, for the same reason: an
+   * engine capability is an agent run, not a function call (R-001). What
+   * differs is the input — one specification rather than a selection of
+   * requirements — so there is no empty-selection refusal to make.
+   */
+  async submitValidation(
+    ctx: ActingContext,
+    specificationId: string,
+  ): Promise<{ job: JobView; joinedExisting: boolean }> {
+    if (!this.jobs || !this.ledger) {
+      throw new Error('No job layer is configured for specification validation.');
+    }
+    // Scope first, and through the store the read surface uses: a validation
+    // job for another tenant's specification must be indistinguishable from
+    // one for a specification that does not exist (FR-002, SC-004).
+    const specification = await this.store.findById(specificationId);
+    if (!specification || specification.workspaceId !== ctx.workspaceId) {
+      throw new NotFoundError(OPAQUE);
+    }
+
+    const { descriptor } = await this.engines.resolveForProject(specification.projectId);
+    const submitted = await this.jobs.submit({
+      workspaceId: ctx.workspaceId,
+      projectId: specification.projectId,
+      kind: 'validate_specification',
+      requestedById: ctx.userId,
+      engineName: descriptor.name,
+      engineVersion: descriptor.version,
+      correlationId: this.correlate(),
+      inputRefs: { specificationId },
     });
 
     const job = await this.ledger.findById(submitted.job.id);

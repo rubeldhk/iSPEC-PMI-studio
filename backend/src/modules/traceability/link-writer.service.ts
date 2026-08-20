@@ -163,3 +163,82 @@ export class InMemoryTraceabilityLinkStore implements TraceabilityLinkStore {
     return this.rows.some((r) => this.key(r) === this.key(link));
   }
 }
+
+// ------------------------------------------------------- the generation seam
+
+/**
+ * T858 — the adapter that makes generation and traversal share ONE link store.
+ *
+ * `T081` calls for link creation "on successful generation". Convergence found
+ * the writer built and called by nothing: EPIC-008's generation path wrote
+ * links into its own `SpecificationStore`, so a generated specification was
+ * invisible to `/trace` and `/coverage`.
+ *
+ * This is the seam. It satisfies the port EPIC-008's store writes through, and
+ * it routes every link via `LinkWriterService` — so the permitted-edge rule
+ * (FR-029) and the idempotent re-write apply to generation exactly as they
+ * apply to anything else. Neither module imports the other's service: EPIC-008
+ * declares the port, EPIC-011 implements it, and they meet at the composition
+ * root.
+ */
+export interface SpecificationTraceLinkShape {
+  workspaceId: string;
+  sourceType: 'specification';
+  sourceId: string;
+  targetType: 'requirement';
+  targetId: string;
+  relationship: 'generated_from';
+}
+
+export class TraceabilityLinkAdapter {
+  constructor(
+    private readonly writer: LinkWriterService,
+    private readonly store: TraceabilityLinkStore,
+  ) {}
+
+  /**
+   * Write a generation's links.
+   *
+   * Grouped by specification so the writer's own API is used rather than a
+   * row-by-row bypass of it. In the in-memory posture this is the same
+   * unit-of-work as the surrounding commit; the Prisma path passes its
+   * transaction-scoped delegate instead.
+   */
+  async writeAll(links: SpecificationTraceLinkShape[]): Promise<void> {
+    const bySpecification = new Map<string, { workspaceId: string; requirementIds: string[] }>();
+    for (const link of links) {
+      const entry = bySpecification.get(link.sourceId) ?? {
+        workspaceId: link.workspaceId,
+        requirementIds: [],
+      };
+      entry.requirementIds.push(link.targetId);
+      bySpecification.set(link.sourceId, entry);
+    }
+    for (const [specificationId, entry] of bySpecification) {
+      await this.writer.linkSpecificationToRequirements({
+        workspaceId: entry.workspaceId,
+        specificationId,
+        requirementIds: entry.requirementIds,
+      });
+    }
+  }
+
+  /** FR-032's reverse lookup: which specifications derive from a requirement. */
+  async sourceIdsForTarget(workspaceId: string, requirementId: string): Promise<string[]> {
+    const rows = await this.store.byTarget(workspaceId, 'requirement', requirementId);
+    return rows.filter((r) => r.sourceType === 'specification').map((r) => r.sourceId);
+  }
+
+  /** The links a specification owns — SC-002's orphan check reads this. */
+  async forSource(workspaceId: string, specificationId: string): Promise<SpecificationTraceLinkShape[]> {
+    const rows = await this.store.bySource(workspaceId, 'specification', specificationId);
+    return rows.map((r) => ({
+      workspaceId: r.workspaceId,
+      sourceType: 'specification' as const,
+      sourceId: r.sourceId,
+      targetType: 'requirement' as const,
+      targetId: r.targetId,
+      relationship: 'generated_from' as const,
+    }));
+  }
+}

@@ -11,6 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { UnauthenticatedError } from '../../../src/core/errors.js';
 import { SpecificationsController } from '../../../src/modules/specifications/specifications.controller.js';
 import type { GenerationJobApi } from '../../../src/modules/specifications/generate-specification.service.js';
+import type { SpecificationLifecycleApi } from '../../../src/modules/specifications/lifecycle.service.js';
 import type { SpecificationSearchApi } from '../../../src/modules/specifications/specification-search.service.js';
 import type {
   SpecificationDetail,
@@ -76,7 +77,15 @@ function mocks(): {
 
 function controller(): { c: SpecificationsController } & ReturnType<typeof mocks> {
   const m = mocks();
-  return { ...m, c: new SpecificationsController(m.jobs, m.reads, m.search) };
+  return {
+    ...m,
+    c: new SpecificationsController(
+      m.jobs,
+      m.reads,
+      m.search,
+      {} as unknown as SpecificationLifecycleApi,
+    ),
+  };
 }
 
 describe('SpecificationsController · generation jobs (F-04.5)', () => {

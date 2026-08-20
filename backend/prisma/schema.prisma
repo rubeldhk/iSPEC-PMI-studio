@@ -34,6 +34,8 @@ model Workspace {
   specificationVersions SpecificationVersion[]
   traceabilityLinks     TraceabilityLink[]
   decisionRecords       ArchitectureDecisionRecord[]
+  lifecycleTransitions  LifecycleTransition[]
+  validationFindings    ValidationFinding[]
 
   @@map("workspaces")
 }
@@ -231,8 +233,10 @@ model Specification {
 
   workspace      Workspace              @relation(fields: [workspaceId], references: [id])
   project        Project                @relation(fields: [projectId], references: [id])
-  versions       SpecificationVersion[] @relation("SpecificationVersions")
-  currentVersion SpecificationVersion?  @relation("SpecificationCurrentVersion", fields: [currentVersionId], references: [id])
+  versions             SpecificationVersion[] @relation("SpecificationVersions")
+  currentVersion       SpecificationVersion?  @relation("SpecificationCurrentVersion", fields: [currentVersionId], references: [id])
+  lifecycleTransitions LifecycleTransition[]
+  validationFindings   ValidationFinding[]
 
   @@index([workspaceId])
   // SC-009's 1-second p95 applies to listing views, and the list is filtered by
@@ -260,12 +264,68 @@ model SpecificationVersion {
 
   workspace     Workspace      @relation(fields: [workspaceId], references: [id])
   specification Specification  @relation("SpecificationVersions", fields: [specificationId], references: [id])
-  currentOf     Specification? @relation("SpecificationCurrentVersion")
+  currentOf     Specification?      @relation("SpecificationCurrentVersion")
+  findings      ValidationFinding[]
 
   @@unique([specificationId, versionNumber])
   @@index([workspaceId])
   @@index([specificationId, versionNumber(sort: Desc)])
   @@map("specification_versions")
+}
+
+// ------------------------------------------------- lifecycle & validation
+//
+// T109 + T120 (EPIC-009) — the two records the lifecycle produces: WHO moved a
+// specification and WHEN (FR-014), and WHAT validation found (FR-023).
+//
+// Both were gated on EPIC-008: each references `specifications`, so neither
+// could land before T077 did.
+
+model LifecycleTransition {
+  id              String             @id @default(uuid())
+  workspaceId     String
+  specificationId String
+  fromState       SpecLifecycleState
+  toState         SpecLifecycleState
+  // FR-014: who transitioned it, and when. Never null — an unattributed
+  // lifecycle move is not history, it is a rumour.
+  actorId         String
+  occurredAt      DateTime           @default(now())
+
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
+  specification Specification @relation(fields: [specificationId], references: [id])
+
+  @@index([workspaceId])
+  @@index([specificationId, occurredAt(sort: Desc)])
+  @@map("lifecycle_transitions")
+}
+
+enum FindingSeverity {
+  info
+  warning
+  error
+}
+
+// FR-023: a finding without a location is malformed engine output, refused by
+// the parser AND by a CHECK constraint. Findings belong to the VERSION that was
+// validated, not to the specification: a later version has not been checked.
+model ValidationFinding {
+  id                     String          @id @default(uuid())
+  workspaceId            String
+  specificationId        String
+  specificationVersionId String
+  location               String
+  severity               FindingSeverity
+  message                String
+  createdAt              DateTime        @default(now())
+
+  workspace     Workspace            @relation(fields: [workspaceId], references: [id])
+  specification Specification        @relation(fields: [specificationId], references: [id])
+  version       SpecificationVersion @relation(fields: [specificationVersionId], references: [id])
+
+  @@index([workspaceId])
+  @@index([specificationVersionId])
+  @@map("validation_findings")
 }
 
 // ---------------------------------------------------------------- traceability

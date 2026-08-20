@@ -82,9 +82,9 @@ Adopted by decision **D-14** after the MPS drop replaced the original three-stat
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI)*
 
-- [ ] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `specs/009-spec-lifecycle-versioning/defects/` contains no open defect records
-- [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [x] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V) — `T193`
+- [x] `/speckit-converge` reports no unbuilt work for this epic — `T194`; `T855`/`T856` appended and completed
+- [x] `specs/009-spec-lifecycle-versioning/defects/` contains no open defect records — `T195`
+- [x] Principle deltas above still hold; any deferral retains a valid owner — `T196`
+- [x] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
 - [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge

@@ -30,6 +30,7 @@ import {
   InMemorySpecificationStore,
   SpecificationsReadService,
 } from '../../src/modules/specifications/specifications-read.service.js';
+import type { SpecificationLifecycleApi } from '../../src/modules/specifications/lifecycle.service.js';
 import { StubEngine } from '../unit/specifications/helpers.js';
 
 const PATH = 'path';
@@ -68,6 +69,9 @@ function controller(): SpecificationsController {
     generation,
     new SpecificationsReadService(store),
     new SpecificationSearchService(store),
+    // Lifecycle is EPIC-009's; these suites exercise EPIC-008's routes and
+    // never reach it.
+    {} as unknown as SpecificationLifecycleApi,
   );
 }
 

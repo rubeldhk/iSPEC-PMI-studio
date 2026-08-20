@@ -27,6 +27,7 @@ import {
   InMemorySpecificationStore,
   SpecificationsReadService,
 } from '../../src/modules/specifications/specifications-read.service.js';
+import type { SpecificationLifecycleApi } from '../../src/modules/specifications/lifecycle.service.js';
 import { StubEngine } from '../unit/specifications/helpers.js';
 
 const PATH = 'path';
@@ -57,7 +58,12 @@ async function seeded(): Promise<{
     { jobs: new JobsService(ledger), ledger },
   );
   const reads = new SpecificationsReadService(store);
-  const c = new SpecificationsController(generation, reads, new SpecificationSearchService(store));
+  const c = new SpecificationsController(
+    generation,
+    reads,
+    new SpecificationSearchService(store),
+    {} as unknown as SpecificationLifecycleApi,
+  );
 
   const outcome = await generation.run({
     jobId: 'job_seed',

@@ -73,6 +73,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'audit_entries',
       'engine_registrations',
       'generation_jobs',
+      'lifecycle_transitions',
       'projects',
       'requirement_versions',
       'requirements',
@@ -80,6 +81,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'specifications',
       'traceability_links',
       'users',
+      'validation_findings',
       'workspaces',
     ]);
   });
@@ -113,6 +115,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // records, not bookkeeping about the row (EPIC-007 T064, EPIC-008 T077).
       requirement_versions: 'authoredAt',
       specification_versions: 'authoredAt',
+      // A lifecycle transition *occurs* — its timestamp is the history it
+      // records (FR-014), not bookkeeping about the row (EPIC-009 T109).
+      lifecycle_transitions: 'occurredAt',
     };
 
     const missing = [...tables.entries()]

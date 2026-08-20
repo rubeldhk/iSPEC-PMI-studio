@@ -9,6 +9,10 @@
  * which is visible, not silently wrong.
  */
 import { Module } from '@nestjs/common';
+import { REQUIREMENT_STORE, RequirementsModule } from '../requirements/requirements.module.js';
+import type { RequirementStore } from '../requirements/requirements.service.js';
+import { LookupArtifactIdSource } from './coverage.service.js';
+import { LookupRequirementStatusSource } from './retired-flag.js';
 import { CoverageService, type ArtifactIdSource } from './coverage.service.js';
 import {
   InMemoryTraceabilityLinkStore,
@@ -17,7 +21,6 @@ import {
 } from './link-writer.service.js';
 import type { RequirementStatusSource } from './retired-flag.js';
 import {
-  AllActiveRequirementStatusSource,
   REQUIREMENT_STATUS_SOURCE,
   TraceabilityController,
 } from './traceability.controller.js';
@@ -29,6 +32,16 @@ export const TRACEABILITY_LINK_STORE = Symbol('TRACEABILITY_LINK_STORE');
 export const ARTIFACT_ID_SOURCE = Symbol('ARTIFACT_ID_SOURCE');
 
 /** Replaced at the composition root with project/requirement-backed lookups. */
+/**
+ * T862 — retained for the SPECIFICATION half only.
+ *
+ * `specificationsWithoutTasks` counts specifications no task traces back to,
+ * and tasks arrive with EPIC-012. Until they do, every specification is
+ * trivially without tasks, so listing them would report the whole project as a
+ * coverage gap. Empty is the truthful answer to a question that cannot yet be
+ * asked; the REQUIREMENT half is wired below, because that half is answerable
+ * today and SC-010 is about it.
+ */
 export class EmptyArtifactIdSource implements ArtifactIdSource {
   async listRequirementIds(): Promise<string[]> {
     return [];
@@ -40,18 +53,41 @@ export class EmptyArtifactIdSource implements ArtifactIdSource {
 }
 
 @Module({
+  imports: [RequirementsModule],
   controllers: [TraceabilityController],
   providers: [
     {
       provide: TRACEABILITY_LINK_STORE,
       useFactory: (): TraceabilityLinkStore => new InMemoryTraceabilityLinkStore(),
     },
-    { provide: ARTIFACT_ID_SOURCE, useFactory: (): ArtifactIdSource => new EmptyArtifactIdSource() },
     {
-      // Replaced at the composition root with the requirements store. Until
-      // then everything reads active — visible, and named here on purpose.
+      // T862 — the requirement half reads the live register, so SC-010's
+      // "single view" lists real uncovered requirements instead of nothing.
+      // The specification half stays empty until EPIC-012 (see above).
+      provide: ARTIFACT_ID_SOURCE,
+      inject: [REQUIREMENT_STORE],
+      useFactory: (requirements: RequirementStore): ArtifactIdSource =>
+        new LookupArtifactIdSource(
+          {
+            listIdsForProject: async (workspaceId, projectId) =>
+              (
+                await requirements.list(workspaceId, projectId, {
+                  sortBy: 'createdAt',
+                  sortDir: 'asc',
+                })
+              ).map((r) => r.id),
+          },
+          { listIdsForProject: async (): Promise<string[]> => [] },
+        ),
+    },
+    {
+      // T860 — reads the live register. It previously answered `active` for
+      // every id, which made US7 scenario 4 unreachable in the composed
+      // application however well T127 passed in isolation.
       provide: REQUIREMENT_STATUS_SOURCE,
-      useFactory: (): RequirementStatusSource => new AllActiveRequirementStatusSource(),
+      inject: [REQUIREMENT_STORE],
+      useFactory: (requirements: RequirementStore): RequirementStatusSource =>
+        new LookupRequirementStatusSource(requirements),
     },
     {
       provide: LinkWriterService,

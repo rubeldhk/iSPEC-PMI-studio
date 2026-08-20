@@ -117,6 +117,22 @@ export interface JobOutcomeRecord {
   failureReason: EngineFailureReason;
 }
 
+/**
+ * T858 (EPIC-011) — where a generation's links are written.
+ *
+ * DECLARED here and implemented in `traceability/link-writer.service.ts`, so
+ * neither module imports the other's service. Convergence found link creation
+ * built twice and connected once: this port is what makes the two halves one.
+ *
+ * Optional at construction: an unwired store keeps its own links, which is what
+ * every EPIC-008 unit test relies on and what a database-less run needs.
+ */
+export interface SpecificationLinkPort {
+  writeAll(links: SpecificationTraceLink[]): Promise<void>;
+  sourceIdsForTarget(workspaceId: string, requirementId: string): Promise<string[]>;
+  forSource(workspaceId: string, specificationId: string): Promise<SpecificationTraceLink[]>;
+}
+
 /** What search needs: a scoped candidate and the text to match against. */
 export interface SearchCandidate {
   specification: SpecificationRecord;
@@ -163,7 +179,9 @@ export interface SpecificationStore {
   updateSpecification(
     workspaceId: string,
     id: string,
-    data: Partial<Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById'>>,
+    data: Partial<
+      Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById' | 'lifecycleState'>
+    >,
   ): Promise<SpecificationRecord>;
 
   /** Search scope, applied BEFORE matching (T083f). */
@@ -277,9 +295,17 @@ export class SpecificationsReadService implements SpecificationReadApi {
    * and "the human edited something" is not the same decision as "the
    * specification now reflects the changed requirement".
    *
-   * Lifecycle rules — baselined immutability (FR-011a), archive (FR-011b) — are
-   * EPIC-009 `T099b`. This is the FR-012 edit path, and it does not pretend to
-   * be the lifecycle machine.
+   * FR-011a — a **baselined** specification FORKS rather than being amended
+   * (T856). The new version is born in `draft` and the specification continues
+   * from it; the baselined version stays retrievable exactly as it stood.
+   *
+   * That is not a transition, and no lifecycle history is written for it:
+   * `baselined -> draft` is not a permitted edge, and recording one would put
+   * an impossible move in the table the CHECK constraint guards. The state
+   * changes because a new line begins, not because anybody moved it.
+   *
+   * Archive (FR-011b) and the six transitions remain EPIC-009's
+   * `lifecycle.service.ts`; this path does not pretend to be the machine.
    */
   async edit(
     ctx: ActingContext,
@@ -321,22 +347,31 @@ export class SpecificationsReadService implements SpecificationReadApi {
       nextRaw !== current.contentRaw ||
       ('contentParsed' in input && !sameJson(nextParsed, current.contentParsed));
 
-    const update: Partial<Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById'>> = {
+    const update: Partial<
+      Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById' | 'lifecycleState'>
+    > = {
       updatedById: ctx.userId,
     };
     if (typeof input.title === 'string') update.title = input.title.trim();
 
     if (contentChanged) {
+      // FR-011a: the fork is born in `draft`. Only a CONTENT change forks —
+      // a rename has no new content to fork to, and leaves the baseline the
+      // current version.
+      const forks = existing.lifecycleState === 'baselined';
+      const bornIn: SpecLifecycleState = forks ? 'draft' : existing.lifecycleState;
+
       const appended = await this.store.appendVersion({
         workspaceId: existing.workspaceId,
         specificationId: existing.id,
         versionNumber: (current?.versionNumber ?? 0) + 1,
         contentRaw: nextRaw,
         contentParsed: nextParsed,
-        lifecycleStateAtCreation: existing.lifecycleState,
+        lifecycleStateAtCreation: bornIn,
         authoredById: ctx.userId,
       });
       update.currentVersionId = appended.id;
+      if (forks) update.lifecycleState = 'draft';
     } else if (update.title === undefined) {
       // Nothing changed at all. A no-op is not history, and not an update.
       return existing;
@@ -379,6 +414,13 @@ export class InMemorySpecificationStore implements SpecificationStore {
   private seq = 0;
   private nextCommitError: Error | null = null;
 
+  /**
+   * T858 — when supplied, links go to the SHARED traceability store instead of
+   * the local array, and the reads below follow them there. One store, so a
+   * generated specification is traceable (`T857`).
+   */
+  constructor(private readonly linkPort?: SpecificationLinkPort) {}
+
   /** Observable by tests: what was committed, and what the jobs ended as. */
   readonly commits: GenerationCommit[] = [];
   readonly jobOutcomes: JobOutcomeRecord[] = [];
@@ -407,7 +449,9 @@ export class InMemorySpecificationStore implements SpecificationStore {
 
     this.specifications.set(specification.id, specification);
     this.versions.set(version.id, version);
-    this.links.push(...dedupeLinks(commit.links));
+    const links = dedupeLinks(commit.links);
+    if (this.linkPort) await this.linkPort.writeAll(links);
+    else this.links.push(...links);
     this.commits.push(commit);
     return specification;
   }
@@ -459,7 +503,9 @@ export class InMemorySpecificationStore implements SpecificationStore {
   async updateSpecification(
     workspaceId: string,
     id: string,
-    data: Partial<Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById'>>,
+    data: Partial<
+      Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById' | 'lifecycleState'>
+    >,
   ): Promise<SpecificationRecord> {
     const row = this.specifications.get(id);
     if (!row || row.workspaceId !== workspaceId) throw new NotFoundError(OPAQUE);
@@ -482,6 +528,7 @@ export class InMemorySpecificationStore implements SpecificationStore {
   }
 
   async findIdsForRequirement(workspaceId: string, requirementId: string): Promise<string[]> {
+    if (this.linkPort) return this.linkPort.sourceIdsForTarget(workspaceId, requirementId);
     return this.links
       .filter((l) => l.workspaceId === workspaceId && l.targetId === requirementId)
       .map((l) => l.sourceId);
@@ -714,7 +761,9 @@ export class PrismaSpecificationStore implements SpecificationStore {
   async updateSpecification(
     workspaceId: string,
     id: string,
-    data: Partial<Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById'>>,
+    data: Partial<
+      Pick<SpecificationRecord, 'title' | 'currentVersionId' | 'updatedById' | 'lifecycleState'>
+    >,
   ): Promise<SpecificationRecord> {
     // updateMany so the workspace filter participates in the WRITE (T456).
     const { count } = await this.db.specification.updateMany({ where: { workspaceId, id }, data });

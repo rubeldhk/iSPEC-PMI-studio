@@ -7,6 +7,9 @@
  * the database CHECK constraint enforces (specs/_shared/schema.sql) — two
  * implementations of one rule, and this suite pins the code half.
  */
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   InMemoryTransitionRecorder,
@@ -122,5 +125,66 @@ describe('T111 — every transition records actor and time (FR-014)', () => {
         `recorder must not expose ${forbidden}()`,
       ).toBeUndefined();
     }
+  });
+});
+
+// ------------------------------------------------------- T109 · persistence
+//
+// Added when the EPIC-008-gated half of this Epic landed. `lifecycle.machine.ts`
+// records WHO and WHEN through a port; T109 is the table behind it.
+
+describe('T109 · LifecycleTransition reaches the database (FR-014)', () => {
+  const schema = readFileSync(
+    resolve(dirname(fileURLToPath(import.meta.url)), '../../../prisma/schema.prisma'),
+    'utf8',
+  );
+  const migration = readFileSync(
+    resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      '../../../prisma/migrations/20260820100100_epic009_lifecycle_findings/migration.sql',
+    ),
+    'utf8',
+  );
+  const model = /model LifecycleTransition\s*\{([\s\S]*?)\n\}/.exec(schema)?.[1] ?? '';
+
+  it('records who and when, neither nullable', () => {
+    expect(model).toMatch(/actorId\s+String\b(?!\?)/);
+    expect(model).toMatch(/occurredAt\s+DateTime/);
+    expect(model).toMatch(/fromState\s+SpecLifecycleState/);
+    expect(model).toMatch(/toState\s+SpecLifecycleState/);
+  });
+
+  it('carries workspaceId like every tenant-scoped model (FR-002)', () => {
+    expect(model).toMatch(/workspaceId\s+String/);
+  });
+
+  it('is append-only at the database — history cannot be edited afterwards', () => {
+    // "Who approved this, and when" is unanswerable if the answer can be
+    // rewritten. Attached to EPIC-004's SHARED reject_mutation(), never a
+    // redefinition.
+    expect(migration).toMatch(
+      /CREATE TRIGGER "lifecycle_transitions_immutable"[\s\S]*?BEFORE UPDATE OR DELETE ON "lifecycle_transitions"[\s\S]*?EXECUTE FUNCTION reject_mutation\(\)/,
+    );
+    expect(migration).not.toMatch(/CREATE (OR REPLACE )?FUNCTION reject_mutation/);
+  });
+
+  it('the database CHECK permits EXACTLY the transitions the code permits', () => {
+    // The two-layer rule, pinned. Until now this suite could only assert the
+    // code half, because the constraint lived in the design DDL and in no
+    // migration. A drift between them is how a state machine acquires a
+    // transition nobody agreed to.
+    const check = /lifecycle_permitted_transition" CHECK \(([\s\S]*?)\n    \);/.exec(migration)?.[1];
+    expect(check, 'the CHECK constraint is missing from the migration').toBeDefined();
+
+    const inSql = [...check!.matchAll(/"fromState" = '(\w+)'\s+AND "toState" = '(\w+)'/g)]
+      .map(([, from, to]) => `${from}->${to}`)
+      .sort();
+    const inCode = PERMITTED_TRANSITIONS.map((t) => `${t.from}->${t.to}`).sort();
+
+    expect(inSql).toEqual(inCode);
+  });
+
+  it('the CHECK does NOT permit approved -> draft (US5 scenario 4)', () => {
+    expect(migration).not.toMatch(/"fromState" = 'approved'\s+AND "toState" = 'draft'/);
   });
 });
