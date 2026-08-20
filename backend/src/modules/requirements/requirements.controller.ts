@@ -5,12 +5,15 @@
  * PC-1: a transport. Collection routes are project-nested; item routes are
  * flat — exactly the contract's two tables, one controller.
  */
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
-import type { RequirementRetireService } from './requirement-retire.service.js';
+// Value import: the class is the DI TOKEN. A `import type` here erases at
+// compile time, and @Inject would reference nothing (DEF-001-005).
+import { RequirementRetireService } from './requirement-retire.service.js';
 import type { RequirementVersionRecord } from './requirement-version.service.js';
-import type { RequirementRecord, RequirementsService } from './requirements.service.js';
+import { RequirementsService } from './requirements.service.js';
+import type { RequirementRecord } from './requirements.service.js';
 import type {
   CreateRequirementInput,
   EditRequirementInput,
@@ -31,8 +34,11 @@ function stripScope<T extends Record<string, unknown>>(body: T): T {
 @Controller()
 export class RequirementsController {
   constructor(
-    private readonly requirements: RequirementsService,
-    private readonly retirer: RequirementRetireService,
+    // @Inject by token, not by type: esbuild/tsx emits no design:paramtypes,
+    // so a class-typed parameter resolves to UNDEFINED and the first call
+    // throws. Guarded by controller-composition.spec.ts (DEF-001-005).
+    @Inject(RequirementsService) private readonly requirements: RequirementsService,
+    @Inject(RequirementRetireService) private readonly retirer: RequirementRetireService,
   ) {}
 
   @Get('projects/:projectId/requirements')

@@ -20,10 +20,14 @@ import { Module } from '@nestjs/common';
 import { EnginesModule } from '../engines/engines.module.js';
 import { EngineResolverService } from '../engines/engine-resolver.service.js';
 import { JobsService } from '../jobs/jobs.service.js';
+import { REQUIREMENT_STORE, RequirementsModule } from '../requirements/requirements.module.js';
+import type { RequirementStore } from '../requirements/requirements.service.js';
 import {
   GenerateSpecificationService,
   InMemoryGenerationJobLedger,
+  LookupRequirementSelection,
   type GenerationJobLedger,
+  type RequirementSelectionPort,
 } from './generate-specification.service.js';
 import { OutOfDateService } from './out-of-date.service.js';
 import { SpecificationSearchService } from './specification-search.service.js';
@@ -36,6 +40,7 @@ import {
 
 export const SPECIFICATION_STORE = Symbol('SPECIFICATION_STORE');
 export const GENERATION_JOB_LEDGER = Symbol('GENERATION_JOB_LEDGER');
+export const REQUIREMENT_SELECTION = Symbol('REQUIREMENT_SELECTION');
 
 /**
  * A `JobsService` bound to THIS ledger.
@@ -49,7 +54,7 @@ export const GENERATION_JOB_LEDGER = Symbol('GENERATION_JOB_LEDGER');
 export const GENERATION_JOBS_SERVICE = Symbol('GENERATION_JOBS_SERVICE');
 
 @Module({
-  imports: [EnginesModule],
+  imports: [EnginesModule, RequirementsModule],
   controllers: [SpecificationsController],
   providers: [
     {
@@ -66,15 +71,31 @@ export const GENERATION_JOBS_SERVICE = Symbol('GENERATION_JOBS_SERVICE');
       useFactory: (ledger: InMemoryGenerationJobLedger): JobsService => new JobsService(ledger),
     },
     {
+      // T843 — the scope check reads the LIVE requirement register, not a copy.
+      // This is the composition seam: neither module imports the other's
+      // service, and they meet here, on a token.
+      provide: REQUIREMENT_SELECTION,
+      inject: [REQUIREMENT_STORE],
+      useFactory: (store: RequirementStore): RequirementSelectionPort =>
+        new LookupRequirementSelection(store),
+    },
+    {
       provide: GenerateSpecificationService,
-      inject: [EngineResolverService, SPECIFICATION_STORE, GENERATION_JOBS_SERVICE, GENERATION_JOB_LEDGER],
+      inject: [
+        EngineResolverService,
+        SPECIFICATION_STORE,
+        GENERATION_JOBS_SERVICE,
+        GENERATION_JOB_LEDGER,
+        REQUIREMENT_SELECTION,
+      ],
       useFactory: (
         engines: EngineResolverService,
         store: SpecificationStore,
         jobs: JobsService,
         ledger: GenerationJobLedger,
+        requirements: RequirementSelectionPort,
       ): GenerateSpecificationService =>
-        new GenerateSpecificationService(engines, store, { jobs, ledger }),
+        new GenerateSpecificationService(engines, store, { jobs, ledger, requirements }),
     },
     {
       provide: SpecificationsReadService,

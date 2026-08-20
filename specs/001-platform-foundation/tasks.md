@@ -183,3 +183,36 @@ so the one number it exists to report is wrong on exactly the requests it was ex
       one cause and must be asserted separately)
 - [X] T837 Close `DEF-001-004` with its resolving tasks and verifying test named, and record the
       outcome in [`closure.md`](./closure.md) as a dated addendum (Constitution VI, IX)
+
+---
+
+## Phase 9: Convergence — `DEF-001-005` *(appended 2026-08-20 by the second local UAT)*
+
+**Why this phase exists**: with sign-in unblocked, every other endpoint returned 500. Seven
+dependencies across four controllers resolve to `undefined`, because Nest reads class-typed
+constructor parameters from `design:paramtypes` metadata that esbuild — and therefore `tsx`, the
+only way this API is run — does not emit. Recorded in
+[`DEF-001-005`](./defects/DEF-001-005-implicit-class-injection-is-undefined-at-runtime.md).
+
+**The guard comes first, and it is one test for all controllers.** Fixing seven sites by hand
+without it would leave the eighth to be found by the next UAT session — which is how this defect
+reached four delivered Epics.
+
+- [X] T847 Write a failing composition guard that resolves **every controller registered in
+      `AppModule`** from the composed graph and asserts no injected property is `undefined`, in
+      `backend/tests/unit/core/controller-composition.spec.ts`, per `DEF-001-005`. Enumerate
+      controllers from the Nest metadata of the imported modules rather than a hand-written list,
+      so a controller added later is covered without anyone remembering to add it. **Confirm it
+      fails naming all seven sites before T848**
+- [X] T848 Inject by explicit token at the seven sites — `ProjectsController.projects`,
+      `RequirementsController.requirements`/`retirer`, `EnginesController.registry`,
+      `SpecificationsController.generation`/`reads`/`search` — matching `AuditController` and the
+      two auth sites corrected under `DEF-005-001` (guard: T847)
+- [X] T849 [P] Record the runtime question as a decision rather than leaving it to discipline:
+      whether the API should be built with a compiler that emits `design:paramtypes` (SWC or
+      `tsc`) instead of relying on an explicit token at every injection site — in
+      `specs/014-devops-release/` as an input to `F-11.2`, with `DEF-001-005` as its evidence.
+      Both answers are defensible; leaving it undecided is what produced this defect
+- [X] T850 Re-run the browser UAT path — sign in, list projects, create a project, list
+      requirements — and close `DEF-001-005` with its resolving tasks and guard named
+      (Constitution VI, IX)

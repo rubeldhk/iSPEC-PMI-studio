@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-001` (owns the API bootstrap and its runtime) · **affects** EPIC-006, EPIC-007,
 EPIC-008, EPIC-013 — every product capability with a controller
-**Raised**: 2026-08-20 | **Status**: **OPEN** — found by browser UAT, not fixed here
+**Raised**: 2026-08-20 | **Status**: **FIXED** 2026-08-20 by `T847`–`T850`; see Resolution
 **Found by**: the second local UAT session, immediately after `DEF-005-001` unblocked sign-in
 **Severity**: **CRITICAL** — the entire product surface 500s on every request; four Epics that
 closed as delivered cannot serve a single call
@@ -72,3 +72,35 @@ behave in production as it currently ships.
   defensible; leaving it undecided is what produced this defect.
 - This record exists so the fix enters through a task (Constitution I, VI). **No code was changed
   by this UAT session.**
+
+## Resolution (2026-08-20)
+
+Fixed by EPIC-001 Phase 9, guard first.
+
+- **`T847`** — `backend/tests/unit/core/controller-composition.spec.ts` resolves **every**
+  controller from the composed graph and asserts no injected property is `undefined`. Confirmed
+  failing first, naming all four controllers and all seven properties. It enumerates controllers
+  from the Nest metadata of `AppModule`'s imports — including `DynamicModule` forms, which
+  `AuthModule.register()` introduced — so a controller added later is covered without anyone
+  remembering this file exists.
+- **`T848`** — explicit `@Inject(Token)` at all seven sites. Two further traps surfaced while
+  applying it, both invisible to the type checker:
+  - **`import type` erases the token.** Four of the services were imported type-only, so
+    `@Inject(Service)` referenced a binding that does not exist at runtime —
+    `ReferenceError: EngineRegistryService is not defined`. Converted to value imports, with the
+    narrow interface kept as the declared parameter type so the controllers still depend on a
+    contract rather than an implementation (PC-1).
+  - **`SpecificationsController` was already wired — and the wiring was never used.** Its module
+    supplies a factory provider for the controller in `providers:`, but Nest builds controllers
+    from `controllers:` by dependency injection and ignores a same-token entry in `providers:`.
+    The wiring looked correct in review and did nothing. Its parameters are also *interfaces*,
+    which erase entirely, so the concrete service classes are now the tokens.
+
+**Verified in the running application** (`T850`), through the browser's own path via the Vite
+proxy: sign-in `200` → `GET /v1/projects` `200` → `POST /v1/projects` `201`, project persisted and
+returned in the subsequent list. 1101 unit tests, typecheck and lint clean.
+
+**The runtime question is recorded, not settled** — see `T849` and
+`specs/014-devops-release/`. Explicit tokens are now the enforced convention *and* the guard makes
+a lapse fail immediately; a build step that emits `design:paramtypes` would make the convention
+unnecessary. That is EPIC-014's call to make with the rest of the build.

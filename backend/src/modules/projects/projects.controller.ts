@@ -4,13 +4,15 @@
  * PC-1: this is a transport. It resolves the acting context, strips anything a
  * caller sent that could widen tenancy, and delegates. No business logic.
  */
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
+// Value import: the class is the DI TOKEN. A `import type` here erases at
+// compile time, and @Inject would reference nothing (DEF-001-005).
+import { ProjectsService } from './projects.service.js';
 import type {
   CreateProjectInput,
   ProjectRecord,
-  ProjectsService,
   UpdateProjectInput,
 } from './projects.service.js';
 
@@ -32,7 +34,12 @@ function stripScope<T extends Record<string, unknown>>(body: T): T {
 
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projects: ProjectsService) {}
+  constructor(
+    // @Inject by token, not by type: esbuild/tsx emits no design:paramtypes,
+    // so a class-typed parameter resolves to UNDEFINED and the first call
+    // throws. Guarded by controller-composition.spec.ts (DEF-001-005).
+    @Inject(ProjectsService) private readonly projects: ProjectsService,
+  ) {}
 
   @Get()
   async list(@Req() ctx: WorkspaceContext | undefined): Promise<ProjectRecord[]> {
