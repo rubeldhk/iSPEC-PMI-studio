@@ -67,12 +67,12 @@ WCAG 2.2 AA exit criterion below.
 - [x] Every implementation task has a passing unit test (T197)
 - [x] Convergence reports no unbuilt work in scope (T198)
 - [x] `defects/` contains no open records (T199)
-- [ ] **WCAG 2.2 AA — NOT DISCHARGED.** No automated accessibility checks exist in CI and no
-  manual keyboard/screen-reader pass has been performed. Deferred with owner **EPIC-015
-  (QA & validation)** as the natural home for automated a11y gates, subject to the user's
-  standing smoke-gate ruling. The components were built with the primitives that pass depends
-  on (semantic roles, `role="status"`/`role="alert"` live regions, labels on every control,
-  `data-*` state not color-only) — but building for the audit is not the audit.
+- [ ] **WCAG 2.2 AA — automated half DELIVERED, manual half open.** EPIC-015 (same day)
+  delivered `frontend/tests/unit/a11y/components-axe.spec.tsx`: axe-core over all 8
+  EPIC-010/012 surfaces, zero violations, running in the per-commit suite CI executes. What
+  remains is the **manual keyboard and screen-reader pass** — human work that cannot be
+  automated honestly; owner: the user (or a QA session with a real browser and screen reader).
+  The criterion's box stays unchecked until that pass is recorded.
 - [x] Principle deltas hold; deferrals have valid owners (T200)
 - [x] Closure recorded — **EPIC-010 is CLOSED except the WCAG criterion above**; release
   eligibility carries that named condition

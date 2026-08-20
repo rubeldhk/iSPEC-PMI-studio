@@ -1,0 +1,53 @@
+# T146 — nightly REAL-engine smoke test (quickstart V13).
+#
+# Deliberately not part of ci.yml: the real engine is slow, costs money, and
+# is non-deterministic (research R-010). It runs once a night and on manual
+# dispatch, against real AI provider credentials held as repository secrets.
+#
+# V13's claim: the sandbox scaffolds a workspace, runs the agent headlessly,
+# returns parseable output, and destroys the workspace — no container,
+# process, or temp directory survives (research R-001, R-006).
+#
+# HONESTY (Constitution IX): this workflow has NOT run green yet — it needs
+# `AI_PROVIDER_API_KEY` configured in the repository and a GitHub remote with
+# Actions enabled. Until its first green run, quickstart V13 is "wired, not
+# proven" and must be reported that way.
+
+name: Nightly engine smoke
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # 02:00 UTC nightly
+  workflow_dispatch: {}
+
+jobs:
+  real-engine-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The real engine path: resolve the Spec Kit adapter, generate from real
+      # requirements, assert parseable output and a clean teardown. The spec
+      # itself guards on the credential and fails LOUDLY if absent — a missing
+      # secret must read as "not configured", never as a green skip.
+      - name: Run the real-engine smoke (quickstart V13)
+        env:
+          AI_PROVIDER_API_KEY: ${{ secrets.AI_PROVIDER_API_KEY }}
+          REAL_ENGINE_SMOKE: '1'
+        run: pnpm vitest run --project backend-integration tests/integration/real-engine-smoke.spec.ts
+
+      # R-006: nothing survives. The runner is ephemeral, but the assertion
+      # belongs to the spec, not to runner disposal — the spec checks that the
+      # sandbox's own teardown ran.

@@ -22,9 +22,10 @@ import { composeEngineRegistry } from './engine-composition.js';
 import { reportGenerationResult } from './observability-composition.js';
 import { createGenerationWorker, type RunningWorker } from './worker-bootstrap.js';
 import type { JobPersistence } from './generation.consumer.js';
+import { resolveJobTimeoutMs } from './config.js';
 
-/** Hard wall-clock ceiling per job (FR-025). Also a cost control — RAID R-02. */
-const JOB_TIMEOUT_MS = Number(process.env['JOB_TIMEOUT_MS'] ?? 15 * 60 * 1000);
+/** Hard wall-clock ceiling per job (FR-025, SC-011: 10 min default). Also a cost control — RAID R-02. */
+const JOB_TIMEOUT_MS = resolveJobTimeoutMs(process.env);
 
 /**
  * Persistence is not yet connected.
