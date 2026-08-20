@@ -12,9 +12,9 @@ description: "Task list for EPIC-024 — Artifact Access Control"
 
 > ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` and approved business scope. Held is not cancelled — these tasks await an input, not more design.
 
-**Requirements owned**: FR-021 – FR-028, **FR-028a**
+**Requirements owned**: FR-ACC-021 – FR-ACC-028, **FR-ACC-028a**
 
-**Added 2026-08-19**: `T811`–`T816` for **FR-028a**. The parent's third clarification session found that FR-028's run snapshot and the edge case hiding restricted questions from a reviewer implied two different access sets without ever saying which governed what. They are now separated: the snapshot governs the **run**, current grants govern the **reviewer**.
+**Added 2026-08-19**: `T811`–`T816` for **FR-ACC-028a**. The parent's third clarification session found that FR-ACC-028's run snapshot and the edge case hiding restricted questions from a reviewer implied two different access sets without ever saying which governed what. They are now separated: the snapshot governs the **run**, current grants govern the **reviewer**.
 
 **Session label**: `EPIC-024 Artifact Access Control` (Constitution VIII).
 
@@ -30,39 +30,39 @@ description: "Task list for EPIC-024 — Artifact Access Control"
 
 - [ ] T372 [P] [US4] Unit tests asserting read and edit grants permit exactly their level and no more, in `backend/tests/unit/access/grants.spec.ts`
 - [ ] T373 [P] [US4] Unit tests asserting an ungranted artifact is HIDDEN from listings, not shown as inaccessible, and that every refused attempt reaches the audit record (**SC-007**, **SC-013**), in `backend/tests/unit/access/refusal.spec.ts`
-- [ ] T374 [P] [US4] Unit tests asserting a derived artifact is at least as restricted as **every** source it derives from — most-restrictive-wins, so a specification generated from one open and one restricted requirement is hidden from anyone lacking a grant on the restricted one, and derivation cannot be used to read a restricted source indirectly (**FR-025**, clarified 2026-08-08), in `backend/tests/unit/access/inheritance.spec.ts`
+- [ ] T374 [P] [US4] Unit tests asserting a derived artifact is at least as restricted as **every** source it derives from — most-restrictive-wins, so a specification generated from one open and one restricted requirement is hidden from anyone lacking a grant on the restricted one, and derivation cannot be used to read a restricted source indirectly (**FR-ACC-025**, clarified 2026-08-08), in `backend/tests/unit/access/inheritance.spec.ts`
 - [ ] T375 [P] [US4] Unit tests asserting no artifact can reach a state with no user holding edit access, in `backend/tests/unit/access/last-editor.spec.ts`
 - [ ] T376 [US4] Define `AccessGrant` and `AccessAttemptRecord` models in `backend/prisma/schema.prisma` (unit tests: T372, T373)
-- [ ] T826 [P] [US4] Unit tests asserting **every grant and every revocation** is written to the audit record with the actor, the change and the time, in the same transaction as the change itself — `T373` covers the refusal half of the trail, nothing covered this half (**FR-026**, **SC-013**), in `backend/tests/unit/access/grant-audit.spec.ts`
-- [ ] T377 [US4] Implement grant and revoke, each written to the audit record with actor, change and time in `backend/src/modules/access/access-grant.service.ts` (FR-021, FR-022, FR-026, **SC-013**; unit tests: T372, T826)
-- [ ] T378 [US4] Implement the enforcement path — refuse, hide, record — in `backend/src/modules/access/access-enforcement.service.ts` (FR-023, FR-024; unit test: T373)
-- [ ] T379 [US4] Implement derived-artifact restriction inheritance in `backend/src/modules/access/access-inheritance.service.ts` (FR-025; unit test: T374)
-- [ ] T380 [US4] Implement the last-editor guarantee in `backend/src/modules/access/access-grant.service.ts` (FR-027; unit test: T375)
-- [ ] T381 [US4] Implement run-time access snapshotting so a long run cannot half-apply a permission change in `backend/src/modules/access/access-snapshot.service.ts` (FR-028; unit test: T811)
+- [ ] T826 [P] [US4] Unit tests asserting **every grant and every revocation** is written to the audit record with the actor, the change and the time, in the same transaction as the change itself — `T373` covers the refusal half of the trail, nothing covered this half (**FR-ACC-026**, **SC-013**), in `backend/tests/unit/access/grant-audit.spec.ts`
+- [ ] T377 [US4] Implement grant and revoke, each written to the audit record with actor, change and time in `backend/src/modules/access/access-grant.service.ts` (FR-ACC-021, FR-ACC-022, FR-ACC-026, **SC-013**; unit tests: T372, T826)
+- [ ] T378 [US4] Implement the enforcement path — refuse, hide, record — in `backend/src/modules/access/access-enforcement.service.ts` (FR-ACC-023, FR-ACC-024; unit test: T373)
+- [ ] T379 [US4] Implement derived-artifact restriction inheritance in `backend/src/modules/access/access-inheritance.service.ts` (FR-ACC-025; unit test: T374)
+- [ ] T380 [US4] Implement the last-editor guarantee in `backend/src/modules/access/access-grant.service.ts` (FR-ACC-027; unit test: T375)
+- [ ] T381 [US4] Implement run-time access snapshotting so a long run cannot half-apply a permission change in `backend/src/modules/access/access-snapshot.service.ts` (FR-ACC-028; unit test: T811)
 - [ ] T418 [P] [US4] Write failing unit tests for the access controller with mocked services, asserting a grant request on an artifact the caller cannot edit returns **absence, not forbidden**, in `backend/tests/unit/access/access.controller.spec.ts`
 - [ ] T419 [P] [US4] Contract tests for grant, revoke and access-attempt endpoints against `contracts/platform-api-epic-002.md` in `backend/tests/contract/access.spec.ts`
 - [ ] T420 [US4] Implement the access controller in `backend/src/modules/access/access.controller.ts` (unit test: T418; contract test: T419)
 - [ ] T427 [P] [US4] Integration test against a **real** PostgreSQL via Testcontainers asserting an ungranted artifact is **absent from listings** and returns 404 directly, and that the refusal is recorded in the same transaction — a mocked repository passes while the real query leaks (SC-007) — in `backend/tests/integration/access-enforcement.spec.ts`
-- [ ] T428 [P] [US4] Integration test asserting the last-editor invariant holds under **concurrent** revocation, enforced inside the revoke transaction rather than by a pre-check (FR-027, SC-008), in `backend/tests/integration/last-editor.spec.ts`
+- [ ] T428 [P] [US4] Integration test asserting the last-editor invariant holds under **concurrent** revocation, enforced inside the revoke transaction rather than by a pre-check (FR-ACC-027, SC-008), in `backend/tests/integration/last-editor.spec.ts`
 
 ## F-024.6 · Reviewer visibility uses current grants
 
-*FR-028a, SC-018. `T381` snapshots access when a run starts so a long run cannot half-apply a
+*FR-ACC-028a, SC-018. `T381` snapshots access when a run starts so a long run cannot half-apply a
 permission change — a consistency concern measured in minutes. A review session sits open for days.
 Reusing the snapshot there would turn it into a read capability that outlives a revoke, which is
-exactly what FR-023 forbids. The snapshot is therefore narrowed to the run, and session content is
+exactly what FR-ACC-023 forbids. The snapshot is therefore narrowed to the run, and session content is
 evaluated against the grants held at the moment the session is opened.*
 
 - [ ] T811 [P] [US4] Unit tests asserting the run access snapshot governs only what a run may read and produce, and is **not** consulted when deciding what a reviewer may see, in `backend/tests/unit/access/snapshot-scope.spec.ts`
-- [ ] T812 [P] [US4] Unit tests asserting review session content is evaluated against the grants held **at open time**, so a revocation takes effect on the reviewer's next open of an already-open session (FR-028a, SC-018), in `backend/tests/unit/access/session-visibility.spec.ts`
-- [ ] T813 [US4] Narrow the snapshot to run-time evaluation and separate it from open-time evaluation in `backend/src/modules/access/access-snapshot.service.ts` (FR-028, FR-028a; unit test: T811) — narrows `T381`, which currently serves both
-- [ ] T814 [US4] Implement open-time grant evaluation for review session content in `backend/src/modules/access/access-evaluation.service.ts` (FR-028a; unit test: T812)
+- [ ] T812 [P] [US4] Unit tests asserting review session content is evaluated against the grants held **at open time**, so a revocation takes effect on the reviewer's next open of an already-open session (FR-ACC-028a, SC-018), in `backend/tests/unit/access/session-visibility.spec.ts`
+- [ ] T813 [US4] Narrow the snapshot to run-time evaluation and separate it from open-time evaluation in `backend/src/modules/access/access-snapshot.service.ts` (FR-ACC-028, FR-ACC-028a; unit test: T811) — narrows `T381`, which currently serves both
+- [ ] T814 [US4] Implement open-time grant evaluation for review session content in `backend/src/modules/access/access-evaluation.service.ts` (FR-ACC-028a; unit test: T812)
 - [ ] T815 [P] [US4] Integration test against a **real** PostgreSQL via Testcontainers asserting a reviewer whose grant is revoked while a session is open sees the affected questions as restricted on next open, and that the run's snapshot does not re-admit them (SC-018) — a mocked repository passes here while the real query leaks, the same reason `T427` exists (G-02.5), in `backend/tests/integration/session-visibility.spec.ts`
-- [ ] T816 [US4] Surface a restricted review question **as restricted rather than omitting it silently**, in `backend/src/modules/access/access-enforcement.service.ts` (FR-028a; unit test: T812) — deliberately unlike `T378`/FR-024, which hides an inaccessible **artifact** from listings entirely; a reviewer must be able to tell that a question exists they cannot act on, or a session looks complete when it is not
+- [ ] T816 [US4] Surface a restricted review question **as restricted rather than omitting it silently**, in `backend/src/modules/access/access-enforcement.service.ts` (FR-ACC-028a; unit test: T812) — deliberately unlike `T378`/FR-ACC-024, which hides an inaccessible **artifact** from listings entirely; a reviewer must be able to tell that a question exists they cannot act on, or a session looks complete when it is not
 
 ## F-024.UI · Interface
 
-*Satisfies **FR-024**. Recorded by `T687` — `traceability-convention.md` makes the
+*Satisfies **FR-ACC-024**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
 - [ ] T399 [P] [US4] Component unit tests for access grant management in `frontend/tests/unit/components/AccessGrants.spec.tsx`

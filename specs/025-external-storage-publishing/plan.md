@@ -53,7 +53,7 @@ Without the fixture, `SC-011` — "an additional provider with zero changes outs
 `job_failure_reason` in `_shared/schema.sql`. Provider-specific errors are **mapped into** the
 taxonomy by the adapter; a Dropbox error code must never reach `backend/`.
 
-**Concurrent publishes are prevented, not queued** (`FR-040`, **R-002-6**) — an advisory lock on
+**Concurrent publishes are prevented, not queued** (`FR-PUB-040`, **R-002-6**) — an advisory lock on
 `project_id`. Two simultaneous publishes is a race with no informational value, unlike answer
 conflicts, which are surfaced.
 
@@ -66,10 +66,10 @@ conflicts, which are surfaced.
 | # | Gate | Status |
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
-| II | Requirements trace to cited SRS documents | ⚠️ **PASS WITH DEBT** — third-party storage (`FR-029`–`FR-040`) has **no SRS source**; no cloud file-storage provider appears in any of the 24 modules or 20 volumes. `T439` gates **approval** |
+| II | Requirements trace to cited SRS documents | ⚠️ **PASS WITH DEBT** — third-party storage (`FR-PUB-029`–`FR-PUB-040`) has **no SRS source**; no cloud file-storage provider appears in any of the 24 modules or 20 volumes. `T439` gates **approval** |
 | III | Epic → Feature → Task decomposition | PASS — 3 functions: F-02.6, F-025.UI, F-025.Z; tasks counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002) |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `F-025.Z` in [tasks.md](./tasks.md) |
-| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` finding **A1** (2026-08-19) found `T391` paired to `T384`, which asserts the failure taxonomy and nothing about `FR-034`'s publish record. The pairing existed; the assertion did not. Closed by `T817` |
+| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` finding **A1** (2026-08-19) found `T391` paired to `T384`, which asserts the failure taxonomy and nothing about `FR-PUB-034`'s publish record. The pairing existed; the assertion did not. Closed by `T817` |
 | VI | `specs/025-external-storage-publishing/defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | PASS — via EPIC-014 F-11.2 |
 | VIII | Session labelled with the working Epic, or the first command | PASS — session labelled `speckit-constitution` (its first command); stated in the closing report |
@@ -87,18 +87,18 @@ conflicts, which are surfaced.
 
 ### G-025.1 · Credential and token handling — ✅ resolved 2026-08-08
 
-`FR-029` required an administrator to authorise a connection with **no mechanism chosen**, and the
+`FR-PUB-029` required an administrator to authorise a connection with **no mechanism chosen**, and the
 parent's data model explicitly excluded it. It was the only genuine unknown left in the family, and
 `T390` could not be written without it.
 
 ✅ **Resolved**: delegated OAuth-style authorisation. The platform stores a **refresh token
-encrypted at rest** and never accepts a password (`FR-029`, `FR-029a`, `FR-029b`, `SC-014`). The
+encrypted at rest** and never accepts a password (`FR-PUB-029`, `FR-PUB-029a`, `FR-PUB-029b`, `SC-014`). The
 token never reaches the adapter — which receives a short-lived access token per call and nothing
 more, preserving contract rule **S7** and the ADR-0002 sandbox posture. `T390` is now writable.
 
 ### G-025.2 · Publish depends on EPIC-024's grants ⚠️ open, sequencing
 
-`T392` excludes artifacts the publishing user cannot access (`FR-033`). Without EPIC-024 there is
+`T392` excludes artifacts the publishing user cannot access (`FR-PUB-033`). Without EPIC-024 there is
 nothing to exclude *by*, and the task silently becomes a no-op **that passes its test** — the
 dangerous shape, because a green suite reads as coverage.
 
@@ -114,7 +114,7 @@ migrated intact.
 
 ### G-02F.1 · The identifier collision extends to success criteria ⚠️ new finding, family-wide
 
-**C-01** was recorded as a *requirement* collision: EPIC-002's `FR-001`–`FR-040` clash with the
+**C-01** was recorded as a *requirement* collision: EPIC-002's `FR-RUN-001`–`FR-PUB-040` clash with the
 platform's `FR-001`–`FR-034`. Checking the split surfaced that **the success criteria collide too**,
 and that was never recorded:
 
@@ -153,7 +153,7 @@ F-02.6  storage contract ──► fixture provider ──► conformance suite 
 It makes everything above the adapter provably correct before a provider SDK — the slowest and least
 certain component — exists, and it keeps CI free of network calls to Google Drive.
 
-**The republish preview is computed before anything is written** (`FR-036`). "Tell the user what will
+**The republish preview is computed before anything is written** (`FR-PUB-036`). "Tell the user what will
 change, then change it" is only true if the preview is not itself the first write.
 
 **A file exceeding the provider's size limit is skipped and reported; the rest continue.** Failing
@@ -182,7 +182,7 @@ exists to hold once.
 ## Definition of done
 
 - [ ] Every task in [tasks.md](./tasks.md) complete, every unit test passing (Constitution V)
-- [ ] **SRS back-fill complete** for `FR-029`–`FR-040` (`T439`) — gates approval
+- [ ] **SRS back-fill complete** for `FR-PUB-029`–`FR-PUB-040` (`T439`) — gates approval
 - [ ] Zero passwords accepted or stored; zero tokens in any response, log, or error (`SC-014`)
 - [ ] `pnpm test:arch` green — no provider SDK named outside the adapter layer (`T432`)
 - [ ] Conformance suite green against the fixture and at least one real provider

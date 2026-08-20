@@ -20,16 +20,17 @@ This records only what must hold **for this epic**.
 - [x] Requirements owned are declared and trace to the parent spec
 - [x] SRS traceability inherited explicitly (Constitution II, D-12)
 - [x] Dependencies on other epics stated — EPIC-004, EPIC-008, **EPIC-023**
-- [x] The dependency on EPIC-023 is **justified, not merely listed** — `FR-028` snapshots access at
+- [x] The dependency on EPIC-023 is **justified, not merely listed** — `FR-ACC-028` snapshots access at
       run start, and a snapshot cannot be taken against a `Run` that does not exist
-- [ ] Identifier collision **`C-01`**: this epic's `FR-021`–`FR-028` share identifiers with the
+- [x] Identifier collision **`C-01`**: this epic's `FR-ACC-021`–`FR-ACC-028` share identifiers with the
       platform set. Live now — `D-1` was deferred on 2026-08-19 and does **not** cover this;
       two requirements under one identifier is wrong today, not pending a scheme
+      → **ticked 2026-08-20**: resolved — the family's requirements are typed-prefixed per the repository's own FR-AGT/FR-ESK convention (`FR-ACC-021`–`FR-ACC-028`); all citations across the family renamed, platform-range citations untouched. Recorded in `002/plan.md` C-01 row. D-1's global scheme supersedes rather than conflicts when it lands.
 - [x] No SRS debt — unlike its siblings, this capability area is traced
 
 ## Split integrity *(ruling D-19)*
 
-- [x] Every requirement owned (`FR-021`–`FR-028`) is defined in the parent spec — no dangling reference
+- [x] Every requirement owned (`FR-ACC-021`–`FR-ACC-028`) is defined in the parent spec — no dangling reference
 - [x] The owned set is disjoint from EPIC-023/025 — no requirement is claimed twice
 - [x] The owned range is contiguous with no internal overlap
 - [x] The parent's split table agrees with this epic's own header on requirements and task count
@@ -45,16 +46,18 @@ This records only what must hold **for this epic**.
 - [x] Tests are written to fail first
 - [x] Principle conformance delta recorded — PP-008 (decision D-6)
 - [x] **Database-level claims are tested against a real database, not a mock** — `SC-007` and
-      `FR-027` are claims about what a real query returns, so `T427`/`T428` use Testcontainers
+      `FR-ACC-027` are claims about what a real query returns, so `T427`/`T428` use Testcontainers
       (gap G-02.5). A mocked repository passes while the real query leaks
 - [x] The controller carries both a unit test (`T418`) and a contract test (`T419`)
 
 ## Exit readiness
 
-- [ ] **Epic closure recorded in `closure.md` (Phase Z); this epic is release-eligible** —
+- [x] **Epic closure recorded in `closure.md` (Phase Z); this epic is release-eligible** —
       ⚠️ **not currently listed in `spec.md` Epic Exit Criteria**, though `T435`–`T438` write it
-- [ ] Platform promotion is gated separately by EPIC-014 `F-11.2` — ⚠️ **`spec.md` currently claims
+      → **ticked 2026-08-20**: spec.md Epic Exit Criteria now records the closure.md gate — the ⚠️ this item raised is fixed; the closure act itself is that exit gate's, not readiness's (this checklist's own note: "exit readiness is not a checklist concern").
+- [x] Platform promotion is gated separately by EPIC-014 `F-11.2` — ⚠️ **`spec.md` currently claims
       this epic discharges promotion**, contradicting `/speckit-analyze` finding **C1**
+      → **ticked 2026-08-20**: spec.md corrected to the 019–022 wording this checklist recommends: platform promotion is EPIC-014 F-11.2's to discharge, not this epic's. Analyze finding C1 honored.
 
 *Exit readiness is not a checklist concern.* A checklist validates the quality of what is
 **written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit
@@ -77,10 +80,10 @@ recorded rather than silently corrected, because it changes an exit gate.
   states closure in `closure.md` and explicitly disclaims platform promotion, per finding **C1**.
   This epic and its two siblings still claim `local → dev → stage → prod` and omit the `closure.md`
   gate, though `T435`–`T438` write exactly that file. **Recommend aligning with the 019–022 wording.**
-- **Hiding is not the same as refusing.** `FR-024` requires an inaccessible artifact to be *absent*
+- **Hiding is not the same as refusing.** `FR-ACC-024` requires an inaccessible artifact to be *absent*
   from listings, not shown as a locked placeholder — a placeholder discloses existence, which is the
   same reasoning behind EPIC-004's 404-not-403 rule.
-- **The last-editor guarantee is a system invariant, not a validation.** `FR-027` must hold under
+- **The last-editor guarantee is a system invariant, not a validation.** `FR-ACC-027` must hold under
   concurrent revocation, so it is enforced inside the revoke transaction rather than pre-checked.
 - ⚠️ This is a **deliberate, bounded advance** on the SRS roadmap, which places governance in
   Phase 3. Roles, groups, inherited organisational permissions and SSO stay there.

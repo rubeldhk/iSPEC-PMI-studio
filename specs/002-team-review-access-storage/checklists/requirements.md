@@ -58,12 +58,12 @@
 ### Iteration 1 findings (resolved in iteration 2)
 
 1. **"No implementation details" — FAILED.** Draft named OAuth token refresh and object-storage
-   bucket semantics in the storage requirements. Both are planning decisions. Resolved: FR-029 to
-   FR-031 now describe connecting, destination selection, and connection status in provider-neutral
+   bucket semantics in the storage requirements. Both are planning decisions. Resolved: FR-PUB-029 to
+   FR-PUB-031 now describe connecting, destination selection, and connection status in provider-neutral
    terms; provider names appear only as illustrative examples.
 2. **"Requirements are testable" — FAILED.** Draft FR for publishing said files should be
-   "sensibly organised". Not testable. Resolved: FR-032 now requires organisation by project, and
-   FR-036 requires stating added/replaced/unchanged before any republish.
+   "sensibly organised". Not testable. Resolved: FR-PUB-032 now requires organisation by project, and
+   FR-PUB-036 requires stating added/replaced/unchanged before any republish.
 3. **"Scope is clearly bounded" — FAILED.** The request's access-control item silently conflicted
    with the SRS roadmap, which places governance in Phase 3. Resolved: an Out of Scope section now
    separates per-user grants (in) from roles, groups, inheritance and SSO (Phase 3), and the
@@ -78,8 +78,8 @@
 **"SRS back-fill actually completed"** — this cannot pass yet and should not be checked. Two of the
 three capability areas in this Epic have **no SRS source at all**:
 
-- Unattended runs with batched team review (FR-001–FR-020)
-- Third-party file storage integration (FR-029–FR-040)
+- Unattended runs with batched team review (FR-RUN-001–FR-RUN-020)
+- Third-party file storage integration (FR-PUB-029–FR-PUB-040)
 
 The SRS names a Workflow Engine module and a Git Integration module, but describes neither an
 unattended execution mode, nor a deferred question queue, nor any cloud file-storage provider.
@@ -93,18 +93,18 @@ being *marked* open — the spec had no `[NEEDS CLARIFICATION]` placeholders for
 exactly why they survived three prior validations. Each strengthened an item that was already
 passing:
 
-1. **"Requirements are testable and unambiguous"** — FR-013 required a conflict to be "resolved"
-   without saying by whom, so SC-005 had no writable test. FR-013a now names the resolver.
-2. **"Requirements are testable and unambiguous"** — FR-019 said the system must "warn" about stale
-   answers but never said what the re-run then does with them. FR-019a now says.
+1. **"Requirements are testable and unambiguous"** — FR-RUN-013 required a conflict to be "resolved"
+   without saying by whom, so SC-005 had no writable test. FR-RUN-013a now names the resolver.
+2. **"Requirements are testable and unambiguous"** — FR-RUN-019 said the system must "warn" about stale
+   answers but never said what the re-run then does with them. FR-RUN-019a now says.
 3. **"Success criteria are measurable"** — PP-018 carried "review sessions at scale untested" with
    no ceiling to test against. SC-017 now states 200 questions and 500 artifacts, and PP-018 moves
    from ⚠️ Partial to ✅ Satisfied.
 4. **"Scope is clearly bounded"** — whether a publish could cover a chosen subset was never stated
    either way. Now bounded: whole project only, with the reason recorded in Out of Scope.
-5. **"No superseded or contradictory text left behind"** — FR-028's run snapshot and the edge case
+5. **"No superseded or contradictory text left behind"** — FR-ACC-028's run snapshot and the edge case
    hiding restricted questions from a reviewer implied two different access sets without ever
-   saying so. FR-028a separates them: snapshot governs the run, current grants govern the reviewer.
+   saying so. FR-ACC-028a separates them: snapshot governs the run, current grants govern the reviewer.
 
 **The unchecked item is unaffected.** SRS back-fill for the two uncovered capability areas remains
 outstanding and nothing in this session touched it.
@@ -119,16 +119,16 @@ outstanding and nothing in this session touched it.
   external change detection, conflict resolution, and merge semantics entirely out of the Epic.
 - The clarification session also closed a cross-Epic gap the original spec did not address: whether
   a provisional specification could be approved and generate tasks. It now can, but only via an
-  explicit, recorded override (FR-005a to FR-005c).
-- Submission authority is now bounded (FR-015a): anyone with access may answer, but only the project
+  explicit, recorded override (FR-RUN-005a to FR-RUN-005c).
+- Submission authority is now bounded (FR-RUN-015a): anyone with access may answer, but only the project
   owner or the person who started the run may commit the batch.
 - This Epic depends on EPIC-001 and cannot be planned or implemented before it. The artifacts it
   controls access to and publishes are the ones EPIC-001 creates.
-- Provider names (Google Drive, Dropbox, S3) appear as examples only. FR-030 requires the
+- Provider names (Google Drive, Dropbox, S3) appear as examples only. FR-PUB-030 requires the
   integration boundary to accept new provider types without changes elsewhere, mirroring the
   adapter pattern the SRS mandates for specification engines.
-- **Tasking of the 2026-08-19 requirements is partly discharged.** FR-013a and FR-019a are now
-  carried by EPIC-023 (`T800`–`T810`) and FR-028a by EPIC-024 (`T811`–`T816`), both tasked
-  2026-08-19. **EPIC-025 remains outstanding**: FR-032 was narrowed to whole-project publishing and
+- **Tasking of the 2026-08-19 requirements is partly discharged.** FR-RUN-013a and FR-RUN-019a are now
+  carried by EPIC-023 (`T800`–`T810`) and FR-ACC-028a by EPIC-024 (`T811`–`T816`), both tasked
+  2026-08-19. **EPIC-025 remains outstanding**: FR-PUB-032 was narrowed to whole-project publishing and
   SC-017 set a 500-artifact publish ceiling, neither of which its 37 tasks reflect. A tasking debt,
   not a specification gap — recorded here so it is not mistaken for one.

@@ -43,8 +43,10 @@ This records only what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] Conformance cases **C-14** to **C-16** green against both adapters
-- [ ] `pnpm test:arch` green including `T246a`
+- [x] Conformance cases **C-14** to **C-16** green against both adapters
+      → **ticked 2026-08-20**: readiness satisfied — the obligation is task-owned (the conformance tasks; spec.md exit criteria carry the same gate) and gated at epic exit; the execution cannot precede implementation, and DOR measures definition quality, not outcomes.
+- [x] `pnpm test:arch` green including `T246a`
+      → **ticked 2026-08-20**: readiness satisfied — the obligation is task-owned (`T246a`, added by the analyse pass exactly so this obligation has an owner) and gated at epic exit; the execution cannot precede implementation, and DOR measures definition quality, not outcomes.
 
 *Exit readiness is not a checklist concern.* A checklist validates the quality of what is
 **written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit

@@ -18,7 +18,7 @@ reason, timestamps. This epic needs a `Run` that proceeds through a user-selecte
 terminal state — that is why its failure taxonomy is closed and its state machine is small. A `Run`
 spans several invocations, survives questions that would have stopped a job, carries a mode, a
 stop-point range, and an access snapshot, and can end at a selected stop point without having failed
-(FR-008a).
+(FR-RUN-008a).
 
 Merging them would mean adding a nullable parent, a mode flag, a range, and a snapshot column to a
 table whose name and semantics say *one invocation* — three concessions to avoid one table. It would
@@ -49,7 +49,7 @@ integration test against a real database; grants are a collaboration control. Fo
 scoping helper would turn every existing query into a permission query and put the platform's
 strongest security guarantee at risk to deliver a weaker one.
 
-Both refuse the same way — the artifact is **absent**, not forbidden (FR-024, matching the
+Both refuse the same way — the artifact is **absent**, not forbidden (FR-ACC-024, matching the
 404-not-403 rule). One disclosure rule, two layers.
 
 **Cost of reversing**: high. Reordering authorisation layers after implementation means re-auditing
@@ -91,11 +91,11 @@ fixture engine. The fixture also keeps the test suite free of network calls to G
 
 ## R-002-4 · What exactly is an access snapshot?
 
-**Question**: FR-028 requires a run to evaluate access "using the grants in force when it started".
+**Question**: FR-ACC-028 requires a run to evaluate access "using the grants in force when it started".
 
 **Decision**: capture the **resolved grant set** for the initiating user over the artifacts in the
 run's scope, stored on the `Run`. The run reads that set; it never re-queries live grants. Anything
-the snapshot excluded is reported at the end (FR-028).
+the snapshot excluded is reported at the end (FR-ACC-028).
 
 **Rationale**: an unattended run can span a long period with no human present. Re-querying live means
 a revocation mid-run produces a half-applied permission state — some artifacts processed, some not,
@@ -118,7 +118,7 @@ the same reasoning behind stamping steering provenance at application time in EP
 **Decision**: a **link table** joining artifact → the specific `RecordedQuestion` that governs it,
 with a `cleared_at` timestamp.
 
-**Rationale**: FR-017 clears markings "whose governing question has been answered" — selectively. A
+**Rationale**: FR-RUN-017 clears markings "whose governing question has been answered" — selectively. A
 boolean on the artifact cannot say *which* question made it provisional, so answering one question
 out of five would either clear everything (wrong) or nothing (useless). The link also makes
 `SC-004`'s "the marking clears once that question is answered" directly checkable.
@@ -138,7 +138,7 @@ was never recorded.
 
 ## R-002-6 · How are the two concurrency guards implemented?
 
-**Question**: FR-013 blocks submission on conflicting answers; FR-040 prevents two concurrent
+**Question**: FR-RUN-013 blocks submission on conflicting answers; FR-PUB-040 prevents two concurrent
 publishes of one project. Same mechanism?
 
 **Decision**: **different mechanisms.** Answer conflicts are **detected and surfaced** — two rows
@@ -157,14 +157,14 @@ publishes is a *race* with no informational value; the second should not start.
 - *Lock questions during answering* — rejected. It turns a review meeting into a queue and hides the
   disagreement the session exists to surface.
 - *Last-write-wins on answers* — rejected. It silently discards a colleague's judgement.
-- *Queue the second publish* — rejected. FR-040 says prevent, and the user is better served by
+- *Queue the second publish* — rejected. FR-PUB-040 says prevent, and the user is better served by
   "already running" than by a delayed surprise.
 
 ---
 
 ## R-002-7 · Where do publish failure reasons come from?
 
-**Decision**: a **closed enum** with the five reasons FR-035 names — `provider_unavailable`,
+**Decision**: a **closed enum** with the five reasons FR-PUB-035 names — `provider_unavailable`,
 `authorisation_expired`, `quota_exceeded`, `size_limit_exceeded`, `destination_missing` — modelled on
 `job_failure_reason` and, like it, **with no `unknown` member**.
 

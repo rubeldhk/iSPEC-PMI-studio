@@ -35,8 +35,8 @@ programme's strongest expression of **PP-003 Human-in-the-Loop** and **PP-016 Ex
 | F-02.2 Provisional approval override | Warn-and-override approval; attributed override records |
 | F-02.3 Team review and answer submission | Sessions, draft answers, conflicts, atomic submission, authority, review API |
 | F-02.4 Re-run with submitted answers | Answer application, marking clearance, new-session rule, stale warnings |
-| F-023.5 Conflict resolution authority | Who resolves a conflict, and retention of the answer not chosen (`FR-013a`) |
-| F-023.6 Stale answers are asked again | Re-raise rather than apply, without blocking the re-run (`FR-019a`) |
+| F-023.5 Conflict resolution authority | Who resolves a conflict, and retention of the answer not chosen (`FR-RUN-013a`) |
+| F-023.6 Stale answers are asked again | Re-raise rather than apply, without blocking the re-run (`FR-RUN-019a`) |
 | F-023.7 Review session scale ceiling | 200 questions in one session (`SC-017`) |
 | F-023.UI Interface | Review session page |
 | F-023.Z Epic closure | Per-epic gate **including the SRS back-fill approval gate** (`T404`) |
@@ -75,7 +75,7 @@ real cross-epic dependency.
 | # | Gate | Status |
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
-| II | Requirements trace to cited SRS documents | ⚠️ **PASS WITH DEBT** — unattended runs (`FR-001`–`FR-020`) have **no SRS source**. `T404` gates **approval**, not merely closure |
+| II | Requirements trace to cited SRS documents | ⚠️ **PASS WITH DEBT** — unattended runs (`FR-RUN-001`–`FR-RUN-020`) have **no SRS source**. `T404` gates **approval**, not merely closure |
 | III | Epic → Feature → Task decomposition | PASS — 9 sections, listed in the Scope table; tasks counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002) |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `F-023.Z` in [tasks.md](./tasks.md) |
 | V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` finding **B1** (2026-08-19) found `T347`, `T361` and `T363` paired to tests that asserted something else. Closed by `T823`–`T825` |
@@ -122,7 +122,7 @@ finding **B1** showed that three of those pairings asserted the wrong thing, now
 
 ### G-02F.1 · The identifier collision extends to success criteria ⚠️ new finding, family-wide
 
-**C-01** was recorded as a *requirement* collision: EPIC-002's `FR-001`–`FR-040` clash with the
+**C-01** was recorded as a *requirement* collision: EPIC-002's `FR-RUN-001`–`FR-PUB-040` clash with the
 platform's `FR-001`–`FR-034`. Checking the split surfaced that **the success criteria collide too**,
 and that was never recorded:
 
@@ -155,14 +155,14 @@ This epic lands FIRST of the three: T343 defines `Run`, which EPIC-024's T381 sn
 
 ## Design notes specific to this epic
 
-**`reached_stop_point` is a success state**, not a failure (`FR-008a`). A run that stops where the
+**`reached_stop_point` is a success state**, not a failure (`FR-RUN-008a`). A run that stops where the
 user asked it to stop has done its job.
 
 **An artifact generated with no steering... no — with no provisional answer** carries no marking at
 all. Markings exist only where a guess was made, which is what makes "everything derived from a
 provisional answer is marked" checkable rather than universal.
 
-**Submission is restricted to the project owner or the run's initiator** (`FR-015a`). Answering stays
+**Submission is restricted to the project owner or the run's initiator** (`FR-RUN-015a`). Answering stays
 open to everyone with access — the restriction is on *committing* the batch, not on participating.
 
 **A run raising zero questions creates no review session.** An empty session would be a to-do item
@@ -186,7 +186,7 @@ exists to hold once.
 ## Definition of done
 
 - [ ] Every task in [tasks.md](./tasks.md) complete, every unit test passing (Constitution V)
-- [ ] **SRS back-fill complete** for `FR-001`–`FR-020` (`T404`) — gates approval, not just closure
+- [ ] **SRS back-fill complete** for `FR-RUN-001`–`FR-RUN-020` (`T404`) — gates approval, not just closure
 - [ ] Quickstart **V02-1** to **V02-6** pass
 - [ ] A run in unattended mode completes without human input regardless of question count
 - [ ] Markings clear **selectively** when one question is answered, not all at once

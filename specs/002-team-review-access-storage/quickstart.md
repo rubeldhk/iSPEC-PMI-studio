@@ -22,7 +22,7 @@ pnpm dev
 
 ## V02-1 · An unattended run finishes without asking anything
 
-**Proves**: FR-001 to FR-004, FR-007 · SC-001, SC-002
+**Proves**: FR-RUN-001 to FR-RUN-004, FR-RUN-007 · SC-001, SC-002
 
 1. Create a project with requirements known to raise several questions.
 2. Start a run with `mode=unattended`, `stopRange=after_specification`.
@@ -42,7 +42,7 @@ as it does today. Unattended mode is additive.
 
 ## V02-2 · Provisional markings are per-question, and clear selectively
 
-**Proves**: FR-005, FR-017 · SC-004 · research **R-002-5**
+**Proves**: FR-RUN-005, FR-RUN-017 · SC-004 · research **R-002-5**
 
 1. From V02-1, list artifacts marked provisional. **Expected**: each names the governing question.
 2. Answer **one** question and submit.
@@ -57,7 +57,7 @@ everything or nothing. Confirm an artifact with two markings is still provisiona
 
 ## V02-3 · A run stops at its chosen point without failing
 
-**Proves**: FR-008, FR-008a
+**Proves**: FR-RUN-008, FR-RUN-008a
 
 1. Start a run with `stopRange=after_specification`.
 
@@ -74,7 +74,7 @@ than restarting.
 
 ## V02-4 · Approving provisional work requires an explicit, attributed override
 
-**Proves**: FR-005a to FR-005c · SC-005a · **PP-003**
+**Proves**: FR-RUN-005a to FR-RUN-005c · SC-005a · **PP-003**
 
 1. Take a specification carrying provisional markings.
 2. Attempt to approve it.
@@ -95,7 +95,7 @@ than restarting.
 
 ## V02-5 · A review session submits atomically, or not at all
 
-**Proves**: FR-009 to FR-015a · SC-003, SC-005, SC-006
+**Proves**: FR-RUN-009 to FR-RUN-015a · SC-003, SC-005, SC-006
 
 1. Open the review session. **Expected**: every question with context, options, and suggestion.
 2. Answer some questions; leave one blank. Attempt to submit.
@@ -116,7 +116,7 @@ without leaving the review.
 
 ## V02-6 · Re-running applies the team's answers
 
-**Proves**: FR-016 to FR-019
+**Proves**: FR-RUN-016 to FR-RUN-019
 
 1. Submit answers that **differ** from the suggestions. Re-run.
    **Expected**: the team's answers are applied; provisional markings clear.
@@ -131,7 +131,7 @@ without leaving the review.
 
 ## V02-7 · An artifact without a grant is absent, not forbidden
 
-**Proves**: FR-021 to FR-028 · SC-007, SC-008, SC-013 · research **R-002-2**
+**Proves**: FR-ACC-021 to FR-ACC-028 · SC-007, SC-008, SC-013 · research **R-002-2**
 
 1. Restrict an artifact to one user. Sign in as another and list the collection.
    **Expected**: the artifact is **absent from the listing** — not shown as a locked placeholder.
@@ -152,7 +152,7 @@ without a task.
 
 ## V02-8 · Publishing is one-way, and failures are named
 
-**Proves**: FR-029 to FR-036, FR-040 · SC-009, SC-012
+**Proves**: FR-PUB-029 to FR-PUB-036, FR-PUB-040 · SC-009, SC-012
 
 1. Connect the **fixture** provider and choose a destination.
    **Expected**: saved, reporting `healthy`.
@@ -174,7 +174,7 @@ without a task.
 
 ## V02-9 · Providers are interchangeable
 
-**Proves**: FR-030, FR-037, FR-038, FR-039 · SC-010, SC-011 · **PP-015**
+**Proves**: FR-PUB-030, FR-PUB-037, FR-PUB-038, FR-PUB-039 · SC-010, SC-011 · **PP-015**
 
 1. Publish to the fixture provider.
 2. Connect a **second** provider and switch to it. Publish again.
@@ -196,7 +196,7 @@ independence is a claim that decays quietly, exactly as engine independence woul
 - **Real provider integration.** Every scenario runs against the fixture, deliberately. A real
   Google Drive / Dropbox / S3 run is slow, costly, and non-deterministic — it belongs in a nightly
   suite alongside EPIC-015's `T146`.
-- **Credential and token handling.** FR-029 requires authorisation but no mechanism is chosen; the
+- **Credential and token handling.** FR-PUB-029 requires authorisation but no mechanism is chosen; the
   data model flags it as owed before `T390`. Nothing here can validate it yet.
 - **Review sessions at scale.** PP-018 records session scalability as untested; SC-003's 20-question
   target is a usability measure, not a load test.

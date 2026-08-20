@@ -34,13 +34,13 @@ this epic **owns** the following and is where they are satisfied:
 
 | Requirement |
 |---|
-| FR-021, FR-022 — grant and revoke read or edit access per artifact |
-| FR-023, FR-024 — refuse and record; hide rather than show as inaccessible |
-| FR-025 — a derived artifact is at least as restricted as its source |
-| FR-026 — every grant and revocation audited |
-| FR-027 — no artifact may reach a state with no user holding edit access |
-| FR-028 — access evaluated against the grants in force when a run started, governing what that run may read and produce |
-| FR-028a — what a reviewer may see in a review session is evaluated against the grants held when the session is opened, so a revocation takes effect on the next open |
+| FR-ACC-021, FR-ACC-022 — grant and revoke read or edit access per artifact |
+| FR-ACC-023, FR-ACC-024 — refuse and record; hide rather than show as inaccessible |
+| FR-ACC-025 — a derived artifact is at least as restricted as its source |
+| FR-ACC-026 — every grant and revocation audited |
+| FR-ACC-027 — no artifact may reach a state with no user holding edit access |
+| FR-ACC-028 — access evaluated against the grants in force when a run started, governing what that run may read and produce |
+| FR-ACC-028a — what a reviewer may see in a review session is evaluated against the grants held when the session is opened, so a revocation takes effect on the next open |
 
 ## User stories owned
 
@@ -57,7 +57,7 @@ this epic **owns** the following and is where they are satisfied:
 
 - EPIC-004 — tenancy and audit, which these grants extend
 - EPIC-008 — artifacts to grant access on
-- **EPIC-023** — the `Run` model, which carries the `access_snapshot` column `T381` writes (FR-028).
+- **EPIC-023** — the `Run` model, which carries the `access_snapshot` column `T381` writes (FR-ACC-028).
   A run-start snapshot cannot be taken against a `Run` that does not exist
 
 ## Clarifications
@@ -90,5 +90,6 @@ epic records only where it **differs** or is the place a principle is satisfied:
 - [ ] `/speckit-converge` reports no unbuilt work for this epic
 - [ ] `specs/024-artifact-access-control/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
+- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge
 - [ ] A closing report was published (Constitution IX)

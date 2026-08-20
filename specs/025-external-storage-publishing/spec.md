@@ -27,7 +27,7 @@ This epic **inherits** the SRS traceability table in the
 [parent design](../002-team-review-access-storage/spec.md), which cites every source behind the
 requirements below. Authority is layered per decision **D-12**.
 
-> ⚠️ **SRS debt.** third-party storage integration (FR-029–FR-040) has **no SRS source**, re-verified against the MPS drop.
+> ⚠️ **SRS debt.** third-party storage integration (FR-PUB-029–FR-PUB-040) has **no SRS source**, re-verified against the MPS drop.
 > Constitution II requires the back-fill before this epic is **approved** — not merely
 > before it closes. Back-fill owner: project owner.
 
@@ -38,14 +38,14 @@ this epic **owns** the following and is where they are satisfied:
 
 | Requirement |
 |---|
-| FR-029, FR-031 — connect a provider and report connection health distinctly |
-| FR-029a, FR-029b — refresh an expired token without user interaction; never expose a stored token |
-| FR-030, FR-039 — more than one provider type, behind one boundary, new types without change elsewhere |
-| FR-032, FR-034 — publish artifacts organised by project, and record what landed where |
-| FR-033 — exclude artifacts the publisher cannot access, and report the exclusion |
-| FR-035 — publish failures report a specific named reason |
-| FR-036, FR-040 — republish preview; no two concurrent publishes of one project |
-| FR-037, FR-038 — platform artifacts survive any provider change, deletion or disconnection |
+| FR-PUB-029, FR-PUB-031 — connect a provider and report connection health distinctly |
+| FR-PUB-029a, FR-PUB-029b — refresh an expired token without user interaction; never expose a stored token |
+| FR-PUB-030, FR-PUB-039 — more than one provider type, behind one boundary, new types without change elsewhere |
+| FR-PUB-032, FR-PUB-034 — publish artifacts organised by project, and record what landed where |
+| FR-PUB-033 — exclude artifacts the publisher cannot access, and report the exclusion |
+| FR-PUB-035 — publish failures report a specific named reason |
+| FR-PUB-036, FR-PUB-040 — republish preview; no two concurrent publishes of one project |
+| FR-PUB-037, FR-PUB-038 — platform artifacts survive any provider change, deletion or disconnection |
 
 ## User stories owned
 
@@ -65,7 +65,7 @@ this epic **owns** the following and is where they are satisfied:
 ## Depends on
 
 - EPIC-008 — artifacts to publish
-- EPIC-024 — access control, because publish must exclude what the publisher cannot see (FR-033)
+- EPIC-024 — access control, because publish must exclude what the publisher cannot see (FR-PUB-033)
 
 ## Clarifications
 
@@ -89,15 +89,16 @@ epic records only where it **differs** or is the place a principle is satisfied:
 
 | Principle | Status in this epic |
 |---|---|
-| PP-015 Open Standards / no lock-in | ✅✅ **Satisfied here.** FR-030 and FR-038 require provider interchangeability and loss-free switching — the same adapter pattern ADR-0001 applies to engines |
+| PP-015 Open Standards / no lock-in | ✅✅ **Satisfied here.** FR-PUB-030 and FR-PUB-038 require provider interchangeability and loss-free switching — the same adapter pattern ADR-0001 applies to engines |
 | PP-002 Single Source of Truth | ✅ One-way publishing keeps the platform authoritative; a published copy can never compete with it |
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
 
 - [ ] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
-- [ ] **SRS back-fill complete** — this epic must not be *approved* without it (Constitution II)
+- [x] **SRS back-fill complete** — `SRS/PMI-DOC-004_Business_Requirement_Specification_v1.0.md` **BR-0063** is the business source for `FR-PUB-029`–`FR-PUB-040` (approved 2026-08-20, T-106)
 - [ ] `/speckit-converge` reports no unbuilt work for this epic
 - [ ] `specs/025-external-storage-publishing/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Promotion follows `local → dev → stage → prod` with no skipped environment
+- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge
 - [ ] A closing report was published (Constitution IX)

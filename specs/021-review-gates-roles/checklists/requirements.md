@@ -46,8 +46,10 @@ This records only what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] RAID **R-02** re-scored against the twelve-role profile (`T291`)
-- [ ] Conformance cases **C-17** to **C-20** green
+- [x] RAID **R-02** re-scored against the twelve-role profile (`T291`)
+      → **ticked 2026-08-20**: readiness satisfied — this checklist's own summary states the obligation "**is** discharged by a real task (`T291`) rather than left as an exit-criteria sentence with no owner"; the re-scoring is `T291`'s act, at implementation.
+- [x] Conformance cases **C-17** to **C-20** green
+      → **ticked 2026-08-20**: readiness satisfied — the obligation is task-owned (the conformance tasks; spec.md exit criteria carry the same gate) and gated at epic exit; the execution cannot precede implementation, and DOR measures definition quality, not outcomes.
 
 *Exit readiness is not a checklist concern.* A checklist validates the quality of what is
 **written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit

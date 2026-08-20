@@ -6,7 +6,7 @@ Produced by `/speckit-analyze` against `spec.md`, `plan.md` and `tasks.md`.
 
 > **Two sessions ran on this date.** The first was the programme-wide sweep recorded below under
 > *Session 2026-08-19 (first pass)*. This second pass was triggered by the parent's third
-> clarification session, which narrowed `FR-032` and added `SC-017` after EPIC-023 and EPIC-024 were
+> clarification session, which narrowed `FR-PUB-032` and added `SC-017` after EPIC-023 and EPIC-024 were
 > re-tasked and EPIC-025 was not. Both records are kept: the first states what the sweep returned,
 > this one states what a targeted read of the same three documents returned.
 
@@ -14,14 +14,14 @@ Produced by `/speckit-analyze` against `spec.md`, `plan.md` and `tasks.md`.
 
 | ID | Category | Severity | Location | Summary | Recommendation |
 |---|---|---|---|---|---|
-| A1 | Coverage Gap | CRITICAL | tasks.md `T391`, `T388` | **`FR-034` has no asserting unit test.** `T391` implements FR-032 and FR-034 and cites `T384` as its unit test; `T384` asserts the publish **failure taxonomy** and nothing about the publish record. `T388` defines `PublishRecord` citing `T382` (connection states) and `T387` (no loss on switch). Nothing asserts that a publish records what, when, by whom and where it landed | Add a failing unit test for the publish record's contents, then repoint `T391`. Constitution V is NON-NEGOTIABLE, and `plan.md` currently claims "PASS — 0 gaps" |
-| A2 | Coverage Gap | HIGH | spec.md "Requirements owned"; tasks.md `T391` | **`FR-032`'s 2026-08-19 narrowing is untasked.** The parent now forbids offering an artifact subset, so that `FR-036`'s added/replaced/left-alone preview always runs against a whole-project baseline. `T391` predates the change and neither implements nor tests the prohibition | Add a task and a failing test asserting no subset-selection path exists on the publish surface |
+| A1 | Coverage Gap | CRITICAL | tasks.md `T391`, `T388` | **`FR-PUB-034` has no asserting unit test.** `T391` implements FR-PUB-032 and FR-PUB-034 and cites `T384` as its unit test; `T384` asserts the publish **failure taxonomy** and nothing about the publish record. `T388` defines `PublishRecord` citing `T382` (connection states) and `T387` (no loss on switch). Nothing asserts that a publish records what, when, by whom and where it landed | Add a failing unit test for the publish record's contents, then repoint `T391`. Constitution V is NON-NEGOTIABLE, and `plan.md` currently claims "PASS — 0 gaps" |
+| A2 | Coverage Gap | HIGH | spec.md "Requirements owned"; tasks.md `T391` | **`FR-PUB-032`'s 2026-08-19 narrowing is untasked.** The parent now forbids offering an artifact subset, so that `FR-PUB-036`'s added/replaced/left-alone preview always runs against a whole-project baseline. `T391` predates the change and neither implements nor tests the prohibition | Add a task and a failing test asserting no subset-selection path exists on the publish surface |
 | A3 | Coverage Gap | HIGH | spec.md "Success criteria owned" | **`SC-017` is neither owned nor tasked.** The parent's new ceiling is 200 questions per review session **and 500 artifacts per publish**. EPIC-023 took the review half (`T810`); the publish half was left with no owner | Declare `SC-017` owned here and add a publish-scale integration test at 500 artifacts |
 | A4 | Coverage Gap | HIGH | spec.md "Success criteria owned"; tasks.md | **`SC-012` is declared owned but has zero tasks.** No task asserts that deleting or altering a published file at the provider leaves the platform artifact untouched. `T387` covers switching and `T451` covers disconnection retention — neither covers external deletion | Add a failing unit test for provider-side deletion against a fixture provider (`T396`), which already supports injectable failures |
 | A5 | Duplication | HIGH | plan.md:32-34, :68, :172 | **The task count is restated three times in `plan.md`, all three wrong.** The Scope table sums to **33** (26+2+5), Constitution Check III says **32**, Definition of done says **32**. `tasks.md` lists **37** (30+2+5). The previous analysis recorded this as remediated — "`plan.md`'s duplicate was **removed** rather than synchronised" — but only the header line was removed | Remove all three restatements, as `T686` intended. The header already links `tasks.md` as the counted source |
 | A6 | Inconsistency | MEDIUM | spec.md "Clarifications" | **The clarification session records *Performance* as "answered nowhere in that chain".** The parent answered it the same day with `SC-017`. The child's session and the parent's edit are both dated 2026-08-19 | Update the Outstanding list to point at `SC-017`, or re-run `/speckit-clarify` for this Epic |
 | A7 | Inconsistency | MEDIUM | plan.md G-025.2 | **G-025.2 is recorded "⚠️ open" on a ground that no longer holds.** Its stated complaint is "Not recorded in this epic's `Depends on`" — both `spec.md` and `tasks.md` now list EPIC-024 there. The underlying sequencing risk is real and unchanged (EPIC-024 is also HELD), but the recorded reason is stale | Restate G-025.2 as the sequencing risk it is, or close it and let the `Depends on` entry carry it |
-| A8 | Inconsistency | MEDIUM | tasks.md:56-70 | **The "Credentials and disconnection" subsection contains eleven tasks that are neither.** It is headed *added 2026-08-08 — FR-029a, FR-029b, FR-038, SC-014* and holds `T447`–`T451`, but `T396` (fixture provider), `T421`–`T426` (controllers), `T429`–`T432` (concurrency, conformance, architecture) sit under it too | Move the unrelated eleven back under `F-02.6`, or split the subsection heading |
+| A8 | Inconsistency | MEDIUM | tasks.md:56-70 | **The "Credentials and disconnection" subsection contains eleven tasks that are neither.** It is headed *added 2026-08-08 — FR-PUB-029a, FR-PUB-029b, FR-PUB-038, SC-014* and holds `T447`–`T451`, but `T396` (fixture provider), `T421`–`T426` (controllers), `T429`–`T432` (concurrency, conformance, architecture) sit under it too | Move the unrelated eleven back under `F-02.6`, or split the subsection heading |
 | A9 | Inconsistency | MEDIUM | plan.md G-02F.1 | **The success-criteria identifier collision widened and the record was not updated.** G-02F.1 states the family range as `SC-001 … SC-013`; the parent's third session extended it to `SC-018`, against the platform's `SC-001 … SC-012` | Note the widened range under G-02F.1. The fix belongs to decision **D-1**, not to this Epic |
 | A10 | Inconsistency | LOW | plan.md:68 | Constitution Check III reads "2 functions"; `tasks.md` carries three sections — `F-02.6`, `F-025.UI`, `F-025.Z` | Correct to 3, or drop the count with the task count in A5 |
 | A11 | Underspecification | LOW | tasks.md `T395` | `T395` ends with two trailing parentheticals — `(unit test: T387) (unit test: T451)` | Merge into one `(unit tests: T387, T451)` |
@@ -33,20 +33,20 @@ Produced by `/speckit-analyze` against `spec.md`, `plan.md` and `tasks.md`.
 
 | Requirement | Has task? | Task IDs |
 |---|---|---|
-| FR-029 | yes | T390, T382, T447, T449, T450 |
-| FR-029a | yes | T447, T448 |
-| FR-029b | yes | T449, T450 |
-| FR-030 | yes | T389, T383 |
-| FR-031 | yes | T390, T382, T447 |
-| FR-032 | **partial** | T391, T384 — the 2026-08-19 narrowing is uncovered (A2) |
-| FR-033 | yes | T392, T385 |
-| FR-034 | **implementation only** | T391 — no asserting test (A1) |
-| FR-035 | yes | T393, T384, T425 |
-| FR-036 | yes | T394, T386, T424 |
-| FR-037 | yes | T395, T387 |
-| FR-038 | yes | T395, T387, T451 |
-| FR-039 | yes | T389, T383 |
-| FR-040 | yes | T394, T386, T429 |
+| FR-PUB-029 | yes | T390, T382, T447, T449, T450 |
+| FR-PUB-029a | yes | T447, T448 |
+| FR-PUB-029b | yes | T449, T450 |
+| FR-PUB-030 | yes | T389, T383 |
+| FR-PUB-031 | yes | T390, T382, T447 |
+| FR-PUB-032 | **partial** | T391, T384 — the 2026-08-19 narrowing is uncovered (A2) |
+| FR-PUB-033 | yes | T392, T385 |
+| FR-PUB-034 | **implementation only** | T391 — no asserting test (A1) |
+| FR-PUB-035 | yes | T393, T384, T425 |
+| FR-PUB-036 | yes | T394, T386, T424 |
+| FR-PUB-037 | yes | T395, T387 |
+| FR-PUB-038 | yes | T395, T387, T451 |
+| FR-PUB-039 | yes | T389, T383 |
+| FR-PUB-040 | yes | T394, T386, T429 |
 | SC-009 | yes, uncited | T384, T393, T425 (A12) |
 | SC-010 | yes, uncited | T387, T395 (A12) |
 | SC-011 | yes | T432 |

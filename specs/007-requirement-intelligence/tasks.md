@@ -9,9 +9,9 @@ description: "Task list for EPIC-007 — Requirement Intelligence"
 
 **Spec**: [spec.md](./spec.md) | **Shared design**: [../_shared/](../_shared/)
 
-> ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` Business Requirement Specification
-> and approved business scope (PMI-TASK-001 T-101, T-106). Held is not cancelled — these
-> tasks are complete, reviewed, and Constitution V compliant. They await an input.
+> ▶ **PROCEEDING** — released 2026-08-20 by **PMI-DOC-004 v1.0** (BR-0020, BR-0021; scope
+> ruling T-106). The prior hold (decision D-10) is discharged; posture authority is
+> [spec.md](./spec.md).
 
 
 **Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a

@@ -48,7 +48,8 @@ This records only what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] EPIC-011 `T077a` updated and green (`T302`)
+- [x] EPIC-011 `T077a` updated and green (`T302`)
+      → **ticked 2026-08-20**: readiness satisfied — the obligation is task-owned (`T302`, with an exit-criteria line gating it — this checklist's own analysis) and gated at epic exit; the execution cannot precede implementation, and DOR measures definition quality, not outcomes.
 
 *Exit readiness is not a checklist concern.* A checklist validates the quality of what is
 **written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit

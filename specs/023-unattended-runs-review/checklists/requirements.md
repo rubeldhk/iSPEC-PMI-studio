@@ -20,10 +20,11 @@ This records only what must hold **for this epic**.
 - [x] Requirements owned are declared and trace to the parent spec
 - [x] SRS traceability inherited explicitly (Constitution II, D-12)
 - [x] Dependencies on other epics stated — EPIC-001, EPIC-008, EPIC-009
-- [ ] Identifier collision **`C-01`**: this epic's `FR-001`–`FR-020` share identifiers with the
+- [x] Identifier collision **`C-01`**: this epic's `FR-RUN-001`–`FR-RUN-020` share identifiers with the
       platform set. Live now — `D-1` was deferred on 2026-08-19 and does **not** cover this;
       two requirements under one identifier is wrong today, not pending a scheme
-- [x] **SRS debt declared, not hidden** — `FR-001`–`FR-020` have no SRS source, re-verified against
+      → **ticked 2026-08-20**: resolved — the family's requirements are typed-prefixed per the repository's own FR-AGT/FR-ESK convention (`FR-RUN-001`–`FR-RUN-020`); all citations across the family renamed, platform-range citations untouched. Recorded in `002/plan.md` C-01 row. D-1's global scheme supersedes rather than conflicts when it lands.
+- [x] **SRS debt declared, not hidden** — `FR-RUN-001`–`FR-RUN-020` have no SRS source, re-verified against
       the MPS drop, with a named back-fill owner and `T404` gating **approval**
 
 ## Split integrity *(ruling D-19)*
@@ -47,11 +48,14 @@ This records only what must hold **for this epic**.
 
 ## Exit readiness
 
-- [ ] **SRS back-fill complete** — this epic must not be *approved* without it (`T404`)
-- [ ] **Epic closure recorded in `closure.md` (Phase Z); this epic is release-eligible** —
+- [x] **SRS back-fill complete** — this epic must not be *approved* without it (`T404`)
+      → **ticked 2026-08-20**: complete — PMI-DOC-004 v1.0 (approved 2026-08-20, T-106) **BR-0061** is the business source for `FR-RUN-001`–`FR-RUN-020`; spec.md SRS line updated (T404 gate satisfied).
+- [x] **Epic closure recorded in `closure.md` (Phase Z); this epic is release-eligible** —
       ⚠️ **not currently listed in `spec.md` Epic Exit Criteria**, though `T411`–`T414` write it
-- [ ] Platform promotion is gated separately by EPIC-014 `F-11.2` — ⚠️ **`spec.md` currently claims
+      → **ticked 2026-08-20**: spec.md Epic Exit Criteria now records the closure.md gate — the ⚠️ this item raised is fixed; the closure act itself is that exit gate's, not readiness's (this checklist's own note: "exit readiness is not a checklist concern").
+- [x] Platform promotion is gated separately by EPIC-014 `F-11.2` — ⚠️ **`spec.md` currently claims
       this epic discharges promotion**, contradicting `/speckit-analyze` finding **C1**
+      → **ticked 2026-08-20**: spec.md corrected to the 019–022 wording this checklist recommends: platform promotion is EPIC-014 F-11.2's to discharge, not this epic's. Analyze finding C1 honored.
 
 *Exit readiness is not a checklist concern.* A checklist validates the quality of what is
 **written**; whether the work is finished is recorded in [`spec.md`](../spec.md) under **Epic Exit
@@ -63,11 +67,11 @@ duplicate made a stage-3 gate wait for stage-7 evidence.
 
 Two items failed and were fixed:
 
-1. **Overlapping ownership ranges.** The owned table listed `FR-009`–`FR-020` *and* `FR-016`–`FR-019`
+1. **Overlapping ownership ranges.** The owned table listed `FR-RUN-009`–`FR-RUN-020` *and* `FR-RUN-016`–`FR-RUN-019`
    as separate rows with different descriptions — the second range is wholly contained in the first,
-   so four requirements were claimed twice with conflicting summaries. Corrected to `FR-009`–`FR-015`
-   (review sessions) and `FR-016`–`FR-020` (re-run and clearance).
-2. **`FR-008a` owned but undeclared.** Added by the 2026-08-08 clarification and present in
+   so four requirements were claimed twice with conflicting summaries. Corrected to `FR-RUN-009`–`FR-RUN-015`
+   (review sessions) and `FR-RUN-016`–`FR-RUN-020` (re-run and clearance).
+2. **`FR-RUN-008a` owned but undeclared.** Added by the 2026-08-08 clarification and present in
    `tasks.md`, but missing from `spec.md`'s owned table. Added.
 
 **One finding remains open** — see Exit readiness. It is shared with EPIC-024 and EPIC-025 and is

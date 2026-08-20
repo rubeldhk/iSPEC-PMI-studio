@@ -56,8 +56,8 @@ That is what makes this the programme's strongest expression of **PP-003 Human-i
 
 **68 → 87 tasks** on 2026-08-05, closing G-02.3, G-02.4 and G-02.5. **Split 2026-08-07 (D-19)** into
 [EPIC-023](../023-unattended-runs-review/tasks.md), [EPIC-024](../024-artifact-access-control/tasks.md), [EPIC-025](../025-external-storage-publishing/tasks.md) — 87 IDs preserved, 9 closure tasks added, 96 total.
-**Now 128** — the clarification session of 2026-08-08 added `T447`–`T451` to EPIC-025 for FR-029a and
-FR-029b. Current split: **EPIC-023 58 · EPIC-024 28 · EPIC-025 42**.
+**Now 128** — the clarification session of 2026-08-08 added `T447`–`T451` to EPIC-025 for FR-PUB-029a and
+FR-PUB-029b. Current split: **EPIC-023 58 · EPIC-024 28 · EPIC-025 42**.
 
 ## Technical Context
 
@@ -69,7 +69,7 @@ spans *many* invocations across a user-selected range, survives questions, and c
 snapshot. Modelling them as one thing breaks both — [research.md](./research.md) **R-002-1**.
 
 **Access control is a second authorisation layer, not a replacement.** EPIC-004's workspace scoping
-(FR-002, `workspace_id` on every row) still runs first and still returns **404, not 403**. Per-artifact
+(FR-RUN-002, `workspace_id` on every row) still runs first and still returns **404, not 403**. Per-artifact
 grants narrow *within* a workspace. Two layers, evaluated in order — **R-002-2**.
 
 **Storage providers reuse the engine adapter pattern.** `packages/storage-contract` mirrors
@@ -83,11 +83,11 @@ applied to storage. **R-002-3** and
 than a staged simplification. Nothing at a provider can alter a platform artifact.
 
 **Access is evaluated against a snapshot taken when a run starts**, so a long unattended run cannot
-half-apply a mid-flight permission change (FR-028). Unusual, and easy to implement wrongly —
+half-apply a mid-flight permission change (FR-ACC-028). Unusual, and easy to implement wrongly —
 **R-002-4**.
 
-**Concurrency has two distinct guards**: answer conflicts within a review session (FR-013) and
-concurrent publishes of one project (FR-040). Different mechanisms, different failure modes —
+**Concurrency has two distinct guards**: answer conflicts within a review session (FR-RUN-013) and
+concurrent publishes of one project (FR-PUB-040). Different mechanisms, different failure modes —
 **R-002-6**.
 
 **NEEDS CLARIFICATION**: none. The spec's five-question session of 2026-08-02 resolved every marker;
@@ -100,7 +100,7 @@ zero remain. The seven open technical questions are resolved in Phase 0.
 | # | Gate | Status |
 |---|------|--------|
 | I | All code changes produced only via Spec Kit commands — no direct edits | PASS |
-| II | Every requirement traces to a cited `SRS/` document; untraced items in Assumptions | ⚠️ **PASS WITH DEBT** — **two whole capability areas have no SRS source**: unattended runs (FR-001–FR-020) and third-party storage (FR-029–FR-040). Declared in the spec with a named back-fill owner and re-verified against the MPS drop. `T404` gates **approval**, not merely closure. The largest Constitution II debt in the programme |
+| II | Every requirement traces to a cited `SRS/` document; untraced items in Assumptions | ⚠️ **PASS WITH DEBT** — **two whole capability areas have no SRS source**: unattended runs (FR-RUN-001–FR-RUN-020) and third-party storage (FR-PUB-029–FR-PUB-040). Declared in the spec with a named back-fill owner and re-verified against the MPS drop. `T404` gates **approval**, not merely closure. The largest Constitution II debt in the programme |
 | III | Work decomposed Epic → Feature → Task; Epic ID assigned and directory exists | ✅ **PASS** — resolved by **D-19**: split into EPIC-023 (43), EPIC-024 (21), EPIC-025 (32), one per module |
 | IV | `/speckit-converge` scheduled as the Epic exit gate | PASS — each child carries its own closure section |
 | V | Every implementation task carries a unit-test task, written to fail first | ✅ **PASS** — G-02.3 and G-02.4 closed 2026-08-05. Every controller now carries a unit test and a contract test |
@@ -111,7 +111,7 @@ zero remain. The seven open technical questions are resolved in Phase 0.
 | — | Repository synced from GitHub before this work started | PASS — 0 commits behind `origin/main`, verified 2026-08-04 |
 | — | No other Claude session active on this checkout | ⚠️ **CANNOT ASSERT** — `002/tasks.md` and `018/tasks.md` appeared in this working tree mid-session, authored outside it. The single-session assumption did not hold today |
 | — | Principle register present, deferrals argued (D-6) | PASS — 20/20 declared; 4 deferrals, each owned |
-| — | **C-01 identifier collision** | ⚠️ **UNRESOLVED** — this epic's `FR-001`–`FR-040` collide with the platform set, and 68 task descriptions now cite them. Decision **D-1** owns the fix |
+| — | **C-01 identifier collision** | ✅ **RESOLVED 2026-08-20** — the family's requirements are typed-prefixed (`FR-RUN-001`–`020`, `FR-ACC-021`–`028`, `FR-PUB-029`–`040`), following the repo's own FR-AGT/FR-ESK convention; every citation across 002/023/024/025 renamed (702 identifiers + platform-object lines). D-1's global scheme, when it lands, supersedes rather than conflicts |
 
 **Any FAIL blocks Phase 0.** No outright FAIL. **Three qualified gates** — II, V, and session
 isolation — carried into Complexity Tracking rather than waved through.
@@ -182,7 +182,7 @@ says three developers could work in parallel. That is the shape **D-15** split E
 **D-18** split EPIC-017 for.
 
 **Recommended cut — now executed** as **EPIC-023** (M-06, 43 tasks), **EPIC-024** (M-13, 21) and
-**EPIC-025** (M-11, 37 — 32 at the split, plus 5 added on 2026-08-08 for FR-029a/FR-029b). All 87
+**EPIC-025** (M-11, 37 — 32 at the split, plus 5 added on 2026-08-08 for FR-PUB-029a/FR-PUB-029b). All 87
 task IDs preserved; 9 closure tasks added so each child converges independently. EPIC-002 is now a
 parent design carrying no tasks.
 
@@ -261,31 +261,31 @@ the real ones — the ordering EPIC-003 chose deliberately, for the same reason:
 above the adapter provably correct before the slowest, least certain component exists.
 
 **Access control should land early despite being independent.** `F-02.6` publish must exclude
-artifacts the publisher cannot access (FR-033), so storage silently depends on access being real.
+artifacts the publisher cannot access (FR-PUB-033), so storage silently depends on access being real.
 
 ## Design notes specific to this epic
 
 **A provisional marking is a link, not a flag.** It joins an artifact to the *specific question* that
-governs it, which is what lets FR-017 clear markings selectively when that question is answered. A
+governs it, which is what lets FR-RUN-017 clear markings selectively when that question is answered. A
 boolean would force regenerating everything.
 
 **Conflicts block submission; they do not auto-resolve.** Two people answering differently is a
 disagreement to surface, not a race to win. Last-write-wins would silently discard a colleague's
 judgement — the opposite of what a review session is for.
 
-**Hiding is not the same as refusing.** FR-024 requires an inaccessible artifact to be *absent* from
+**Hiding is not the same as refusing.** FR-ACC-024 requires an inaccessible artifact to be *absent* from
 listings, not shown as a locked placeholder. A placeholder discloses existence — the same reasoning
 behind EPIC-004's 404-not-403 rule.
 
-**The last-editor guarantee is a system invariant, not a validation.** FR-027 must hold under
+**The last-editor guarantee is a system invariant, not a validation.** FR-ACC-027 must hold under
 concurrent revocations, which means enforcing it in the same transaction as the revoke — not checking
 first and revoking after.
 
-**Publish failure reasons are a closed taxonomy.** FR-035 names five. The platform's existing job
+**Publish failure reasons are a closed taxonomy.** FR-PUB-035 names five. The platform's existing job
 failure enum deliberately has no `unknown` member, and this one must not either: a generic failure is
 a defect.
 
-**The republish preview is computed before anything is written** (FR-036). "Tell the user what will
+**The republish preview is computed before anything is written** (FR-PUB-036). "Tell the user what will
 change, then change it" is only true if the preview is not itself the first write.
 
 ## Risks carried by this epic
@@ -314,7 +314,7 @@ change, then change it" is only true if the preview is not itself the first writ
 ## Definition of done
 
 - [ ] All **128** tasks complete across EPIC-023/024/025, every unit test passing (Constitution V)
-- [ ] **SRS back-fill complete** for FR-001–FR-020 (`T404`) and FR-029–FR-040 incl. FR-029a/b
+- [ ] **SRS back-fill complete** for FR-RUN-001–FR-RUN-020 (`T404`) and FR-PUB-029–FR-PUB-040 incl. FR-PUB-029a/b
       (`T439`) — each gates *approval* of its own child epic
 - [ ] Quickstart **V02-1** to **V02-9** pass
 - [ ] Integration tests green against a **real** PostgreSQL for access enforcement (G-02.5)
@@ -328,8 +328,8 @@ change, then change it" is only true if the preview is not itself the first writ
 | Complexity / qualification | Why | Simpler alternative rejected because |
 |---|---|---|
 | `Run` separate from `GenerationJob` | A run spans many invocations, survives questions, and carries an access snapshot | Reusing `GenerationJob` needs a nullable parent, a mode flag, and a snapshot column on a table meaning "one engine invocation" — three concessions to avoid one table |
-| A second authorisation layer over workspace scoping | FR-021–FR-028 need per-artifact grants; workspace scoping is per-tenant | Replacing workspace scoping with grants makes every existing query a permission query and puts SC-004 at risk |
-| A storage contract package mirroring the engine contract | FR-030/FR-039 require interchangeable providers; SC-011 requires zero platform change | Calling provider SDKs directly from services makes SC-011 untestable and repeats the mistake ADR-0001 exists to prevent |
+| A second authorisation layer over workspace scoping | FR-ACC-021–FR-ACC-028 need per-artifact grants; workspace scoping is per-tenant | Replacing workspace scoping with grants makes every existing query a permission query and puts SC-004 at risk |
+| A storage contract package mirroring the engine contract | FR-PUB-030/FR-PUB-039 require interchangeable providers; SC-011 requires zero platform change | Calling provider SDKs directly from services makes SC-011 untestable and repeats the mistake ADR-0001 exists to prevent |
 | **Gate II qualified** — two capability areas unsourced | The feature request is real; the SRS has not caught up | Refusing to plan until back-fill lands stalls an epic the owner asked for. `T404` converts the debt into an approval gate |
 | ~~Gate V qualified~~ | ✅ Closed 2026-08-05 by the follow-up `/speckit-tasks` pass | — |
 | **Session-isolation row unassertable** | Files authored outside this session appeared mid-turn | Asserting PASS would be false. Recorded as observed fact |

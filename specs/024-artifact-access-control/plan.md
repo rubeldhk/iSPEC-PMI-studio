@@ -30,7 +30,7 @@ filter rather than a boundary, it passes every unit test and leaks in production
 | Function | What it delivers |
 |---|---|
 | F-02.5 Artifact access control | Grants, enforcement, hiding, inheritance, last-editor guarantee, snapshots, access API, integration tests |
-| F-024.6 Reviewer visibility uses current grants | Open-time evaluation, separated from the run snapshot (`FR-028a`) |
+| F-024.6 Reviewer visibility uses current grants | Open-time evaluation, separated from the run snapshot (`FR-ACC-028a`) |
 | F-024.UI Interface | Access grant control |
 | F-024.Z Epic closure | Per-epic gate |
 
@@ -48,10 +48,10 @@ set. Two layers, fixed order. Folding grants into the scoping helper would turn 
 into a permission query and put `SC-004` — the platform's strongest security guarantee — at risk to
 deliver a weaker one.
 
-**Both layers refuse identically**: the artifact is **absent**, never forbidden. That is `FR-024`
+**Both layers refuse identically**: the artifact is **absent**, never forbidden. That is `FR-ACC-024`
 and it matches EPIC-004's 404-not-403 rule. A locked placeholder discloses existence.
 
-**The last-editor guarantee is a transaction-level invariant** (`FR-027`), not a validation. It must
+**The last-editor guarantee is a transaction-level invariant** (`FR-ACC-027`), not a validation. It must
 hold under *concurrent* revocations, which means enforcing it inside the revoke transaction — a
 check-then-revoke sequence races past it.
 
@@ -64,10 +64,10 @@ check-then-revoke sequence races past it.
 | # | Gate | Status |
 |---|------|--------|
 | I | Code produced only via Spec Kit commands | PASS |
-| II | Requirements trace to cited SRS documents | PASS — `FR-021`–`FR-028` cite SRS 11 Security (RBAC, Authorization, Audit_Log) and the Security & Governance module |
+| II | Requirements trace to cited SRS documents | PASS — `FR-ACC-021`–`FR-ACC-028` cite SRS 11 Security (RBAC, Authorization, Audit_Log) and the Security & Governance module |
 | III | Epic → Feature → Task decomposition | PASS — 4 sections, listed in the Scope table; tasks counted in [tasks.md](./tasks.md), never restated here (`T686`, PP-002) |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `F-024.Z` in [tasks.md](./tasks.md) |
-| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` findings **C1** and **C2** (2026-08-19) found `T374` asserting `FR-025`'s pre-clarification single-source case and `FR-026` with no asserting test at all. Closed by the `T374` rewrite and `T826` |
+| V | Every implementation task carries a unit test, written to fail first — or, for document/configuration outputs, an executable conformance check | ⚠️ **PASS WITH GAP** — `/speckit-analyze` findings **C1** and **C2** (2026-08-19) found `T374` asserting `FR-ACC-025`'s pre-clarification single-source case and `FR-ACC-026` with no asserting test at all. Closed by the `T374` rewrite and `T826` |
 | VI | `specs/024-artifact-access-control/defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | PASS — via EPIC-014 F-11.2 |
 | VIII | Session labelled with the working Epic, or the first command | PASS — session labelled `speckit-constitution` (its first command); stated in the closing report |
@@ -88,12 +88,12 @@ check-then-revoke sequence races past it.
 **An earlier version of this section had the dependency backwards.** It claimed this epic gates both
 siblings and that neither recorded it. Checking the task placement showed otherwise:
 
-- `T381` (run-start access snapshotting, **FR-028**, owned here) lives in **this epic**, not EPIC-023.
+- `T381` (run-start access snapshotting, **FR-ACC-028**, owned here) lives in **this epic**, not EPIC-023.
   It writes the `access_snapshot` column on `Run`, and **`Run` is defined by EPIC-023 `T343`** — so
   **this epic depends on EPIC-023**, not the reverse. Now recorded in [spec.md](./spec.md).
 - **EPIC-023 does not depend on this epic.** Nothing across its 43 tasks references access or grants.
 - **EPIC-025 already recorded its dependency** on this epic — `T392` excludes artifacts the publisher
-  cannot access (`FR-033`) — and always had; that half of the original claim was simply wrong.
+  cannot access (`FR-PUB-033`) — and always had; that half of the original claim was simply wrong.
 
 **Corrected order**: EPIC-023 → EPIC-024 → EPIC-025. The numbering was right all along.
 
@@ -103,7 +103,7 @@ requirement has a test, a controller, *and* database-level coverage.
 
 ### G-02F.1 · The identifier collision extends to success criteria ⚠️ new finding, family-wide
 
-**C-01** was recorded as a *requirement* collision: EPIC-002's `FR-001`–`FR-040` clash with the
+**C-01** was recorded as a *requirement* collision: EPIC-002's `FR-RUN-001`–`FR-PUB-040` clash with the
 platform's `FR-001`–`FR-034`. Checking the split surfaced that **the success criteria collide too**,
 and that was never recorded:
 
@@ -133,15 +133,15 @@ F-02.5  grant/enforcement tests ──► models ──► grant + revoke ──
 
 ## Design notes specific to this epic
 
-**Hiding is not refusing.** `FR-024` requires an inaccessible artifact to be *absent* from listings.
+**Hiding is not refusing.** `FR-ACC-024` requires an inaccessible artifact to be *absent* from listings.
 `T427` asserts this against a **real** PostgreSQL via Testcontainers, because `SC-007` is a claim
 about what the database returns — a mocked repository passes while the real query leaks. That is the
 same argument EPIC-004 made for `T052`.
 
-**A derived artifact is at least as restricted as its source** (`FR-025`), evaluated on read rather
+**A derived artifact is at least as restricted as its source** (`FR-ACC-025`), evaluated on read rather
 than copied on write, so a later restriction on the source propagates rather than going stale.
 
-**Every refusal is recorded in the same transaction as the refusal** (`FR-023`), matching EPIC-004's
+**Every refusal is recorded in the same transaction as the refusal** (`FR-ACC-023`), matching EPIC-004's
 audit interceptor. An action cannot be refused without its record.
 
 **Revocation is a timestamp, not a delete** — the audit trail survives the grant.

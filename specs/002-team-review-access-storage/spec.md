@@ -23,9 +23,9 @@ manager third pary solution like google drive, dropbox, s3 etc"
 >
 > | Child epic | Module | Requirements owned | Tasks |
 > |---|---|---|---|
-> | [EPIC-023 Unattended Runs & Team Review](../023-unattended-runs-review/) | M-06 Workflow | FR-001–FR-020, FR-005a–c, FR-008a, FR-013a, FR-015a, FR-019a | 58 |
-> | [EPIC-024 Artifact Access Control](../024-artifact-access-control/) | M-13 Security & Governance | FR-021–FR-028, FR-028a | 28 |
-> | [EPIC-025 External Storage Publishing](../025-external-storage-publishing/) | M-11 DevOps | FR-029–FR-040, FR-029a–b | 42 |
+> | [EPIC-023 Unattended Runs & Team Review](../023-unattended-runs-review/) | M-06 Workflow | FR-RUN-001–FR-RUN-020, FR-RUN-005a–c, FR-RUN-008a, FR-RUN-013a, FR-RUN-015a, FR-RUN-019a | 58 |
+> | [EPIC-024 Artifact Access Control](../024-artifact-access-control/) | M-13 Security & Governance | FR-ACC-021–FR-ACC-028, FR-ACC-028a | 28 |
+> | [EPIC-025 External Storage Publishing](../025-external-storage-publishing/) | M-11 DevOps | FR-PUB-029–FR-PUB-040, FR-PUB-029a–b | 42 |
 >
 > **Why split**: this epic spanned **three modules**, and MPS Volume 6 §1 places epics *below*
 > modules. An epic covering three inverts the hierarchy — the same defect D-15 corrected when
@@ -38,15 +38,15 @@ manager third pary solution like google drive, dropbox, s3 etc"
 > All 87 task IDs were preserved unchanged; 9 closure tasks were added so each child can converge
 > independently (Constitution IV) — **96 at the split**. The clarification session of **2026-08-08**
 > then added **5 tasks** to EPIC-025 (`T447`–`T451`) for the new token-lifecycle requirements
-> **FR-029a** and **FR-029b**, bringing the current total to **101** (43 + 21 + 37).
+> **FR-PUB-029a** and **FR-PUB-029b**, bringing the current total to **101** (43 + 21 + 37).
 >
 > The clarification session of **2026-08-19** then added **11 tasks** to EPIC-023 (`T800`–`T810`)
-> for **FR-013a** and **FR-019a** plus the review half of **SC-017**, and **6 tasks** to EPIC-024
-> (`T811`–`T816`) for **FR-028a** — bringing the total to **118** (54 + 27 + 37).
+> for **FR-RUN-013a** and **FR-RUN-019a** plus the review half of **SC-017**, and **6 tasks** to EPIC-024
+> (`T811`–`T816`) for **FR-ACC-028a** — bringing the total to **118** (54 + 27 + 37).
 >
-> **EPIC-025 reconciled 2026-08-19.** `/speckit-analyze` found the narrowed **FR-032** and the
+> **EPIC-025 reconciled 2026-08-19.** `/speckit-analyze` found the narrowed **FR-PUB-032** and the
 > publish half of **SC-017** untasked, along with **SC-012** owned since the split with no task and
-> **FR-034** implemented against a test that asserted something else. Closed by `T817`–`T821`,
+> **FR-PUB-034** implemented against a test that asserted something else. Closed by `T817`–`T821`,
 > taking EPIC-025 to **42** and the family to **123** (54 + 27 + 42).
 >
 > A re-task pass across all three children the same day audited every owned requirement and success
@@ -55,8 +55,8 @@ manager third pary solution like google drive, dropbox, s3 etc"
 > `T822` in EPIC-023 — total **124** (55 + 27 + 42).
 >
 > `/speckit-analyze` then read EPIC-023 and EPIC-024 the same day and found five requirements whose
-> cited unit test asserted something else — `FR-008`, `FR-015`, `FR-020` in EPIC-023, `FR-025` and
-> `FR-026` in EPIC-024. Closed by `T823`–`T826` and a rewrite of `T374`: **128** (58 + 28 + 42).
+> cited unit test asserted something else — `FR-RUN-008`, `FR-RUN-015`, `FR-RUN-020` in EPIC-023, `FR-ACC-025` and
+> `FR-ACC-026` in EPIC-024. Closed by `T823`–`T826` and a rewrite of `T374`: **128** (58 + 28 + 42).
 **Depends on**: `EPIC-001` — PMI Studio Phase 1 Platform Core. This Epic extends the projects,
 requirements, specifications, tasks, and generation jobs that EPIC-001 establishes.
 
@@ -104,21 +104,21 @@ requirements, specifications, tasks, and generation jobs that EPIC-001 establish
 
 - Q: When two reviewers give different answers to the same question, who decides which answer wins,
   and how? → A: **B — the project owner or the run's starter picks the winner.** Every competing
-  answer is retained with its author. Reuses the authority boundary FR-015a already draws, and keeps
+  answer is retained with its author. Reuses the authority boundary FR-RUN-015a already draws, and keeps
   the record showing that the disagreement happened rather than erasing it (PP-004).
 - Q: When a reviewer opens a review session, is what they can see decided by the grants captured
   when the run started, or by the grants in force at that moment? → A: **A — current grants,
-  re-evaluated on every open.** FR-028's snapshot exists to stop a *run* half-applying a mid-flight
+  re-evaluated on every open.** FR-ACC-028's snapshot exists to stop a *run* half-applying a mid-flight
   change, a consistency concern measured in minutes. A review session sits open for days, so a
-  snapshot there becomes a read capability that outlives a revoke — which FR-023 and PP-008 forbid.
+  snapshot there becomes a read capability that outlives a revoke — which FR-ACC-023 and PP-008 forbid.
 - Q: When a re-run finds the work underneath a submitted answer changed after that answer was given,
   does it apply the answer anyway or ask again? → A: **B — re-raise it as a fresh question in the
   new session.** Non-stale answers still apply. Routes the decision back through machinery that
-  already exists (FR-018, FR-005, FR-017) and gets a human decision (PP-003). Blocking the re-run
+  already exists (FR-RUN-018, FR-RUN-005, FR-RUN-017) and gets a human decision (PP-003). Blocking the re-run
   instead would break SC-001, which requires an unattended run to finish without input.
 - Q: When someone publishes to connected storage, do they publish the whole project or choose which
   artifacts go out? → A: **A — whole project every time.** Artifact selection is out of scope here.
-  FR-036's "added, replaced, or left alone" comparison is only unambiguous against a whole-project
+  FR-PUB-036's "added, replaced, or left alone" comparison is only unambiguous against a whole-project
   baseline: with subsets, a deselected file is indistinguishable from a deleted one.
 - Q: How large must one review session and one publish be able to get before the platform may slow
   down or page the work? → A: **A — 200 questions per session, 500 artifacts per publish.** An
@@ -130,36 +130,36 @@ requirements, specifications, tasks, and generation jobs that EPIC-001 establish
 
 | Source | Section | Covers |
 |--------|---------|--------|
-| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Core Principles — "Specification First, AI Second" | FR-001, FR-004 |
-| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Core Principles — "Every artifact is versioned and traceable" | FR-020, FR-026, FR-034 |
-| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Workflow Engine | FR-001, FR-002, FR-006, FR-008 |
-| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Security & Governance | FR-021, FR-022, FR-023, FR-025, FR-026 |
-| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Administration | FR-021, FR-022, FR-029, FR-038 |
-| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Git Integration (nearest existing external-system integration) | FR-029, FR-032, FR-034 |
-| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | High-Level Architecture — Engine Adapters; adapter layer pattern | FR-030, FR-038, FR-039 |
+| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Core Principles — "Specification First, AI Second" | FR-RUN-001, FR-RUN-004 |
+| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Core Principles — "Every artifact is versioned and traceable" | FR-RUN-020, FR-ACC-026, FR-PUB-034 |
+| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Workflow Engine | FR-RUN-001, FR-RUN-002, FR-RUN-006, FR-RUN-008 |
+| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Security & Governance | FR-ACC-021, FR-ACC-022, FR-ACC-023, FR-ACC-025, FR-ACC-026 |
+| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Administration | FR-ACC-021, FR-ACC-022, FR-PUB-029, FR-PUB-038 |
+| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Enterprise Modules — Git Integration (nearest existing external-system integration) | FR-PUB-029, FR-PUB-032, FR-PUB-034 |
+| `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | High-Level Architecture — Engine Adapters; adapter layer pattern | FR-PUB-030, FR-PUB-038, FR-PUB-039 |
 | `SRS/PMI_Studio_Enterprise_Master_Blueprint.docx` | Roadmap — Phase 2 "Workflow orchestration"; Phase 3 "Governance, Enterprise administration" | Scope boundary (see Clarifications) |
-| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 11 Security — RBAC.md, Authorization.md, Audit_Log.md, Data_Privacy.md | FR-021 to FR-028 |
-| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 03 Architecture — Plugin_Architecture.md, Adapter_Architecture.md | FR-030, FR-039 |
-| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 06 Specification Engine — Specification_Lifecycle.md, Constraint_Resolution.md | FR-005, FR-017, FR-019 |
-| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 12 DevOps — Infrastructure.md, Disaster_Recovery.md | FR-031, FR-037 |
-| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 13 Product Management — Sprint_Guide.md (team collaboration cadence) | FR-007, FR-009, FR-010 |
-| `SRS/raw study.docx` | "Spec Kit becomes the first implementation, not the core dependency" — adapter pattern applied to external systems | FR-030, FR-038, FR-039 |
-| `SRS/raw study.docx` | "Parallel development by multiple AI agents" | FR-001, FR-003 |
-| `SRS/PMI_Studio_Module_Based_Requirements_and_Epics.docx` | Security & Governance → *RBAC/ABAC* | FR-021 to FR-028 |
-| `SRS/PMI-DOC-002_Product_Charter.docx` | Governance — Change Control Process; Architecture Review Board | FR-009 to FR-020 (team review as a change-control surface) |
+| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 11 Security — RBAC.md, Authorization.md, Audit_Log.md, Data_Privacy.md | FR-ACC-021 to FR-ACC-028 |
+| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 03 Architecture — Plugin_Architecture.md, Adapter_Architecture.md | FR-PUB-030, FR-PUB-039 |
+| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 06 Specification Engine — Specification_Lifecycle.md, Constraint_Resolution.md | FR-RUN-005, FR-RUN-017, FR-RUN-019 |
+| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 12 DevOps — Infrastructure.md, Disaster_Recovery.md | FR-PUB-031, FR-PUB-037 |
+| `SRS/PMI_Studio_Reference_Documents_for_SpecKit.docx` | 13 Product Management — Sprint_Guide.md (team collaboration cadence) | FR-RUN-007, FR-RUN-009, FR-RUN-010 |
+| `SRS/raw study.docx` | "Spec Kit becomes the first implementation, not the core dependency" — adapter pattern applied to external systems | FR-PUB-030, FR-PUB-038, FR-PUB-039 |
+| `SRS/raw study.docx` | "Parallel development by multiple AI agents" | FR-RUN-001, FR-RUN-003 |
+| `SRS/PMI_Studio_Module_Based_Requirements_and_Epics.docx` | Security & Governance → *RBAC/ABAC* | FR-ACC-021 to FR-ACC-028 |
+| `SRS/PMI-DOC-002_Product_Charter.docx` | Governance — Change Control Process; Architecture Review Board | FR-RUN-009 to FR-RUN-020 (team review as a change-control surface) |
 | `SRS/PMI-DOC-000_Product_Documentation_and_Specification_Standard_v1.0.docx` | §3 Requirement Identifiers; §5 Traceability Rules | ⚠️ **This spec does not yet conform** — see [srs-alignment.md](../srs-alignment.md) C-01 to C-03 |
-| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | **PP-003 Human-in-the-Loop** — "Critical decisions require human approval before implementation" | FR-005a to FR-005c, FR-015a |
-| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | Architecture Implications — "Treat AI agents as governed services, not autonomous authorities" | FR-004, FR-005 (provisional marking of every unattended-run artifact) |
-| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | PP-008 Security by Design | FR-021 to FR-028 |
-| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | PP-015 Open Standards / no vendor lock-in | FR-030, FR-038, FR-039 (interchangeable storage providers) |
+| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | **PP-003 Human-in-the-Loop** — "Critical decisions require human approval before implementation" | FR-RUN-005a to FR-RUN-005c, FR-RUN-015a |
+| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | Architecture Implications — "Treat AI agents as governed services, not autonomous authorities" | FR-RUN-004, FR-RUN-005 (provisional marking of every unattended-run artifact) |
+| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | PP-008 Security by Design | FR-ACC-021 to FR-ACC-028 |
+| `SRS/PMI-DOC-003_Product_Principles_v1.0.docx` | PP-015 Open Standards / no vendor lock-in | FR-PUB-030, FR-PUB-038, FR-PUB-039 (interchangeable storage providers) |
 
 **Requirements not yet covered by SRS**: Two whole capability areas in this Epic have no SRS
 source and are drawn from the feature request alone:
 
-1. **Unattended runs with batched team review** (FR-001 to FR-020). The SRS names a Workflow Engine
+1. **Unattended runs with batched team review** (FR-RUN-001 to FR-RUN-020). The SRS names a Workflow Engine
    module but never describes an unattended execution mode, provisional answers, or a deferred,
    team-resolved question queue.
-2. **Third-party file storage integration** (FR-029 to FR-040). The SRS names Git Integration and
+2. **Third-party file storage integration** (FR-PUB-029 to FR-PUB-040). The SRS names Git Integration and
    an Infrastructure layer, but no cloud file-storage provider integration (Google Drive, Dropbox,
    S3) appears in any of the 24 modules or 20 volumes.
 
@@ -167,7 +167,7 @@ source and are drawn from the feature request alone:
 ~82 epics) and the Enterprise Product Backlog (12 groups, ~67 epics) contain **neither** capability.
 The back-fill obligation stands and is now better evidenced, not resolved.
 
-Access control (FR-021 to FR-028) *is* SRS-backed — Security & Governance is module #22 and
+Access control (FR-ACC-021 to FR-ACC-028) *is* SRS-backed — Security & Governance is module #22 and
 Volume 10 — but the SRS roadmap places it in Phase 3, not here. That is a sequencing conflict, not
 a coverage gap. Resolved by clarification: a bounded advance of per-user grants only, with roles,
 groups, inheritance, and SSO left in Phase 3 and the roadmap unamended.
@@ -185,22 +185,22 @@ Principles bind the programme, not each Epic individually. This Epic's position 
 |----|-----------|--------|---------------------------------------------------|
 | PP-001 | Specification First, AI Second | ✅ Satisfied | Constitution I |
 | PP-002 | Single Source of Truth | ✅ Satisfied | Constitution II. **Two capability areas have no SRS source** — declared above with back-fill owner |
-| PP-003 | Human-in-the-Loop | ✅✅ **Central** | The Epic's organising principle. Unattended runs never decide — they record a question, apply a marked *provisional* answer, and require a human batch decision (FR-009–FR-020). Approval of provisional work needs an explicit, attributed override (FR-005a–c); submission is restricted (FR-015a) |
-| PP-004 | End-to-End Traceability | ⚠️ Partial | Answers attributable to person and time (FR-012, FR-020); publish records retained (FR-034). Code/test/release links pending D-2 |
-| PP-005 | Modular Architecture | ✅ Satisfied | Storage providers behind one integration boundary (FR-030) |
+| PP-003 | Human-in-the-Loop | ✅✅ **Central** | The Epic's organising principle. Unattended runs never decide — they record a question, apply a marked *provisional* answer, and require a human batch decision (FR-RUN-009–FR-RUN-020). Approval of provisional work needs an explicit, attributed override (FR-RUN-005a–c); submission is restricted (FR-RUN-015a) |
+| PP-004 | End-to-End Traceability | ⚠️ Partial | Answers attributable to person and time (FR-RUN-012, FR-RUN-020); publish records retained (FR-PUB-034). Code/test/release links pending D-2 |
+| PP-005 | Modular Architecture | ✅ Satisfied | Storage providers behind one integration boundary (FR-PUB-030) |
 | PP-006 | Engine Independence | ✅ Satisfied | Inherits EPIC-001's contract; adds no engine coupling |
 | PP-007 | API & MCP First | 🔶 **Deferred** | → catalog module M-09 (Phase 3), consistent with EPIC-001. Owner: tech lead |
-| PP-008 | Security by Design | ✅ Satisfied | Per-artifact access grants (FR-021–FR-028); derived artifacts inherit restriction (FR-025); refusals audited (FR-023, FR-026) |
+| PP-008 | Security by Design | ✅ Satisfied | Per-artifact access grants (FR-ACC-021–FR-ACC-028); derived artifacts inherit restriction (FR-ACC-025); refusals audited (FR-ACC-023, FR-ACC-026) |
 | PP-009 | Quality by Design | ✅ Satisfied | Constitution V; acceptance scenarios on all 7 stories; 14 measurable criteria |
-| PP-010 | Observability by Default | ⚠️ Partial | Access and publish auditing specified (FR-026, FR-034). Logging/metrics/tracing inherit EPIC-001's position — decision D-7 |
+| PP-010 | Observability by Default | ⚠️ Partial | Access and publish auditing specified (FR-ACC-026, FR-PUB-034). Logging/metrics/tracing inherit EPIC-001's position — decision D-7 |
 | PP-011 | Documentation as Code | ⚠️ Partial | Specs are Markdown in git; `SRS/` is `.docx` — decision D-5 |
-| PP-012 | Everything Versioned | ✅ Satisfied | Review sessions retained permanently (FR-020); published artifact versions recorded |
+| PP-012 | Everything Versioned | ✅ Satisfied | Review sessions retained permanently (FR-RUN-020); published artifact versions recorded |
 | PP-013 | Knowledge-Driven Engineering | 🔶 **Deferred** | → M-10 Knowledge Platform (Phase 2). Owner: product owner |
 | PP-014 | Configuration over Customization | ✅ Satisfied | Provider connections are configuration, not per-tenant code |
-| PP-015 | Open Standards | ✅✅ Satisfied | FR-030 and FR-038 require provider interchangeability and loss-free switching — no storage vendor lock-in |
-| PP-016 | Explainable AI | ✅✅ **Central** | Every deferred question records the options considered and the suggested answer with its context (FR-003, FR-007), so an AI suggestion is reviewable before it becomes a decision |
+| PP-015 | Open Standards | ✅✅ Satisfied | FR-PUB-030 and FR-PUB-038 require provider interchangeability and loss-free switching — no storage vendor lock-in |
+| PP-016 | Explainable AI | ✅✅ **Central** | Every deferred question records the options considered and the suggested answer with its context (FR-RUN-003, FR-RUN-007), so an AI suggestion is reviewable before it becomes a decision |
 | PP-017 | Cost-Aware AI | 🔶 **Deferred** | → M-07 AI Platform. Unattended runs *increase* AI spend, so RAID **R-02** applies with more force here than in EPIC-001. Owner: tech lead |
-| PP-018 | Scalability First | ✅ Satisfied | Workspace-scoped throughout; concurrent publish prevented (FR-040). Scale ceiling now stated and testable — 200 questions per review session, 500 artifacts per publish (SC-017, clarified 2026-08-19) |
+| PP-018 | Scalability First | ✅ Satisfied | Workspace-scoped throughout; concurrent publish prevented (FR-PUB-040). Scale ceiling now stated and testable — 200 questions per review session, 500 artifacts per publish (SC-017, clarified 2026-08-19) |
 | PP-019 | Continuous Improvement (DORA/SPACE) | 🔶 **Deferred** | → M-14 Reporting. Owner: product owner |
 | PP-020 | Customer Value | ✅ Satisfied | 14 measurable criteria, including a 20-question review inside 60 minutes (SC-003) |
 
@@ -512,134 +512,134 @@ confirm both publishes succeeded and no platform artifact changed.
 
 #### Unattended run mode
 
-- **FR-001**: Users MUST be able to start a run in an unattended mode that proceeds without pausing
+- **FR-RUN-001**: Users MUST be able to start a run in an unattended mode that proceeds without pausing
   for input, and MUST choose, when starting it, how far the run should go before stopping — at
   minimum: stop after specification, or continue through task generation.
-- **FR-002**: Users MUST be able to start a run in the normal interactive mode, which pauses at
+- **FR-RUN-002**: Users MUST be able to start a run in the normal interactive mode, which pauses at
   each decision point.
-- **FR-003**: System MUST, in unattended mode, record every question it would otherwise have asked,
+- **FR-RUN-003**: System MUST, in unattended mode, record every question it would otherwise have asked,
   together with the options considered and its own suggested answer.
-- **FR-004**: System MUST, in unattended mode, proceed past each recorded question using its
+- **FR-RUN-004**: System MUST, in unattended mode, proceed past each recorded question using its
   suggested answer as a provisional answer.
-- **FR-005**: System MUST mark every artifact produced from a provisional answer as provisional,
+- **FR-RUN-005**: System MUST mark every artifact produced from a provisional answer as provisional,
   and MUST identify which question made it so.
-- **FR-005a**: System MUST, when a user attempts to approve a specification carrying provisional
+- **FR-RUN-005a**: System MUST, when a user attempts to approve a specification carrying provisional
   markings, show every provisional item and the question governing it, and MUST require the approver
   to explicitly accept them before approval proceeds.
-- **FR-005b**: System MUST record a provisional-approval override against the approval, naming the
+- **FR-RUN-005b**: System MUST record a provisional-approval override against the approval, naming the
   approver, the time, and the specific provisional items accepted.
-- **FR-005c**: System MUST NOT otherwise block approval or task generation on provisional markings;
+- **FR-RUN-005c**: System MUST NOT otherwise block approval or task generation on provisional markings;
   task generation continues to follow the approval gate established in EPIC-001.
-- **FR-006**: System MUST group all questions raised by one run into a single review session
+- **FR-RUN-006**: System MUST group all questions raised by one run into a single review session
   belonging to that run.
-- **FR-007**: System MUST record, for each question, enough context for someone who did not start
+- **FR-RUN-007**: System MUST record, for each question, enough context for someone who did not start
   the run to understand what is being asked.
-- **FR-008**: System MUST stop an unattended run and preserve all completed work when it encounters
+- **FR-RUN-008**: System MUST stop an unattended run and preserve all completed work when it encounters
   a condition it cannot proceed past, recording the reason.
-- **FR-008a**: System MUST stop an unattended run at the range the user selected, report that it
+- **FR-RUN-008a**: System MUST stop an unattended run at the range the user selected, report that it
   reached the selected stop point rather than failed, and allow the run to be continued further
   from that point.
 
 #### Team review and answer submission
 
-- **FR-009**: Users with access MUST be able to view every question in a review session in one place.
-- **FR-010**: Users MUST be able to select a suggested answer, or provide their own, for each
+- **FR-RUN-009**: Users with access MUST be able to view every question in a review session in one place.
+- **FR-RUN-010**: Users MUST be able to select a suggested answer, or provide their own, for each
   question, and MUST be able to attach a note.
-- **FR-011**: System MUST save answers as drafts as they are made, without committing the session.
-- **FR-012**: System MUST record who provided each answer and when.
-- **FR-013**: System MUST show a conflict when two users record different answers to the same
+- **FR-RUN-011**: System MUST save answers as drafts as they are made, without committing the session.
+- **FR-RUN-012**: System MUST record who provided each answer and when.
+- **FR-RUN-013**: System MUST show a conflict when two users record different answers to the same
   question, and MUST block submission until it is resolved.
-- **FR-013a**: System MUST restrict resolution of a conflict to the project owner or the user who
+- **FR-RUN-013a**: System MUST restrict resolution of a conflict to the project owner or the user who
   started the run (clarified 2026-08-19), who selects which of the competing answers stands. Every
   competing answer MUST be retained with its author and time, so the record shows the disagreement
   occurred and who resolved it. Selecting a winner MUST NOT delete the answers not chosen.
-- **FR-014**: System MUST refuse submission of a review session with unanswered questions, naming
+- **FR-RUN-014**: System MUST refuse submission of a review session with unanswered questions, naming
   them.
-- **FR-015**: System MUST commit all answers in a session together as one submission, after which
+- **FR-RUN-015**: System MUST commit all answers in a session together as one submission, after which
   the session is closed to further edits.
-- **FR-015a**: System MUST restrict submission of a review session to the project owner or the user
+- **FR-RUN-015a**: System MUST restrict submission of a review session to the project owner or the user
   who started the run, and MUST refuse submission by anyone else with a stated reason. Answering
   and noting remain open to every user with access to the session.
-- **FR-016**: Users MUST be able to re-run using a submitted session's answers in place of the
+- **FR-RUN-016**: Users MUST be able to re-run using a submitted session's answers in place of the
   provisional ones.
-- **FR-017**: System MUST clear the provisional marking from artifacts whose governing question has
+- **FR-RUN-017**: System MUST clear the provisional marking from artifacts whose governing question has
   been answered.
-- **FR-018**: System MUST record new questions raised by a re-run in a new review session rather
+- **FR-RUN-018**: System MUST record new questions raised by a re-run in a new review session rather
   than reopening a submitted one.
-- **FR-019**: System MUST warn, when re-running, if the underlying work changed after answers were
+- **FR-RUN-019**: System MUST warn, when re-running, if the underlying work changed after answers were
   submitted, naming the answers that may no longer apply.
-- **FR-019a**: System MUST, for each answer identified as stale under FR-019, raise the governing
+- **FR-RUN-019a**: System MUST, for each answer identified as stale under FR-RUN-019, raise the governing
   question again as a new question in the re-run's review session rather than applying the stale
   answer (clarified 2026-08-19). Answers not identified as stale MUST still be applied. The re-run
-  MUST NOT block or wait for input on account of a stale answer — it proceeds under FR-004 with a
-  provisional answer, and the artifacts it produces are marked provisional under FR-005.
-- **FR-020**: System MUST retain submitted review sessions as a permanent record of what was
+  MUST NOT block or wait for input on account of a stale answer — it proceeds under FR-RUN-004 with a
+  provisional answer, and the artifacts it produces are marked provisional under FR-RUN-005.
+- **FR-RUN-020**: System MUST retain submitted review sessions as a permanent record of what was
   decided, by whom, and why.
 
 #### Artifact access control
 
-- **FR-021**: Project owners MUST be able to grant a user read or edit access to a project artifact.
-- **FR-022**: Project owners MUST be able to revoke a previously granted access.
-- **FR-023**: System MUST refuse any view or change for which the acting user holds no sufficient
+- **FR-ACC-021**: Project owners MUST be able to grant a user read or edit access to a project artifact.
+- **FR-ACC-022**: Project owners MUST be able to revoke a previously granted access.
+- **FR-ACC-023**: System MUST refuse any view or change for which the acting user holds no sufficient
   grant, and MUST record the refused attempt.
-- **FR-024**: System MUST hide artifacts a user cannot access rather than showing them as
+- **FR-ACC-024**: System MUST hide artifacts a user cannot access rather than showing them as
   inaccessible placeholders in listings.
-- **FR-025**: System MUST ensure an artifact derived from restricted artifacts is at least as
+- **FR-ACC-025**: System MUST ensure an artifact derived from restricted artifacts is at least as
   restricted as **every** source it derives from (clarified 2026-08-08). Where sources carry
   different grants, **the most restrictive wins**: a user MUST hold a sufficient grant on every
   source to view the derived artifact. Derivation MUST NOT widen access.
-- **FR-026**: System MUST record every access grant and revocation with the actor, the change, and
+- **FR-ACC-026**: System MUST record every access grant and revocation with the actor, the change, and
   the time.
-- **FR-027**: System MUST prevent an artifact from reaching a state where no user holds edit access
+- **FR-ACC-027**: System MUST prevent an artifact from reaching a state where no user holds edit access
   to it.
-- **FR-028**: System MUST evaluate access using the grants in force when a run started, and MUST
+- **FR-ACC-028**: System MUST evaluate access using the grants in force when a run started, and MUST
   report anything a run could not use because of access. This snapshot governs **what a run may read
   and produce**, and nothing else.
-- **FR-028a**: System MUST evaluate what a reviewer may see in a review session against the grants
+- **FR-ACC-028a**: System MUST evaluate what a reviewer may see in a review session against the grants
   in force **at the moment the session is opened**, not against the run's access snapshot (clarified
   2026-08-19). A revocation MUST take effect on the next open of any session, so no run snapshot can
   keep an artifact readable to a user whose grant has been withdrawn.
 
 #### External storage integration
 
-- **FR-029**: Administrators MUST be able to connect a workspace to an external file storage
+- **FR-PUB-029**: Administrators MUST be able to connect a workspace to an external file storage
   provider and select a destination within it. Authorisation MUST be **delegated** (clarified
   2026-08-08): the administrator authorises at the provider, and the platform stores only a
   **refresh token, encrypted at rest**. The platform MUST NOT accept, store, or transmit a
   provider account password.
-- **FR-029a**: System MUST refresh an expired access token without user interaction where the
+- **FR-PUB-029a**: System MUST refresh an expired access token without user interaction where the
   provider permits it, and MUST report the connection as needing re-authorisation when it cannot
-  (FR-031).
-- **FR-029b**: System MUST NOT expose a stored token through any endpoint, log entry, or error
+  (FR-PUB-031).
+- **FR-PUB-029b**: System MUST NOT expose a stored token through any endpoint, log entry, or error
   message, and MUST discard it on disconnection.
-- **FR-030**: System MUST support more than one provider type, and MUST allow a new provider type
+- **FR-PUB-030**: System MUST support more than one provider type, and MUST allow a new provider type
   to be added without changing platform behaviour outside the storage integration layer.
-- **FR-031**: System MUST report the status of each connection, distinguishing healthy, needing
+- **FR-PUB-031**: System MUST report the status of each connection, distinguishing healthy, needing
   re-authorisation, and unavailable.
-- **FR-032**: Users MUST be able to publish a project's artifacts as files to the connected
+- **FR-PUB-032**: Users MUST be able to publish a project's artifacts as files to the connected
   destination, organised by project. A publish MUST cover the **whole project** (clarified
-  2026-08-19); the system MUST NOT offer selection of an artifact subset, so that FR-036's
+  2026-08-19); the system MUST NOT offer selection of an artifact subset, so that FR-PUB-036's
   added / replaced / left-alone comparison always runs against a whole-project baseline. The only
-  artifacts omitted are those excluded by FR-033 for access reasons, and those are reported.
-- **FR-033**: System MUST exclude from a publish any artifact the publishing user cannot access,
+  artifacts omitted are those excluded by FR-PUB-033 for access reasons, and those are reported.
+- **FR-PUB-033**: System MUST exclude from a publish any artifact the publishing user cannot access,
   and MUST report the exclusion.
-- **FR-034**: System MUST record, for each publish, what was published, when, by whom, and where it
+- **FR-PUB-034**: System MUST record, for each publish, what was published, when, by whom, and where it
   landed.
-- **FR-035**: System MUST report publish failures with a specific named reason, distinguishing at
+- **FR-PUB-035**: System MUST report publish failures with a specific named reason, distinguishing at
   minimum: provider unavailable, authorisation expired, quota exceeded, size limit exceeded, and
   destination missing.
-- **FR-036**: System MUST state, when republishing, what will be added, replaced, or left alone
+- **FR-PUB-036**: System MUST state, when republishing, what will be added, replaced, or left alone
   before making any change.
-- **FR-037**: System MUST keep platform artifacts intact and available regardless of any change,
+- **FR-PUB-037**: System MUST keep platform artifacts intact and available regardless of any change,
   deletion, or disconnection at the provider.
-- **FR-038**: Administrators MUST be able to disconnect or switch providers without loss of any
+- **FR-PUB-038**: Administrators MUST be able to disconnect or switch providers without loss of any
   platform artifact or publish history. On disconnection the platform MUST **leave already-published
   files untouched at the provider** (clarified 2026-08-08), record that the connection was removed,
   and stop tracking those files. It MUST NOT delete them — they are copies in storage the customer
   owns.
-- **FR-039**: System MUST refuse to connect a provider that cannot support a required capability,
+- **FR-PUB-039**: System MUST refuse to connect a provider that cannot support a required capability,
   naming the missing capability.
-- **FR-040**: System MUST prevent two concurrent publishes of the same project.
+- **FR-PUB-040**: System MUST prevent two concurrent publishes of the same project.
 
 ### Key Entities
 
@@ -726,7 +726,7 @@ confirm both publishes succeeded and no platform artifact changed.
 - **Editing artifacts inside the external provider's own interface.**
 - **Automatic scheduled publishing** — publishing is user-initiated in this Epic.
 - **Publishing a chosen subset of a project's artifacts** — a publish covers the whole project.
-  Confirmed by clarification: subset selection would make FR-036's republish comparison ambiguous,
+  Confirmed by clarification: subset selection would make FR-PUB-036's republish comparison ambiguous,
   because a deselected file could not be told apart from a deleted one.
 - **Deferred contract capabilities from EPIC-001** (improve specification, generate acceptance
   criteria, estimate complexity, analyze dependencies) remain out of scope.
