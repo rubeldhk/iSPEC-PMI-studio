@@ -15,6 +15,33 @@
 > Design System & UX Standards** (`UI-0001`–`UI-0042`). Readiness still runs through the
 > Definition-of-Ready gate, not by declaration (EPIC-026).
 
+## Clarifications
+
+### Session 2026-08-20
+
+- Q: PMI-DOC-005 puts brand identity out of scope, but the token layer needs concrete colour and
+  type values — where do they come from? → A: **This Epic derives a neutral system palette
+  itself** — restrained neutrals plus one accent, chosen to pass WCAG 2.2 AA in both themes. It
+  makes no brand claim and is replaceable by swapping token values, which is what the token layer
+  exists for. The alternative — waiting on brand input — would block the first thing this Epic
+  builds on a decision nobody has scheduled.
+- Q: Which browsers must the design system support? → A: **Modern evergreen only** — last two
+  versions of Chrome, Edge, Firefox and Safari. This permits CSS nesting, `:has()`, container
+  queries and modern colour functions, which keeps the token layer simple and the tooling thin.
+  Recorded because *nothing in the programme stated a target*, so every component would otherwise
+  have picked its own floor or none — the same gap the WCAG clarification closed for accessibility.
+- Q: Twelve other Epics carry 39 UI tasks — who restyles those when they land? → A: **Each Epic
+  styles its own work; EPIC-029 restyles only what exists today.** This Epic delivers the tokens,
+  components and lint rule, then restyles the four pages and two components that exist now. Every
+  future UI task builds on the system from the start, and the lint rule (`FR-DS-051`) makes that
+  automatic rather than a promise. The alternative — one Epic owning all restyling — could not
+  close until every other UI Epic had landed.
+- Q: What counts as the recorded manual keyboard and screen-reader pass? → A: **A committed
+  transcript naming the tool, its version, and each journey walked**, following this repository's
+  own precedent (`v6-transcript.md`, the `T666` walkthrough record). A governance check can assert
+  it exists and names a screen reader; a ticked checklist cannot fail on its own, which
+  Constitution V calls decoration.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -25,8 +52,9 @@
 | `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` | §6.4 Accessibility | FR-DS-030 to FR-DS-033 |
 | `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` | §6.5 Layout & content | FR-DS-040 to FR-DS-042 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v1.0.md` | §2 BG-01, BG-05, BG-06 | the business goals `PMI-DOC-005` serves |
+| *(this Epic's clarification session, 2026-08-20)* | Clarifications | FR-DS-005, FR-DS-006, FR-DS-034, FR-DS-052 — decisions no upstream document had taken |
 
-**Requirements not yet covered by SRS**: none. `PMI-DOC-005` is at **v0.1 Draft** — this Epic must
+**Requirements not yet covered by SRS**: `FR-DS-005`, `FR-DS-006`, `FR-DS-034` and `FR-DS-052` were settled by this Epic's clarification session because **no upstream document had taken them** — the palette source, the browser floor, the accessibility evidence format, and restyle ownership. They are recorded here and flagged for `PMI-DOC-005` back-fill at its approval (owner: project owner). `PMI-DOC-005` is at **v0.1 Draft** — this Epic must
 not be *approved* for implementation until it is approved, the same gate EPIC-023 and EPIC-025
 carry for their SRS debt.
 
@@ -138,6 +166,7 @@ presentations; each is asserted by a component test.
 - **Text is enlarged to 200%** — layouts reflow without clipping or overlap (WCAG 1.4.4).
 - **A component is used before its state is defined** — the lint rule and component tests fail
   rather than shipping a control with no focus or disabled appearance.
+- **A brand identity arrives later** — token values are swapped; no component changes, because no component holds a literal value (`FR-DS-001`).
 - **A future component library is adopted** — it must meet these requirements; it does not get to
   redefine them (`PMI-DOC-005` UI-0030).
 
@@ -165,6 +194,10 @@ presentations; each is asserted by a component test.
 - **FR-DS-042**: Microcopy MUST name things as users recognise them; controls MUST state what happens and confirmations what happened.
 - **FR-DS-050**: The four delivered pages (`SignIn`, `Projects`, `Requirements`, `Traceability`) and two components (`EngineSelector`, `RequirementEditor`) MUST be restyled onto the system.
 - **FR-DS-051**: A lint rule MUST fail the build on any literal visual value outside the token definition file.
+- **FR-DS-005**: The token values MUST be a **neutral system palette** derived by this Epic — restrained neutrals plus one accent — making no brand claim and replaceable by swapping token values *(clarified 2026-08-20)*.
+- **FR-DS-006**: The system MUST support the last two versions of Chrome, Edge, Firefox and Safari, and MAY use CSS features available across that set *(clarified 2026-08-20)*.
+- **FR-DS-034**: The manual keyboard and screen-reader pass MUST be recorded as a committed transcript naming the tool, its version, and each journey walked — not as a ticked checklist item *(clarified 2026-08-20)*.
+- **FR-DS-052**: Restyling by this Epic covers **only the pages and components that exist at its start**. Every other Epic styles its own UI work against the system, enforced by `FR-DS-051` rather than by promise *(clarified 2026-08-20)*.
 
 ### Key Entities
 
@@ -182,6 +215,8 @@ presentations; each is asserted by a component test.
 - **SC-DS-004**: Every component in the Phase 1 inventory demonstrates each state that applies to it, each asserted by a test.
 - **SC-DS-005**: Both themes render every delivered page with no undefined token and no text on a same-coloured surface.
 - **SC-DS-006**: A new page can be built without introducing a visual value that is not already a token.
+- **SC-DS-007**: Every token colour pair used for text meets WCAG 2.2 AA contrast in **both** themes, verified by an automated check rather than by inspection *(clarified 2026-08-20)*.
+- **SC-DS-008**: The committed accessibility transcript names the screen reader, its version, and every journey walked *(clarified 2026-08-20)*.
 
 ## Assumptions
 
@@ -191,6 +226,9 @@ presentations; each is asserted by a component test.
 - React 18 is the frontend; no component library is currently a dependency, deliberately.
 - The 39 existing UI tasks in other Epics are not blocked by this Epic — they ship plain and are restyled by `FR-DS-050` (`D-41`).
 - The minimum supported viewport is recorded in this Epic's plan, not assumed per screen (`FR-DS-040`).
+- The palette this Epic derives is **not** a brand identity and does not pre-empt one; a future brand replaces token values without touching a component (`FR-DS-005`).
+- Browser support is stated once here (`FR-DS-006`) so component authors do not each pick a floor.
+- Where the design system lives in the workspace — a `packages/` module or inside `frontend/` — is a structural decision for this Epic's plan, not a requirement.
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
 

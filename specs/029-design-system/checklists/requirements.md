@@ -19,9 +19,12 @@
 ## Requirement Completeness
 
 - [x] No [NEEDS CLARIFICATION] markers remain
-      → two genuinely open questions exist and both are handled as *named decisions with owners*
-      rather than markers: the component library (`D-42`) and the minimum viewport (recorded in
-      this Epic's plan, `FR-DS-040`). A marker would imply the spec cannot proceed; both can.
+      → the clarification session of 2026-08-20 settled four questions no upstream document had
+      taken (palette source, browser floor, accessibility evidence, restyle ownership) — see
+      `FR-DS-005`, `FR-DS-006`, `FR-DS-034`, `FR-DS-052`. Two remain as *named decisions with
+      owners* rather than markers: the component library (`D-42`) and the minimum viewport
+      (`FR-DS-040`, recorded in this Epic's plan). A marker would imply the spec cannot proceed;
+      both can.
 - [x] Requirements are testable and unambiguous
       → each maps to a lint rule, an automated accessibility check, a component test, or a
       recorded manual pass. `FR-DS-030` is the one inherited requirement and is stated once.
@@ -48,6 +51,11 @@
 - [x] No implementation details leak into specification
 
 ## Notes
+
+- **Clarified 2026-08-20** — four answers integrated, all four questions asked in one batch
+  (Constitution X). The palette question was a real hole: `PMI-DOC-005` §3 puts brand identity out
+  of scope while the token layer needs concrete values, and nothing said where they come from.
+  `FR-DS-005` closes it without pre-empting a brand.
 
 - **Two gates stand between this spec and implementation**, both recorded in Epic Exit Criteria
   rather than left implicit: `PMI-DOC-005` is **v0.1 Draft** and must be approved (the EPIC-023 /
