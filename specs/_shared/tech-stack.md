@@ -96,11 +96,13 @@ does not need to make and complicates local development.
 
 ### React + Vite
 
-Conventional, well-staffed, and the SRS anticipates a substantial UI (Volume 8, a full design
+Conventional, well-staffed, and the programme anticipates a substantial UI (`PMI-DOC-005`, a full design
 system, a screen specification for every screen). Vite keeps the feedback loop fast.
 
-**Note**: no component library is chosen. SRS Volume 8 defines a design system that does not exist
-yet; picking one now would pre-empt it. Phase 1 UI is deliberately plain.
+**Note**: no component library is chosen. `PMI-DOC-005` (approved 2026-08-20) defines the design
+system; the build-vs-adopt choice is decision `D-42`, EPIC-029 `T890`. Phase 1 UI is deliberately
+plain until that Epic lands. *(Was: "SRS Volume 8 defines a design system that does not exist
+yet" — a volume never written, corrected by `D-41`.)*
 
 ### Docker for the engine sandbox ⚠ non-negotiable in this design
 
@@ -136,7 +138,7 @@ behind the adapter.
 - **Hosting** — containers imply nothing about where they run
 - **AI provider and model** — engine image configuration, recorded per artifact (FR-022)
 - **Observability tooling** — audit is built; telemetry is an ops choice
-- **Component library / design system** — awaits SRS Volume 8
+- **Component library / design system** — `PMI-DOC-005` approved 2026-08-20; the library choice awaits decision `D-42` (EPIC-029 `T890`), not the never-written SRS Volume 8 (`D-41`)
 - **Secrets management** — an environment concern, not a Phase 1 requirement
 
 ## Change cost

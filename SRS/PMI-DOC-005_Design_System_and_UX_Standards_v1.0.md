@@ -1,6 +1,6 @@
 # PMI-DOC-005 — Design System & UX Standards
 
-**Document ID**: PMI-DOC-005 · **Version**: 0.1 (DRAFT — awaiting owner approval)
+**Document ID**: PMI-DOC-005 · **Version**: 1.0 · **Status**: APPROVED 2026-08-20
 **Owner**: Project Owner (Product) · **Author**: drafted with Claude, 2026-08-20
 **Depends on**: PMI-DOC-000 (structure, identifiers), PMI-DOC-001 (vision), PMI-DOC-003 (principles)
 **Authorised by**: decision [`D-41`](../specs/_shared/decisions/D-41-the-design-system-waits-on-a-volume-that-does-not-exist.md)
@@ -99,6 +99,16 @@ Identifiers per `PMI-DOC-000` §3 (`UI-xxxx`, corpus-wide, four digits).
   field with label and error, table, empty state, error state, loading indicator, modal, toast,
   navigation, page header, badge/status pill.
 
+### 6.1a Palette and platform *(back-filled at approval — EPIC-029 clarification, 2026-08-20)*
+
+- **UI-0005** — Token values are a **neutral system palette** derived by the implementing Epic:
+  restrained neutrals plus one accent, passing WCAG 2.2 AA in both themes. It makes no brand
+  claim and is replaced by swapping token values, never by touching a component. §3 puts brand
+  identity out of scope; this states where values come from in the meantime, which §3 did not.
+- **UI-0006** — The system supports the **last two versions of Chrome, Edge, Firefox and
+  Safari**, and may use CSS features available across that set. Stated once here so component
+  authors do not each pick a floor.
+
 ### 6.4 Accessibility
 
 - **UI-0030** — **WCAG 2.2 Level AA.** Inherited from EPIC-010's clarification of 2026-08-19 and
@@ -109,6 +119,10 @@ Identifiers per `PMI-DOC-000` §3 (`UI-xxxx`, corpus-wide, four digits).
   exit. Automated checks cannot see focus order or announcement quality.
 - **UI-0033** — Every interactive element MUST be reachable and operable by keyboard alone, with a
   visible focus indicator meeting contrast requirements.
+
+- **UI-0035** — The manual pass of `UI-0032` is recorded as a **committed transcript naming the
+  tool, its version, and each journey walked** — not a ticked checklist, which cannot fail
+  (Constitution V). *(Back-filled at approval — EPIC-029 clarification.)*
 
 ### 6.5 Layout and content
 
@@ -133,7 +147,9 @@ Identifiers per `PMI-DOC-000` §3 (`UI-xxxx`, corpus-wide, four digits).
 - **RULE-03** — This document defines standards; Epics own their screens. A screen decision does
   not belong here, and a standard does not belong in a screen.
 - **RULE-04** — Existing UI ships plain and is restyled when this system lands. No Epic is blocked
-  by this document (`D-41`).
+  by this document (`D-41`). **Each Epic styles its own UI work**; the design Epic restyles only
+  what existed at its start, and `UI-0001`'s lint rule makes that automatic rather than a
+  promise. *(Back-filled at approval — EPIC-029 clarification, 2026-08-20.)*
 - **RULE-05** — **The component library is chosen by a recorded decision**, evaluated against §6.
   Build-vs-adopt is genuinely open: adopting inherits accessibility work and constrains visual
   identity; building inverts both. Whoever decides records why, as `D-42`.
@@ -179,4 +195,5 @@ tokens and components.
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-20 | Initial draft under `D-41`: 20 requirements across tokens, themes, components, accessibility, layout and content; component-library choice deferred to a named decision (`RULE-05`) |
+| 1.0 | 2026-08-20 | **APPROVED** by the Project Owner. Back-filled the four requirements EPIC-029's clarification session settled because no upstream document had taken them (Constitution II): `UI-0005` palette source, `UI-0006` browser floor, `UI-0035` accessibility evidence format, `RULE-04` restyle ownership |
 | 0.1.1 | 2026-08-20 | `UI-0042` split by EPIC-029 analysis `C1`: the testable half stays a requirement, the naming half becomes `UI-0043`, a SHOULD convention — a MUST no check can fail is one no Epic can discharge |

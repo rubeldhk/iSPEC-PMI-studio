@@ -1,6 +1,6 @@
 # D-41 — the design system waits on a volume that does not exist
 
-**Status**: **DECIDED 2026-08-20** by the project owner · **Scope**: programme-wide
+**Status**: **DECIDED AND DISCHARGED 2026-08-20** by the project owner · **Scope**: programme-wide
 **Supersedes the trigger of**: RAID `D-J` ("Revisit when Volume 8 exists")
 **Raised by**: the second local UAT session, from a question about design and UI coverage
 
@@ -64,3 +64,23 @@ that the previous answer was a phantom.
 - The 39 existing UI tasks are **not** blocked by this. They ship plain, and are restyled when the
   design system lands — the cost the programme already accepted when it chose to proceed without
   a component library.
+
+## Discharged — 2026-08-20
+
+Every consequence this decision named is complete, the same day it was taken:
+
+- **`PMI-DOC-005` written and approved v1.0** by the Project Owner, with the four requirements
+  EPIC-029's clarification session settled back-filled at approval (`UI-0005` palette source,
+  `UI-0006` browser floor, `UI-0035` accessibility evidence, `RULE-04` restyle ownership) —
+  Constitution II satisfied rather than deferred.
+- **All four Volume 8 citations repointed**: `dependencies.md`, `research.md`,
+  `010-specification-interface/spec.md`, and `ai-native-architecture.md` — one more than this
+  record originally listed. Each keeps a note of what it used to say, so the correction is visible
+  rather than silent.
+- **`RAID D-J` discharged**: its trigger fired, which is what it could never do while it pointed at
+  a volume nobody wrote.
+- **EPIC-029 declared** and taken through specify → clarify → plan → tasks → analyze, with 42 tasks
+  and one CRITICAL finding already remediated.
+
+**What remains is one decision, and it has an owner**: `D-42`, the component-library build-vs-adopt
+choice, is EPIC-029 `T890` at the head of Phase 5. Twenty-one of the Epic's tasks do not wait on it.

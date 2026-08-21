@@ -110,5 +110,6 @@ has `T888a` and its untestable half is no longer claimed as a requirement. Tasks
 **Constitution V**: the `D1` violation is closed. No task now changes application code without a
 paired check.
 
-The Epic's two standing gates are unchanged: `PMI-DOC-005` is still v0.1 Draft (now v0.1.1 in its
-revision history, still unapproved), and `D-42` is still unrecorded — it is `T890`.
+**Superseded within the hour**: `PMI-DOC-005` was **approved v1.0 on 2026-08-20**, with the four
+clarification-sourced requirements back-filled at approval. One gate remains: `D-42`, which is
+`T890` at the head of Phase 5.

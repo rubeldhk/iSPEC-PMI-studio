@@ -46,17 +46,17 @@
 
 | Source | Section | Covers |
 |--------|---------|--------|
-| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` | §6.1 Tokens | FR-DS-001 to FR-DS-004 |
-| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` | §6.2 Themes | FR-DS-010 to FR-DS-012 |
-| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` | §6.3 Components | FR-DS-020 to FR-DS-023 |
-| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` | §6.4 Accessibility | FR-DS-030 to FR-DS-033 |
-| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` | §6.5 Layout & content | FR-DS-040 to FR-DS-042 |
+| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.1 Tokens | FR-DS-001 to FR-DS-004 |
+| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.2 Themes | FR-DS-010 to FR-DS-012 |
+| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.3 Components | FR-DS-020 to FR-DS-023 |
+| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.4 Accessibility | FR-DS-030 to FR-DS-033 |
+| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.5 Layout & content | FR-DS-040 to FR-DS-042 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v1.0.md` | §2 BG-01, BG-05, BG-06 | the business goals `PMI-DOC-005` serves |
 | *(this Epic's clarification session, 2026-08-20)* | Clarifications | FR-DS-005, FR-DS-006, FR-DS-034, FR-DS-052 — decisions no upstream document had taken |
 
-**Requirements not yet covered by SRS**: `FR-DS-005`, `FR-DS-006`, `FR-DS-034` and `FR-DS-052` were settled by this Epic's clarification session because **no upstream document had taken them** — the palette source, the browser floor, the accessibility evidence format, and restyle ownership. They are recorded here and flagged for `PMI-DOC-005` back-fill at its approval (owner: project owner). `PMI-DOC-005` is at **v0.1 Draft** — this Epic must
-not be *approved* for implementation until it is approved, the same gate EPIC-023 and EPIC-025
-carry for their SRS debt.
+**Requirements not yet covered by SRS**: `FR-DS-005`, `FR-DS-006`, `FR-DS-034` and `FR-DS-052` were settled by this Epic's clarification session because **no upstream document had taken them** — the palette source, the browser floor, the accessibility evidence format, and restyle ownership. They are recorded here and flagged for `PMI-DOC-005` back-fill at its approval (owner: project owner). `PMI-DOC-005` was **approved v1.0 on 2026-08-20**, and the four clarification-sourced
+requirements were back-filled into it at approval (`UI-0005`, `UI-0006`, `UI-0035`, `RULE-04`) —
+Constitution II satisfied. The SRS-debt gate EPIC-023 and EPIC-025 carry is **discharged here**.
 
 ## Principle Conformance & Deferrals *(mandatory — PMI-DOC-003, decision D-6)*
 
@@ -233,7 +233,7 @@ presentations; each is asserted by a component test.
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
 
 - [ ] Every implementation task has a passing unit test — or, for token/configuration outputs, a passing executable conformance check (Constitution V)
-- [ ] `PMI-DOC-005` is approved (it is v0.1 Draft today) — this Epic may not be approved before it is
+- [x] `PMI-DOC-005` is approved — **v1.0, 2026-08-20**, with the four clarification-sourced requirements back-filled at approval
 - [ ] Decision `D-42` (component library build vs adopt) is recorded, with security review if a dependency is adopted
 - [ ] Automated accessibility checks pass in CI, and the manual keyboard and screen-reader pass is recorded (`FR-DS-032`)
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic

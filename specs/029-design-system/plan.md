@@ -2,7 +2,7 @@
 
 **Branch**: `epic/029-design-system` (not yet created) | **Date**: 2026-08-20 | **Spec**: [spec.md](./spec.md)
 
-**Epic**: `EPIC-029` | **SRS References**: `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v0.1.md` §6.1–§6.5; `SRS/PMI-DOC-004` §2 BG-01/05/06
+**Epic**: `EPIC-029` | **SRS References**: `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` §6.1–§6.5; `SRS/PMI-DOC-004` §2 BG-01/05/06
 
 **Input**: Feature specification from `/specs/029-design-system/spec.md`
 
@@ -48,7 +48,7 @@ zero literal visual values outside the token file (`FR-DS-051`); both themes com
 | # | Gate | Status |
 |---|------|--------|
 | I | All code changes in this plan will be produced only via Spec Kit commands — no direct edits | PASS |
-| II | Every requirement traces to a cited `SRS/` document; untraced items listed in Assumptions | PASS — `PMI-DOC-005` §6.1–§6.5; four clarification-sourced requirements flagged for back-fill |
+| II | Every requirement traces to a cited `SRS/` document; untraced items listed in Assumptions | PASS — `PMI-DOC-005` §6.1–§6.5; the four clarification-sourced requirements were **back-filled into PMI-DOC-005 v1.0 at its approval**, 2026-08-20 |
 | III | Work is decomposed Epic → Feature → Task; Epic ID assigned and `specs/<epic-id>/` exists | PASS |
 | IV | `/speckit-converge` is scheduled as the Epic exit gate before any promotion | PASS |
 | V | Every implementation task carries a mandatory unit-test task, written to fail first — or, for document/configuration outputs, an executable conformance check that can fail | PASS — tokens are configuration and get a conformance check (`F-29.1`); the lint rule is mutation-verified against a literal value |

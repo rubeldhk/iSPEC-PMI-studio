@@ -27,7 +27,7 @@ instead, and each such check is mutation-verified: a check that cannot fail is d
 
 **Two gates, and what they do NOT block** (`spec.md` Exit Criteria):
 
-- `PMI-DOC-005` is **v0.1 Draft** — this Epic may not be *approved* until it is approved.
+- ~~`PMI-DOC-005` is **v0.1 Draft**~~ — **approved v1.0 on 2026-08-20**. This gate is discharged.
 - Decision **`D-42`** (component library: build vs adopt) gates **Phase 5 onward only**.
   Phases 1–4 — setup, tokens, themes, the lint rule, the accessibility harness, the contrast check
   — depend on neither and are the recommended MVP.
@@ -179,7 +179,7 @@ work, which T878's rule now enforces automatically.
 ## Phase Z: Epic Closure (MANDATORY - Constitution IV, V, VI, IX)
 
 - [ ] T901 Confirm every implementation task has a passing unit test, and every configuration or document task a passing conformance check that was **observed failing first** (Constitution V)
-- [ ] T902 Confirm `PMI-DOC-005` has been **approved** — this Epic may not be approved while it is v0.1 Draft (the EPIC-023 / EPIC-025 precedent), and back-fill `FR-DS-005`, `FR-DS-006`, `FR-DS-034`, `FR-DS-052` into it (Constitution II)
+- [X] T902 Confirm `PMI-DOC-005` has been **approved** and the clarification-sourced requirements back-filled — **done 2026-08-20 at approval**: v1.0 carries `UI-0005` (palette), `UI-0006` (browser floor), `UI-0035` (accessibility evidence) and `RULE-04` (restyle ownership). Back-filling at approval rather than at closure means the approved document is the complete one (Constitution II)
 - [ ] T903 Run `/speckit-converge`; append and complete any remaining unbuilt work
 - [ ] T904 Triage `specs/029-design-system/defects/`; close every record or defer to a named Epic, then publish the Epic closing report — work completed, work deferred, recommended next command (Constitution IX)
 

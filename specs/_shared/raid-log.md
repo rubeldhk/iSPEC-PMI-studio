@@ -78,7 +78,7 @@ External things this Epic waits on or is coupled to. Register with licences: [de
 | **D-H** | SRS back-fill by the project owner | Internal | Medium | Two requirements lack SRS coverage — see I-03 | Owner action; gates Epic exit (T155a) |
 | **D-K** | **`PMI-DOC-004` Business Requirement Specification + approved business scope** | Internal | **Critical** | **135 of 201 tasks are held pending these** (decision D-10). The BRS is cited by three governing documents and does not exist; the Charter is still `Draft` | Owner action — PMI-TASK-001 **T-101** and **T-106**. Nothing in M-02, M-03, M-04, or M-06 starts until both land |
 | **D-I** | EPIC-002 | Internal | Low | EPIC-002 depends on this Epic, not the reverse | Seams present: `access_snapshot`, job state machine |
-| **D-J** | ~~SRS Volume 8 design system~~ **`PMI-DOC-005` Design System & UX Standards** | Internal | Medium | Phase 1 UI is deliberately plain; no component library chosen. **Corrected 2026-08-20 (`D-41`): the MPS has six volumes — Volume 8 was never written, so the original trigger could never fire** | Owner action — write and approve `PMI-DOC-005`, then declare the design Epic. WCAG 2.2 AA (EPIC-010, 2026-08-19) is inherited, not redefined |
+| **D-J** | ~~SRS Volume 8 design system~~ **`PMI-DOC-005` Design System & UX Standards** | Internal | Medium | Phase 1 UI is deliberately plain; no component library chosen. **Corrected 2026-08-20 (`D-41`): the MPS has six volumes — Volume 8 was never written, so the original trigger could never fire** | **DISCHARGED 2026-08-20** — `PMI-DOC-005` approved v1.0 and EPIC-029 declared, specified, planned, tasked and analyzed. Remaining: decision `D-42` (component library), owned by EPIC-029 `T890` |
 
 ---
 
