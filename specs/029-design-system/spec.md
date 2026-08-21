@@ -50,7 +50,7 @@
 | `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.2 Themes | FR-DS-010 to FR-DS-012 |
 | `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.3 Components | FR-DS-020 to FR-DS-023 |
 | `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.4 Accessibility | FR-DS-030 to FR-DS-033 |
-| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.5 Layout & content | FR-DS-040 to FR-DS-042 |
+| `SRS/PMI-DOC-005_Design_System_and_UX_Standards_v1.0.md` | §6.5 Layout & content | FR-DS-040 to FR-DS-043 (`FR-DS-042` ← `UI-0042`; `FR-DS-043` ← `UI-0043`, a SHOULD) |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v1.0.md` | §2 BG-01, BG-05, BG-06 | the business goals `PMI-DOC-005` serves |
 | *(this Epic's clarification session, 2026-08-20)* | Clarifications | FR-DS-005, FR-DS-006, FR-DS-034, FR-DS-052 — decisions no upstream document had taken |
 
@@ -73,12 +73,12 @@ The SRS-debt gate EPIC-023 and EPIC-025 carry is **discharged here**.
 |----|-----------|--------|---------------------------------------------------|
 | PP-001 | Specification First, AI Second | Satisfied | `PMI-DOC-005` precedes any component |
 | PP-002 | Single Source of Truth | Satisfied | the token file is the single definition (`FR-DS-002`) |
-| PP-003 | Human-in-the-Loop | Satisfied | `D-42` (build vs adopt) is a human decision gating the component layer |
+| PP-003 | Human-in-the-Loop | Satisfied | `D-42` (build vs adopt) was taken by the project owner, 2026-08-20 — a human decision, not an inferred default |
 | PP-004 | End-to-End Traceability | Satisfied | BG → UI-xxxx → FR-DS-xxx → task |
 | PP-005 | Modular Architecture | Satisfied | tokens, components and pages are three layers, consumed one way |
 | PP-006 | Engine Independence | Not applicable | no engine surface |
 | PP-007 | API & MCP First | Not applicable | presentation layer only |
-| PP-008 | Security by Design | Partial | any third-party UI dependency needs security review before adoption (`D-42`) |
+| PP-008 | Security by Design | Satisfied | **Not triggered.** `D-42` (2026-08-20) takes **no third-party UI dependency** — components are built on native HTML elements — so there is no dependency to review and no third-party component code reaches a user's browser. `PP-008` remains in force for any future proposal to adopt one |
 | PP-009 | Quality by Design | Satisfied | every requirement is testable by lint, automated check, or recorded manual pass |
 | PP-010 | Observability by Default | Not applicable | no new telemetry surface |
 | PP-011 | Documentation as Code | Satisfied | tokens and component contracts live in the repository |
@@ -92,8 +92,9 @@ The SRS-debt gate EPIC-023 and EPIC-025 carry is **discharged here**.
 | PP-019 | Continuous Improvement | Satisfied | accessibility checks in CI produce a trend |
 | PP-020 | Customer Value | Satisfied | accessibility is contractual for enterprise customers |
 
-**Deferral count**: 1 — `PP-008`, owned by decision `D-42`, discharged before the component layer
-is implemented.
+**Deferral count**: **0.** The single deferral — `PP-008`, owned by decision `D-42` — was
+discharged on 2026-08-20 when `D-42` chose native elements over a component library, leaving
+nothing to review.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -183,10 +184,15 @@ presentations; each is asserted by a component test.
 
 ### Functional Requirements
 
+*Listed in identifier order. Requirements marked *(clarified 2026-08-20)* were settled by this
+Epic's clarification session and back-filled into `PMI-DOC-005` v1.0 at approval.*
+
 - **FR-DS-001**: Every colour, type size, space, radius and duration in the interface MUST be a token.
 - **FR-DS-002**: Tokens MUST be defined once, in one place, and consumed by reference.
 - **FR-DS-003**: The space scale MUST be a fixed ratio scale rather than ad-hoc values.
 - **FR-DS-004**: The type scale MUST define at most seven sizes with line heights and weights.
+- **FR-DS-005**: The token values MUST be a **neutral system palette** derived by this Epic — restrained neutrals plus one accent — making no brand claim and replaceable by swapping token values *(clarified 2026-08-20)*.
+- **FR-DS-006**: The system MUST support the last two versions of Chrome, Edge, Firefox and Safari, and MAY use CSS features available across that set *(clarified 2026-08-20)*.
 - **FR-DS-010**: Light and dark themes MUST both define every token.
 - **FR-DS-011**: Theme selection MUST follow the operating-system preference by default and allow a persistent override.
 - **FR-DS-012**: Colour MUST NOT be the sole carrier of meaning.
@@ -198,15 +204,23 @@ presentations; each is asserted by a component test.
 - **FR-DS-031**: Automated accessibility checks MUST run in CI over every page and component.
 - **FR-DS-032**: A manual keyboard and screen-reader pass MUST be recorded at this Epic's exit.
 - **FR-DS-033**: Every interactive element MUST be keyboard-operable with a visible focus indicator meeting contrast requirements.
+- **FR-DS-034**: The manual keyboard and screen-reader pass MUST be recorded as a committed transcript naming the tool, its version, and each journey walked — not as a ticked checklist item *(clarified 2026-08-20)*.
 - **FR-DS-040**: Layouts MUST be responsive to a stated minimum viewport, recorded in this Epic's plan.
 - **FR-DS-041**: Every data table MUST offer filtering.
-- **FR-DS-042**: Microcopy MUST name things as users recognise them; controls MUST state what happens and confirmations what happened.
+- **FR-DS-042**: Controls MUST state what happens, and confirmations MUST state what happened — a `Save` control pairs with a `Saved` confirmation, not a generic `Success`.
+- **FR-DS-043**: Microcopy **SHOULD** name things as a user recognises them, not as the system models them.
 - **FR-DS-050**: The four delivered pages (`SignIn`, `Projects`, `Requirements`, `Traceability`) and two components (`EngineSelector`, `RequirementEditor`) MUST be restyled onto the system.
 - **FR-DS-051**: A lint rule MUST fail the build on any literal visual value outside the token definition file.
-- **FR-DS-005**: The token values MUST be a **neutral system palette** derived by this Epic — restrained neutrals plus one accent — making no brand claim and replaceable by swapping token values *(clarified 2026-08-20)*.
-- **FR-DS-006**: The system MUST support the last two versions of Chrome, Edge, Firefox and Safari, and MAY use CSS features available across that set *(clarified 2026-08-20)*.
-- **FR-DS-034**: The manual keyboard and screen-reader pass MUST be recorded as a committed transcript naming the tool, its version, and each journey walked — not as a ticked checklist item *(clarified 2026-08-20)*.
 - **FR-DS-052**: Restyling by this Epic covers **only the pages and components that exist at its start**. Every other Epic styles its own UI work against the system, enforced by `FR-DS-051` rather than by promise *(clarified 2026-08-20)*.
+
+> **Why `FR-DS-042` is split** *(analysis `F2`, 2026-08-20)*. It previously stated both halves as
+> MUST. `PMI-DOC-005` v0.1.1 had already split its source requirement — the testable half stayed
+> `UI-0042`, the naming half became `UI-0043`, a **SHOULD** — because no executable check can fail
+> on *"name things as users recognise them"*, and Constitution V holds that review does not satisfy
+> a requirement. That split was applied to the SRS and to `tasks.md` but never to this file, so this
+> Epic went on asserting a stronger obligation than its own source. `FR-DS-042` is checked by
+> `T888a`; `FR-DS-043` is a **convention, deliberately carrying no Epic obligation** — a MUST no
+> Epic could ever discharge is worse than an honest SHOULD.
 
 ### Key Entities
 
@@ -230,7 +244,7 @@ presentations; each is asserted by a component test.
 ## Assumptions
 
 - `PMI-DOC-005` is approved before implementation begins; this Epic must not be *approved* while it is Draft (the EPIC-023/025 precedent).
-- The component-library build-vs-adopt choice is **not** made here — `PMI-DOC-005` `RULE-05` requires it be recorded as decision **`D-42`** before the component layer is implemented. The token layer, lint rule and accessibility work do not depend on it and may proceed first.
+- The component-library build-vs-adopt choice was **recorded as decision `D-42` on 2026-08-20**, as `PMI-DOC-005` `RULE-05` requires: components are **built on native HTML elements** — `<button>`, `<input>`, `<select>`, `<dialog>` — with **no component-library dependency**, so `PP-008` is not triggered. What the decision leaves behind is an obligation rather than a gate: a div-based reimplementation of something the platform provides is a defect against `D-42`, and `T886` is the only check that can see one.
 - The frontend has **zero CSS files today**, so this Epic starts from nothing rather than migrating an existing style layer.
 - React 18 is the frontend; no component library is currently a dependency, deliberately.
 - The 39 existing UI tasks in other Epics are not blocked by this Epic — they ship plain and are restyled by `FR-DS-050` (`D-41`).
@@ -239,12 +253,21 @@ presentations; each is asserted by a component test.
 - Browser support is stated once here (`FR-DS-006`) so component authors do not each pick a floor.
 - Where the design system lives in the workspace — a `packages/` module or inside `frontend/` — is a structural decision for this Epic's plan, not a requirement.
 
-## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
+## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX, XI)*
 
 - [ ] Every implementation task has a passing unit test — or, for token/configuration outputs, a passing executable conformance check (Constitution V)
 - [x] `PMI-DOC-005` is approved — **v1.0, 2026-08-20**, with the four clarification-sourced requirements back-filled at approval
-- [ ] Decision `D-42` (component library build vs adopt) is recorded, with security review if a dependency is adopted
+- [x] Decision `D-42` (component library build vs adopt) is recorded — [**decided 2026-08-20**](../_shared/decisions/D-42-component-library-build-vs-adopt.md): built on native elements, no dependency, so no security review is owed (`PP-008` not triggered)
 - [ ] Automated accessibility checks pass in CI, and the manual keyboard and screen-reader pass is recorded (`FR-DS-032`)
+- [ ] **Constitution XI Tier 1** — a test drives the delivered interface through its **real entry point**, mounting the application at its root rather than rendering a page in isolation, and was observed failing with a stylesheet import removed (`T899a`)
+- [ ] **Constitution XI Tier 2** — the restyled journey has been exercised against a **running application** and a **run-generated** transcript is committed, passing its conformance check (`T900a`, `T900b`). A hand-written transcript does not satisfy this
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
 - [ ] `specs/029-design-system/defects/` contains no open defect records
 - [ ] A closing report was published: work completed, work deferred, and the recommended next task named as a concrete Spec Kit command (Constitution IX)
+
+> **Why the two `XI` criteria are here and not only in `tasks.md`** *(analysis `F1`)*. Constitution
+> XI was ratified on 2026-08-20, after this Epic's tasks were written. `tasks.md` complies via
+> `T899a`, `T900a`, `T900b` and `T901a` — but a closing report is checked against *this* list, so an
+> Epic whose exit criteria are silent on XI could be closed while violating a NON-NEGOTIABLE
+> principle. This Epic restyles the four pages a user actually sees, which makes it the worst
+> possible candidate for a reachability waiver.
