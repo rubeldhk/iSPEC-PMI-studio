@@ -27,8 +27,8 @@ findings are blocking, so "severity" there must mean *severity now*, not *severi
 
 | ID | Category | Severity when found | Summary | Resolution |
 |---|---|---|---|---|
-| R1 | Inconsistency | HIGH | `T529` hard-coded the drift it existed to fix — quoting 31 / 32 / 34 when the real numbers had become 31 / 37 / 38 | `T529` corrected both prose sources to **38** with its composition recorded; `T517` removed the README copy entirely |
-| R2 | Coverage Gap | HIGH | `T535` requires promotion `local → dev → stage → prod`, but Gate VII records *"this epic ships no runtime artifact"* | **Decided by the project owner, 2026-08-18**: Constitution VII is **not applicable**, following the EPIC-027 precedent. Recorded in `closure.md` |
+| R1 ✅ | Inconsistency | HIGH | `T529` hard-coded the drift it existed to fix — quoting 31 / 32 / 34 when the real numbers had become 31 / 37 / 38 | `T529` corrected both prose sources to **38** with its composition recorded; `T517` removed the README copy entirely |
+| R2 ✅ | Coverage Gap | HIGH | `T535` requires promotion `local → dev → stage → prod`, but Gate VII records *"this epic ships no runtime artifact"* | **Decided by the project owner, 2026-08-18**: Constitution VII is **not applicable**, following the EPIC-027 precedent. Recorded in `closure.md` |
 | R3 | Coverage Gap | MEDIUM | `SC-ESK-003` was named nowhere outside its own definition | Asserted by `G-26-03` *"gives every row a stage — no Epic is unstaged"* and by `render.spec.ts` |
 | R4 | Coverage Gap | MEDIUM | `FR-ESK-017` had zero task references | Named in `T486`/`T487`'s skill amendments and asserted by `G-26-06` |
 | R5 | Underspecification | MEDIUM | `FR-ESK-019` unimplemented, so no Epic could reach `Analyzed` | `T486` landed; **this record is the first `analysis.md` in the repository** |
