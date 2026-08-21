@@ -9,8 +9,8 @@ description: "Task list for EPIC-020 — Living Specifications & Impact"
 
 **Spec**: [spec.md](./spec.md) | **Parent design**: [../017-enhancement-model/](../017-enhancement-model/) | **Shared design**: [../_shared/](../_shared/)
 
-> ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` Business Requirement Specification and
-> approved business scope. Split from EPIC-017 on 2026-08-04 (ruling **D-18**).
+> ▶ **PROCEEDING** — released 2026-08-20 by **PMI-DOC-004 v1.0** (APPROVED; scope ruling T-106).
+> Split from EPIC-017 on 2026-08-04 (ruling **D-18**). EPIC-019's organization tier is delivered.
 
 **Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a
 paired unit-test task, written to fail first.
@@ -32,12 +32,12 @@ Feature → requirement link mandatory, carried in this framing note.*
 links are system-written, acyclic, and immutable; dependency edges are user-maintained, cyclic-checked,
 and mutable. One table with a discriminator makes every query filter by kind.*
 
-- [ ] T251 [P] [US3] Write failing unit tests asserting `DependencyEdge` refuses duplicates and self-edges, and that source and target must share a workspace, in `backend/tests/unit/dependencies/dependency-edge.spec.ts`
-- [ ] T252 [US3] Define `DependencyEdge` model with `dependency_type` and indexes on **both** traversal directions in `backend/prisma/schema.prisma` (unit test: T251)
-- [ ] T253 [P] [US3] Write failing unit tests for cycle detection as a pure function, covering direct, two-hop, and multi-hop cycles, in `backend/tests/unit/dependencies/cycle-detection.spec.ts`
-- [ ] T254 [US3] Implement multi-hop cycle detection running on the path, not only the direct edge, in `backend/src/modules/dependencies/cycle-detector.ts` (unit test: T253)
-- [ ] T255 [P] [US3] Write failing unit tests for the dependency service — create, list, delete — asserting a cycle-forming edge is refused before storage — direct, two-hop and multi-hop alike, so detection is complete rather than merely present (**SC-ENH-009**, with T253) — in `backend/tests/unit/dependencies/dependencies.service.spec.ts`
-- [ ] T256 [US3] Implement the dependency service in `backend/src/modules/dependencies/dependencies.service.ts` (unit tests: T253, T255)
+- [X] T251 [P] [US3] Write failing unit tests asserting `DependencyEdge` refuses duplicates and self-edges, and that source and target must share a workspace, in `backend/tests/unit/dependencies/dependency-edge.spec.ts`
+- [X] T252 [US3] Define `DependencyEdge` model with `dependency_type` and indexes on **both** traversal directions in `backend/prisma/schema.prisma` (unit test: T251)
+- [X] T253 [P] [US3] Write failing unit tests for cycle detection as a pure function, covering direct, two-hop, and multi-hop cycles, in `backend/tests/unit/dependencies/cycle-detection.spec.ts`
+- [X] T254 [US3] Implement multi-hop cycle detection running on the path, not only the direct edge, in `backend/src/modules/dependencies/cycle-detector.ts` (unit test: T253)
+- [X] T255 [P] [US3] Write failing unit tests for the dependency service — create, list, delete — asserting a cycle-forming edge is refused before storage — direct, two-hop and multi-hop alike, so detection is complete rather than merely present (**SC-ENH-009**, with T253) — in `backend/tests/unit/dependencies/dependencies.service.spec.ts`
+- [X] T256 [US3] Implement the dependency service in `backend/src/modules/dependencies/dependencies.service.ts` (unit tests: T253, T255)
 
 ## F-17.6 · Impact analysis
 
@@ -48,12 +48,12 @@ Feature → requirement link mandatory, carried in this framing note.*
 **R-017-5**). A closure table trades a trivial write path for write amplification on every edge
 change — worth it at a scale this epic does not target.*
 
-- [ ] T257 [P] [US3] Write failing unit tests for impact path construction as a pure function, asserting each affected artifact carries the path and distance by which it is affected, in `backend/tests/unit/dependencies/impact-path.spec.ts`
-- [ ] T258 [US3] Implement impact path construction in `backend/src/modules/dependencies/impact-path.ts` (unit test: T257)
-- [ ] T259 [P] [US3] Write failing unit tests asserting a truncated traversal returns `bounded = true` and never silently shortens the result, in `backend/tests/unit/dependencies/impact-bounded.spec.ts`
-- [ ] T260 [US3] Implement the recursive impact query with a configured depth bound in `backend/src/modules/dependencies/impact.service.ts` (unit tests: T257, T259)
-- [ ] T261 [P] [US3] Integration test running impact analysis against a real PostgreSQL via Testcontainers, asserting multi-hop dependents resolve and that a dependency on a retired or archived artifact is returned and marked, in `backend/tests/integration/impact-analysis.spec.ts`
-- [ ] T262 [US3] Implement dependency and impact endpoints per `contracts/platform-api.md` in `backend/src/modules/dependencies/dependencies.controller.ts` — one request returns every affected specification, so no caller opens a specification to learn it is affected (**SC-ENH-002**) — (unit test: T255; integration test: T261)
+- [X] T257 [P] [US3] Write failing unit tests for impact path construction as a pure function, asserting each affected artifact carries the path and distance by which it is affected, in `backend/tests/unit/dependencies/impact-path.spec.ts`
+- [X] T258 [US3] Implement impact path construction in `backend/src/modules/dependencies/impact-path.ts` (unit test: T257)
+- [X] T259 [P] [US3] Write failing unit tests asserting a truncated traversal returns `bounded = true` and never silently shortens the result, in `backend/tests/unit/dependencies/impact-bounded.spec.ts`
+- [X] T260 [US3] Implement the recursive impact query with a configured depth bound in `backend/src/modules/dependencies/impact.service.ts` (unit tests: T257, T259)
+- [X] T261 [P] [US3] Integration test running impact analysis against a real PostgreSQL via Testcontainers, asserting multi-hop dependents resolve and that a dependency on a retired or archived artifact is returned and marked, in `backend/tests/integration/impact-analysis.spec.ts`
+- [X] T262 [US3] Implement dependency and impact endpoints per `contracts/platform-api.md` in `backend/src/modules/dependencies/dependencies.controller.ts` — one request returns every affected specification, so no caller opens a specification to learn it is affected (**SC-ENH-002**) — (unit test: T255; integration test: T261)
 
 ## F-17.4 · Living specification currency
 
@@ -62,12 +62,12 @@ when a **source requirement** changes; `currency_status` generalises that trigge
 artifact. Satisfies **FR-ENH-006** and **FR-ENH-007** (`T687`); the FR-032 reference above
 is the platform behaviour this extends, not a requirement this Epic owns. **One field, wider trigger** — two independent staleness flags would disagree.*
 
-- [ ] T263 [P] [US2] Write failing unit tests asserting a change to any upstream artifact marks the specification `stale` with `stale_reason` naming what changed, and that FR-032's existing requirement-change trigger continues to work through the same field, in `backend/tests/unit/specifications/currency.spec.ts`
-- [ ] T264 [US2] Add `currency_status`, `stale_reason`, `reconciled_at/by` to `Specification` in `backend/prisma/schema.prisma` (unit test: T263)
-- [ ] T265 [US2] Implement currency detection driven by the dependency graph in `backend/src/modules/specifications/currency.service.ts` (unit tests: T263; depends on T256)
-- [ ] T266 [P] [US2] Write failing unit tests asserting reconciliation clears the mark with attribution, and that a **baselined** specification is reconciled by forking a new `draft` rather than by alteration, in `backend/tests/unit/specifications/reconciliation.spec.ts`
-- [ ] T267 [US2] Implement reconciliation preserving baseline immutability (FR-011a) in `backend/src/modules/specifications/reconciliation.service.ts` (unit test: T266)
-- [ ] T268 [P] [US2] Component unit tests asserting staleness renders **on the specification itself**, not only in a report — so no specification is silently stale (**SC-ENH-006**, with T263) — in `frontend/tests/unit/components/StalenessBanner.spec.tsx`
+- [X] T263 [P] [US2] Write failing unit tests asserting a change to any upstream artifact marks the specification `stale` with `stale_reason` naming what changed, and that FR-032's existing requirement-change trigger continues to work through the same field, in `backend/tests/unit/specifications/currency.spec.ts`
+- [X] T264 [US2] Add `currency_status`, `stale_reason`, `reconciled_at/by` to `Specification` in `backend/prisma/schema.prisma` (unit test: T263)
+- [X] T265 [US2] Implement currency detection driven by the dependency graph in `backend/src/modules/specifications/currency.service.ts` (unit tests: T263; depends on T256)
+- [X] T266 [P] [US2] Write failing unit tests asserting reconciliation clears the mark with attribution, and that a **baselined** specification is reconciled by forking a new `draft` rather than by alteration, in `backend/tests/unit/specifications/reconciliation.spec.ts`
+- [X] T267 [US2] Implement reconciliation preserving baseline immutability (FR-011a) in `backend/src/modules/specifications/reconciliation.service.ts` (unit test: T266)
+- [X] T268 [P] [US2] Component unit tests asserting staleness renders **on the specification itself**, not only in a report — so no specification is silently stale (**SC-ENH-006**, with T263) — in `frontend/tests/unit/components/StalenessBanner.spec.tsx`
 
 ---
 
@@ -78,10 +78,10 @@ is the platform behaviour this extends, not a requirement this Epic owns. **One 
 confirms. Platform promotion `local → dev → stage → prod` is a separate, platform-wide gate and is
 NOT part of this phase.*
 
-- [ ] T269 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/020-living-specifications/closure.md`
-- [ ] T270 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/020-living-specifications/closure.md`
-- [ ] T271 Triage `specs/020-living-specifications/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/020-living-specifications/closure.md`
-- [ ] T272 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/020-living-specifications/closure.md`
+- [X] T269 Confirm every implementation task in this epic has a passing unit test (Constitution V); record the result in `specs/020-living-specifications/closure.md`
+- [X] T270 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/020-living-specifications/closure.md`
+- [X] T271 Triage `specs/020-living-specifications/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/020-living-specifications/closure.md`
+- [X] T272 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/020-living-specifications/closure.md`
 
 ---
 

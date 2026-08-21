@@ -31,12 +31,20 @@ export function SpecificationView({ api, specificationId }: SpecificationViewPro
     return <main>{error !== null ? <p role="alert">{error}</p> : <p>Loading…</p>}</main>;
   }
 
+  // EPIC-020 T268 (SC-ENH-006): ONE live region for staleness. FR-032's
+  // out-of-date flag and FR-ENH-006's currency status share it, so the two
+  // can never disagree on screen — and no specification is silently stale.
+  const stale = specification.isOutOfDate || specification.currencyStatus === 'stale';
+  const staleDetail =
+    specification.staleReason ?? 'its source requirements changed after generation';
+
   return (
     <main>
       <h1>{specification.title}</h1>
-      {specification.isOutOfDate && (
+      {stale && (
         <p role="status">
-          This specification is out of date — its source requirements changed after generation.
+          This specification is not current (out of date) — {staleDetail}. Nothing is regenerated
+          automatically; reconcile it deliberately.
         </p>
       )}
       <p>{specification.lifecycleState}</p>

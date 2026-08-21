@@ -83,10 +83,13 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // lifecycle wave's schema.
     // organizations + the three steering tables arrived with EPIC-019 T227 —
     // the tenancy tier and the steering engine's scope/content/provenance set.
+    // dependency_edges arrived with EPIC-020 T252 — the user-maintained
+    // dependency graph, deliberately separate from traceability_links.
     expect([...tables.keys()].sort()).toEqual([
       'adr_specification_links',
       'architecture_decision_records',
       'audit_entries',
+      'dependency_edges',
       'engine_registrations',
       'generation_jobs',
       'lifecycle_transitions',

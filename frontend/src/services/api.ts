@@ -109,6 +109,9 @@ export interface Specification {
   engineVersion: string;
   generatedAt: string;
   isOutOfDate: boolean;
+  /** EPIC-020 (FR-ENH-006): one field, wider trigger than isOutOfDate. */
+  currencyStatus?: 'current' | 'stale';
+  staleReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }

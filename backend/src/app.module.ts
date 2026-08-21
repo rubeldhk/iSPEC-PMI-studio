@@ -11,6 +11,7 @@ import { RequirementsModule } from './modules/requirements/requirements.module.j
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
 import { SteeringModule } from './modules/steering/steering.module.js';
+import { DependenciesModule } from './modules/dependencies/dependencies.module.js';
 import { TraceabilityModule } from './modules/traceability/traceability.module.js';
 
 /**
@@ -46,6 +47,7 @@ import { TraceabilityModule } from './modules/traceability/traceability.module.j
     SpecificationsModule,
     TasksModule,
     SteeringModule,
+    DependenciesModule,
     TraceabilityModule,
     DecisionsModule,
   ],

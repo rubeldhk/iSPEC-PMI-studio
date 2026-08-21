@@ -63,6 +63,7 @@ model Workspace {
   steeringScopes        SteeringScope[]
   steeringDocuments     SteeringDocument[]
   steeringApplications  SteeringApplication[]
+  dependencyEdges       DependencyEdge[]
 
   @@map("workspaces")
 }
@@ -253,6 +254,13 @@ model Specification {
   // FR-032: set when a source requirement changes; NEVER auto-corrected, and
   // never a trigger to regenerate. A human decides.
   isOutOfDate      Boolean            @default(false)
+  // EPIC-020 T264 (FR-ENH-006/007) — ONE field, wider trigger: generalises
+  // FR-032's flag to ANY upstream artifact. Reconciliation clears it with
+  // attribution; a baselined specification reconciles by forking (FR-011a).
+  currencyStatus   CurrencyStatus     @default(current)
+  staleReason      String?
+  reconciledAt     DateTime?
+  reconciledById   String?
   createdAt        DateTime           @default(now())
   createdById      String
   updatedAt        DateTime           @updatedAt
@@ -651,6 +659,12 @@ enum SteeringDocumentStatus {
   retired
 }
 
+// EPIC-020 T264 — living-specification currency (FR-ENH-006).
+enum CurrencyStatus {
+  current
+  stale
+}
+
 // T229 — a resolved position in the four-level hierarchy.
 model SteeringScope {
   id          String            @id @default(uuid())
@@ -689,6 +703,34 @@ model SteeringDocument {
   @@index([workspaceId])
   @@index([scopeId, status])
   @@map("steering_documents")
+}
+
+// ------------------------------------------------------------ dependencies
+//
+// EPIC-020 T252 (R-017-3) — a SEPARATE table from traceability_links:
+// derivation links are system-written, acyclic, immutable; dependency edges
+// are user-maintained, cycle-checked, mutable. One table with a
+// discriminator would make every query filter by kind.
+
+model DependencyEdge {
+  id             String   @id @default(uuid())
+  workspaceId    String
+  sourceType     String
+  sourceId       String
+  targetType     String
+  targetId       String
+  dependencyType String
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([sourceType, sourceId, targetType, targetId])
+  @@index([sourceType, sourceId])
+  @@index([targetType, targetId])
+  @@index([workspaceId])
+  @@map("dependency_edges")
 }
 
 // T242 — the provenance record, written AT GENERATION TIME, never recomputed.
