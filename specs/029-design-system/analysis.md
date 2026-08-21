@@ -1,5 +1,95 @@
 # Cross-Artifact Analysis: EPIC-029 Design System
 
+**Session**: 2026-08-20 (second run — see [below](#session-2026-08-20--second-run) for the current findings)
+
+---
+
+## Session 2026-08-20 — second run
+
+**Why re-run**: the first run analysed artifacts written against constitution **v1.4.0** with `D-42`
+open. Both changed — Principle **XI** was ratified, `D-42` was decided, and `tasks.md` went 42 → 47.
+Nothing below was visible to the first run.
+
+**A note on finding IDs.** This record uses `F1`…`F9`, **not** the category-initial IDs
+(`D1`, `C1`, `U1`) the first run used and `/speckit-analyze` prescribes. `DOR-09` counts blocking
+rows matching `/^\|\s*F\d+\s*\|/`, so **no finding the first run wrote was ever visible to the
+gate** — including `D1`, which was CRITICAL. That is finding `F4`, and using the `F` prefix here is
+what makes this record's own findings enforceable.
+
+## Findings
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| F1 | Constitution | HIGH | spec.md:242–250 | **Epic Exit Criteria omit Constitution XI.** The header cites "Constitution IV, V, VI, IX" and no criterion covers the reachability gate. `tasks.md` complies via `T901a`, but the Exit Criteria list is what a closing report is checked against — so the Epic could be closed against its own checklist while violating a NON-NEGOTIABLE principle | Add exit criteria for XI Tier 1 (`T899a`) and Tier 2 (`T900a`, `T900b`), and add XI to the section header |
+| F2 | Inconsistency | HIGH | spec.md:203; `PMI-DOC-005` `UI-0042`/`UI-0043` | **`FR-DS-042` still states as MUST what its own SRS downgraded to SHOULD.** The first run's `C1` remediation split `UI-0042`, moving "name things as users recognise them" to `UI-0043` as a SHOULD — but that pass explicitly did not touch `spec.md`. The Epic now asserts a stronger obligation than its source, and half of it can never have a check that fails | Split `FR-DS-042` to mirror `UI-0042`/`UI-0043`: the controls/confirmations half stays MUST (covered by `T888a`); the naming half becomes a stated SHOULD convention |
+| F3 | Coverage gap | HIGH | spec.md:226; quickstart.md V5; tasks.md T900, T900b | **`SC-DS-006` has no task that tests it.** It reads *"a new page can be built without introducing a visual value that is not already a token"* — nothing builds a new page. Three artifacts cite it for unrelated work: V5 and `T900b` test delivered pages in both themes (that is `SC-DS-005`); `T900` tests viewport and zoom (`FR-DS-040`) | Repoint the three citations to `SC-DS-005`/`FR-DS-040`, then either give `SC-DS-006` a task that composes a throwaway page from tokens and asserts the lint rule stays clean, or reclassify it as an outcome rather than a measurable criterion |
+| F4 | Constitution | HIGH | `tests/governance/epic-stage/dor.ts:337`; `/speckit-analyze` template | **`DOR-09` cannot see findings written per this command's own template.** The gate counts blocking rows matching `/^\|\s*F\d+\s*\|/`; the command instructs *"generate stable IDs prefixed by category initial"*. The first run's `D1` was **CRITICAL** and `DOR-09` reported *"analysis recorded, no blocking findings"*. Owner: EPIC-026 | Reconcile gate and template — widen the pattern, or fix the template and every existing record. Mutation-verify against a known CRITICAL row; a gate that cannot fail is decoration (Constitution V) |
+| F5 | Constitution | HIGH | plan.md:77; `tests/governance/epic-stage/dor.ts:266` | **`DOR-06` cannot see a warning-marked FAIL.** The pattern matches `\| FAIL` and `\| ❌ FAIL` but not `\| ⚠️ FAIL`, because `\s*` does not match `⚠️`. `plan.md:77` records a genuine FAIL — another session active on this checkout — and `DOR-06` reports *"Constitution Check clean"*. Owner: EPIC-026 | Close the status vocabulary and reject any word outside it. An undefined status currently defaults to passing, which is the wrong default for a term nobody defined |
+| F6 | Inconsistency | MEDIUM | spec.md:81, 95 | **`PP-008` and the deferral count are stale after `D-42`.** No third-party UI dependency is taken, so no security review is owed — yet `PP-008` reads "Partial" and "**Deferral count**: 1" | Set `PP-008` to Satisfied, citing `D-42` as evidence that `PP-008` is not triggered; deferral count 0 |
+| F7 | Inconsistency | MEDIUM | spec.md:246 | Exit criterion *"Decision `D-42` is recorded"* is unticked, though it was recorded 2026-08-20 | Tick it and cite the decision record |
+| F8 | Inconsistency | MEDIUM | spec.md:233 | Assumptions still state *"the component-library build-vs-adopt choice is **not** made here"* | Replace with the settled outcome and its consequence: components are built on native elements, `PP-008` untriggered |
+| F9 | Style | LOW | spec.md:206–209 | `FR-DS-005`, `006`, `034`, `052` are appended after `FR-DS-051`, out of numeric order | Reorder, or state that clarification-sourced requirements are appended by convention |
+
+**Overflow**: none. Nine findings; no aggregation needed.
+
+## Coverage Summary — second run
+
+| Requirement group | Has task? | Task IDs |
+|---|---|---|
+| `FR-DS-001`–`006` tokens, palette, browser floor | ✅ | T868, T869, T900 |
+| `FR-DS-010`–`012` themes | ✅ | T870–T874 |
+| `FR-DS-020`–`023` components | ✅ | T886, T886a, T887–T893 |
+| `FR-DS-030`–`034` accessibility | ✅ | T880–T885 |
+| `FR-DS-040`–`041` layout | ✅ | T889, T900 |
+| `FR-DS-042` microcopy | ⚠️ half | `T888a` covers the testable half only — **F2** |
+| `FR-DS-050`–`052` restyle + lint | ✅ | T876–T879, T895–T899 |
+| `SC-DS-001`–`005`, `007`, `008` | ✅ | T883, T885, T878, T886, **T900a**, T872, T884 |
+| **`SC-DS-006`** | ❌ | none — **F3** |
+
+## Constitution Alignment — second run
+
+| Principle | Status |
+|---|---|
+| I, II, III, IV, VI, VII, IX, X | PASS |
+| V — Mandatory task-level tests | PASS for all 47 tasks. `FR-DS-042`'s naming half is a requirement no check can discharge — **F2** |
+| VIII — Session labelling | ⚠️ Recorded deviation; separate clone required before implementation. Invisible to `DOR-06` — **F5** |
+| **XI — Reachability gate** | Satisfied in `tasks.md` (`T899a`, `T900a`, `T900b`, `T901a`); **absent from `spec.md` Exit Criteria — F1** |
+
+## Unmapped Tasks — second run
+
+None. All **47** tasks map to a requirement, success criterion, or Constitution obligation.
+
+## Metrics — second run
+
+- **Total requirements**: 32 (24 `FR-DS`, 8 `SC-DS`)
+- **Total tasks**: 47
+- **Coverage**: **31 / 32 = 97%** (`SC-DS-006` uncovered — F3)
+- **Ambiguity count**: 0
+- **Duplication count**: 0
+- **CRITICAL**: 0 · **HIGH**: 5 (F1–F5) · **MEDIUM**: 3 · **LOW**: 1
+
+## Next Actions — second run
+
+**Five HIGH findings block `/speckit-implement`** via `DOR-09` — and, for the first time, the gate
+can actually see them.
+
+1. **F1, F2, F6, F7, F8, F9** — all `spec.md` edits, none of them large. `/speckit-specify` owns
+   that file; this command does not.
+2. **F3** — decide whether `SC-DS-006` earns a task or is reclassified, then repoint the three
+   mis-citations.
+3. **F4, F5** — belong to **EPIC-026**, which owns the epic-stage gates. They do not block
+   EPIC-029's *implementation*; they block *trusting* any readiness verdict, this one included.
+
+Concrete command: `/speckit-specify` for EPIC-029 to amend `spec.md` for F1, F2, F6, F7, F8, F9.
+
+**Note on `D-42` and `PMI-DOC-005`**: both gates the first run left open are now discharged —
+`PMI-DOC-005` approved v1.0, `D-42` decided. The gate that replaced them sits at the other end of
+the Epic: Constitution XI, at closure.
+
+---
+
+## First run
+
 **Session**: 2026-08-20
 
 **Scope**: `spec.md`, `plan.md`, `tasks.md`, `contracts/`, `research.md` — consistency, coverage,
