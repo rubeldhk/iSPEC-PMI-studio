@@ -21,7 +21,7 @@ paired unit-test task, written to fail first. Tasks producing **configuration or
 tokens, themes, the lint rule, the accessibility record — carry an **executable conformance check**
 instead, and each such check is mutation-verified: a check that cannot fail is decoration.
 
-**Task IDs**: `T865`–`T904`, plus `T866a`, `T888a` added by the analyse pass of 2026-08-20, and `T886a`, `T899a`, `T900a`, `T900b`, `T901a` added by the re-plan of 2026-08-20 (corpus max was `T864`; the `a`-suffix convention keeps a later addition adjacent to what it pairs with — the `T549a`/`T576a` precedent). **47 tasks.**
+**Task IDs**: `T865`–`T904`, plus `T866a`, `T888a` added by the analyse pass of 2026-08-20; `T886a`, `T899a`, `T900a`, `T900b`, `T901a` added by the re-plan of 2026-08-20; and `T900c` added by the second analyse pass to close finding `F3` (corpus max was `T864`; the `a`-suffix convention keeps a later addition adjacent to what it pairs with — the `T549a`/`T576a` precedent). **48 tasks.**
 
 **Re-planned 2026-08-20** against **constitution v1.5.0** and the now-settled `D-42`. Principle XI (the reachability gate) is new and **changes this Epic's exit conditions**; the original 42 tasks were never checked against it because it did not exist. Five tasks were added:
 
@@ -32,6 +32,7 @@ instead, and each such check is mutation-verified: a check that cannot fail is d
 | `T900a` | **XI Tier 2** — `V5` was a person looking at a screen; XI requires a run-generated transcript |
 | `T900b` | `T900a` produces a document, so Constitution V requires a conformance check that can fail |
 | `T901a` | Phase Z confirms Constitution V (`T901`); XI now needs the same treatment at closure |
+| `T900c` | **Second analyse pass, finding `F3`** — `SC-DS-006` ("a new page can be built without introducing a visual value that is not already a token") was cited by three artifacts that each tested something else, and nothing built a new page. Token *sufficiency* was untested |
 
 **Amended 2026-08-20** by `/speckit-analyze`, which found one Constitution V violation and five further issues — see [analysis.md](./analysis.md). Fixes are marked inline: `T866a` (the stylesheet import had no check), `T879` (its backlog was empty by construction), `T888a` (`FR-DS-042` had no task), `T890` (moved ahead of the tests it shapes), `T884` (own file), and ID citations across seven tasks.
 
@@ -186,12 +187,14 @@ work, which T878's rule now enforces automatically.
 - [ ] T898 [P] Restyle `frontend/src/pages/Traceability.tsx` onto tokens and components (accessibility conformance check: T883)
 - [ ] T899 [P] Restyle `frontend/src/components/EngineSelector.tsx` and `frontend/src/components/RequirementEditor.tsx` onto tokens and components (accessibility conformance check: T894)
 - [ ] T899a **Constitution XI Tier 1** — write the real-entry-point test in `frontend/tests/unit/design/app-root.spec.tsx`: **mount the application at its root** (the composed tree `main.tsx` builds, not a page component in isolation) and assert a delivered page renders with token-derived styling resolved. **Mutation-verify by removing a stylesheet import** — the test MUST fail. `T866a` asserts the import *line exists* by reading the source; this asserts the app *actually renders styled*, which is the difference Principle XI was written for. Neither `T866a` nor `T883` drives the real entry point (unit test: this task is itself the test)
-- [ ] T900 Verify the restyled pages at the **minimum viewport (360×640)** and at **200% text zoom** with no clipping or overflow, and record the result in [quickstart.md](./quickstart.md) `V5` (`FR-DS-006`, `FR-DS-040`, `SC-DS-006`, research `R-029-4`)
+- [ ] T900 Verify the restyled pages at the **minimum viewport (360×640)** and at **200% text zoom** with no clipping or overflow, and record the result in [quickstart.md](./quickstart.md) `V5` (`FR-DS-006`, `FR-DS-040`, research `R-029-4`)
 - [ ] T900a **Constitution XI Tier 2** — drive the restyled journey against the **running application** (sign-in → projects → requirements, both themes, 360×640 and 200% zoom) and emit a **run-generated transcript** to `docs/accessibility/EPIC-029-reachability-transcript.md`. The transcript MUST be produced by the run and name what was exercised; **hand-writing or editing it is a constitution violation**, the rule `G-28-02` enforced against `T709`'s first attempt. The local stack is up and verified as of 2026-08-20, so this needs no new environment (conformance check: T900b)
-- [ ] T900b [P] Write the conformance check for the reachability transcript in `tests/governance/reachability-transcript.spec.ts`: the file exists, names each page exercised and both themes, and carries evidence it was machine-generated. **A file saying only "passed" MUST fail** — the same standard `T884` holds the manual accessibility record to (`SC-DS-006`, Constitution XI Tier 2)
+- [ ] T900b [P] Write the conformance check for the reachability transcript in `tests/governance/reachability-transcript.spec.ts`: the file exists, names each page exercised and both themes, and carries evidence it was machine-generated. **A file saying only "passed" MUST fail** — the same standard `T884` holds the manual accessibility record to (`SC-DS-005`, Constitution XI Tier 2)
+- [ ] T900c Build a **new page from tokens and components only** — a fixture at `frontend/tests/unit/design/fixtures/NewPage.tsx` composing a page header, a form field, a table, a status pill and an empty state — and assert in `frontend/tests/unit/design/token-sufficiency.spec.tsx` that (a) the literal-value rule reports **zero violations** on it — run **programmatically via the ESLint API**, the same way `T876`/`T877` drive the rule, because the rule's file scope is `frontend/src/**` and this fixture deliberately sits outside it, (b) it declares **no new custom property**, and (c) **every `var(--…)` it references resolves to a token defined in `tokens.css`** — an unresolved reference fails, naming it. **Mutation-verify** by referencing `var(--color-does-not-exist)`: the check MUST fail. This is the only task that proves `SC-DS-006` — *a new page can be built without introducing a visual value that is not already a token*. Per analysis `F3`: `SC-DS-006` had been cited by three artifacts that each tested something else, and **nothing built a new page**, so token *sufficiency* — as distinct from token *correctness*, which `T868` covers — was never tested at all
 
 **Checkpoint**: quickstart **V5** — every delivered page renders from tokens alone, in both themes,
-**proven against the running application** rather than asserted.
+**proven against the running application** rather than asserted — and **V6**, that a *new* page
+needs no visual value the token set does not already carry.
 
 ---
 

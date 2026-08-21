@@ -18,11 +18,10 @@ what makes this record's own findings enforceable.
 
 ## Findings
 
-**Nine findings; six remediated the same session (see [Remediation](#remediation-applied--2026-08-20-second-run)). The three still open are listed here.**
+**Nine findings; seven remediated the same session (see [Remediation](#remediation-applied--2026-08-20-second-run)). The two still open are listed here — both owned by EPIC-026.**
 
 | ID | Category | Severity | Location(s) | Summary | Recommendation |
 |----|----------|----------|-------------|---------|----------------|
-| F3 | Coverage gap | HIGH | spec.md `SC-DS-006`; quickstart.md V5; tasks.md T900, T900b | **`SC-DS-006` has no task that tests it.** It reads *"a new page can be built without introducing a visual value that is not already a token"* — nothing builds a new page. Three artifacts cite it for unrelated work: V5 and `T900b` test delivered pages in both themes (that is `SC-DS-005`); `T900` tests viewport and zoom (`FR-DS-040`) | Repoint the three citations to `SC-DS-005`/`FR-DS-040`, then either give `SC-DS-006` a task that composes a throwaway page from tokens and asserts the lint rule stays clean, or reclassify it as an outcome rather than a measurable criterion. **Spans `quickstart.md` and `tasks.md`, so it is not a `spec.md`-only fix** |
 | F4 | Constitution | HIGH | `tests/governance/epic-stage/dor.ts:337`; `/speckit-analyze` template | **`DOR-09` cannot see findings written per this command's own template.** The gate counts blocking rows matching `/^\|\s*F\d+\s*\|/`; the command instructs *"generate stable IDs prefixed by category initial"*. The first run's `D1` was **CRITICAL** and `DOR-09` reported *"analysis recorded, no blocking findings"*. Owner: **EPIC-026** | Reconcile gate and template — widen the pattern, or fix the template and every existing record. Mutation-verify against a known CRITICAL row; a gate that cannot fail is decoration (Constitution V) |
 | F5 | Constitution | HIGH | plan.md:77; `tests/governance/epic-stage/dor.ts:266` | **`DOR-06` cannot see a warning-marked FAIL.** The pattern matches `\| FAIL` and `\| ❌ FAIL` but not `\| ⚠️ FAIL`, because `\s*` does not match `⚠️`. `plan.md:77` records a genuine FAIL — another session active on this checkout — and `DOR-06` reports *"Constitution Check clean"*. Owner: **EPIC-026** | Close the status vocabulary and reject any word outside it. An undefined status currently defaults to passing, which is the wrong default for a term nobody defined |
 
@@ -46,7 +45,7 @@ what makes this record's own findings enforceable.
 | `FR-DS-042` microcopy | ⚠️ half | `T888a` covers the testable half only — **F2** |
 | `FR-DS-050`–`052` restyle + lint | ✅ | T876–T879, T895–T899 |
 | `SC-DS-001`–`005`, `007`, `008` | ✅ | T883, T885, T878, T886, **T900a**, T872, T884 |
-| **`SC-DS-006`** | ❌ | none — **F3** |
+| **`SC-DS-006`** | ✅ | **T900c** — added by this run's `F3` remediation |
 
 ## Constitution Alignment — second run
 
@@ -102,14 +101,19 @@ touched by this pass.
 | **F7** | MEDIUM | Exit criterion for `D-42` ticked, linked to the decision record, and annotated with the consequence — no security review owed |
 | **F8** | MEDIUM | Assumption rewritten from *"not made here"* to the settled outcome, including the obligation it leaves behind: a div-based reimplementation is a defect against `D-42`, and `T886` is the only check that can see one |
 | **F9** | LOW | Requirements relisted in identifier order — `001`–`006`, `010`–`012`, `020`–`023`, `030`–`034`, `040`–`043`, `050`–`052` — with a note that clarification-sourced requirements are marked inline rather than appended |
+| **F3** | HIGH | **`SC-DS-006` given a real task rather than reclassified** (project owner's call). `T900c` builds a new page from tokens and components only — page header, form field, table, status pill, empty state — and asserts the lint rule reports zero violations, no new custom property is declared, and **every `var(--…)` resolves to a token that exists**, naming any that does not. Mutation-verified with `var(--color-does-not-exist)`. The three mis-citations were repointed: quickstart `V5` and `T900b` → `SC-DS-005`, `T900` → `FR-DS-040`/`FR-DS-006`. New quickstart scenario **`V6`**. **48 tasks** |
 
 **Requirement count**: 24 → **25 `FR-DS`** (`FR-DS-043` added by the `F2` split), so **33 total**
-with the 8 `SC-DS`.
+with the 8 `SC-DS`. **Coverage 33 / 33 = 100%** once `T900c` lands `SC-DS-006`.
 
-**Still open**: `F3`, `F4`, `F5` — all HIGH, so `DOR-09` continues to block, correctly. `F3` spans
-`quickstart.md` and `tasks.md` as well as `spec.md`, and `F4`/`F5` belong to **EPIC-026**, which
-owns the epic-stage gates. Neither blocks EPIC-029's implementation work; both block *trusting* a
-readiness verdict.
+**Task count**: 47 → **48** (`T900c`).
+
+**Files edited by the `F3` pass**: `tasks.md` and `quickstart.md` — `spec.md` needed no change,
+since `SC-DS-006` was well-stated all along; only nothing tested it.
+
+**Still open**: `F4` and `F5`, both HIGH, so `DOR-09` continues to block. Both belong to
+**EPIC-026**, which owns the epic-stage gates. Neither blocks EPIC-029's implementation work; both
+block *trusting* a readiness verdict — including the one this record produces.
 
 ---
 
