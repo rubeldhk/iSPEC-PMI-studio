@@ -50,7 +50,9 @@ since. **Valkey** is the BSD-licensed fork, wire-compatible and a drop-in replac
 | D-14 | TanStack Query | 5.x | Server state, polling job status | MIT | ☐ | Low |
 | D-15 | Vite | 5.x | Build and dev server | MIT | ☐ | Low |
 
-No component library is listed deliberately — SRS Volume 8 defines a design system that does not
+No component library is listed deliberately — `PMI-DOC-005` (approved 2026-08-20) defines the
+design system and leaves the build-vs-adopt choice to decision `D-42`. *(Was: "SRS Volume 8", a
+volume never written — corrected by `D-41`.)* The system does not
 exist yet. Choosing one now would pre-empt it.
 
 ## Engine sandbox image

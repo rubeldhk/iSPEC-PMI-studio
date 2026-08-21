@@ -70,7 +70,7 @@ This epic records only where it **differs** or is the place a principle is satis
 
 ## Notes
 
-No component library is chosen. SRS Volume 8 defines a design system that does not exist yet; picking one now would pre-empt it.
+No component library is chosen. `PMI-DOC-005` (approved 2026-08-20) defines the design system and reserves the build-vs-adopt choice for decision `D-42`; picking one here would pre-empt it. *(Was: "SRS Volume 8 ... does not exist yet" — a volume never written, corrected by `D-41`.)*
 
 **Accessibility target: WCAG 2.2 Level AA** *(clarified 2026-08-19)*. Automated checks run in CI; a
 manual keyboard and screen-reader pass is required at Epic exit. This Epic owns the target for the

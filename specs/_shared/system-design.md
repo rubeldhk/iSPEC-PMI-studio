@@ -388,4 +388,4 @@ Recorded so nobody assumes they were overlooked:
   depends on it.
 - **AI provider and model** — an engine image configuration concern, recorded per artifact (FR-022).
 - **Observability tooling** — audit is specified and built; operational telemetry is an ops choice.
-- **Accessibility and localisation standards** — no SRS requirement yet; arrives with SRS Volume 8.
+- **Accessibility standards** — **settled**: WCAG 2.2 AA (EPIC-010, 2026-08-19), carried into `PMI-DOC-005` §6.4 (approved 2026-08-20). Localisation remains unspecified and is not claimed by any Epic. *(Was: "arrives with SRS Volume 8" — never written, corrected by `D-41`.)*

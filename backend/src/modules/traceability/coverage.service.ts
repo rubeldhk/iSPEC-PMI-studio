@@ -60,3 +60,38 @@ export class CoverageService {
     };
   }
 }
+
+/**
+ * T862 — the artifact source a running deployment uses (FR-031, SC-010).
+ *
+ * `EmptyArtifactIdSource` returned `[]` from both methods, so coverage
+ * iterated nothing and reported nothing. An empty report and a clean report
+ * are indistinguishable, which made SC-010's "identify every uncovered
+ * requirement in a single view" true only of a blank view.
+ *
+ * Narrow read ports rather than the two stores themselves: coverage needs ids,
+ * not records, and a port that can only list ids cannot grow into a second
+ * read path for either module.
+ */
+export interface RequirementIdLookup {
+  listIdsForProject(workspaceId: string, projectId: string): Promise<string[]>;
+}
+
+export interface SpecificationIdLookup {
+  listIdsForProject(workspaceId: string, projectId: string): Promise<string[]>;
+}
+
+export class LookupArtifactIdSource implements ArtifactIdSource {
+  constructor(
+    private readonly requirements: RequirementIdLookup,
+    private readonly specifications: SpecificationIdLookup,
+  ) {}
+
+  async listRequirementIds(workspaceId: string, projectId: string): Promise<string[]> {
+    return this.requirements.listIdsForProject(workspaceId, projectId);
+  }
+
+  async listSpecificationIds(workspaceId: string, projectId: string): Promise<string[]> {
+    return this.specifications.listIdsForProject(workspaceId, projectId);
+  }
+}

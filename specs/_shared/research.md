@@ -297,7 +297,7 @@ lifecycle* — saves nothing and buys a migration.
 | Hosting target and deployment topology | Constitution VII fixes the promotion order (`local → dev → stage → prod`) but not the substrate. No Phase 1 requirement depends on it. |
 | Horizontal scaling of engine workers | SC-009 concerns project size, not concurrency. Add when measured. |
 | Operational telemetry (metrics, tracing) | ⚠️ **Justification superseded 2026-08-03.** This entry originally argued observability was "an operational choice". **PMI-DOC-003 PP-010 makes logging, metrics, and tracing first-class**, removing that latitude. Now an open decision — **D-7** in [srs-alignment.md](../srs-alignment.md). See `system-design.md` PC-3 for the retrofit cost. |
-| Accessibility and localisation standards | No SRS requirement yet; a UI framework decision now, standards when the design system arrives (SRS Volume 8). |
+| Accessibility and localisation standards | **Settled**: WCAG 2.2 AA (EPIC-010, 2026-08-19), carried into `PMI-DOC-005` §6.4 (approved 2026-08-20). *(Was: "standards when the design system arrives (SRS Volume 8)" — a volume never written, corrected by `D-41`.)* |
 | AI provider and model selection | An engine image configuration concern. Must be recorded per artifact (FR-022) but need not be fixed here. **PMI-DOC-003 PP-017** adds cost-aware selection as a principle; split by decision D-6 — containment ships here, optimisation goes to catalog module M-07 (`system-design.md` PC-2). |
 
 ## Open risks

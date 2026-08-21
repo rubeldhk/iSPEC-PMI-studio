@@ -21,6 +21,10 @@ backend/prisma/*.db
 # Engine sandbox scratch — ephemeral workspaces are never committed
 .engine-workspaces/
 
+# Agent worktrees — a git worktree is a whole checkout; committing one nests a
+# second copy of the repository inside this one.
+.claude/worktrees/
+
 # Editor / OS
 .DS_Store
 Thumbs.db

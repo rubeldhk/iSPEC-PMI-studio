@@ -215,6 +215,7 @@ startup, naming it (FR-021).
 |--------|------|-------|
 | `GET` | `/projects/{id}/decisions` | |
 | `POST` | `/projects/{id}/decisions` | `title`, `context`, `decision`, `consequences` required |
+| `GET` | `/decisions/{id}` | Includes the specifications the decision affects |
 | `PATCH` | `/decisions/{id}` | Includes status changes |
 | `POST` | `/decisions/{id}/links` | Link to affected specifications (FR-034) |
 

@@ -235,7 +235,7 @@ new load is a worse outcome than an argued replacement.
 | PostgreSQL 16 | Knowledge graph, evidence, decisions, 12-state machines | ⚠️ **Holds with a threshold** — see B.2 |
 | Prisma | More entities, more migrations | ⚠️ **Holds, but is not yet installed** (`T013`). Every new entity below is currently unvalidated |
 | BullMQ + Redis/Valkey | Agent runs, human-gate states | ⚠️ **Holds for compute; must not own human gates** — C-24 |
-| React 18 | Decision Center, three Rooms, Kanban | ✅ Holds. No component library still chosen (awaits SRS Volume 8) |
+| React 18 | Decision Center, three Rooms, Kanban | ✅ Holds. No component library still chosen — now awaiting decision `D-42` under `PMI-DOC-005`, not the never-written SRS Volume 8 (`D-41`) |
 | Docker | One of six execution substrates | ⚠️ **Holds as a provider; must stop being the abstraction** — C-20 |
 | SpecificationEngine contract | Unchanged | ✅ **Preserve verbatim.** Native §3 protects it |
 | Engine adapters + fixture | Pattern replicated for agents | ✅ **The template.** Its fixture adapter is why the conformance suite found three real defects |

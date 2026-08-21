@@ -41,3 +41,39 @@ export async function flagRetiredLinks<T extends LinkTarget>(
     retired: link.targetType === 'requirement' && statuses.get(link.targetId) === 'retired',
   }));
 }
+
+/**
+ * T860 — the status source a running deployment uses (US7/AC4).
+ *
+ * `AllActiveRequirementStatusSource` answers `active` for every id it is given,
+ * which made scenario 4 — "the link is still shown and marked as originating
+ * from a retired requirement" — impossible in the composed application however
+ * well the unit tests passed. This one asks the register.
+ *
+ * An id this workspace cannot see, or one that does not exist, is OMITTED from
+ * the map rather than reported active. The two are the same answer to a caller
+ * (FR-002), and neither is a claim about a requirement's status.
+ */
+export interface RequirementStatusLookup {
+  findById(id: string): Promise<{ workspaceId: string; status: 'active' | 'retired' } | null>;
+}
+
+export class LookupRequirementStatusSource implements RequirementStatusSource {
+  constructor(private readonly lookup: RequirementStatusLookup) {}
+
+  async statusOf(
+    workspaceId: string,
+    requirementIds: string[],
+  ): Promise<Map<string, 'active' | 'retired'>> {
+    const statuses = new Map<string, 'active' | 'retired'>();
+    if (requirementIds.length === 0) return statuses;
+
+    const rows = await Promise.all(
+      requirementIds.map(async (id) => [id, await this.lookup.findById(id)] as const),
+    );
+    for (const [id, row] of rows) {
+      if (row && row.workspaceId === workspaceId) statuses.set(id, row.status);
+    }
+    return statuses;
+  }
+}

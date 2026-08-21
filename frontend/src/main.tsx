@@ -13,6 +13,7 @@ import { EngineSelector } from './components/EngineSelector';
 import { RequirementEditor } from './components/RequirementEditor';
 import { ProjectDetail, ProjectsPage } from './pages/Projects';
 import { RequirementsPage } from './pages/Requirements';
+import { TraceabilityPage } from './pages/Traceability';
 import { SignIn } from './pages/SignIn';
 import { ApiClient, type Requirement, type WhoAmI } from './services/api';
 
@@ -20,21 +21,30 @@ type View =
   | { kind: 'loading' }
   | { kind: 'sign-in' }
   | { kind: 'projects' }
-  | { kind: 'project'; projectId: string; editing?: Requirement | null };
+  | { kind: 'project'; projectId: string; editing?: Requirement | null }
+  // T864 (EPIC-011) — US7 is "the user views…", four times over. The page was
+  // built and reachable from nowhere; this is the route.
+  | { kind: 'traceability'; projectId: string };
 
-function App(): ReactElement {
+/**
+ * Exported so the shell's own routing is testable (T863). A router arrives
+ * with EPIC-010; until then this is the navigation, and it is worth asserting
+ * rather than assuming.
+ */
+export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
   const [view, setView] = useState<View>({ kind: 'loading' });
   const [, setIdentity] = useState<WhoAmI | null>(null);
 
   const api = useMemo(
     () =>
+      injected ??
       new ApiClient({
         onSessionExpired: (): void => {
           setIdentity(null);
           setView({ kind: 'sign-in' });
         },
       }),
-    [],
+    [injected],
   );
 
   useEffect(() => {
@@ -70,6 +80,12 @@ function App(): ReactElement {
         <ProjectDetail api={api} projectId={view.projectId} onBack={(): void => setView({ kind: 'projects' })}>
           <>
             <EngineSelector api={api} projectId={view.projectId} value={null} />
+            <button
+              type="button"
+              onClick={(): void => setView({ kind: 'traceability', projectId: view.projectId })}
+            >
+              Traceability
+            </button>
             <RequirementsPage
               api={api}
               projectId={view.projectId}
@@ -84,6 +100,18 @@ function App(): ReactElement {
             />
           </>
         </ProjectDetail>
+      );
+    case 'traceability':
+      return (
+        <main>
+          <button
+            type="button"
+            onClick={(): void => setView({ kind: 'project', projectId: view.projectId })}
+          >
+            Back to project
+          </button>
+          <TraceabilityPage api={api} projectId={view.projectId} />
+        </main>
       );
   }
 }
