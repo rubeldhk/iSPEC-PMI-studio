@@ -413,15 +413,39 @@ model Task {
 // Indexed BOTH ways: both traversal directions are first-class (FR-030) and
 // must stay fast at 500 specifications per project (SC-009).
 
+// EPIC-022 T301 — widened to the twelve chain stages (FR-ENH-021, R-017-7).
 enum TraceArtifactType {
+  vision
+  goal
+  capability
   requirement
   specification
+  architecture
+  plan
   task
+  code
+  test
+  release
+  operation
 }
 
+// Widened, not replaced: the two Phase 1 types stay; the twelve chain link
+// types of the source document join them.
 enum TraceRelationship {
   generated_from
   derived_from
+  vision
+  goals
+  capabilities
+  requirements
+  specifications
+  architecture
+  planning
+  tasks
+  code
+  tests
+  release
+  operations
 }
 
 model TraceabilityLink {
@@ -706,6 +730,23 @@ model SteeringDocument {
   @@index([workspaceId])
   @@index([scopeId, status])
   @@map("steering_documents")
+}
+
+// EPIC-022 T297 (R-017-6) — the twenty-one-section structure as VERSIONED
+// DATA, not a stored skeleton: conformance is a validation rule producing
+// FR-023 findings. Deployment-scoped (product configuration, D-16: product
+// outputs only — never this repository's own documents).
+model StructureDefinition {
+  id        String   @id @default(uuid())
+  version   Int
+  // Ordered [{name, required}] — order is part of the definition.
+  sections  Json
+  appliesTo String   @default("product_outputs")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([appliesTo, version])
+  @@map("structure_definitions")
 }
 
 // ---------------------------------------------------------------- reviews

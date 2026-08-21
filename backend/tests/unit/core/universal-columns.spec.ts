@@ -47,6 +47,9 @@ const NOT_TENANT_SCOPED = new Set([
   // EPIC-021 T274: the twelve-role roster is deployment configuration, the
   // same exception engine_registrations carries.
   'review_roles',
+  // EPIC-022 T297: the versioned structure definition is product
+  // configuration (D-16), not tenant data.
+  'structure_definitions',
 ]);
 
 function migrationSql(): string {
@@ -109,6 +112,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'steering_applications',
       'steering_documents',
       'steering_scopes',
+      'structure_definitions',
       'tasks',
       'traceability_links',
       'users',

@@ -18,6 +18,11 @@ import type { CoverageReport } from './coverage.service.js';
 import { flagRetiredLinks, type RequirementStatusSource } from './retired-flag.js';
 import { TraceabilityService } from './traceability.service.js';
 import type { ForwardTrace, SpecificationTrace } from './traceability.service.js';
+import { ChainTraversalService } from './chain-traversal.service.js';
+import type { ChainTraversalResult } from './chain-traversal.service.js';
+import { ChainGapService } from './chain-gap.service.js';
+import type { ChainGapReport } from './chain-gap.service.js';
+import type { TraceArtifactType } from './link-writer.service.js';
 
 function requireAuth(ctx: WorkspaceContext | undefined | null): WorkspaceContext {
   if (!ctx?.workspaceId || !ctx.userId) throw new UnauthenticatedError('No valid session.');
@@ -57,6 +62,18 @@ export class TraceabilityController {
     @Optional()
     @Inject(REQUIREMENT_STATUS_SOURCE)
     private readonly statuses: RequirementStatusSource = new AllActiveRequirementStatusSource(),
+    // EPIC-022 T307 — optional with empty-graph defaults so constructions
+    // that predate the chain stay valid; the MODULE injects the real store.
+    @Optional()
+    @Inject(ChainTraversalService)
+    private readonly chainTraversal: ChainTraversalService = new ChainTraversalService({
+      linksForWorkspace: async () => [],
+    }),
+    @Optional()
+    @Inject(ChainGapService)
+    private readonly chainGaps_: ChainGapService = new ChainGapService({
+      linksForWorkspace: async () => [],
+    }),
   ) {}
 
   @Get('requirements/:id/trace')
@@ -108,5 +125,36 @@ export class TraceabilityController {
     @Param('projectId') projectId: string,
   ): Promise<CoverageReport> {
     return this.coverage.forProject(requireAuth(ctx).workspaceId, projectId);
+  }
+
+  // ---------------------------------------------------- EPIC-022 T307
+
+  /** Full-chain traversal, either direction (FR-ENH-021). */
+  @Get('artifacts/:type/:id/chain')
+  async chain(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('type') type: string,
+    @Param('id') id: string,
+  ): Promise<{ up: ChainTraversalResult; down: ChainTraversalResult }> {
+    const workspaceId = requireAuth(ctx).workspaceId;
+    const start = { artifactType: type as TraceArtifactType, artifactId: id };
+    const [up, down] = await Promise.all([
+      this.chainTraversal.traverse(workspaceId, start, 'up'),
+      this.chainTraversal.traverse(workspaceId, start, 'down'),
+    ]);
+    return { up, down };
+  }
+
+  /** First-missing-link report — never a silently shortened chain (FR-ENH-022). */
+  @Get('artifacts/:type/:id/chain-gaps')
+  async chainGaps(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('type') type: string,
+    @Param('id') id: string,
+  ): Promise<ChainGapReport> {
+    return this.chainGaps_.report(requireAuth(ctx).workspaceId, {
+      artifactType: type as TraceArtifactType,
+      artifactId: id,
+    });
   }
 }

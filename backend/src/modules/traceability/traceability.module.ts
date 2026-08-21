@@ -22,6 +22,8 @@ import {
   TraceabilityController,
 } from './traceability.controller.js';
 import { TraceabilityService } from './traceability.service.js';
+import { ChainTraversalService } from './chain-traversal.service.js';
+import { ChainGapService } from './chain-gap.service.js';
 
 export { REQUIREMENT_STATUS_SOURCE } from './traceability.controller.js';
 
@@ -70,11 +72,25 @@ export class EmptyArtifactIdSource implements ArtifactIdSource {
       useFactory: (store: TraceabilityLinkStore, artifacts: ArtifactIdSource): CoverageService =>
         new CoverageService(store, artifacts),
     },
+    {
+      // EPIC-022 T304/T306 — the chain reads the same graph the writer writes.
+      provide: ChainTraversalService,
+      inject: [TRACEABILITY_LINK_STORE],
+      useFactory: (store: TraceabilityLinkStore): ChainTraversalService =>
+        new ChainTraversalService(store),
+    },
+    {
+      provide: ChainGapService,
+      inject: [TRACEABILITY_LINK_STORE],
+      useFactory: (store: TraceabilityLinkStore): ChainGapService => new ChainGapService(store),
+    },
   ],
   exports: [
     LinkWriterService,
     TraceabilityService,
     CoverageService,
+    ChainTraversalService,
+    ChainGapService,
     TRACEABILITY_LINK_STORE,
     ARTIFACT_ID_SOURCE,
   ],

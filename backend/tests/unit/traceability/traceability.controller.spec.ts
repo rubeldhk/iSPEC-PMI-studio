@@ -74,8 +74,9 @@ describe('TraceabilityController · wiring', () => {
     const methods = Object.getOwnPropertyNames(TraceabilityController.prototype).filter(
       (m) => m !== 'constructor',
     );
+    // chain + chainGaps joined with EPIC-022 T307 — both GET, still read-only.
     expect(methods.sort()).toEqual(
-      ['projectCoverage', 'requirementTrace', 'specificationTrace', 'taskTrace'].sort(),
+      ['projectCoverage', 'requirementTrace', 'specificationTrace', 'taskTrace', 'chain', 'chainGaps'].sort(),
     );
   });
 });

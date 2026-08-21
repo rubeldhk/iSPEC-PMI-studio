@@ -15,15 +15,84 @@
 import { randomUUID } from 'node:crypto';
 import { ConflictError, ValidationFailedError } from '../../core/errors.js';
 
-export const TRACE_ARTIFACT_TYPES = ['requirement', 'specification', 'task'] as const;
-export type TraceArtifactType = (typeof TRACE_ARTIFACT_TYPES)[number];
+/**
+ * EPIC-022 T301 (R-017-7) — the twelve chain STAGES, vision → operations.
+ * The chain IS derivation, extended: TraceabilityLink widens rather than
+ * gaining a sibling table (the opposite conclusion to DependencyEdge, and
+ * deliberately so).
+ */
+export const CHAIN_STAGES = [
+  'vision',
+  'goal',
+  'capability',
+  'requirement',
+  'specification',
+  'architecture',
+  'plan',
+  'task',
+  'code',
+  'test',
+  'release',
+  'operation',
+] as const;
 
-export type TraceRelationship = 'generated_from' | 'derived_from';
+export type TraceArtifactType = (typeof CHAIN_STAGES)[number];
 
-/** The two Phase 1 edges — everything else is refused naming this set. */
+/** Kept for callers that predate the widening. */
+export const TRACE_ARTIFACT_TYPES = CHAIN_STAGES;
+
+/** The twelve chain link types of FR-ENH-021, the source document's names. */
+export const CHAIN_LINK_TYPES = [
+  'vision',
+  'goals',
+  'capabilities',
+  'requirements',
+  'specifications',
+  'architecture',
+  'planning',
+  'tasks',
+  'code',
+  'tests',
+  'release',
+  'operations',
+] as const;
+
+export type TraceRelationship =
+  | 'generated_from'
+  | 'derived_from'
+  | (typeof CHAIN_LINK_TYPES)[number];
+
+export function stageIndex(stage: TraceArtifactType): number {
+  const index = CHAIN_STAGES.indexOf(stage);
+  if (index === -1) {
+    throw new ValidationFailedError(
+      `Unknown chain stage "${stage}". Stages: ${CHAIN_STAGES.join(' → ')}.`,
+    );
+  }
+  return index;
+}
+
+/**
+ * The permitted edges: the two Phase 1 pairs, plus the chain-adjacent pairs
+ * (child stage → parent stage). Every chain edge points UP-CHAIN — from a
+ * later stage to an earlier one — which is what keeps the chain acyclic by
+ * construction; everything else is refused naming this set.
+ */
 export const PERMITTED_EDGES: readonly { sourceType: TraceArtifactType; targetType: TraceArtifactType }[] = [
+  // Phase 1 (FR-029) — unchanged.
   { sourceType: 'specification', targetType: 'requirement' },
   { sourceType: 'task', targetType: 'specification' },
+  // The chain's adjacent segments (FR-ENH-021).
+  { sourceType: 'goal', targetType: 'vision' },
+  { sourceType: 'capability', targetType: 'goal' },
+  { sourceType: 'requirement', targetType: 'capability' },
+  { sourceType: 'architecture', targetType: 'specification' },
+  { sourceType: 'plan', targetType: 'architecture' },
+  { sourceType: 'task', targetType: 'plan' },
+  { sourceType: 'code', targetType: 'task' },
+  { sourceType: 'test', targetType: 'code' },
+  { sourceType: 'release', targetType: 'test' },
+  { sourceType: 'operation', targetType: 'release' },
 ];
 
 export function assertPermittedEdge(sourceType: TraceArtifactType, targetType: TraceArtifactType): void {
@@ -67,6 +136,8 @@ export interface TraceabilityLinkStore {
     targetId: string,
   ): Promise<TraceabilityLinkRecord[]>;
   exists(link: Omit<TraceabilityLinkRecord, 'id' | 'createdAt'>): Promise<boolean>;
+  /** EPIC-022 T304 — the chain traversal reads the whole workspace graph. */
+  linksForWorkspace(workspaceId: string): Promise<TraceabilityLinkRecord[]>;
 }
 
 export class LinkWriterService {
@@ -161,5 +232,9 @@ export class InMemoryTraceabilityLinkStore implements TraceabilityLinkStore {
 
   async exists(link: Omit<TraceabilityLinkRecord, 'id' | 'createdAt'>): Promise<boolean> {
     return this.rows.some((r) => this.key(r) === this.key(link));
+  }
+
+  async linksForWorkspace(workspaceId: string): Promise<TraceabilityLinkRecord[]> {
+    return this.rows.filter((r) => r.workspaceId === workspaceId).map((r) => ({ ...r }));
   }
 }

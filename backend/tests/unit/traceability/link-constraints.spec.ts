@@ -1,10 +1,11 @@
 /**
- * T077a — TraceabilityLink permits only the two Phase 1 edge types and
- * rejects duplicates. Written to FAIL before T078/T081 exist (Constitution V).
+ * T077a — TraceabilityLink permits only the enumerated edge set and rejects
+ * duplicates. Written to FAIL before T078/T081 exist (Constitution V).
  *
- * FR-029. The permitted edges are the schema CHECK's set:
- * specification → requirement (generated_from), task → specification
- * (generated_from). Everything else is refused NAMING the permitted set.
+ * FR-029 + FR-ENH-021: **updated by EPIC-022 T302** — the set widened from
+ * the two Phase 1 edges to include the ten chain-adjacent pairs (R-017-7).
+ * This update was a PLANNED task of that epic; the pre-widening assertion
+ * failed the build the moment T301 landed, exactly as designed.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -20,12 +21,24 @@ import { ConflictError, ValidationFailedError } from '../../../src/core/errors.j
 const here = dirname(fileURLToPath(import.meta.url));
 const schema = readFileSync(resolve(here, '../../../prisma/schema.prisma'), 'utf8');
 
-describe('the permitted edges (FR-029)', () => {
-  it('are exactly the two Phase 1 edge types', () => {
-    expect(PERMITTED_EDGES.map((e) => `${e.sourceType}->${e.targetType}`).sort()).toEqual([
-      'specification->requirement',
-      'task->specification',
-    ]);
+describe('the permitted edges (FR-029 + FR-ENH-021, widened by EPIC-022 T302)', () => {
+  it('are exactly the two Phase 1 edges plus the ten chain-adjacent pairs', () => {
+    expect(PERMITTED_EDGES.map((e) => `${e.sourceType}->${e.targetType}`).sort()).toEqual(
+      [
+        'specification->requirement',
+        'task->specification',
+        'goal->vision',
+        'capability->goal',
+        'requirement->capability',
+        'architecture->specification',
+        'plan->architecture',
+        'task->plan',
+        'code->task',
+        'test->code',
+        'release->test',
+        'operation->release',
+      ].sort(),
+    );
   });
 
   it.each([
@@ -34,6 +47,9 @@ describe('the permitted edges (FR-029)', () => {
     ['specification', 'task'],
     ['task', 'requirement'],
     ['specification', 'specification'],
+    // Down-chain edges stay refused — derivation only ever points up-chain.
+    ['vision', 'goal'],
+    ['release', 'operation'],
   ])('%s → %s is refused, naming the field', (sourceType, targetType) => {
     const err = ((): unknown => {
       try {
