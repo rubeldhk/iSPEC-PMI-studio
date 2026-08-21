@@ -34,9 +34,10 @@ Every component in this inventory:
 1. contains **no literal visual value** — tokens only (`FR-DS-051`);
 2. renders correctly in **both themes** (`FR-DS-010`);
 3. if interactive, is **keyboard-operable with a visible focus indicator** (`FR-DS-033`);
-4. passes the axe check with the tag set of research `R-029-2` — including the explicitly enabled
+4. is built on the **native element named in the `D-42` table below**, where one exists (`D-42`);
+5. passes the axe check with the tag set of research `R-029-2` — including the explicitly enabled
    `target-size` rule, without which the WCAG 2.2 delta is untested;
-5. has a test asserting **each state its row declares**.
+6. has a test asserting **each state its row declares**.
 
 ## Deliberately out of Phase 1
 
@@ -44,8 +45,38 @@ Tabs, accordion, date picker, combobox, tooltip, drawer, pagination. Each is rea
 accessibility depth; none is required by a delivered page or by the four Epics next in the
 dependency order. They arrive when a screen needs them, against this same contract.
 
-## Dependency on `D-42`
+## `D-42` — settled: built on native elements
 
-Whether these are **built here or adopted** from a library is decision `D-42` (`PMI-DOC-005`
-`RULE-05`). This contract is written to survive either answer: an adopted library must satisfy
-every row and every universal obligation, and does not get to redefine them (`FR-DS-030`).
+Decision [`D-42`](../../_shared/decisions/D-42-component-library-build-vs-adopt.md) (2026-08-20)
+resolves `PMI-DOC-005` `RULE-05`: these are **built here**, on native HTML elements, with **no
+component-library dependency**. `PP-008` is not triggered.
+
+This contract was written to survive either answer and is unchanged by the decision — the state
+matrix above is the obligation regardless of how a row is implemented. What the decision adds is
+the **starting element** for each row, so that "build" does not get read as "build from `<div>`":
+
+| Component | Built on | Notes |
+|---|---|---|
+| Button | `<button>` | type, disabled, keyboard activation are the element's |
+| TextInput | `<input>` | |
+| Select | `<select>` | native listbox behaviour; no custom popup in Phase 1 |
+| Checkbox | `<input type="checkbox">` | `indeterminate` is a property, not a state |
+| Radio | `<input type="radio">` | grouped by `name` |
+| FormField | `<label>` + `aria-describedby` | owns the announced error message (`FR-DS-021`) |
+| Table | `<table>` | real row/cell semantics; filtering is ours (`FR-DS-041`) |
+| EmptyState · ErrorState · PageHeader | semantic sectioning | |
+| LoadingIndicator | `aria-busy` / `role="status"` | MUST NOT block unrelated interaction |
+| Modal | `<dialog>` | focus trap, Escape-to-close and inert backdrop come free |
+| Toast | `role="status"` / `aria-live="polite"` | **the one row with real depth** — announcement timing is a product judgement, not a library's |
+| Navigation | `<nav>` + `aria-current` | |
+| StatusPill | text or icon **plus** colour | never colour alone (`FR-DS-012`) |
+
+**A div-based reimplementation of something the platform provides is a defect against `D-42`**, not
+a style preference.
+
+**Native is the starting point, not the evidence.** Every row still earns its conformance through
+the accessibility harness (`T880`) and the state-coverage check (`T886`). Inheriting correct
+behaviour from an element does not exempt a component from proving it.
+
+**If a component proves intractable natively**, that is a new decision recorded against `D-42` —
+per component, never a licence to adopt a library across the inventory.

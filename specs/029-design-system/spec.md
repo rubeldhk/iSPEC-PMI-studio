@@ -54,9 +54,18 @@
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v1.0.md` | §2 BG-01, BG-05, BG-06 | the business goals `PMI-DOC-005` serves |
 | *(this Epic's clarification session, 2026-08-20)* | Clarifications | FR-DS-005, FR-DS-006, FR-DS-034, FR-DS-052 — decisions no upstream document had taken |
 
-**Requirements not yet covered by SRS**: `FR-DS-005`, `FR-DS-006`, `FR-DS-034` and `FR-DS-052` were settled by this Epic's clarification session because **no upstream document had taken them** — the palette source, the browser floor, the accessibility evidence format, and restyle ownership. They are recorded here and flagged for `PMI-DOC-005` back-fill at its approval (owner: project owner). `PMI-DOC-005` was **approved v1.0 on 2026-08-20**, and the four clarification-sourced
-requirements were back-filled into it at approval (`UI-0005`, `UI-0006`, `UI-0035`, `RULE-04`) —
-Constitution II satisfied. The SRS-debt gate EPIC-023 and EPIC-025 carry is **discharged here**.
+**Requirements not yet covered by SRS**: **None.**
+
+`FR-DS-005`, `FR-DS-006`, `FR-DS-034` and `FR-DS-052` were settled by this Epic's clarification
+session because **no upstream document had taken them** — the palette source, the browser floor,
+the accessibility evidence format, and restyle ownership. They were carried as SRS debt with the
+project owner as back-fill owner, and that debt is now **discharged**: `PMI-DOC-005` was approved
+**v1.0 on 2026-08-20** and all four were back-filled into it *at approval*, as `UI-0005`,
+`UI-0006`, `UI-0035` and `RULE-04` — recorded in that document's revision history. Every
+requirement in this Epic therefore traces to an approved SRS document, and Constitution II is
+satisfied with nothing outstanding.
+
+The SRS-debt gate EPIC-023 and EPIC-025 carry is **discharged here**.
 
 ## Principle Conformance & Deferrals *(mandatory — PMI-DOC-003, decision D-6)*
 

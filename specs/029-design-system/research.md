@@ -9,7 +9,7 @@
 | **R-029-3** | How is contrast verified, given jsdom has no layout? | 🟢 Answered |
 | **R-029-4** | What is the minimum supported viewport (`FR-DS-040`)? | 🟢 Answered |
 | **R-029-5** | How does a lint rule detect a literal visual value? | 🟢 Answered |
-| **R-029-6** | Build or adopt a component library? | 🔴 **OPEN by design — decision `D-42`** |
+| **R-029-6** | Build or adopt a component library? | 🟢 Answered — **`D-42`, decided 2026-08-20** |
 
 ---
 
@@ -101,23 +101,56 @@ and its test pattern exist.
 **Mutation requirement**: the rule's test MUST verify it fails on a literal — the rule is itself a
 check, and a check that cannot fail is decoration.
 
-## R-029-6 · Build or adopt a component library — OPEN 🔴
+## R-029-6 · Build or adopt a component library — answered 🟢
 
-**Deliberately unresolved.** `PMI-DOC-005` `RULE-05` requires this be recorded as decision `D-42`,
-with security review if a dependency is adopted (`PP-008`).
+**Decision**: **build**, on native HTML elements, with **no component-library dependency**. Recorded
+as [`D-42`](../_shared/decisions/D-42-component-library-build-vs-adopt.md), decided 2026-08-20 by the
+project owner, as `PMI-DOC-005` `RULE-05` requires. `PP-008` is **not triggered** — no third-party
+UI dependency is taken.
 
-**What is already known, so the decision has inputs rather than opinions**:
+### The table this section first published was wrong
 
-| | Adopt (e.g. Radix Primitives, React Aria) | Build |
+It is left below, struck through, because how it was wrong is the useful part:
+
+| | Adopt (e.g. Radix Primitives, React Aria) | ~~Build~~ |
 |---|---|---|
-| Accessibility | Inherits focus management, ARIA and keyboard behaviour that take real expertise | Every component must earn WCAG 2.2 AA itself |
+| Accessibility | Inherits focus management, ARIA and keyboard behaviour that take real expertise | ~~Every component must earn WCAG 2.2 AA itself~~ |
 | Visual identity | Unstyled primitives leave identity fully open; styled kits constrain it | Complete freedom |
 | Dependency | New third-party surface, security review, upgrade duty (`PP-008`) | None |
-| Cost | Days | Weeks, and the accessibility work is the expensive part |
+| Cost | Days | ~~Weeks, and the accessibility work is the expensive part~~ |
 
-**What this Epic can do without it**: tokens, themes, the lint rule, the accessibility harness, the
-contrast check, and the viewport decision — everything in `F-29.1` and `F-29.2`. Only the component
-layer and the restyling wait.
+**The error: it costed a div-based reimplementation.** Every row about accessibility assumed each
+component starts from `<div>` and must build role, keyboard operation and focus from nothing. That
+is true only if you decline what the platform already gives you — and `PMI-DOC-005` `UI-0006` puts
+the browser floor at the **last two versions of Chrome, Edge, Firefox and Safari**, where every
+native element this inventory needs is available.
+
+Against that floor the fifteen rows of [contracts/components.md](./contracts/components.md) divide:
+
+| Depth | Components | What carries the accessibility |
+|---|---|---|
+| Native element + token styling | Button, TextInput, Select, Checkbox, Radio, PageHeader, StatusPill, EmptyState, ErrorState, LoadingIndicator | The element itself — role, keyboard operation and focus are the platform's |
+| Native element + known wiring | FormField, Navigation, Table | `aria-describedby`, `aria-current`, real `<table>` semantics |
+| Platform solves the hard part | Modal | `<dialog>` gives focus trap, Escape-to-close and an inert backdrop with no JavaScript |
+| Genuine care required | Toast | `aria-live` politeness and announcement timing |
+
+**Only Toast has depth a library would not hand straight back** — and its difficulty is deciding
+*when* to announce, a product judgement no dependency makes for us.
+
+So adopting would still require fifteen wrappers, every state style and every test; the library
+replaces the internals of roughly four components. Against that narrow saving sit a third-party
+surface in the render path of every screen, a `PP-008` review, a standing upgrade duty, and a
+foreign API that `contracts/components.md` would have to be **mapped onto** rather than satisfied —
+while `FR-DS-030` is explicit that an adopted library *"does not get to redefine"* the contract.
+
+**Alternatives considered**: adopting unstyled primitives is the right answer for an inventory rich
+in comboboxes, date pickers and menus. Those are [explicitly out of Phase 1](./contracts/components.md).
+Revisit when a screen needs one — per `D-42`, **per component, not wholesale**.
+
+**What this obliges**: components are built on native elements. A div-based reimplementation of
+something the platform provides is a defect against `D-42`, not a style preference. Native is the
+starting point, **not the evidence** — every component still has to prove `FR-DS-030` and its
+declared states through the harness (`T880`) and the state-coverage check (`T886`).
 
 ## Docs consulted
 

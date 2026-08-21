@@ -56,12 +56,17 @@ A reusable element with a contract and a defined set of states (`FR-DS-020`).
 | `name` | one of the fifteen in the Phase 1 inventory (`FR-DS-023`) |
 | `states` | the subset of `default, hover, focus, active, disabled, loading, error, empty` that applies |
 | `props` | its contract — what a consumer may set |
+| `element` | the **native HTML element** it is built on, per `D-42` — `<button>`, `<input>`, `<select>`, `<dialog>`, `<table>`, `<nav>`, or semantic sectioning. Declared per component in `contracts/components.md` |
 
 **Validation**
 
 - Every applicable state MUST be implemented **and asserted by a test** (`SC-DS-004`). "Applicable"
   is declared per component in `contracts/components.md`, so the assertion knows what to look for
   and a missing state is a failure rather than an omission nobody notices.
+- Every component MUST render the **native element its row declares** (`D-42`), asserted by the
+  same check that reads the state table. A div-based reimplementation of a platform element is a
+  defect, not a style choice — and it is invisible to every other check in this Epic, which is why
+  it needs its own.
 - A component MUST contain **no literal visual value** (`FR-DS-051`, enforced by lint).
 - Every interactive component MUST be keyboard-operable with a visible focus indicator
   (`FR-DS-033`).
