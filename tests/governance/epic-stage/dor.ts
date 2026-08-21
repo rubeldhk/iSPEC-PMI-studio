@@ -22,7 +22,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO_ROOT } from '../helpers';
 import { loadStageConfig } from './derive';
-import { validateAnalysisRecord } from './analysis-record';
+import { RESOLVED_FINDING, findingRows, findingSeverity, validateAnalysisRecord } from './analysis-record';
 import type { DeclarationsFile, EpicKind } from './declarations';
 
 export interface DorContext {
@@ -77,6 +77,44 @@ function prose(text: string): string {
 
 function hasHeading(text: string, pattern: RegExp): boolean {
   return text.split(/\r?\n/).some((line) => /^#{2,3}\s/.test(line) && pattern.test(line));
+}
+
+/**
+ * The status word of every Constitution Check row in a plan (`DEF-026-009`).
+ *
+ * Reads the **last cell** of each table row under a `Constitution Check`
+ * heading, strips decoration — emoji, bold, italic, code — drops any trailing
+ * explanation after a dash, and returns the leading word upper-cased.
+ *
+ * Scoped to the section, and to the cell, for two different reasons. To the
+ * SECTION, because a plan's other tables use the same row shape and none of
+ * them carry gate statuses. To the CELL, because `DOR-06` previously matched
+ * the whole row and so could not distinguish a gate that FAILED from one whose
+ * status merely says `PASS — no FAIL conditions remain`.
+ */
+function planStatusCells(plan: string): string[] {
+  const statuses: string[] = [];
+  let inCheck = false;
+  for (const line of plan.split(/\r?\n/)) {
+    if (/^#{2,3}\s/.test(line)) {
+      inCheck = /constitution check/i.test(line);
+      continue;
+    }
+    if (!inCheck || !line.trimStart().startsWith('|')) continue;
+    const cells = line.split('|').map((cell) => cell.trim()).filter((cell) => cell !== '');
+    if (cells.length < 2) continue;
+    const raw = cells[cells.length - 1] ?? '';
+    // Separator row (`|---|---|`).
+    if (/^[-: ]+$/.test(raw)) continue;
+    const word = raw
+      .replace(/[*_`]/g, '')
+      .split(/\s[-—–]\s/)[0]
+      ?.replace(/[^A-Za-z ]/g, '')
+      .trim()
+      .split(/\s+/)[0];
+    if (word) statuses.push(word.toUpperCase());
+  }
+  return statuses;
 }
 
 // ------------------------------------------------------------- conditions
@@ -263,11 +301,29 @@ const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
     if (!plan) return { id: 'DOR-06', passed: false, detail: 'plan.md is absent' };
     // A QUALIFIED gate is a recorded deviation, not a failure. Conflating them
     // would block every Epic honest enough to write one down.
-    const failed = /\|\s*(?:❌\s*)?FAIL\b/i.test(plan);
+    //
+    // DEF-026-009 — this was `/\|\s*(?:❌\s*)?FAIL\b/i`, which permits exactly
+    // one marker before the word. `\s*` does not match `⚠️`, so `⚠️ FAIL`
+    // scored as "Constitution Check clean". EPIC-029 carried that row — another
+    // session live on the checkout — and reached `Ready` against the
+    // instruction in the document DOR-06 had just read.
+    //
+    // Read the STATUS CELL rather than the row: a gate whose status says
+    // "PASS — no FAIL conditions remain" is not a failure, and a row-wide match
+    // cannot tell the difference.
+    //
+    // Statuses outside any vocabulary (`CANNOT ASSERT`, `PASS WITH DEBT`,
+    // `PARTIAL` — 17 phrasings across 28 plans) keep their existing behaviour.
+    // Rejecting them is `D-43`, and worth roughly forty rows of judgement that
+    // does not belong inside a regex fix.
+    const failedRows = planStatusCells(plan).filter((status) => status === 'FAIL');
+    const failed = failedRows.length > 0;
     return {
       id: 'DOR-06',
       passed: !failed,
-      detail: failed ? 'plan.md Constitution Check records a FAIL' : 'Constitution Check clean',
+      detail: failed
+        ? `plan.md Constitution Check records a FAIL (${failedRows.length})`
+        : 'Constitution Check clean',
     };
   },
 
@@ -332,10 +388,23 @@ const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
     }
     // Blocking means CRITICAL or HIGH. If every severity blocked, the honest
     // response to a LOW nit would be to stop writing findings down.
-    const blocking = analysis
-      .split(/\r?\n/)
-      .filter((row) => /^\|\s*F\d+\s*\|/.test(row))
-      .filter((row) => /\|\s*(CRITICAL|HIGH)\s*\|/.test(row));
+    //
+    // DEF-026-008 — match ANY letter prefix, not `F` alone. This read `F\d+`,
+    // while `/speckit-analyze` instructs authors to "generate stable IDs
+    // prefixed by category initial" and demonstrates `A1`. Following the
+    // command produced `D1`, `C1`, `U1` — none of which matched, so EPIC-029's
+    // CRITICAL `D1` was reported as no blocking findings at all. The reader was
+    // widened rather than the template changed, because that leaves every
+    // record already written valid.
+    // A resolved finding is history, not a blocker. Without this the widening
+    // above would block every Epic that keeps its remediated findings in the
+    // table — EPIC-026, closed since 2026-08-18, was the case that showed it.
+    const blocking = findingRows(analysis)
+      .filter((row) => !RESOLVED_FINDING.test(row))
+      .filter((row) => {
+        const severity = findingSeverity(row);
+        return severity === 'CRITICAL' || severity === 'HIGH';
+      });
     return {
       id: 'DOR-09',
       passed: blocking.length === 0,

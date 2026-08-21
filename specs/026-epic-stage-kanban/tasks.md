@@ -778,3 +778,28 @@ Each step is independently valuable and none breaks the previous.
   patches (Constitution VI)
 - Every command run ends with a closing report (Constitution IX); unrun checks are never reported as
   passing
+
+---
+
+## Phase 5: Defect remediation — `DEF-026-008`, `DEF-026-009` *(appended 2026-08-20 by `/speckit-tasks`)*
+
+*Two DOR conditions read artifacts with regexes that do not match what those artifacts actually
+say. `DOR-09` matches finding IDs of the form `F1`, while `/speckit-analyze` — in this repository —
+instructs authors to use category-initial IDs and demonstrates `A1`; EPIC-029's first analysis
+recorded a **CRITICAL** finding as `D1` and the gate reported none. `DOR-06` allows exactly one
+marker before `FAIL`, so `⚠️ FAIL` scores as "Constitution Check clean"; EPIC-029's plan records
+one and reached `Ready` against its own instruction to work in a separate clone.*
+
+*Both failed **open**, which is why neither surfaced on its own: a gate that wrongly refuses is
+reported within a day; a gate that wrongly permits is reported only when someone goes looking. The
+recurring shape across nine defects is raised as [`D-43`](../_shared/decisions/D-43-dor-conditions-parse-prose-by-hand.md)
+and is **deliberately not settled here** — these two are fixed individually under its option (a).*
+
+- [X] T905 [P] Write the failing regression check for `DEF-026-008` in `tests/governance/epic-stage/dor-09-finding-ids.spec.ts`: a record whose findings table uses **category-initial IDs** (`A1`, `D1`, `C1`) with a `CRITICAL` or `HIGH` severity MUST be counted as blocking by `DOR-09`, and MUST have its severity vocabulary validated by `validateAnalysisRecord`. **Observe it failing first** — today both silently ignore such rows (`DEF-026-008`)
+- [X] T906 Widen the row pattern in `DOR-09` and in `validateAnalysisRecord` (`tests/governance/epic-stage/dor.ts`, `analysis-record.ts`) to recognise a finding ID as **one or more letters followed by digits**, not `F` alone. Widening the reader — rather than changing the `/speckit-analyze` template — is chosen because it leaves every record already written valid (`DEF-026-008`; unit test: T905)
+- [X] T907 Sweep every `specs/*/analysis.md` for findings the gate has been ignoring, and record what the sweep found in `DEF-026-008` before closing it. A fix that leaves the backlog unexamined closes the condition without closing the exposure (`DEF-026-008`; conformance check: T905)
+- [X] T908 [P] Write the failing regression check for `DEF-026-009` in `tests/governance/epic-stage/dor-06-marked-fail.spec.ts`: `DOR-06` MUST fail on `⚠️ FAIL`, on bare `FAIL`, on `❌ FAIL` and on `**FAIL**`; MUST pass on `PASS`, on `QUALIFIED`, and on a status merely *containing* the word (`PASS — no FAIL conditions remain`), which is why the status cell is read rather than the whole row. **Observe each case failing first** (`DEF-026-009`)
+- [X] T909 Record the **status-vocabulary evidence** in `DEF-026-009` and hand the choice to [`D-43`](../_shared/decisions/D-43-dor-conditions-parse-prose-by-hand.md) rather than imposing one here. **Revised mid-implementation on evidence**: the sweep found **17 distinct status phrasings** across 28 plans — `PASS` (334), `CANNOT ASSERT` (15), `PASS WITH DEBT` (4), `PASS WITH GAP` (3), `NOT VERIFIED`, `DEVIATION`, `CONDITIONAL`, `PARTIAL`, `QUALIFIED`, `FAIL` — so a closed vocabulary would fail roughly forty rows at once and move several Epics out of `Ready`. That is `D-43` option (c), whose cost is noise across old artifacts, and taking it as a side effect of fixing one regex is the conflation `D-43` exists to prevent (`DEF-026-009`)
+- [X] T910 Reimplement `DOR-06` in `tests/governance/epic-stage/dor.ts` to read the **status cell** — last cell of the row, decoration stripped, first word taken — and fail when that word is `FAIL`, whatever precedes it. Scoped to the actual defect: **a FAIL is a FAIL however it is marked**. Statuses outside any vocabulary keep today's behaviour pending `D-43`, so this fix changes no Epic's readiness except where a genuine FAIL was being hidden (`DEF-026-009`; unit test: T908)
+- [X] T911 Sweep every `specs/*/plan.md` Constitution Check for FAIL rows the gate has been ignoring and for statuses outside the new vocabulary — EPIC-029's plan alone carries `⚠️ PARTIAL` and `⚠️ CONDITIONAL` — and record the result in `DEF-026-009` before closing it (`DEF-026-009`; conformance check: T908)
+- [X] T912 Close `DEF-026-008` and `DEF-026-009` with Resolution sections naming the resolving tasks, then re-run `pnpm register:update` and report which Epics changed readiness as a result. An Epic that silently moves out of `Ready` because a gate started working is the finding, not a side effect (Constitution VI, IX)
