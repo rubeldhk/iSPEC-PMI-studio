@@ -36,6 +36,10 @@ const harness: ConformanceHarness = {
 
   createSlow: (delayMs) => new FixtureEngine({ delayMs }),
 
+  // C16 (EPIC-019): an engine that reports every steering input as violated —
+  // ok result, findings attached, per contract rule S6.
+  createSteeringViolating: () => new FixtureEngine({ violateSteering: true }),
+
   incompleteDescriptor: (missing: EngineCapability): EngineDescriptor => ({
     name: 'fixture-incomplete',
     version: 'fixture-1.0.0+model=none',

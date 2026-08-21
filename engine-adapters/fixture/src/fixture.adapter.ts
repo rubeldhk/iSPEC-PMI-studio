@@ -33,6 +33,12 @@ export interface FixtureOptions {
   failWith?: EngineFailureReason;
   /** Simulate work so cancellation and timeout can be tested. */
   delayMs?: number;
+  /**
+   * EPIC-019 T246 / C16 — report every steering input as violated. The result
+   * stays `ok` with findings (steering-contract rule S6): a specification that
+   * violates a standard is still a specification.
+   */
+  violateSteering?: boolean;
 }
 
 export class FixtureEngine implements SpecificationEngine {
@@ -64,11 +70,40 @@ export class FixtureEngine implements SpecificationEngine {
     const forced = await this.runOrFail(ctx);
     if (forced) return forced as EngineResult<GeneratedSpecification>;
 
+    // EPIC-019 T246 — steering is consumed HERE, adapter-side (contract rule
+    // S1: the platform hands over structured data and formats nothing). The
+    // array is pre-resolved and pre-ordered (S2/S3), so rendering in sequence
+    // is already correct precedence. Absent or empty steering leaves the
+    // output byte-identical to the pre-steering baseline (S4, C14).
+    const steering = input.steering ?? [];
+    const steeringSection =
+      steering.length === 0
+        ? []
+        : [
+            '',
+            '## Steering applied',
+            '',
+            ...steering.map(
+              (s) => `- [${s.scopeType}] ${s.subject} v${s.version}: ${s.content}`,
+            ),
+          ];
+
     const contentRaw = [
       `# Specification: ${input.projectName}`,
       '',
       ...input.requirements.map((r) => `- ${r.reference} (${r.type}/${r.priority}) ${r.description}`),
+      ...steeringSection,
     ].join('\n');
+
+    // C16 — a violation is a FINDING on a successful result, never a failure.
+    const findings: ValidationFinding[] | undefined =
+      this.options.violateSteering && steering.length > 0
+        ? steering.map((s) => ({
+            location: 'section:steering',
+            severity: 'warning' as const,
+            message: `Violates steering subject "${s.subject}" v${s.version} (${s.scopeType}).`,
+          }))
+        : undefined;
 
     return engineOk(
       {
@@ -77,7 +112,11 @@ export class FixtureEngine implements SpecificationEngine {
         contentParsed: {
           title: `Specification: ${input.projectName}`,
           requirementRefs: input.requirements.map((r) => r.reference),
+          ...(steering.length > 0
+            ? { steeringApplied: steering.map((s) => `${s.subject}@v${s.version}`) }
+            : {}),
         },
+        ...(findings ? { findings } : {}),
       },
       this.descriptor,
     );

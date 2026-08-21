@@ -41,6 +41,9 @@ const NOT_TENANT_SCOPED = new Set([
   // A pure join row (EPIC-016 T143): its tenancy derives from BOTH endpoints,
   // each of which carries workspaceId — a third copy could only disagree.
   'adr_specification_links',
+  // EPIC-019 T226 (R-017-1): the tier ABOVE the tenant. Workspaces reference
+  // it; giving it a workspaceId would invert the hierarchy.
+  'organizations',
 ]);
 
 function migrationSql(): string {
@@ -78,6 +81,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // lifecycle_transitions + validation_findings (EPIC-009 T109/T120) and
     // adr_specification_links (EPIC-016 T143's deferred half) complete the
     // lifecycle wave's schema.
+    // organizations + the three steering tables arrived with EPIC-019 T227 —
+    // the tenancy tier and the steering engine's scope/content/provenance set.
     expect([...tables.keys()].sort()).toEqual([
       'adr_specification_links',
       'architecture_decision_records',
@@ -85,11 +90,15 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'engine_registrations',
       'generation_jobs',
       'lifecycle_transitions',
+      'organizations',
       'projects',
       'requirement_versions',
       'requirements',
       'specification_versions',
       'specifications',
+      'steering_applications',
+      'steering_documents',
+      'steering_scopes',
       'tasks',
       'traceability_links',
       'users',
@@ -132,6 +141,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // The join row records a relationship, not an event; neither the design
       // DDL nor the model gives it a timestamp of its own (EPIC-016 T143).
       adr_specification_links: 'adrId',
+      // Provenance is *applied* at generation time (EPIC-019 T242) — the
+      // timestamp is part of the record, not bookkeeping about the row.
+      steering_applications: 'appliedAt',
     };
 
     const missing = [...tables.entries()]

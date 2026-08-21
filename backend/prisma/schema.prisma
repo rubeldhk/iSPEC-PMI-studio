@@ -18,11 +18,34 @@ datasource db {
 
 // ---------------------------------------------------------------- tenancy
 
-model Workspace {
+// EPIC-019 T226 — the scope above workspace (R-017-1). `organizationId` goes
+// on `workspaces` ONLY: every artifact reaches its organization by one join,
+// and a second denormalised tenancy column would be a second thing to get
+// wrong in a security boundary.
+model Organization {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  workspaces Workspace[]
+
+  @@map("organizations")
+}
+
+model Workspace {
+  id   String @id @default(uuid())
+  name String
+  // Required — a workspace belongs to exactly one organization. The default
+  // points at the seeded default organization so pre-organization callers
+  // (and every seed written before this epic) stay valid (T227).
+  organizationId String   @default("org_default")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Restrict, not Cascade: deleting an organization that still has
+  // workspaces is refused (T225).
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   users                 User[]
   projects              Project[]
@@ -37,6 +60,9 @@ model Workspace {
   lifecycleTransitions  LifecycleTransition[]
   validationFindings    ValidationFinding[]
   tasks                 Task[]
+  steeringScopes        SteeringScope[]
+  steeringDocuments     SteeringDocument[]
+  steeringApplications  SteeringApplication[]
 
   @@map("workspaces")
 }
@@ -592,4 +618,97 @@ model EngineRegistration {
   updatedAt    DateTime @updatedAt
 
   @@map("engine_registrations")
+}
+
+// ---------------------------------------------------------------- steering
+//
+// EPIC-019 — steering scopes, documents, and provenance (FR-ENH-001..005).
+
+enum SteeringScopeType {
+  organization
+  workspace
+  project
+  product
+}
+
+// FR-ENH-002 — the ten named subjects. Anything else is refused by name in
+// steering.validation.ts; the enum makes the database agree.
+enum SteeringSubject {
+  organization
+  workspace
+  product
+  architecture
+  coding_standards
+  security
+  ui_standards
+  business_rules
+  technology_stack
+  ai_governance
+}
+
+enum SteeringDocumentStatus {
+  active
+  retired
+}
+
+// T229 — a resolved position in the four-level hierarchy.
+model SteeringScope {
+  id          String            @id @default(uuid())
+  workspaceId String
+  scopeType   SteeringScopeType
+  scopeRef    String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id])
+  documents SteeringDocument[]
+
+  @@unique([scopeType, scopeRef])
+  @@index([workspaceId])
+  @@map("steering_scopes")
+}
+
+// T232 — versioned steering content. Retire marks, never deletes; the edit
+// history is append-only, modelled the way RequirementVersion is.
+model SteeringDocument {
+  id          String                 @id @default(uuid())
+  workspaceId String
+  subject     SteeringSubject
+  scopeId     String
+  content     String
+  version     Int
+  status      SteeringDocumentStatus @default(active)
+  createdById String
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id])
+  scope     SteeringScope @relation(fields: [scopeId], references: [id])
+
+  @@unique([subject, scopeId, version])
+  @@index([workspaceId])
+  @@index([scopeId, status])
+  @@map("steering_documents")
+}
+
+// T242 — the provenance record, written AT GENERATION TIME, never recomputed.
+// An artifact generated with no steering in scope has one with an empty set —
+// not a missing row (SC-ENH-001).
+model SteeringApplication {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  artifactId   String
+  artifactType String
+  // The exact document versions that constrained this generation.
+  appliedDocuments Json
+  // FR-ENH-005 — {winning, overridden} pairs; the broader rule is recorded,
+  // not discarded.
+  overrides Json
+  appliedAt DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([artifactType, artifactId])
+  @@index([workspaceId])
+  @@map("steering_applications")
 }

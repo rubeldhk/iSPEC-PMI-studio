@@ -88,13 +88,13 @@ records only where it differs:
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
 
-- [ ] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `specs/019-steering-engine/defects/` contains no open defect records
-- [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] Conformance cases **C-14** to **C-16** green against both adapters
-- [ ] `pnpm test:arch` green including **`T246a`** — no steering text assembled into a prompt in `backend/src/**`
-- [ ] A closing report was published: work completed, work deferred, and the recommended next task
+- [x] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
+- [x] `/speckit-converge` reports no unbuilt work for this epic
+- [x] `specs/019-steering-engine/defects/` contains no open defect records
+- [x] Principle deltas above still hold; any deferral retains a valid owner
+- [x] Conformance cases **C-14** to **C-16** green against both adapters
+- [x] `pnpm test:arch` green including **`T246a`** — no steering text assembled into a prompt in `backend/src/**`
+- [x] A closing report was published: work completed, work deferred, and the recommended next task
       named as a concrete Spec Kit command (Constitution IX)
-- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [x] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
 - [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge

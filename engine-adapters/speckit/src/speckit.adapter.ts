@@ -585,8 +585,19 @@ const FAILURE_MESSAGE: Record<EngineFailureReason, string> = {
   empty_selection: 'Select at least one requirement.',
 };
 
-/** Requirements rendered as the agent's input document. */
+/**
+ * Requirements — and, since EPIC-019, steering — rendered as the agent's
+ * input document.
+ *
+ * THIS is where structured steering becomes prose, and it is the CORRECT
+ * place (steering-contract § "What this contract does not do"): prompt
+ * composition is engine-specific and lives inside the adapter. The array
+ * arrives pre-resolved and ordered broadest to narrowest (S2/S3), so
+ * rendering in sequence is already correct precedence. Absent or empty
+ * steering leaves the document byte-identical to the pre-steering form (S4).
+ */
 function renderRequirements(input: GenerateSpecificationInput): string {
+  const steering = input.steering ?? [];
   return [
     `# ${input.projectName}`,
     '',
@@ -594,6 +605,18 @@ function renderRequirements(input: GenerateSpecificationInput): string {
       (requirement: RequirementInput) =>
         `- ${requirement.reference} (${requirement.type}/${requirement.priority}) ${requirement.description}`,
     ),
+    ...(steering.length === 0
+      ? []
+      : [
+          '',
+          '## Steering — standards this specification MUST honour',
+          '',
+          ...steering.map((s) => `- [${s.scopeType}] ${s.subject} v${s.version}: ${s.content}`),
+          '',
+          'If the specification cannot honour a standard above, record it as',
+          '`<!-- steering-violation: <location> | <info|warning|error> | <message naming the subject> -->`',
+          'in the generated document rather than failing.',
+        ]),
     '',
   ].join('\n');
 }

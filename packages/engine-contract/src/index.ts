@@ -91,10 +91,58 @@ export interface RequirementInput {
   priority: RequirementPriority;
 }
 
+// ---------------------------------------------------------------- steering
+//
+// EPIC-019 T244 — steering-contract.md. ONE input field; no new capability.
+// Plain data only (like RequirementInput[]): no entities, no identifiers the
+// adapter could dereference. Rules S1–S6 live with the contract document.
+
+/** Broadest first. S3: an adapter that concatenates gets precedence right. */
+export const STEERING_SCOPE_ORDER = ['organization', 'workspace', 'project', 'product'] as const;
+
+export type SteeringScopeType = (typeof STEERING_SCOPE_ORDER)[number];
+
+/** The ten subjects of FR-ENH-002. */
+export type SteeringSubject =
+  | 'organization'
+  | 'workspace'
+  | 'product'
+  | 'architecture'
+  | 'coding_standards'
+  | 'security'
+  | 'ui_standards'
+  | 'business_rules'
+  | 'technology_stack'
+  | 'ai_governance';
+
+export interface SteeringInput {
+  subject: SteeringSubject;
+  scopeType: SteeringScopeType;
+  /** The guidance text, verbatim. */
+  content: string;
+  /** The exact version applied. */
+  version: number;
+}
+
+/** S3 — true when the array is ordered broadest to narrowest (equal levels may be adjacent). */
+export function isSteeringOrdered(steering: readonly SteeringInput[]): boolean {
+  for (let i = 1; i < steering.length; i++) {
+    const prev = STEERING_SCOPE_ORDER.indexOf(steering[i - 1]!.scopeType);
+    const next = STEERING_SCOPE_ORDER.indexOf(steering[i]!.scopeType);
+    if (next < prev) return false;
+  }
+  return true;
+}
+
 export interface GenerateSpecificationInput {
   projectName: string;
   /** Never empty — an empty selection is refused before a job starts. */
   requirements: RequirementInput[];
+  /**
+   * Absent or empty when no steering is in scope (S4 — steering is additive).
+   * Pre-resolved by the platform (S2), ordered broadest to narrowest (S3).
+   */
+  steering?: SteeringInput[];
 }
 
 export interface GenerateTasksInput {
@@ -115,6 +163,12 @@ export interface GeneratedSpecification {
   /** Engine output verbatim, always persisted (R-007). */
   contentRaw: string;
   contentParsed: Record<string, unknown>;
+  /**
+   * S6 (steering-contract.md): a steering violation is a FINDING, not a
+   * failure — a specification that violates a standard is still a
+   * specification. Absent when the engine reports none.
+   */
+  findings?: ValidationFinding[];
 }
 
 export interface GeneratedTask {

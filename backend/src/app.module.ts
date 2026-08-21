@@ -10,6 +10,7 @@ import { ProjectsModule } from './modules/projects/projects.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
+import { SteeringModule } from './modules/steering/steering.module.js';
 import { TraceabilityModule } from './modules/traceability/traceability.module.js';
 
 /**
@@ -44,6 +45,7 @@ import { TraceabilityModule } from './modules/traceability/traceability.module.j
     RequirementsModule,
     SpecificationsModule,
     TasksModule,
+    SteeringModule,
     TraceabilityModule,
     DecisionsModule,
   ],

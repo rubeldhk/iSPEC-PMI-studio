@@ -2,7 +2,7 @@
 
 **Epic**: `EPIC-019` | **Module**: M-01 / M-04 | **Date**: 2026-08-04 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
+**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) | **Posture**: ▶ **PROCEEDING** (PMI-DOC-004 v1.0, 2026-08-20)
 
 **Parent design** — not duplicated here: [`../017-enhancement-model/`](../017-enhancement-model/)
 ([plan](../017-enhancement-model/plan.md) · [research](../017-enhancement-model/research.md) ·

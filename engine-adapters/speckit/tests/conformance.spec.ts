@@ -152,6 +152,18 @@ const harness: ConformanceHarness = {
       },
     }),
 
+  // C16 (EPIC-019): the agent recorded a steering violation in the generated
+  // document, using the marker the adapter's input instructions define. The
+  // adapter surfaces it as a finding on an ok result (S6).
+  createSteeringViolating: () =>
+    buildEngine({
+      files: {
+        'specs/001-conformance/spec.md':
+          GENERATED_SPEC +
+          '\n<!-- steering-violation: section:overview | warning | Violates steering subject "security" v2 -->\n',
+      },
+    }),
+
   incompleteDescriptor: (missing: EngineCapability): EngineDescriptor => ({
     ...descriptor,
     name: 'speckit-incomplete',

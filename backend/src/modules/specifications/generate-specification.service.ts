@@ -198,10 +198,38 @@ export interface GenerationJobApi {
  */
 const MAX_REQUIREMENTS_DEFAULT = 500;
 
+/**
+ * EPIC-019 (FR-ENH-004) — steering enters and leaves the generation path
+ * through this port. Resolution happens BEFORE the engine runs (S2, already
+ * settled and ordered); provenance is stamped in the same act as the commit,
+ * with an EMPTY resolution when nothing was in scope — never a missing row
+ * (SC-ENH-001). Steering content is passed on as structured data untouched;
+ * nothing here renders it (S1, enforced by T246a).
+ */
+export interface GenerationSteeringPort {
+  resolveForGeneration(
+    workspaceId: string,
+    projectId: string,
+  ): Promise<{
+    resolved: { subject: string; scopeType: string; content: string; version: number }[];
+    overrides: unknown[];
+  }>;
+  recordForGeneration(stamp: {
+    workspaceId: string;
+    artifactType: string;
+    artifactId: string;
+    resolution: {
+      resolved: { subject: string; scopeType: string; content: string; version: number }[];
+      overrides: unknown[];
+    };
+  }): Promise<unknown>;
+}
+
 export interface GenerateSpecificationOptions {
   jobs?: JobSubmitPort;
   ledger?: GenerationJobLedger;
   requirements?: RequirementSelectionPort;
+  steering?: GenerationSteeringPort;
   maxRequirements?: number;
   now?: () => Date;
   newCorrelationId?: () => string;
@@ -220,6 +248,7 @@ export class GenerateSpecificationService implements GenerationJobApi {
   private readonly jobs: JobSubmitPort | undefined;
   private readonly ledger: GenerationJobLedger | undefined;
   private readonly requirements: RequirementSelectionPort | undefined;
+  private readonly steering: GenerationSteeringPort | undefined;
   private readonly maxRequirements: number;
   private readonly now: () => Date;
   private readonly correlate: () => string;
@@ -232,6 +261,7 @@ export class GenerateSpecificationService implements GenerationJobApi {
     this.jobs = options.jobs;
     this.ledger = options.ledger;
     this.requirements = options.requirements;
+    this.steering = options.steering;
     this.maxRequirements = options.maxRequirements ?? MAX_REQUIREMENTS_DEFAULT;
     this.now = options.now ?? ((): Date => new Date());
     this.correlate = options.newCorrelationId ?? newCorrelationId;
@@ -395,6 +425,22 @@ export class GenerateSpecificationService implements GenerationJobApi {
       return this.terminal(order, 'engine_unavailable');
     }
 
+    // FR-ENH-004 — steering resolves BEFORE the engine runs, pre-settled and
+    // ordered (S2/S3). A resolution failure fails the run rather than quietly
+    // generating an unconstrained artifact with false provenance.
+    let steeringResolution: Awaited<ReturnType<GenerationSteeringPort['resolveForGeneration']>> | null =
+      null;
+    if (this.steering) {
+      try {
+        steeringResolution = await this.steering.resolveForGeneration(
+          order.workspaceId,
+          order.projectId,
+        );
+      } catch {
+        return this.terminal(order, 'engine_error');
+      }
+    }
+
     const outcome = await runWithLimits(
       (signal) =>
         engine.generateSpecification(
@@ -406,6 +452,10 @@ export class GenerateSpecificationService implements GenerationJobApi {
               type: r.type,
               priority: r.priority,
             })),
+            // S4 — absent, not empty, when nothing is in scope.
+            ...(steeringResolution && steeringResolution.resolved.length > 0
+              ? { steering: steeringResolution.resolved as never }
+              : {}),
           },
           {
             signal,
@@ -470,6 +520,18 @@ export class GenerateSpecificationService implements GenerationJobApi {
 
     try {
       const specification = await this.store.commitGeneration(commit);
+      // FR-ENH-004 / SC-ENH-001 — provenance is stamped in the same act as
+      // the commit, with the EMPTY resolution when nothing was in scope. A
+      // stored artifact with no steering row is exactly the "unknown
+      // provenance" the success criterion forbids.
+      if (this.steering) {
+        await this.steering.recordForGeneration({
+          workspaceId: order.workspaceId,
+          artifactType: 'specification',
+          artifactId: specification.id,
+          resolution: steeringResolution ?? { resolved: [], overrides: [] },
+        });
+      }
       // T845 — the read surface learns what the run produced, so a client can
       // open it (contract job body `resultRef`, Quickstart V4 step 4). In a
       // composed deployment the ledger and the store address the same

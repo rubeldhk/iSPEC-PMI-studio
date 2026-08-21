@@ -12,7 +12,7 @@
  *          Returning `ok` with empty content would let a silently empty
  *          artifact enter the lifecycle and be approved.
  */
-import type { GeneratedSpecification } from '@pmi/engine-contract';
+import type { GeneratedSpecification, ValidationFinding } from '@pmi/engine-contract';
 
 export type ParseOutcome =
   | { ok: true; value: GeneratedSpecification }
@@ -63,14 +63,36 @@ export function parseSpecification(raw: string): ParseOutcome {
     };
   }
 
+  const findings = extractSteeringFindings(raw);
   return {
     ok: true,
     value: {
       title,
       contentRaw: raw,
       contentParsed: { title: parsed.title, sections: parsed.sections, headingOrder: parsed.headingOrder },
+      ...(findings.length > 0 ? { findings } : {}),
     },
   };
+}
+
+/**
+ * EPIC-019 (steering-contract rule S6) — a steering violation the agent
+ * recorded is surfaced as a FINDING on the successful result, never as a
+ * failure. The agent is instructed (in the input document the adapter
+ * renders) to record violations as
+ * `<!-- steering-violation: <location> | <severity> | <message> -->`.
+ */
+export function extractSteeringFindings(raw: string): ValidationFinding[] {
+  const findings: ValidationFinding[] = [];
+  for (const match of raw.matchAll(/<!--\s*steering-violation:\s*([^|]+)\|([^|]+)\|([\s\S]*?)-->/g)) {
+    const location = (match[1] ?? '').trim();
+    const severity = (match[2] ?? '').trim();
+    const message = (match[3] ?? '').trim();
+    if (location === '' || message === '') continue;
+    if (!['info', 'warning', 'error'].includes(severity)) continue;
+    findings.push({ location, severity: severity as ValidationFinding['severity'], message });
+  }
+  return findings;
 }
 
 function collectSections(lines: string[], title: string): ParsedSections {

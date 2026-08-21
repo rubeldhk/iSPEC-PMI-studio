@@ -16,12 +16,14 @@ import {
   MissingCapabilityError,
   PHASE_1_CAPABILITIES,
   assertPhase1Capabilities,
+  isSteeringOrdered,
   type EngineCapability,
   type EngineContext,
   type EngineDescriptor,
   type EngineFailureReason,
   type RequirementInput,
   type SpecificationEngine,
+  type SteeringInput,
 } from '../../src/index';
 
 /**
@@ -52,6 +54,12 @@ export interface ConformanceHarness {
    * never surfaces in a message, diagnostics, or output.
    */
   readonly secretProbe: string;
+  /**
+   * C16 (EPIC-019 T245) — an engine that, given steering, reports a violation
+   * of it. The suite asserts the violation arrives as a FINDING on a
+   * successful result, never as a failure (steering-contract rule S6).
+   */
+  createSteeringViolating(): SpecificationEngine;
 }
 
 const REQUIREMENT: RequirementInput = {
@@ -308,6 +316,96 @@ export function runEngineConformance(harness: ConformanceHarness): void {
         for (const pattern of CREDENTIAL_PATTERNS) {
           expect(pattern.test(surface), `matched credential pattern ${pattern}`).toBe(false);
         }
+      }
+    });
+
+    // ------------------------------------------------------ 14 (EPIC-019)
+    it('C14 · absent steering is byte-identical to the pre-steering baseline (S4)', async () => {
+      const input = { projectName: 'Conformance', requirements: selectionOf(2) };
+
+      const baseline = await harness.create().generateSpecification(input, context());
+      const absent = await harness.create().generateSpecification({ ...input }, context());
+      const empty = await harness
+        .create()
+        .generateSpecification({ ...input, steering: [] }, context());
+
+      expect(baseline.ok && absent.ok && empty.ok).toBe(true);
+      if (baseline.ok && absent.ok && empty.ok) {
+        // Steering is ADDITIVE: no steering — whether the field is missing or
+        // empty — must leave the output exactly as it was before the field
+        // existed. This is what keeps every pre-steering case valid.
+        expect(absent.value.contentRaw).toBe(baseline.value.contentRaw);
+        expect(empty.value.contentRaw).toBe(baseline.value.contentRaw);
+      }
+    });
+
+    // ------------------------------------------------------ 15 (EPIC-019)
+    it('C15 · structured steering is consumed with no platform-side formatting (S1, S3)', async () => {
+      const steering: SteeringInput[] = [
+        {
+          subject: 'coding_standards',
+          scopeType: 'organization',
+          content: 'All services are framework-free.',
+          version: 1,
+        },
+        {
+          subject: 'technology_stack',
+          scopeType: 'project',
+          content: 'PostgreSQL and Valkey only.',
+          version: 3,
+        },
+      ];
+      // What the platform hands over IS the wire format: plain, ordered data.
+      expect(JSON.parse(JSON.stringify(steering))).toEqual(steering);
+      expect(isSteeringOrdered(steering)).toBe(true);
+
+      const snapshot = JSON.parse(JSON.stringify(steering)) as unknown;
+      const result = await harness
+        .create()
+        .generateSpecification(
+          { projectName: 'Conformance', requirements: selectionOf(2), steering },
+          context(),
+        );
+
+      expect(result.ok, 'an adapter must accept structured steering').toBe(true);
+      // The adapter consumed the array; it did not reach back and reformat the
+      // platform's data — any engine-specific rendering happened on ITS side.
+      expect(steering).toEqual(snapshot);
+    });
+
+    // ------------------------------------------------------ 16 (EPIC-019)
+    it('C16 · a steering violation is a FINDING, not a failure (S6)', async () => {
+      const steering: SteeringInput[] = [
+        {
+          subject: 'security',
+          scopeType: 'organization',
+          content: 'Never store passwords in plaintext.',
+          version: 2,
+        },
+      ];
+      const result = await harness
+        .createSteeringViolating()
+        .generateSpecification(
+          { projectName: 'Conformance', requirements: selectionOf(1), steering },
+          context(),
+        );
+
+      // A specification that violates a standard is still a specification.
+      expect(result.ok, 'a violation must not fail the generation').toBe(true);
+      if (result.ok) {
+        const findings = result.value.findings ?? [];
+        expect(findings.length, 'the violation must surface as a finding').toBeGreaterThan(0);
+        for (const finding of findings) {
+          expect(finding.location?.trim()).toBeTruthy();
+          expect(['info', 'warning', 'error']).toContain(finding.severity);
+          expect(finding.message.trim()).not.toBe('');
+        }
+        // The finding is actionable: it names the violated subject.
+        expect(
+          findings.some((finding) =>
+            steering.some((s) => finding.message.includes(s.subject)),
+          ),
+        ).toBe(true);
       }
     });
   });
