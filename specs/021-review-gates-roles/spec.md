@@ -97,13 +97,13 @@ refusal rather than a cost report at the end of the month.
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
 
-- [ ] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
-- [ ] `/speckit-converge` reports no unbuilt work for this epic
-- [ ] `specs/021-review-gates-roles/defects/` contains no open defect records
-- [ ] Principle deltas above still hold; any deferral retains a valid owner
-- [ ] RAID **R-02** re-scored against the twelve-role profile (T291)
-- [ ] Conformance cases **C-17** to **C-20** green
-- [ ] A closing report was published: work completed, work deferred, and the recommended next task
+- [x] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
+- [x] `/speckit-converge` reports no unbuilt work for this epic
+- [x] `specs/021-review-gates-roles/defects/` contains no open defect records
+- [x] Principle deltas above still hold; any deferral retains a valid owner
+- [x] RAID **R-02** re-scored against the twelve-role profile (T291)
+- [x] Conformance cases **C-17** to **C-20** green
+- [x] A closing report was published: work completed, work deferred, and the recommended next task
       named as a concrete Spec Kit command (Constitution IX)
-- [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
+- [x] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
 - [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge

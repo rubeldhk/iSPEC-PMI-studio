@@ -44,6 +44,9 @@ const NOT_TENANT_SCOPED = new Set([
   // EPIC-019 T226 (R-017-1): the tier ABOVE the tenant. Workspaces reference
   // it; giving it a workspaceId would invert the hierarchy.
   'organizations',
+  // EPIC-021 T274: the twelve-role roster is deployment configuration, the
+  // same exception engine_registrations carries.
+  'review_roles',
 ]);
 
 function migrationSql(): string {
@@ -83,20 +86,24 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // lifecycle wave's schema.
     // organizations + the three steering tables arrived with EPIC-019 T227 —
     // the tenancy tier and the steering engine's scope/content/provenance set.
-    // dependency_edges arrived with EPIC-020 T252 — the user-maintained
-    // dependency graph, deliberately separate from traceability_links.
+    // dependency_edges arrived with EPIC-020 T252; the four review tables
+    // with EPIC-021 (roles, gates, append-only outcomes, attributed findings).
     expect([...tables.keys()].sort()).toEqual([
       'adr_specification_links',
       'architecture_decision_records',
       'audit_entries',
       'dependency_edges',
       'engine_registrations',
+      'gate_outcomes',
       'generation_jobs',
       'lifecycle_transitions',
       'organizations',
       'projects',
       'requirement_versions',
       'requirements',
+      'review_findings',
+      'review_gates',
+      'review_roles',
       'specification_versions',
       'specifications',
       'steering_applications',
@@ -147,6 +154,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // Provenance is *applied* at generation time (EPIC-019 T242) — the
       // timestamp is part of the record, not bookkeeping about the row.
       steering_applications: 'appliedAt',
+      // A gate outcome *occurs* (EPIC-021 T287) — the audit_entries treatment.
+      gate_outcomes: 'occurredAt',
     };
 
     const missing = [...tables.entries()]

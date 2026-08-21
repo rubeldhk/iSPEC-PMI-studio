@@ -64,6 +64,9 @@ model Workspace {
   steeringDocuments     SteeringDocument[]
   steeringApplications  SteeringApplication[]
   dependencyEdges       DependencyEdge[]
+  reviewGates           ReviewGate[]
+  gateOutcomes          GateOutcome[]
+  reviewFindings        ReviewFinding[]
 
   @@map("workspaces")
 }
@@ -703,6 +706,84 @@ model SteeringDocument {
   @@index([workspaceId])
   @@index([scopeId, status])
   @@map("steering_documents")
+}
+
+// ---------------------------------------------------------------- reviews
+//
+// EPIC-021 — review gates and roles (FR-ENH-012..016, 023/024).
+
+// T274 — the twelve roles. Deployment-scoped like engine_registrations:
+// the roster is platform configuration, not tenant data.
+model ReviewRole {
+  id                     String   @id @default(uuid())
+  name                   String   @unique
+  responsibility         String
+  permittedArtifactTypes String[]
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("review_roles")
+}
+
+// T278 — a gate on a lifecycle transition, naming the roles that must run.
+// requiredRoles never empty: the gate fails closed (clarification 2026-08-19).
+model ReviewGate {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  transition    String
+  requiredRoles String[]
+  blocking      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id])
+  outcomes  GateOutcome[]
+
+  @@index([workspaceId, transition])
+  @@map("review_gates")
+}
+
+// T287 — append-only, the audit_entries treatment, with ONE exception the
+// trigger carves out: the one-time decision fill on an undecided row.
+model GateOutcome {
+  id                 String    @id @default(uuid())
+  workspaceId        String
+  specificationId    String
+  gateId             String
+  rolesRun           Json
+  gateFailed         Boolean
+  humanDecision      String?
+  decidedById        String?
+  decidedAt          DateTime?
+  overriddenFindings Json?
+  occurredAt         DateTime  @default(now())
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id])
+  gate      ReviewGate      @relation(fields: [gateId], references: [id])
+  findings  ReviewFinding[]
+
+  @@index([workspaceId])
+  @@index([specificationId])
+  @@map("gate_outcomes")
+}
+
+// T282 — attributed or refused: roleId and location are REQUIRED (SC-ENH-005).
+model ReviewFinding {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  gateOutcomeId String
+  roleId        String
+  location      String
+  severity      String
+  message       String
+  createdAt     DateTime @default(now())
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id])
+  outcome   GateOutcome @relation(fields: [gateOutcomeId], references: [id])
+
+  @@index([workspaceId])
+  @@index([gateOutcomeId])
+  @@map("review_findings")
 }
 
 // ------------------------------------------------------------ dependencies

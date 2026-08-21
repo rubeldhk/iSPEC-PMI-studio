@@ -16,7 +16,13 @@ export const PHASE_1_CAPABILITIES = [
   'validate_specification',
 ] as const;
 
-export type EngineCapability = (typeof PHASE_1_CAPABILITIES)[number];
+/**
+ * All capability names an adapter may declare. Phase 1's three are REQUIRED
+ * at registration; `review_specification` (EPIC-021, E-R5) is optional —
+ * declared when supported, refused at GATE time when absent, and never a
+ * registration requirement.
+ */
+export type EngineCapability = (typeof PHASE_1_CAPABILITIES)[number] | 'review_specification';
 
 export interface EngineDescriptor {
   name: string;
@@ -145,6 +151,39 @@ export interface GenerateSpecificationInput {
   steering?: SteeringInput[];
 }
 
+// ----------------------------------------------------------------- review
+//
+// EPIC-021 T276 — review-role-contract.md. ONE capability; a reviewing role
+// is a PARAMETER of the call, not a service. Rules E-R1..E-R6 live with the
+// contract document. NOT a Phase 1 required capability (E-R5): registration
+// without it stays valid; gates refuse at gate time.
+
+export const REVIEW_CAPABILITY = 'review_specification' as const;
+
+/** E-R6 — role definitions come from platform configuration, passed in. */
+export interface RoleInput {
+  name: string;
+  responsibility: string;
+  permittedArtifactTypes: string[];
+}
+
+export interface ReviewInput {
+  /** The content under review. */
+  specification: string;
+  role: RoleInput;
+  /** Optional; the standards the review should apply. */
+  steering?: SteeringInput[];
+}
+
+/**
+ * Empty `findings` is a PASS (E-R4) — the deliberate divergence from the
+ * base contract's empty-output rule. No role field: the platform echoes the
+ * role it asked; adapter-reported attribution would be forgeable.
+ */
+export interface ReviewOutput {
+  findings: ValidationFinding[];
+}
+
 export interface GenerateTasksInput {
   projectName: string;
   specificationTitle: string;
@@ -212,6 +251,16 @@ export interface SpecificationEngine {
     input: ValidateSpecificationInput,
     ctx: EngineContext,
   ): Promise<EngineResult<ValidationFinding[]>>;
+
+  /**
+   * EPIC-021 (review-role-contract.md) — OPTIONAL: review is not a Phase 1
+   * capability (E-R5). Adapters return failures, never throw (E-R1); a
+   * finding without a location makes the whole result malformed (E-R2).
+   */
+  reviewSpecification?(
+    input: ReviewInput,
+    ctx: EngineContext,
+  ): Promise<EngineResult<ReviewOutput>>;
 }
 
 // ---------------------------------------------------------------- registry

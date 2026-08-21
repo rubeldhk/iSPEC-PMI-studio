@@ -11,7 +11,11 @@ import { Argon2PasswordService } from '../../../src/modules/auth/password.servic
 
 const service = new Argon2PasswordService();
 
-describe('Argon2PasswordService', () => {
+// Argon2id is DELIBERATELY memory- and CPU-hard; under contention with a
+// concurrent Testcontainers suite these hashes have exceeded the default 5s
+// twice (2026-08-20). The widened timeout accommodates the algorithm's
+// designed cost — it does not paper over a defect.
+describe('Argon2PasswordService', { timeout: 30_000 }, () => {
   it('produces an Argon2id digest, never the plaintext', async () => {
     const digest = await service.hash('correct horse battery staple');
     expect(digest.startsWith('$argon2id$')).toBe(true);
