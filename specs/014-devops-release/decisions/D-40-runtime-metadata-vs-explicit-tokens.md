@@ -1,6 +1,7 @@
 # D-40 — should the API be built by a compiler that emits `design:paramtypes`?
 
-**Status**: **OPEN — input to `F-11.2`** · **Raised**: 2026-08-20 by `T849`
+**Status**: **DECIDED 2026-08-20** by the project owner — **(a) explicit tokens**, and the dead
+flag deleted · **Raised**: 2026-08-20 by `T849`
 **Owner**: EPIC-014 (owns the build and the promotion pipeline)
 **Evidence**: [`DEF-001-005`](../001-platform-foundation/defects/DEF-001-005-implicit-class-injection-is-undefined-at-runtime.md)
 
@@ -42,3 +43,28 @@ a defect record, would settle a build question inside a bug fix.
 
 **Not deciding is what produced `DEF-001-005`**: the configuration said one thing, the runtime did
 another, and nobody owned the gap. This record gives it an owner.
+
+## The decision (2026-08-20)
+
+**(a) Explicit tokens — and `emitDecoratorMetadata` deleted from `tsconfig.base.json`.**
+
+The record as first written left the flag in place. That was incomplete: the flag is not neutral,
+it is **the configuration that made incorrect code look correct**. Nothing else in the repository
+needs it — validation is hand-rolled, with no `class-validator` or `class-transformer` anywhere —
+so removing it costs nothing and removes the trap. `experimentalDecorators` stays; esbuild honours
+that one and decorator syntax requires it.
+
+**Why (a) over (b).** Explicit tokens are correct under `tsx` **and** under a compiled build. A
+production `dist/` may well be wanted later — running `tsx` in production is unusual — but that is
+a *packaging* question, and `F-11.2` still owns it. Choosing (b) now would settle packaging as a
+side effect of fixing an injection bug: exactly the conflation this record was created to prevent.
+
+**What this obliges**: every injection site uses `@Inject(Token)`, including class-typed ones. The
+convention cannot be forgotten silently — `backend/tests/unit/core/controller-composition.spec.ts`
+resolves every controller from the composed graph and fails on any `undefined` property, naming it.
+
+**Verified**: `tsc --noEmit` clean across the backend and the composition guard green (13 tests)
+with the flag removed — confirming it was inert, which was the whole finding.
+
+**Left open for `F-11.2`**: whether the API ships as a compiled `dist/` or continues to run through
+`tsx`. This decision is deliberately silent on that and stays valid either way.

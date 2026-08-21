@@ -18,8 +18,14 @@
     "sourceMap": true,
     "skipLibCheck": true,
 
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    // esbuild honours this; decorator syntax needs it.
+    "experimentalDecorators": true
+    // emitDecoratorMetadata is deliberately absent (D-40). Nothing here is
+    // compiled by tsc — the API runs through tsx, and esbuild emits no
+    // design:paramtypes — so setting it asserted something the runtime
+    // contradicted, which is how DEF-001-005 got seven undefined dependencies
+    // past 1000+ green tests. Injection is explicit: @Inject(Token) everywhere,
+    // guarded by backend/tests/unit/core/controller-composition.spec.ts.
   },
   "exclude": ["node_modules", "dist"]
 }

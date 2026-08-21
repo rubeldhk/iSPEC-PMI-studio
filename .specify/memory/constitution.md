@@ -1,18 +1,25 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.3.0 → 1.4.0
-Bump rationale: MINOR — Principle IX materially expanded with a Delivery Board synchronization
-obligation, per the project owner's 2026-08-20 instruction: the published Delivery Board artifact
-must be refreshed whenever completed work changes what it displays.
+Version change: 1.4.0 → 1.5.0
+Bump rationale: MINOR — one new principle added (XI. Reachability Gate Per Epic). Nothing removed,
+renamed, or redefined incompatibly; every prior obligation still holds. The amendment discharges
+the smoke-gate question the project owner settled on 2026-08-20, raised by DEF-005-001 and shared
+by five predecessor defects: convergence detects work specified but never built, and nothing
+detected work built but never wired.
+
+Added principles:
+  - XI. Reachability Gate Per Epic (NON-NEGOTIABLE) — an Epic claiming a user-facing capability
+    may not close until that capability is exercised the way a user reaches it. Tier 1 (always):
+    a test driving it through its real entry point against the composed module graph; a mocked
+    collaborator provably cannot satisfy this. Tier 2 (Epics delivering a journey): a
+    run-generated transcript against a running application, per the SC-AGT-001 precedent.
+    Applies prospectively to Epics closing after 2026-08-20.
 
 Modified principles:
-  - IX. Mandatory Closing Report — gains "Delivery Board synchronization": stops whose Work
-    Completed changes anything the board displays MUST refresh the board artifact at its
-    recorded URL (same URL, never a new one), with counts derived from the repository; a
-    session that cannot reach the artifact must declare the board stale and name what changed
+  - IV. Convergence Gate — rationale now states explicitly that convergence does not detect work
+    built but never wired, and names XI as its complement rather than its substitute
 
-Added principles: none
 Added sections: none
 Removed sections: none
 
@@ -23,9 +30,16 @@ Templates requiring updates:
   ✅ .claude/skills/speckit-*/SKILL.md     — reviewed; closing-report guidance is generic and
      inherits IX from the constitution; no contrary hard-coded behavior
 
-Follow-up TODOs: none
+Templates requiring updates (v1.5.0):
+  ⚠️ .specify/templates/plan-template.md   — Constitution Check gate needs an XI row
+  ⚠️ .specify/templates/tasks-template.md  — Phase Z closure needs a reachability-gate task
+  ✅ .specify/templates/spec-template.md   — reviewed; no change required
 
---- previous report (v1.3.0) ---
+Follow-up TODOs (v1.5.0): propagate XI into the two templates flagged above before the next
+/speckit-plan or /speckit-tasks run, so the gate is enforced by the artifacts and not only by
+the constitution.
+
+--- previous report (v1.4.0) ---
 Version change: 1.2.0 → 1.3.0
 Bump rationale: MINOR — one new principle added (X. Interaction Discipline by Phase) and one
 existing principle materially expanded (IX now governs EVERY stop, not only command/session
@@ -154,6 +168,10 @@ Declaring an Epic done without a passing convergence run is a constitution viola
 
 **Rationale**: Convergence is the only mechanism that detects work that was specified but never
 built. Skipping it lets partially-implemented Epics reach downstream environments.
+
+**Convergence does not detect work that was built but never *wired*** — that is Principle XI's
+subject, and the two gates are complements, not substitutes. An Epic passing convergence with
+every test green can still ship a capability no user can reach.
 
 ### V. Mandatory Task-Level Unit Tests (NON-NEGOTIABLE)
 
@@ -322,6 +340,43 @@ Batching converts N interruptions into one sitting where the PO/PM/TL answers ev
 full context; recommended defaults keep execution moving at machine speed while every assumption
 stays on the audit trail.
 
+### XI. Reachability Gate Per Epic (NON-NEGOTIABLE)
+
+An Epic that claims a **user-facing capability** MUST NOT be declared complete until that
+capability has been exercised through the way a user actually reaches it. Two tiers apply.
+
+**Tier 1 — always required. At least one test per user-facing capability MUST drive it through
+its real entry point** — the actual HTTP route, CLI command, or job handler — **against the
+composed module graph**, with the real composition root rather than a hand-assembled one.
+
+- A unit test with a mocked collaborator does **not** satisfy this tier. It provably cannot: the
+  mock is present precisely where the missing wiring would be.
+- The entry point MUST be the real one. Calling a service method directly is not an entry point;
+  it is the thing the entry point was supposed to reach.
+
+**Tier 2 — required when the Epic delivers a user-facing journey (a screen, a page, a flow).** A
+transcript of the capability exercised **against a running application** MUST be recorded as
+evidence before closure, following the precedent `SC-AGT-001` set for the execution engine.
+
+- The transcript MUST be **generated by the run**, never hand-written. Editing evidence to make it
+  say the right thing is a constitution violation of the first order.
+- Epics with no user-facing journey — libraries, contracts, governance, infrastructure — are
+  satisfied by Tier 1 alone.
+
+**This gate applies prospectively**, to Epics closing after 2026-08-20. Epics already closed are
+swept by the local UAT sessions instead; reopening them to prove what a running stack now
+demonstrates directly would buy nothing.
+
+**Rationale**: Principle IV detects work that was *specified but never built*. Nothing detected
+work that was **built but never wired** — and that gap has now produced the same defect six times:
+`DEF-001-001` (observability bundle unreachable), `DEF-001-002` (`requestFinished` with no call
+site), `DEF-028-005` (`runV6` tested and never called), `DEF-001-004`, `DEF-001-005` (seven
+dependencies `undefined` at runtime), and `DEF-005-001` (sign-in impossible in the running
+application). EPIC-003's closing report named the shape exactly: *"65 passing tests and an engine
+that cannot start."* Every instance was found by a human opening a browser, always after the Epic
+had been declared closed. A test suite that never crosses a real entry point measures whether the
+parts work, not whether the product does.
+
 ## Repository & Environment Governance
 
 **Hosting**: The canonical remote is GitHub — `https://github.com/rubeldhk/iSPEC-PMI-studio.git`.
@@ -373,11 +428,12 @@ Epic → Feature → Task → Defect → Changes → Task → Defect → …
    `/speckit-implement`. Never patch code directly.
 7. **Defect (re-verify)** — Re-test; close the defect record or loop again from step 4.
 
-**Epic exit gate**: run `/speckit-converge`. Only a clean convergence plus green unit tests
-permits promotion from `local` to `dev`.
+**Epic exit gate**: run `/speckit-converge`. Only a clean convergence plus green unit tests plus a
+satisfied reachability gate (Principle XI) permits promotion from `local` to `dev`.
 
-**Quality gates in order**: unit tests green → convergence clean → Epic defect folder has no open
-records → promote.
+**Quality gates in order**: unit tests green → **every user-facing capability exercised through its
+real entry point** (Principle XI Tier 1; plus a running-application transcript at Tier 2, where the
+Epic delivers a journey) → convergence clean → Epic defect folder has no open records → promote.
 
 **Every step above closes with a report** (Principle IX): what was done, and the recommended next
 task named as a concrete Spec Kit command. This applies to each step individually, not only to the
@@ -410,9 +466,9 @@ Epics comply.
 **Compliance review**: Every `/speckit-plan` MUST complete its Constitution Check gate before
 Phase 0 research and re-check it after Phase 1 design. Every `/speckit-analyze` MUST report
 constitution violations as blocking findings. Every Epic convergence MUST confirm Principles I,
-IV, V, VI, and VII were honored. Every command run MUST end with the closing report required by
+IV, V, VI, VII, and XI were honored. Every command run MUST end with the closing report required by
 Principle IX and MUST honor the interaction budget of Principle X for its phase. Complexity or
 deviation MUST be justified in the plan's Complexity Tracking table, or the work MUST be
 simplified.
 
-**Version**: 1.4.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-20
+**Version**: 1.5.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-20
