@@ -74,7 +74,7 @@ v1.4.0, before Principle XI existed.
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | PASS — clarify asked four questions in one batch (2026-08-20) |
 | XI | Every user-facing capability is exercised through its **real entry point** against the composed graph (Tier 1); Epics delivering a **journey** additionally record a run-generated transcript against a running application (Tier 2) | ⚠️ **CONDITIONAL — two tasks missing.** See below |
 | — | Repository was synced from GitHub before this work started | PASS |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | ⚠️ FAIL — see Complexity Tracking |
+| — | No other Claude session is active on the checkout where this Epic is implemented (else: work in a dedicated clone or worktree) | **PASS** — discharged 2026-08-21 by isolation, not by exclusivity. See below |
 
 ### Principle XI — what this Epic must add
 
@@ -102,6 +102,42 @@ explicit that a transcript must be produced by the run rather than written by ha
 
 **Neither gap blocks starting.** Both block *closing*, and they are additions to `tasks.md`, which
 this command does not write — see the Completion Report for the command that does.
+
+### How the concurrent-session condition was discharged
+
+**The condition is about the checkout, not the machine.** Constitution §"Concurrent session
+isolation (MANDATORY)" reads: *"If another Claude session is already active in the working
+repository, a new session MUST NOT implement or change code in that repository. It MUST first
+create a separate clone (or **dedicated worktree**) and perform all implementation there."*
+
+It is therefore satisfied by **isolation**, not by exclusivity. Closing other sessions is not the
+remedy and never was — the parenthetical in the row itself always named the answer.
+
+**The facts, established 2026-08-21 by asking rather than assuming.** Two other sessions are live
+on this machine, and **both are in this same checkout**:
+
+| Session | Checkout | Working |
+|---|---|---|
+| `ispec-pmi-studio-13` | main checkout, branch `main` | delivered EPIC-023/024/025 today; all uncommitted changes in `backend/`, `frontend/`, `package.json` and the `closure.md` files are its work, deliberately held pending the user's instruction to commit |
+| `pmi-studio-c3` | main checkout, via absolute paths | diagnosis only; next intends `/speckit-tasks` on EPIC-002 |
+
+So the main checkout genuinely fails the condition, and the original `FAIL` was correct.
+
+**The discharge**: `.claude/worktrees/epic-029-design-system`, branch `epic/029-design-system`,
+created 2026-08-21 from `ed8747f`, following the `epic-009-011-016` precedent. **No other session
+is active in that worktree**, and none of this Epic's implementation touches the shared checkout.
+The worktree carries its own `.specify/feature.json`, which also ends the pointer collision three
+sessions were having over one shared file.
+
+**What this row does NOT claim.** It does not claim the repository is quiet, or that this Epic's
+*documents* were authored in isolation — they were not, and Constitution VIII's `⚠️ PARTIAL` above
+records that separately. It claims exactly what the constitution requires: **implementation happens
+where nothing else is running.**
+
+**This row must revert to `FAIL` if that stops being true** — if implementation moves back to the
+shared checkout, or another session enters the worktree. It is a statement about a live condition,
+not a stamp; `DOR-06` re-evaluates it on every run (`FR-ESK-013`, evaluation is fresh, never
+stamped), and as of 2026-08-20 it can finally see a `FAIL` however it is marked (`DEF-026-009`).
 
 ### `D-42` needs an assertion too (Constitution V)
 
@@ -168,6 +204,6 @@ package boundary now would be a guess about a second one.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|--------------------------------------|
-| **Constitution VIII / concurrent-session isolation** — this Epic was specified and planned on a checkout where another session is working EPIC-008/011, on branch `epic/017-enhancement-model` rather than an EPIC-029 branch | The design work is document-only so far (spec, plan, research); no application file has been touched by it | Working in a separate clone is the correct answer and is **required before implementation begins** — recorded here rather than discovered later. `D-39`'s branch-vs-epic check would flag this if it existed |
+| **Constitution VIII / session labelling** — this Epic was specified and planned on a shared checkout, on a branch not named for it | The design work was document-only; no application file was touched by it | **Concurrent-session isolation is now discharged** — `.claude/worktrees/epic-029-design-system` exists and implementation happens only there (see Constitution Check). What remains `⚠️ PARTIAL` is narrower and honest: the *documents* were authored on a shared checkout under another Epic's branch, which no later worktree can retroactively change. `D-39`'s branch-vs-epic check would flag this if it existed |
 | **`axe-core` as a new dependency** | `FR-DS-031` requires automated accessibility checks in CI; nothing in the repository can perform them | Hand-written assertions per rule would be a partial, unmaintained reimplementation of a standard — and would not fail on rules nobody remembered to write |
 | **Constitution XI — `tasks.md` predates the principle** and lacks a real-entry-point test (Tier 1) and a run-generated running-application transcript (Tier 2) | XI was ratified 2026-08-20, after this Epic's tasks were generated. The Epic delivers a user-facing journey, so both tiers apply | Closing the Epic on the existing 42 tasks was rejected: that is precisely the "built, tested, called by nothing" shape XI exists to stop, and this Epic — which restyles the four pages a user actually sees — is the worst possible one to grant an exemption to. Both tasks are added via `/speckit-tasks` before closure |
