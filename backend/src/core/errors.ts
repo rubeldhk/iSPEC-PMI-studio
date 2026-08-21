@@ -12,9 +12,12 @@ export type ErrorCode =
   | 'unauthenticated'
   | 'not_found'
   | 'conflict'
+  | 'forbidden'
+  | 'review_incomplete'
   | 'invalid_lifecycle_transition'
   | 'specification_not_approved'
   | 'engine_unavailable'
+  | 'provider_unavailable'
   | 'internal_error';
 
 export interface ErrorBody {
@@ -55,6 +58,29 @@ export class NotFoundError extends PlatformError {
 
 export class ConflictError extends PlatformError {
   readonly code = 'conflict' as const;
+}
+
+/**
+ * EPIC-023 (FR-RUN-015a, FR-RUN-013a) — the ONE deliberate exception to the
+ * absence rule above, written into `platform-api-epic-002.md`: a review
+ * session's existence is not secret to someone who can already see it; what is
+ * refused is the AUTHORITY to submit or resolve. Absence would be misleading —
+ * the user can see the session and needs to know why they cannot act. Never
+ * use this for artifact visibility; that stays 404.
+ */
+export class ForbiddenError extends PlatformError {
+  readonly code = 'forbidden' as const;
+}
+
+/** FR-RUN-014: submission is refused naming the unanswered questions. */
+export class ReviewIncompleteError extends PlatformError {
+  readonly code = 'review_incomplete' as const;
+
+  constructor(unansweredQuestionIds: readonly string[]) {
+    super('Submission refused — unanswered questions remain.', {
+      unansweredQuestionIds: [...unansweredQuestionIds],
+    });
+  }
 }
 
 /** FR-011: refuse the transition and name the permitted set. */
@@ -101,11 +127,24 @@ export class EngineUnavailableError extends PlatformError {
   readonly code = 'engine_unavailable' as const;
 }
 
+/**
+ * EPIC-025 (FR-PUB-031) — an unreachable storage provider, reported BEFORE
+ * anything is sent. 502 per `platform-api-epic-002.md`: unlike an engine
+ * refusal, this one names an upstream dependency failure, and the contract
+ * documents the status explicitly — the DEF-008-001 rule is satisfied by the
+ * owning contract, not violated around it.
+ */
+export class ProviderUnavailableError extends PlatformError {
+  readonly code = 'provider_unavailable' as const;
+}
+
 const STATUS: Record<ErrorCode, number> = {
   validation_failed: 400,
   unauthenticated: 401,
   not_found: 404,
   conflict: 409,
+  forbidden: 403,
+  review_incomplete: 422,
   invalid_lifecycle_transition: 422,
   specification_not_approved: 422,
   // 422, not 503. The contract's status table lists no 5xx for a refusal, and
@@ -113,6 +152,7 @@ const STATUS: Record<ErrorCode, number> = {
   // CODE carries the meaning; inventing an undocumented status from an epic
   // that does not own `platform-api.md` is the mistake DEF-008-001 records.
   engine_unavailable: 422,
+  provider_unavailable: 502,
   internal_error: 500,
 };
 

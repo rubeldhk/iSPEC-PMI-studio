@@ -33,20 +33,20 @@ description: "Task list for EPIC-025 — External Storage Publishing"
 *Satisfies **FR-PUB-029**, **FR-PUB-029a**, **FR-PUB-029b**, **FR-PUB-030**, **FR-PUB-031**, **FR-PUB-032**, **FR-PUB-033**, **FR-PUB-034**, **FR-PUB-035**, **FR-PUB-036**, **FR-PUB-037**, **FR-PUB-038**, **FR-PUB-039** and **FR-PUB-040**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note. This Epic carries one delivery feature, so it satisfies the whole owned set; the interface half is F-025.UI.*
 
-- [ ] T382 [P] [US5] Unit tests asserting a workspace can be connected to a provider **with a destination selected within it** (**FR-PUB-029**), and that the connection reports healthy, needs-reauthorisation and unavailable as distinct states (FR-PUB-031), in `backend/tests/unit/storage/connection.spec.ts`
-- [ ] T383 [P] [US5] Unit tests asserting a provider missing a required capability is refused, naming it, in `backend/tests/unit/storage/capability-refusal.spec.ts`
-- [ ] T384 [P] [US6] Unit tests asserting every publish failure reports a distinct named reason — unavailable, expired, quota, size, destination missing, with zero generic failures reaching the user (**SC-009**), in `backend/tests/unit/storage/publish-failures.spec.ts`
-- [ ] T385 [P] [US6] Unit tests asserting artifacts the publisher cannot access are excluded and the exclusion reported, in `backend/tests/unit/storage/publish-access.spec.ts`
-- [ ] T386 [P] [US6] Unit tests asserting republish states what will be added, replaced or left alone BEFORE changing anything, in `backend/tests/unit/storage/republish.spec.ts`
-- [ ] T387 [P] [US7] Unit tests asserting provider switching loses no platform artifact and no publish history (**SC-010**), in `backend/tests/unit/storage/provider-switch.spec.ts`
-- [ ] T388 [US5] Define `StorageConnection`, `PublishRecord` and `PublishedFileReference` models in `backend/prisma/schema.prisma` (unit tests: T382, T387, T817)
-- [ ] T389 [US5] Define the storage provider contract in `packages/storage-contract/src/index.ts` — one boundary, interchangeable providers (FR-PUB-030, FR-PUB-039; unit test: T383)
-- [ ] T390 [US5] Implement connection lifecycle and health reporting in `backend/src/modules/storage/connection.service.ts` (FR-PUB-029, FR-PUB-031; unit test: T382)
-- [ ] T391 [US6] Implement the publish pipeline with per-project organisation in `backend/src/modules/storage/publish.service.ts` (FR-PUB-032, FR-PUB-034; unit tests: T817, T818)
-- [ ] T392 [US6] Implement access-aware exclusion during publish in `backend/src/modules/storage/publish.service.ts` (FR-PUB-033; unit test: T385)
-- [ ] T393 [US6] Implement the publish failure taxonomy in `backend/src/modules/storage/publish-failures.ts` (FR-PUB-035, **SC-009**; unit test: T384)
-- [ ] T394 [US6] Implement republish preview and concurrent-publish prevention in `backend/src/modules/storage/republish.service.ts` (FR-PUB-036, FR-PUB-040; unit tests: T386 for the preview, T424 for the 409 on a second concurrent publish; integration test: T429 for the advisory lock)
-- [ ] T395 [US7] Implement provider switching and disconnection with artifact preservation in `backend/src/modules/storage/provider-switch.service.ts` (FR-PUB-037, FR-PUB-038, **SC-010**; unit tests: T387, T451)
+- [X] T382 [P] [US5] Unit tests asserting a workspace can be connected to a provider **with a destination selected within it** (**FR-PUB-029**), and that the connection reports healthy, needs-reauthorisation and unavailable as distinct states (FR-PUB-031), in `backend/tests/unit/storage/connection.spec.ts`
+- [X] T383 [P] [US5] Unit tests asserting a provider missing a required capability is refused, naming it, in `backend/tests/unit/storage/capability-refusal.spec.ts`
+- [X] T384 [P] [US6] Unit tests asserting every publish failure reports a distinct named reason — unavailable, expired, quota, size, destination missing, with zero generic failures reaching the user (**SC-009**), in `backend/tests/unit/storage/publish-failures.spec.ts`
+- [X] T385 [P] [US6] Unit tests asserting artifacts the publisher cannot access are excluded and the exclusion reported, in `backend/tests/unit/storage/publish-access.spec.ts`
+- [X] T386 [P] [US6] Unit tests asserting republish states what will be added, replaced or left alone BEFORE changing anything, in `backend/tests/unit/storage/republish.spec.ts`
+- [X] T387 [P] [US7] Unit tests asserting provider switching loses no platform artifact and no publish history (**SC-010**), in `backend/tests/unit/storage/provider-switch.spec.ts`
+- [X] T388 [US5] Define `StorageConnection`, `PublishRecord` and `PublishedFileReference` models in `backend/prisma/schema.prisma` (unit tests: T382, T387, T817)
+- [X] T389 [US5] Define the storage provider contract in `packages/storage-contract/src/index.ts` — one boundary, interchangeable providers (FR-PUB-030, FR-PUB-039; unit test: T383)
+- [X] T390 [US5] Implement connection lifecycle and health reporting in `backend/src/modules/storage/connection.service.ts` (FR-PUB-029, FR-PUB-031; unit test: T382)
+- [X] T391 [US6] Implement the publish pipeline with per-project organisation in `backend/src/modules/storage/publish.service.ts` (FR-PUB-032, FR-PUB-034; unit tests: T817, T818)
+- [X] T392 [US6] Implement access-aware exclusion during publish in `backend/src/modules/storage/publish.service.ts` (FR-PUB-033; unit test: T385)
+- [X] T393 [US6] Implement the publish failure taxonomy in `backend/src/modules/storage/publish-failures.ts` (FR-PUB-035, **SC-009**; unit test: T384)
+- [X] T394 [US6] Implement republish preview and concurrent-publish prevention in `backend/src/modules/storage/republish.service.ts` (FR-PUB-036, FR-PUB-040; unit tests: T386 for the preview, T424 for the 409 on a second concurrent publish; integration test: T429 for the advisory lock)
+- [X] T395 [US7] Implement provider switching and disconnection with artifact preservation in `backend/src/modules/storage/provider-switch.service.ts` (FR-PUB-037, FR-PUB-038, **SC-010**; unit tests: T387, T451)
 
 ### Credentials and disconnection *(added 2026-08-08 — FR-PUB-029a, FR-PUB-029b, FR-PUB-038, SC-014, clarified that day)*
 
@@ -54,28 +54,28 @@ Feature → requirement link mandatory, carried in this framing note. This Epic 
 never accepts a password. The token never reaches the adapter, which gets a short-lived access token
 per call — preserving contract rule **S7** and the ADR-0002 sandbox posture.*
 
-- [ ] T447 [P] [US5] Write failing unit tests asserting an expired access token is refreshed without user interaction where the provider permits it, and that a connection whose refresh fails reports `needs_reauthorisation` rather than `unavailable` (**FR-PUB-029a**, FR-PUB-031), in `backend/tests/unit/storage/token-refresh.spec.ts`
-- [ ] T448 [US5] Implement token refresh and re-authorisation reporting in `backend/src/modules/storage/token-refresh.service.ts` (**FR-PUB-029a**; unit test: T447)
-- [ ] T449 [P] [US5] Write failing unit tests asserting a stored refresh token never appears in any endpoint response, log entry, or error message, that no provider account password is ever accepted, and that the token is discarded on disconnection (**FR-PUB-029b**, **SC-014**), in `backend/tests/unit/storage/token-exposure.spec.ts`
-- [ ] T450 [US5] Implement refresh-token encryption at rest, non-exposure, and discard-on-disconnect in `backend/src/modules/storage/connection.service.ts` (**FR-PUB-029b**, **SC-014**; unit test: T449)
-- [ ] T451 [P] [US7] Write failing unit tests asserting disconnection **leaves already-published files untouched at the provider** and marks their publish records no longer tracked — the platform never deletes at the provider (**FR-PUB-038**), in `backend/tests/unit/storage/disconnect-retention.spec.ts`
+- [X] T447 [P] [US5] Write failing unit tests asserting an expired access token is refreshed without user interaction where the provider permits it, and that a connection whose refresh fails reports `needs_reauthorisation` rather than `unavailable` (**FR-PUB-029a**, FR-PUB-031), in `backend/tests/unit/storage/token-refresh.spec.ts`
+- [X] T448 [US5] Implement token refresh and re-authorisation reporting in `backend/src/modules/storage/token-refresh.service.ts` (**FR-PUB-029a**; unit test: T447)
+- [X] T449 [P] [US5] Write failing unit tests asserting a stored refresh token never appears in any endpoint response, log entry, or error message, that no provider account password is ever accepted, and that the token is discarded on disconnection (**FR-PUB-029b**, **SC-014**), in `backend/tests/unit/storage/token-exposure.spec.ts`
+- [X] T450 [US5] Implement refresh-token encryption at rest, non-exposure, and discard-on-disconnect in `backend/src/modules/storage/connection.service.ts` (**FR-PUB-029b**, **SC-014**; unit test: T449)
+- [X] T451 [P] [US7] Write failing unit tests asserting disconnection **leaves already-published files untouched at the provider** and marks their publish records no longer tracked — the platform never deletes at the provider (**FR-PUB-038**), in `backend/tests/unit/storage/disconnect-retention.spec.ts`
 ### API surface, fixture and conformance *(added 2026-08-05 — closing G-02.2, G-02.4 and G-02.5)*
 
 *Regrouped 2026-08-19 by `/speckit-analyze` finding **A8**. These eleven sat under the credentials
 heading above because they were appended after it, not because they belong to it — none concerns a
 token or a disconnection.*
 
-- [ ] T396 [P] [US5] Implement a fixture storage provider with injectable failures, mirroring the engine fixture pattern, in `packages/storage-adapters/fixture/src/index.ts` (unit tests: T382, T384)
-- [ ] T421 [P] [US5] Write failing unit tests for the storage connections controller with mocked services, asserting an unreachable provider reports `unavailable` and never `healthy`, in `backend/tests/unit/storage/connections.controller.spec.ts`
-- [ ] T422 [P] [US5] Contract tests for connection endpoints against `contracts/platform-api-epic-002.md` in `backend/tests/contract/storage-connections.spec.ts`
-- [ ] T423 [US5] Implement the storage connections controller in `backend/src/modules/storage/connections.controller.ts` (unit test: T421; contract test: T422)
-- [ ] T424 [P] [US6] Write failing unit tests for the publish controller, asserting the republish preview is computed **before any write** and that a second concurrent publish returns 409, in `backend/tests/unit/storage/publish.controller.spec.ts`
-- [ ] T425 [P] [US6] Contract tests for publish and preview endpoints, asserting every failure carries a reason from the closed taxonomy with no `unknown` member, and that the publish endpoint accepts **no artifact-subset parameter** (FR-PUB-032), in `backend/tests/contract/publish.spec.ts`
-- [ ] T426 [US6] Implement the publish controller in `backend/src/modules/storage/publish.controller.ts` (unit test: T424; contract test: T425)
-- [ ] T429 [P] [US6] Integration test asserting two concurrent publishes of one project are **prevented** by an advisory lock on `project_id`, not queued (FR-PUB-040), in `backend/tests/integration/publish-concurrency.spec.ts`
-- [ ] T430 [US5] Implement the shared storage conformance suite — the 8 cases SC-01 to SC-08 from `contracts/storage-provider-contract.md` — in `packages/storage-contract/tests/conformance/storage-conformance.suite.ts`
-- [ ] T431 [US5] Run the conformance suite against the fixture provider in `packages/storage-adapters/fixture/tests/conformance.spec.ts` (suite: T430)
-- [ ] T432 [US7] Implement the architecture test failing the build if `backend/src/**` names any storage provider SDK, package, or provider string — the guarantee behind SC-011, mirroring T047 for engines — in `backend/tests/architecture/storage-independence.spec.ts`
+- [X] T396 [P] [US5] Implement a fixture storage provider with injectable failures, mirroring the engine fixture pattern, in `packages/storage-adapters/fixture/src/index.ts` (unit tests: T382, T384)
+- [X] T421 [P] [US5] Write failing unit tests for the storage connections controller with mocked services, asserting an unreachable provider reports `unavailable` and never `healthy`, in `backend/tests/unit/storage/connections.controller.spec.ts`
+- [X] T422 [P] [US5] Contract tests for connection endpoints against `contracts/platform-api-epic-002.md` in `backend/tests/contract/storage-connections.spec.ts`
+- [X] T423 [US5] Implement the storage connections controller in `backend/src/modules/storage/connections.controller.ts` (unit test: T421; contract test: T422)
+- [X] T424 [P] [US6] Write failing unit tests for the publish controller, asserting the republish preview is computed **before any write** and that a second concurrent publish returns 409, in `backend/tests/unit/storage/publish.controller.spec.ts`
+- [X] T425 [P] [US6] Contract tests for publish and preview endpoints, asserting every failure carries a reason from the closed taxonomy with no `unknown` member, and that the publish endpoint accepts **no artifact-subset parameter** (FR-PUB-032), in `backend/tests/contract/publish.spec.ts`
+- [X] T426 [US6] Implement the publish controller in `backend/src/modules/storage/publish.controller.ts` (unit test: T424; contract test: T425)
+- [X] T429 [P] [US6] Integration test asserting two concurrent publishes of one project are **prevented** by an advisory lock on `project_id`, not queued (FR-PUB-040), in `backend/tests/integration/publish-concurrency.spec.ts`
+- [X] T430 [US5] Implement the shared storage conformance suite — the 8 cases SC-01 to SC-08 from `contracts/storage-provider-contract.md` — in `packages/storage-contract/tests/conformance/storage-conformance.suite.ts`
+- [X] T431 [US5] Run the conformance suite against the fixture provider in `packages/storage-adapters/fixture/tests/conformance.spec.ts` (suite: T430)
+- [X] T432 [US7] Implement the architecture test failing the build if `backend/src/**` names any storage provider SDK, package, or provider string — the guarantee behind SC-011, mirroring T047 for engines — in `backend/tests/architecture/storage-independence.spec.ts`
 
 ### Publish record, scope and external change *(added 2026-08-19 — FR-PUB-032, FR-PUB-034, SC-012, SC-017, from `/speckit-analyze` findings A1–A4)*
 
@@ -84,27 +84,27 @@ publish record, so the record shipped unverified — the pairing existed, the as
 parent's third clarification session then narrowed `FR-PUB-032` to whole-project publishing and set the
 publish half of `SC-017`, and `SC-012` had been owned since the split with no task at all.*
 
-- [ ] T817 [P] [US6] Unit tests asserting each publish writes a record naming what was published, when, by whom, and where it landed, and that the record survives a failed publish stating what did and did not land (**FR-PUB-034**), in `backend/tests/unit/storage/publish-record.spec.ts`
-- [ ] T818 [P] [US6] Unit tests asserting a publish covers the whole project and that no artifact-subset selection is offered, so FR-PUB-036's added / replaced / left-alone preview always compares against a whole-project baseline — a deselected file must not be expressible, because it cannot be told apart from a deleted one (**FR-PUB-032**), in `backend/tests/unit/storage/publish-scope.spec.ts`
-- [ ] T819 [US6] Enforce whole-project publish scope in `backend/src/modules/storage/publish.service.ts` (**FR-PUB-032**; unit test: T818) — the only artifacts omitted are those `FR-PUB-033` excludes for access reasons, and those are reported
-- [ ] T820 [P] [US6] Integration test asserting a publish of **500 artifacts** completes without failure and without degrading the publish flow, against the fixture provider (**SC-017**), in `backend/tests/integration/publish-scale.spec.ts` — the counterpart of `T810`, which took the 200-question review half
-- [ ] T821 [P] [US6] Unit tests asserting deletion or alteration of a published file at the provider leaves the platform artifact intact and merely marks its `PublishedFileReference` stale — the platform never reads back from the provider (**SC-012**, FR-PUB-037), in `backend/tests/unit/storage/external-deletion.spec.ts`
+- [X] T817 [P] [US6] Unit tests asserting each publish writes a record naming what was published, when, by whom, and where it landed, and that the record survives a failed publish stating what did and did not land (**FR-PUB-034**), in `backend/tests/unit/storage/publish-record.spec.ts`
+- [X] T818 [P] [US6] Unit tests asserting a publish covers the whole project and that no artifact-subset selection is offered, so FR-PUB-036's added / replaced / left-alone preview always compares against a whole-project baseline — a deselected file must not be expressible, because it cannot be told apart from a deleted one (**FR-PUB-032**), in `backend/tests/unit/storage/publish-scope.spec.ts`
+- [X] T819 [US6] Enforce whole-project publish scope in `backend/src/modules/storage/publish.service.ts` (**FR-PUB-032**; unit test: T818) — the only artifacts omitted are those `FR-PUB-033` excludes for access reasons, and those are reported
+- [X] T820 [P] [US6] Integration test asserting a publish of **500 artifacts** completes without failure and without degrading the publish flow, against the fixture provider (**SC-017**), in `backend/tests/integration/publish-scale.spec.ts` — the counterpart of `T810`, which took the 200-question review half
+- [X] T821 [P] [US6] Unit tests asserting deletion or alteration of a published file at the provider leaves the platform artifact intact and merely marks its `PublishedFileReference` stale — the platform never reads back from the provider (**SC-012**, FR-PUB-037), in `backend/tests/unit/storage/external-deletion.spec.ts`
 
 ## F-025.UI · Interface
 
 *Satisfies **FR-PUB-031** and **FR-PUB-036**. Recorded by `T687` — `traceability-convention.md` makes the
 Feature → requirement link mandatory, carried in this framing note.*
 
-- [ ] T401 [P] [US5] Component unit tests for storage connection and publish status in `frontend/tests/unit/pages/StorageConnections.spec.tsx`
-- [ ] T402 [P] [US5] Implement the storage connections page in `frontend/src/pages/StorageConnections.tsx` (unit test: T401)
+- [X] T401 [P] [US5] Component unit tests for storage connection and publish status in `frontend/tests/unit/pages/StorageConnections.spec.tsx`
+- [X] T402 [P] [US5] Implement the storage connections page in `frontend/src/pages/StorageConnections.tsx` (unit test: T401)
 
 ## F-025.Z · Epic closure
 
-- [ ] T439 **Confirm the SRS back-fill is complete** for third-party storage integration (FR-PUB-029–FR-PUB-040), which has no SRS source (Constitution II) — this epic must not be **approved** without it; record in `specs/025-external-storage-publishing/closure.md`
-- [ ] T440 Confirm every implementation task in this epic has a passing unit test (Constitution V); record in `specs/025-external-storage-publishing/closure.md`
-- [ ] T441 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/025-external-storage-publishing/closure.md`
-- [ ] T442 Triage `specs/025-external-storage-publishing/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/025-external-storage-publishing/closure.md`
-- [ ] T443 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the closing report in `specs/025-external-storage-publishing/closure.md`
+- [X] T439 **Confirm the SRS back-fill is complete** for third-party storage integration (FR-PUB-029–FR-PUB-040), which has no SRS source (Constitution II) — this epic must not be **approved** without it; record in `specs/025-external-storage-publishing/closure.md`
+- [X] T440 Confirm every implementation task in this epic has a passing unit test (Constitution V); record in `specs/025-external-storage-publishing/closure.md`
+- [X] T441 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/025-external-storage-publishing/closure.md`
+- [X] T442 Triage `specs/025-external-storage-publishing/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/025-external-storage-publishing/closure.md`
+- [X] T443 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the closing report in `specs/025-external-storage-publishing/closure.md`
 
 ---
 

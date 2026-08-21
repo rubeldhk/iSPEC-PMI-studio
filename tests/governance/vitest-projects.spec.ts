@@ -55,6 +55,8 @@ const PROJECT_DIRS: Record<string, string> = {
   observability: 'packages/observability/tests',
   'fixture-adapter': 'engine-adapters/fixture/tests',
   'speckit-adapter': 'engine-adapters/speckit/tests',
+  // EPIC-025 T431 — the storage fixture adapter and its conformance run.
+  'storage-adapters': 'packages/storage-adapters/fixture/tests',
   'execution-contract': 'packages/execution-contract/tests',
   'agent-contract': 'packages/agent-contract/tests',
   'agent-adapters': 'agent-adapters',

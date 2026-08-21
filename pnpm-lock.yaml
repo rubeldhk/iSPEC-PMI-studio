@@ -77,6 +77,9 @@ importers:
       '@pmi/observability':
         specifier: workspace:*
         version: link:../packages/observability
+      '@pmi/storage-contract':
+        specifier: workspace:*
+        version: link:../packages/storage-contract
       '@prisma/client':
         specifier: ^5
         version: 5.22.0(prisma@5.22.0)
@@ -108,6 +111,9 @@ importers:
       '@pmi/engine-adapter-speckit':
         specifier: workspace:*
         version: link:../engine-adapters/speckit
+      '@pmi/storage-adapter-fixture':
+        specifier: workspace:*
+        version: link:../packages/storage-adapters/fixture
       '@pmi/worker':
         specifier: workspace:*
         version: link:../worker
@@ -210,6 +216,14 @@ importers:
       '@pmi/engine-contract':
         specifier: workspace:*
         version: link:../engine-contract
+
+  packages/storage-adapters/fixture:
+    dependencies:
+      '@pmi/storage-contract':
+        specifier: workspace:*
+        version: link:../../storage-contract
+
+  packages/storage-contract: {}
 
   worker:
     dependencies:

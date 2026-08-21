@@ -181,6 +181,91 @@ export interface Engine {
   isDefault: boolean;
 }
 
+/** A recorded answer in a review session (EPIC-023, SC-006 attribution). */
+export interface ReviewAnswer {
+  id: string;
+  questionId: string;
+  value: string;
+  authorId: string;
+  recordedAt: string;
+  note: string | null;
+  state: 'draft' | 'committed';
+  conflict: boolean;
+  selectedAsWinner: boolean;
+}
+
+/** A deferred question: context, options, suggestion (FR-RUN-003/007). */
+export interface ReviewQuestion {
+  id: string;
+  context: string;
+  optionsConsidered: string[];
+  suggestedAnswer: string;
+  restricted: boolean;
+  answers: ReviewAnswer[];
+}
+
+export interface ReviewSession {
+  id: string;
+  runId: string;
+  state: 'open' | 'submitted';
+  openedAt: string;
+  submittedAt: string | null;
+  questions: ReviewQuestion[];
+}
+
+/** An access grant on an artifact (EPIC-024, FR-ACC-021). */
+export interface AccessGrant {
+  id: string;
+  artifactType: string;
+  artifactId: string;
+  userId: string;
+  level: 'read' | 'edit';
+  grantedById: string;
+  grantedAt: string;
+  revokedAt: string | null;
+}
+
+export interface AccessAttempt {
+  id: string;
+  userId: string;
+  artifactType: string;
+  artifactId: string;
+  action: string;
+  reason: string;
+  attemptedAt: string;
+}
+
+/** A storage connection (EPIC-025). The token never appears here. */
+export interface StorageConnection {
+  id: string;
+  providerName: string;
+  destination: string;
+  status: 'healthy' | 'needs_reauthorisation' | 'unavailable';
+  authorisedById: string;
+  lastCheckedAt: string | null;
+  disconnectedAt: string | null;
+}
+
+export interface PublishRecord {
+  id: string;
+  projectId: string;
+  connectionId: string;
+  initiatedById: string;
+  state: 'running' | 'succeeded' | 'partial' | 'failed';
+  failureReason: string | null;
+  failureMessage: string | null;
+  artifactsIncluded: { artifactId: string; name: string; landed: boolean }[];
+  artifactsExcluded: { artifactId: string; name: string; reason: string }[];
+  destinationLocations: string[];
+  publishedAt: string;
+}
+
+export interface RepublishPreview {
+  added: string[];
+  replaced: string[];
+  unchanged: string[];
+}
+
 export interface FieldError {
   field: string;
   reason: string;
@@ -382,6 +467,119 @@ export class ApiClient {
 
   async getProjectCoverage(projectId: string): Promise<CoverageReport> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/coverage`);
+  }
+
+  // ---- review sessions (EPIC-023) ----
+
+  async getRunReview(runId: string): Promise<ReviewSession> {
+    return this.request('GET', `/runs/${encodeURIComponent(runId)}/review`);
+  }
+
+  async getReviewSession(id: string): Promise<ReviewSession> {
+    return this.request('GET', `/review/${encodeURIComponent(id)}`);
+  }
+
+  /** Saves a DRAFT — commits nothing (FR-RUN-011). */
+  async saveDraftAnswer(
+    sessionId: string,
+    questionId: string,
+    input: { value?: string; takeSuggested?: boolean; note?: string },
+  ): Promise<ReviewAnswer> {
+    return this.request(
+      'PUT',
+      `/review/${encodeURIComponent(sessionId)}/answers/${encodeURIComponent(questionId)}`,
+      input,
+    );
+  }
+
+  /** Atomic batch commit (FR-RUN-015). */
+  async submitReviewSession(id: string): Promise<ReviewSession> {
+    return this.request('POST', `/review/${encodeURIComponent(id)}/submit`);
+  }
+
+  async resolveReviewConflict(
+    sessionId: string,
+    questionId: string,
+    winnerAnswerId: string,
+  ): Promise<ReviewAnswer[]> {
+    return this.request(
+      'POST',
+      `/review/${encodeURIComponent(sessionId)}/conflicts/${encodeURIComponent(questionId)}/resolve`,
+      { winnerAnswerId },
+    );
+  }
+
+  // ---- access grants (EPIC-024) ----
+
+  async listGrants(artifactType: string, artifactId: string): Promise<AccessGrant[]> {
+    return this.request(
+      'GET',
+      `/artifacts/${encodeURIComponent(artifactType)}/${encodeURIComponent(artifactId)}/grants`,
+    );
+  }
+
+  async createGrant(
+    artifactType: string,
+    artifactId: string,
+    input: { userId: string; level: 'read' | 'edit' },
+  ): Promise<AccessGrant> {
+    return this.request(
+      'POST',
+      `/artifacts/${encodeURIComponent(artifactType)}/${encodeURIComponent(artifactId)}/grants`,
+      input,
+    );
+  }
+
+  async revokeGrant(artifactType: string, artifactId: string, grantId: string): Promise<AccessGrant> {
+    return this.request(
+      'DELETE',
+      `/artifacts/${encodeURIComponent(artifactType)}/${encodeURIComponent(artifactId)}/grants/${encodeURIComponent(grantId)}`,
+    );
+  }
+
+  async listAccessAttempts(artifactType: string, artifactId: string): Promise<AccessAttempt[]> {
+    return this.request(
+      'GET',
+      `/artifacts/${encodeURIComponent(artifactType)}/${encodeURIComponent(artifactId)}/access-attempts`,
+    );
+  }
+
+  // ---- storage connections and publishing (EPIC-025) ----
+
+  async listStorageConnections(workspaceId: string): Promise<StorageConnection[]> {
+    return this.request('GET', `/workspaces/${encodeURIComponent(workspaceId)}/storage-connections`);
+  }
+
+  async createStorageConnection(
+    workspaceId: string,
+    input: { providerType: string; destination: string },
+  ): Promise<StorageConnection> {
+    return this.request(
+      'POST',
+      `/workspaces/${encodeURIComponent(workspaceId)}/storage-connections`,
+      input,
+    );
+  }
+
+  async getConnectionHealth(id: string): Promise<{ status: StorageConnection['status'] }> {
+    return this.request('GET', `/storage-connections/${encodeURIComponent(id)}/health`);
+  }
+
+  async disconnectStorageConnection(id: string): Promise<StorageConnection> {
+    return this.request('DELETE', `/storage-connections/${encodeURIComponent(id)}`);
+  }
+
+  /** Whole-project publish — deliberately no artifact selection (FR-PUB-032). */
+  async publishProject(projectId: string): Promise<PublishRecord> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/publishes`);
+  }
+
+  async listPublishes(projectId: string): Promise<PublishRecord[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/publishes`);
+  }
+
+  async getPublishPreview(projectId: string): Promise<RepublishPreview> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/publishes/preview`);
   }
 
   // ---- engines (US8) ----

@@ -13,6 +13,10 @@ import { TasksModule } from './modules/tasks/tasks.module.js';
 import { SteeringModule } from './modules/steering/steering.module.js';
 import { DependenciesModule } from './modules/dependencies/dependencies.module.js';
 import { TraceabilityModule } from './modules/traceability/traceability.module.js';
+import { RunsModule } from './modules/runs/runs.module.js';
+import { ReviewModule } from './modules/review/review.module.js';
+import { AccessModule } from './modules/access/access.module.js';
+import { StorageModule } from './modules/storage/storage.module.js';
 
 /**
  * Application composition root.
@@ -50,6 +54,10 @@ import { TraceabilityModule } from './modules/traceability/traceability.module.j
     DependenciesModule,
     TraceabilityModule,
     DecisionsModule,
+    RunsModule,
+    ReviewModule,
+    AccessModule,
+    StorageModule,
   ],
 })
 export class AppModule {}

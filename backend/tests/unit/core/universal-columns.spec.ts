@@ -91,8 +91,16 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // the tenancy tier and the steering engine's scope/content/provenance set.
     // dependency_edges arrived with EPIC-020 T252; the four review tables
     // with EPIC-021 (roles, gates, append-only outcomes, attributed findings).
+    // The six run/review tables arrived with EPIC-023 (T343/T350/T357/T802):
+    // runs, their recorded questions and provisional markings, the append-only
+    // approval overrides, and the review sessions with their answers.
+    // access_grants + access_attempt_records arrived with EPIC-024 T376 —
+    // layer 2 of the two-layer authorisation rule and its refusal record.
     expect([...tables.keys()].sort()).toEqual([
+      'access_attempt_records',
+      'access_grants',
       'adr_specification_links',
+      'answers',
       'architecture_decision_records',
       'audit_entries',
       'dependency_edges',
@@ -102,16 +110,24 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'lifecycle_transitions',
       'organizations',
       'projects',
+      'provisional_approval_overrides',
+      'provisional_markings',
+      'publish_records',
+      'published_file_references',
+      'recorded_questions',
       'requirement_versions',
       'requirements',
       'review_findings',
       'review_gates',
       'review_roles',
+      'review_sessions',
+      'runs',
       'specification_versions',
       'specifications',
       'steering_applications',
       'steering_documents',
       'steering_scopes',
+      'storage_connections',
       'structure_definitions',
       'tasks',
       'traceability_links',
@@ -160,6 +176,20 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       steering_applications: 'appliedAt',
       // A gate outcome *occurs* (EPIC-021 T287) — the audit_entries treatment.
       gate_outcomes: 'occurredAt',
+      // EPIC-023: an override is *approved*, a session is *opened*, an answer
+      // is *recorded* — in each case the timestamp IS the record (FR-RUN-005b,
+      // FR-RUN-020, SC-006), not bookkeeping about the row.
+      provisional_approval_overrides: 'approvedAt',
+      review_sessions: 'openedAt',
+      answers: 'recordedAt',
+      // EPIC-024: a grant is *granted*, an attempt is *attempted* — the
+      // timestamp is the record itself (FR-ACC-023, FR-ACC-026).
+      access_grants: 'grantedAt',
+      access_attempt_records: 'attemptedAt',
+      // EPIC-025: a publish record and its file references are *published* —
+      // FR-PUB-034 makes the timestamp part of the record.
+      publish_records: 'publishedAt',
+      published_file_references: 'publishedAt',
     };
 
     const missing = [...tables.entries()]

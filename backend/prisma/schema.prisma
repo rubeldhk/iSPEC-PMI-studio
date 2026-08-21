@@ -67,6 +67,17 @@ model Workspace {
   reviewGates           ReviewGate[]
   gateOutcomes          GateOutcome[]
   reviewFindings        ReviewFinding[]
+  runs                  Run[]
+  recordedQuestions     RecordedQuestion[]
+  provisionalMarkings   ProvisionalMarking[]
+  provisionalOverrides  ProvisionalApprovalOverride[]
+  reviewSessions        ReviewSession[]
+  answers               Answer[]
+  accessGrants          AccessGrant[]
+  accessAttempts        AccessAttemptRecord[]
+  storageConnections    StorageConnection[]
+  publishRecords        PublishRecord[]
+  publishedFiles        PublishedFileReference[]
 
   @@map("workspaces")
 }
@@ -124,6 +135,7 @@ model Project {
   requirements    Requirement[]
   specifications  Specification[]
   decisionRecords ArchitectureDecisionRecord[]
+  runs            Run[]
 
   @@unique([workspaceId, name])
   @@index([workspaceId])
@@ -853,6 +865,346 @@ model DependencyEdge {
   @@index([targetType, targetId])
   @@index([workspaceId])
   @@map("dependency_edges")
+}
+
+// ---------------------------------------------------------------- runs
+//
+// EPIC-023 T343 — an unattended run and what it deferred (FR-RUN-001..008).
+//
+// A Run is NOT a GenerationJob (R-002-1): a job is one engine invocation; a
+// run spans many across a user-selected range, survives questions, and
+// carries an access snapshot. `reached_stop_point` is a SUCCESS state
+// (FR-RUN-008a) — merging the two would make it a meaningless job outcome.
+
+enum RunMode {
+  interactive
+  unattended
+}
+
+enum RunStopRange {
+  after_specification
+  through_tasks
+}
+
+enum RunState {
+  running
+  reached_stop_point
+  failed
+  cancelled
+}
+
+model Run {
+  id          String       @id @default(uuid())
+  workspaceId String
+  projectId   String
+  mode        RunMode
+  stopRange   RunStopRange
+  state       RunState     @default(running)
+  // FR-ACC-028 / R-002-4 — resolved grants at start, read from, never
+  // re-queried. Written by EPIC-024; null until that epic lands.
+  accessSnapshot Json?
+  initiatedById  String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  // Why it stopped, when not a clean stop point (FR-RUN-008). On a clean stop
+  // it reports that the run stopped at the selected range (FR-RUN-008a).
+  outcomeReason String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  workspace     Workspace          @relation(fields: [workspaceId], references: [id])
+  project       Project            @relation(fields: [projectId], references: [id])
+  questions     RecordedQuestion[]
+  reviewSession ReviewSession?
+
+  @@index([workspaceId])
+  @@index([projectId, state])
+  @@map("runs")
+}
+
+// T343 — a question the run would have asked, recorded instead (FR-RUN-003,
+// FR-RUN-004, FR-RUN-007). Context is REQUIRED: enough for someone who did
+// not start the run to understand what is being asked.
+model RecordedQuestion {
+  id                String @id @default(uuid())
+  workspaceId       String
+  runId             String
+  context           String
+  optionsConsidered Json
+  suggestedAnswer   String
+  // What the run actually proceeded on — a provisional answer, not a decision.
+  provisionalAnswerApplied String?
+  // True when the asker's grants hide the artifact it concerns: shown as
+  // restricted rather than silently omitted (parent edge case).
+  restricted Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  workspace Workspace            @relation(fields: [workspaceId], references: [id])
+  run       Run                  @relation(fields: [runId], references: [id])
+  markings  ProvisionalMarking[]
+  answers   Answer[]
+
+  @@index([workspaceId])
+  @@index([runId])
+  @@map("recorded_questions")
+}
+
+// T343 — a LINK, not a flag (R-002-5): it joins an artifact to the SPECIFIC
+// question governing it, which is what lets markings clear selectively when
+// one question is answered. A boolean clears everything or nothing.
+model ProvisionalMarking {
+  id           String    @id @default(uuid())
+  workspaceId  String
+  artifactType String
+  artifactId   String
+  questionId   String
+  clearedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  question  RecordedQuestion @relation(fields: [questionId], references: [id])
+
+  @@index([workspaceId])
+  @@index([artifactType, artifactId])
+  @@index([questionId])
+  @@map("provisional_markings")
+}
+
+// T350 — append-only (the audit_entries treatment): approval of a provisional
+// specification is refused without one (FR-RUN-005a), and SC-005a requires
+// zero un-overridden provisional approvals.
+model ProvisionalApprovalOverride {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  approvalRef   String
+  approverId    String
+  approvedAt    DateTime @default(now())
+  // The SPECIFIC provisional items accepted (FR-RUN-005b).
+  itemsAccepted Json
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([approvalRef])
+  @@map("provisional_approval_overrides")
+}
+
+// ---------------------------------------------------------------- review
+//
+// EPIC-023 T357 — one session per run, unique by construction; a run raising
+// zero questions creates NO session. `open → submitted` is one way; a
+// submitted session is closed to edits and retained permanently (FR-RUN-015,
+// FR-RUN-018, FR-RUN-020) — the DELETE trigger in the migration backs that.
+
+enum ReviewSessionState {
+  open
+  submitted
+}
+
+enum AnswerState {
+  draft
+  committed
+}
+
+model ReviewSession {
+  id          String             @id @default(uuid())
+  workspaceId String
+  runId       String             @unique
+  state       ReviewSessionState @default(open)
+  openedAt    DateTime           @default(now())
+  submittedAt DateTime?
+  updatedAt   DateTime           @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  run       Run       @relation(fields: [runId], references: [id])
+
+  @@index([workspaceId])
+  @@map("review_sessions")
+}
+
+// T357 + T802 — a draft or committed answer with permanent attribution
+// (FR-RUN-010..013, SC-006). Conflicting answers BOTH survive (R-002-6);
+// resolution (FR-RUN-013a) selects a winner and deletes nothing — the record
+// has to show that the disagreement happened (SC-015).
+model Answer {
+  id         String      @id @default(uuid())
+  workspaceId String
+  questionId  String
+  value       String
+  authorId    String
+  recordedAt  DateTime    @default(now())
+  note        String?
+  state       AnswerState @default(draft)
+  conflict    Boolean     @default(false)
+  // T802 — conflict resolution, restricted to owner or initiator.
+  selectedAsWinner     Boolean   @default(false)
+  conflictResolvedById String?
+  conflictResolvedAt   DateTime?
+  updatedAt            DateTime  @updatedAt
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  question  RecordedQuestion @relation(fields: [questionId], references: [id])
+
+  @@index([workspaceId])
+  @@index([questionId])
+  @@map("answers")
+}
+
+// ---------------------------------------------------------------- access
+//
+// EPIC-024 T376 — per-artifact access grants (FR-ACC-021..028).
+//
+// Layer 2 of the two-layer rule: workspace scoping (EPIC-004, layer 1) is
+// never modified; a grant refusal is indistinguishable from absence
+// (FR-ACC-024). Revocation is a TIMESTAMP, not a delete — the audit trail
+// survives. The last-editor invariant (FR-ACC-027) is enforced inside the
+// revoke transaction, not by a pre-check.
+
+enum AccessLevel {
+  read
+  edit
+}
+
+model AccessGrant {
+  id           String      @id @default(uuid())
+  workspaceId  String
+  artifactType String
+  artifactId   String
+  userId       String
+  level        AccessLevel
+  grantedById  String
+  grantedAt    DateTime    @default(now())
+  revokedAt    DateTime?
+  revokedById  String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([artifactType, artifactId])
+  @@index([userId])
+  @@map("access_grants")
+}
+
+// T376 — every refusal is recorded, in the SAME transaction as the refusal
+// (FR-ACC-023, SC-007, SC-013). Append-only: the trigger rejects mutation.
+model AccessAttemptRecord {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  userId       String
+  artifactType String
+  artifactId   String
+  action       String
+  reason       String
+  attemptedAt  DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([artifactType, artifactId])
+  @@map("access_attempt_records")
+}
+
+// ---------------------------------------------------------------- storage
+//
+// EPIC-025 T388 — external storage connections and publish records
+// (FR-PUB-029..040).
+//
+// The refresh token is ENCRYPTED AT REST and never selected by a read path;
+// it is discarded (nulled) on disconnection (FR-PUB-029b). Disconnection must
+// not touch any platform artifact — it is a timestamp plus a token discard.
+
+enum ConnectionStatus {
+  healthy
+  needs_reauthorisation
+  unavailable
+}
+
+enum PublishState {
+  running
+  succeeded
+  partial
+  failed
+}
+
+// FR-PUB-035 / SC-009: deliberately NO `unknown` member, matching
+// job_failure_reason — a generic failure is a defect.
+enum PublishFailureReason {
+  provider_unavailable
+  authorisation_expired
+  quota_exceeded
+  size_limit_exceeded
+  destination_missing
+}
+
+model StorageConnection {
+  id           String           @id @default(uuid())
+  workspaceId  String
+  providerName String
+  // Folder or bucket within the provider (FR-PUB-029).
+  destination  String
+  status       ConnectionStatus @default(healthy)
+  authorisedById String
+  // Encrypted at rest; never returned by any endpoint; nulled on disconnect.
+  refreshTokenEncrypted String?
+  lastCheckedAt         DateTime?
+  disconnectedAt        DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  publishRecords PublishRecord[]
+
+  @@index([workspaceId])
+  @@map("storage_connections")
+}
+
+// T388 — what was published, when, by whom, and where it landed
+// (FR-PUB-034). The record SURVIVES a failed publish, stating what did and
+// did not land — and survives provider switches (FR-PUB-038, SC-010).
+model PublishRecord {
+  id            String               @id @default(uuid())
+  workspaceId   String
+  projectId     String
+  connectionId  String
+  initiatedById String
+  artifactsIncluded    Json
+  // Each exclusion carries its reason (FR-PUB-033).
+  artifactsExcluded    Json
+  state                PublishState
+  failureReason        PublishFailureReason?
+  destinationLocations Json
+  publishedAt          DateTime              @default(now())
+
+  workspace  Workspace         @relation(fields: [workspaceId], references: [id])
+  connection StorageConnection @relation(fields: [connectionId], references: [id])
+
+  @@index([workspaceId])
+  @@index([projectId, publishedAt(sort: Desc)])
+  @@map("publish_records")
+}
+
+// T388 — where each artifact landed. Retained through a provider switch;
+// deleting the file at the provider has ZERO effect on the platform artifact
+// (FR-PUB-037, SC-012) — the reference merely goes stale. On disconnection it
+// is retained and marked no longer tracked (FR-PUB-038).
+model PublishedFileReference {
+  id                  String   @id @default(uuid())
+  workspaceId         String
+  artifactType        String
+  artifactId          String
+  connectionId        String
+  destinationLocation String
+  publishedVersion    String
+  stale               Boolean  @default(false)
+  noLongerTracked     Boolean  @default(false)
+  publishedAt         DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@index([artifactType, artifactId])
+  @@index([connectionId])
+  @@map("published_file_references")
 }
 
 // T242 — the provenance record, written AT GENERATION TIME, never recomputed.

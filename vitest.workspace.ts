@@ -99,6 +99,16 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-025 T431 — the storage fixture adapter and its conformance run.
+    // Registered the moment the first spec exists, per the T537/T539 rule.
+    test: {
+      name: 'storage-adapters',
+      root: './packages/storage-adapters',
+      include: ['**/tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     test: {
       name: 'execution-contract',
       root: './packages/execution-contract',
