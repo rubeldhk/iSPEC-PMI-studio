@@ -85,3 +85,30 @@ tasks.md is this command's to write, not this one's (analysis is read-only apart
 
 Nothing here changes the Epic's two standing gates: `PMI-DOC-005` remains v0.1 Draft, and `D-42`
 remains unrecorded.
+
+---
+
+## Remediation applied — 2026-08-20
+
+All six findings were remediated the same session, by the project owner's approval, through
+`tasks.md` (which is `/speckit-tasks`' file to write) plus the two documents each finding pointed
+at. **`spec.md` and `plan.md` were not touched.**
+
+| ID | Applied |
+|---|---|
+| **D1** | `T866a` added — asserts `main.tsx` imports both stylesheets, mutation-verified by removing one. Placed adjacent to `T866` using the repository's `a`-suffix convention (`T549a`/`T576a`) so the pairing is visible |
+| **U1** | `T879` rewritten: the backlog now derives from the component inventory each page needs, not from lint output that would return nothing |
+| **C1** | Split rather than forced. `T888a` asserts the **testable** half (a `Save` control pairs with a `Saved` confirmation). The naming half became **`UI-0043` in `PMI-DOC-005` as a SHOULD convention** — no check can fail on "name things as users recognise them", and Constitution V holds that review does not satisfy a requirement. A MUST no Epic could ever discharge is worse than an honest SHOULD |
+| **O1** | `T890` moved to the head of Phase 5, under its own *Decision first* heading |
+| **I1** | The accessibility-record check moved to `tests/governance/accessibility-record.spec.ts`; quickstart `V4`'s command repointed to match |
+| **C2** | IDs cited across seven tasks — `FR-DS-001`, `002`, `020`, `023`, `030`, `051`, `SC-DS-003`, `005`, `006` |
+
+**Coverage after remediation**: 32 / 32 requirements (100%), since `FR-DS-042`'s testable half now
+has `T888a` and its untestable half is no longer claimed as a requirement. Tasks: **42**
+(`T865`–`T904`, `T866a`, `T888a`).
+
+**Constitution V**: the `D1` violation is closed. No task now changes application code without a
+paired check.
+
+The Epic's two standing gates are unchanged: `PMI-DOC-005` is still v0.1 Draft (now v0.1.1 in its
+revision history, still unapproved), and `D-42` is still unrecorded — it is `T890`.

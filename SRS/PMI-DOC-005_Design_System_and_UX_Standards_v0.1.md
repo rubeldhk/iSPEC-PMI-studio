@@ -116,8 +116,15 @@ Identifiers per `PMI-DOC-000` §3 (`UI-xxxx`, corpus-wide, four digits).
   recorded in the implementing Epic, not assumed per screen.
 - **UI-0041** — Every data table MUST offer filtering. A table a user cannot narrow is a list they
   must read.
-- **UI-0042** — Microcopy MUST name things as a user recognises them, not as the system implements
-  them; controls MUST state what happens, and confirmations MUST state what happened.
+- **UI-0042** — Controls MUST state what happens and confirmations MUST state what happened — a
+  `Save` control pairs with a `Saved` confirmation, not a generic `Success`. **Testable**, and
+  asserted by EPIC-029 `T888a`.
+- **UI-0043** — Microcopy SHOULD name things as a user recognises them, not as the system
+  implements them (a person manages *notifications*, not *webhook config*). **A convention, not
+  a requirement** — split from `UI-0042` on 2026-08-20 by EPIC-029's analysis pass (`C1`),
+  because no check can fail on it and Constitution V holds that manual review does not satisfy
+  a requirement. Stating it as SHOULD is honest; stating it as MUST would have been a
+  requirement no Epic could ever discharge.
 
 ## 7. Business Rules
 
@@ -172,3 +179,4 @@ tokens and components.
 | Version | Date | Change |
 |---|---|---|
 | 0.1 | 2026-08-20 | Initial draft under `D-41`: 20 requirements across tokens, themes, components, accessibility, layout and content; component-library choice deferred to a named decision (`RULE-05`) |
+| 0.1.1 | 2026-08-20 | `UI-0042` split by EPIC-029 analysis `C1`: the testable half stays a requirement, the naming half becomes `UI-0043`, a SHOULD convention — a MUST no check can fail is one no Epic can discharge |

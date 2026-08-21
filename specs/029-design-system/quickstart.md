@@ -73,7 +73,7 @@ keyboard and a screen reader, then commit the transcript to
 `docs/accessibility/EPIC-029-manual-pass.md` naming the tool, its version, and each journey.
 
 ```bash
-pnpm vitest run --project governance tests/governance/design-tokens.spec.ts -t "manual pass"
+pnpm vitest run --project governance tests/governance/accessibility-record.spec.ts
 ```
 
 **Expected**: the check finds the record and confirms it names a screen reader and at least one
