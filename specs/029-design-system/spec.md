@@ -17,6 +17,31 @@
 
 ## Clarifications
 
+### Session 2026-08-21
+
+Run with the instruction *"make it ready to implement."* The specification itself surfaced **no
+new ambiguity** — every taxonomy category reads Clear after the 2026-08-20 session and the two
+analysis passes — so this session's questions were the two readiness decisions the scan surfaced,
+and its output is the readiness work recorded below rather than a spec change:
+
+- Q: Two other Claude sessions are open on this machine while EPIC-029's plan fails its
+  Constitution Check on exactly that fact — how is the single-session condition satisfied? →
+  A: **By isolation, not exclusivity**: the user closes what can be closed, and implementation
+  runs in the dedicated worktree (`epic/029-design-system`) created 2026-08-21 — the discharge
+  the plan's own Complexity Tracking prescribed. The plan's Constitution Check row was
+  re-evaluated the same day by the session that created the worktree.
+- Q: Should the DOR status-vocabulary closure (D-43) be pre-empted here by normalising other
+  Epics' plan statuses? → A: **No — follow EPIC-026 as written** (user: "check 026 again"):
+  `DEF-026-009` was fixed narrowly (a FAIL fails, whatever its decoration), and the ~17 other
+  status phrasings stay as found under decision `D-43`, which owns whether a closed vocabulary
+  is worth the sweep.
+
+Readiness work this session (all dated in the artifacts themselves): the stale Constitution
+Check rows V and XI re-checked to PASS against the landed `T886a`/`T899a`/`T900a`/`T900b`;
+findings `F4`/`F5` confirmed resolved by the `DEF-026-008`/`DEF-026-009` gate fixes; the
+sibling records EPIC-023/024/025 given their earned `✅` markers so the repaired gate reads
+their 2026-08-19 remediations.
+
 ### Session 2026-08-20
 
 - Q: PMI-DOC-005 puts brand identity out of scope, but the token layer needs concrete colour and
