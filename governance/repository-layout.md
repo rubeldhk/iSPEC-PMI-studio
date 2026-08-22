@@ -170,6 +170,7 @@ path added or removed without updating this document fails the build.
 - `specs/027-ai-native-amendment/`
 - `specs/028-agent-execution-seam/`
 - `specs/029-design-system/`
+- `specs/031-decision-policy-engine/`
 
 ## Deliberately not covered here
 
