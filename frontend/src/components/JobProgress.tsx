@@ -47,8 +47,9 @@ export function JobProgress({ api, jobId, pollMs = 2000, onSettled }: JobProgres
       if (timer !== null) clearInterval(timer);
     };
     // onSettled intentionally excluded: re-subscribing on every render of the
-    // parent would reset the poll cycle.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // parent would reset the poll cycle. Keep it out of the dependency list.
+    // (No eslint-disable here: react-hooks is not among the configured plugins,
+    // so the directive named a rule that could never fire and was itself an error.)
   }, [api, jobId, pollMs]);
 
   if (job === null) return <span>Checking job…</span>;
