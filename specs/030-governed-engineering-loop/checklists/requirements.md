@@ -24,10 +24,12 @@
 ## Requirement Completeness
 
 - [x] No [NEEDS CLARIFICATION] markers remain
-      → zero markers. Two genuinely open questions are carried instead as **named Assumptions with
-      owners** — PMI-DOC-006 approval (project owner) and `BR-0065` ownership (product owner) —
-      following the `EPIC-029` precedent. A marker would imply the spec cannot proceed; it can,
-      because neither question changes a requirement below, only who records it.
+      → zero markers. **Re-validated after the 2026-08-22 clarification session**, which settled five
+      questions and added `FR-GEL-009`, `FR-GEL-015`, `FR-GEL-016` and `FR-GEL-041`. The `BR-0065`
+      ownership question is now **decided** — it moves to this Epic — leaving one carried item: the
+      PMI-DOC-006 approval, a **named Assumption with the project owner as owner**, following the
+      `EPIC-029` precedent. A marker would imply the spec cannot proceed; it can, because the
+      approval changes who records the Room pattern, not what this Epic builds.
 - [x] Requirements are testable and unambiguous
       → each maps to an assertion. The hardest one, `FR-GEL-021`, is testable as *"a silent pass is
       not reachable"* and its exit criterion requires the check be mutation-tested, because a gate
@@ -73,13 +75,16 @@
   *"when `PMI-DOC-004` lands, three capability areas will have nowhere to go until someone creates
   epics for them."* One of the three now has somewhere to go.
 
-- **`BR-0065` is cited but not claimed.** PMI-DOC-004 v2.0 §6.7 assigns it to `EPIC-012`. This Epic
-  builds the mechanism `BR-0065` is expressed against and says so explicitly in SRS Traceability,
-  because a requirement with two owners is a requirement with none — the mirror image of the orphan
-  that acceptance criterion 2 of PMI-DOC-004 §11 forbids.
+- **`BR-0065` is now owned here** *(clarified 2026-08-22)*. The original draft cited it without
+  claiming it, because PMI-DOC-004 v2.0 §6.7 assigns it to `EPIC-012`. The clarification scan then
+  found that **`EPIC-012` never cited it** — zero occurrences across `specs/012-workflow-tasks/` —
+  which turned the question from *which of two claims survives* into *where an unclaimed general
+  requirement belongs*. It belongs to the Epic that builds the general mechanism. **The SRS edit is
+  outstanding and owned by the project owner**; until it lands, Constitution II means the SRS wins on
+  the record, and this Epic says so rather than acting as though the change has happened.
 
-- **The stage is `Specified`, and the next step is `/speckit-clarify`.** This checklist being fully
-  resolved before a clarification session is recorded will surface in the stage register as a
-  `report` finding — *checklist evidence present without the stage before it*. That is the register
-  working: it is the honest description of an Epic between specify and clarify, and it clears when
-  the session runs.
+- **The stage moves to `Checklisted` with this session.** `Specified` and `Clarified` are now both
+  evidenced and this checklist is fully resolved, so the three stages are contiguous and the
+  `report` finding this Epic carried — *checklist evidence present without the stage before it* —
+  clears. That is the register working as designed: it described an Epic between specify and
+  clarify, and stopped describing it the moment the session ran. Next step is `/speckit-plan`.

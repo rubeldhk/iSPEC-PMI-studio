@@ -25,12 +25,30 @@ Event → Context → Analyze → Decide → Execute → Verify → Evidence →
 owns the abstraction only. It does not own any Room, and it does not own the Decide or Evidence
 stage implementations, which are separate Epics."
 
+## Clarifications
+
+### Session 2026-08-22
+
+Five questions, all answered with the recommended option. The scan rated Functional Scope,
+Terminology, Edge Cases and Completion Signals **Clear**; the five below were the Partial or Missing
+categories with the highest impact × uncertainty.
+
+- Q: Who should own `BR-0065` — *workflow state transitions MUST be explicit, authorized and auditable* — now that this Epic builds the mechanism it describes? → A: **`EPIC-030`. It moves here.** The scan established that `EPIC-012` **never cited `BR-0065`** — zero occurrences across `specs/012-workflow-tasks/` — so no existing claim is being taken away, and `EPIC-012` keeps `BR-0050` and `BR-0151` so it is not orphaned. `F-04` in `brs-v2-reconciliation.md` §5.1 sets the precedent: a home assignment *"is not an architecture decision"* and correcting it is a cell edit. **The PMI-DOC-004 §6.7 and reconciliation §3.1/§4 edits are outstanding and owned by the project owner** — until they land the SRS still reads `EPIC-012`, and under Constitution II the SRS wins on the record.
+- Q: If the audit store cannot accept a transition record, should the transition be refused, or proceed and be recorded afterwards? → A: **Refuse — fail closed** (`FR-GEL-041`). Matches `EPIC-031`'s `FR-DPE-050` and `ADR-0025`'s reasoning that proceeding without governance converts an outage into an ungoverned window.
+- Q: At what scope may a loop instance be configured — programme-wide, per tenant, or per project? → A: **Workflow types and their stages are programme-defined; tenants configure only authorities, gates and trigger rules** (`FR-GEL-009`). This is what keeps `UX-0035` enforceable per product rather than per customer.
+- Q: Is changing a loop instance configuration itself a governed action requiring authorized human approval? → A: **Yes — permanently high band, and no tenant policy may lower it** (`FR-GEL-016`). `ADR-0025` constraint 1 applied one level up: a configuration that can lower its own gates is the failure mode installed at the foundation.
+- Q: When two actors attempt transitions on the same object at the same moment, what should happen? → A: **First to commit wins; the second is refused with a recorded conflict naming the transition that won** (`FR-GEL-015`).
+
+**Deferred, deliberately.** Transition throughput and latency targets (`PP-018`), configuration-version
+retention, and MCP exposure (`PP-007`, lands with `EPIC-013`) are plan-level and were not asked.
+PMI-DOC-006's approval is an act of the project owner, not an ambiguity in this specification.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
 |--------|---------|--------|
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0064` — Governed Engineering Loop | FR-GEL-001 to FR-GEL-008 |
-| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0065` — Explicit states | FR-GEL-010 to FR-GEL-014 |
+| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0065` — Explicit states (**owner moved to this Epic**, clarified 2026-08-22; §6.7 still reads `EPIC-012` until the edit lands) | FR-GEL-010 to FR-GEL-016 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0060` — Review gates (seam only, not implemented here) | FR-GEL-020 to FR-GEL-022 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0069` — Automation triggers (**enforcement seam only**; owned by `EPIC-031`, `U-07`) | FR-GEL-030 to FR-GEL-033 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.18 `BR-0111` — Immutable audit | FR-GEL-012, FR-GEL-040 |
@@ -43,37 +61,49 @@ stage implementations, which are separate Epics."
 v1.0, which is **PROPOSED, not approved** — see the first entry under Assumptions, where the
 back-fill owner is named.
 
+**One outstanding SRS edit** *(clarified 2026-08-22)*: `BR-0065`'s owner moved to this Epic, and
+PMI-DOC-004 §6.7 has not yet been edited to say so. This is **not** an uncovered requirement — the
+requirement is approved and cited correctly — it is an ownership record that two documents will
+disagree about until the edit lands. Under Constitution II **the SRS wins on the record**, so this
+Epic does not act as though the change has already happened. The edit is an Epic Exit Criterion and
+its owner is named under Assumptions.
+
 ### Ownership notes — read before planning
 
-**This Epic owns exactly one requirement: `BR-0064`.** Three others are cited below and none is
-claimed. Stating that here rather than leaving it to inference is the point: `brs-v2-reconciliation.md`
-§4 assigns `BR-0069` to `U-07` and `BR-0065` to `EPIC-012`, so a spec that cited them without
-qualification would read as a second owner for each.
+**This Epic owns two requirements: `BR-0064` and `BR-0065`** *(the second clarified 2026-08-22)*.
+Two others are cited and neither is claimed. Stating that here rather than leaving it to inference is
+the point: `brs-v2-reconciliation.md` §4 assigns `BR-0069` to `U-07`, so a spec that cited it without
+qualification would read as a second owner.
 
 | Cited | Owner | What this Epic supplies |
 |---|---|---|
 | `BR-0064` | **this Epic** (`U-06`) | the abstraction itself |
-| `BR-0065` | `EPIC-012` Workflow & Tasks | the transition substrate the requirement is expressed against — see below |
+| `BR-0065` | **this Epic** *(moved 2026-08-22; SRS edit outstanding)* | explicit states, authorized transitions, auditable history — see below |
 | `BR-0060` | `EPIC-021` Review Gates & Roles | the seam a gate hangs on, and the guarantee that a silent pass is unreachable (`FR-GEL-021`) |
 | `BR-0069` | `EPIC-031` Decision & Policy Engine (`U-07`) | mechanical enforcement — an automated transition with no citable rule is refused at configuration load (`FR-GEL-031`). Which rules may exist, and what they may trigger, is `EPIC-031`'s |
 
-#### The `BR-0065` question — a decision this Epic must not take alone
+#### The `BR-0065` question — settled 2026-08-22, with one edit outstanding
 
-`BR-0064` is the requirement this Epic **owns**. It is capability area `U-06`, and it is one of the
-three areas the `EPIC-027` register marks **UNOWNED** (`brs-v2-reconciliation.md` §4).
+`BR-0064` is capability area `U-06`, one of the three the `EPIC-027` register marks **UNOWNED**.
+`BR-0065` — *workflow state transitions MUST be explicit, authorized and auditable* — was assigned to
+`EPIC-012` Workflow & Tasks in PMI-DOC-004 v2.0 §6.7.
 
-`BR-0065` is **already owned by `EPIC-012` Workflow & Tasks** in PMI-DOC-004 v2.0 §6.7. This Epic
-does **not** claim it. What this Epic supplies is the transition substrate that `BR-0065` is
-expressed against — explicit states, authorized transitions, auditable history — so that `EPIC-012`
-satisfies its requirement over one mechanism rather than a second one built beside it. The
-distinction matters because §11 acceptance criterion 2 of PMI-DOC-004 v2.0 forbids an orphan *in
-either direction*, and two Epics both claiming `BR-0065` is the mirror-image defect: a requirement
-with two owners is a requirement with none.
+**The clarification scan found that `EPIC-012` never cited it.** `BR-0065` returns **zero
+occurrences** across `specs/012-workflow-tasks/`; the assignment exists only in PMI-DOC-004 §6.7 and
+the reconciliation's Epic→BR map, because `EPIC-012` predates BRS v2.0 and was mapped to the
+requirement rather than written against it.
 
-**Recorded for the clarification session**: whether `EPIC-012`'s `BR-0065` scope should be narrowed
-to task-state transitions with the general mechanism cited here, or whether `BR-0065` should move,
-is a reconciliation decision this Epic must not take unilaterally. It is listed under Assumptions
-with a named owner.
+That changes the question from *"which of two claims survives"* to *"where does an unclaimed general
+requirement belong"* — and the answer is the Epic that builds the general mechanism. `F-04` in
+`brs-v2-reconciliation.md` §5.1 is the precedent and states the cost plainly: a home assignment *"is
+not an architecture decision"*, and correcting it is a cell edit. `EPIC-012` keeps `BR-0050` and
+`BR-0151`, so it does not become an orphan under PMI-DOC-004 §11 criterion 2.
+
+> **The edit has not been made.** PMI-DOC-004 v2.0 is an **APPROVED** document; changing it is a
+> project-owner act with a revision-history obligation (§17), not a side effect of a clarification
+> run. Until PMI-DOC-004 §6.7 and `brs-v2-reconciliation.md` §3.1/§4 are edited, **the SRS still
+> reads `EPIC-012` and under Constitution II the SRS wins.** This Epic records the decision, cites
+> the requirement, and carries the edit as an Epic Exit Criterion with the project owner named.
 
 ## Principle Conformance & Deferrals *(mandatory — PMI-DOC-003, decision D-6)*
 
@@ -261,6 +291,20 @@ type and assert it returns done/current/pending across the same stage vocabulary
   risk; it asks the Decide stage. Until `EPIC-031` is built, the seam's default is refuse, not
   allow. A substrate whose absent policy provider defaults to permit is the `ADR-0025` failure mode
   installed at the foundation.
+- **The audit store is unavailable** — the transition is **refused** (`FR-GEL-041`). The alternative
+  is a governed action with no record, which is worse than a refused one: a refusal is visible and a
+  missing record is not *(clarified 2026-08-22)*.
+- **Two actors transition the same object at the same moment** — the first to commit wins; the
+  second is refused with a conflict naming the winner, and both outcomes are recorded
+  (`FR-GEL-015`). Serializing the loser was rejected: it would queue a transition whose gates were
+  evaluated against a stage that no longer exists *(clarified 2026-08-22)*.
+- **A tenant wants a stage the programme model does not have** — not expressible (`FR-GEL-009`).
+  Tenants configure authorities, gates and triggers; stages are programme-defined, or `UX-0035`
+  holds per customer instead of per product *(clarified 2026-08-22)*.
+- **Someone edits a loop configuration to remove a gate** — that edit is itself a high-band governed
+  action requiring authorized human approval (`FR-GEL-016`). Otherwise the configuration is a way
+  around every approval it defines, and the change appears in no decision record
+  *(clarified 2026-08-22)*.
 
 ## Requirements *(mandatory)*
 
@@ -276,6 +320,7 @@ type and assert it returns done/current/pending across the same stage vocabulary
 - **FR-GEL-006**: An object in flight MUST retain the configuration version it entered under; reconfiguration MUST NOT alter the meaning of transitions already recorded.
 - **FR-GEL-007**: A configuration naming a stage outside `FR-GEL-001`, or a stage whose implementation is not registered, MUST be refused at load time and MUST name what was wrong.
 - **FR-GEL-008**: A workflow type MAY omit a stage that does not apply to it; the omission MUST be visible in the object's loop history rather than indistinguishable from a stage never reached.
+- **FR-GEL-009**: **Workflow types and the stages they use MUST be programme-defined.** A tenant MUST be able to configure only authorities, required gates and trigger rules — never which stages exist, are named, or apply. This is what keeps `UX-0035` enforceable per product rather than per customer *(clarified 2026-08-22)*.
 
 *Explicit, authorized, auditable state.*
 
@@ -284,6 +329,8 @@ type and assert it returns done/current/pending across the same stage vocabulary
 - **FR-GEL-012**: Every transition MUST produce an append-only record identifying actor, authority basis, object and object version, source stage, target stage, trigger, timestamp and result (`BR-0111`).
 - **FR-GEL-013**: An object's loop history MUST be reconstructible from transition records alone, without reading current state.
 - **FR-GEL-014**: A refused transition MUST be recorded as a refusal with its reason; a refusal that leaves no record is indistinguishable from an attempt never made.
+- **FR-GEL-015**: Where two transitions are attempted concurrently on one object, **the first to commit MUST win and the second MUST be refused** with a conflict naming the transition that won. Both outcomes MUST be recorded. Two transitions MUST NOT both succeed against one source stage *(clarified 2026-08-22)*.
+- **FR-GEL-016**: **Changing a loop instance configuration MUST itself be a governed action requiring authorized human approval, permanently in the high risk band.** No tenant policy MUST be able to lower it. A configuration that can lower its own gates is a route around every gate it defines *(clarified 2026-08-22)*.
 
 *Gate seam — `BR-0060`, implemented by `EPIC-021`.*
 
@@ -301,6 +348,7 @@ type and assert it returns done/current/pending across the same stage vocabulary
 *Audit and inspection.*
 
 - **FR-GEL-040**: Loop transition records MUST be append-only and tamper-evident, consistent with the workspace audit mechanism of `EPIC-004`.
+- **FR-GEL-041**: **Where the audit store cannot accept a transition record, the transition MUST be refused.** The loop MUST fail closed rather than proceed unrecorded. An unrecorded transition is indistinguishable from one that never happened, so an outage would otherwise become an undetectable gap in the trail `BG-05` measures *(clarified 2026-08-22)*.
 
 *Projections consumed by other Epics.*
 
@@ -316,7 +364,7 @@ type and assert it returns done/current/pending across the same stage vocabulary
 ### Key Entities
 
 - **Loop Model**: the eight ordered stages and their meaning. Exactly one exists; it is not per-tenant, per-project or per-workflow-type.
-- **Loop Instance Configuration**: a versioned declaration binding one workflow type to the model — applicable stages, entry and exit conditions, required authorities, required gates and trigger rules.
+- **Loop Instance Configuration**: a versioned declaration binding one workflow type to the model — applicable stages, entry and exit conditions, required authorities, required gates and trigger rules. Its **stages are programme-defined**; a tenant may configure only authorities, gates and triggers, and any change to it is a high-band governed action *(clarified 2026-08-22)*.
 - **Loop Object State**: the current stage of one governed object, plus the configuration version it entered under. Derived from transitions; never written directly.
 - **Transition**: one explicit, authorized movement between stages, carrying actor, authority basis, object version, trigger, gate outcomes and result. The only way state changes.
 - **Gate Outcome**: the result of a required gate on a transition — satisfied, refused, exception, or violation. Never "passed by omission".
@@ -334,11 +382,14 @@ type and assert it returns done/current/pending across the same stage vocabulary
 - **SC-GEL-006**: For any governed object, the stage it is in and the time it has been there are answerable without opening the object — the measurement `BG-06` lead time depends on.
 - **SC-GEL-007**: Two declared workflow types expose an identical stage vocabulary, verified by comparison rather than by review.
 - **SC-GEL-008**: An unsatisfied required gate resolves to refused, exception or violation in **100%** of attempts; the check is mutation-tested by removing the refusal path and observing the suite fail.
+- **SC-GEL-009**: When the audit store is unavailable, **100%** of transitions are refused and **zero** proceed unrecorded *(clarified 2026-08-22)*.
+- **SC-GEL-010**: **Zero** loop configuration changes take effect without authorized human approval, under any tenant policy — verified by enumerating the tenant configuration surface rather than by inspecting defaults *(clarified 2026-08-22)*.
+- **SC-GEL-011**: In a concurrent transition race, **zero** pairs both succeed; the loser is refused with a recorded conflict in **100%** of cases *(clarified 2026-08-22)*.
 
 ## Assumptions
 
 - **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-GEL-050` and `FR-GEL-051` cite `UX-0030` and `UX-0035` from it. Both restate `BR-0064`, which *is* approved, so neither requirement depends on the proposed document for its authority — but the projection's exact shape does. **Back-fill owner: project owner**, through the PMI-DOC-006 approval that decision 6 of `brs-v2-reconciliation.md` §7 leaves outstanding. This is the same SRS-debt shape `EPIC-029` discharged and `EPIC-023`/`EPIC-025` carried.
-- **`BR-0065`'s owner is `EPIC-012`, and this Epic does not claim it.** Whether `EPIC-012`'s scope narrows to task-state transitions over this mechanism, or `BR-0065` moves here, is a reconciliation decision. **Owner: product owner**, at this Epic's clarification session. Until it is taken, this Epic builds the mechanism and cites the requirement without claiming ownership.
+- **`BR-0065`'s owner moved to this Epic on 2026-08-22, and two documents have not caught up.** The clarification session established that `EPIC-012` never cited it — zero occurrences — so the move takes no claim away. **The SRS edit is outstanding: PMI-DOC-004 v2.0 §6.7 and `brs-v2-reconciliation.md` §3.1/§4 must be changed to read `EPIC-030`. Back-fill owner: project owner**, because PMI-DOC-004 v2.0 is APPROVED and editing it carries a §17 revision-history obligation. Until then the SRS reads `EPIC-012` and, under Constitution II, **the SRS wins on the record** — this Epic builds the mechanism and cites the requirement either way, so nothing below depends on which document is read first.
 - `ADR-0018` is **Open** and this Epic is expected to converge it. Its `Awaits` names the three Room epics; the Rooms are declared in the same Wave and depend on this Epic, so the ADR converges when this Epic and `EPIC-033` are both specified — not when all three Rooms are built.
 - The eight stages are taken as given from `BR-0064` and `ADR-0018`. Renaming or re-cutting them is a PMI-DOC-004 revision under `RULE-15`, not an Epic decision.
 - Audit persistence is `EPIC-004`'s (`BR-0111`); this Epic emits records into it rather than building a second audit store.
@@ -356,8 +407,11 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] The silent-pass path of `FR-GEL-021` has been **mutation-tested**: the refusal removed, and the suite observed failing. A gate check that cannot fail is decoration (Constitution V)
 - [ ] **Constitution XI Tier 1** — a test drives a loop transition through its **real entry point** against the composed module graph, not a hand-assembled one. A mocked collaborator provably cannot satisfy this
 - [ ] **Constitution XI Tier 2** — **not applicable**: this Epic delivers no user-facing journey. Recorded here rather than omitted, because an exit list silent on XI can be closed while violating a NON-NEGOTIABLE principle (the `EPIC-029` `F1` precedent)
+- [ ] **`FR-GEL-041` is mutation-tested**: the audit store is made unavailable and the transition observed being refused rather than proceeding unrecorded (`SC-GEL-009`)
+- [ ] **`FR-GEL-016` is mutation-tested**: a tenant-reachable path that changes a loop configuration without authorized human approval is added, and the suite observed failing (`SC-GEL-010`)
 - [ ] `ADR-0018` has been converged — moved to Accepted, or its remaining `Awaits` restated against what actually remains
-- [ ] The `BR-0065` ownership question is settled and recorded, in this spec's Clarifications or in `brs-v2-reconciliation.md`
+- [x] The `BR-0065` ownership question is settled — **decided 2026-08-22**: it moves to this Epic (see Clarifications)
+- [ ] **The `BR-0065` SRS edit has landed** — PMI-DOC-004 v2.0 §6.7 and `brs-v2-reconciliation.md` §3.1/§4 read `EPIC-030`, with a §17 revision-history entry. Owned by the project owner; until it lands the SRS and this spec disagree, and Constitution II says the SRS wins
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
 - [ ] `specs/030-governed-engineering-loop/defects/` contains no open defect records
 - [ ] A closing report was published: work completed, work deferred, and the recommended next task named as a concrete Spec Kit command (Constitution IX)
