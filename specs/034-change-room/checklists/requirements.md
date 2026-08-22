@@ -87,6 +87,11 @@
   (`FR-CHR-012`). Both exit criteria require the transfer be exercised end to end jointly, so neither
   half is built against a guess about the other.
 
-- **The stage is `Specified`, and the next step is `/speckit-clarify`.** A fully-resolved checklist
-  ahead of a recorded clarification session surfaces in the stage register as a `report` finding —
-  *checklist evidence present without the stage before it*. That clears when the session runs.
+- **The stage moves to `Checklisted` with this session**, and the `report` finding this Epic carried
+  clears. Next step is `/speckit-plan`.
+
+- **This Room is stricter than the loop it runs on, deliberately.** `EPIC-030`'s `FR-GEL-015`
+  settles concurrent *transitions* by first-commit-wins. `FR-CHR-054` does not inherit it, because
+  the question here is not who moved first but what the decision was **made against** — a change
+  approved against baseline v1 referred to v1's impact view, v1's trade-offs and v1's approval.
+  Inheriting the generic rule would have been the easy default and the wrong one.

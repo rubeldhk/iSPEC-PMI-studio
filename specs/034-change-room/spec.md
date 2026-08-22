@@ -33,6 +33,21 @@ baseline during implementation. The flow is request, clarification, impacted art
 and trade-offs, schedule cost security and quality risk, decision, approved baseline delta, spec
 task and test changes, re-plan, and completion evidence."
 
+## Clarifications
+
+### Session 2026-08-22
+
+Two questions, both answered with the recommended option, in a consolidated round covering
+`EPIC-031` to `EPIC-035` (Constitution X). The first was asked once and applies to all three Rooms.
+
+- Q: Is each Room a distinct loop workflow type, or one shared type with variants? -> A: **Three distinct workflow types over one engine** (`FR-CHR-001`). `ADR-0018`'s only decided constraint, now enforced by `EPIC-030`'s `T944a`/`T944b` rather than asserted.
+- Q: When two changes target one baseline, does the loop's first-commit-wins apply, or an explicit rebase? -> A: **An explicit recorded rebase, with re-decision where the impact changed** (`FR-CHR-054`). `EPIC-030`'s `FR-GEL-015` governs *transitions* — who moved the object first. It says nothing about what a decision was **made against**, and that is the part that matters here: a change approved against baseline v1 must not silently apply to v2, because the impact view, the trade-offs and the approval all referred to v1. So this Room is **stricter than the loop's generic rule**, and says so rather than inheriting it by default.
+
+**Deferred, deliberately.** Impact-graph traversal depth and response targets (`PP-018`) are
+plan-level. The PMI-DOC-006 approval is an act of the project owner — and `EPIC-033` flags it as
+best discharged *before* this Epic plans, since this Room inherits the Room pattern rather than
+setting it.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -251,8 +266,13 @@ and to `EPIC-033`'s.
 
 - **A change is raised against a baseline that has since been superseded** — it is rebased onto the
   current baseline as an explicit act with its own record, never silently retargeted.
-- **Two changes are approved concurrently against the same baseline** — the second is evaluated
-  against the baseline the first produced. Concurrent application to one baseline is a conflict.
+- **Two changes are approved concurrently against the same baseline** — the second is explicitly
+  rebased onto the baseline the first produced and re-decided if its impact view changed
+  (`FR-CHR-054`). Silently applying it would ship an approval that referred to a baseline no longer
+  in force *(clarified 2026-08-22)*.
+- **A Requirement Room stage would be useful here** — not expressible. Each Room is a distinct
+  workflow type (`FR-CHR-001`); borrowing another Room's stage collapses two governed surfaces,
+  which is the one thing `ADR-0018` decided against *(clarified 2026-08-22)*.
 - **A change is withdrawn after impact analysis** — the analysis and the withdrawal are retained. A
   withdrawn change is evidence that a question was asked.
 - **A change's impact view cannot resolve part of the graph** — the unresolvable part is shown as
@@ -273,7 +293,7 @@ and to `EPIC-033`'s.
 
 *Room identity and boundary.*
 
-- **FR-CHR-001**: The Change Room MUST be a **configured instance** of the Governed Engineering Loop (`BR-0064`, `EPIC-030`), and MUST be the only path by which an approved baseline changes (`RULE-02`).
+- **FR-CHR-001**: The Change Room MUST be a **distinct configured workflow type** of the Governed Engineering Loop (`BR-0064`, `EPIC-030`) — its own stages, authorities and gates over a shared engine, never a variant of another Room's type (`FR-GEL-004`) — and MUST be the only path by which an approved baseline changes (`RULE-02`) *(distinctness clarified 2026-08-22)*.
 - **FR-CHR-002**: This Epic MUST NOT implement the loop (`EPIC-030`), policy (`EPIC-031`), the evidence store (`EPIC-032`), impact analysis (`EPIC-020`), task revision (`BR-0154`, `U-12`), the architecture-violation check (`BR-0073`, `U-17`), or the Defect Room (`EPIC-035`).
 
 *Change intake — `BR-0042`, `BR-0043`.*
@@ -309,7 +329,7 @@ and to `EPIC-033`'s.
 - **FR-CHR-051**: Baseline change MUST remain in the high risk band; no tenant policy MUST be able to lower it (`ADR-0025` constraint 1, via `EPIC-031`).
 - **FR-CHR-052**: Decision authority MUST be evaluated through `EPIC-031`, using the `BR-0005` decision-authority record.
 - **FR-CHR-053**: Change decisions MUST surface in the Decision Inbox (`BR-0068`).
-- **FR-CHR-054**: Two changes MUST NOT apply concurrently to one baseline; the second MUST be evaluated against the baseline the first produced.
+- **FR-CHR-054**: Two changes MUST NOT apply concurrently to one baseline. The second MUST be **explicitly rebased** onto the baseline the first produced, as a recorded act (`FR-CHR-013`), and MUST be **re-decided where the rebase changes its impact view**. Inheriting `EPIC-030`'s first-commit-wins is insufficient: that rule governs which transition won, not what the decision was made against, and a change approved against the prior baseline referred to a different impact view, different trade-offs and a different approval *(clarified 2026-08-22)*.
 
 *Re-baseline and re-plan — `BR-0047`.*
 
@@ -357,6 +377,8 @@ and to `EPIC-033`'s.
 - **SC-CHR-006**: **100%** of closed changes answer all four `BR-0048` questions from their own record.
 - **SC-CHR-007**: **Zero** completed work items are destroyed by a re-plan.
 - **SC-CHR-008**: Region names match the shared Room pattern exactly, verified by comparison against `EPIC-033`'s rather than by review.
+- **SC-CHR-009**: **Zero** changes apply to a baseline other than the one their decision was made against; every rebase is recorded, and one that alters the impact view is re-decided *(clarified 2026-08-22)*.
+- **SC-CHR-010**: This Room resolves as its own workflow type: **zero** transitions succeed under another Room's stages, authorities or gates *(clarified 2026-08-22)*.
 
 ## Assumptions
 
@@ -377,6 +399,7 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] Every implementation task has a passing unit test — or, for the loop-instance configuration and Room pattern outputs, a passing executable conformance check (Constitution V)
 - [ ] **`FR-CHR-011` is mutation-tested**: a path that changes an approved baseline without a decided Change Request is added, and the suite observed failing (`SC-CHR-001`). This is `RULE-02` made mechanical
 - [ ] **`FR-CHR-032` is mutation-tested**: an undeterminable impact area is made to render as absent rather than unknown, and the suite observed failing (`SC-CHR-002`)
+- [ ] **`FR-CHR-054` is mutation-tested**: a silent retarget onto a newer baseline is added, and the suite observed failing (`SC-CHR-009`). This is the one that would ship an approval referring to a baseline no longer in force
 - [ ] The Room is demonstrably a **configured instance** of `EPIC-030`'s loop, shown by the instance configuration
 - [ ] Region names are verified identical to `EPIC-033`'s by comparison rather than by review (`SC-CHR-008`)
 - [ ] A Defect Room transfer has been exercised end to end with context and evidence preserved (`FR-CHR-012`), jointly with `EPIC-035`
