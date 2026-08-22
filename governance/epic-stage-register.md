@@ -20,7 +20,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-007](../specs/007-requirement-intelligence/) | Requirement Intelligence | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-008](../specs/008-spec-authoring-generation/) | Specification Authoring & Generation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-009](../specs/009-spec-lifecycle-versioning/) | Specification Lifecycle & Versioning | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-010](../specs/010-specification-interface/) | Specification Interface | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-010](../specs/010-specification-interface/) | Specification Interface | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-011](../specs/011-traceability/) | Traceability | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-012](../specs/012-workflow-tasks/) | Workflow & Tasks | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-013](../specs/013-engine-api-selection/) | Engine API & Selection | delivery | Ready | — | Ready | `/speckit-implement` |
