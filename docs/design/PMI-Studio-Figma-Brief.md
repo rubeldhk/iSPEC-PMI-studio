@@ -9,23 +9,9 @@
 > 46 tokens, all resolving, zero contrast failures across 56 text elements in both themes. These are
 > not suggestions to design against; they are what the product currently renders.
 
-> ### ⚠️ Two sections are known stale as of 2026-08-21
->
-> After this brief was generated, `T905` wired the theme system to the application root and added a
-> **`ThemeControl`** ("Follow system / Light / Dark", built from FormField + Select) inside a new
-> **`.ds-app-bar`** that wraps **every** view.
->
-> - **§7 Component inventory** lists fifteen components. `ThemeControl` is a sixteenth surface —
->   a *composition* of two existing components rather than a new primitive, but it appears on
->   every screen and should be mocked.
-> - **§8 Screens** describes no top bar. Every screen now has one.
->
-> **The tokens, type scale, spacing, radius, elevation and motion in §3–§6 are unaffected** — those
-> are the token layer, and `T905` added no tokens. Design against them with confidence; treat the
-> screen inventory as needing one revision.
->
-> This brief is generated from the built system, so it is only ever as current as the tree it was
-> read from. It will be regenerated once EPIC-029 stops changing.
+> **Regenerated 2026-08-21 after `T913`**, which wired the theme system to the application root and
+> added the app bar described in §8. Verified against the rebuilt product: 46 tokens resolving, 65
+> text elements, zero contrast failures in both themes, 360px clean at 100% and 200% zoom.
 
 ---
 
@@ -170,6 +156,19 @@ declares, because each is implemented and tested.
 | 14 | PageHeader | ✓ | — | — | — | — | ✓ | — | — | Title, optional actions |
 | 15 | StatusPill | ✓ | — | — | — | — | — | — | — | Status by **text or icon as well as colour** |
 
+### Plus one composition — `ThemeControl`
+
+Not a sixteenth primitive, and deliberately not in the table above: `contracts/components.md`
+declares **fifteen**, and the state-coverage check reads that table, so adding a row would break it.
+`ThemeControl` is an **application composition** of `FormField` + `Select`.
+
+It sits in a **`.ds-app-bar` at the top of every screen** and offers three options:
+**Follow system · Light · Dark**. Mock it once and repeat it — it is on every view.
+
+Behaviour to respect in the mock: "Follow system" is the default and shows no explicit selection;
+choosing Light or Dark **overrides the OS and persists across a reload**; clearing returns to
+following the OS.
+
 **Deliberately not in scope**: tabs, accordion, date picker, combobox, tooltip, drawer, pagination.
 Each is real accessibility work and none is required by a delivered screen. **Do not mock them** —
 they would imply a commitment that does not exist.
@@ -184,9 +183,12 @@ the Select is a native dropdown, not a custom popup.
 
 ### In scope — styled, and the ones to mock first
 
+**Every screen carries the app bar** (`.ds-app-bar`) across the top, containing the `ThemeControl`.
+Draw it once as a component and place it on all four.
+
 | Screen | Content |
 |---|---|
-| **Sign in** | Centred card. App title, Email, Password, primary "Sign in". Error on failure |
+| **Sign in** | App bar. Centred card: app title, Email, Password, primary "Sign in". Error on failure |
 | **Projects** | Page title. Create-project form (name + Create). List of projects |
 | **Project / Requirements** | Back link, project title, Archive. Rename form. Engine selector. Traceability link. **Requirements table** with Type / Priority / Status filters, plus a "New requirement" form (Description, Type, Priority, Save) |
 | **Traceability** | Coverage view — which requirements are covered by which specifications |
