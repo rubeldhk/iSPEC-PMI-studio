@@ -308,3 +308,21 @@ opening a browser *after* an Epic had been declared done.
 perform, so no duplicate task is appended for it.*
 
 - [X] T913 Wire the theme override into the running application per FR-DS-011 (partial): call `initTheme()` at the application root in `frontend/src/main.tsx`, add a visible theme control — light / dark / follow-system, driven by `setTheme`/`clearTheme` and composed from existing inventory components — reachable from every delivered page, and extend `frontend/tests/unit/design/app-root.spec.tsx` to observe the COMPOSED app applying a stored preference on load. Today `frontend/src/design/theme.ts` is built and unit-tested (T873/T874) but called by nothing: no code invokes `initTheme`, no control invokes `setTheme`, so a user of the running application cannot set — let alone persist — the override the requirement grants them. This is the built-but-never-wired shape Constitution XI names, and it slipped past T899a because the OS-default path is pure CSS and renders correctly with zero JavaScript
+
+---
+
+## Phase 8: Convergence
+
+*Appended by `/speckit-converge`, 2026-08-21 (second run, after `T913`). Four findings; **one**
+produces a task. The other three are recorded here and deliberately produce none — converge appends
+remaining work, and work owned elsewhere or requiring human judgement is not this Epic's to append.*
+
+- [ ] T914 Restyle the shell's own controls onto the component layer per `SC-DS-003` (partial): the "Traceability" button at `frontend/src/main.tsx:100` and "Back to project" at `:124` carry no class and render browser-default on two delivered surfaces, beside components that are fully styled. `FR-DS-050` named four pages and two components and **`main.tsx` was owned by no restyle task** — the shell is where nobody's job collects, the same shape as `T913`. Note the lint rule provably cannot catch this: **an absence of styling contains no literal value** (`DEF-029-003`; visual consistency check: extend `T883`'s page-level assertions to the shell)
+
+### Findings that produced no task, and why
+
+| Finding | Source | Why no task here |
+|---|---|---|
+| Register does not refetch after save, so a **wrong** empty state is announced | `FR-DS-021`, `DEF-029-005` | **EPIC-011 behaviour, not this Epic's.** The restyle made it worse — a confident empty state misleads harder than a bare paragraph — but appending a fix here would take on another Epic's defect. `T904` triage defers it to a named Epic |
+| "Type" and "Priority" reachable twice per tab cycle with identical accessible names | `FR-DS-030`, `DEF-029-004` | Whether duplicate names are **confusing when heard** is exactly the judgement `T885` exists for. Appending a fix would pre-empt the human pass and risk changing correct markup on a guess |
+| The manual keyboard and screen-reader record does not exist | `FR-DS-032`, `SC-DS-008` | **Already `T885`.** No agent can perform it and none has pretended to; `T884`'s check is red for that reason and should stay red until a person does the work |
