@@ -13,7 +13,6 @@
  * and where it landed — and the record SURVIVES a failed publish, stating
  * what did and did not land (FR-PUB-034).
  */
-import type { StorageProvider } from '@pmi/storage-contract';
 import { ConflictError, NotFoundError, ProviderUnavailableError, ValidationFailedError } from '../../core/errors.js';
 import { publishFailureMessage, type PublishFailureReason } from './publish-failures.js';
 import type { ConnectionService, ProviderRegistry } from './connection.service.js';

@@ -116,7 +116,7 @@ export class GateExecutionService {
               correlationId: `gate_${gate.id}_${role.name}`,
             },
           );
-        } catch (err) {
+        } catch {
           // E-R1 says adapters return failures; one that throws anyway is
           // still a FAILED role, never a silently skipped one.
           return {

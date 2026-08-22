@@ -5,6 +5,10 @@
  * everything derived from it, backward from a task to its origins. Retired
  * requirements render FLAGGED, never omitted. Coverage shows the gaps —
  * derived from absence, which is why an empty list is good news here.
+ *
+ * Restyled onto the design system (EPIC-029 T898): FormField-labelled trace
+ * inputs, Buttons, StatusPill for the retired flag, a status region for the
+ * coverage load.
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import {
@@ -14,6 +18,12 @@ import {
   type ForwardTrace,
   type ReverseTrace,
 } from '../services/api';
+import { Button } from '../design/components/Button';
+import { FormField } from '../design/components/FormField';
+import { LoadingIndicator } from '../design/components/LoadingIndicator';
+import { PageHeader } from '../design/components/PageHeader';
+import { StatusPill } from '../design/components/StatusPill';
+import { TextInput } from '../design/components/TextInput';
 
 export interface TraceabilityPageProps {
   api: ApiClient;
@@ -57,22 +67,21 @@ export function TraceabilityPage({ api, projectId }: TraceabilityPageProps): Rea
   }
 
   return (
-    <section>
-      <h2>Traceability</h2>
+    <section className="ds-stack">
+      <PageHeader title="Traceability" level={2} />
 
-      <div>
-        <label>
-          Requirement id
-          <input value={requirementId} onChange={(e) => setRequirementId(e.target.value)} />
-        </label>
-        <button type="button" onClick={() => void traceForward()}>
-          Trace forward
-        </button>
+      <div className="ds-row">
+        <FormField id="trace-requirement" label="Requirement id">
+          <TextInput value={requirementId} onChange={(e) => setRequirementId(e.target.value)} />
+        </FormField>
+        <Button onClick={() => void traceForward()}>Trace forward</Button>
       </div>
       {forward && (
-        <div>
+        <div className="ds-stack">
           <h3>Derived from {forward.requirementId}</h3>
-          {forward.specifications.length === 0 && <p>Nothing has been derived yet.</p>}
+          {forward.specifications.length === 0 && (
+            <p className="ds-field__hint">Nothing has been derived yet.</p>
+          )}
           <ul>
             {forward.specifications.map((spec) => (
               <li key={spec.specificationId}>
@@ -84,20 +93,19 @@ export function TraceabilityPage({ api, projectId }: TraceabilityPageProps): Rea
         </div>
       )}
 
-      <div>
-        <label>
-          Task id
-          <input value={taskId} onChange={(e) => setTaskId(e.target.value)} />
-        </label>
-        <button type="button" onClick={() => void traceBack()}>
-          Trace back
-        </button>
+      <div className="ds-row">
+        <FormField id="trace-task" label="Task id">
+          <TextInput value={taskId} onChange={(e) => setTaskId(e.target.value)} />
+        </FormField>
+        <Button onClick={() => void traceBack()}>Trace back</Button>
       </div>
       {reverse && (
-        <div>
+        <div className="ds-stack">
           <h3>Origins of {reverse.taskId}</h3>
           {reverse.specifications.length === 0 && (
-            <p>This task traces to no specification — an SC-003 gap worth chasing.</p>
+            <p className="ds-field__hint">
+              This task traces to no specification — an SC-003 gap worth chasing.
+            </p>
           )}
           <ul>
             {reverse.specifications.map((spec) => (
@@ -108,7 +116,12 @@ export function TraceabilityPage({ api, projectId }: TraceabilityPageProps): Rea
                     <li key={req.requirementId}>
                       <span>{req.requirementId}</span>
                       {/* Flagged, never omitted (US7 scenario 4). */}
-                      {req.retired && <em> (retired)</em>}
+                      {req.retired && (
+                        <>
+                          {' '}
+                          <StatusPill tone="warning">retired</StatusPill>
+                        </>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -118,9 +131,9 @@ export function TraceabilityPage({ api, projectId }: TraceabilityPageProps): Rea
         </div>
       )}
 
-      <div>
+      <div className="ds-stack">
         <h3>Coverage</h3>
-        {coverage === null && <p>Loading coverage…</p>}
+        {coverage === null && <LoadingIndicator label="Loading coverage…" />}
         {coverage !== null && (
           <>
             <p>
@@ -129,7 +142,7 @@ export function TraceabilityPage({ api, projectId }: TraceabilityPageProps): Rea
             </p>
             <h4>Requirements with no specification</h4>
             {coverage.uncoveredRequirementIds.length === 0 ? (
-              <p>None — every requirement is covered.</p>
+              <p className="ds-field__hint">None — every requirement is covered.</p>
             ) : (
               <ul>
                 {coverage.uncoveredRequirementIds.map((id) => (
@@ -139,7 +152,7 @@ export function TraceabilityPage({ api, projectId }: TraceabilityPageProps): Rea
             )}
             <h4>Specifications with no tasks</h4>
             {coverage.specificationsWithoutTasks.length === 0 ? (
-              <p>None — every specification has tasks.</p>
+              <p className="ds-field__hint">None — every specification has tasks.</p>
             ) : (
               <ul>
                 {coverage.specificationsWithoutTasks.map((id) => (
@@ -151,7 +164,11 @@ export function TraceabilityPage({ api, projectId }: TraceabilityPageProps): Rea
         )}
       </div>
 
-      {error !== null && <p role="alert">{error}</p>}
+      {error !== null && (
+        <p className="ds-field__error" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

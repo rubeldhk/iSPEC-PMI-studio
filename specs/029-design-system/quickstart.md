@@ -108,6 +108,15 @@ Epic is measured against.
 **Prerequisite met**: the local stack is up and verified end to end as of 2026-08-20 (sign-in →
 projects → requirements), so this scenario is runnable now rather than blocked on environment.
 
+**Recorded result (T900/T900a, 2026-08-21)** — **PASS**, evidenced by the run-generated transcript
+at [`docs/accessibility/EPIC-029-reachability-transcript.md`](../../docs/accessibility/EPIC-029-reachability-transcript.md)
+and checked by `tests/governance/reachability-transcript.spec.ts` (T900b): SignIn, Projects and
+Requirements rendered from tokens against the running application; light ↔ dark re-themed every
+surface (`--color-surface` `#ffffff` ↔ `#111827`, body background following); at 360×640 and at
+200% text zoom nothing overflows — **after** the run caught `DEF-029-002` (488px of content in a
+360px viewport), which was fixed and re-measured to `none` in every condition within the same run.
+One defect found by the first Tier 2 pass is this scenario earning its place.
+
 ## V6 — a *new* page needs no visual value the tokens do not already carry
 
 **Proves**: `SC-DS-006` · **Requirements**: `FR-DS-001`, `FR-DS-002`

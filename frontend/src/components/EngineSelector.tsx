@@ -5,9 +5,16 @@
  * `PATCH /projects/{id}` — the route the contract assigns to selection — and
  * offers "inherit default" as a real choice, because null selection is the
  * resolver's inherit contract (T035), not an unset field.
+ *
+ * Restyled onto the design system (EPIC-029 T899): FormField owns the label,
+ * capabilities render as its hint, loading is a status region beside a
+ * still-operable control.
  */
 import { useEffect, useState, type ReactElement } from 'react';
 import { ApiError, type ApiClient, type Engine, type Project } from '../services/api';
+import { FormField } from '../design/components/FormField';
+import { LoadingIndicator } from '../design/components/LoadingIndicator';
+import { Select } from '../design/components/Select';
 
 export interface EngineSelectorProps {
   api: ApiClient;
@@ -48,10 +55,9 @@ export function EngineSelector({ api, projectId, value, onSelected }: EngineSele
   const current = engines?.find((engine) => engine.name === selected);
 
   return (
-    <div>
-      <label>
-        Engine
-        <select value={selected} onChange={(e) => void choose(e.target.value)}>
+    <div className="ds-stack">
+      <FormField id="engine-selector" label="Engine">
+        <Select value={selected} onChange={(e) => void choose(e.target.value)}>
           <option value="">Inherit default</option>
           {(engines ?? []).map((engine) => (
             <option key={engine.name} value={engine.name}>
@@ -59,17 +65,22 @@ export function EngineSelector({ api, projectId, value, onSelected }: EngineSele
               {engine.isDefault ? ' (default)' : ''}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </FormField>
+      {engines === null && error === null && <LoadingIndicator label="Loading engines" />}
       {/* What the chosen engine can do — capabilities, not only a name. */}
-      {current && <p>Capabilities: {current.capabilities.join(', ')}</p>}
+      {current && <p className="ds-field__hint">Capabilities: {current.capabilities.join(', ')}</p>}
       {!current && engines !== null && engines.length > 0 && (
-        <p>
+        <p className="ds-field__hint">
           Capabilities:{' '}
           {(engines.find((engine) => engine.isDefault) ?? engines[0])!.capabilities.join(', ')}
         </p>
       )}
-      {error !== null && <p role="alert">{error}</p>}
+      {error !== null && (
+        <p className="ds-field__error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

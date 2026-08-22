@@ -48,7 +48,6 @@ export function JobProgress({ api, jobId, pollMs = 2000, onSettled }: JobProgres
     };
     // onSettled intentionally excluded: re-subscribing on every render of the
     // parent would reset the poll cycle.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, jobId, pollMs]);
 
   if (job === null) return <span>Checking job…</span>;

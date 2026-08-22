@@ -7,6 +7,10 @@
  *   a bypassed client still reads the same message (FR-007).
  * - History is shown newest first and is read-only; prior text is retrievable,
  *   never editable (FR-009).
+ *
+ * Restyled onto the design system (EPIC-029 T899): FormFields own the labels,
+ * the Save button keeps its word while working (FR-DS-042), the description
+ * textarea stays a native element styled by the same input tokens.
  */
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import {
@@ -15,6 +19,9 @@ import {
   type Requirement,
   type RequirementVersion,
 } from '../services/api';
+import { Button } from '../design/components/Button';
+import { FormField } from '../design/components/FormField';
+import { Select } from '../design/components/Select';
 
 export interface RequirementEditorProps {
   api: ApiClient;
@@ -77,41 +84,52 @@ export function RequirementEditor({
   }
 
   return (
-    <section>
+    <section className="ds-stack">
       <h3>{requirement ? `Edit ${requirement.reference}` : 'New requirement'}</h3>
-      <form onSubmit={(e) => void save(e)}>
-        <label>
-          Description
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-        </label>
-        <label>
-          Type
-          <select value={type} onChange={(e) => setType(e.target.value)}>
-            {TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Priority
-          <select value={priority} onChange={(e) => setPriority(e.target.value)}>
-            {PRIORITIES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit">Save</button>
+      <form className="ds-stack" onSubmit={(e) => void save(e)}>
+        <FormField id="requirement-description" label="Description">
+          <textarea
+            className="ds-input"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </FormField>
+        <div className="ds-row">
+          <FormField id="requirement-type" label="Type">
+            <Select value={type} onChange={(e) => setType(e.target.value)}>
+              {TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+          <FormField id="requirement-priority" label="Priority">
+            <Select value={priority} onChange={(e) => setPriority(e.target.value)}>
+              {PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        </div>
+        <div className="ds-row">
+          <Button type="submit">Save</Button>
+        </div>
       </form>
-      {error !== null && <p role="alert">{error}</p>}
+      {error !== null && (
+        <p className="ds-field__error" role="alert">
+          {error}
+        </p>
+      )}
 
       {requirement && (
-        <div>
+        <div className="ds-stack">
           <h4>History</h4>
-          {history !== null && history.length === 0 && <p>No earlier versions.</p>}
+          {history !== null && history.length === 0 && (
+            <p className="ds-field__hint">No earlier versions.</p>
+          )}
           {history !== null && history.length > 0 && (
             <ol>
               {history.map((version) => (
