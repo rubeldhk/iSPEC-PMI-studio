@@ -41,7 +41,7 @@ does not depend on its own product to govern itself.
 | [ADR-0012](./ADR-0012-agent-credential-isolation.md) | Agent credential isolation | Accepted | 2026-08-17 |
 | [ADR-0013](./ADR-0013-controlled-network-egress.md) | Controlled network egress | Accepted | 2026-08-17 |
 | [ADR-0014](./ADR-0014-source-of-truth-boundaries.md) | Source-of-truth boundaries between PostgreSQL, Git, Spec Kit and the agent workspace | Accepted | 2026-08-17 |
-| [ADR-0015](./ADR-0015-requirement-change-defect-governance-authority.md) | Requirement, Change and Defect governance authority | Open | 2026-08-17 |
+| [ADR-0015](./ADR-0015-requirement-change-defect-governance-authority.md) | Requirement, Change and Defect governance authority | Accepted | 2026-08-17 |
 | [ADR-0016](./ADR-0016-tdd-defect-execution-policy.md) | TDD defect execution policy | Open | 2026-08-17 |
 | [ADR-0017](./ADR-0017-interactive-workspace-vs-autonomous-sandbox.md) | Interactive developer workspace versus autonomous agent sandbox | Open | 2026-08-17 |
 | [ADR-0018](./ADR-0018-governed-engineering-loops.md) | Governed Engineering Loops as a shared workflow abstraction | Open | 2026-08-17 |
@@ -49,6 +49,13 @@ does not depend on its own product to govern itself.
 | [ADR-0020](./ADR-0020-engineering-expert-model.md) | Engineering Expert model for registered agents | Accepted | 2026-08-17 |
 | [ADR-0021](./ADR-0021-governed-learning.md) | Governed Learning — agent observations are not knowledge | Open | 2026-08-17 |
 | [ADR-0022](./ADR-0022-specification-compliance-and-evidence.md) | Specification compliance and evidence as the differentiator | Open | 2026-08-17 |
+| [ADR-0023](./ADR-0023-capability-resolver-integration-hub.md) | Capability Resolver and the Integration Hub boundary | Accepted | 2026-08-21 |
+| [ADR-0024](./ADR-0024-workspace-fabric-execution-modes.md) | Workspace Fabric execution modes | Accepted | 2026-08-21 |
+| [ADR-0025](./ADR-0025-risk-adaptive-policy-engine.md) | Risk-adaptive policy engine | Accepted | 2026-08-21 |
+| [ADR-0026](./ADR-0026-spec-kit-version-and-extension-management.md) | Spec Kit engine, version and extension management | Accepted | 2026-08-21 |
+| [ADR-0027](./ADR-0027-durable-agent-session.md) | Durable Agent Session independent of the execution provider | Accepted | 2026-08-21 |
+| [ADR-0028](./ADR-0028-application-ux-architecture.md) | Application UX architecture as a document separate from the design system | Accepted | 2026-08-21 |
+| [ADR-0029](./ADR-0029-target-product-versus-release-scope.md) | Target-product scope versus release scope versus declared Epic scope | Accepted | 2026-08-21 |
 
 > **ADR-0006 to ADR-0022 added 2026-08-17** by EPIC-027 (`T627`, `T659`) under decision `D-35`.
 > Native §27 names twelve subjects and Cosmos §9 names five more; all seventeen are recorded now,
@@ -57,3 +64,22 @@ does not depend on its own product to govern itself.
 >
 > **ADR-0001 to ADR-0005 are preserved.** `ADR-0002` is *extended* by `ADR-0013` (controlled network
 > egress), never superseded — decision `D-36`. `G-27-07` asserts both facts.
+
+> **ADR-0023 to ADR-0029 added 2026-08-21** by **PMI-DOC-004 v2.0** under PMI-DOC-004A §12, which
+> names twelve architecture decisions the V2 scope model requires. Five already existed —
+> `ADR-0018`, `ADR-0019`, `ADR-0020`, `ADR-0021`, `ADR-0022` — and these seven are the remainder.
+> All seven are **Accepted**: each records a boundary the BRS depends on. Most describe capability
+> with **no owning epic**, which is a delivery gap recorded in
+> [`specs/brs-v2-reconciliation.md`](../specs/brs-v2-reconciliation.md) §4, not an open question in
+> the decision itself.
+>
+> **PMI-DOC-004 v2.0 was approved 2026-08-22**, discharging the PMI-DOC-004 half of the **Awaits**
+> clause on five records — `ADR-0010`, `ADR-0015`, `ADR-0018`, `ADR-0021` and `ADR-0022`. Each
+> stays **Open** on its remaining blocker — an owning epic — except `ADR-0015`, whose second
+> blocker was the project owner's confirmation of `EPIC-027` **Finding A**. That confirmation came
+> on **2026-08-22**, so `ADR-0015` moved Open → **Accepted**: the three Rooms are **builds, not
+> enhancements**. Every discharge is dated in the record itself, so a reader sees what was
+> released and what still holds.
+>
+> `ADR-0002` remains extended — never superseded — by `ADR-0013` and now also by `ADR-0024`
+> (Workspace Fabric adds execution modes beside the container sandbox, not beneath it).
