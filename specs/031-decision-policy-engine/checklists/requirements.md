@@ -21,11 +21,11 @@
 ## Requirement Completeness
 
 - [x] No [NEEDS CLARIFICATION] markers remain
-      → zero markers. Three open questions are carried as **named Assumptions with owners**: the
-      PMI-DOC-006 approval (project owner), the `BR-0005` authority contract (product owner), and
-      the one question `ADR-0025` explicitly delegates to this Epic — whether classification rules
-      live in the steering hierarchy. The last is in Epic Exit Criteria because `ADR-0025` names
-      `U-07` as its decider, so it is this Epic's to answer, not to ask.
+      → zero markers. **Re-validated after the 2026-08-22 clarification session**, which settled the
+      two questions that were this Epic's to answer: classification rules live in the `BR-0070`
+      steering hierarchy (`ADR-0025`'s delegated question), and the `BR-0005` authority record is
+      published here provisionally for `U-02` to adopt. One carried item remains — the PMI-DOC-006
+      approval, a **named Assumption with the project owner as owner**.
 - [x] Requirements are testable and unambiguous
       → the two hardest are stated as negatives that can fail: `FR-DPE-012` (*no tenant-reachable
       configuration reaches the high band*) and `FR-DPE-013` (*"satisfied" is not reachable by
@@ -80,7 +80,12 @@
   screen a person uses, so a run-generated transcript against a running application is owed at exit.
   Recorded now, in the Epic that acquires the obligation, rather than discovered at closure.
 
-- **The stage is `Specified`, and the next step is `/speckit-clarify`.** A fully-resolved checklist
-  ahead of a recorded clarification session surfaces in the stage register as a `report` finding —
-  *checklist evidence present without the stage before it*. That is the register describing an Epic
-  between specify and clarify, and it clears when the session runs.
+- **The stage moves to `Checklisted` with this session.** `Specified` and `Clarified` are now both
+  evidenced and this checklist is fully resolved, so the three stages are contiguous and the
+  `report` finding this Epic carried — *checklist evidence present without the stage before it* —
+  clears. Next step is `/speckit-plan`.
+
+- **This Epic now enforces a band `EPIC-030` declares.** `FR-GEL-016` makes a loop-configuration
+  change permanently high band; `FR-DPE-012` is where that is actually fenced. The two were
+  clarified the same day, and naming it in only one of them would have left the guarantee owned by
+  nobody — the same ownership gap `BR-0065` produced in the other direction.

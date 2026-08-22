@@ -23,6 +23,21 @@
 Inbox it feeds. This is the Decide stage of the Governed Engineering Loop, not a parallel mechanism —
 Rooms must not each carry their own policy logic."
 
+## Clarifications
+
+### Session 2026-08-22
+
+Three questions, all answered with the recommended option, in a consolidated round covering
+`EPIC-031` to `EPIC-035` (Constitution X).
+
+- Q: Should risk-classification rules live in the existing `BR-0070` steering hierarchy, or in a separate policy artifact? -> A: **The `BR-0070` steering hierarchy** (`FR-DPE-005`). This is the question `ADR-0025` left open and named `U-07` as the decider of. Its own Consequences already argued for it -- *"treating classification rules as reviewed artifacts under `BR-0070` steering, not as configuration"* -- and `BR-0071` steering-conflict resolution solves the scope-precedence problem a separate artifact would have had to re-solve. **Consequence for `EPIC-019`**: classification rules become a steering *subject*, so `EPIC-019` owns their storage, scoping and conflict resolution while this Epic owns their meaning.
+- Q: Should this Epic define the `BR-0005` decision-authority record now, given `U-02` is unowned? -> A: **Yes -- as a published contract this Epic owns provisionally** (`FR-DPE-014`), which `U-02` adopts unchanged when declared. The same pattern `EPIC-030` used for its five ports: publish the shape, let the owner fill it. Waiting would block this Epic on an undeclared one; inventing a private record would give `BR-0005` two definitions.
+- Q: Should *changing a loop instance configuration* join the non-configurable high band explicitly? -> A: **Yes** (`FR-DPE-012`). `EPIC-030`'s `FR-GEL-016`, clarified the same day, makes it permanently high band -- but **this Epic is the one that enforces bands**. If `FR-DPE-012` does not name it, nothing does.
+
+**Deferred, deliberately.** Engine availability and latency targets (`PP-018`) and the enumeration
+of "consequential" actions are plan-level. The PMI-DOC-006 approval is an act of the project owner,
+not an ambiguity in this specification.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -258,6 +273,12 @@ return and assert "satisfied" is not among them.
   blank queue indistinguishable from "nothing pending" (`UX-0051`).
 - **An exception expires while work is in flight** — the expiry is a fact on the record, not a grace
   period. An expired exception does not retroactively become a pass.
+- **A tenant edits steering to reclassify a loop configuration change as low risk** — refused.
+  `FR-DPE-012` fences it, and the attempt stays visible in steering's own version history
+  *(clarified 2026-08-22)*.
+- **Classification steering conflicts across scopes** — resolved by `BR-0071`, and the precedence
+  rule that resolved it is part of the explanation rather than an internal detail
+  *(clarified 2026-08-22)*.
 
 ## Requirements *(mandatory)*
 
@@ -269,16 +290,16 @@ return and assert "satisfied" is not among them.
 - **FR-DPE-002**: Classification MUST be a property of the action and its target, not of the requester. Modifying an approved baseline is high risk regardless of who asks.
 - **FR-DPE-003**: Risk classification MUST be **policy-declared, never model-inferred**. An Engineering Expert MAY propose a class; it MUST NOT assign its own, and its proposal MUST be retained separately from the effective class.
 - **FR-DPE-004**: An action type with no matching classification rule MUST receive the most restrictive band.
-- **FR-DPE-005**: Classification rules MUST be versioned, reviewable artifacts — not runtime configuration edited without review (`ADR-0025` Consequences).
+- **FR-DPE-005**: Classification rules MUST be expressed in the **`BR-0070` hierarchical steering system** — versioned, reviewable, composable at organization, workspace, project, repository and path scope — and MUST NOT be runtime configuration edited without review. Where rules at different scopes conflict, `BR-0071` steering-conflict resolution applies and the precedence rule that resolved them MUST appear in the explanation (`FR-DPE-042`) *(clarified 2026-08-22; `ADR-0025`'s open question, settled)*.
 - **FR-DPE-006**: A change to a classification rule MUST NOT alter the recorded class of a decision already taken.
 
 *Risk-adaptive approval — `BR-0067`, `ADR-0025` three bands and four constraints.*
 
 - **FR-DPE-010**: The engine MUST implement exactly three bands: **low** MAY auto-execute where policy permits; **medium** requires policy and evidence gates; **high or consequential** requires authorized human approval.
 - **FR-DPE-011**: The approval burden MUST be tunable per tenant by policy, without forking or bypassing the engine.
-- **FR-DPE-012**: **The high band MUST NOT be configurable away.** Baseline changes, release promotion and any action PMI-DOC-004 marks as requiring authorized human decision MUST remain human-approved under every tenant policy. A policy attempting to downgrade one MUST be refused at load time.
+- **FR-DPE-012**: **The high band MUST NOT be configurable away.** Baseline changes, release promotion, **changes to a loop instance configuration** (`EPIC-030` `FR-GEL-016`) and any action PMI-DOC-004 marks as requiring authorized human decision MUST remain human-approved under every tenant policy. A policy attempting to downgrade one MUST be refused at load time *(loop configuration added 2026-08-22 — this Epic enforces the band `EPIC-030` declares)*.
 - **FR-DPE-013**: A required gate that is unsatisfied MUST resolve to refuse or to proceed-under-recorded-exception. **"Satisfied" MUST NOT be reachable by omission** (`BR-0060`, constraint 2).
-- **FR-DPE-014**: Every approval MUST record actor, authority basis, object version, decision and timestamp, using the `BR-0005` decision-authority contract rather than a second one.
+- **FR-DPE-014**: Every approval MUST record actor, authority basis, object version, decision and timestamp, using the `BR-0005` decision-authority contract rather than a second one. **This Epic publishes that contract provisionally**, as a shape `U-02` adopts unchanged when it is declared; it MUST NOT be a private record this Epic keeps to itself *(clarified 2026-08-22)*.
 - **FR-DPE-015**: An approver MUST NOT approve their own request unless policy explicitly permits it for that action class, and that permission MUST appear in the explanation.
 - **FR-DPE-016**: An auto-executed action MUST still produce an audit record and its required evidence (constraint 4).
 
@@ -339,8 +360,8 @@ return and assert "satisfied" is not among them.
 ## Assumptions
 
 - **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-DPE-020`, `FR-DPE-026` and `FR-DPE-043` cite `UX-0021`, `UX-0033` and `UX-0051`. Each restates an approved `BR-` (`BR-0068`, `BR-0174`, `BR-0195`), so none depends on the proposed document for authority — the Inbox's placement in the shell does. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
-- **`BR-0005` is unowned (`U-02`) and this Epic consumes it rather than building it.** `FR-DPE-014` requires the decision-authority record; `ADR-0015` names `BR-0005` as settling it. If `U-02` is not declared before this Epic plans, this Epic defines the record's **shape** as a contract and `U-02` adopts it — it does not define a second authority model. **Owner: product owner**, at this Epic's clarification session.
-- **`ADR-0025` leaves one question open and names this Epic as its decider**: whether classification rules live in the `BR-0070` steering hierarchy or in a separate policy artifact. Recorded in Epic Exit Criteria; deliberately not pre-empted here, because the answer changes what `EPIC-019` owns.
+- **`BR-0005` is unowned (`U-02`), and this Epic now publishes its contract provisionally** *(settled 2026-08-22)*. `FR-DPE-014` requires the decision-authority record; `ADR-0015` names `BR-0005` as settling it. This Epic defines the record's **shape** as a published contract, which `U-02` adopts unchanged when declared. It does **not** define a second authority model, and the shape is not private to this Epic.
+- **`ADR-0025`'s open question is answered** *(2026-08-22)*: classification rules live in the **`BR-0070` steering hierarchy** (`FR-DPE-005`). **Consequence for `EPIC-019`**: it owns their storage, scoping and conflict resolution as a steering subject; this Epic owns their meaning. `ADR-0025` itself still says *Open* on this point and must be updated — listed in Epic Exit Criteria.
 - Depends on `EPIC-030` for the loop and its Decide seam. The dependency is one-directional: `EPIC-030` declares the seam and defaults it to refuse; this Epic fills it.
 - Audit persistence is `EPIC-004`'s (`BR-0111`); identity and authentication are `EPIC-005`'s (`BR-0002`). This Epic builds neither.
 - Evidence *gates* are referenced by the medium band, but evidence typing and Evidence Contracts are `EPIC-032`'s (`BR-0142`). Until that Epic lands, an evidence gate is expressed against the contract `EPIC-032` will supply, not against an interim evidence model built here.
@@ -355,8 +376,9 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] Every implementation task has a passing unit test — or, for policy and classification-rule outputs, a passing executable conformance check that reads the artifact and fails when it drifts (Constitution V)
 - [ ] **Constraint 1 is mutation-tested**: the non-configurable high band is removed and the suite observed failing (`SC-DPE-001`). A fence that cannot fail is decoration
 - [ ] **Constraint 3 is mutation-tested**: a decision path is made to return no explanation and the suite observed failing (`SC-DPE-002`)
-- [ ] The `ADR-0025` open question is **decided and recorded** — classification rules in the `BR-0070` steering hierarchy, or in a separate policy artifact — with the consequence for `EPIC-019` stated
-- [ ] The `BR-0005` decision-authority contract is recorded as a contract this Epic consumes, and `U-02` is named as its eventual owner
+- [x] The `ADR-0025` open question is **decided** — classification rules live in the `BR-0070` steering hierarchy, with the consequence for `EPIC-019` stated (clarified 2026-08-22)
+- [ ] **`ADR-0025` has been updated** to record that answer and close its `Open` line. Deciding something in a spec while the ADR still reads *open* is the same drift `RULE-16` prevents for identifiers, applied to decisions
+- [ ] The `BR-0005` decision-authority contract is **published** as a versioned shape, with `U-02` named as its eventual owner and the adoption path stated
 - [ ] **Constitution XI Tier 1** — a test drives a decision through its **real entry point** against the composed module graph. A mocked policy collaborator provably cannot satisfy this: the mock sits exactly where the missing wiring would be
 - [ ] **Constitution XI Tier 2** — the Decision Inbox journey has been exercised against a **running application** and a **run-generated** transcript is committed. A hand-written transcript does not satisfy this (the `SC-AGT-001` precedent)
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
