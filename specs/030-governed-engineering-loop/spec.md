@@ -32,7 +32,7 @@ stage implementations, which are separate Epics."
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0064` — Governed Engineering Loop | FR-GEL-001 to FR-GEL-008 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0065` — Explicit states | FR-GEL-010 to FR-GEL-014 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0060` — Review gates (seam only, not implemented here) | FR-GEL-020 to FR-GEL-022 |
-| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0069` — Automation triggers | FR-GEL-030 to FR-GEL-033 |
+| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0069` — Automation triggers (**enforcement seam only**; owned by `EPIC-031`, `U-07`) | FR-GEL-030 to FR-GEL-033 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.18 `BR-0111` — Immutable audit | FR-GEL-012, FR-GEL-040 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §5 Core Concepts — *Governed Engineering Loop*; §7 `RULE-11` *No invisible automation* | FR-GEL-001, FR-GEL-030 |
 | `SRS/PMI-DOC-006_Application_UX_Architecture_v1.0.md` | §6.1 `UX-0030` *Loop progress* region; §6.2 `UX-0035` no divergence in region vocabulary | FR-GEL-050, FR-GEL-051 |
@@ -43,7 +43,21 @@ stage implementations, which are separate Epics."
 v1.0, which is **PROPOSED, not approved** — see the first entry under Assumptions, where the
 back-fill owner is named.
 
-### The `BR-0065` ownership note — read before planning
+### Ownership notes — read before planning
+
+**This Epic owns exactly one requirement: `BR-0064`.** Three others are cited below and none is
+claimed. Stating that here rather than leaving it to inference is the point: `brs-v2-reconciliation.md`
+§4 assigns `BR-0069` to `U-07` and `BR-0065` to `EPIC-012`, so a spec that cited them without
+qualification would read as a second owner for each.
+
+| Cited | Owner | What this Epic supplies |
+|---|---|---|
+| `BR-0064` | **this Epic** (`U-06`) | the abstraction itself |
+| `BR-0065` | `EPIC-012` Workflow & Tasks | the transition substrate the requirement is expressed against — see below |
+| `BR-0060` | `EPIC-021` Review Gates & Roles | the seam a gate hangs on, and the guarantee that a silent pass is unreachable (`FR-GEL-021`) |
+| `BR-0069` | `EPIC-031` Decision & Policy Engine (`U-07`) | mechanical enforcement — an automated transition with no citable rule is refused at configuration load (`FR-GEL-031`). Which rules may exist, and what they may trigger, is `EPIC-031`'s |
+
+#### The `BR-0065` question — a decision this Epic must not take alone
 
 `BR-0064` is the requirement this Epic **owns**. It is capability area `U-06`, and it is one of the
 three areas the `EPIC-027` register marks **UNOWNED** (`brs-v2-reconciliation.md` §4).
