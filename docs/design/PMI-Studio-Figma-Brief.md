@@ -9,6 +9,24 @@
 > 46 tokens, all resolving, zero contrast failures across 56 text elements in both themes. These are
 > not suggestions to design against; they are what the product currently renders.
 
+> ### ⚠️ Two sections are known stale as of 2026-08-21
+>
+> After this brief was generated, `T905` wired the theme system to the application root and added a
+> **`ThemeControl`** ("Follow system / Light / Dark", built from FormField + Select) inside a new
+> **`.ds-app-bar`** that wraps **every** view.
+>
+> - **§7 Component inventory** lists fifteen components. `ThemeControl` is a sixteenth surface —
+>   a *composition* of two existing components rather than a new primitive, but it appears on
+>   every screen and should be mocked.
+> - **§8 Screens** describes no top bar. Every screen now has one.
+>
+> **The tokens, type scale, spacing, radius, elevation and motion in §3–§6 are unaffected** — those
+> are the token layer, and `T905` added no tokens. Design against them with confidence; treat the
+> screen inventory as needing one revision.
+>
+> This brief is generated from the built system, so it is only ever as current as the tree it was
+> read from. It will be regenerated once EPIC-029 stops changing.
+
 ---
 
 ## 1. What PMI Studio is
