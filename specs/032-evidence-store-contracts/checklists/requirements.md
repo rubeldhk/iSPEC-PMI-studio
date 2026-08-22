@@ -21,12 +21,10 @@
 ## Requirement Completeness
 
 - [x] No [NEEDS CLARIFICATION] markers remain
-      → zero markers. Two open questions are carried as **named Assumptions with owners**: the
-      PMI-DOC-006 approval (project owner), and whether `U-08` should have been an `EPIC-015`
-      extension (product owner). The second is genuinely open — `brs-v2-reconciliation.md` §4 states
-      that home as an alternative, the only area in the register that does — and it is in Epic Exit
-      Criteria rather than as a marker, because the Epic can be planned either way. `FR-EVS-050`
-      keeps the two from duplicating whichever answer arrives.
+      → zero markers. **Re-validated after the 2026-08-22 clarification session**, which settled the
+      `U-08` question — this Epic stands, `EPIC-015` consumes it — and added `FR-EVS-035`, the
+      fail-closed rule for an unreachable store. One carried item remains: the PMI-DOC-006 approval,
+      a **named Assumption with the project owner as owner**.
 - [x] Requirements are testable and unambiguous
       → `FR-EVS-030` is stated as an unreachability — *completion with an unmet Contract MUST NOT be
       reachable* — and its exit criterion requires the bypass mutation. `FR-EVS-014` and
@@ -78,9 +76,14 @@
   The Epic Exit Criteria say so explicitly, because "the differentiator is now owned" is exactly the
   overstatement this declaration invites.
 
-- **The stage is `Specified`, and the next step is `/speckit-clarify`.** The `U-08` versus
-  `EPIC-015` question is the one that session must put to the product owner first — it is the only
-  Wave 1 declaration whose *existence as a separate Epic* is a live question rather than a settled one.
+- **The stage moves to `Checklisted` with this session**, and the `report` finding this Epic carried
+  clears. Next step is `/speckit-plan`.
+
+- **The question that could have dissolved this Epic is answered.** `U-08` was the only Wave 1
+  declaration whose *existence as a separate Epic* was live rather than settled. It stands, because
+  the store is substrate for all three Rooms and not only for Epic-level QA. What that leaves is a
+  record to correct: `brs-v2-reconciliation.md` §4 still offers the alternative, and an exit
+  criterion now says so.
 
 - A fully-resolved checklist ahead of a recorded clarification session surfaces in the stage register
   as a `report` finding — *checklist evidence present without the stage before it*. That is the

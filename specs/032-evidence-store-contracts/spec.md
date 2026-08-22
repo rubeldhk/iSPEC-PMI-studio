@@ -23,6 +23,20 @@ completion gate that enforces it. This is the Evidence stage of the Governed Eng
 the foundation of the product's stated differentiator: completion is evidence-driven rather than
 assertion-driven."
 
+## Clarifications
+
+### Session 2026-08-22
+
+Two questions, both answered with the recommended option, in a consolidated round covering
+`EPIC-031` to `EPIC-035` (Constitution X).
+
+- Q: Should `U-08` be this new Epic, or an `EPIC-015` extension? -> A: **This new Epic stands.** The store, the Contract mechanism and the completion gate are substrate for **every** governed workflow — the Requirement, Change and Defect Rooms all consume them — not only for Epic-level QA validation. `EPIC-015` becomes a **consumer** of this store rather than its host, and `FR-EVS-050` continues to prevent a second validation path in either direction. This closes the only capability area in `brs-v2-reconciliation.md` §4 whose home was recorded as an alternative.
+- Q: When the evidence store is unreachable, does the completion gate refuse or allow? -> A: **Refuse — fail closed** (`FR-EVS-035`). Unstated before this session, and the wrong default would have been invisible: an outage would have become a window in which *"done"* needed no proof, which is precisely what `BG-08` exists to prevent. This also makes all three substrate Epics fail the same direction — `EPIC-030` `FR-GEL-041`, `EPIC-031` `FR-DPE-050`, and this.
+
+**Deferred, deliberately.** Attestation and provenance format selection (`PP-015`) and retention and
+volume targets (`PP-018`) are plan-level. The PMI-DOC-006 approval is an act of the project owner.
+`BR-0143` and `BR-0036` remain `U-09` and are not this Epic's to settle.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -244,7 +258,11 @@ the gate treats it identically.
 - **Evidence volume for one object grows very large** — reference over copy (`FR-EVS-005`), with
   retention recorded in this Epic's plan rather than assumed.
 - **`EPIC-015` already validates an Epic against acceptance criteria** — this Epic supplies the
-  store and the gate; it must not build a second validation path (`FR-EVS-050`).
+  store and the gate; it must not build a second validation path (`FR-EVS-050`). `EPIC-015` is a
+  **consumer** of this store, settled 2026-08-22.
+- **The evidence store is unreachable when completion is declared** — refused (`FR-EVS-035`). The
+  alternative accepts completion on the strength of a Contract nobody could read, which is the
+  assertion-driven model wearing an outage as an excuse *(clarified 2026-08-22)*.
 
 ## Requirements *(mandatory)*
 
@@ -287,6 +305,7 @@ the gate treats it identically.
 - **FR-EVS-032**: A refused completion MUST name the unmet items.
 - **FR-EVS-033**: A refused completion MUST be recorded.
 - **FR-EVS-034**: An item satisfied by evidence that fails its integrity check MUST count as unmet. Presence is not validity.
+- **FR-EVS-035**: Where the evidence store cannot be reached, the completion gate MUST **refuse** rather than allow. An unreachable store means the Contract cannot be evaluated, and an unevaluated Contract is not a satisfied one. This matches `EPIC-030` `FR-GEL-041` and `EPIC-031` `FR-DPE-050`: all three substrate Epics fail closed *(clarified 2026-08-22)*.
 
 *External contribution — `BR-0146`, `ADR-0022` decided boundary.*
 
@@ -322,11 +341,12 @@ the gate treats it identically.
 - **SC-EVS-006**: A reference whose target has been removed reports unresolvable in **100%** of reads, and never satisfies an item.
 - **SC-EVS-007**: Evidence attached to a superseded artifact version never satisfies a Contract item for the current version.
 - **SC-EVS-008**: Contract satisfaction rate is reportable per project — the `BG-08` measure *"% of completed work with a satisfied Evidence Contract"* computed from the store rather than estimated.
+- **SC-EVS-009**: When the evidence store is unreachable, **100%** of completion attempts are refused and **zero** are accepted *(clarified 2026-08-22)*.
 
 ## Assumptions
 
 - **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-EVS-027` cites its Room Evidence region. The requirement it serves — `BR-0140`–`BR-0142` — is approved, so only the projection's shape depends on the proposed document. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
-- **Whether `U-08` should be an `EPIC-015` extension rather than this new Epic is unsettled.** `brs-v2-reconciliation.md` §4 records the home as *"new epic, or `EPIC-015` extension"* — the only area whose assignment is an alternative. This Epic is declared as the new epic because the store, the Contract mechanism and the gate are substrate for **every** governed workflow, not only for Epic-level QA validation; but the call belongs to the **product owner** and is listed in Epic Exit Criteria. `FR-EVS-050` keeps the two from duplicating whichever way it goes.
+- **`U-08` stands as this new Epic** *(settled 2026-08-22)*. `brs-v2-reconciliation.md` §4 recorded the home as *"new epic, or `EPIC-015` extension"* — the only area whose assignment was an alternative. The store, the Contract mechanism and the gate are substrate for **every** governed workflow, so `EPIC-015` becomes a **consumer** rather than the host. `FR-EVS-050` still prevents a second validation path, now in the confirmed direction. `brs-v2-reconciliation.md` §4 should be updated to drop the alternative — listed in Epic Exit Criteria.
 - **`BR-0143` and `BR-0036` are `U-09` and stay unowned.** `ADR-0022` remains Open on exactly that. Declaring this Epic does not converge that ADR and must not be reported as doing so.
 - Depends on `EPIC-030` for the loop's **Evidence** stage seam. The dependency is one-directional.
 - Depends on `EPIC-031` only where a Contract item is itself gated by policy; the medium band's *evidence gates* are expressed against this Epic's Contract, and neither Epic builds the other's half.
@@ -341,7 +361,9 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 
 - [ ] Every implementation task has a passing unit test — or, for Evidence Contract definitions and other non-code outputs, a passing executable conformance check that reads the artifact and fails when it drifts (Constitution V)
 - [ ] **`FR-EVS-030` is mutation-tested**: a bypass permitting completion with an unmet Contract is added, and the suite observed failing (`SC-EVS-001`). This is the Epic's load-bearing requirement and the one most costly to have as decoration
-- [ ] The **`U-08` versus `EPIC-015` extension** question is decided and recorded by the product owner, with the consequence for `EPIC-015` stated
+- [x] The **`U-08` versus `EPIC-015` extension** question is **decided** (2026-08-22): `U-08` is this new Epic, and `EPIC-015` consumes it
+- [ ] **`brs-v2-reconciliation.md` §4 has been updated** to record `U-08`'s home as settled rather than as an alternative, so the register stops offering a choice that has been made
+- [ ] **`FR-EVS-035` is mutation-tested**: make the gate allow when the store is unreachable, and observe the suite fail (`SC-EVS-009`)
 - [ ] Every evidence type named by `BR-0140` has been exercised against one gate (`SC-EVS-004`) — nine types, one mechanism, demonstrated rather than asserted
 - [ ] **Constitution XI Tier 1** — a test drives evidence contribution and the completion gate through their **real entry points** against the composed module graph. A mocked evidence store provably cannot satisfy this
 - [ ] **Constitution XI Tier 2** — **not applicable**: this Epic delivers no standalone journey, and the *Evidence & Compliance* area cannot be built until `U-09` is declared (`UX-0060`). Recorded rather than omitted, per the `EPIC-029` `F1` precedent
