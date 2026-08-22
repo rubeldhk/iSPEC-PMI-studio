@@ -83,6 +83,14 @@
   Epic. The two share a word and nothing else — and conflating them would make this Epic look like it
   already exists, which is precisely the class of error Finding A corrected.
 
-- **The stage is `Specified`, and the next step is `/speckit-clarify`.** A fully-resolved checklist
-  ahead of a recorded clarification session surfaces in the stage register as a `report` finding —
-  *checklist evidence present without the stage before it*. That clears when the session runs.
+- **The stage moves to `Checklisted` with this session**, and the `report` finding this Epic carried
+  clears. Next step is `/speckit-plan`.
+
+- **The clarification scan found a real gap, not a wording problem.** `ADR-0016` names three
+  classification outcomes; this specification routed two. Confirmed Defect went to repair and Change
+  Request to the Change Room, and **Requirement Gap had no destination at all** — an item would have
+  classified correctly and then stopped moving. `FR-DFR-076` routes it to the Requirement Room as new
+  intent, and `FR-DFR-077` states the general rule the omission broke: every outcome has a
+  destination. The spec's own Notes had warned that *"two outcomes is the shape this Epic is most
+  likely to ship by accident"*; it turns out three names with two exits is how that shape survives
+  being counted.

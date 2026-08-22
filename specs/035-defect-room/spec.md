@@ -34,6 +34,20 @@ governed transfer path to the Change Room. The flow is report or test failure, c
 requirement and spec, reproduce, create a failing test, diagnose, add implementation work, fix, run
 test and regression, evidence, close."
 
+## Clarifications
+
+### Session 2026-08-22
+
+Two questions, both answered with the recommended option, in a consolidated round covering
+`EPIC-031` to `EPIC-035` (Constitution X). The first was asked once and applies to all three Rooms.
+
+- Q: Is each Room a distinct loop workflow type, or one shared type with variants? -> A: **Three distinct workflow types over one engine** (`FR-DFR-001`). `ADR-0018`'s only decided constraint, now enforced by `EPIC-030`'s `T944a`/`T944b` rather than asserted.
+- Q: Where does a **Requirement Gap** go? -> A: **To the Requirement Room (`EPIC-033`) as new intent** (`FR-DFR-076`), with the defect record retained and marked reclassified, never deleted. **This was a real gap, found by the scan rather than by reading.** `ADR-0016` names three classification outcomes and this specification routed only two — Confirmed Defect to repair, Change Request to the Change Room. The third had **no destination at all**. A Requirement Gap cannot go to the Change Room, because there is no approved baseline to change; that absence is precisely what makes it a gap. Leaving it unrouted would have produced an item that classified correctly and then stopped moving.
+
+**Deferred, deliberately.** Regression-suite runtime and close-path targets (`PP-018`) are
+plan-level. The PMI-DOC-006 approval is an act of the project owner. `ADR-0016`'s convergence stays
+in Epic Exit Criteria — its shape includes runtime behaviour only implementation can confirm.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -255,7 +269,12 @@ requirement and specification, and resolution evidence are retained and queryabl
 ### Edge Cases
 
 - **The contested behaviour has no approved baseline at all** — **Requirement Gap**, the third
-  outcome. Not a defect, not a change. Treating it as either invents an approval that never happened.
+  outcome. Not a defect, not a change: treating it as either invents an approval that never
+  happened. It routes to the Requirement Room as new intent (`FR-DFR-076`), because a gap needs a
+  requirement written, not a baseline amended *(destination clarified 2026-08-22)*.
+- **A Requirement Room stage would be useful here** — not expressible. Each Room is a distinct
+  workflow type (`FR-DFR-001`); borrowing another Room's stage collapses two governed surfaces,
+  which is the one thing `ADR-0018` decided against *(clarified 2026-08-22)*.
 - **A defect is reported against a superseded artifact version** — recorded against the version
   reported, then re-evaluated against current. It does not silently become a defect in current
   behaviour.
@@ -280,7 +299,7 @@ requirement and specification, and resolution evidence are retained and queryabl
 
 *Room identity and boundary.*
 
-- **FR-DFR-001**: The Defect Room MUST be a **configured instance** of the Governed Engineering Loop (`BR-0064`, `EPIC-030`).
+- **FR-DFR-001**: The Defect Room MUST be a **distinct configured workflow type** of the Governed Engineering Loop (`BR-0064`, `EPIC-030`) — its own stages, authorities and gates over a shared engine, never a variant of another Room's type (`FR-GEL-004`) *(clarified 2026-08-22)*.
 - **FR-DFR-002**: This Epic MUST NOT implement the loop (`EPIC-030`), policy (`EPIC-031`), the evidence store (`EPIC-032`), the Change Room (`EPIC-034`), test execution or QA validation (`EPIC-015`, `BR-0080`), the task model (`EPIC-012`), or production telemetry linkage (`BR-0163`, `U-19`).
 
 *Intake — `BR-0051`.*
@@ -335,6 +354,8 @@ requirement and specification, and resolution evidence are retained and queryabl
 - **FR-DFR-073**: A declined transfer MUST retain both the offer and the decline.
 - **FR-DFR-074**: An item refused by the Change Room MUST return with the refusal attached; it MUST NOT be lost between Rooms.
 - **FR-DFR-075**: A defect that is really a change MUST NOT be fixable as a defect.
+- **FR-DFR-076**: An item classified as a **Requirement Gap** MUST be routed to the Requirement Room (`EPIC-033`) as **new intent**, carrying its reproduction context and evidence. The defect record MUST be retained and marked reclassified, never deleted (`ADR-0016`). It MUST NOT be routed to the Change Room: there is no approved baseline to change, and that absence is what makes it a gap *(clarified 2026-08-22 — the third outcome previously had no destination)*.
+- **FR-DFR-077**: Each of the three classification outcomes MUST have a destination, and an item MUST NOT be able to rest in a classified state with nowhere to go.
 
 *Analytics — `BR-0058`.*
 
@@ -375,6 +396,8 @@ requirement and specification, and resolution evidence are retained and queryabl
 - **SC-DFR-007**: **100%** of closures required the defect test plus applicable regression tests to pass, with evidence retained.
 - **SC-DFR-008**: Escape point and origin are aggregatable across closed defects without opening individual records.
 - **SC-DFR-009**: A person can carry a defect from report to closure **using only a keyboard**, with focus visible at every step (`BR-0193`, `EPIC-029`).
+- **SC-DFR-010**: **100%** of Requirement Gap classifications reach the Requirement Room as new intent, with the defect record retained and marked reclassified; **zero** rest in a classified state with no destination *(clarified 2026-08-22)*.
+- **SC-DFR-011**: This Room resolves as its own workflow type: **zero** transitions succeed under another Room's stages, authorities or gates *(clarified 2026-08-22)*.
 
 ## Assumptions
 
@@ -382,7 +405,7 @@ requirement and specification, and resolution evidence are retained and queryabl
 - **`ADR-0016` is Open and this Epic is expected to converge it.** Its `Awaits` names *"the Defect Room epic, which does not yet exist"* — as of this declaration, it does. Its Negative consequence is discharged: approved baselines depend on the Requirement Room, which is `EPIC-033`, declared in this Wave. Convergence is in Epic Exit Criteria.
 - **`BR-0163` operational feedback is `U-19` and unowned.** This Room accepts monitoring- and incident-originated defects (`BR-0051`); **automatic linkage from production telemetry is not this Epic**, and `FR-DFR-083` requires the Room to say so rather than present a partial origin distribution as complete. `brs-v2-reconciliation.md` §4 records `U-19` as depending on `U-04` and `U-05` — both declared in this Wave, so its blocker is now Epic declaration alone.
 - **`BR-0106` session cost limits are `U-11` and unowned.** Triage and diagnosis invoke models; this Room must not build its own budget mechanism.
-- Depends on `EPIC-030` (loop), `EPIC-031` (decision and Inbox), `EPIC-032` (evidence), `EPIC-033` (the baselines it classifies against) and `EPIC-034` (the transfer target). All five are declared in this Wave.
+- Depends on `EPIC-030` (loop), `EPIC-031` (decision and Inbox), `EPIC-032` (evidence), `EPIC-033` (the baselines it classifies against — **and, since 2026-08-22, the destination for a Requirement Gap**) and `EPIC-034` (the change transfer target). All five are declared in this Wave, so both outbound routes are specified from both ends.
 - `EPIC-015` owns test execution and QA validation (`BR-0080`). This Room requests runs and consumes results; if `EPIC-015`'s surface is insufficient, the correct response is a change to `EPIC-015`, not a runner here (`FR-DFR-062`).
 - `EPIC-012` owns the task model. Repair work becomes `EPIC-012` tasks (`FR-DFR-051`).
 - Regression-suite runtime bounds the close path; targets are this Epic's plan (`PP-018`).
@@ -395,7 +418,8 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] Every implementation task has a passing unit test — or, for the loop-instance configuration and Room pattern outputs, a passing executable conformance check (Constitution V)
 - [ ] **`FR-DFR-041` is mutation-tested**: a path accepting a fix with no failing test is added, and the suite observed failing (`SC-DFR-001`). Test-first is this Room's reason to exist
 - [ ] **`FR-DFR-044` is mutation-tested**: automatic reclassification of a passing reproduction test is added, and the suite observed failing (`SC-DFR-004`). `ADR-0016` names this failure mode explicitly and it is the easiest of the eight requirements to "simplify" into a defect
-- [ ] All **three** classification outcomes are demonstrated — Confirmed Defect, Change Request, Requirement Gap. Two outcomes is the shape this Epic is most likely to ship by accident
+- [ ] All **three** classification outcomes are demonstrated **and routed** — Confirmed Defect to repair, Change Request to `EPIC-034`, Requirement Gap to `EPIC-033` as new intent. Two outcomes is the shape this Epic is most likely to ship by accident, and an unrouted third is how the shape returns wearing three names
+- [ ] A **Requirement Gap** has been routed end to end into the Requirement Room, jointly with `EPIC-033` (`FR-DFR-076`)
 - [ ] **`ADR-0016` is converged** — moved to Accepted, or its `Awaits` restated against what actually remains. Its current `Awaits` is this Epic
 - [ ] A transfer to the Change Room has been exercised end to end with context and evidence preserved, jointly with `EPIC-034` (`FR-DFR-071`)
 - [ ] Region names are verified identical to `EPIC-033`'s by comparison rather than by review
