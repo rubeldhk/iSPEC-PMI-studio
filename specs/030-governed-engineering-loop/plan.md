@@ -52,9 +52,17 @@ sustained per workspace.
 (`BR-0001`); no Room vocabulary may appear in the contract package (`FR-GEL-061`, asserted by an
 architecture test); the Decide seam refuses when unfilled (`FR-GEL-062`).
 
-**Scale/Scope**: 16 functional requirements across five groups, 11 success criteria, 4 new tables,
-5 HTTP routes, 5 ports. Three downstream Epics (`EPIC-033`–`035`) and two sibling substrate Epics
-(`EPIC-031`, `EPIC-032`) consume this contract.
+**Scale/Scope**: **30 functional requirements across seven groups**, 11 success criteria, **3 new
+tables**, 5 HTTP routes, 5 ports. Three downstream Epics (`EPIC-033`–`035`) and two sibling substrate
+Epics (`EPIC-031`, `EPIC-032`) consume this contract.
+
+> **Corrected 2026-08-22** (analysis finding `I1`). This read *"16 functional requirements across
+> five groups"* and *"4 new tables"*. The first counted only the opening requirement group — the
+> Epic is roughly twice the size that figure implied, which is the difference between a medium Epic
+> and a large one at estimation time. The second counted `GateOutcome`, which
+> [data-model.md](./data-model.md) §5 embeds in `LoopTransition` rather than giving its own table.
+> Both were found by extracting identifiers rather than by reading, and both are the `G-36`
+> count-defect class PMI-DOC-004 §0.3 closed and `G-BRS-01` now guards.
 
 ## Constitution Check
 

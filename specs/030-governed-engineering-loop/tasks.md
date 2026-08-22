@@ -21,12 +21,13 @@ prior practice conflicts with it, this document wins."*
 
 **Non-code outputs count too** (Constitution V, v1.2.0). This Epic's non-code output is the set of
 loop instance configuration files under `packages/loop-contract/workflows/`; their executable
-conformance check is `T931`/`T932`, and `T978` proves it can fail.
+conformance check is `T931`, written failing-first, and `T932` makes the files pass it. A check
+that cannot fail is decoration, which is why `T931` precedes `T932` rather than describing it.
 
 **Organization**: grouped by the five user stories of [spec.md](./spec.md), each independently
 implementable and testable.
 
-**Task ID range**: `T913`–`T993`, 81 tasks. The corpus high-water mark was `T912` when this list was
+**Task ID range**: `T913`–`T993`, 83 tasks (`T944a`/`T944b` added 2026-08-22 to close analysis finding `C1`). The corpus high-water mark was `T912` when this list was
 written; identifiers are unique corpus-wide (`G-26-15`, `DEF-028-014`). Ids stay three-digit
 deliberately — the governance regex is `T\d{3}[a-z]?\b`, so a four-digit id would be **invisible** to
 both `G-26-15` and `DOR-08` rather than rejected by them.
@@ -99,9 +100,9 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 ### Configuration files and their conformance check — the non-code output
 
-- [ ] T930 [P] Author the loop instance configuration JSON schema and one worked example in `packages/loop-contract/workflows/` per [contracts/loop-contract.md](./contracts/loop-contract.md) §5
+- [ ] T930 [P] Author the loop instance configuration JSON schema and one worked example in `packages/loop-contract/workflows/` per [contracts/loop-contract.md](./contracts/loop-contract.md) §5 — `FR-GEL-005`, `FR-GEL-020` (a transition carries its named required gates)
 - [ ] T931 [P] Write the failing executable conformance check in `backend/tests/architecture/loop-config-conformance.spec.ts` — fails on a stage outside `LOOP_STAGES`, an unregistered stage handler, a trigger with no rule id, or absent `approvedBy`/`approvalRef`
-- [ ] T932 Make every file in `packages/loop-contract/workflows/` pass T931 (conformance: T931) — Constitution V for a non-code output
+- [ ] T932 Make every file in `packages/loop-contract/workflows/` pass T931 (conformance: T931) — Constitution V for a non-code output, `FR-GEL-005`
 - [ ] T933 [P] Write the failing architecture test in `backend/tests/architecture/loop-independence.spec.ts` — asserts `packages/loop-contract` imports nothing from a Room module and contains no Room vocabulary, modelled on `engine-independence.spec.ts` — `FR-GEL-061`
 
 ### Module skeleton and its wiring
@@ -129,6 +130,8 @@ drive an object through every declared stage, and assert `git diff --stat backen
 - [ ] T942 [US1] Implement the stage handler registry in `backend/src/modules/loop/stage-registry.ts` (unit test: T941) — `FR-GEL-007`, `FR-GEL-062` refuse-by-default
 - [ ] T943 [P] [US1] Write failing unit tests for tenant configuration scope in `backend/tests/unit/loop-config-scope.spec.ts` — a tenant row whose `stages` differ from the programme file is refused — `FR-GEL-009`
 - [ ] T944 [US1] Implement the programme/tenant configuration split in `backend/src/modules/loop/loop-config.loader.ts` (unit test: T943) — `FR-GEL-009`, clarified 2026-08-22
+- [ ] T944a [P] [US1] Write failing unit tests for workflow-type isolation in `backend/tests/unit/loop-type-isolation.spec.ts` — an object of workflow type A MUST NOT be transitionable under type B's stages, authorities or gates; each type resolves its own configuration — `FR-GEL-004`, `ADR-0018`
+- [ ] T944b [US1] Implement per-type configuration resolution on the transition path in `backend/src/modules/loop/loop.service.ts` (unit test: T944a) — `FR-GEL-004`. `ADR-0018`'s only decided constraint: *"A shared engine must not collapse three governed surfaces into one"*
 - [ ] T945 [US1] Implement `POST /loop/objects` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `declareObject`, pinning `configVersion` per `FR-GEL-006`
 - [ ] T946 [US1] Write the integration test for quickstart Scenario 1 in `backend/tests/integration/loop-new-workflow-type.spec.ts` — asserts zero lines of new engine code (`SC-GEL-001`)
 
@@ -167,12 +170,12 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 6
 
-- [ ] T961 [P] [US3] Write failing unit tests for trigger-rule citation in `backend/tests/unit/loop-trigger-rule.spec.ts` — a configuration with a rule-less automated transition is refused at load — `FR-GEL-031`
-- [ ] T962 [US3] Implement trigger-rule validation in `backend/src/modules/loop/loop-config.loader.ts` (unit test: T961)
+- [ ] T961 [P] [US3] Write failing unit tests for trigger-rule citation in `backend/tests/unit/loop-trigger-rule.spec.ts` — a configuration with a rule-less automated transition is refused at load — `FR-GEL-030`, `FR-GEL-031`, `SC-GEL-004`
+- [ ] T962 [US3] Implement trigger-rule validation in `backend/src/modules/loop/loop-config.loader.ts` (unit test: T961) — `FR-GEL-030`, `SC-GEL-004`
 - [ ] T963 [P] [US3] Write failing unit tests for human/automation distinguishability in `backend/tests/unit/loop-actor-kind.spec.ts` — `FR-GEL-032`
 - [ ] T964 [US3] Implement `actorKind` recording in `backend/src/modules/loop/transition-writer.ts` (unit test: T963)
 - [ ] T965 [P] [US3] Write failing unit tests for trigger idempotency in `backend/tests/unit/loop-trigger-idempotency.spec.ts` — a repeated firing records a duplicate rather than advancing twice — `FR-GEL-033`
-- [ ] T966 [US3] Implement idempotent trigger handling in `backend/src/modules/loop/trigger-dispatcher.ts` (unit test: T965)
+- [ ] T966 [US3] Implement idempotent trigger handling in `backend/src/modules/loop/trigger-dispatcher.ts` (unit test: T965) — `FR-GEL-030` declares triggered transitions; this is where one fires
 
 **Checkpoint**: US3 is independently demonstrable — every automated move names its rule
 
@@ -184,8 +187,8 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 7
 
-- [ ] T967 [P] [US4] Write failing unit tests for gate-outcome completeness in `backend/tests/unit/loop-gate-completeness.spec.ts` — a declared gate with no recorded outcome makes the transition invalid, not passed — `FR-GEL-021`
-- [ ] T968 [US4] Implement gate evaluation and the four-outcome resolution in `backend/src/modules/loop/gate-evaluator.ts` (unit test: T967) — refuse / exception / violation, never satisfied-by-omission
+- [ ] T967 [P] [US4] Write failing unit tests for gate-outcome completeness in `backend/tests/unit/loop-gate-completeness.spec.ts` — a declared gate with no recorded outcome makes the transition invalid, not passed — `FR-GEL-020`, `FR-GEL-021`, `SC-GEL-008`
+- [ ] T968 [US4] Implement gate evaluation and the four-outcome resolution in `backend/src/modules/loop/gate-evaluator.ts` (unit test: T967) — refuse / exception / violation, never satisfied-by-omission — `FR-GEL-020`, `SC-GEL-008`
 - [ ] T969 [P] [US4] Write failing unit tests for exception recording in `backend/tests/unit/loop-gate-exception.spec.ts` — authorizer and reason required — `FR-GEL-021`
 - [ ] T970 [US4] Implement exception and violation recording in `backend/src/modules/loop/gate-evaluator.ts` (unit test: T969)
 - [ ] T971 [US4] Implement `GET /loop/objects/:id/exceptions` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `FR-GEL-022`
@@ -215,7 +218,7 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 - [ ] T976 [P] Add stage-residency instrumentation so "which stage, and for how long" is answerable without opening the object, in `backend/src/modules/loop/loop.service.ts` (unit test: T977) — `SC-GEL-006`
 - [ ] T977 [P] Write failing unit tests for stage-residency measurement in `backend/tests/unit/loop-residency.spec.ts`
-- [ ] T978 **Mutation proof — `FR-GEL-021`**: add a `satisfied`-by-default branch to `backend/src/modules/loop/gate-evaluator.ts`, revert (unit test: T967 — it must fail while the mutation stands). Record the observation in this Epic's closing report — a gate check that cannot fail is decoration (Constitution V)
+- [ ] T978 **Mutation proof — `FR-GEL-021`**: add a `satisfied`-by-default branch to `backend/src/modules/loop/gate-evaluator.ts`, revert (unit test: T967 — it must fail while the mutation stands). `SC-GEL-008`. Record the observation in this Epic's closing report — a gate check that cannot fail is decoration (Constitution V)
 - [ ] T979 **Mutation proof — `FR-GEL-041`**: split the transition and audit writes in `backend/src/modules/loop/transition-writer.ts`, revert (integration test: T957 — it must fail while the mutation stands). Record the observation
 - [ ] T980 **Mutation proof — `FR-GEL-016`**: remove the `approvedBy`/`approvalRef` requirement from `backend/src/modules/loop/loop-config.loader.ts`, revert (unit test: T937 — it must fail while the mutation stands). Record the observation (`SC-GEL-010`)
 - [ ] T981 **Mutation proof — Constitution XI Tier 1**: remove `LoopModule` from `backend/src/app.module.ts`, revert (integration test: T934 — it must fail while the mutation stands). Record the observation — a test importing `LoopModule` directly would still pass, which is the defect class Principle XI was ratified over
