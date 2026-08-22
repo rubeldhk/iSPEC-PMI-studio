@@ -47,6 +47,25 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # The Prisma client is GENERATED code, and nothing else generates it.
+      #
+      # Without this step `@prisma/client` resolves to its ungenerated stub, which
+      # exports no `PrismaClient` at all. Typecheck then fails in the integration
+      # tests with TS2305 (no exported member 'PrismaClient') and TS7006 ('tx'
+      # implicitly has an 'any' type) — errors about the schema being absent, not
+      # about the code being wrong. It is the reason CI was red on 2026-08-21 and
+      # 2026-08-22 while the same tree typechecked clean on every developer machine
+      # that happened to have generated the client at some point.
+      #
+      # It belongs here rather than in a `postinstall`: a backend postinstall does
+      # run, and reports success, but pnpm finalises the virtual store afterwards
+      # and the generated output does not survive it.
+      #
+      # Every step below depends on this, not just Typecheck — the unit, contract
+      # and integration suites import the same client.
+      - name: Generate Prisma client
+        run: pnpm --filter @pmi/backend exec prisma generate
+
       - name: Typecheck
         run: pnpm -r typecheck
 
