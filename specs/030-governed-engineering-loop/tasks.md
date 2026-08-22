@@ -66,7 +66,7 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 **Purpose**: make the workspace able to hold a fifth contract package, and discharge the failing gate
 
-- [ ] T913 Create the dedicated worktree `git worktree add ../ispec-epic-030 epic/030-governed-engineering-loop` and work there — discharges the plan's one failing Constitution gate (concurrent-session isolation), following the EPIC-029 precedent
+- [ ] T913 Create the dedicated worktree at `.claude/worktrees/epic-030-governed-engineering-loop` — `git worktree add .claude/worktrees/epic-030-governed-engineering-loop epic/030-governed-engineering-loop` — and work there. Discharges the plan's one failing Constitution gate (concurrent-session isolation), following the EPIC-029 precedent. **Done 2026-08-22**; the path is the repository's own convention (gitignored, three siblings already), not the `../ispec-epic-030` the first draft named
 - [ ] T914 [P] Scaffold `packages/loop-contract/package.json` and `packages/loop-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
 - [ ] T915 [P] Register a `loop-contract` project in `vitest.workspace.ts` without `passWithNoTests` — `TS-005`, an empty suite is a failure
 - [ ] T916 [P] Record `supertest` and `@types/supertest` in `specs/_shared/dependencies.md` with purpose, alternatives considered and licence (`TS-001`, `TS-002`) — verified absent from the repository today

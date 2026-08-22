@@ -82,7 +82,7 @@ Epics (`EPIC-031`, `EPIC-032`) consume this contract.
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | **PASS** — `/speckit-clarify` asked five questions in one batch; this plan run has paused for nothing |
 | XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph, not a hand-assembled one; a mocked collaborator does not satisfy this. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application is planned as closure evidence. An Epic with no user-facing capability records that, rather than omitting the row | **PASS** — Tier 1 planned in `R-030-8` and `quickstart.md` Scenario 10, importing the real `AppModule`. **Tier 2 not applicable**: this Epic delivers no user-facing journey, recorded rather than omitted |
 | — | Repository was synced from GitHub before this work started | **PASS** — `git fetch --all` run this session; `main` is level with `origin/main`, 0 ahead / 0 behind |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | **FAIL** — see Complexity Tracking. Cannot be asserted, and there is positive evidence against it |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | **PASS** — **discharged 2026-08-22**. Implementation runs in the dedicated worktree `.claude/worktrees/epic-030-governed-engineering-loop`, created this date; the primary checkout returned to `main`. Discharged by isolation, not by exclusivity — the same reading `EPIC-029` recorded on 2026-08-21. See Complexity Tracking |
 
 Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking below.
 
@@ -96,8 +96,13 @@ Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking belo
 **Post-Phase-1 re-check (2026-08-22)**: re-evaluated after `research.md`, `data-model.md`,
 `contracts/` and `quickstart.md`. **No gate changed status.** Gate V strengthened rather than
 weakened — Phase 1 turned three of the four mutation checks into concrete quickstart scenarios
-(4, 7, 9) with the inversion each must survive. The single FAIL is unchanged and its discharge is
-unchanged.
+(4, 7, 9) with the inversion each must survive.
+
+**Post-remediation re-check (2026-08-22, later the same day)**: the concurrent-session gate moved
+**FAIL → PASS** when the worktree was created. It is the only status that changed. `DOR-06` — which
+reads the leading word of each status cell — now finds no FAIL, so this plan no longer holds the
+Epic out of `Ready`. Gate V additionally gained `T944a`/`T944b` from analysis finding `C1`, closing
+the one requirement that had no task.
 
 ## Project Structure
 
@@ -165,6 +170,6 @@ alternatives rejected.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| **Constitution gate: "No other Claude session is active on this checkout" — FAIL** | Planning writes no application code, and the isolation rule's own rationale is that *"two concurrent agents editing one checkout corrupts task state, produces interleaved partial edits, and breaks convergence accounting"* — which binds implementation, not specification. This checkout currently shows 10+ `claude.exe` processes, and three source files were observed reverting to their committed state mid-session without any command of this session's causing it. Exclusivity cannot be asserted, so it is recorded as FAIL rather than assumed | Asserting the gate passes was rejected as unverifiable. **Discharge, scheduled before `/speckit-implement`**: implementation runs in a dedicated worktree, following the `EPIC-029` precedent — its plan failed this identical row on 2026-08-21 and was discharged by creating `epic/029-design-system` as a worktree. `.claude/worktrees/` already holds three. The discharge is an Epic Exit Criterion, not an intention |
+| **Constitution gate: "No other Claude session is active on this checkout" — was FAIL, ✅ discharged 2026-08-22** | Planning writes no application code, and the isolation rule's own rationale is that *"two concurrent agents editing one checkout corrupts task state, produces interleaved partial edits, and breaks convergence accounting"* — which binds implementation, not specification. This checkout showed 10+ `claude.exe` processes, and three source files were observed reverting to their committed state mid-session without any command of this session's causing it. Exclusivity could not be asserted, so it was recorded as FAIL rather than assumed | Asserting the gate passes was rejected as unverifiable. **Discharged by isolation, not exclusivity**: the worktree `.claude/worktrees/epic-030-governed-engineering-loop` was created on 2026-08-22 and the primary checkout returned to `main`. This is the `EPIC-029` reading verbatim — its plan failed this identical row on 2026-08-21 and was discharged the same way. The gate row above now reads PASS |
 | **Interim approval gate for `FR-GEL-016`** (`R-030-7`) | `FR-GEL-016` requires authorized human approval for a configuration change, but `EPIC-031`'s policy engine does not exist. The interim is a reviewed, attributed commit recorded as `approvedBy`/`approvalRef`; the loop refuses to load a configuration lacking them | Waiting for `EPIC-031` was rejected — it makes this Epic un-implementable until another Epic ships, the sequencing `ADR-0018` warns about. Shipping without the gate was rejected — a configuration changeable without approval is a route around every approval it defines. **This interim is a debt, not an end state**, and `EPIC-031` must replace it; the swap only ever tightens, because `FR-GEL-016` makes the band non-lowerable |
 | **A fifth workspace package** | `packages/loop-contract` is the fifth `*-contract` package | A shared `packages/contracts` barrel was rejected: it would couple the loop's release cadence to the engine and agent contracts, and `TS-004` requires each package to typecheck independently |

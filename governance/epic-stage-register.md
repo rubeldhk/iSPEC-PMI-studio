@@ -40,7 +40,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-029](../specs/029-design-system/) | Design System | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-030](../specs/030-governed-engineering-loop/) | Governed Engineering Loop | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-030](../specs/030-governed-engineering-loop/) | Governed Engineering Loop | delivery | Ready | — | Ready | `/speckit-implement` |
 
 ## Findings
 
