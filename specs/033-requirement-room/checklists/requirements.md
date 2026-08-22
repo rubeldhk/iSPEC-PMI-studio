@@ -83,7 +83,14 @@
   `PROPOSED`. The first Room built sets the vocabulary the other two inherit, whether or not anyone
   approved it.
 
-- **The stage is `Specified`, and the next step is `/speckit-clarify`.** A fully-resolved checklist
-  ahead of a recorded clarification session surfaces in the stage register as a `report` finding —
-  *checklist evidence present without the stage before it*. That is the register describing an Epic
-  between specify and clarify, and it clears when the session runs.
+- **The stage moves to `Checklisted` with this session**, and the `report` finding this Epic carried
+  clears. Next step is `/speckit-plan`.
+
+- **This Room is now a distinct workflow type, not a variant** (`FR-RQR-001`, clarified
+  2026-08-22). That turns `ADR-0018`'s only decided constraint into something `EPIC-030`'s
+  `T944a`/`T944b` can fail on, rather than a sentence three Rooms are each trusted to honour.
+
+- **`BR-0004` is now a prohibition, not an intention** (`FR-RQR-004`). The original spec said no
+  interim external-stakeholder path *would* be built; it now says one MUST NOT be. The difference
+  matters because an interim access path is the kind of thing added under delivery pressure by
+  someone who never read the assumption.

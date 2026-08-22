@@ -35,6 +35,20 @@ raw intent into a baselined requirement set ready for specification. The flow is
 extraction and normalization, clarification, conflict and gap analysis, options, risks, acceptance
 criteria, stakeholder decision, baseline, and handoff to specification."
 
+## Clarifications
+
+### Session 2026-08-22
+
+Two questions, both answered with the recommended option, in a consolidated round covering
+`EPIC-031` to `EPIC-035` (Constitution X). The first was asked once and applies to all three Rooms.
+
+- Q: Is each Room a distinct loop workflow type, or one shared type with variants? -> A: **Three distinct workflow types over one engine** (`FR-RQR-001`). This is `ADR-0018`'s only decided constraint stated as a requirement: *"the Requirement, Change and Defect Rooms remain distinct user-facing governed rooms with their own rules, states, permissions and decisions, while reusing a common workflow engine. A shared engine must not collapse three governed surfaces into one."* `EPIC-030` now has a test for it — `T944a`/`T944b`, added to close analysis finding `C1` — so the constraint is enforced rather than asserted.
+- Q: Should an interim external-stakeholder access path be built before `U-02` is declared? -> A: **No** (`FR-RQR-004`). `BR-0004` lets authorized external stakeholders review assigned requirements *without receiving broader engineering access*. That is an access-control mechanism, and building one outside the Epic that owns it would put a second authorization model beside `EPIC-024`'s — the failure `D-33` describes in the requirement register, applied to access. Until `U-02` is declared, this Room serves workspace-internal authorized identities only, and says so rather than degrading quietly.
+
+**Deferred, deliberately.** Requirement-set size and clarification-volume targets (`PP-018`) are
+plan-level. The PMI-DOC-006 approval is an act of the project owner and remains this Room's
+strongest SRS dependency — it should be discharged before `EPIC-034` plans against the same pattern.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -278,6 +292,11 @@ pattern definition rather than from this Room's own vocabulary.
   waived once and then forgotten.
 - **`EPIC-007` already holds requirement records** — this Room consumes that register (`FR-RQR-002`)
   rather than creating a second one, which is `D-33`'s whole point.
+- **A Change Room stage would be useful here** — not expressible. Each Room is a distinct workflow
+  type (`FR-RQR-001`); borrowing another Room's stage would collapse two governed surfaces, which is
+  the one thing `ADR-0018` decided against *(clarified 2026-08-22)*.
+- **An external stakeholder needs to review a requirement** — not supported, and the Room states that
+  rather than failing on click (`FR-RQR-004`, `UX-0002`). `U-02` owns it *(clarified 2026-08-22)*.
 
 ## Requirements *(mandatory)*
 
@@ -285,9 +304,10 @@ pattern definition rather than from this Room's own vocabulary.
 
 *Room identity and boundary.*
 
-- **FR-RQR-001**: The Requirement Room MUST be a **configured instance** of the Governed Engineering Loop (`BR-0064`, `EPIC-030`), not a workflow implemented beside it.
+- **FR-RQR-001**: The Requirement Room MUST be a **distinct configured workflow type** of the Governed Engineering Loop (`BR-0064`, `EPIC-030`), not a workflow implemented beside it and not a variant of a shared Room type. Its stages, authorities and gates are its own; the engine is shared. `EPIC-030` `FR-GEL-004` enforces the distinctness *(clarified 2026-08-22)*.
 - **FR-RQR-002**: This Epic MUST consume the requirement register `EPIC-007` owns (`BR-0020`, `BR-0021`) and MUST NOT create a second requirement store (`D-33`).
 - **FR-RQR-003**: This Epic MUST NOT implement the loop (`EPIC-030`), risk and approval policy (`EPIC-031`), the evidence store (`EPIC-032`), the Change Room (`EPIC-034`) or the Defect Room (`EPIC-035`).
+- **FR-RQR-004**: This Epic MUST NOT build an external-stakeholder access path. `BR-0004` is `U-02` and unowned; until it is declared this Room serves workspace-internal authorized identities only, and MUST say so rather than degrading silently *(clarified 2026-08-22)*.
 
 *Guided clarification — `BR-0022`.*
 
@@ -366,11 +386,12 @@ pattern definition rather than from this Room's own vocabulary.
 - **SC-RQR-006**: Every baseline is traceable to the intent it came from and to the specifications derived from it, in both directions.
 - **SC-RQR-007**: All six Room regions are present and their names match the shared pattern exactly — verified by comparison, not review.
 - **SC-RQR-008**: A person can carry unstructured intent through to an approved baseline **using only a keyboard**, with focus visible at every step (`BR-0193`, `EPIC-029`).
+- **SC-RQR-009**: This Room resolves as its own workflow type: **zero** transitions succeed under another Room's stages, authorities or gates — asserted by `EPIC-030`'s `T944a` against this type *(clarified 2026-08-22)*.
 
 ## Assumptions
 
 - **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-RQR-070`–`FR-RQR-075` cite `UX-0030`–`UX-0035` and `UX-0040`. `BR-0191`, which requires the shared Room pattern, is *SHOULD* in PMI-DOC-004 — so the pattern's binding force comes largely from the proposed document. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 of `brs-v2-reconciliation.md` §7. This is the strongest SRS dependency of the three Rooms and should be discharged before `EPIC-034` plans against the same pattern.
-- **`BR-0004` stakeholder access is `U-02` and unowned.** *"Authorized external stakeholders review assigned requirements without receiving broader engineering access"* is a Requirement Room-adjacent capability this Epic does **not** own. Until `U-02` is declared, this Room's decisions are available to workspace-internal authorized identities only, and **no interim external-stakeholder access path is built**. **Owner: product owner.**
+- **`BR-0004` stakeholder access is `U-02` and unowned — confirmed 2026-08-22, no interim path.** *"Authorized external stakeholders review assigned requirements without receiving broader engineering access"* is a Requirement Room-adjacent capability this Epic does **not** own. `FR-RQR-004` now states the prohibition as a requirement rather than an intention: an interim path would be a second authorization model beside `EPIC-024`'s. **Owner: product owner**, when `U-02` is declared.
 - **`BR-0106` session cost limits are `U-11` and unowned.** AI clarification and options generation invoke models. This Room MUST NOT build its own budget mechanism; it consumes whatever `U-11` supplies and, until then, records model usage without enforcing a ceiling.
 - Depends on `EPIC-030` (loop), `EPIC-031` (decision and Inbox) and `EPIC-032` (evidence). All three are declared in this same Wave; the sequencing is that this Room is planned after the three are specified, not after they are built.
 - `EPIC-007` is closed and keeps its scope (`D-33`). This Room extends the requirement lifecycle above EPIC-007's register; it does not reopen it.
