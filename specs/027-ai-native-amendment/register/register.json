@@ -4,7 +4,7 @@
     "clauses.md": "a14129d7b62076217cb412f50c8ff9097411664a35a67c28d4cca0114ea2a27d",
     "verdicts.md": "c88a514dd2c7dc79637f9cc22d019a0c895d82042c2ed7349165dc8d326eaff4",
     "capabilities.md": "f54ac90c0cb703e160e6883f4312c8fea2a31584be633002c852622e304e10fb",
-    "capability-areas.md": "ff42cf01e63db78317f5d74b12419fc45bc4454d4d60281df5dfb4096bfbbc05",
+    "capability-areas.md": "5687b05290b871b8d7e2907e40529e73412df2dca353f51fe631c7c5f353ab5f",
     "premises.md": "077020efcdd8390b9900188967b4e8fd0826ace33da6f59bd7607b6242fe361a",
     "decisions.md": "1c158babcbfeadaeceb1e61123fed285aeff28839a336631b37562311f2072fe",
     "research.md": "36599a7513730c4e22f5a68d3734c0992e3bff04b1f18f848a6351534449961e",
@@ -12337,7 +12337,7 @@
     {
       "area": "Persistent project state",
       "verdict": "missing",
-      "home": "EPIC-029 (proposed)",
+      "home": "new epic — Workspace Fabric",
       "posture": "proceeds — unspecified"
     },
     {

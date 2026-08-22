@@ -32,26 +32,18 @@ owning epic. All three are product surface and therefore held, so nothing is blo
 recorded here is that when `PMI-DOC-004` lands, three capability areas will have nowhere to go until
 someone creates epics for them.
 
-## The twenty areas
-
-`FR-AMD-012` requires each capability area assigned: an existing epic, a new epic, architectural
-preparation only, or deferred. This is that assignment, and `G-27-13` asserts the count agrees with
-the figure `SC-AMD-011` quotes — an assertion added because those two numbers had already drifted
-apart (`DEF-027-001`).
-
-**Four proceeded, sixteen are held, and three of the twenty have no owner at all.**
-
-The four proceeding areas were the amendment's immediately-buildable slice. Three are now BUILT by
-EPIC-028; the fourth, persistent project state, is still unspecified. The sixteen held areas are held
-behind `PMI-DOC-004` — not by this reconciliation, which changed no epic's posture (`FR-AMD-017`,
-asserted by `G-27-14`).
-
-**The three unowned areas are the finding this table exists to surface.** Governed Engineering Loops,
-Governed Learning and the Specification Compliance Agent all arrived with the Cosmos amendment on
-2026-08-14, all three are genuinely new — absent from the four August-11 documents — and none has an
-owning epic. All three are product surface and therefore held, so nothing is blocked today. What is
-recorded here is that when `PMI-DOC-004` lands, three capability areas will have nowhere to go until
-someone creates epics for them.
+> **Correction, 2026-08-22 (`F-04`).** The *Persistent project state* home read **"EPIC-029 (proposed)"**
+> — a forward-looking guess made on 2026-08-17 that the next epic number would carry this area.
+> `EPIC-029` was subsequently declared as **Design System**, so the area pointed at a home something
+> else had taken. Its home is now the **Workspace Fabric** epic (`U-14` in
+> [`specs/brs-v2-reconciliation.md`](../../brs-v2-reconciliation.md) §4), which is where non-ephemeral
+> execution lives under PMI-DOC-004 v2.0 `BR-0131`–`BR-0133` and `ADR-0024`. `ADR-0009` already
+> decided the substrate — the git remote is durable, volumes are cache, and the Docker provider
+> refuses a persistent binding with `policy_refused` — so what remains unbuilt is a provider that
+> supports the persistent lifecycle, which is a Workspace Fabric execution mode.
+>
+> Posture is unchanged: this area was never held behind `PMI-DOC-004`, and "proceeds — unspecified"
+> stays accurate. The counts in the paragraph above are therefore still correct.
 
 ## Register
 
@@ -61,7 +53,7 @@ someone creates epics for them.
 | ProjectExecutionEnvironment | needs-enhancement | EPIC-028 | BUILT 2026-08-17 |
 | EgressPolicy profiles | conflicting | EPIC-028 | BUILT 2026-08-17 |
 | Agent-independence architecture test | missing | EPIC-028 | BUILT 2026-08-17 |
-| Persistent project state | missing | EPIC-029 (proposed) | proceeds — unspecified |
+| Persistent project state | missing | new epic — Workspace Fabric | proceeds — unspecified |
 | Execution job to AgentRun state machine | needs-enhancement | EPIC-012 | held |
 | Requirement Room / Requirement Intelligence | conflicting | new epic — NOT EPIC-007 | held |
 | Change Room / Change Intelligence | conflicting | new epic | held |
