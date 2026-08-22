@@ -40,6 +40,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-029](../specs/029-design-system/) | Design System | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-034](../specs/034-change-room/) | Change Room | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 
 ## Findings
 
@@ -48,3 +49,4 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | Epic | Finding | Severity |
 |---|---|---|
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
+| EPIC-034 | Checklisted evidence present without the stage before it — stage held at Specified | report |
