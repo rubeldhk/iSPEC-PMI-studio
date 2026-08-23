@@ -103,10 +103,14 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'answers',
       'architecture_decision_records',
       'audit_entries',
+      'baseline_exceptions',
+      'baselines',
+      'clarifications',
       'dependency_edges',
       'engine_registrations',
       'gate_outcomes',
       'generation_jobs',
+      'handoffs',
       'lifecycle_transitions',
       'loop_instance_configurations',
       'loop_objects',
@@ -118,6 +122,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'publish_records',
       'published_file_references',
       'recorded_questions',
+      'requirement_candidates',
+      'requirement_decisions',
       'requirement_versions',
       'requirements',
       'review_findings',
@@ -202,6 +208,13 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // record rather than bookkeeping about the row. The
       // provisional_approval_overrides precedent.
       loop_instance_configurations: 'approvedAt',
+      // EPIC-033: a decision is *decided* and a baseline is *approved*
+      // (FR-RQR-040, BR-0026) — in both cases the timestamp IS the record, not
+      // bookkeeping about the row. A handoff is *selected* (FR-RQR-060): the
+      // moment a frozen set went to specification is the fact being recorded.
+      requirement_decisions: 'decidedAt',
+      baselines: 'approvedAt',
+      handoffs: 'selectedAt',
     };
 
     const missing = [...tables.entries()]

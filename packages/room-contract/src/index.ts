@@ -34,3 +34,10 @@ export {
   type Labelled,
 } from './epistemic.js';
 export type { RoomObjectRef } from './object-ref.js';
+export {
+  ROOM_PORTS,
+  absentBehaviourOf,
+  type AbsentBehaviour,
+  type RoomPort,
+  type RoomPortName,
+} from './ports.js';
