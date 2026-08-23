@@ -145,20 +145,20 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 2, 3, 4 and 5
 
-- [ ] T947 [P] [US2] Write failing unit tests for transition authority in `backend/tests/unit/loop-authority.spec.ts` — an unauthorized attempt is refused and names the missing authority — `FR-GEL-011`
-- [ ] T948 [US2] Implement authority evaluation in `backend/src/modules/loop/loop.service.ts` (unit test: T947)
-- [ ] T949 [P] [US2] Write failing unit tests for the transition record's required fields in `backend/tests/unit/loop-transition-record.spec.ts` — actor, authority basis, object version, from, to, trigger, result all present — `FR-GEL-012`, `SC-GEL-003`
-- [ ] T950 [US2] Implement transition-record construction in `backend/src/modules/loop/transition-writer.ts` (unit test: T949)
-- [ ] T951 [P] [US2] Write failing unit tests asserting a refusal is itself recorded in `backend/tests/unit/loop-refusal-record.spec.ts` — `FR-GEL-014`
-- [ ] T952 [US2] Implement refusal recording in `backend/src/modules/loop/transition-writer.ts` (unit test: T951)
-- [ ] T953 [US2] Implement `POST /loop/objects/:id/transitions` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `403` on missing authority, `409` on lost race
-- [ ] T954 [US2] Implement optimistic concurrency via conditional `updateMany` on `{ id, version }` with `version: { increment: 1 }` in `backend/src/modules/loop/transition-writer.ts` (integration test: T956) — `R-030-1`, `FR-GEL-015`
-- [ ] T955 [US2] Implement the single-transaction transition-plus-audit write in `backend/src/modules/loop/transition-writer.ts` (integration test: T957) — `R-030-2`, `FR-GEL-041`
-- [ ] T956 [P] [US2] Write the concurrency integration test in `backend/tests/integration/loop-concurrency.spec.ts` — two concurrent transitions, exactly one accepted, loser `409` with `wonBy`, both recorded (`SC-GEL-011`)
-- [ ] T957 [P] [US2] Write the fail-closed integration test in `backend/tests/integration/loop-fail-closed.spec.ts` — audit writer fails, transition refused, stage unchanged on read-back (`SC-GEL-009`)
-- [ ] T958 [P] [US2] Write failing unit tests for direct-state-write refusal in `backend/tests/unit/loop-no-direct-write.spec.ts` — `FR-GEL-010`, `SC-GEL-002`
-- [ ] T959 [US2] Implement `GET /loop/objects/:id/history` in `backend/src/modules/loop/loop.controller.ts` (integration test: T960) — `FR-GEL-013`
-- [ ] T960 [P] [US2] Write the history-reconstruction integration test in `backend/tests/integration/loop-history-rebuild.spec.ts` — rebuilds the loop with `currentStage` withheld and asserts agreement (`SC-GEL-005`)
+- [X] T947 [P] [US2] Write failing unit tests for transition authority in `backend/tests/unit/loop-authority.spec.ts` — an unauthorized attempt is refused and names the missing authority — `FR-GEL-011`
+- [X] T948 [US2] Implement authority evaluation in `backend/src/modules/loop/loop.service.ts` (unit test: T947)
+- [X] T949 [P] [US2] Write failing unit tests for the transition record's required fields in `backend/tests/unit/loop-transition-record.spec.ts` — actor, authority basis, object version, from, to, trigger, result all present — `FR-GEL-012`, `SC-GEL-003`
+- [X] T950 [US2] Implement transition-record construction in `backend/src/modules/loop/transition-writer.ts` (unit test: T949)
+- [X] T951 [P] [US2] Write failing unit tests asserting a refusal is itself recorded in `backend/tests/unit/loop-refusal-record.spec.ts` — `FR-GEL-014`
+- [X] T952 [US2] Implement refusal recording in `backend/src/modules/loop/transition-writer.ts` (unit test: T951)
+- [X] T953 [US2] Implement `POST /loop/objects/:id/transitions` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `403` on missing authority, `409` on lost race
+- [X] T954 [US2] Implement optimistic concurrency via conditional `updateMany` on `{ id, version }` with `version: { increment: 1 }` in `backend/src/modules/loop/transition-writer.ts` (integration test: T956) — `R-030-1`, `FR-GEL-015`
+- [X] T955 [US2] Implement the single-transaction transition-plus-audit write in `backend/src/modules/loop/transition-writer.ts` (integration test: T957) — `R-030-2`, `FR-GEL-041`
+- [X] T956 [P] [US2] Write the concurrency integration test in `backend/tests/integration/loop-concurrency.spec.ts` — two concurrent transitions, exactly one accepted, loser `409` with `wonBy`, both recorded (`SC-GEL-011`)
+- [X] T957 [P] [US2] Write the fail-closed integration test in `backend/tests/integration/loop-fail-closed.spec.ts` — audit writer fails, transition refused, stage unchanged on read-back (`SC-GEL-009`)
+- [X] T958 [P] [US2] Write failing unit tests for direct-state-write refusal in `backend/tests/unit/loop-no-direct-write.spec.ts` — `FR-GEL-010`, `SC-GEL-002`
+- [X] T959 [US2] Implement `GET /loop/objects/:id/history` in `backend/src/modules/loop/loop.controller.ts` (integration test: T960) — `FR-GEL-013`
+- [X] T960 [P] [US2] Write the history-reconstruction integration test in `backend/tests/integration/loop-history-rebuild.spec.ts` — rebuilds the loop with `currentStage` withheld and asserts agreement (`SC-GEL-005`)
 
 **Checkpoint**: US2 is independently demonstrable — state is auditable, atomic and race-safe
 

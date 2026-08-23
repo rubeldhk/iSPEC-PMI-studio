@@ -24,12 +24,15 @@
  * transition history.
  */
 
-import { ValidationFailedError } from '../../core/errors.js';
+import { NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import type { ResolvedLoopConfig } from './loop-config.loader.js';
 import type { LoopConfigRegistry } from './config-registry.js';
-import type { LoopStore } from './loop.store.js';
+import type { LoopStore, LoopTransitionRow } from './loop.store.js';
+import { TransitionWriter } from './transition-writer.js';
+import type { AuthorityMap } from './authority.js';
 import {
   projectProgress,
+  type AuditSink,
   type LoopObjectRef,
   type LoopProgress,
   type LoopStage,
@@ -47,6 +50,8 @@ export interface DeclareObjectInput {
 
 export interface TransitionInput {
   readonly objectId: string;
+  /** What the actor holds, resolved by the caller from the identity. */
+  readonly actorAuthorities?: readonly string[];
   readonly toStage: LoopStage;
   /** The OCC token — `R-030-1`, `FR-GEL-012`. */
   readonly expectedVersion: number;
@@ -103,10 +108,23 @@ export class LoopService {
    * default here would let a caller build a service that silently governs
    * nothing.
    */
+  readonly #writer: TransitionWriter;
+
   constructor(
     private readonly store: LoopStore,
     private readonly configs: LoopConfigRegistry,
-  ) {}
+    /**
+     * The tenant half of the configuration: who may perform which transition.
+     *
+     * Empty by default and **that is a refusal, not a permission** — an
+     * unconfigured transition is one nobody authorised, and `authority.ts`
+     * turns that into a refusal rather than a pass (`FR-GEL-062`).
+     */
+    private readonly authorities: AuthorityMap = {},
+    audit?: AuditSink,
+  ) {
+    this.#writer = new TransitionWriter(store, audit);
+  }
 
   /**
    * `FR-GEL-006` — creates a `LoopObject` at `Event`, pinning `configVersion`.
@@ -119,7 +137,7 @@ export class LoopService {
    */
   async declareObject(input: DeclareObjectInput): Promise<LoopObjectRef> {
     const missing = DECLARE_REQUIRED.filter((field) => {
-      const value = (input as Record<string, unknown> | null | undefined)?.[field];
+      const value = (input as unknown as Record<string, unknown> | null | undefined)?.[field];
       return typeof value !== 'string' || value.length === 0;
     });
     if (missing.length > 0) {
@@ -152,13 +170,51 @@ export class LoopService {
    * throw below is not a refusal — it is the absence of an implementation, and
    * conflating the two is what would make a 501 look like a 403 in the history.
    */
-  transition(_input: TransitionInput): Promise<TransitionResult> {
-    throw new NotYetImplementedError('transition', 'T946–T960');
+  async transition(input: TransitionInput): Promise<TransitionResult> {
+    const object = await this.store.findObject(input.objectId);
+    if (!object) throw new NotFoundError(`no loop object ${input.objectId}`);
+
+    // FR-GEL-004 — the OBJECT's type resolves the configuration, never the
+    // caller's. A caller naming a workflow type is a caller choosing its own
+    // rules.
+    const config = this.configs.require(object.workflowType);
+
+    return this.#writer.write({
+      object,
+      config,
+      authorities: this.authorities,
+      toStage: input.toStage,
+      expectedVersion: input.expectedVersion,
+      actor: {
+        // `agent` is an origin at the API surface; the loop records two kinds
+        // (FR-GEL-032), and an agent acting on its own is automation.
+        kind: input.actor.kind === 'human' ? 'human' : 'automation',
+        id: input.actor.id,
+        authorities: input.actorAuthorities ?? [],
+      },
+      ...(input.trigger ? { trigger: input.trigger } : {}),
+      gates: [],
+    });
   }
 
-  /** `FR-GEL-013` — every transition, in order, sufficient to reconstruct the loop. */
-  history(_objectId: string): Promise<readonly TransitionResult[]> {
-    throw new NotYetImplementedError('history', 'T971');
+  /**
+   * `FR-GEL-013` — every transition, in order, sufficient to reconstruct the
+   * loop **without reading current state**.
+   *
+   * Returns the rows rather than `TransitionResult`s: a result is an answer to
+   * a caller who just acted, and a history is a record. `T960` reconstructs the
+   * object from these with `currentStage` withheld, which is the property this
+   * ordering exists to support.
+   */
+  async history(objectId: string): Promise<readonly LoopTransitionRow[]> {
+    // An object that does not exist is NOT an object with no transitions.
+    // Returning `[]` would say the second when the truth is the first — the same
+    // conflation FR-GEL-008 forbids for an omitted stage, one level up.
+    if (!(await this.store.findObject(objectId))) {
+      throw new NotFoundError(`no loop object ${objectId}`);
+    }
+    const rows = await this.store.transitionsFor(objectId);
+    return [...rows].sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
   }
 
   /**
@@ -198,8 +254,41 @@ export class LoopService {
     });
   }
 
-  /** `FR-GEL-022` — every exception and violation, without opening each transition. */
-  exceptions(_objectId: string): Promise<readonly TransitionResult[]> {
-    throw new NotYetImplementedError('exceptions', 'T973');
+  /**
+   * `FR-GEL-050`, `FR-GEL-051` — an object's progress, resolved from its own
+   * configuration and its own history.
+   *
+   * `completedStages` comes from the ACCEPTED transitions rather than from a
+   * column, because `FR-GEL-013` requires the history to be sufficient on its
+   * own — and a stored "stages completed" list would be a second source that
+   * can disagree with it.
+   */
+  async progressOf(objectId: string): Promise<readonly LoopProgress[]> {
+    const object = await this.store.findObject(objectId);
+    if (!object) throw new NotFoundError(`no loop object ${objectId}`);
+    const config = this.configs.require(object.workflowType);
+    const rows = await this.history(objectId);
+    const completedStages = rows
+      .filter((r) => r.outcome === 'accepted')
+      .map((r) => r.fromStage)
+      .filter((s): s is LoopStage => s !== null);
+    return this.progressForConfig(config, {
+      currentStage: object.currentStage,
+      completedStages,
+    });
+  }
+
+  /**
+   * `FR-GEL-022` — every exception and violation, without opening each
+   * transition.
+   *
+   * `conflict` and `refused` are deliberately NOT included. An exception is an
+   * authorised departure from the rules and a violation is an unauthorised one;
+   * a lost race is neither, and a list that mixed them would make "how often do
+   * we bypass our own gates?" unanswerable.
+   */
+  async exceptions(objectId: string): Promise<readonly LoopTransitionRow[]> {
+    const rows = await this.history(objectId);
+    return rows.filter((r) => r.outcome === 'exception' || r.outcome === 'violation');
   }
 }

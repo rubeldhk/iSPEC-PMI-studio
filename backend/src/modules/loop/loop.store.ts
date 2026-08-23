@@ -13,7 +13,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { LoopStage, TransitionOutcome } from '@pmi/loop-contract';
+import type { LoopStage, TransactionHandle, TransitionOutcome } from '@pmi/loop-contract';
 
 export interface LoopObjectRow {
   readonly id: string;
@@ -61,11 +61,44 @@ export interface CreateObjectInput {
   readonly currentStage: LoopStage;
 }
 
+export interface AdvanceInput {
+  readonly id: string;
+  /** `R-030-1` — the version the caller read the object at. */
+  readonly expectedVersion: number;
+  readonly toStage: LoopStage;
+}
+
 export interface LoopStore {
   createObject(input: CreateObjectInput): Promise<LoopObjectRow>;
   findObject(id: string): Promise<LoopObjectRow | null>;
-  appendTransition(row: Omit<LoopTransitionRow, 'id' | 'occurredAt'>): Promise<LoopTransitionRow>;
+  /**
+   * `R-030-1` — conditional advance. Returns the updated row, or **null** when
+   * the version moved.
+   *
+   * Null rather than a throw: losing an optimistic race is an ordinary outcome
+   * with a governed answer (`conflict`, `FR-GEL-015`), and an exception would
+   * make it look like a fault.
+   *
+   * The Prisma implementation is `updateMany({ where: { id, version }, data: {
+   * currentStage, version: { increment: 1 } } })` and a count of 0 is the loss —
+   * one statement, so there is no window between checking and writing.
+   */
+  advanceObject(input: AdvanceInput): Promise<LoopObjectRow | null>;
+  appendTransition(
+    row: Omit<LoopTransitionRow, 'id' | 'occurredAt'>,
+    tx?: TransactionHandle,
+  ): Promise<LoopTransitionRow>;
   transitionsFor(objectId: string): Promise<readonly LoopTransitionRow[]>;
+  /**
+   * `FR-GEL-041`, `R-030-2` — the transition and its audit record land together
+   * or neither lands.
+   *
+   * The in-memory implementation really does roll back. A fake that ran the
+   * callback and ignored failure would let `T957`'s fail-closed test pass over
+   * behaviour the database does not have, which is worse than having no
+   * in-memory store at all.
+   */
+  runInTransaction<T>(fn: (tx: TransactionHandle) => Promise<T>): Promise<T>;
 }
 
 /** In-memory store for tests and database-less runs. Mirrors `InMemoryTaskStore`. */
@@ -89,6 +122,21 @@ export class InMemoryLoopStore implements LoopStore {
     return this.#objects.get(id) ?? null;
   }
 
+  async advanceObject(input: AdvanceInput): Promise<LoopObjectRow | null> {
+    const current = this.#objects.get(input.id);
+    // The whole condition in one read-and-write, mirroring the single
+    // `updateMany` statement the Prisma store issues. A read, a check and a
+    // separate write would open exactly the window OCC exists to close.
+    if (!current || current.version !== input.expectedVersion) return null;
+    const next: LoopObjectRow = {
+      ...current,
+      currentStage: input.toStage,
+      version: current.version + 1,
+    };
+    this.#objects.set(next.id, next);
+    return next;
+  }
+
   async appendTransition(
     row: Omit<LoopTransitionRow, 'id' | 'occurredAt'>,
   ): Promise<LoopTransitionRow> {
@@ -102,5 +150,27 @@ export class InMemoryLoopStore implements LoopStore {
 
   async transitionsFor(objectId: string): Promise<readonly LoopTransitionRow[]> {
     return this.#transitions.filter((t) => t.objectId === objectId);
+  }
+
+  /**
+   * A real rollback, not a pass-through.
+   *
+   * Snapshots both collections, runs the callback, and restores on failure. It
+   * costs a shallow copy and it buys the one thing a fake transaction cannot:
+   * `T957`'s fail-closed assertion fails here for the same reason it would fail
+   * against PostgreSQL.
+   */
+  async runInTransaction<T>(fn: (tx: TransactionHandle) => Promise<T>): Promise<T> {
+    const objects = new Map(this.#objects);
+    const transitions = [...this.#transitions];
+    try {
+      return await fn({ __loopTransaction: 'opaque' });
+    } catch (error) {
+      this.#objects.clear();
+      for (const [k, v] of objects) this.#objects.set(k, v);
+      this.#transitions.length = 0;
+      this.#transitions.push(...transitions);
+      throw error;
+    }
   }
 }

@@ -91,13 +91,24 @@ describe('T934 · the loop is reachable through the composed application (Consti
     ['get', `/${PREFIX}/loop/objects/probe/exceptions`],
   ] as const)('routes %s %s — the real entry point answers', async (method, route) => {
     const response = await request(app.getHttpServer())[method](route).send({});
+    const code = (response.body as { error?: { code?: string } })?.error?.code;
 
-    // Deliberately NOT asserting a success status. This is a reachability test,
-    // and what it must distinguish is "the route exists and the application
-    // answered" from "no such route". A 400 or a 403 is a fine answer here; a
-    // 404 is not — the failure being caught is an unregistered controller,
-    // which 404s every path it should own.
-    expect(response.status).not.toBe(404);
+    // Deliberately NOT asserting success. This is a reachability test, and what
+    // it must distinguish is "the route exists and a handler answered" from "no
+    // such route".
+    //
+    // The distinction is sharper than a status. Since `DEF-030-001`, an
+    // UNMATCHED path is `500 internal_error` — NestJS's NotFoundException
+    // reaching the catch-all filter. A MATCHED path answers with a platform
+    // code: `validation_failed` for a bad body, `not_found` for an object that
+    // does not exist. `not_found` here means the handler RAN and looked, which
+    // is exactly what reachability asks.
+    expect(
+      code,
+      `${method.toUpperCase()} ${route} answered ${response.status} with code ${String(code)} — ` +
+        'internal_error means no handler matched',
+    ).not.toBe('internal_error');
+    expect(code).toBeDefined();
   });
 
   it('answers an unowned route differently from an owned one, or the check above is vacuous', async () => {

@@ -18,6 +18,8 @@ import { describe, expect, it } from 'vitest';
 import { LOOP_STAGES } from '@pmi/loop-contract';
 import { loadLoopConfig } from '../../src/modules/loop/loop-config.loader.js';
 import { LoopService } from '../../src/modules/loop/loop.service.js';
+import { InMemoryLoopStore } from '../../src/modules/loop/loop.store.js';
+import { LoopConfigRegistry } from '../../src/modules/loop/config-registry.js';
 
 const HANDLED = [...LOOP_STAGES];
 
@@ -30,7 +32,7 @@ const SHORT = {
 };
 
 const config = loadLoopConfig(SHORT, { registeredStages: HANDLED });
-const service = new LoopService();
+const service = new LoopService(new InMemoryLoopStore(), new LoopConfigRegistry([config]));
 
 describe('T939 · the projection returns all eight stages, always', () => {
   const rows = service.progressForConfig(config, { currentStage: 'Analyze', completedStages: ['Event'] });
