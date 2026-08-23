@@ -72,7 +72,7 @@ contract.
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | **PASS** — nine questions across five Epics in one questionnaire; this run paused for nothing |
 | XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph, not a hand-assembled one; a mocked collaborator does not satisfy this. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application is planned as closure evidence. An Epic with no user-facing capability records that, rather than omitting the row | **PASS** — Tier 1 planned (quickstart 12), reusing `EPIC-030`'s pattern. **Tier 2 not applicable, by rule**: the *Evidence & Compliance* area needs the compliance half, which is `U-09` and unowned, and `UX-0060` forbids building an area before its Epic is declared (`R-032-8`) |
 | — | Repository was synced from GitHub before this work started | **PASS** — `git fetch --all` this session; `main` level with `origin/main` |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | **FAIL** — see Complexity Tracking |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | **PASS** — **discharged 2026-08-23**. Implementation runs in the dedicated worktree `.claude/worktrees/epic-032-evidence-store-contracts`, created this date; the primary checkout returned to `main`. Discharged by **isolation, not exclusivity** — the reading `EPIC-029` recorded on 2026-08-21 and `EPIC-030` on 2026-08-22. See Complexity Tracking |
 
 Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking below.
 
@@ -85,6 +85,16 @@ changed status.** Gate V strengthened: Phase 1 moved three guarantees from servi
 type system and the schema — `ContractItem` has no `met` field, `subject` is a non-empty tuple, and
 `CompletionResult`'s failure branch carries a non-empty `unmet` list. Each is a check that cannot be
 forgotten because there is nothing to forget.
+
+**Post-discharge re-check (2026-08-23)**: the concurrent-session gate moved **FAIL → PASS**
+when the worktree `.claude/worktrees/epic-032-evidence-store-contracts` was created and the primary checkout returned to
+`main`. **It is the only status that changed.** `DOR-06` reads the leading word of each status
+cell and now finds no `FAIL`, so this plan no longer holds the Epic out of `Ready`.
+
+The gate was never asserted to pass. It was **discharged**, and the difference matters: this
+checkout still shows 10+ `claude.exe` processes and exclusivity is still unverifiable. What
+changed is that this Epic's implementation no longer shares a working tree with anything else —
+which is what the rule protects, and the only part of it this session could establish.
 
 ## Project Structure
 
@@ -154,6 +164,6 @@ structure is the cheapest way not to repeat that.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| **Constitution gate: "No other Claude session is active on this checkout" — FAIL** | Planning writes no application code, and the isolation rule's rationale binds implementation. This checkout still shows 10+ `claude.exe` processes and exclusivity cannot be asserted, so it is recorded as FAIL rather than assumed | Asserting the gate passes was rejected as unverifiable. **Discharge, before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-032-evidence-store-contracts`. `EPIC-030` proved the step: the gate then moves FAIL → PASS and `DOR-06` clears |
+| **Constitution gate: "No other Claude session is active on this checkout" — was FAIL, ✅ discharged 2026-08-23** | Planning writes no application code, and the isolation rule's rationale binds implementation. This checkout still shows 10+ `claude.exe` processes and exclusivity cannot be asserted, so it is recorded as FAIL rather than assumed | Asserting the gate passes was rejected as unverifiable. **Discharge, before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-032-evidence-store-contracts`. `EPIC-030` proved the step: the gate then moves FAIL → PASS and `DOR-06` clears |
 | **A sixth `*-contract` package** | `packages/evidence-contract` | A shared barrel was rejected for `EPIC-030` and `EPIC-031` and is rejected again: `TS-004` requires independent typechecking, and a barrel couples six release cadences |
 | **PMI-defined predicate types alongside standard ones** | in-toto has no approval, transcript or review-finding predicate, and `BR-0140` enumerates all three | Inventing a wholly bespoke envelope was rejected (`R-032-1`) — it would reinvent subject/digest badly and forgo `PP-015`. Waiting for standard predicates was rejected: three of the nine evidence kinds would have no representation. The split is **recorded in the contract** so a future standard predicate can replace a PMI one without the gate changing |
