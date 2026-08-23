@@ -66,12 +66,12 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 **Purpose**: make the workspace able to hold a fifth contract package, and discharge the failing gate
 
-- [ ] T913 Create the dedicated worktree at `.claude/worktrees/epic-030-governed-engineering-loop` — `git worktree add .claude/worktrees/epic-030-governed-engineering-loop epic/030-governed-engineering-loop` — and work there. Discharges the plan's one failing Constitution gate (concurrent-session isolation), following the EPIC-029 precedent. **Done 2026-08-22**; the path is the repository's own convention (gitignored, three siblings already), not the `../ispec-epic-030` the first draft named
-- [ ] T914 [P] Scaffold `packages/loop-contract/package.json` and `packages/loop-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
-- [ ] T915 [P] Register a `loop-contract` project in `vitest.workspace.ts` without `passWithNoTests` — `TS-005`, an empty suite is a failure
-- [ ] T916 [P] Record `supertest` and `@types/supertest` in `specs/_shared/dependencies.md` with purpose, alternatives considered and licence (`TS-001`, `TS-002`) — verified absent from the repository today
-- [ ] T917 Add `supertest` and `@types/supertest` to `backend/package.json` devDependencies and refresh `pnpm-lock.yaml` (`TS-003`)
-- [ ] T918 [P] Add `packages/loop-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
+- [X] T913 Create the dedicated worktree at `.claude/worktrees/epic-030-governed-engineering-loop` — `git worktree add .claude/worktrees/epic-030-governed-engineering-loop epic/030-governed-engineering-loop` — and work there. Discharges the plan's one failing Constitution gate (concurrent-session isolation), following the EPIC-029 precedent. **Done 2026-08-22**; the path is the repository's own convention (gitignored, three siblings already), not the `../ispec-epic-030` the first draft named
+- [X] T914 [P] Scaffold `packages/loop-contract/package.json` and `packages/loop-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
+- [X] T915 [P] Register a `loop-contract` project in `vitest.workspace.ts` without `passWithNoTests` — `TS-005`, an empty suite is a failure
+- [X] T916 [P] Record `supertest` and `@types/supertest` in `specs/_shared/dependencies.md` with purpose, alternatives considered and licence (`TS-001`, `TS-002`) — verified absent from the repository today
+- [X] T917 Add `supertest` and `@types/supertest` to `backend/package.json` devDependencies and refresh `pnpm-lock.yaml` (`TS-003`)
+- [X] T918 [P] Add `packages/loop-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
 
 ---
 
@@ -83,13 +83,13 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 ### The stage vocabulary and ports — `packages/loop-contract`
 
-- [ ] T919 [P] Write failing unit tests for the stage vocabulary in `packages/loop-contract/tests/stages.spec.ts` — asserts exactly eight stages in model order and that the tuple is readonly
-- [ ] T920 Implement `LOOP_STAGES` and the `LoopStage` type in `packages/loop-contract/src/stages.ts` (unit test: T919) — `FR-GEL-001`, `FR-GEL-002`
-- [ ] T921 [P] Write failing unit tests for the five port shapes in `packages/loop-contract/tests/ports.spec.ts` — asserts `GateOutcome.result` has exactly four members and no default, and that `AuditSink.record` requires a non-optional transaction handle
-- [ ] T922 Implement `StageHandler`, `PolicyProvider`, `EvidenceProvider`, `GateProvider` and `AuditSink` in `packages/loop-contract/src/ports.ts` (unit test: T921) — `FR-GEL-021`, `FR-GEL-041`, `FR-GEL-062`
-- [ ] T923 [P] Write failing unit tests for result and projection types in `packages/loop-contract/tests/types.spec.ts`
-- [ ] T924 Implement `TransitionResult`, `LoopProgress`, `GateOutcome` and `LoopObjectRef` in `packages/loop-contract/src/types.ts` (unit test: T923)
-- [ ] T925 Implement the export barrel `packages/loop-contract/src/index.ts` (unit test: T919)
+- [X] T919 [P] Write failing unit tests for the stage vocabulary in `packages/loop-contract/tests/stages.spec.ts` — asserts exactly eight stages in model order and that the tuple is readonly
+- [X] T920 Implement `LOOP_STAGES` and the `LoopStage` type in `packages/loop-contract/src/stages.ts` (unit test: T919) — `FR-GEL-001`, `FR-GEL-002`
+- [X] T921 [P] Write failing unit tests for the five port shapes in `packages/loop-contract/tests/ports.spec.ts` — asserts `GateOutcome.result` has exactly four members and no default, and that `AuditSink.record` requires a non-optional transaction handle
+- [X] T922 Implement `StageHandler`, `PolicyProvider`, `EvidenceProvider`, `GateProvider` and `AuditSink` in `packages/loop-contract/src/ports.ts` (unit test: T921) — `FR-GEL-021`, `FR-GEL-041`, `FR-GEL-062`
+- [X] T923 [P] Write failing unit tests for result and projection types in `packages/loop-contract/tests/types.spec.ts`
+- [X] T924 Implement `TransitionResult`, `LoopProgress`, `GateOutcome` and `LoopObjectRef` in `packages/loop-contract/src/types.ts` (unit test: T923)
+- [X] T925 Implement the export barrel `packages/loop-contract/src/index.ts` (unit test: T919)
 
 ### Persistence — `backend/prisma`
 

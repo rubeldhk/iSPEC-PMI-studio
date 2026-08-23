@@ -90,12 +90,34 @@ of them.
 |----|-----------|------|---------|------------------|----------|
 | D-21 | Vitest | 1.x | Unit tests (Constitution V) | MIT | ☐ |
 | D-21a | @testing-library/react + jest-dom | 16.x / 6.x | Component unit tests — how the 14 UI tasks satisfy Constitution V | MIT | ☐ |
-| D-22 | Supertest | 6.x | API contract tests | MIT | ☐ |
+| D-22 | Supertest + @types/supertest | 7.x / 6.x | API contract tests; **and from EPIC-030, the Constitution XI Tier 1 pattern for the backend** — driving a composed `AppModule` through its real HTTP routes | MIT | ☐ |
 | D-23 | Testcontainers | 10.x | Integration against real PostgreSQL/Valkey | MIT | ☐ |
 | D-24 | Playwright | 1.x | End-to-end | Apache-2.0 | ☐ |
 | D-25 | ESLint | 9.x | Linting, dependency-boundary rule | MIT | ☐ |
 | D-26 | Prettier | 3.x | Formatting | MIT | ☐ |
 | D-27 | pnpm | 9.x | Workspace and package management | MIT | ☐ |
+
+### D-22 in detail — recorded by EPIC-030 `T916`, and it was already here
+
+`TS-001` requires a register entry before a dependency enters a `package.json`. EPIC-030's research
+verified `supertest` was absent from `backend/package.json` and **no `createNestApplication` test
+existed anywhere in the repository** — both true — and concluded it was a new dependency. It is not:
+`D-22` has carried it since the platform specification, declared for *"API contract tests"* that were
+never written. The register was ahead of the code, which is the direction that costs nothing.
+
+So `T916` **augmented** this row rather than adding a `D-30` beside it. A second row for one library
+is the duplication a register exists to prevent, and claiming to have recorded something already
+recorded would be false.
+
+- **Purpose here**: EPIC-030 establishes the backend Constitution XI Tier 1 pattern — a test that
+  drives the real `AppModule` through its real HTTP routes. `EPIC-029`'s `T899a` set the frontend
+  precedent; the backend's five existing `tests/integration/` files exercise services, not routes.
+- **Alternatives considered**: NestJS's `app.getHttpServer()` with the built-in `http` module —
+  rejected as several lines of boilerplate per assertion, which is how a reachability test degrades
+  into a service test. `light-my-request` — rejected: Fastify-oriented, and this platform is on
+  Express (`D-03`). Calling controller methods directly — rejected outright; that is precisely the
+  hand-assembled graph Constitution XI Tier 1 forbids.
+- **Licence**: MIT, both packages.
 
 ## Infrastructure
 
