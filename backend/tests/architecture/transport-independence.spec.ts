@@ -38,6 +38,35 @@ const TRANSPORT_ALLOWED = /\.(filter|guard|controller|module)\.ts$/;
 
 const HTTP_IMPORT = /from\s+['"](@nestjs\/common|@nestjs\/core|express|fastify)['"]/;
 
+/**
+ * Comments and string literals removed before the `Request`/`Response` scan.
+ *
+ * *(Added 2026-08-23 by `EPIC-033` `T338h`.)* The scan is looking for a service
+ * that touches an HTTP request or response **object**, and neither can be
+ * referenced from inside a comment or a quoted string. It was matching prose:
+ * `baseline.service.ts` quotes `FR-RQR-051` — *"offered as a **Change Request**
+ * against that baseline"* — and its refusal message tells the user to raise
+ * one, which `BR-0042` requires it to say.
+ *
+ * Loosening the rule instead — allow-listing the file, or lowercasing a quoted
+ * requirement so a regex stops noticing it — is the move
+ * `room-contract-independence.spec.ts` (`T337s`) already rejected for the same
+ * class of false positive, in the same Epic, three tasks earlier: *"a check
+ * that has to be loosened three times is measuring the wrong thing"*.
+ * `EPIC-030`'s `T958` reached it independently.
+ *
+ * This strictly narrows what is ignored: `@Req(`, `@Res(` and every real type
+ * reference are code and survive. Only prose stops matching.
+ */
+function code(body: string): string {
+  return body
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+    .replace(/`(?:[^`\\]|\\.)*`/g, '``');
+}
+
 describe('service / transport separation (PC-1)', () => {
   it('has services to check', () => {
     // Without this the suite would pass on an empty tree, which is the failure
@@ -55,8 +84,20 @@ describe('service / transport separation (PC-1)', () => {
   it('services never reference a request or response object', () => {
     const offenders = services
       .filter((f) => !TRANSPORT_ALLOWED.test(f.rel))
-      .filter((f) => /\b(Request|Response|@Req\(|@Res\()\b/.test(f.body));
+      .filter((f) => /\b(Request|Response|@Req\(|@Res\()\b/.test(code(f.body)));
     expect(offenders.map((o) => o.rel)).toEqual([]);
+  });
+
+  it('still catches a transport reference in code, or the stripping above is a hole', () => {
+    // Anti-vacuity for `code()`. If a future edit stripped too much, every
+    // assertion above would pass over a service holding an express Response.
+    const stripped = code(`
+      /* a comment mentioning Request */
+      const message = 'raise a Change Request';
+      export class Thing { handle(res: Response) {} }
+    `);
+    expect(/\bRequest\b/.test(stripped)).toBe(false);
+    expect(/\bResponse\b/.test(stripped)).toBe(true);
   });
 
   it('services never read an HTTP status code', () => {

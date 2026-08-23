@@ -1402,6 +1402,21 @@ model RequirementCandidate {
   // The EPIC-007 requirement id once decided; null while a candidate.
   // A REFERENCE, never a copy — EPIC-007 owns the text.
   promotedTo    String?
+  // FR-RQR-030, T339b — the criteria the baseline gate reads.
+  //
+  // Held HERE rather than passed in with an approval, so the gate reads data
+  // this Room owns. A caller that supplied its own answer to "does this have
+  // criteria" could assert its way past SC-RQR-003's "zero", which is the one
+  // number that requirement is.
+  //
+  // Null and [] are the same state — no criteria — and both block. The column
+  // is nullable only because the rows that predate it are.
+  acceptanceCriteria Json?
+  // DEFAULT TRUE, and that is the whole point: a candidate is presumed to need
+  // criteria until somebody says otherwise. Defaulting false would make the
+  // gate fire only for candidates a caller had already flagged, which is a
+  // default that permits — the failure `requirement-room.tokens.ts` names.
+  intendedForImplementation Boolean @default(true)
   createdAt     DateTime      @default(now())
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id])

@@ -8,6 +8,7 @@
  * stores at the composition root.
  */
 import { Module } from '@nestjs/common';
+import { EditAuthorityRegistry } from './edit-authority.js';
 import { RequirementRetireService } from './requirement-retire.service.js';
 import {
   InMemoryRequirementVersionStore,
@@ -42,10 +43,23 @@ export const REQUIREMENT_VERSION_STORE = Symbol('REQUIREMENT_VERSION_STORE');
         new RequirementVersionService(store),
     },
     {
+      // T338h (EPIC-033) — the veto holder. Provided here and exported so
+      // RequirementRoomModule can register into it; this module never imports
+      // the Room, which is what keeps the two from being circular.
+      provide: EditAuthorityRegistry,
+      useFactory: (): EditAuthorityRegistry => new EditAuthorityRegistry(),
+    },
+    {
       provide: RequirementsService,
-      inject: [REQUIREMENT_STORE, RequirementVersionService],
-      useFactory: (store: RequirementStore, history: RequirementVersionService): RequirementsService =>
-        new RequirementsService(store, history),
+      inject: [REQUIREMENT_STORE, RequirementVersionService, EditAuthorityRegistry],
+      useFactory: (
+        store: RequirementStore,
+        history: RequirementVersionService,
+        authority: EditAuthorityRegistry,
+      ): RequirementsService =>
+        new RequirementsService(store, history, {
+          onBeforeEdit: (ctx, requirement) => authority.assertEditable(ctx, requirement),
+        }),
     },
     {
       provide: RequirementRetireService,
@@ -58,6 +72,7 @@ export const REQUIREMENT_VERSION_STORE = Symbol('REQUIREMENT_VERSION_STORE');
     RequirementsService,
     RequirementVersionService,
     RequirementRetireService,
+    EditAuthorityRegistry,
     REQUIREMENT_STORE,
     REQUIREMENT_VERSION_STORE,
   ],

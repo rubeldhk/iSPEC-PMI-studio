@@ -80,6 +80,9 @@ importers:
       '@pmi/observability':
         specifier: workspace:*
         version: link:../packages/observability
+      '@pmi/room-contract':
+        specifier: workspace:*
+        version: link:../packages/room-contract
       '@pmi/storage-contract':
         specifier: workspace:*
         version: link:../packages/storage-contract

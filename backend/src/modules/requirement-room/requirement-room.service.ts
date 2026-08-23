@@ -4,17 +4,65 @@
  * PC-1: framework-free. The module wires it; it stays callable without HTTP so
  * an MCP surface can be added in Phase 3 without redesign.
  *
- * **What this is at T337y**: the module skeleton and its wiring, so T337x's
- * reachability test has a real graph to resolve and real routes to reach. The
- * operations land across Phases 3–8.
+ * **What this is at T338l**: intake, the routed Requirement Gap and the
+ * governed baseline are implemented; the rest still refuse. `T337y` built the
+ * skeleton so `T337x`'s reachability test had a real graph to resolve and real
+ * routes to reach, and Phases 4–7 fill the remainder.
  *
  * A stub returning a plausible success would be the defect this Epic's own
  * reachability test exists to catch, one level down. So each unbuilt operation
- * throws, naming the task that will implement it — and validation that is real
- * lands now, so a route answers *"your request is wrong"* rather than
- * *"we broke"*.
+ * throws, **naming the task that will implement it** — and those names are
+ * maintained: four of them were stale by `T338l` (`clarifications` pointed at
+ * `T338j`, which by then meant the concurrent-approval test), and a pointer
+ * that resolves to the wrong task is worse than none, because it reads as
+ * answered.
  */
+import { randomUUID } from 'node:crypto';
 import { ValidationFailedError } from '../../core/errors.js';
+import type { AnalysisResult, AnalysisService } from './analysis.service.js';
+import type {
+  ApproveBaselineInput,
+  BaselineApproval,
+  BaselineService,
+} from './baseline.service.js';
+import type { AskedQuestion, ClarificationService } from './clarification.service.js';
+import { projectReadiness } from './readiness.projection.js';
+import type { BaselineReadiness, EvidenceStatus } from './readiness.projection.js';
+import type { EvidenceContractSource } from './baseline.service.js';
+import type { RequirementRoomStore } from './requirement-room.store.js';
+import type {
+  GapIntakeCommand,
+  IntakeCommand,
+  IntakeService,
+} from './intake.service.js';
+import type { CandidateRow, ClarificationRow } from './requirement-room.store.js';
+
+/** `POST /rooms/requirement/:id/clarifications` — ask a set, or answer one. */
+export interface ClarificationRequest {
+  readonly workspaceId: string;
+  readonly askedBy?: string;
+  readonly questions?: readonly AskedQuestion[];
+  readonly answer?: { readonly id: string; readonly answer: string; readonly answeredBy: string };
+}
+
+/** `GET /rooms/requirement/:id/analysis` — scope from the query, not a body. */
+export interface AnalysisQuery {
+  readonly workspaceId: string;
+  readonly projectId: string;
+  readonly correlationId?: string;
+}
+
+/** `GET /rooms/requirement/:id/readiness`. */
+export interface ReadinessQuery {
+  readonly workspaceId: string;
+  readonly projectId?: string;
+  /**
+   * Omit and the Evidence Contract reads as **not evaluated**, which blocks.
+   * There is no value meaning "no contract applies" on purpose — that would be
+   * a way to report ready by leaving a parameter off.
+   */
+  readonly evidenceContractRef?: string;
+}
 
 export class NotYetImplementedError extends Error {
   constructor(operation: string, task: string) {
@@ -23,41 +71,103 @@ export class NotYetImplementedError extends Error {
   }
 }
 
-export interface IntakeInput {
-  readonly workspaceId: string;
-  readonly projectId: string;
-  readonly sourceRef: string;
-  readonly text: string;
-}
-
-const INTAKE_REQUIRED = ['workspaceId', 'projectId', 'sourceRef', 'text'] as const;
+/** Retained as the transport's body type; `IntakeCommand` is the real one. */
+export type IntakeInput = IntakeCommand;
 
 export class RequirementRoomService {
-  /** FR-RQR-010 — multi-source intake becomes labelled candidates. Lands at T338b. */
-  intake(input: IntakeInput): Promise<unknown> {
-    const missing = INTAKE_REQUIRED.filter((field) => {
-      const value = (input as unknown as Record<string, unknown> | null | undefined)?.[field];
-      return typeof value !== 'string' || value.length === 0;
-    });
-    if (missing.length > 0) {
-      throw new ValidationFailedError(`intake requires: ${missing.join(', ')}`);
+  constructor(
+    private readonly intakeService: IntakeService,
+    private readonly baselines: BaselineService,
+    private readonly analysisService: AnalysisService,
+    private readonly clarificationService: ClarificationService,
+    private readonly store: RequirementRoomStore,
+    /** Absent ⇒ readiness reports the Contract as unevaluated, which blocks. */
+    private readonly evidence?: EvidenceContractSource | undefined,
+  ) {}
+
+  /** T338b — `FR-RQR-010`. Multi-source intake becomes labelled candidates. */
+  intake(input: IntakeCommand): Promise<CandidateRow[]> {
+    return this.intakeService.intake(input);
+  }
+
+  /**
+   * T338v — `EPIC-035` `FR-DFR-076`. A Requirement Gap arrives as new intent.
+   *
+   * The inbound half of the Defect Room's third classification outcome, and the
+   * task `EPIC-035`'s Exit Criterion 5 waits on.
+   */
+  gapIntake(input: GapIntakeCommand): Promise<CandidateRow[]> {
+    return this.intakeService.gapIntake(input);
+  }
+
+  /**
+   * T338r — `FR-RQR-012`, `FR-RQR-013`. Ask a set, or answer one in place.
+   *
+   * **Both shapes return the whole set**, not just what changed. `FR-RQR-012`
+   * asks for questions *presented as one set*; a response carrying only the row
+   * the caller touched would put the job of reassembling the set back on every
+   * client, and one of them would get it wrong.
+   *
+   * *Wired here at `T338t`, which owns Phase 4's controller work. No task names
+   * this route on its own, and `contracts/room-contract.md` §5 lists it — a
+   * `ClarificationService` nothing can reach would be the unwired-capability
+   * defect this Epic cites `EPIC-031`'s `C2` for.*
+   */
+  async clarifications(
+    roomObjectId: string,
+    input: ClarificationRequest,
+  ): Promise<ClarificationRow[]> {
+    if (!roomObjectId) {
+      throw new ValidationFailedError('clarifications require a Room object id in the path');
     }
-    throw new NotYetImplementedError('intake', 'T338b');
+    if (input?.questions) {
+      await this.clarificationService.ask({
+        workspaceId: input.workspaceId,
+        roomObjectId,
+        askedBy: input.askedBy ?? '',
+        questions: input.questions,
+      });
+    } else if (input?.answer) {
+      await this.clarificationService.answer({
+        workspaceId: input.workspaceId,
+        id: input.answer.id,
+        answer: input.answer.answer,
+        answeredBy: input.answer.answeredBy,
+      });
+    } else {
+      throw new ValidationFailedError(
+        'a clarification request carries either `questions` to ask or an `answer` to record',
+      );
+    }
+    return this.clarificationService.list(input.workspaceId, roomObjectId);
   }
 
-  /** FR-RQR-012 — clarifications as one set. Lands at T338j. */
-  clarifications(_roomObjectId: string): Promise<unknown> {
-    throw new NotYetImplementedError('clarifications', 'T338j');
+  /**
+   * T338t — `FR-RQR-014`, `FR-RQR-015`. Labelled elements, conflicts and
+   * duplicates.
+   *
+   * Answers whether or not an analysis provider is bound: the deterministic
+   * half always runs, and `aiAvailable` says whether the other half did. See
+   * `analysis.service.ts` for why that is this Room's one degrading seam.
+   */
+  analysis(roomObjectId: string, query: AnalysisQuery): Promise<AnalysisResult> {
+    if (!roomObjectId) {
+      throw new ValidationFailedError('analysis requires a Room object id in the path');
+    }
+    if (!query?.workspaceId || !query.projectId) {
+      throw new ValidationFailedError('analysis requires: workspaceId, projectId');
+    }
+    return this.analysisService.analyze({
+      workspaceId: query.workspaceId,
+      projectId: query.projectId,
+      roomObjectId,
+      correlationId: query.correlationId ?? randomUUID(),
+    });
   }
 
-  /** FR-RQR-014 — labelled candidates, conflicts, gaps. Lands at T338n. */
-  analysis(_roomObjectId: string): Promise<unknown> {
-    throw new NotYetImplementedError('analysis', 'T338n');
-  }
-
-  /** FR-RQR-020 — two or more options, each a recommendation. Lands at T339c. */
+  /** FR-RQR-020 — two or more options, each a recommendation. Lands at T339n. */
   options(_roomObjectId: string): Promise<unknown> {
-    throw new NotYetImplementedError('options', 'T339c');
+    throw new NotYetImplementedError('options', 'T339n');
   }
 
   /** FR-RQR-040 — an authorized human decision. Lands at T339p. */
@@ -65,18 +175,67 @@ export class RequirementRoomService {
     throw new NotYetImplementedError('decide', 'T339p');
   }
 
-  /** FR-RQR-050 — freeze the set. Lands at T338f. */
-  baseline(_roomObjectId: string): Promise<unknown> {
-    throw new NotYetImplementedError('baseline', 'T338f');
+  /**
+   * T338l — `FR-RQR-050`. Freeze the set, through the governed path.
+   *
+   * `roomObjectId` addresses the Room instance; it is **not** a column on
+   * `baselines`. The trace from a baseline back to the intent it came from runs
+   * `Baseline.decisionId` → `RequirementDecision.roomObjectId` → the candidates
+   * of that Room object, and forward through `Handoff` (`SC-RQR-006`, both
+   * directions). Adding a second path from the baseline row would give the same
+   * question two answers that can disagree.
+   *
+   * A refusal comes back as a **value**, not a thrown error — see
+   * `BaselineApproval`. The caller gets `{ outcome: 'refused', reason, detail }`
+   * and can record it, which is what a governed refusal is for.
+   */
+  baseline(roomObjectId: string, input: ApproveBaselineInput): Promise<BaselineApproval> {
+    if (!roomObjectId) {
+      throw new ValidationFailedError('a baseline requires a Room object id in the path');
+    }
+    return this.baselines.approve(input);
   }
 
-  /** FR-RQR-060 — select a baselined set as specification input. Lands at T403c. */
+  /** FR-RQR-060 — select a baselined set as specification input. Lands at T403b. */
   handoff(_version: string): Promise<unknown> {
-    throw new NotYetImplementedError('handoff', 'T403c');
+    throw new NotYetImplementedError('handoff', 'T403b');
   }
 
-  /** FR-RQR-073 — what is blocking. Lands at T403q. */
-  readiness(_roomObjectId: string): Promise<unknown> {
-    throw new NotYetImplementedError('readiness', 'T403q');
+  /**
+   * T339h — `FR-RQR-073`, `UX-0032`. What is blocking, derived on every read.
+   *
+   * **The decision is `null` until `T339p` records one**, so a set with nothing
+   * else outstanding still reports `pending-decision`. That is accurate rather
+   * than a placeholder: `FR-RQR-040` requires an authorized human decision, and
+   * none has been taken. Reporting `ready` here would be the plausible-success
+   * stub this Room's own reachability test exists to catch.
+   */
+  async readiness(roomObjectId: string, query: ReadinessQuery): Promise<BaselineReadiness> {
+    if (!roomObjectId) {
+      throw new ValidationFailedError('readiness requires a Room object id in the path');
+    }
+    if (!query?.workspaceId) {
+      throw new ValidationFailedError('readiness requires: workspaceId');
+    }
+    const [candidates, clarifications] = await Promise.all([
+      this.store.listCandidates(query.workspaceId, roomObjectId),
+      this.store.listClarifications(query.workspaceId, roomObjectId),
+    ]);
+    return projectReadiness({
+      candidates,
+      clarifications,
+      // Null when EPIC-032 is unbound or no Contract was named — which BLOCKS.
+      // "Cannot tell" is never "ready".
+      evidence: await this.evidenceStatus(query),
+      decision: null,
+    });
+  }
+
+  private async evidenceStatus(query: ReadinessQuery): Promise<EvidenceStatus | null> {
+    if (!this.evidence || !query.evidenceContractRef || !query.projectId) return null;
+    return this.evidence.isSatisfied(query.evidenceContractRef, {
+      workspaceId: query.workspaceId,
+      projectId: query.projectId,
+    });
   }
 }
