@@ -23,13 +23,15 @@ identifier. The trace is two-hop, deliberate, and consistent across every Wave 1
 
 **Non-code outputs count too** (Constitution V, v1.2.0). This Epic's non-code output is
 `packages/loop-contract/workflows/change-room.json`; its executable conformance check is
-`EPIC-030`'s configuration check, which this file must pass (`T406v`).
+`EPIC-030`'s `T931`, whose `T932` reads **every** file in that directory. `T406v` authors this
+Epic's file and must cite `T931` — not a local architecture test, which would check a different
+thing entirely *(corrected 2026-08-23, analysis finding `C2`)*.
 
 **Organization**: grouped by the six user stories of [spec.md](./spec.md).
 
 ## ⚠ Task identifiers — four bases
 
-**98 tasks on four base identifiers.** Re-derived against `G-26-15`'s own regex across every
+**99 tasks on four base identifiers.** Re-derived against `G-26-15`'s own regex across every
 branch: **992 of 999 prefixes are in use and 7 were free** — `406`, `994`–`999`. This Epic takes
 four and leaves **three** for `EPIC-035`, the last Wave 1 Epic.
 
@@ -45,14 +47,14 @@ four and leaves **three** for `EPIC-035`, the last Wave 1 Epic.
 | `T406` | Phase 1 Setup (`a`–`e`) · Phase 2 Foundational (`f`–`w`) |
 | `T996` | Phase 3 US1 (`a`–`i`) · Phase 4 US2 (`j`–`q`) · Phase 5 US3 (`r`–`x`) |
 | `T994` | Phase 6 US4 (`a`–`i`) · Phase 7 US5 (`j`–`q`) · Phase 8 US6 (`r`–`z`) |
-| `T995` | Phase N Polish (`a`–`k`) · Phase Z Closure (`m`–`z`) |
+| `T995` | Phase N Polish (`a`–`l`) · Phase Z Closure (`m`–`z`) |
 
 **Identifiers do not sort into execution order.** The table above is the map, and the bases are not
 contiguous — `T406` is a hole low in the corpus, the rest are its last three. Three phases share a
 base where two would not fit.
 
 **`EPIC-035` has three bases — 81 identifiers — and its spec carries seven user stories.** Its two
-sibling Rooms needed 100 and 98 tasks for six. `T995y` carries the hand-off to `EPIC-026`;
+sibling Rooms needed 100 and 99 tasks for six. `T995y` carries the hand-off to `EPIC-026`;
 `EPIC-032` raised it as a warning and `EPIC-033` as a blocker, **and here it stops being a warning**:
 this is the first Epic that had to split three phases onto one base, and the next one does not fit at
 all.
@@ -124,7 +126,7 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 - [ ] T406s Generate the migration under `backend/prisma/migrations/` including **`targetBaselineVersion NOT NULL`** (a change with no baseline is not a change), the **`decidedBy` must resolve to a human** check constraint, and `unknownReason NOT NULL` when an area is `unknown` (integration test: T406t)
 - [ ] T406t [P] Write failing integration tests asserting all three constraints reject at the database level in `backend/tests/integration/change-room-constraints.spec.ts` — the human-decider constraint is the belt beside `EPIC-031`'s policy braces, so the fence holds even if a caller bypasses the policy engine
 - [ ] T406u [P] Write the failing reachability test in `backend/tests/integration/change-room-reachability.spec.ts` importing the real `AppModule` — Constitution XI Tier 1
-- [ ] T406v Author `packages/loop-contract/workflows/change-room.json` and make it pass `EPIC-030`'s configuration conformance check (conformance: T406l) — `FR-CHR-001`, a **distinct workflow type**, with unused stages visible as omitted (`FR-GEL-008`)
+- [ ] T406v Author `packages/loop-contract/workflows/change-room.json` and make it pass `EPIC-030`'s configuration conformance check (conformance: T931 — on `epic/030`; integration test: T994z) — `FR-CHR-001`, a **distinct workflow type**, with unused stages visible as omitted (`FR-GEL-008`). **This file is what `T994z` proves**: type isolation is a property of the configuration and of `EPIC-030`'s `T944b` resolution, not of new code here. **Cross-Epic dependency**: `T931` is `EPIC-030`'s failing-first check and its `T932` already reads every file under `packages/loop-contract/workflows/`, so no new check is needed here — but this task cannot be discharged until `epic/030` merges. *Cited `T406l` until 2026-08-23 (analysis finding `C2`): that is this Epic's independence architecture test, which asserts vocabulary and import bans and nothing whatever about the workflow file, so Constitution V's non-code output had no check that could fail for it*
 - [ ] T406w Implement `backend/src/modules/change-room/change-room.module.ts` and register it in `backend/src/app.module.ts` (integration test: T406u) — the wiring T406u exists to prove
 
 **Checkpoint**: the guarantees are types, the boundaries are asserted, and nothing is traversed twice
@@ -176,7 +178,7 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 4
 
-- [ ] T996r [P] [US3] Write failing unit tests for option generation in `backend/tests/unit/change-room-options.spec.ts` — two or more, each carrying all six trade-off dimensions or explicitly `not-applicable`, each labelled `recommendation`, none pre-selected (`FR-CHR-040`, `FR-CHR-041`, `FR-CHR-042`)
+- [ ] T996r [P] [US3] Write failing unit tests for option generation in `backend/tests/unit/change-room-options.spec.ts` — two or more **for every Change Request, with no materiality threshold** (`FR-CHR-040` as resolved in spec.md), each carrying all six trade-off dimensions or explicitly `not-applicable`, each labelled `recommendation`, none pre-selected (`FR-CHR-040`, `FR-CHR-041`, `FR-CHR-042`)
 - [ ] T996s [US3] Implement `backend/src/modules/change-room/options.service.ts` (unit test: T996r) — invokes `EPIC-028`'s `AgentGateway` with capability `analyze`, degrading rather than refusing when absent, as `EPIC-033` established
 - [ ] T996t [P] [US3] Write failing unit tests for decision retention in `backend/tests/unit/change-room-declined-options.spec.ts` — the chosen option, its rationale and the **options declined** are all retained (`FR-CHR-043`)
 - [ ] T996u [US3] Implement declined-option retention in `backend/src/modules/change-room/decision.service.ts` (unit test: T996t)
@@ -241,7 +243,7 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 - [ ] T994w [P] [US6] Write failing component tests for the 360px floor in `frontend/src/pages/ChangeRoom.viewport.test.tsx` — state, decision and evidence remain visible at 360px, using the **imported** shell's breakpoints (`FR-CHR-085`, `UX-0040`, `UX-0042`)
 - [ ] T994x [P] [US6] Write the failing transfer integration test in `backend/tests/integration/change-room-transfer.spec.ts` — a Defect Room transfer arrives with context and evidence preserved **by reference** and origin visible; a refused transfer **returns** with the refusal attached (`FR-CHR-012`, `BR-0057`, `R-034-6`)
 - [ ] T994y [US6] Implement `POST …/transfer-intake` and the return path in `backend/src/modules/change-room/intake.service.ts` (integration test: T994x) — exercised jointly with `EPIC-035` `FR-DFR-074`
-- [ ] T994z [US6] Implement the workflow-type isolation integration test in `backend/tests/integration/change-room-type-isolation.spec.ts` (integration test: T406u) — a Change Room object cannot transition under another Room's stages or authorities (`FR-CHR-001`, `SC-CHR-010`, via `EPIC-030` `T944a`)
+- [ ] T994z [P] [US6] Write the failing integration test for workflow-type isolation in `backend/tests/integration/change-room-type-isolation.spec.ts` — a Change Room object cannot transition under another Room's stages or authorities (`FR-CHR-001`, `SC-CHR-010`, via `EPIC-030` `T944a`). *Reworded 2026-08-23 (analysis finding `U1`): it read as an implementation task and cited `T406u`, the reachability test, as its pair — a citation that proves nothing about type isolation. A test-authoring task has no test partner to cite*
 
 **Checkpoint**: all six user stories demonstrable
 
@@ -253,6 +255,7 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 - [ ] T995b **Mutation proof — `FR-CHR-032`**: make an undeterminable impact area render as absent rather than `unknown` in `backend/src/modules/change-room/impact.composer.ts`, revert (unit test: T996l — it must fail while the mutation stands). Record the observation (`SC-CHR-002`)
 - [ ] T995c **Mutation proof — `FR-CHR-062`**: import and call `TaskRegenerationService.regenerate()` from `backend/src/modules/change-room/replan.recorder.ts`, revert (architecture test: T406l **and** integration test: T994l — both must fail while the mutation stands). Record both observations. **This is the trap `R-034-2` exists to prevent, and the only way to know the ban holds is to try it**
 - [ ] T995d **Mutation proof — Constitution XI Tier 1**: remove `ChangeRoomModule` from `backend/src/app.module.ts`, revert (integration test: T406u — it must fail while the mutation stands). Record the observation
+- [ ] T995l **Mutation proof — `FR-CHR-054`**: make `backend/src/modules/change-room/rebase.service.ts` silently retarget a change onto the newer baseline instead of recording the rebase and re-deciding, revert (unit test: T994h — it must fail while the mutation stands). Record the observation (`SC-CHR-009`). **This is the one the spec singles out**: an approval that referred to a different impact view, different trade-offs and a different baseline, applied anyway. *Added 2026-08-23 to close analysis finding `C1` — the spec made this a condition of completion and no task discharged it. Placed with the other mutation proofs rather than in letter order, per this file's own note that identifiers do not sort into execution order*
 - [ ] T995e [P] Verify the `R-034-8` targets — impact view p95 < 3 s at depth 25 over a 500-artifact project, baseline delta p95 < 500 ms at 200 members, Room load p95 < 1.2 s, closure p95 < 200 ms excluding the `EPIC-032` call — and record the measured figures
 - [ ] T995f [P] Confirm the Room-load figure matches `EPIC-033`'s measured figure; a shared shell with two different results is two shells
 - [ ] T995g [P] Confirm the recorded `traversalDepth` is `DEFAULT_IMPACT_DEPTH` and not a local constant (`R-034-1`)
@@ -343,5 +346,10 @@ and the re-plan safety test. The ban is only known to hold if someone tries it.
   phases share one base — and the next Epic does not fit at all. The task states which of the two
   available fixes `EPIC-026` must choose, because "we ran out of numbers" is not actionable and
   "widen the regex" quietly assumes the answer.
+- **Two citations pointed at the wrong check** (`C2`, `U1`), and both survived the pre-commit
+  verification, because that verification asked whether a citation *exists* — not whether the thing
+  it names could fail for the stated reason. That is exactly what `T995a`–`T995d` and `T995l` do one
+  level down. A pairing detector that only counts citations will keep passing a task list that names
+  the wrong test.
 - **Constitution V over the skill default**: `/speckit-tasks` calls tests optional; the constitution
   overrides every template, skill and tool default.

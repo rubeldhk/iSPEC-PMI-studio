@@ -71,7 +71,7 @@ stories, 6 new tables, 9 HTTP routes, 6 ports, 0 new packages.
 | II | Every requirement traces to a cited `SRS/` document; untraced items listed in Assumptions | **PASS, with the same named risk `EPIC-033` carries** — `FR-CHR-080`–`085` cite PMI-DOC-006, status `PROPOSED`, and `BR-0191` is only a *SHOULD*. This Epic **inherits** the pattern rather than setting it, so the exposure is `EPIC-033`'s decision and this Epic's dependency |
 | III | Work is decomposed Epic → Feature → Task; Epic ID assigned and `specs/<epic-id>/` exists | **PASS** — `EPIC-034` |
 | IV | `/speckit-converge` is scheduled as the Epic exit gate before any promotion | **PASS** — Epic Exit Criteria |
-| V | Every implementation task carries a mandatory unit-test task, written to fail first — or, for document/configuration outputs, an executable conformance check that can fail | **PASS** — the non-code output is `packages/loop-contract/workflows/change-room.json`, checked by `EPIC-030`'s configuration conformance check |
+| V | Every implementation task carries a mandatory unit-test task, written to fail first — or, for document/configuration outputs, an executable conformance check that can fail | **PASS** — the non-code output is `packages/loop-contract/workflows/change-room.json`, checked by `EPIC-030`'s configuration conformance check, **`T931`**, whose `T932` reads every file in that directory. *The identifier is named here from 2026-08-23 (analysis finding `C2`): `tasks.md` cited this Epic's own architecture test instead, which checks import bans and says nothing about the file* |
 | VI | `specs/<epic-id>/defects/` exists and is the sole intake for defects in this Epic | **PASS** — exists, in the git index via `.gitkeep` |
 | VII | Changes land in the local Claude repo first; promotion follows local → dev → stage → prod | **PASS** — local branch only |
 | VIII | Session/clone is labelled with the working Epic (`EPIC-### <name>`), or the first command | **PASS** — branch `epic/034-change-room` |
@@ -139,13 +139,23 @@ backend/prisma/
 backend/tests/
 ├── integration/
 │   ├── change-room-reachability.spec.ts     # XI Tier 1 — imports AppModule
+│   ├── change-room-constraints.spec.ts      # the three DB constraints reject
 │   ├── change-room-baseline-gate.spec.ts    # FR-CHR-011, RULE-02
+│   ├── change-room-high-band.spec.ts        # FR-CHR-051 — no policy lowers it
 │   ├── change-room-replan-safety.spec.ts    # FR-CHR-065 — no completed task destroyed
-│   └── change-room-transfer.spec.ts         # BR-0057, jointly with EPIC-035
+│   ├── change-room-transfer.spec.ts         # BR-0057, jointly with EPIC-035
+│   └── change-room-type-isolation.spec.ts   # SC-CHR-010 — via EPIC-030 T944a
 └── architecture/
-    └── change-room-independence.spec.ts     # no region vocabulary, no second traversal,
-                                             #   NO TaskRegenerationService import
+    ├── change-room-independence.spec.ts     # no region vocabulary, no second traversal,
+    │                                        #   NO TaskRegenerationService import
+    └── change-room-transcript.spec.ts       # XI Tier 2 — the transcript was generated
 ```
+
+> **Four files added 2026-08-23** (analysis finding `I1`). This block listed 4 integration and 1
+> architecture file; `tasks.md` names 7 and 2. Each addition was implied by the plan's own
+> constraints — database constraints, the high-band fence, `SC-CHR-010`, the Tier 2 transcript — but
+> the block reads as exhaustive, so a reader comparing the two would have concluded the task list
+> invented tests. The plan was the drift.
 
 **Structure Decision**: backend module plus a Room page, **composing** `EPIC-033`'s shared package.
 This Epic publishes **no package** — the Room pattern is `EPIC-033`'s, and a second one would make

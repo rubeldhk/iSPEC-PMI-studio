@@ -318,14 +318,14 @@ and to `EPIC-033`'s.
 
 *Trade-off analysis — `BR-0045`.*
 
-- **FR-CHR-040**: For a material change, the system MUST present **two or more** options.
+- **FR-CHR-040**: For a material change, the system MUST present **two or more** options. **Every Change Request in this Room is a material change**: `FR-CHR-011` makes this the only path by which an approved baseline changes, so nothing reaches this requirement that is not a baseline change, and no materiality threshold exists or is representable in `ChangeRequest` *(resolved 2026-08-23, analysis finding `A1` — the term gated two MUSTs and a success criterion and was defined in none of the seven artifacts)*.
 - **FR-CHR-041**: Each option MUST state its schedule, cost, quality, **security**, compatibility and delivery trade-offs, or explicitly mark a dimension not applicable.
 - **FR-CHR-042**: Options MUST be **clearly marked as recommendations rather than decisions**, and none pre-selected.
 - **FR-CHR-043**: A recorded decision MUST retain the option chosen, its rationale and the options declined.
 
 *Change decision — `BR-0046`.*
 
-- **FR-CHR-050**: A material change MUST receive an **authorized decision before implementation affects an approved baseline**.
+- **FR-CHR-050**: A material change MUST receive an **authorized decision before implementation affects an approved baseline** — material as resolved in `FR-CHR-040`, so **every** change decided here, which `FR-CHR-051` then fixes permanently in the high band. The word is `BR-0046`'s and is kept; what is added is which changes it selects.
 - **FR-CHR-051**: Baseline change MUST remain in the high risk band; no tenant policy MUST be able to lower it (`ADR-0025` constraint 1, via `EPIC-031`).
 - **FR-CHR-052**: Decision authority MUST be evaluated through `EPIC-031`, using the `BR-0005` decision-authority record.
 - **FR-CHR-053**: Change decisions MUST surface in the Decision Inbox (`BR-0068`).
@@ -371,7 +371,7 @@ and to `EPIC-033`'s.
 
 - **SC-CHR-001**: **Zero** approved baselines change other than through a decided Change Request — mutation-tested by adding a bypass path and observing the suite fail.
 - **SC-CHR-002**: **100%** of impact views span all eight `BR-0044` areas, with undeterminable areas marked unknown rather than absent.
-- **SC-CHR-003**: **100%** of material change decisions are taken by an authorized human; **zero** are auto-approved under any tenant policy.
+- **SC-CHR-003**: **100%** of material change decisions are taken by an authorized human; **zero** are auto-approved under any tenant policy. Measurable over **all** changes, since `FR-CHR-040` resolves every Change Request here as material.
 - **SC-CHR-004**: **100%** of approved changes produce new artifact versions with the prior baseline still readable and byte-identical.
 - **SC-CHR-005**: **Zero** changes close with an unmet Evidence Contract.
 - **SC-CHR-006**: **100%** of closed changes answer all four `BR-0048` questions from their own record.
@@ -401,7 +401,8 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] **`FR-CHR-011` is mutation-tested**: a path that changes an approved baseline without a decided Change Request is added, and the suite observed failing (`SC-CHR-001`). This is `RULE-02` made mechanical
 - [ ] **`FR-CHR-032` is mutation-tested**: an undeterminable impact area is made to render as absent rather than unknown, and the suite observed failing (`SC-CHR-002`)
 - [ ] **`FR-CHR-054` is mutation-tested**: a silent retarget onto a newer baseline is added, and the suite observed failing (`SC-CHR-009`). This is the one that would ship an approval referring to a baseline no longer in force
-- [ ] The Room is demonstrably a **configured instance** of `EPIC-030`'s loop, shown by the instance configuration
+- [ ] **`FR-CHR-062` is mutation-tested**: `TaskRegenerationService.regenerate()` is imported and called from the re-plan recorder, and **both** the architecture test and the re-plan safety test observed failing. *Added 2026-08-23 (analysis finding `L1`): the task list already carried this proof and the gate did not require it, so a later reader could satisfy the gate while dropping the proof of the one trap this Epic's plan names*
+- [ ] The Room is demonstrably a **configured instance** of `EPIC-030`'s loop, shown by the instance configuration, and its workflow file passes `EPIC-030`'s `T931` conformance check (Constitution V, non-code output)
 - [ ] Region names are verified identical to `EPIC-033`'s by comparison rather than by review (`SC-CHR-008`)
 - [ ] A Defect Room transfer has been exercised end to end with context and evidence preserved (`FR-CHR-012`), jointly with `EPIC-035`
 - [ ] **Constitution XI Tier 1** — a test drives the Room through its **real entry point** against the composed module graph
