@@ -21,6 +21,13 @@ export interface TableProps {
   rows: Array<Record<string, ReactNode>>;
   /** Label for the built-in filter (FR-DS-041). */
   filterLabel?: string;
+  /**
+   * Extra controls for the tools bar — the prototype's `.table-tools` holds a
+   * filter and, where a screen needs one, a narrowing select beside it
+   * (T918, parity row 5). The Table owns the bar; a screen owns what else
+   * goes in it.
+   */
+  tools?: ReactNode;
   rowKey?: (row: Record<string, ReactNode>, index: number) => string;
   loading?: boolean;
   error?: string;
@@ -34,6 +41,7 @@ export function Table({
   columns,
   rows,
   filterLabel = 'Filter rows',
+  tools,
   rowKey = (_row, index) => String(index),
   loading = false,
   error,
@@ -56,18 +64,25 @@ export function Table({
   return (
     <div className="ds-table-wrap">
       {showFilter && (
-        <p className="ds-table__filter">
-          <label className="ds-field__label" htmlFor={filterId}>
-            {filterLabel}
-          </label>
-          <input
-            id={filterId}
-            type="search"
-            className="ds-input"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-        </p>
+        <div className="ds-table__tools">
+          {/* T918, parity row 5 — the prototype collects filtering into a bar
+              along the top of the grid rather than leaving a control floating
+              above it. The filter itself is unchanged: FR-DS-041 already
+              required it, and this is where it lives. */}
+          <p className="ds-table__filter">
+            <label className="ds-field__label" htmlFor={filterId}>
+              {filterLabel}
+            </label>
+            <input
+              id={filterId}
+              type="search"
+              className="ds-input"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+          </p>
+          {tools}
+        </div>
       )}
       <table className="ds-table" aria-busy={loading || undefined}>
         <caption className="ds-table__caption">{caption}</caption>

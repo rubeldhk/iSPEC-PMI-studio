@@ -292,3 +292,36 @@ describe('keyboard operability sweep (FR-DS-033)', () => {
     expect(onClick).toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 9 (T920) — the prototype's four button weights, parity row 7.
+// ---------------------------------------------------------------------------
+
+describe('Button · secondary variant (T920, parity row 7)', () => {
+  it('is the prototype\u2019s bare .btn — a bordered surface control, still a <button>', () => {
+    render(<Button variant="secondary">Export status</Button>);
+    const button = screen.getByRole('button', { name: 'Export status' });
+    expect(button.tagName).toBe('BUTTON');
+    expect(button.className).toContain('ds-button--secondary');
+  });
+
+  it('carries the same states the variant-neutral rules give every button', () => {
+    render(
+      <Button variant="secondary" loading>
+        Saving
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: /saving/i });
+    // Loading keeps the label and disables the control, exactly as primary
+    // does — a variant is a weight, never a different component.
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('primary remains the default, so no existing caller changed meaning', () => {
+    render(<Button>Sign in</Button>);
+    expect(screen.getByRole('button', { name: 'Sign in' }).className).toContain(
+      'ds-button--primary',
+    );
+  });
+});

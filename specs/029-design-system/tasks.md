@@ -317,7 +317,7 @@ perform, so no duplicate task is appended for it.*
 produces a task. The other three are recorded here and deliberately produce none — converge appends
 remaining work, and work owned elsewhere or requiring human judgement is not this Epic's to append.*
 
-- [ ] T914 Restyle the shell's own controls onto the component layer per `SC-DS-003` (partial): the "Traceability" button at `frontend/src/main.tsx:100` and "Back to project" at `:124` carry no class and render browser-default on two delivered surfaces, beside components that are fully styled. `FR-DS-050` named four pages and two components and **`main.tsx` was owned by no restyle task** — the shell is where nobody's job collects, the same shape as `T913`. Note the lint rule provably cannot catch this: **an absence of styling contains no literal value** (`DEF-029-003`; visual consistency check: extend `T883`'s page-level assertions to the shell)
+- [X] T914 Restyle the shell's own controls onto the component layer per `SC-DS-003` (partial): the "Traceability" button at `frontend/src/main.tsx:100` and "Back to project" at `:124` carry no class and render browser-default on two delivered surfaces, beside components that are fully styled. `FR-DS-050` named four pages and two components and **`main.tsx` was owned by no restyle task** — the shell is where nobody's job collects, the same shape as `T913`. Note the lint rule provably cannot catch this: **an absence of styling contains no literal value** (`DEF-029-003`; visual consistency check: extend `T883`'s page-level assertions to the shell)
 
 ### Findings that produced no task, and why
 
@@ -326,3 +326,48 @@ remaining work, and work owned elsewhere or requiring human judgement is not thi
 | Register does not refetch after save, so a **wrong** empty state is announced | `FR-DS-021`, `DEF-029-005` | **EPIC-011 behaviour, not this Epic's.** The restyle made it worse — a confident empty state misleads harder than a bare paragraph — but appending a fix here would take on another Epic's defect. `T904` triage defers it to a named Epic |
 | "Type" and "Priority" reachable twice per tab cycle with identical accessible names | `FR-DS-030`, `DEF-029-004` | Whether duplicate names are **confusing when heard** is exactly the judgement `T885` exists for. Appending a fix would pre-empt the human pass and risk changing correct markup on a guess |
 | The manual keyboard and screen-reader record does not exist | `FR-DS-032`, `SC-DS-008` | **Already `T885`.** No agent can perform it and none has pretended to; `T884`'s check is red for that reason and should stay red until a person does the work |
+
+---
+
+## Phase 9: Prototype parity
+
+*Appended by `/speckit-implement`, 2026-08-23, on the instruction to **follow the prototype for
+components and functionality**. The reference artifact —
+[`docs/design/PMI-Studio-V2-Application-Prototype.html`](../../docs/design/PMI-Studio-V2-Application-Prototype.html),
+filed under `PMI-DOC-004A` Amendment G — reached `main` after this branch diverged and has never
+been read against the component layer. It is now merged in.*
+
+**Scope is a contract, not a judgement call.** The prototype's own header rules its token values
+illustrative and states it is not a build target; `PMI-DOC-005` `RULE-03` and `PMI-DOC-006`
+`UX-0060` keep unowned screens out of this Epic. [`contracts/prototype-parity.md`](./contracts/prototype-parity.md)
+records the resulting split — **ten adopted patterns, eight declined with reasons** — and
+`T924`'s check reads that table, so a declined row cannot be quietly adopted later and an adopted
+row cannot be quietly dropped.
+
+**IDs `T915`–`T928`** (corpus max was `T914`). **14 tasks.**
+
+### Tests first (MANDATORY — Constitution V)
+
+- [X] T924 [P] Write the **parity check** in `frontend/tests/unit/design/prototype-parity.spec.tsx`: read the adopted table of `contracts/prototype-parity.md` and assert each row's artifact is present — the token exists, the class is declared in `components.css`, the component exposes the prop, the shell renders the region. **Mutation-verify**: a row whose artifact is removed MUST fail, naming the row. Without this the whole phase is a set of edits nobody can prove stayed made, which is the shape Constitution V exists to reject
+- [X] T925 [P] Extend `tests/governance/design-tokens.spec.ts` with the new surfaces **before they exist**: text-on-`--color-canvas` for every text role, and each `--color-<tone>-subtle` against the tone that sits on it, plus `--color-focus` at 3:1 on canvas and on `--color-accent-subtle`. Observe it failing with *token missing* before `T915`
+
+### Implementation
+
+- [X] T915 Add the surface and tint tokens the prototype's card language needs — `--color-canvas` and `--color-accent-subtle`, `--color-success-subtle`, `--color-warning-subtle`, `--color-danger-subtle` — to `frontend/src/design/tokens.css` and all three blocks of `themes.css`. Values are **this Epic's neutral palette** (`FR-DS-005`, `UI-0005`), not the prototype's hexes, which its header rules illustrative (conformance check: T925)
+- [X] T916 Add the **card surface** as a layout class `.ds-card` in `frontend/src/design/components/components.css`, and put the page on `--color-canvas` so a surface reads as raised against it. Not a sixteenth component: `T886` fixes the inventory at fifteen and the prototype's `.card` is a container, not a control (parity row 3)
+- [X] T917 [P] `PageHeader` gains **`description`** — the prototype's `.pagehead` is a title, a sentence saying what the page is for, and actions to the right (parity row 4; unit test: T889's structure suite)
+- [X] T918 [P] `Table`: move the filter into a **tools bar** (`.ds-table__tools`) above the grid and give column headers the prototype's small, uppercase, muted treatment on a raised ground. Filtering itself is unchanged — it is already `FR-DS-041` (parity row 5; unit test: T889)
+- [X] T919 [P] `StatusPill` tones become **tinted grounds** rather than outlines, on the `T915` tint tokens (parity row 6; unit test: T889)
+- [X] T920 [P] `Button` gains **`secondary`** — the prototype's default weight, a bordered surface control — and `ghost` becomes genuinely borderless. `primary` stays the accent-filled one (parity row 7; unit test: T887)
+- [X] T921 [P] `Modal` gains **`actions`** and moves its close affordance into the header, per the prototype's head / body / foot (parity row 8; unit test: T889)
+- [X] T922 [P] `Navigation` gains **`orientation`** (`horizontal` | `vertical`) and a per-item **`count`**, the sidebar's grouped destinations reduced to the two properties that are not screen content (parity row 9; unit test: T889)
+- [X] T923 Give the shell in `frontend/src/main.tsx` the prototype's **frame** — a sticky top bar carrying location and the global actions, above a bounded content column — composed from inventory components only, and **restyle the two unstyled controls `T914` names** in the same pass. Extends `frontend/tests/unit/design/app-root.spec.tsx` (parity row 10; closes `T914` and `DEF-029-003`)
+- [X] T926 Fix `DEF-029-006` in `frontend/tests/unit/a11y/pages.spec.tsx`: the Traceability mock returns a coverage object of the wrong shape, so `TraceabilityPage` throws while rendering its coverage section and **axe never sees it** — a `T883` assertion that has been passing over a page half of which never rendered. The mock is cast `as unknown as ApiClient`, so the compiler cannot see it either
+
+### Reachability — Phase 9 changed the surfaces the XI Tier 2 evidence measured
+
+- [ ] T927 Re-drive the **Constitution XI Tier 2** run against the restyled build and append the verbatim records to `docs/accessibility/EPIC-029-reachability-transcript.md` (`DEF-029-007`). The 2026-08-21 transcript records `bodyBackground: rgb(255, 255, 255)`; the page now sits on `--color-canvas`, so that run describes a build that no longer exists. **Partially done 2026-08-23**: SignIn and the shell re-driven — sticky top bar, content column, canvas resolved in both themes, **no horizontal overflow at 1280×800 or 360×640, at 100% or 200% text zoom, either theme**. **Still open: Projects and Requirements**, which need a signed-in session and therefore belong to the same human sitting as `T885`
+- [X] T928 Close the gap in the check that let `T927` happen: extend `tests/governance/reachability-transcript.spec.ts` so the transcript must carry the `--color-canvas` and `--color-surface` values `themes.css` **currently** declares, in both themes, failing with the token name and "re-run T900a". `T900b` tested that the file was evidence and never that it was evidence of *this* build — so it stayed green for two days after the palette moved under it. **Mutation-verified** against the literal miss: a transcript saying `rgb(255, 255, 255)` against a canvas of `#f6f7f9`. A hand cannot satisfy this without running the application
+
+**Checkpoint**: `pnpm lint` clean, the parity check green and observed failing on a removed row,
+and every existing suite still passing — the prototype's form, this Epic's values.

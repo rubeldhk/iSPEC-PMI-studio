@@ -7,7 +7,15 @@
 import type { ButtonHTMLAttributes, ReactElement } from 'react';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'danger' | 'ghost';
+  /**
+   * T920, parity row 7 — the prototype's four weights. `secondary` is its
+   * bare `.btn`: a bordered surface control, and the one most page actions
+   * actually want. `primary` stays the accent-filled one and stays the
+   * default, so no existing caller changes meaning; a page that wants the
+   * prototype's restraint now has a way to ask for it. `ghost` is
+   * borderless — a control that reads as text until you reach it.
+   */
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   loading?: boolean;
 }
 

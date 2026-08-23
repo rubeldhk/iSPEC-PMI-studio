@@ -82,11 +82,17 @@ describe('T883 · every delivered page passes the WCAG 2.2 AA harness', () => {
     const api = {
       getRequirementTrace: vi.fn(async () => ({ requirement, specifications: [] })),
       getTaskTrace: vi.fn(async () => ({ task: null, requirements: [] })),
+      // T926 (DEF-029-006) — this mock returned a coverage object of a shape
+      // `CoverageReport` has never had, so TraceabilityPage threw on
+      // `uncoveredRequirementIds.length` while rendering its coverage
+      // section: the section never mounted and axe never saw it, while this
+      // test went on passing. The cast to ApiClient is what hid it from the
+      // compiler too. The shape below is the real contract (services/api.ts).
       getProjectCoverage: vi.fn(async () => ({
-        totalRequirements: 1,
-        coveredRequirements: 1,
-        coveragePercent: 100,
-        uncovered: [],
+        uncoveredRequirementIds: ['REQ-002'],
+        specificationsWithoutTasks: ['SPEC-001'],
+        requirementCount: 2,
+        specificationCount: 1,
       })),
     } as unknown as ApiClient;
     render(host(<TraceabilityPage api={api} projectId="p1" />));

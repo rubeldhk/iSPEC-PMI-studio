@@ -14,10 +14,15 @@
  */
 :root {
   /* -- colour roles — all themed ---------------------------------------- */
-  --color-text: #1a1d21;
-  --color-text-muted: #4b5563;
+  /* Three grounds, deepest first: canvas is the page, surface is what sits
+   * on it, raised is what sits on that. T915 (Phase 9) added canvas — the
+   * prototype's `--bg`: without a ground below the surface, a card cannot
+   * read as a card (contracts/prototype-parity.md row 1). */
+  --color-canvas: #f6f7f9;
   --color-surface: #ffffff;
   --color-surface-raised: #f3f4f6;
+  --color-text: #1a1d21;
+  --color-text-muted: #4b5563;
   --color-border: #d1d5db;
   --color-accent: #1d4ed8;
   --color-on-accent: #ffffff;
@@ -25,6 +30,16 @@
   --color-success: #166534;
   --color-warning: #854d0e;
   --color-focus: #1d4ed8;
+
+  /* Tinted grounds — a status carries a wash of its own hue (parity row 2).
+   * These are tokens rather than `color-mix(… 12% …)` because the percentage
+   * would be a literal, and the rule is right to reject it: a tint IS a
+   * design decision, so it gets a name and a contrast pair like any other.
+   * Neutral has no tint token — --color-surface-raised already is one. */
+  --color-accent-subtle: #e9edff;
+  --color-success-subtle: #e6f4ea;
+  --color-warning-subtle: #fbf1e0;
+  --color-danger-subtle: #fbeaea;
 
   /* -- space — fixed ratio 1.5 from 0.25rem (FR-DS-003), never themed ---- */
   --space-0: 0;

@@ -232,6 +232,24 @@ const TEXT_ON_SURFACE: Array<[fg: string, bg: string]> = [
   ['--color-warning', '--color-surface'],
   ['--color-warning', '--color-surface-raised'],
   ['--color-on-accent', '--color-accent'],
+
+  // T925 (Phase 9) — the canvas the prototype puts behind its surfaces
+  // (parity row 1). A page ground is a surface text sits on, so it earns the
+  // same pairs the others carry.
+  ['--color-text', '--color-canvas'],
+  ['--color-text-muted', '--color-canvas'],
+  ['--color-accent', '--color-canvas'],
+  ['--color-danger', '--color-canvas'],
+  ['--color-success', '--color-canvas'],
+  ['--color-warning', '--color-canvas'],
+
+  // T925 — the tinted grounds (parity row 2). Each tone sits on its own tint;
+  // that pair is the whole point of the token, so it is the pair checked.
+  ['--color-accent', '--color-accent-subtle'],
+  ['--color-success', '--color-success-subtle'],
+  ['--color-warning', '--color-warning-subtle'],
+  ['--color-danger', '--color-danger-subtle'],
+  ['--color-text', '--color-accent-subtle'],
 ];
 
 const THEMES: Array<[name: string, values: Map<string, string>]> = [
@@ -266,7 +284,15 @@ describe('T882 · the focus indicator meets 3:1 against every surface (FR-DS-033
     const failures: string[] = [];
     const focus = values.get('--color-focus');
     expect(focus, `--color-focus has no ${theme} value`).toBeDefined();
-    for (const surface of ['--color-surface', '--color-surface-raised']) {
+    // T925 — canvas and the accent tint are surfaces a focusable control sits
+    // on (the page ground, and the current navigation item), so the indicator
+    // has to clear 3:1 on them too.
+    for (const surface of [
+      '--color-surface',
+      '--color-surface-raised',
+      '--color-canvas',
+      '--color-accent-subtle',
+    ]) {
       const bg = values.get(surface);
       if (!bg) {
         failures.push(`${surface} (${theme}): token missing`);

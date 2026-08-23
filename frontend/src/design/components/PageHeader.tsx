@@ -9,16 +9,31 @@ import { LoadingIndicator } from './LoadingIndicator';
 
 export interface PageHeaderProps {
   title: string;
+  /**
+   * What the page is for, in a sentence (T917, parity row 4). The prototype's
+   * `.pagehead` is a title AND a line of orientation — a screen that only
+   * names itself leaves the reader to infer what it does.
+   */
+  description?: string;
   /** Heading level in the page's outline; the page decides, not the component. */
   level?: 1 | 2 | 3;
   loading?: boolean;
   actions?: ReactNode;
 }
 
-export function PageHeader({ title, level = 1, loading = false, actions }: PageHeaderProps): ReactElement {
+export function PageHeader({
+  title,
+  description,
+  level = 1,
+  loading = false,
+  actions,
+}: PageHeaderProps): ReactElement {
   return (
     <header className="ds-page-header">
-      {createElement(`h${level}`, { className: 'ds-page-header__title' }, title)}
+      <div className="ds-page-header__heading">
+        {createElement(`h${level}`, { className: 'ds-page-header__title' }, title)}
+        {description && <p className="ds-page-header__description">{description}</p>}
+      </div>
       {loading && <LoadingIndicator label="Loading" />}
       {actions && <div className="ds-page-header__actions">{actions}</div>}
     </header>

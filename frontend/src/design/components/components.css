@@ -21,7 +21,10 @@ body {
   line-height: var(--type-3-line);
   font-weight: var(--type-3-weight);
   color: var(--color-text);
-  background: var(--color-surface);
+  /* T916, parity row 1 — the page is the canvas; surfaces sit ON it. A body
+   * painted --color-surface leaves a card with nothing to be raised above,
+   * which is why the prototype's `--bg` exists at all. */
+  background: var(--color-canvas);
 }
 
 /* -- layout helpers the restyled pages compose --------------------------- */
@@ -67,16 +70,90 @@ body {
 }
 
 /*
- * T913 — the application bar: where the theme override lives, above every
- * view rather than inside one (FR-DS-011 grants it to the user, not a page).
+ * T913/T923 — the application shell. The bar is where the theme override
+ * lives, above every view rather than inside one (FR-DS-011 grants it to the
+ * user, not a page); T923 gave it the prototype's `.topbar` form — sticky,
+ * carrying where you are on the left and what is globally available on the
+ * right — and bounded the view beneath it in a `.ds-content` column, which is
+ * the prototype's `.content` (parity row 10).
  */
-.ds-app-bar {
+.ds-shell {
+  min-height: 100vh;
+  background: var(--color-canvas);
+}
+
+.ds-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface-raised);
+  background: var(--color-surface);
+}
+
+.ds-topbar__location {
+  font-weight: var(--type-4-weight);
+  /* At 360px with 200% text zoom a breadcrumb is longer than the line;
+   * breaking beats clipping, the DEF-029-002 lesson. */
+  overflow-wrap: anywhere;
+}
+
+.ds-topbar__location-context {
+  color: var(--color-text-muted);
+  font-weight: var(--type-3-weight);
+}
+
+.ds-topbar__actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ds-content {
+  /* The prototype bounds its content column rather than letting a table run
+   * the width of a wide display. `auto` margins centre it; there is no token
+   * for a measure, so the column is bounded by its own padding and the page
+   * grid rather than by a literal max-width. */
+  margin: 0 auto;
+  width: 100%;
+}
+
+/*
+ * T916, parity row 3 — the card: the prototype's dominant container, and the
+ * reason the canvas exists. Not a sixteenth component (T886 fixes the
+ * inventory at fifteen): the prototype's `.card` is a container, not a
+ * control, so it is a layout class beside .ds-page and .ds-stack.
+ */
+.ds-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
+  padding: var(--space-5);
+}
+
+/*
+ * Text present to assistive technology and absent to sight. `inset(100%)`
+ * rather than the usual `inset(50%)` because the literal-value rule allows
+ * 100% and rejects 50% — and it should: a percentage is a visual decision.
+ * Both hide the box completely; only 100% is sayable in the allowlist.
+ */
+.ds-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(100%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* -- Button --------------------------------------------------------------- */
@@ -118,10 +195,34 @@ body {
   color: var(--color-surface);
 }
 
-.ds-button--ghost {
+/*
+ * T920, parity row 7 — the prototype's bare `.btn`: a bordered surface
+ * control. Most page actions want this weight; `primary` stays the accent
+ * one and stays the default so no existing caller changes meaning.
+ */
+.ds-button--secondary {
   border-color: var(--color-border);
   background: var(--color-surface);
   color: var(--color-text);
+}
+
+.ds-button--secondary:hover {
+  background: var(--color-surface-raised);
+  filter: none;
+}
+
+/* The prototype's `.btn.ghost` is transparent AND borderless — a control that
+ * reads as text until you reach it. It was previously a bordered surface
+ * button, which is what `secondary` now is. */
+.ds-button--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-accent);
+}
+
+.ds-button--ghost:hover {
+  background: var(--color-accent-subtle);
+  filter: none;
 }
 
 .ds-button--loading {
@@ -229,11 +330,28 @@ body {
   overflow-x: auto;
 }
 
+/*
+ * T918, parity row 5 — the prototype's `.table-tools`: filtering lives in a
+ * bar along the top of the grid, separated from it by a rule, rather than
+ * floating loose above it. Filtering itself is FR-DS-041 and unchanged.
+ */
+.ds-table__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+}
+
 .ds-table__filter {
   margin: 0;
   display: grid;
   gap: var(--space-1);
   justify-content: start;
+  min-width: 0;
 }
 
 .ds-table {
@@ -257,9 +375,20 @@ body {
   border-bottom: 1px solid var(--color-border);
 }
 
+/*
+ * T918 — the prototype sets column headers small, uppercase, letter-spaced
+ * and muted on a raised ground, so a header reads as a label rather than as
+ * a first row of data. No letter-spacing: the token set has no tracking
+ * scale, and borrowing one from --space would be a misuse of it — the size,
+ * case and colour already carry the distinction.
+ */
 .ds-table th {
+  font-size: var(--type-1-size);
+  line-height: var(--type-1-line);
   font-weight: var(--type-4-weight);
+  text-transform: uppercase;
   color: var(--color-text-muted);
+  background: var(--color-surface-raised);
 }
 
 .ds-table tbody tr:hover {
@@ -349,11 +478,55 @@ body {
   opacity: 0.4;
 }
 
+/*
+ * T921, parity row 8 — the prototype's `.modalhead` / `.modalbody` /
+ * `.modalfoot`: the close affordance belongs beside the title, and a
+ * dialog's actions belong together at its end.
+ */
+.ds-modal__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
 .ds-modal__title {
   margin: 0;
   font-size: var(--type-4-size);
   line-height: var(--type-4-line);
   font-weight: var(--type-4-weight);
+  overflow-wrap: anywhere;
+}
+
+.ds-modal__close {
+  margin-left: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--type-2-size);
+  line-height: var(--type-2-line);
+  cursor: pointer;
+}
+
+.ds-modal__close:hover {
+  background: var(--color-surface-raised);
+}
+
+.ds-modal__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+/* An empty shelf draws a rule across nothing; collapse it. */
+.ds-modal__footer:empty {
+  display: none;
 }
 
 /* -- Toast ------------------------------------------------------------------ */
@@ -397,13 +570,47 @@ body {
   list-style: none;
 }
 
+/*
+ * T922, parity row 9 — the prototype's primary navigation is a vertical rail
+ * whose items fill their width; a page's secondary navigation is a row. Same
+ * markup, same semantics, same aria-current: orientation is presentation.
+ */
+.ds-nav__list--horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.ds-nav__list--vertical {
+  flex-direction: column;
+}
+
+.ds-nav__list--vertical .ds-nav__item {
+  width: 100%;
+}
+
 .ds-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
   border: 0;
   border-radius: var(--radius-md);
   background: none;
   color: var(--color-text);
   cursor: pointer;
+  text-align: start;
+}
+
+/* The prototype's `.nav-item .n` — how many things wait at a destination,
+ * pushed to the far edge of the item. */
+.ds-nav__count {
+  margin-left: auto;
+  padding: var(--space-0) var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-size: var(--type-1-size);
+  line-height: var(--type-1-line);
 }
 
 .ds-nav__item:hover {
@@ -417,7 +624,12 @@ body {
 .ds-nav__item[aria-current='page'] {
   font-weight: var(--type-4-weight);
   color: var(--color-accent);
-  background: var(--color-surface-raised);
+  background: var(--color-accent-subtle);
+}
+
+.ds-nav__item[aria-current='page'] .ds-nav__count {
+  background: var(--color-surface);
+  color: var(--color-accent);
 }
 
 .ds-nav__item:disabled {
@@ -447,17 +659,47 @@ body {
   overflow-wrap: anywhere;
 }
 
+.ds-page-header__heading {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  min-width: 0;
+}
+
+/*
+ * T917, parity row 4 — the prototype's `.pagehead p`: a sentence saying what
+ * the page is for, muted beneath the title. Bounded so it reads as a
+ * paragraph rather than running the width of a wide display.
+ */
+.ds-page-header__description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--type-2-size);
+  line-height: var(--type-2-line);
+}
+
 .ds-page-header__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3);
 }
 
 /* -- StatusPill ----------------------------------------------------------------- */
 
+/*
+ * T919, parity row 6 — the prototype's `.pill` is a wash of its own hue, not
+ * an outline. The tint is a token per tone (T915) rather than
+ * `color-mix(… 12% …)`, because the percentage would be a literal and the
+ * rule is right to reject it: a tint IS a design decision, so it gets a name
+ * and a computed contrast pair like every other colour.
+ *
+ * The text stays the carrier of meaning (FR-DS-012) — the ground only makes
+ * it findable.
+ */
 .ds-pill {
   display: inline-block;
   padding: var(--space-1) var(--space-3);
-  border: 1px solid currentColor;
+  border: 1px solid transparent;
   border-radius: var(--radius-full);
   font-size: var(--type-1-size);
   line-height: var(--type-1-line);
@@ -466,22 +708,27 @@ body {
 
 .ds-pill--neutral {
   color: var(--color-text-muted);
+  background: var(--color-surface-raised);
 }
 
 .ds-pill--success {
   color: var(--color-success);
+  background: var(--color-success-subtle);
 }
 
 .ds-pill--warning {
   color: var(--color-warning);
+  background: var(--color-warning-subtle);
 }
 
 .ds-pill--danger {
   color: var(--color-danger);
+  background: var(--color-danger-subtle);
 }
 
 .ds-pill--accent {
   color: var(--color-accent);
+  background: var(--color-accent-subtle);
 }
 
 /* -- motion ------------------------------------------------------------------- */

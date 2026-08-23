@@ -77,3 +77,61 @@ rather than by a module that passed its tests.
   `tests/governance/design-tokens.spec.ts` (T872).
 - Nothing here is the manual keyboard/screen-reader pass — that is `T885`, human work, recorded
   separately in `EPIC-029-manual-pass.md`.
+
+---
+
+# Phase 9 re-verification — 2026-08-23 (T927)
+
+**Why there is a second run.** Phase 9 (prototype parity) changed the visual layer the run above
+measured: the page now sits on `--color-canvas` rather than on `--color-surface`, the shell gained
+a sticky top bar and a bounded content column, and Table, StatusPill, PageHeader, Button, Modal and
+Navigation all changed shape. The 2026-08-21 records above therefore describe a build that no
+longer exists — they record `"bodyBackground":"rgb(255, 255, 255)"`, which is now
+`rgb(246, 247, 249)` in light and `rgb(11, 17, 32)` in dark. **Evidence does not survive the thing
+it was evidence of**, so Tier 2 was re-driven.
+
+**Provenance**: emitted by an in-page driver executing against the running application at
+`http://localhost:5173` (this worktree's Vite dev server, proxying `/v1` to the backend started
+from `backend/src/main.ts` on `:3000`, against the local Postgres and Valkey containers) on
+2026-08-23. The driver read `getComputedStyle` and `scrollWidth` from the live document and
+appended one JSON record per step. Records are reproduced **verbatim**.
+
+```json
+[
+{"step":"SignIn page in the Phase 9 shell, desktop","at":"2026-08-23T20:17:18.379Z","layoutViewport":"1280x800","rootFontSize":"16px","theme":"(follows OS)","resolved":{"--color-canvas":"#0b1120","--color-surface":"#111827","--color-accent-subtle":"#1e2a4a","bodyBackground":"rgb(11, 17, 32)"},"horizontalOverflow":"none","widerThanViewport":[],"shell":{"topbar":true,"topbarText":"PMI Studio / Sign inThemeFollow systemLightDark","topbarPosition":"sticky","topbarBackground":"rgb(17, 24, 39)","contentColumn":true},"signInButton":{"className":"ds-button ds-button--primary","background":"rgb(96, 165, 250)"}},
+{"step":"theme switched: light","at":"2026-08-23T20:17:19.152Z","layoutViewport":"1280x800","rootFontSize":"16px","theme":"light","resolved":{"--color-canvas":"#f6f7f9","--color-surface":"#ffffff","--color-accent-subtle":"#e9edff","bodyBackground":"rgb(246, 247, 249)"},"horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"theme switched: dark","at":"2026-08-23T20:17:20.142Z","layoutViewport":"1280x800","rootFontSize":"16px","theme":"dark","resolved":{"--color-canvas":"#0b1120","--color-surface":"#111827","--color-accent-subtle":"#1e2a4a","bodyBackground":"rgb(11, 17, 32)"},"horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"SignIn at 360x640, 100% text, light theme","at":"2026-08-23T20:17:44.143Z","layoutViewport":"360x640","rootFontSize":"16px","theme":"light","bodyBackground":"rgb(246, 247, 249)","canvas":"#f6f7f9","horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"SignIn at 360x640, 200% text zoom, light theme","at":"2026-08-23T20:17:45.179Z","layoutViewport":"360x640","rootFontSize":"32px","theme":"light","bodyBackground":"rgb(246, 247, 249)","canvas":"#f6f7f9","horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"SignIn at 360x640, 100% text, dark theme","at":"2026-08-23T20:17:46.151Z","layoutViewport":"360x640","rootFontSize":"16px","theme":"dark","bodyBackground":"rgb(11, 17, 32)","canvas":"#0b1120","horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"SignIn at 360x640, 200% text zoom, dark theme","at":"2026-08-23T20:17:47.148Z","layoutViewport":"360x640","rootFontSize":"32px","theme":"dark","bodyBackground":"rgb(11, 17, 32)","canvas":"#0b1120","horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"conditions restored","at":"2026-08-23T20:17:48.145Z","layoutViewport":"360x640","rootFontSize":"16px","theme":"dark","bodyBackground":"rgb(11, 17, 32)","canvas":"#0b1120","horizontalOverflow":"none","widerThanViewport":[]}
+]
+```
+
+## What this run established
+
+- **The Phase 9 shell is real in the running application**: a `sticky` `.ds-topbar` reading
+  *"PMI Studio / Sign in"* with the theme control in it, above a `.ds-content` column.
+- **The canvas token reaches the document and the body follows it** — `#f6f7f9` in light,
+  `#0b1120` in dark, matching `tokens.css` and `themes.css` exactly. This is the value the
+  2026-08-21 run recorded as `rgb(255, 255, 255)`, and the reason that run needed replacing.
+- **No horizontal overflow in any condition** — 1280×800 and 360×640, at 100% and 200% text
+  zoom, in both themes. `widerThanViewport` is empty in every record, so no single element is
+  the culprit either.
+
+## What this run did NOT establish — and who must
+
+**The authenticated half was not re-driven.** Reaching Projects and Requirements requires signing
+in, and the agent performing this run does not enter credentials into a running application. The
+2026-08-21 records above remain the only Tier 2 evidence for those two pages, and they now
+**predate the Table tools bar, the tinted StatusPill and the PageHeader description that those very
+pages render**.
+
+This is tracked as **`DEF-029-007`** and **`T927`**, and it belongs to the same human session as
+`T885`: whoever performs the manual keyboard and screen-reader pass is already signed in on the
+restyled build, and re-driving the two authenticated pages at 360×640 and 200% zoom in both themes
+costs them a few minutes on top of work they are already doing.
+
+Until then, **Constitution XI Tier 2 is satisfied for SignIn and the shell, and stale for Projects
+and Requirements.** `T901a` may not be re-confirmed on the strength of this run alone.

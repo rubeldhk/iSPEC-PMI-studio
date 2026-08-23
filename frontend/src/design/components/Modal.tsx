@@ -17,6 +17,13 @@ export interface ModalProps {
   loading?: boolean;
   error?: string;
   errorAction?: string;
+  /**
+   * T921, parity row 8 — the prototype's `.modalfoot`: a dialog's actions
+   * belong together at its end, not scattered through its body. The close
+   * affordance moves up into the header where the prototype puts it, so the
+   * footer is the caller's alone.
+   */
+  actions?: ReactNode;
   children?: ReactNode;
 }
 
@@ -27,6 +34,7 @@ export function Modal({
   loading = false,
   error,
   errorAction = 'Close and try again.',
+  actions,
   children,
 }: ModalProps): ReactElement {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -67,7 +75,12 @@ export function Modal({
         onClose();
       }}
     >
-      <p className="ds-modal__title">{title}</p>
+      <div className="ds-modal__header">
+        <p className="ds-modal__title">{title}</p>
+        <button type="button" className="ds-modal__close" onClick={onClose}>
+          Close
+        </button>
+      </div>
       <div className="ds-modal__body">
         {loading ? (
           <LoadingIndicator label="Loading" />
@@ -77,9 +90,9 @@ export function Modal({
           children
         )}
       </div>
-      <button type="button" className="ds-modal__close" onClick={onClose}>
-        Close
-      </button>
+      {/* Always rendered: the footer is the dialog's action shelf, and a
+          dialog with none still closes from here. `actions` fills it. */}
+      <div className="ds-modal__footer">{actions}</div>
     </dialog>
   );
 }

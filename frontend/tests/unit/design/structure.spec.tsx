@@ -241,3 +241,135 @@ describe('StatusPill (T889)', () => {
     expect(pill.className).toContain('ds-pill');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 9 (T917/T918/T919/T921/T922) — prototype parity, the BEHAVIOUR half.
+// prototype-parity.spec.tsx asserts each pattern is present; these assert it
+// works. Presence without behaviour is the shape T886(b) was written against.
+// ---------------------------------------------------------------------------
+
+describe('PageHeader · description (T917, parity row 4)', () => {
+  it('renders the sentence saying what the page is for, without displacing the title', () => {
+    render(
+      <PageHeader
+        title="Requirements"
+        description="Everything captured for this project, and what it traces to."
+      />,
+    );
+    expect(screen.getByRole('heading', { name: 'Requirements' })).toBeDefined();
+    expect(screen.getByText(/what it traces to/)).toBeDefined();
+  });
+
+  it('a header with no description renders no empty paragraph', () => {
+    const { container } = render(<PageHeader title="Projects" />);
+    expect(container.querySelector('.ds-page-header__description')).toBeNull();
+  });
+});
+
+describe('Table · tools bar (T918, parity row 5)', () => {
+  it('the filter still filters from inside the bar — FR-DS-041 is unchanged', () => {
+    render(<Table caption="Requirements" columns={COLUMNS} rows={ROWS} />);
+    const filter = screen.getByLabelText(/filter/i);
+    expect(filter.closest('.ds-table__tools')).not.toBeNull();
+    fireEvent.change(filter, { target: { value: 'REQ-002' } });
+    expect(screen.queryByText('REQ-001')).toBeNull();
+    expect(screen.getByText('REQ-002')).toBeDefined();
+  });
+
+  it('a screen may add its own control to the bar without owning the bar', () => {
+    render(
+      <Table
+        caption="Requirements"
+        columns={COLUMNS}
+        rows={ROWS}
+        tools={<button type="button">Export</button>}
+      />,
+    );
+    const extra = screen.getByRole('button', { name: 'Export' });
+    expect(extra.closest('.ds-table__tools')).not.toBeNull();
+  });
+});
+
+describe('StatusPill · tinted ground (T919, parity row 6)', () => {
+  it('the text still carries the status — the tint only makes it findable (FR-DS-012)', () => {
+    render(<StatusPill tone="danger">blocked</StatusPill>);
+    // The pill reads as "blocked" with colour removed entirely, which is the
+    // whole of FR-DS-012; the ground is an affordance, not the meaning.
+    expect(screen.getByText('blocked')).toBeDefined();
+  });
+
+  it('every tone declares a tinted ground, not an outline', () => {
+    for (const tone of ['accent', 'success', 'warning', 'danger']) {
+      const block = new RegExp(String.raw`\.ds-pill--${tone}\s*\{([^}]*)\}`).exec(css);
+      expect(block?.[1], `.ds-pill--${tone} has no rule`).toBeDefined();
+      expect(block?.[1], `.ds-pill--${tone} is not tinted`).toContain(
+        `var(--color-${tone}-subtle)`,
+      );
+    }
+  });
+});
+
+describe('Modal · head / body / foot (T921, parity row 8)', () => {
+  it('actions collect in the footer and the close affordance sits in the header', () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <Modal open title="Create project" onClose={onClose} actions={<button type="button">Create</button>}>
+        Body
+      </Modal>,
+    );
+    expect(container.querySelector('.ds-modal__footer')?.textContent).toContain('Create');
+    const close = container.querySelector('.ds-modal__header button') as HTMLButtonElement;
+    expect(close).not.toBeNull();
+    fireEvent.click(close);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('Escape still closes — the restructure did not cost the dialog its behaviour', () => {
+    const onClose = vi.fn();
+    const { container } = render(
+      <Modal open title="Confirm" onClose={onClose}>
+        Body
+      </Modal>,
+    );
+    fireEvent.keyDown(container.querySelector('dialog') as HTMLDialogElement, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('Navigation · orientation and count (T922, parity row 9)', () => {
+  it('a count is part of the item\u2019s accessible name, never a disembodied number', () => {
+    render(
+      <Navigation
+        label="Primary"
+        orientation="vertical"
+        items={[{ id: 'r', label: 'Requirements', count: 12 }]}
+        onSelect={() => {}}
+      />,
+    );
+    // "Requirements 12 waiting" — the number is attached to what it counts.
+    expect(screen.getByRole('button', { name: /requirements\s*12\s*waiting/i })).toBeDefined();
+  });
+
+  it('orientation is presentation only — semantics are identical either way', () => {
+    const { container: vertical } = render(
+      <Navigation
+        label="Primary"
+        orientation="vertical"
+        items={[{ id: 'p', label: 'Projects', current: true }]}
+        onSelect={() => {}}
+      />,
+    );
+    expect(
+      vertical.querySelector('.ds-nav__item[aria-current="page"]'),
+      'aria-current survives the vertical orientation',
+    ).not.toBeNull();
+    expect(vertical.querySelector('.ds-nav__list--vertical')).not.toBeNull();
+  });
+
+  it('an item with no count renders no badge', () => {
+    const { container } = render(
+      <Navigation label="Primary" items={[{ id: 'p', label: 'Projects' }]} onSelect={() => {}} />,
+    );
+    expect(container.querySelector('.ds-nav__count')).toBeNull();
+  });
+});

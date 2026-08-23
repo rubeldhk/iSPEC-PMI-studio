@@ -17,6 +17,7 @@ import './design/components/components.css';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ThemeControl } from './design/ThemeControl';
+import { Button } from './design/components/Button';
 import { initTheme } from './design/theme';
 import { EngineSelector } from './components/EngineSelector';
 import { RequirementEditor } from './components/RequirementEditor';
@@ -97,12 +98,16 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
           <ProjectDetail api={api} projectId={view.projectId} onBack={(): void => setView({ kind: 'projects' })}>
             <>
               <EngineSelector api={api} projectId={view.projectId} value={null} />
-              <button
-                type="button"
+              {/* T914/T923 (DEF-029-003) — this control carried no class and
+                  rendered browser-default beside fully styled components. The
+                  lint rule provably cannot see it: an ABSENCE of styling
+                  contains no literal value. */}
+              <Button
+                variant="secondary"
                 onClick={(): void => setView({ kind: 'traceability', projectId: view.projectId })}
               >
                 Traceability
-              </button>
+              </Button>
               <RequirementsPage
                 api={api}
                 projectId={view.projectId}
@@ -121,30 +126,59 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
       case 'traceability':
         return (
           <main>
-            <button
-              type="button"
+            {/* T914/T923 (DEF-029-003) — the second of the two unstyled shell
+                controls. Same fix, same reason. */}
+            <Button
+              variant="secondary"
               onClick={(): void => setView({ kind: 'project', projectId: view.projectId })}
             >
               Back to project
-            </button>
+            </Button>
             <TraceabilityPage api={api} projectId={view.projectId} />
           </main>
         );
     }
   })();
 
-  // The theme control sits OUTSIDE the view switch deliberately: FR-DS-011
-  // grants the override to the user of the application, not to one page, so
-  // it must be reachable from every one of them.
+  // T923 (parity row 10) — the prototype's frame: a sticky top bar carrying
+  // where you are on the left and what is globally available on the right,
+  // above a bounded content column. It is the prototype's `.topbar` and
+  // `.content` and nothing else — the sidebar's seventeen destinations belong
+  // to the Epics that own those screens (PMI-DOC-006 UX-0060), which is why
+  // contracts/prototype-parity.md declines them by name.
+  //
+  // The theme control sits here, OUTSIDE the view switch, deliberately:
+  // FR-DS-011 grants the override to the user of the application, not to one
+  // page, so it must be reachable from every one of them.
   return (
-    <>
-      <div className="ds-app-bar">
-        <ThemeControl />
-      </div>
-      {content}
-    </>
+    <div className="ds-shell">
+      <header className="ds-topbar">
+        <p className="ds-topbar__location">
+          <span className="ds-topbar__location-context">PMI Studio / </span>
+          {LOCATION[view.kind]}
+        </p>
+        <div className="ds-topbar__actions">
+          <ThemeControl />
+        </div>
+      </header>
+      <div className="ds-content">{content}</div>
+    </div>
   );
 }
+
+/**
+ * Where the shell says you are. The prototype's breadcrumb reads
+ * "Acme / Payments / Home"; the workspace and project halves belong to
+ * EPIC-004's scoping, which this Epic may not invent, so the shell states the
+ * half it actually knows.
+ */
+const LOCATION: Record<View['kind'], string> = {
+  loading: 'Loading',
+  'sign-in': 'Sign in',
+  projects: 'Projects',
+  project: 'Project',
+  traceability: 'Traceability',
+};
 
 const el = document.getElementById('root');
 if (el) createRoot(el).render(<App />);
