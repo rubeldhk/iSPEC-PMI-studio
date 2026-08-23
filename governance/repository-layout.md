@@ -172,6 +172,11 @@ path added or removed without updating this document fails the build.
 - `specs/029-design-system/`
 - `specs/030-governed-engineering-loop/`
 - `specs/033-requirement-room/`
+- `packages/room-contract/` — the SHARED Room pattern: `RoomShellProps`, `Epistemic`,
+  `RoomObjectRef`. Imported by `EPIC-034` and `EPIC-035`, whose first tasks stop if it is not
+  built — breaking this path breaks two Epics that cannot be built without it (EPIC-033 `T337d`)
+- `frontend/src/rooms/` — `RoomShell` and the region primitives; owns the `UX-0041` breakpoints
+  and the `UX-0040` 360px floor, so no Room sets its own
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T918`)
 

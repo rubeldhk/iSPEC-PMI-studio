@@ -64,6 +64,10 @@ const PROJECT_DIRS: Record<string, string> = {
   // visible: registering the project without mapping it here is the failure
   // T537 exists to catch, and it caught it.
   'loop-contract': 'packages/loop-contract/tests',
+  // EPIC-033 T337c — the shared Room pattern. Mapped in the same change that
+  // registers the project, because EPIC-030 registered loop-contract without
+  // mapping it here and T537 caught exactly that.
+  'room-contract': 'packages/room-contract/tests',
   'agent-adapters': 'agent-adapters',
   // EPIC-028 T539 — registered only once T646a gave it tests. `T537` correctly
   // fails on a project that collects nothing, and registering it earlier would

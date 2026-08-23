@@ -82,11 +82,11 @@ as a warning; one Epic later it decides how the next two are written.**
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T337a Create the worktree `git worktree add .claude/worktrees/epic-033-requirement-room epic/033-requirement-room` and work there — discharges the plan's one failing Constitution gate
-- [ ] T337b [P] Scaffold `packages/room-contract/package.json` and `packages/room-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
-- [ ] T337c [P] Register a `room-contract` project in `vitest.workspace.ts` without `passWithNoTests` (`TS-005`)
-- [ ] T337d [P] Add `packages/room-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
-- [ ] T337e Confirm `supertest` is present from `EPIC-030`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
+- [X] T337a Create the worktree `git worktree add .claude/worktrees/epic-033-requirement-room epic/033-requirement-room` and work there — discharges the plan's one failing Constitution gate
+- [X] T337b [P] Scaffold `packages/room-contract/package.json` and `packages/room-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
+- [X] T337c [P] Register a `room-contract` project in `vitest.workspace.ts` without `passWithNoTests` (`TS-005`)
+- [X] T337d [P] Add `packages/room-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
+- [X] T337e Confirm `supertest` is present from `EPIC-030`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
 
 ---
 
@@ -98,13 +98,13 @@ as a warning; one Epic later it decides how the next two are written.**
 
 ### The shared Room contract
 
-- [ ] T337f [P] Write failing unit tests for the region slots in `packages/room-contract/tests/regions.spec.ts` — asserts `RoomShellProps` has **exactly six required members** and **no `children`**, so omitting a region is a type error (`FR-RQR-070`, `UX-0030`)
-- [ ] T337g Implement `RoomShellProps` in `packages/room-contract/src/regions.ts` (unit test: T337f) — `FR-RQR-071`, `UX-0035`. The region vocabulary is the prop names, defined once for three Epics
-- [ ] T337h [P] Write failing unit tests for the epistemic label in `packages/room-contract/tests/epistemic.spec.ts` — asserts `Epistemic` has four members, is **required**, has no default and no optional variant, so an unlabelled element is not constructible (`FR-RQR-011`, `UX-0031`)
-- [ ] T337i Implement `Epistemic` and `Labelled<T>` in `packages/room-contract/src/epistemic.ts` (unit test: T337h) — `R-033-4`
-- [ ] T337j [P] Write failing unit tests for the object reference in `packages/room-contract/tests/object-ref.spec.ts` — asserts `workflowType` is an **open string, not a closed union of three Rooms**, so the shared contract does not know its consumers (`R-033-3`)
-- [ ] T337k Implement `RoomObjectRef` in `packages/room-contract/src/object-ref.ts` (unit test: T337j)
-- [ ] T337l Implement the export barrel `packages/room-contract/src/index.ts` (unit test: T337f)
+- [X] T337f [P] Write failing unit tests for the region slots in `packages/room-contract/tests/regions.spec.ts` — asserts `RoomShellProps` has **exactly six required members** and **no `children`**, so omitting a region is a type error (`FR-RQR-070`, `UX-0030`)
+- [X] T337g Implement `RoomShellProps` in `packages/room-contract/src/regions.ts` (unit test: T337f) — `FR-RQR-071`, `UX-0035`. The region vocabulary is the prop names, defined once for three Epics
+- [X] T337h [P] Write failing unit tests for the epistemic label in `packages/room-contract/tests/epistemic.spec.ts` — asserts `Epistemic` has four members, is **required**, has no default and no optional variant, so an unlabelled element is not constructible (`FR-RQR-011`, `UX-0031`)
+- [X] T337i Implement `Epistemic` and `Labelled<T>` in `packages/room-contract/src/epistemic.ts` (unit test: T337h) — `R-033-4`
+- [X] T337j [P] Write failing unit tests for the object reference in `packages/room-contract/tests/object-ref.spec.ts` — asserts `workflowType` is an **open string, not a closed union of three Rooms**, so the shared contract does not know its consumers (`R-033-3`)
+- [X] T337k Implement `RoomObjectRef` in `packages/room-contract/src/object-ref.ts` (unit test: T337j)
+- [X] T337l Implement the export barrel `packages/room-contract/src/index.ts` (unit test: T337f)
 
 ### The shared Room shell — the user-interface half
 
