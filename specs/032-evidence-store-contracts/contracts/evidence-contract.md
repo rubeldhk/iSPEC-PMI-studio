@@ -50,6 +50,13 @@ recorded so a future standard predicate can replace ours without the gate changi
 
 ## 2. The Evidence Contract — ours entirely
 
+> **Two senses of "contract", kept apart.** This *package* is an **interface contract**, named for
+> the `engine-contract` family. `EvidenceContract` below is a **domain entity** — the
+> required-evidence set. Both keep their names: `BR-0142` calls it an Evidence Contract, and under
+> Constitution II the SRS wins, so renaming the type would put the code out of step with the
+> requirement that names it. Write *the `evidence-contract` package* or *an Evidence Contract*,
+> never bare *"the evidence contract"* *(analysis finding `I1`, 2026-08-22)*.
+
 ```ts
 export interface EvidenceContract {
   readonly workClass: string;

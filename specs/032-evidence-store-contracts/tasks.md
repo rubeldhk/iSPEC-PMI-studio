@@ -25,7 +25,8 @@ conformance check is `T856p`, written failing-first, and `T856q` makes the defin
 
 ## ⚠ Task identifier scheme — read before adding a task
 
-**81 tasks on the block `T855`–`T864`, one base identifier per phase, suffixed within it.**
+**83 tasks on the block `T855`–`T864`, one base identifier per phase, suffixed within it.** (81
+originally; `T857h` and `T859k` added 2026-08-22 to close analysis findings `C1` and `C2`.)
 `T855a`–`T855e` is Phase 1, `T856a`–`T856s` is Phase 2, and so on. The governance regex is
 `T\d{3}[a-z]?\b`, so every one of these is a distinct, valid identifier.
 
@@ -49,6 +50,17 @@ as **FAIL** and `T855a` is its discharge. Label the session `EPIC-032 Evidence S
 - **[P]**: can run in parallel (different files, no dependencies)
 - **[Story]**: US1–US5
 - Exact file paths in every description
+
+## Two senses of "contract" — both correct, kept apart
+
+`packages/evidence-contract` is an **interface contract** package, named for the
+`engine-contract`/`agent-contract` family. `EvidenceContract` is a **domain entity**: the
+required-evidence set `BR-0142` names. They are different things and both keep their names —
+**Constitution II, the SRS wins**, and `BR-0142` calls it an Evidence Contract.
+
+So in this Epic, write **the `evidence-contract` package** or **an Evidence Contract**, never bare
+*"the evidence contract"*. *(Analysis finding `I1`, 2026-08-22 — the first recommendation was to
+rename the entity, which would have put the code out of step with the requirement that names it.)*
 
 ## Path Conventions
 
@@ -126,6 +138,7 @@ as **FAIL** and `T855a` is its discharge. Label the session `EPIC-032 Evidence S
 - [ ] T857e [P] [US1] Write failing unit tests for the completion gate in `backend/tests/unit/evidence-completion-gate.spec.ts` — refuses with a **non-empty** unmet list, returns a `Result` rather than throwing, and records the refusal (`FR-EVS-030`, `FR-EVS-032`, `FR-EVS-033`)
 - [ ] T857f [US1] Implement `backend/src/modules/evidence/completion.gate.ts` (unit test: T857e) — `R-032-2`'s result-not-exception rule
 - [ ] T857g [US1] Implement `POST /evidence/:workRef/complete` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `409` carrying the unmet list
+- [ ] T857h [US1] Implement the **refuse-on-unreachable** branch in `backend/src/modules/evidence/completion.gate.ts` (integration test: T862a) — `FR-EVS-035`, `R-032-5`. An unevaluated Contract is not a satisfied one. *Added 2026-08-22 to close analysis finding `C1`: the requirement had a test, a success criterion and a mutation proof, and nothing that built the behaviour*
 
 **Checkpoint**: US1 demonstrable — "done" refuses, and says what is missing
 
@@ -166,6 +179,7 @@ as **FAIL** and `T855a` is its discharge. Label the session `EPIC-032 Evidence S
 - [ ] T859h [P] [US3] Write failing unit tests for superseded-version evidence in `backend/tests/unit/evidence-superseded.spec.ts` — evidence for `v1` stays readable and is **not** evidence for `v2` (`FR-EVS-012`, `SC-EVS-007`)
 - [ ] T859i [P] [US3] Write failing integration tests for access and isolation in `backend/tests/integration/evidence-access.spec.ts` — reads honour the attested artifact's rules (`FR-EVS-015`, `BR-0062`) and never cross a workspace (`FR-EVS-016`)
 - [ ] T859j [US3] Implement the `AccessPolicy` binding to `EPIC-024` in `backend/src/modules/evidence/evidence.module.ts` (integration test: T859i) — evidence must not become a side channel around artifact access
+- [ ] T859k [US3] Implement **version-scoped item matching** in `backend/src/modules/evidence/contract.status.ts` (unit test: T859h) — `FR-EVS-012`: an attestation satisfies an item only for the artifact version it names, and evidence for a superseded version stays readable without satisfying the current one. *Added 2026-08-22 to close analysis finding `C2`*
 
 **Checkpoint**: US3 demonstrable — presence is not validity
 
@@ -180,7 +194,7 @@ as **FAIL** and `T855a` is its discharge. Label the session `EPIC-032 Evidence S
 - [ ] T860a [P] [US4] Write failing unit tests for external contribution in `backend/tests/unit/evidence-contribution.spec.ts` — the contributing tool and its version are recorded alongside ordinary provenance (`FR-EVS-041`)
 - [ ] T860b [US4] Implement contribution handling in `backend/src/modules/evidence/attestation.store.ts` (unit test: T860a) — `FR-EVS-040`, through the adapter path, **no bespoke per-tool route**
 - [ ] T860c [P] [US4] Write failing unit tests for version-less refusal in `backend/tests/unit/evidence-no-version.spec.ts` — a contribution naming no artifact version is refused, never attached to whatever is current (`FR-EVS-042`)
-- [ ] T860d [US4] Implement `POST /evidence` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `400` on a missing subject digest
+- [ ] T860d [US4] Implement `POST /evidence` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s; unit test: T860c) — `400` on a missing subject digest, `FR-EVS-042`
 - [ ] T860e [P] [US4] Write the `EPIC-015` producer integration test in `backend/tests/integration/evidence-from-qa-suite.spec.ts` — an existing `EPIC-015` validation run lands as a `test-result/v0.1` attestation and satisfies a Contract item, with **nothing re-run by this Epic** (`FR-EVS-050`, `SC-EVS-005`, `R-032-6`)
 - [ ] T860f [P] [US4] Write the no-analysis assertion in `backend/tests/architecture/evidence-no-review-engine.spec.ts` — asserts this Epic performs no scanning, linting or review analysis of its own (`FR-EVS-043`, `ADR-0022`)
 - [ ] T860g [US4] Implement `GET /evidence/rollup` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `FR-EVS-006`, `SC-EVS-008`, the `BG-08` measure computed from the store
@@ -215,7 +229,7 @@ as **FAIL** and `T855a` is its discharge. Label the session `EPIC-032 Evidence S
 - [ ] T862f [P] Verify the `R-032-7` targets — evidence write p95 < 60 ms, Contract evaluation p95 < 150 ms **at 50 items**, unmet query p95 < 100 ms, rollup p95 < 500 ms **at 10,000 items** — and record the measured figures
 - [ ] T862g [P] Confirm the gate budget composes with `EPIC-030`'s 150 ms transition and `EPIC-031`'s 120 ms decide, and record the combined measurement
 - [ ] T862h [P] Confirm attestations are never pruned by any retention path (`R-032-7`) — evidence for a superseded version must stay readable
-- [ ] T862i Run **all twelve** scenarios in [quickstart.md](./quickstart.md), enumerated 1–12 by number rather than as a catch-all, and record each result
+- [ ] T862i Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (done does not complete), **Scenario 2** (Contract up front), **Scenario 3** (no weakening in flight), **Scenario 4** (provenance), **Scenario 5** (presence is not validity), **Scenario 6** (nine kinds, one mechanism), **Scenario 7** (external tool, zero analysis), **Scenario 8** (`EPIC-015` as producer), **Scenario 9** (unreachable store refuses), **Scenario 10** (not a side channel), **Scenario 11** (empty Contract visible), **Scenario 12** (XI Tier 1). *Enumerated 2026-08-22 to close analysis finding `A1` — the prior wording instructed enumeration rather than enumerating, and `EPIC-031` had already tried that fix once*
 
 ---
 

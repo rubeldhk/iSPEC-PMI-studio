@@ -145,8 +145,8 @@ backend/tests/
     └── evidence-contract-conformance.spec.ts  # Constitution V, non-code output
 ```
 
-**Structure Decision**: the `packages/<x>-contract` + `backend/src/modules/<x>` split, now used six
-times. `storage.adapter.ts` is called out explicitly because `EPIC-031`'s analysis found the
+**Structure Decision** *(`R-032-3`)*: the `packages/<x>-contract` + `backend/src/modules/<x>` split,
+now used six times. `storage.adapter.ts` is called out explicitly because `EPIC-031`'s analysis found the
 equivalent binding missing there (`C2`) — the port existed, the adapter did not. Naming it in the
 structure is the cheapest way not to repeat that.
 
