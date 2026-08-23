@@ -55,8 +55,12 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
-      → intake, classify, reproduce, prove, repair, verify, transfer, analyse, render. All eight
+      → intake, classify, reproduce, prove, **repair**, verify, transfer, analyse, render. All eight
       owned `BR-` requirements are exercised; this is the largest owned set of the six Wave 1 Epics.
+      **Re-checked 2026-08-22** by a cross-Epic scan for the `EPIC-031` `C1` shape — an owned `BR-`
+      with requirements and no user story. `BR-0055` was exactly that, and `BR-0053` was thin. User
+      Story 7 and a fifth US2 scenario close both. The claim above was previously true of the
+      requirement list and false of the story list, which is the gap the scan exists to find.
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification
 

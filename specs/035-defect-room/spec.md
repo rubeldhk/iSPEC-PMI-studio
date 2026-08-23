@@ -171,6 +171,10 @@ pass.
    recorded and alternative evidence is required — the exception is visible, not implicit.
 4. **Given** a fix whose test passes but whose regression set fails, **When** closure is attempted,
    **Then** it is refused and the failing regression is named.
+5. **Given** a defect under investigation, **When** its reproduction is recorded, **Then**
+   reproducibility, environment, evidence and affected behaviour are all captured as data — not left
+   implicit in the test — and the evidence is readable only under the access rules of the artifact it
+   concerns (`BR-0053`, `FR-DFR-030`, `FR-DFR-033`) *(added 2026-08-22)*.
 
 ---
 
@@ -266,6 +270,34 @@ requirement and specification, and resolution evidence are retained and queryabl
 2. **Given** a set of closed defects, **When** quality analysis is requested, **Then** escape point
    and origin are aggregatable without opening each record.
 
+### User Story 7 - A confirmed defect becomes traceable repair work (Priority: P2)
+
+A defect is confirmed. It becomes implementation tasks that carry their origin with them: each links
+back to the failing behaviour and to the test that proved it, so an engineer picking one up months
+later can see what it is repairing and why that repair is owed.
+
+**Why this priority**: `BR-0055`. Confirming a defect and *fixing* it are different acts, and the
+bridge between them is where traceability is usually lost — a task created by hand from a defect
+someone read carries no link back, and `BR-0058`'s escape analytics then measures a population it
+cannot join to its causes. Added 2026-08-22 after a cross-Epic scan found `BR-0055` owned, with
+functional requirements, and exercised by **no user story** — the same shape as `EPIC-031`'s `C1`,
+found before it could reach a task list rather than after.
+
+**Independent Test**: confirm a defect, convert it, and assert the resulting tasks are `EPIC-012`
+tasks each linked to the failing behaviour and its test — and that conversion is refused before
+classification has happened.
+
+**Acceptance Scenarios**:
+
+1. **Given** a confirmed defect, **When** repair work is created, **Then** it becomes traceable
+   implementation tasks, each linked to the failing behaviour and to its test.
+2. **Given** a defect that has **not** been classified, **When** conversion is attempted, **Then** it
+   is refused — repair work must not begin before classification (`FR-DFR-052`).
+3. **Given** repair tasks created from a defect, **When** they are inspected, **Then** they are
+   `EPIC-012` tasks and **not** a Room-local task model (`FR-DFR-051`).
+4. **Given** a defect reclassified after tasks were created, **When** the record is read, **Then**
+   the tasks and the reclassification are both visible — the tasks are not silently orphaned.
+
 ### Edge Cases
 
 - **The contested behaviour has no approved baseline at all** — **Requirement Gap**, the third
@@ -290,6 +322,9 @@ requirement and specification, and resolution evidence are retained and queryabl
   *applicable regression tests*, and applicability is not bounded by the defect's own Epic.
 - **A defect is filed by an AI agent** — accepted as an origin, and triage still requires approved
   expected behaviour to be identified. An agent may report; it may not classify a defect as confirmed.
+- **A defect is reclassified after repair tasks already exist** — the tasks and the reclassification
+  are both visible; the tasks are not silently orphaned. `ADR-0016` forbids deleting a reclassified
+  record, and that applies to the work it produced *(added 2026-08-22)*.
 - **A defect's reproduction evidence contains sensitive data** — attached under the artifact's own
   access rules (`BR-0062`), never as an unrestricted attachment.
 
@@ -398,6 +433,7 @@ requirement and specification, and resolution evidence are retained and queryabl
 - **SC-DFR-009**: A person can carry a defect from report to closure **using only a keyboard**, with focus visible at every step (`BR-0193`, `EPIC-029`).
 - **SC-DFR-010**: **100%** of Requirement Gap classifications reach the Requirement Room as new intent, with the defect record retained and marked reclassified; **zero** rest in a classified state with no destination *(clarified 2026-08-22)*.
 - **SC-DFR-011**: This Room resolves as its own workflow type: **zero** transitions succeed under another Room's stages, authorities or gates *(clarified 2026-08-22)*.
+- **SC-DFR-012**: **100%** of repair tasks created from a confirmed defect link to the failing behaviour and its test; **zero** are created before classification *(added 2026-08-22)*.
 
 ## Assumptions
 
