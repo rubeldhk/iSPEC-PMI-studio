@@ -30,7 +30,7 @@ artifacts `EPIC-034` and `EPIC-035` import rather than re-derive.
 the AI seam is `EPIC-028`'s `AgentGateway`, the design system `EPIC-029`'s, the register
 `EPIC-007`'s.
 
-**Storage**: PostgreSQL via Prisma (`ADR-0003`). **5 new tables.** None duplicates `EPIC-007`'s
+**Storage**: PostgreSQL via Prisma (`ADR-0003`). **6 new tables.** None duplicates `EPIC-007`'s
 register; the baseline stores requirement **version ids**, never copies (`R-033-5`).
 
 **Testing**: Vitest 2.1.8 — `backend-unit`, `backend-integration`, `architecture`, `frontend`, plus
@@ -52,10 +52,14 @@ place; no AI may take a requirement decision, enforced by a database check const
 external-stakeholder path (`FR-RQR-004`).
 
 **Scale/Scope**: **38 functional requirements across eight groups**, 9 success criteria, 6 user
-stories, 5 new tables, 8 HTTP routes, 5 ports, 1 shared contract package, 1 Room surface.
+stories, **6 new tables**, 8 HTTP routes, 5 ports, 1 shared contract package, 1 Room surface.
 
-> **Counted from the artifacts, not asserted.** `EPIC-030`'s analysis found this figure wrong in its
-> own plan (`I1`) and `EPIC-031`'s first draft reproduced it. Every number is extracted.
+> **Counted from the artifacts.** `EPIC-030`'s analysis found this figure wrong in its own plan
+> (`I1`) and `EPIC-031`'s first draft reproduced it. **This plan reproduced it a third time**: the
+> table count read 5 against a data model defining 6, in the very paragraph claiming the figures were
+> extracted. Corrected 2026-08-22 (analysis finding `I1`). The lesson recorded rather than the
+> number quietly changed: a note claiming every figure was counted must be true of every figure, or
+> it makes the wrong ones harder to spot.
 
 ## Constitution Check
 

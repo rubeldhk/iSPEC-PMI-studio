@@ -23,9 +23,15 @@ tests as optional; **the constitution overrides it**.
 
 **Organization**: grouped by the six user stories of [spec.md](./spec.md).
 
+**Requirement citation convention** *(stated here so analysis does not rediscover it)*: a requirement
+is cited on the task that **tests** it; the implementing task cites the **test** by identifier. The
+trace is therefore two-hop — `FR-RQR-050` → `T338e` (test) → `T338f` (implementation, via
+`unit test: T338e`). This is deliberate and consistent across every Wave 1 Epic. `DOR-08` reads the
+second hop; a reader tracing a requirement should follow both.
+
 ## ⚠ Task identifiers — five bases, two phases each
 
-**99 tasks on five base identifiers**, because that is what the corpus has left.
+**100 tasks on five base identifiers**, because that is what the corpus has left.
 
 | Base | Phases |
 |---|---|
@@ -33,7 +39,7 @@ tests as optional; **the constitution overrides it**.
 | `T338` | Phase 3 US1 (`a`–`l`) · Phase 4 US2 (`m`–`t`) |
 | `T339` | Phase 5 US3 (`a`–`h`) · Phase 6 US4 (`m`–`s`) |
 | `T403` | Phase 7 US5 (`a`–`f`) · Phase 8 US6 (`m`–`w`) |
-| `T405` | Phase N Polish (`a`–`j`) · Phase Z Closure (`m`–`x`) |
+| `T405` | Phase N Polish (`a`–`j`) · Phase Z Closure (`m`–`y`) |
 
 **Identifiers no longer sort into execution order.** They cannot: the thirteen free prefixes are
 `337–339`, `403`, `405–406`, `864`, `994–999` — scattered, not contiguous. Execution order comes
@@ -252,7 +258,7 @@ as a warning; one Epic later it decides how the next two are written.**
 - [ ] T405g [P] Record the 500-requirement set-size limit and the observed degradation above it, so it is a stated limit rather than a surprise (`R-033-7`)
 - [ ] T405h [P] Confirm no second requirement store exists anywhere in this Epic's output (`FR-RQR-002`, `D-33`) — the boundary most likely to be crossed, because a local cache of requirement text would feel convenient daily
 - [ ] T405i [P] Confirm `Execute` and `Verify` render as **omitted** in the loop-progress projection, not absent (`FR-GEL-008`, `R-033-6`)
-- [ ] T405j Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (intent to baseline), **2** (no in-place edit), **3** (epistemic labels), **4** (acceptance criteria), **5** (real options), **6** (no AI decision), **7** (handoff), **8** (blockers visible), **9** (regions cannot diverge), **10** (own workflow type), **11** (stakeholder told not failed), **12** (XI Tier 1), **13** (XI Tier 2 keyboard journey)
+- [ ] T405j Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (intent to baseline), **Scenario 2** (no in-place edit), **Scenario 3** (epistemic labels), **Scenario 4** (acceptance criteria), **Scenario 5** (real options), **Scenario 6** (no AI decision), **Scenario 7** (handoff), **Scenario 8** (blockers visible), **Scenario 9** (regions cannot diverge), **Scenario 10** (own workflow type), **Scenario 11** (stakeholder told not failed), **Scenario 12** (XI Tier 1), **Scenario 13** (XI Tier 2 keyboard journey). *Each written in full 2026-08-22 to close analysis finding `A1` — the abbreviated form was legible to a reader and invisible to extraction, which is the third way this fix has failed*
 
 ---
 
@@ -265,6 +271,7 @@ Ordered as the constitution's *"Quality gates in order"* states them.
 - [ ] T405o **Constitution XI Tier 2 (Epics delivering a journey)** — **APPLIES.** The intent-to-baseline journey is exercised against a **running application** and a **run-generated** transcript is committed. It MUST be a **keyboard** transcript, because `SC-RQR-008` requires the journey be completable by keyboard alone. Hand-written evidence is a constitution violation of the first order
 - [ ] T405p [P] Write the transcript conformance check in `backend/tests/architecture/requirement-room-transcript.spec.ts` — asserts the transcript exists, names the run, records keyboard-only operation, and was **generated** rather than authored
 - [ ] T405q Confirm the shared artifacts are genuinely shared — `packages/room-contract` and `frontend/src/rooms/` carry no Requirement Room vocabulary, so `EPIC-034` and `EPIC-035` import rather than fork them
+- [ ] T405y **Hand the shared Room pattern to `EPIC-034` and `EPIC-035` by name.** Record in the closing report that both MUST import `packages/room-contract` (`RoomShellProps`, `Epistemic`, `RoomObjectRef`) and `frontend/src/rooms/RoomShell.tsx`, and MUST NOT re-derive the pattern. Confirm each Epic's spec names those artifacts before its `/speckit-plan` runs. *Added 2026-08-22 to close analysis finding `C1`: `T405q` proves the artifacts are shareable; nothing told the other two Rooms to share them, and a planner finding `UX-0035` with no artifact re-derives the pattern — exactly what Phase 2 exists to prevent*
 - [ ] T405r Restate in the closing report that `BR-0004` external stakeholder access remains **`U-02`'s** — this Room's delivery does not close it (`FR-RQR-004`)
 - [ ] T405s Restate that `BR-0106` session cost limits remain **`U-11`'s** — this Room consumes `EPIC-028`'s wall-clock outcome and builds no budget mechanism
 - [ ] T405t **Hand the PMI-DOC-006 exposure to the project owner** — `FR-RQR-070`–`FR-RQR-075` rest on a `PROPOSED` document, and `R-033-3` raised the cost of the pattern later changing. If approval has not landed, say so plainly rather than closing over it

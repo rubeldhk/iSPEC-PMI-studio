@@ -10,6 +10,12 @@ Cross-artifact consistency pass before implementation. Read-only apart from this
 
 **Result: four findings, one blocking.** No CRITICAL.
 
+**Remediation applied 2026-08-22 — all four closed.** `tasks.md` gained `T405y` (the shared-pattern
+handoff, named), a stated citation convention and thirteen scenarios written in full; `plan.md`'s
+table count is corrected to six. `EPIC-034` and `EPIC-035` were additionally told the artifact's
+name on their own branches — the half of `C1` that could not be fixed from here. `DOR-09` now reads
+**zero blocking findings**; `DOR-06` still fails on the concurrent-session gate.
+
 **This Epic's analysis carries more weight than the three before it**, because `EPIC-033` decides
 the Room pattern `EPIC-034` and `EPIC-035` inherit. A defect in the shared half propagates to two
 Epics rather than staying local — and the blocking finding is exactly that: the shared artifact
@@ -23,18 +29,18 @@ check. **All three held**; the inverse check caught `T403u` during authoring and
 
 | ID | Category | Severity | Location(s) | Summary | Recommendation |
 |----|----------|----------|-------------|---------|----------------|
-| C1 | Coverage Gap | HIGH | `plan.md` Complexity Tracking; `tasks.md` Phase 2, T405q; `EPIC-034`/`EPIC-035` `spec.md` | **The shared artifact has no handle in the two Epics that inherit it.** `packages/room-contract` and `frontend/src/rooms/RoomShell.tsx` are produced by this Epic's Phase 2 and **must** be imported by `EPIC-034` and `EPIC-035` — that is `R-033-3`'s entire purpose and the reason Phase 2 is scheduled first. **Neither of those specs mentions `room-contract` or `RoomShell`.** Both name `EPIC-033` as a dependency in general terms, which is all they could do: this plan did not exist when they were clarified. The consequence is concrete — a planner opening `EPIC-034` finds `UX-0035` and no artifact, and re-derives the pattern, which is precisely what `UX-0035` forbids and what Phase 2 exists to prevent. `T405q` asserts the artifacts *are* shareable; **nothing tells the other two Rooms to share them** | Add a task in Phase Z that records the shared-artifact handoff explicitly — naming `packages/room-contract` and `RoomShell` as required imports for `EPIC-034` and `EPIC-035` — and raise it at those Epics' `/speckit-plan` runs. `T405q` proves shareability; this makes the sharing an instruction rather than an availability |
-| I1 | Inconsistency | MEDIUM | `plan.md` Technical Context (Storage) and Scale/Scope | **Plan states 5 new tables in two places; there are 6.** [data-model.md](./data-model.md) defines `RequirementCandidate`, `Clarification`, `RequirementDecision`, `Baseline`, `BaselineException` and `Handoff` — `AiAnalysis` (§3) is embedded, not a table — and `T337u` lists all six. **This is the third occurrence of this defect class**: `EPIC-030` `I1` (16 versus 30 requirements, 4 versus 3 tables) and `EPIC-031`'s first draft (30 versus 32). Sharper here, because this plan carries an explicit *"counted from the artifacts, not asserted"* note — which was true of five figures and false of this one | Correct both occurrences to **6 new tables**. The counting note should either be true of every figure it covers or not be made |
-| U1 | Underspecification | LOW | `tasks.md`, 27 requirements | **27 requirements are cited on the failing-test task and never on the implementation.** `FR-RQR-050` cites `T338e` (the test); `T338f` implements it and cites only `unit test: T338e`. The trace is valid but **two-hop**, and the convention is written down nowhere — so every analyze run rediscovers it and has to decide whether it is a gap. It is not; it is a house style used consistently across all four tasked Epics | State the convention once, near the top of `tasks.md`: *a requirement is cited on the task that tests it; the implementing task cites the test.* One sentence retires a recurring false positive |
-| A1 | Ambiguity | LOW | `quickstart.md` (13 scenarios); `tasks.md` T405j | **The scenario-enumeration fix has now failed three ways.** `EPIC-031` closed this finding by rewording to *"enumerated by number"* — an instruction, not an enumeration. `EPIC-032` closed it by listing all twelve in full. `EPIC-033` listed them but **abbreviated after the first** — `**Scenario 1** … **2** … **3**` — so extraction finds 4 of 13 and the enumeration is only legible to a human reader | Write `Scenario N` in full for each of the thirteen. Recorded as a three-variant failure so the fourth attempt is not another abbreviation |
+| C1 ✅ | Coverage Gap | HIGH | `plan.md` Complexity Tracking; `tasks.md` Phase 2, T405q; `EPIC-034`/`EPIC-035` `spec.md` | **The shared artifact has no handle in the two Epics that inherit it.** `packages/room-contract` and `frontend/src/rooms/RoomShell.tsx` are produced by this Epic's Phase 2 and **must** be imported by `EPIC-034` and `EPIC-035` — that is `R-033-3`'s entire purpose and the reason Phase 2 is scheduled first. **Neither of those specs mentions `room-contract` or `RoomShell`.** Both name `EPIC-033` as a dependency in general terms, which is all they could do: this plan did not exist when they were clarified. The consequence is concrete — a planner opening `EPIC-034` finds `UX-0035` and no artifact, and re-derives the pattern, which is precisely what `UX-0035` forbids and what Phase 2 exists to prevent. `T405q` asserts the artifacts *are* shareable; **nothing tells the other two Rooms to share them** | Add a task in Phase Z that records the shared-artifact handoff explicitly — naming `packages/room-contract` and `RoomShell` as required imports for `EPIC-034` and `EPIC-035` — and raise it at those Epics' `/speckit-plan` runs. `T405q` proves shareability; this makes the sharing an instruction rather than an availability |
+| I1 ✅ | Inconsistency | MEDIUM | `plan.md` Technical Context (Storage) and Scale/Scope | **Plan states 5 new tables in two places; there are 6.** [data-model.md](./data-model.md) defines `RequirementCandidate`, `Clarification`, `RequirementDecision`, `Baseline`, `BaselineException` and `Handoff` — `AiAnalysis` (§3) is embedded, not a table — and `T337u` lists all six. **This is the third occurrence of this defect class**: `EPIC-030` `I1` (16 versus 30 requirements, 4 versus 3 tables) and `EPIC-031`'s first draft (30 versus 32). Sharper here, because this plan carries an explicit *"counted from the artifacts, not asserted"* note — which was true of five figures and false of this one | Correct both occurrences to **6 new tables**. The counting note should either be true of every figure it covers or not be made |
+| U1 ✅ | Underspecification | LOW | `tasks.md`, 27 requirements | **27 requirements are cited on the failing-test task and never on the implementation.** `FR-RQR-050` cites `T338e` (the test); `T338f` implements it and cites only `unit test: T338e`. The trace is valid but **two-hop**, and the convention is written down nowhere — so every analyze run rediscovers it and has to decide whether it is a gap. It is not; it is a house style used consistently across all four tasked Epics | State the convention once, near the top of `tasks.md`: *a requirement is cited on the task that tests it; the implementing task cites the test.* One sentence retires a recurring false positive |
+| A1 ✅ | Ambiguity | LOW | `quickstart.md` (13 scenarios); `tasks.md` T405j | **The scenario-enumeration fix has now failed three ways.** `EPIC-031` closed this finding by rewording to *"enumerated by number"* — an instruction, not an enumeration. `EPIC-032` closed it by listing all twelve in full. `EPIC-033` listed them but **abbreviated after the first** — `**Scenario 1** … **2** … **3**` — so extraction finds 4 of 13 and the enumeration is only legible to a human reader | Write `Scenario N` in full for each of the thirteen. Recorded as a three-variant failure so the fourth attempt is not another abbreviation |
 
-**Blocking**: `C1` (HIGH). `DOR-09` treats HIGH as blocking, so this record holds the Epic out of
-`Ready` until it is resolved. `DOR-06` also still fails on the plan's recorded concurrent-session
-gate.
+**Blocking**: `C1` (HIGH) — **resolved 2026-08-22**, see Remediation status. `DOR-09` ignores rows
+marked ✅, so this record no longer holds the Epic out of `Ready`. `DOR-06` still does.
 
 ## Coverage summary
 
-Computed by identifier extraction across all 99 task lines and all five design documents.
+Computed by identifier extraction across all 100 task lines and all five design documents, after
+the 2026-08-22 remediation.
 
 | Requirement group | Defined | Cited | Has an implementation task |
 |---|---|---|---|
@@ -52,7 +58,7 @@ Computed by identifier extraction across all 99 task lines and all five design d
 **Citation coverage 100%. Implementation coverage 100%.** Both axes clean — the first time in the
 Wave, and a direct result of the three earlier findings being applied forward.
 
-**Unmapped tasks: none.** All 99 map to a requirement, success criterion, constitution obligation,
+**Unmapped tasks: none.** All 100 map to a requirement, success criterion, constitution obligation,
 `TS-00x` standard, or named handover (`T405q`–`T405t`, `T405w`).
 
 **Failing-test tasks with no implementation partner: 2**, both legitimate — `T337w` (constraints
@@ -81,13 +87,13 @@ Project Structure has a task.
 | Metric | Value |
 |---|---|
 | Total requirements (FR + SC) | 47 |
-| Total tasks | 99 |
+| Total tasks | 100 |
 | Citation coverage | 100% (38/38 FR, 9/9 SC) |
 | Implementation coverage | 100% (38/38 FR, 9/9 SC) |
 | Ambiguity findings | 1 |
 | Duplication findings | 0 |
 | **Critical issues** | **0** |
-| **Blocking issues (CRITICAL + HIGH)** | **1** |
+| **Blocking issues (CRITICAL + HIGH)** | **0** after remediation (was 1) |
 
 ## Remediation status
 
@@ -95,10 +101,12 @@ Recorded separately from the findings table so `DOR-09` reads open findings, not
 
 | ID | State | Action taken |
 |----|-------|--------------|
-| C1 | Open | Not applied — `/speckit-analyze` is read-only apart from this record |
-| I1 | Open | Not applied |
-| U1 | Open | Not applied |
-| A1 | Open | Not applied |
+| C1 ✅ | Closed | **Both halves.** `T405y` added here — the handoff as an instruction, naming `packages/room-contract` and `RoomShell` as required imports. And `EPIC-034`/`EPIC-035` each gained an Assumption naming those artifacts **on their own branches**, which is the half that could not be fixed from this Epic |
+| I1 ✅ | Closed | `plan.md` corrected to **6 new tables** in both places, with the third-recurrence recorded rather than the number quietly changed |
+| U1 ✅ | Closed | The two-hop citation convention is now stated once near the top of `tasks.md` |
+| A1 ✅ | Closed | `T405j` writes `Scenario N` in full, thirteen times. Verified by extraction: 13 of 13 |
+
+**Applied 2026-08-22 on explicit approval.** `/speckit-analyze` itself wrote only this record.
 
 ## Notes
 
