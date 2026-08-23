@@ -108,10 +108,10 @@ as a warning; one Epic later it decides how the next two are written.**
 
 ### The shared Room shell — the user-interface half
 
-- [ ] T337m [P] Write failing component tests for `RoomShell` in `frontend/src/rooms/RoomShell.test.tsx` — all six regions render; the `UX-0041` breakpoints apply; state, decision and evidence remain visible at **360px** (`UX-0040`, `UX-0042`, `FR-RQR-075`)
-- [ ] T337n Implement `frontend/src/rooms/RoomShell.tsx` (unit test: T337m) — owns the breakpoints and the 360px floor so no Room sets its own
-- [ ] T337o [P] Write failing component tests for the epistemic token mapping in `frontend/src/rooms/regions/Epistemic.test.tsx` — the visual treatment is **derived from** the discriminant, so label and styling cannot disagree (`FR-RQR-072`, `UX-0031`)
-- [ ] T337p Implement the region primitives and epistemic token mapping in `frontend/src/rooms/regions/` (unit test: T337o) — styled against `EPIC-029`'s system
+- [X] T337m [P] Write failing component tests for `RoomShell` in `frontend/src/rooms/RoomShell.test.tsx` — all six regions render; the `UX-0041` breakpoints apply; state, decision and evidence remain visible at **360px** (`UX-0040`, `UX-0042`, `FR-RQR-075`)
+- [X] T337n Implement `frontend/src/rooms/RoomShell.tsx` (unit test: T337m) — owns the breakpoints and the 360px floor so no Room sets its own
+- [X] T337o [P] Write failing component tests for the epistemic token mapping in `frontend/src/rooms/regions/Epistemic.test.tsx` — the visual treatment is **derived from** the discriminant, so label and styling cannot disagree (`FR-RQR-072`, `UX-0031`)
+- [X] T337p Implement the region primitives and epistemic token mapping in `frontend/src/rooms/regions/` (unit test: T337o) — styled against `EPIC-029`'s system
 
 ### Ports, loop instance and persistence
 
