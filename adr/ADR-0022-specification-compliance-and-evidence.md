@@ -3,7 +3,9 @@
 **Status**: Open
 **Date**: 2026-08-17
 **Deciders**: Tech lead (architecture) · project owner (open items)
-**Awaits**: PMI-DOC-004 and an owning epic for the Specification Compliance Agent
+**Awaits**: an owning epic for the Specification Compliance Agent (`U-09`)
+**Discharged**: PMI-DOC-004 — approved v2.0, 2026-08-22. `BR-0143` makes the compliance verdict
+a requirement, and `BR-0144` states that declaring completion is not evidence
 
 > Created by **EPIC-027 `T627`/`T659`** under decision `D-35`: all seventeen ADR subjects
 > named by Native §27 and Cosmos §9 are recorded now, each either decided or explicitly

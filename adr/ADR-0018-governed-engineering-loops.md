@@ -3,7 +3,8 @@
 **Status**: Open
 **Date**: 2026-08-17
 **Deciders**: Tech lead (architecture) · project owner (open items)
-**Awaits**: PMI-DOC-004 and the three Room epics, none of which exists
+**Awaits**: the three Room epics, none of which exists (`U-01`, `U-04`, `U-05`)
+**Discharged**: PMI-DOC-004 — approved v2.0, 2026-08-22. `BR-0064` makes the loop a requirement
 
 > Created by **EPIC-027 `T627`/`T659`** under decision `D-35`: all seventeen ADR subjects
 > named by Native §27 and Cosmos §9 are recorded now, each either decided or explicitly

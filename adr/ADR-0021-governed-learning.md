@@ -3,7 +3,9 @@
 **Status**: Open
 **Date**: 2026-08-17
 **Deciders**: Tech lead (architecture) · project owner (open items)
-**Awaits**: PMI-DOC-004 and a Governed Learning epic, which does not exist
+**Awaits**: a Governed Learning epic, which does not exist (`U-15`)
+**Discharged**: PMI-DOC-004 — approved v2.0, 2026-08-22. §6.12 (`BR-0114`–`BR-0118`) makes
+governed learning a requirement
 
 > Created by **EPIC-027 `T627`/`T659`** under decision `D-35`: all seventeen ADR subjects
 > named by Native §27 and Cosmos §9 are recorded now, each either decided or explicitly

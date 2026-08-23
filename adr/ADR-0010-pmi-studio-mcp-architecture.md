@@ -3,7 +3,9 @@
 **Status**: Open
 **Date**: 2026-08-17
 **Deciders**: Tech lead (architecture) · project owner (open items)
-**Awaits**: R-AI-014 (MCP least-privilege authorization model) and PMI-DOC-004
+**Awaits**: `R-AI-014` (MCP least-privilege authorization model)
+**Discharged**: PMI-DOC-004 — approved v2.0, 2026-08-22. `BR-0122` makes MCP a first-class
+transport, and `ADR-0023` places it at the adapter layer rather than the business abstraction
 
 > Created by **EPIC-027 `T627`/`T659`** under decision `D-35`: all seventeen ADR subjects
 > named by Native §27 and Cosmos §9 are recorded now, each either decided or explicitly

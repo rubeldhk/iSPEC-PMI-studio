@@ -1,6 +1,6 @@
 # PMI-DOC-004 — Business Requirement Specification & Approved Scope
 
-**Document ID**: PMI-DOC-004 · **Version**: 1.0 · **Status**: APPROVED
+**Document ID**: PMI-DOC-004 · **Version**: 1.0 · **Status**: APPROVED — **SUPERSEDED for target-product scope** by v2.0 (2026-08-22)
 **Owner**: Project Owner (Product) · **Author**: drafted with Claude, 2026-08-20
 **Depends on**: PMI-DOC-000 (structure, identifiers), PMI-DOC-001 (vision), PMI-DOC-002 (charter), PMI-DOC-003 (principles)
 **Discharges**: PMI-TASK-001 **T-101** (Complete Business Requirement Specification) and **T-106** (Approve business scope — approved by the Project Owner, 2026-08-20, in the drafting session’s batched decision round)
@@ -11,6 +11,23 @@
 > the business requirement each traces UP to, and the approved scope ruling that releases them.
 > This document supplies both, and nothing else: functional detail stays in the Epic specs,
 > which Constitution II subordinates to this document where they disagree.
+
+
+> **Superseded in part, not withdrawn.** [PMI-DOC-004 v2.0](./PMI-DOC-004_Business_Requirement_Specification_v2.0.md)
+> was approved on 2026-08-22 and supersedes this document **for target-product scope only**.
+>
+> This document remains authoritative as the **historical Phase-1 release baseline**: its §3 scope
+> ruling is what released the 19 held Epics, and it stays valid as a release record (v2.0
+> `RULE-12`). It is slice **R1** in the v2.0 release model, not an error to be corrected.
+>
+> **Every `BR-` identifier below keeps its meaning in v2.0.** Ruling `R-01`
+> ([`specs/brs-v2-reconciliation.md`](../specs/brs-v2-reconciliation.md) §2) preserved all 25, and
+> `G-BRS-02` asserts it on every commit — so citations of these identifiers elsewhere in the
+> repository remain correct as written and required no change.
+>
+> The count defect in §1 below — "24 business requirements" against the 25 listed in §6 — is
+> recorded as PMI-DOC-004A `G-36` and is **left uncorrected here on purpose**: this is an approved
+> historical record, and `G-BRS-01` now prevents the same defect in the current document.
 
 ## 1. Executive Summary
 
