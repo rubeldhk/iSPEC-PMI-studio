@@ -113,6 +113,7 @@ reachable, which inverts `RULE-03`: AI recommends, humans and policy govern.
 | `POST` | `/rooms/requirement/:id/baseline` | freeze the set (`FR-RQR-050`) |
 | `POST` | `/baselines/:version/handoff` | select as specification input (`FR-RQR-060`) |
 | `GET` | `/rooms/requirement/:id/readiness` | what is blocking (`FR-RQR-073`) |
+| `POST` | `/rooms/requirement/gap-intake` | a Requirement Gap routed from `EPIC-035` arrives as **new intent** (`EPIC-035` `FR-DFR-076`) |
 
 `403` when policy refuses the decision, carrying the `EPIC-031` decision id so the Room can render
 the refusing policy (`FR-RQR-043`, `UX-0033`). `409` on an in-place edit of a baselined requirement,

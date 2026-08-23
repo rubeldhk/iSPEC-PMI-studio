@@ -31,12 +31,12 @@ second hop; a reader tracing a requirement should follow both.
 
 ## ⚠ Task identifiers — five bases, two phases each
 
-**100 tasks on five base identifiers**, because that is what the corpus has left.
+**102 tasks on five base identifiers**, because that is what the corpus has left. *`T338u` and `T338v` were appended on 2026-08-23 to close `EPIC-035` analysis finding `C1` — the Requirement-Gap inbound route this Room is the destination for.*
 
 | Base | Phases |
 |---|---|
 | `T337` | Phase 1 Setup (`a`–`e`) · Phase 2 Foundational (`f`–`y`) |
-| `T338` | Phase 3 US1 (`a`–`l`) · Phase 4 US2 (`m`–`t`) |
+| `T338` | Phase 3 US1 (`a`–`l`, and `u`–`v` appended) · Phase 4 US2 (`m`–`t`) |
 | `T339` | Phase 5 US3 (`a`–`h`) · Phase 6 US4 (`m`–`s`) |
 | `T403` | Phase 7 US5 (`a`–`f`) · Phase 8 US6 (`m`–`w`) |
 | `T405` | Phase N Polish (`a`–`j`) · Phase Z Closure (`m`–`y`) |
@@ -143,6 +143,8 @@ as a warning; one Epic later it decides how the next two are written.**
 - [ ] T338f [US1] Implement `backend/src/modules/requirement-room/baseline.service.ts` (unit test: T338e) — the entity this Epic exists to add
 - [ ] T338g [P] [US1] Write the failing integration test for in-place edit refusal in `backend/tests/integration/baseline-immutability.spec.ts` — a baselined requirement returns `409` with the Change Request affordance, and the `setHash` is unchanged (`FR-RQR-051`, `RULE-02`, `SC-RQR-001`)
 - [ ] T338h [US1] Implement in-place edit refusal and Change Request handoff in `backend/src/modules/requirement-room/baseline.service.ts` (integration test: T338g) — `BR-0042`, the seam `EPIC-034` receives
+- [ ] T338u [P] [US1] Write the failing integration test for **Requirement-Gap intake** in `backend/tests/integration/requirement-room-gap-intake.spec.ts` — an item classified as a Requirement Gap by `EPIC-035` arrives as **new intent**, becomes a candidate carrying its reproduction context and evidence **by reference**, and its Defect Room origin is visible from the candidate. A gap that cannot be admitted is **refused**, never silently dropped (`EPIC-035` `FR-DFR-076`, `SC-DFR-010`)
+- [ ] T338v [US1] Implement `POST /rooms/requirement/gap-intake` in `backend/src/modules/requirement-room/intake.service.ts` and the controller (integration test: T338u) — the inbound half of `EPIC-035`'s third classification outcome. *Added 2026-08-23 to close `EPIC-035` analysis finding `C1`: `FR-DFR-076` was written by a clarification **after** this Epic was planned, so the destination for a routed Requirement Gap had never been told it was one. `EPIC-035`'s Exit Criterion 5 cannot hold until this task lands, and its `T997d` checks for it at Phase 1.* **Identifiers appended past the phase's `a`–`l` range**, per this file's own note that identifiers no longer sort into execution order
 - [ ] T338i [P] [US1] Write failing unit tests for supersession in `backend/tests/unit/requirement-room-supersede.spec.ts` — a superseded baseline stays readable and names what replaced it (`FR-RQR-052`)
 - [ ] T338j [P] [US1] Write failing unit tests for concurrent overlapping approval in `backend/tests/unit/requirement-room-concurrent.spec.ts` — a conflict, **never a merge** (`FR-RQR-054`); and a revised source document after baseline enters as **new intent**, leaving the baseline unmoved (`FR-RQR-055`)
 - [ ] T338k [US1] Implement supersession, conflict detection and Evidence Contract satisfaction in `backend/src/modules/requirement-room/baseline.service.ts` (unit tests: T338i, T338j) — `FR-RQR-053` gates approval on `EPIC-032`
