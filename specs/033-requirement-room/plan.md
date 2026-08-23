@@ -79,7 +79,7 @@ stories, **6 new tables**, 8 HTTP routes, 5 ports, 1 shared contract package, 1 
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | **PASS** — nine questions across five Epics in one questionnaire; this run paused for nothing |
 | XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph, not a hand-assembled one; a mocked collaborator does not satisfy this. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application is planned as closure evidence. An Epic with no user-facing capability records that, rather than omitting the row | **PASS** — Tier 1 planned (quickstart 12). **Tier 2 applies in full** (quickstart 13), and the transcript must be a **keyboard** transcript because `SC-RQR-008` requires the journey be completable by keyboard alone |
 | — | Repository was synced from GitHub before this work started | **PASS** — `git fetch --all` this session; `main` level with `origin/main` |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | **FAIL** — see Complexity Tracking |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | **PASS** — **discharged 2026-08-23**. Implementation runs in the dedicated worktree `.claude/worktrees/epic-033-requirement-room`, created this date; the primary checkout returned to `main`. Discharged by **isolation, not exclusivity** — the reading `EPIC-029` recorded on 2026-08-21 and `EPIC-030` on 2026-08-22. See Complexity Tracking |
 
 Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking below.
 
@@ -90,6 +90,16 @@ Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking belo
 changed status.** Gate V strengthened: Phase 1 moved two Room-pattern rules out of review and into
 the type system, where a test cannot forget them. Gate II's risk is unchanged and now argued in
 `R-033-9` rather than left as a footnote.
+
+**Post-discharge re-check (2026-08-23)**: the concurrent-session gate moved **FAIL → PASS**
+when the worktree `.claude/worktrees/epic-033-requirement-room` was created and the primary checkout returned to
+`main`. **It is the only status that changed.** `DOR-06` reads the leading word of each status
+cell and now finds no `FAIL`, so this plan no longer holds the Epic out of `Ready`.
+
+The gate was never asserted to pass. It was **discharged**, and the difference matters: this
+checkout still shows 10+ `claude.exe` processes and exclusivity is still unverifiable. What
+changed is that this Epic's implementation no longer shares a working tree with anything else —
+which is what the rule protects, and the only part of it this session could establish.
 
 ## Project Structure
 
@@ -167,7 +177,7 @@ per-Room backend module and page. `RequirementRoom.tsx` is a **new page beside t
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| **Constitution gate: "No other Claude session is active on this checkout" — FAIL** | Planning writes no application code; the isolation rule binds implementation. 10+ `claude.exe` processes, exclusivity unverifiable | **Discharge before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-033-requirement-room`. `EPIC-030` proved the step — the gate then moves FAIL → PASS and `DOR-06` clears |
+| **Constitution gate: "No other Claude session is active on this checkout" — was FAIL, ✅ discharged 2026-08-23** | Planning writes no application code; the isolation rule binds implementation. 10+ `claude.exe` processes, exclusivity unverifiable | **Discharge before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-033-requirement-room`. `EPIC-030` proved the step — the gate then moves FAIL → PASS and `DOR-06` clears |
 | **A seventh workspace package, and it is shared across three Epics** | `packages/room-contract` is imported by `EPIC-033`, `EPIC-034` and `EPIC-035` | Putting the Room pattern in this Epic's backend module was rejected: the other two Rooms would import from a Room, which is exactly the collapse `ADR-0018` decided against. A shared package is the only place three peers can depend on without depending on each other |
 | **This Epic sets patterns two later Epics inherit** | `RoomShell`'s six props and the epistemic discriminant are decided here and imported there | Deferring the pattern until all three Rooms are specified was rejected: `EPIC-034` and `EPIC-035` are already clarified and reference `UX-0035`, so a pattern decided later would be a pattern two Epics had already planned against. **The cost is that changing it later touches three Epics** — which is why `R-033-9` argues for discharging the PMI-DOC-006 approval before `EPIC-034` plans |
 | **Proceeding on a `PROPOSED` SRS document** | `FR-RQR-070`–`075` cite PMI-DOC-006, status `PROPOSED — REQUIRES PROJECT OWNER APPROVAL`; `BR-0191` is only a *SHOULD* | Waiting was rejected — it blocks Wave 1's largest Epic on an unscheduled act. The exposure is bounded and stated: `R-033-3` is reversible at the cost of one file *until* three Rooms compose it, which is the argument for approving PMI-DOC-006 before `EPIC-034` plans rather than after |
