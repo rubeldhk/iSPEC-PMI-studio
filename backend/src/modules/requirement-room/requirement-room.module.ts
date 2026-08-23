@@ -36,6 +36,7 @@ import { AnalysisService } from './analysis.service.js';
 import { BaselineService } from './baseline.service.js';
 import { ClarificationService } from './clarification.service.js';
 import { DecisionService } from './decision.service.js';
+import { HandoffService } from './handoff.service.js';
 import { OptionsService } from './options.service.js';
 import { IntakeService } from './intake.service.js';
 import { EpicSevenRequirementRegister } from './register.adapter.js';
@@ -132,6 +133,11 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         new DecisionService(store, undefined),
     },
     {
+      provide: HandoffService,
+      inject: [REQUIREMENT_ROOM_STORE],
+      useFactory: (store: RequirementRoomStore): HandoffService => new HandoffService(store),
+    },
+    {
       provide: RequirementRoomService,
       inject: [
         IntakeService,
@@ -140,6 +146,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         ClarificationService,
         OptionsService,
         DecisionService,
+        HandoffService,
         EDIT_VETO_REGISTERED,
         REQUIREMENT_ROOM_STORE,
       ],
@@ -150,6 +157,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         clarifications: ClarificationService,
         options: OptionsService,
         decisions: DecisionService,
+        handoffs: HandoffService,
         _veto: true,
         store: RequirementRoomStore,
       ): RequirementRoomService =>
@@ -163,6 +171,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
           clarifications,
           options,
           decisions,
+          handoffs,
           store,
           undefined,
         ),
@@ -176,6 +185,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
     ClarificationService,
     OptionsService,
     DecisionService,
+    HandoffService,
     REQUIREMENT_ROOM_STORE,
   ],
 })

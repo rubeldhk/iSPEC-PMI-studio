@@ -27,6 +27,7 @@ import type {
 } from './baseline.service.js';
 import type { AskedQuestion, ClarificationService } from './clarification.service.js';
 import type { DecisionService } from './decision.service.js';
+import type { HandoffService } from './handoff.service.js';
 import type { OptionsService, PresentedOption, ProposedOption } from './options.service.js';
 import { projectReadiness } from './readiness.projection.js';
 import type { BaselineReadiness, EvidenceStatus } from './readiness.projection.js';
@@ -37,7 +38,12 @@ import type {
   IntakeCommand,
   IntakeService,
 } from './intake.service.js';
-import type { CandidateRow, ClarificationRow, DecisionRow } from './requirement-room.store.js';
+import type {
+  CandidateRow,
+  ClarificationRow,
+  DecisionRow,
+  HandoffRow,
+} from './requirement-room.store.js';
 import type { ActorRef } from '@pmi/loop-contract';
 import type { Labelled } from '@pmi/room-contract';
 
@@ -71,6 +77,16 @@ export interface DecideRequest {
   readonly rationale: string;
 }
 
+/** `POST /baselines/:version/handoff`. */
+export interface HandoffRequest {
+  readonly workspaceId: string;
+  /** `(projectId, version)` is the baseline's key; a version alone is ambiguous. */
+  readonly projectId: string;
+  /** Opaque — this Room does not parse it (`FR-RQR-062`). */
+  readonly specificationWorkflowRef: string;
+  readonly selectedBy: string;
+}
+
 /** `GET /rooms/requirement/:id/readiness`. */
 export interface ReadinessQuery {
   readonly workspaceId: string;
@@ -101,6 +117,7 @@ export class RequirementRoomService {
     private readonly clarificationService: ClarificationService,
     private readonly optionsService: OptionsService,
     private readonly decisionService: DecisionService,
+    private readonly handoffService: HandoffService,
     private readonly store: RequirementRoomStore,
     /** Absent ⇒ readiness reports the Contract as unevaluated, which blocks. */
     private readonly evidence?: EvidenceContractSource | undefined,
@@ -253,9 +270,32 @@ export class RequirementRoomService {
     return this.baselines.approve(input);
   }
 
-  /** FR-RQR-060 — select a baselined set as specification input. Lands at T403b. */
-  handoff(_version: string): Promise<unknown> {
-    throw new NotYetImplementedError('handoff', 'T403b');
+  /**
+   * T403f — `FR-RQR-060`, `FR-RQR-061`. Select a baselined set as input to a
+   * specification workflow.
+   *
+   * The route addresses the baseline by **version**, which is the thing
+   * `FR-RQR-061` requires be recorded. `projectId` comes from the body because
+   * `(projectId, version)` is the baseline's key and a version alone would
+   * resolve to another project's set.
+   */
+  async handoff(version: string, input: HandoffRequest): Promise<HandoffRow> {
+    const baselineVersion = Number.parseInt(version, 10);
+    if (!Number.isInteger(baselineVersion) || baselineVersion < 1) {
+      throw new ValidationFailedError(
+        `"${version}" is not a baseline version — versions are whole numbers from 1`,
+      );
+    }
+    if (!input?.workspaceId || !input.projectId) {
+      throw new ValidationFailedError('a handoff requires: workspaceId, projectId');
+    }
+    return this.handoffService.select({
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+      baselineVersion,
+      specificationWorkflowRef: input.specificationWorkflowRef,
+      selectedBy: input.selectedBy,
+    });
   }
 
   /**

@@ -216,12 +216,12 @@ as a warning; one Epic later it decides how the next two are written.**
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 7
 
-- [ ] T403a [P] [US5] Write failing unit tests for handoff selection in `backend/tests/unit/requirement-room-handoff.spec.ts` — approved baselines are selectable inputs to one or more specification workflows (`FR-RQR-060`)
-- [ ] T403b [US5] Implement `backend/src/modules/requirement-room/handoff.service.ts` (unit test: T403a)
-- [ ] T403c [P] [US5] Write failing unit tests for version recording in `backend/tests/unit/requirement-room-handoff-version.spec.ts` — the specification records the baseline **version**, not the baseline generally (`FR-RQR-061`)
-- [ ] T403d [US5] Implement version recording in `backend/src/modules/requirement-room/handoff.service.ts` (unit test: T403c)
-- [ ] T403e [P] [US5] Write the failing architecture test for engine-agnosticism in `backend/tests/architecture/handoff-engine-agnostic.spec.ts` — nothing in the handoff names Spec Kit or any specification engine (`FR-RQR-062`)
-- [ ] T403f [US5] Implement `POST /baselines/:version/handoff` in the controller (integration test: T337x)
+- [X] T403a [P] [US5] Write failing unit tests for handoff selection in `backend/tests/unit/requirement-room-handoff.spec.ts` — approved baselines are selectable inputs to one or more specification workflows (`FR-RQR-060`)
+- [X] T403b [US5] Implement `backend/src/modules/requirement-room/handoff.service.ts` (unit test: T403a)
+- [X] T403c [P] [US5] Write failing unit tests for version recording in `backend/tests/unit/requirement-room-handoff-version.spec.ts` — the specification records the baseline **version**, not the baseline generally (`FR-RQR-061`)
+- [X] T403d [US5] Implement version recording in `backend/src/modules/requirement-room/handoff.service.ts` (unit test: T403c)
+- [X] T403e [P] [US5] Write the failing architecture test for engine-agnosticism in `backend/tests/architecture/handoff-engine-agnostic.spec.ts` — nothing in the handoff names Spec Kit or any specification engine (`FR-RQR-062`)
+- [X] T403f [US5] Implement `POST /baselines/:version/handoff` in the controller (integration test: T337x)
 
 **Checkpoint**: US5 demonstrable — the chain from intent to specification is closed
 

@@ -175,6 +175,25 @@ export interface BaselineExceptionRow {
 }
 
 /**
+ * `handoffs`. Data-model §7.
+ *
+ * `specificationWorkflowRef` is opaque and **engine-agnostic** (`FR-RQR-062`):
+ * a foreign key to one engine's artifact would make a baseline that engine's
+ * thing, and `BR-0027` says a baselined set is selectable by *one or more*
+ * specification workflows — plural, and unnamed.
+ */
+export interface HandoffRow {
+  id: string;
+  workspaceId: string;
+  baselineId: string;
+  /** `FR-RQR-061` — the VERSION selected, not the baseline generally. */
+  baselineVersion: number;
+  specificationWorkflowRef: string;
+  selectedBy: string;
+  selectedAt: Date;
+}
+
+/**
  * The persistence port.
  *
  * **There is no `updateBaseline` and no `deleteBaseline`.** The only mutation a
@@ -234,6 +253,19 @@ export interface RequirementRoomStore {
   createDecision(row: DecisionRow): Promise<DecisionRow>;
   listDecisions(workspaceId: string, roomObjectId: string): Promise<DecisionRow[]>;
 
+  /**
+   * `T403b`. No update and no delete: a handoff records that a specification
+   * derived from a frozen set, and that either happened or it did not.
+   */
+  createHandoff(row: HandoffRow): Promise<HandoffRow>;
+  /** `SC-RQR-006` forwards. */
+  listHandoffsForBaseline(workspaceId: string, baselineId: string): Promise<HandoffRow[]>;
+  /** `SC-RQR-006` backwards. */
+  listHandoffsForWorkflow(
+    workspaceId: string,
+    specificationWorkflowRef: string,
+  ): Promise<HandoffRow[]>;
+
   createBaselineExceptions(rows: readonly BaselineExceptionRow[]): Promise<BaselineExceptionRow[]>;
   /** `FR-RQR-033` — one lookup, by baseline. Never per requirement. */
   listBaselineExceptions(workspaceId: string, baselineId: string): Promise<BaselineExceptionRow[]>;
@@ -251,6 +283,8 @@ export class InMemoryRequirementRoomStore implements RequirementRoomStore {
   private readonly exceptionOrder: string[] = [];
   private readonly decisions = new Map<string, DecisionRow>();
   private readonly decisionOrder: string[] = [];
+  private readonly handoffs = new Map<string, HandoffRow>();
+  private readonly handoffOrder: string[] = [];
 
   async createCandidates(rows: readonly CandidateRow[]): Promise<CandidateRow[]> {
     return rows.map((row) => {
@@ -397,6 +431,37 @@ export class InMemoryRequirementRoomStore implements RequirementRoomStore {
           row !== undefined && row.workspaceId === workspaceId && row.roomObjectId === roomObjectId,
       )
       .map((row) => ({ ...row, declinedOptions: [...row.declinedOptions] }));
+  }
+
+  async createHandoff(row: HandoffRow): Promise<HandoffRow> {
+    const stored = { ...row, id: row.id || randomUUID() };
+    this.handoffs.set(stored.id, stored);
+    this.handoffOrder.push(stored.id);
+    return { ...stored };
+  }
+
+  private orderedHandoffs(match: (row: HandoffRow) => boolean): HandoffRow[] {
+    return this.handoffOrder
+      .map((id) => this.handoffs.get(id))
+      .filter((row): row is HandoffRow => row !== undefined && match(row))
+      .map((row) => ({ ...row }));
+  }
+
+  async listHandoffsForBaseline(workspaceId: string, baselineId: string): Promise<HandoffRow[]> {
+    return this.orderedHandoffs(
+      (row) => row.workspaceId === workspaceId && row.baselineId === baselineId,
+    );
+  }
+
+  async listHandoffsForWorkflow(
+    workspaceId: string,
+    specificationWorkflowRef: string,
+  ): Promise<HandoffRow[]> {
+    return this.orderedHandoffs(
+      (row) =>
+        row.workspaceId === workspaceId &&
+        row.specificationWorkflowRef === specificationWorkflowRef,
+    );
   }
 
   async createBaselineExceptions(

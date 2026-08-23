@@ -16,6 +16,7 @@ import type {
   AnalysisQuery,
   ClarificationRequest,
   DecideRequest,
+  HandoffRequest,
   OptionsRequest,
   ReadinessQuery,
 } from './requirement-room.service.js';
@@ -77,9 +78,10 @@ export class RequirementRoomController {
     return this.room.baseline(id, body);
   }
 
+  /** Addressed by VERSION — the thing `FR-RQR-061` requires be recorded. */
   @Post('baselines/:version/handoff')
-  handoff(@Param('version') version: string): Promise<unknown> {
-    return this.room.handoff(version);
+  handoff(@Param('version') version: string, @Body() body: HandoffRequest): Promise<unknown> {
+    return this.room.handoff(version, body);
   }
 
   @Get('rooms/requirement/:id/readiness')
