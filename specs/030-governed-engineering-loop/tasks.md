@@ -170,12 +170,12 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 6
 
-- [ ] T961 [P] [US3] Write failing unit tests for trigger-rule citation in `backend/tests/unit/loop-trigger-rule.spec.ts` — a configuration with a rule-less automated transition is refused at load — `FR-GEL-030`, `FR-GEL-031`, `SC-GEL-004`
-- [ ] T962 [US3] Implement trigger-rule validation in `backend/src/modules/loop/loop-config.loader.ts` (unit test: T961) — `FR-GEL-030`, `SC-GEL-004`
-- [ ] T963 [P] [US3] Write failing unit tests for human/automation distinguishability in `backend/tests/unit/loop-actor-kind.spec.ts` — `FR-GEL-032`
-- [ ] T964 [US3] Implement `actorKind` recording in `backend/src/modules/loop/transition-writer.ts` (unit test: T963)
-- [ ] T965 [P] [US3] Write failing unit tests for trigger idempotency in `backend/tests/unit/loop-trigger-idempotency.spec.ts` — a repeated firing records a duplicate rather than advancing twice — `FR-GEL-033`
-- [ ] T966 [US3] Implement idempotent trigger handling in `backend/src/modules/loop/trigger-dispatcher.ts` (unit test: T965) — `FR-GEL-030` declares triggered transitions; this is where one fires
+- [X] T961 [P] [US3] Write failing unit tests for trigger-rule citation in `backend/tests/unit/loop-trigger-rule.spec.ts` — a configuration with a rule-less automated transition is refused at load — `FR-GEL-030`, `FR-GEL-031`, `SC-GEL-004`
+- [X] T962 [US3] Implement trigger-rule validation in `backend/src/modules/loop/loop-config.loader.ts` (unit test: T961) — `FR-GEL-030`, `SC-GEL-004`
+- [X] T963 [P] [US3] Write failing unit tests for human/automation distinguishability in `backend/tests/unit/loop-actor-kind.spec.ts` — `FR-GEL-032`
+- [X] T964 [US3] Implement `actorKind` recording in `backend/src/modules/loop/transition-writer.ts` (unit test: T963)
+- [X] T965 [P] [US3] Write failing unit tests for trigger idempotency in `backend/tests/unit/loop-trigger-idempotency.spec.ts` — a repeated firing records a duplicate rather than advancing twice — `FR-GEL-033`
+- [X] T966 [US3] Implement idempotent trigger handling in `backend/src/modules/loop/trigger-dispatcher.ts` (unit test: T965) — `FR-GEL-030` declares triggered transitions; this is where one fires
 
 **Checkpoint**: US3 is independently demonstrable — every automated move names its rule
 

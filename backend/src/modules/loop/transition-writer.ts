@@ -158,6 +158,26 @@ export class TransitionWriter {
     };
   }
 
+  /**
+   * Record a refusal decided **before** the transition rules were consulted.
+   *
+   * `TriggerDispatcher` needs this: a duplicate firing (`FR-GEL-033`) is settled
+   * by the rule and the event, not by authority or by whether the transition is
+   * declared. Routing it through `write` produced a record saying
+   * *"Analyze->Analyze is not declared"* — true, and completely the wrong reason.
+   *
+   * Still goes through `#refuse`, so it is recorded in one transaction with its
+   * audit entry like every other refusal. The point is to name the right cause,
+   * not to take a shortcut past the guarantees.
+   */
+  recordRefusal(
+    request: TransitionRequest,
+    reason: string,
+    authorityBasis = 'loop.pre-transition',
+  ): Promise<TransitionResult> {
+    return this.#refuse(request, authorityBasis, reason);
+  }
+
   /** The authority the transition required, for a refusal's `authorityBasis`. */
   #requiredAuthorityLabel(request: TransitionRequest): string {
     const key = transitionKey(request.object.currentStage, request.toStage);
