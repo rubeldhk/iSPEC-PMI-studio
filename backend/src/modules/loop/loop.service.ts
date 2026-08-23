@@ -25,6 +25,9 @@
  */
 
 import { ValidationFailedError } from '../../core/errors.js';
+import type { ResolvedLoopConfig } from './loop-config.loader.js';
+import type { LoopConfigRegistry } from './config-registry.js';
+import type { LoopStore } from './loop.store.js';
 import {
   projectProgress,
   type LoopObjectRef,
@@ -71,6 +74,16 @@ export class NotYetImplementedError extends Error {
   }
 }
 
+/**
+ * The configuration version an object is pinned to at declaration.
+ *
+ * Fixed at 1 while configurations are files under version control (`R-030-7`).
+ * `T944`'s tenant row carries the real sequence, and `T958` reads it — recorded
+ * as a constant rather than a literal so the day it becomes dynamic there is one
+ * place to change and one place to look.
+ */
+const CONFIG_VERSION = 1;
+
 /** The fields without which a declaration cannot be recorded at all. */
 const DECLARE_REQUIRED = [
   'workspaceId',
@@ -83,6 +96,19 @@ const DECLARE_REQUIRED = [
 
 export class LoopService {
   /**
+   * The store and the registry are constructor arguments with no defaults.
+   *
+   * `LoopService` is constructed by `loop.module.ts`, which binds an in-memory
+   * store and a registry loaded from `packages/loop-contract/workflows/`. A
+   * default here would let a caller build a service that silently governs
+   * nothing.
+   */
+  constructor(
+    private readonly store: LoopStore,
+    private readonly configs: LoopConfigRegistry,
+  ) {}
+
+  /**
    * `FR-GEL-006` — creates a `LoopObject` at `Event`, pinning `configVersion`.
    *
    * Validation is real and lands here now; the write lands at `T945`. Not
@@ -91,7 +117,7 @@ export class LoopService {
    * a request the route cannot yet fulfil is what lets the route answer
    * *"your request is wrong"* instead of *"we broke"*.
    */
-  declareObject(input: DeclareObjectInput): Promise<LoopObjectRef> {
+  async declareObject(input: DeclareObjectInput): Promise<LoopObjectRef> {
     const missing = DECLARE_REQUIRED.filter((field) => {
       const value = (input as Record<string, unknown> | null | undefined)?.[field];
       return typeof value !== 'string' || value.length === 0;
@@ -99,7 +125,24 @@ export class LoopService {
     if (missing.length > 0) {
       throw new ValidationFailedError(`declareObject requires: ${missing.join(', ')}`);
     }
-    throw new NotYetImplementedError('declareObject', 'T945');
+
+    // FR-GEL-004 — the object's own type resolves its own configuration, or it
+    // is not declared at all. `require` has no nullable variant to fall back to.
+    const config = this.configs.require(input.workflowType);
+
+    // FR-GEL-006 — pinned here, at creation, so an in-flight object still
+    // resolves to the bytes it started under after the type is reconfigured.
+    const row = await this.store.createObject({
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+      workflowType: config.workflowType,
+      configVersion: CONFIG_VERSION,
+      subjectType: input.subjectType,
+      subjectId: input.subjectId,
+      currentStage: 'Event',
+    });
+
+    return { workflowType: row.workflowType, objectId: row.id };
   }
 
   /**
@@ -133,6 +176,26 @@ export class LoopService {
     completedStages: readonly LoopStage[];
   }): readonly LoopProgress[] {
     return projectProgress(input);
+  }
+
+  /**
+   * T940 — the same projection, resolved from a loaded configuration.
+   *
+   * The overload callers should reach for: it takes the **object's own
+   * configuration**, so the configured stages come from the workflow type the
+   * object belongs to rather than from whatever the caller passed. That is
+   * `FR-GEL-004` at the projection — a Room asking for type A's progress cannot
+   * be handed type B's shape by supplying the wrong array.
+   */
+  progressForConfig(
+    config: ResolvedLoopConfig,
+    position: { currentStage: LoopStage; completedStages: readonly LoopStage[] },
+  ): readonly LoopProgress[] {
+    return projectProgress({
+      configuredStages: config.stages,
+      currentStage: position.currentStage,
+      completedStages: position.completedStages,
+    });
   }
 
   /** `FR-GEL-022` — every exception and violation, without opening each transition. */

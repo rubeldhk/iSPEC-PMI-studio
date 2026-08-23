@@ -122,18 +122,18 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 1 — declare `example-review.json`,
 drive an object through every declared stage, and assert `git diff --stat backend/src` is empty
 
-- [ ] T937 [P] [US1] Write failing unit tests for the configuration loader in `backend/tests/unit/loop-config-loader.spec.ts` — refusal on unknown stage, unregistered handler, rule-less trigger, missing approval
-- [ ] T938 [US1] Implement `backend/src/modules/loop/loop-config.loader.ts` (unit test: T937) — `FR-GEL-003`, `FR-GEL-007`, `FR-GEL-016`
-- [ ] T939 [P] [US1] Write failing unit tests for stage-omission handling in `backend/tests/unit/loop-stage-omission.spec.ts` — an omitted stage is visible, not absent — `FR-GEL-008`
-- [ ] T940 [US1] Implement stage resolution and omission in `backend/src/modules/loop/loop.service.ts` (unit test: T939)
-- [ ] T941 [P] [US1] Write failing unit tests for `StageHandler` registration and refusal-when-absent in `backend/tests/unit/loop-stage-registry.spec.ts` — `R-030-5`
-- [ ] T942 [US1] Implement the stage handler registry in `backend/src/modules/loop/stage-registry.ts` (unit test: T941) — `FR-GEL-007`, `FR-GEL-062` refuse-by-default
-- [ ] T943 [P] [US1] Write failing unit tests for tenant configuration scope in `backend/tests/unit/loop-config-scope.spec.ts` — a tenant row whose `stages` differ from the programme file is refused — `FR-GEL-009`
-- [ ] T944 [US1] Implement the programme/tenant configuration split in `backend/src/modules/loop/loop-config.loader.ts` (unit test: T943) — `FR-GEL-009`, clarified 2026-08-22
-- [ ] T944a [P] [US1] Write failing unit tests for workflow-type isolation in `backend/tests/unit/loop-type-isolation.spec.ts` — an object of workflow type A MUST NOT be transitionable under type B's stages, authorities or gates; each type resolves its own configuration — `FR-GEL-004`, `ADR-0018`
-- [ ] T944b [US1] Implement per-type configuration resolution on the transition path in `backend/src/modules/loop/loop.service.ts` (unit test: T944a) — `FR-GEL-004`. `ADR-0018`'s only decided constraint: *"A shared engine must not collapse three governed surfaces into one"*
-- [ ] T945 [US1] Implement `POST /loop/objects` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `declareObject`, pinning `configVersion` per `FR-GEL-006`
-- [ ] T946 [US1] Write the integration test for quickstart Scenario 1 in `backend/tests/integration/loop-new-workflow-type.spec.ts` — asserts zero lines of new engine code (`SC-GEL-001`)
+- [X] T937 [P] [US1] Write failing unit tests for the configuration loader in `backend/tests/unit/loop-config-loader.spec.ts` — refusal on unknown stage, unregistered handler, rule-less trigger, missing approval
+- [X] T938 [US1] Implement `backend/src/modules/loop/loop-config.loader.ts` (unit test: T937) — `FR-GEL-003`, `FR-GEL-007`, `FR-GEL-016`
+- [X] T939 [P] [US1] Write failing unit tests for stage-omission handling in `backend/tests/unit/loop-stage-omission.spec.ts` — an omitted stage is visible, not absent — `FR-GEL-008`
+- [X] T940 [US1] Implement stage resolution and omission in `backend/src/modules/loop/loop.service.ts` (unit test: T939)
+- [X] T941 [P] [US1] Write failing unit tests for `StageHandler` registration and refusal-when-absent in `backend/tests/unit/loop-stage-registry.spec.ts` — `R-030-5`
+- [X] T942 [US1] Implement the stage handler registry in `backend/src/modules/loop/stage-registry.ts` (unit test: T941) — `FR-GEL-007`, `FR-GEL-062` refuse-by-default
+- [X] T943 [P] [US1] Write failing unit tests for tenant configuration scope in `backend/tests/unit/loop-config-scope.spec.ts` — a tenant row whose `stages` differ from the programme file is refused — `FR-GEL-009`
+- [X] T944 [US1] Implement the programme/tenant configuration split in `backend/src/modules/loop/loop-config.loader.ts` (unit test: T943) — `FR-GEL-009`, clarified 2026-08-22
+- [X] T944a [P] [US1] Write failing unit tests for workflow-type isolation in `backend/tests/unit/loop-type-isolation.spec.ts` — an object of workflow type A MUST NOT be transitionable under type B's stages, authorities or gates; each type resolves its own configuration — `FR-GEL-004`, `ADR-0018`
+- [X] T944b [US1] Implement per-type configuration resolution on the transition path in `backend/src/modules/loop/loop.service.ts` (unit test: T944a) — `FR-GEL-004`. `ADR-0018`'s only decided constraint: *"A shared engine must not collapse three governed surfaces into one"*
+- [X] T945 [US1] Implement `POST /loop/objects` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `declareObject`, pinning `configVersion` per `FR-GEL-006`
+- [X] T946 [US1] Write the integration test for quickstart Scenario 1 in `backend/tests/integration/loop-new-workflow-type.spec.ts` — asserts zero lines of new engine code (`SC-GEL-001`)
 
 **Checkpoint**: US1 is independently demonstrable — a new workflow type runs without engine changes
 
