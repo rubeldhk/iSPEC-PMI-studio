@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pmi.studio/schemas/loop-instance-configuration/1",
+  "title": "Loop instance configuration",
+  "description": "EPIC-030 T930. The programme-defined half of a governed workflow type (FR-GEL-004, FR-GEL-005, FR-GEL-009). The tenant-configured half — authorities, gates, trigger rules — lives in the loop_instance_configurations row keyed to this file. `stages` is programme-defined and NOT writable by a tenant. The executable conformance check is backend/tests/architecture/loop-config-conformance.spec.ts; this schema documents the shape, that check enforces it, and the check is the authority where the two could disagree.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "workflowType", "stages", "transitions", "approvedBy", "approvalRef"],
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Bumped when this shape changes. A file with no version is a file nobody can migrate."
+    },
+    "workflowType": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Unique per programme; the file is named <workflowType>.json. FR-GEL-004 — each type resolves its own configuration, so two Rooms cannot share one and collapse into a single governed surface (ADR-0018)."
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["Event", "Context", "Analyze", "Decide", "Execute", "Verify", "Evidence", "Outcome"]
+      },
+      "description": "A subset of LOOP_STAGES, in model order (FR-GEL-009). Omitted stages are LEGAL and VISIBLE: FR-GEL-008 requires them to appear in the progress projection as omitted, not as absent, so 'configured not to apply' and 'not reached' stay distinguishable."
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from", "to", "requiredGates", "trigger"],
+        "properties": {
+          "from": { "type": "string", "description": "Must be one of this file's stages." },
+          "to": { "type": "string", "description": "Must be one of this file's stages." },
+          "requiredGates": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "description": "FR-GEL-020 — a transition carries its named required gates. Empty is legal and explicit; absent is not, because 'no gates' and 'nobody said' must not look alike."
+          },
+          "trigger": {
+            "oneOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["ruleId"],
+                "properties": {
+                  "ruleId": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string" }
+                }
+              }
+            ],
+            "description": "null for a human transition, or a named rule for an automated one. FR-GEL-031 and RULE-11: a trigger that exists without naming its rule is the invisible automation the rule forbids, which is why 'present but anonymous' is not expressible here."
+          }
+        }
+      }
+    },
+    "approvedBy": {
+      "type": "string",
+      "minLength": 1,
+      "description": "FR-GEL-016 — the actor identity that approved this configuration. Absent and the configuration does not load; a governed workflow nobody authorised is not governed."
+    },
+    "approvalRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The reviewed commit under R-030-7's interim gate; the EPIC-031 decision id once that Epic lands. Both spellings satisfy the same requirement, which is why the field is a string rather than a typed reference."
+    }
+  }
+}

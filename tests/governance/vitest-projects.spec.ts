@@ -59,6 +59,11 @@ const PROJECT_DIRS: Record<string, string> = {
   'storage-adapters': 'packages/storage-adapters/fixture/tests',
   'execution-contract': 'packages/execution-contract/tests',
   'agent-contract': 'packages/agent-contract/tests',
+  // EPIC-030 T915 — the fifth contract package, added to `test:unit` in the
+  // same change that gave it specs. This map is what makes that addition
+  // visible: registering the project without mapping it here is the failure
+  // T537 exists to catch, and it caught it.
+  'loop-contract': 'packages/loop-contract/tests',
   'agent-adapters': 'agent-adapters',
   // EPIC-028 T539 — registered only once T646a gave it tests. `T537` correctly
   // fails on a project that collects nothing, and registering it earlier would
