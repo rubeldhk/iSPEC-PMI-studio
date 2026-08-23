@@ -74,6 +74,9 @@ importers:
       '@pmi/execution-contract':
         specifier: workspace:*
         version: link:../packages/execution-contract
+      '@pmi/loop-contract':
+        specifier: workspace:*
+        version: link:../packages/loop-contract
       '@pmi/observability':
         specifier: workspace:*
         version: link:../packages/observability

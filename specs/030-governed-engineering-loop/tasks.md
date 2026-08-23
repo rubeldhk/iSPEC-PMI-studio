@@ -95,21 +95,21 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 - [X] T926 Add `LoopInstanceConfiguration`, `LoopObject` and `LoopTransition` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §2–§4
 - [X] T927 Generate the migration under `backend/prisma/migrations/` including the `actorKind = 'automation' ⇒ triggerRuleId IS NOT NULL` constraint (`FR-GEL-031`) and the partial unique index on `(objectId, triggerEventId, triggerRuleId) WHERE outcome = 'accepted'` (`FR-GEL-033`)
-- [ ] T928 [P] Write failing integration test asserting `LoopTransition` rejects `UPDATE` and `DELETE` in `backend/tests/integration/loop-append-only.spec.ts` — `FR-GEL-040`, following the `audit-immutability.spec.ts` precedent
-- [ ] T929 [P] Write failing integration test asserting the automation constraint rejects a rule-less automated transition at the database level in `backend/tests/integration/loop-automation-constraint.spec.ts` — `FR-GEL-031`
+- [X] T928 [P] Write failing integration test asserting `LoopTransition` rejects `UPDATE` and `DELETE` in `backend/tests/integration/loop-append-only.spec.ts` — `FR-GEL-040`, following the `audit-immutability.spec.ts` precedent
+- [X] T929 [P] Write failing integration test asserting the automation constraint rejects a rule-less automated transition at the database level in `backend/tests/integration/loop-automation-constraint.spec.ts` — `FR-GEL-031`
 
 ### Configuration files and their conformance check — the non-code output
 
-- [ ] T930 [P] Author the loop instance configuration JSON schema and one worked example in `packages/loop-contract/workflows/` per [contracts/loop-contract.md](./contracts/loop-contract.md) §5 — `FR-GEL-005`, `FR-GEL-020` (a transition carries its named required gates)
-- [ ] T931 [P] Write the failing executable conformance check in `backend/tests/architecture/loop-config-conformance.spec.ts` — fails on a stage outside `LOOP_STAGES`, an unregistered stage handler, a trigger with no rule id, or absent `approvedBy`/`approvalRef`
-- [ ] T932 Make every file in `packages/loop-contract/workflows/` pass T931 (conformance: T931) — Constitution V for a non-code output, `FR-GEL-005`
-- [ ] T933 [P] Write the failing architecture test in `backend/tests/architecture/loop-independence.spec.ts` — asserts `packages/loop-contract` imports nothing from a Room module and contains no Room vocabulary, modelled on `engine-independence.spec.ts` — `FR-GEL-061`
+- [X] T930 [P] Author the loop instance configuration JSON schema and one worked example in `packages/loop-contract/workflows/` per [contracts/loop-contract.md](./contracts/loop-contract.md) §5 — `FR-GEL-005`, `FR-GEL-020` (a transition carries its named required gates)
+- [X] T931 [P] Write the failing executable conformance check in `backend/tests/architecture/loop-config-conformance.spec.ts` — fails on a stage outside `LOOP_STAGES`, an unregistered stage handler, a trigger with no rule id, or absent `approvedBy`/`approvalRef`
+- [X] T932 Make every file in `packages/loop-contract/workflows/` pass T931 (conformance: T931) — Constitution V for a non-code output, `FR-GEL-005`
+- [X] T933 [P] Write the failing architecture test in `backend/tests/architecture/loop-independence.spec.ts` — asserts `packages/loop-contract` imports nothing from a Room module and contains no Room vocabulary, modelled on `engine-independence.spec.ts` — `FR-GEL-061`
 
 ### Module skeleton and its wiring
 
-- [ ] T934 [P] Write the failing reachability test in `backend/tests/integration/loop-reachability.spec.ts` importing the real `AppModule` — Constitution XI Tier 1, `R-030-8`
-- [ ] T935 Implement `backend/src/modules/loop/loop.module.ts` and `backend/src/modules/loop/loop.tokens.ts` (integration test: T934)
-- [ ] T936 Register `LoopModule` in `backend/src/app.module.ts` (integration test: T934) — the wiring T934 exists to prove
+- [X] T934 [P] Write the failing reachability test in `backend/tests/integration/loop-reachability.spec.ts` importing the real `AppModule` — Constitution XI Tier 1, `R-030-8`
+- [X] T935 Implement `backend/src/modules/loop/loop.module.ts` and `backend/src/modules/loop/loop.tokens.ts` (integration test: T934)
+- [X] T936 Register `LoopModule` in `backend/src/app.module.ts` (integration test: T934) — the wiring T934 exists to prove
 
 **Checkpoint**: contract, schema and checks exist and fail for the right reasons — user stories may begin
 

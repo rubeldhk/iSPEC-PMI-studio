@@ -108,6 +108,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'gate_outcomes',
       'generation_jobs',
       'lifecycle_transitions',
+      'loop_instance_configurations',
+      'loop_objects',
+      'loop_transitions',
       'organizations',
       'projects',
       'provisional_approval_overrides',
@@ -190,6 +193,15 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // FR-PUB-034 makes the timestamp part of the record.
       publish_records: 'publishedAt',
       published_file_references: 'publishedAt',
+      // EPIC-030: a transition *occurs* (FR-GEL-013) — the audit_entries and
+      // lifecycle_transitions treatment, and here the timestamp is the whole
+      // point: the history must be sufficient to reconstruct the loop.
+      loop_transitions: 'occurredAt',
+      // A configuration is *approved* (FR-GEL-016) — it does not exist as a
+      // governed configuration until someone approved it, so approvedAt is the
+      // record rather than bookkeeping about the row. The
+      // provisional_approval_overrides precedent.
+      loop_instance_configurations: 'approvedAt',
     };
 
     const missing = [...tables.entries()]
