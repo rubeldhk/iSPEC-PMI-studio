@@ -100,7 +100,7 @@ packages.
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | **PASS** — nine questions across five Epics in one questionnaire; this run paused for nothing |
 | XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph, not a hand-assembled one; a mocked collaborator does not satisfy this. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application is planned as closure evidence. An Epic with no user-facing capability records that, rather than omitting the row | **PASS** — Tier 1 planned (quickstart 17). **Tier 2 applies in full** (`R-035-10`, quickstart 18), and `SC-DFR-009`'s keyboard-only journey is exercised **inside** that run rather than as a second pass that could disagree with it |
 | — | Repository was synced from GitHub before this work started | **PASS** — `git fetch --all` this session |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | **FAIL** — see Complexity Tracking |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | **PASS** — **discharged 2026-08-23**. Implementation runs in the dedicated worktree `.claude/worktrees/epic-035-defect-room`, created this date; the primary checkout returned to `main`. Discharged by **isolation, not exclusivity** — the reading `EPIC-029` recorded on 2026-08-21 and `EPIC-030` on 2026-08-22. See Complexity Tracking |
 
 Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking below.
 
@@ -115,6 +115,16 @@ changed status.** Gate V strengthened: Phase 1 moved three guarantees into the t
 non-optional, and a `FixAcceptance` union whose accepted branch cannot be constructed without one.
 Gate XI strengthened: quickstart 17 now includes its own inversion, and quickstart 18 folds the
 keyboard journey into the transcript run.
+
+**Post-discharge re-check (2026-08-23)**: the concurrent-session gate moved **FAIL → PASS**
+when the worktree `.claude/worktrees/epic-035-defect-room` was created and the primary checkout returned to
+`main`. **It is the only status that changed.** `DOR-06` reads the leading word of each status
+cell and now finds no `FAIL`, so this plan no longer holds the Epic out of `Ready`.
+
+The gate was never asserted to pass. It was **discharged**, and the difference matters: this
+checkout still shows 10+ `claude.exe` processes and exclusivity is still unverifiable. What
+changed is that this Epic's implementation no longer shares a working tree with anything else —
+which is what the rule protects, and the only part of it this session could establish.
 
 ## Project Structure
 
@@ -195,7 +205,7 @@ put it (`R-035-3`).
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| **Constitution gate: "No other Claude session is active on this checkout" — FAIL** | Planning writes no application code; the isolation rule binds implementation. 10+ `claude.exe` processes, exclusivity unverifiable | **Discharge before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-035-defect-room`. `EPIC-030` proved the step; the gate then moves FAIL → PASS and `DOR-06` clears |
+| **Constitution gate: "No other Claude session is active on this checkout" — was FAIL, ✅ discharged 2026-08-23** | Planning writes no application code; the isolation rule binds implementation. 10+ `claude.exe` processes, exclusivity unverifiable | **Discharge before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-035-defect-room`. `EPIC-030` proved the step; the gate then moves FAIL → PASS and `DOR-06` clears |
 | **A required collaborator has no implementation anywhere in the programme** | `FR-DFR-062` requires test execution to be requested from `EPIC-015`; `EPIC-015` owns `BR-0080` and built programme validation, not a callable surface (`R-035-1`) | Building a runner here was rejected by `FR-DFR-002` and by the plain words of `FR-DFR-062` — it would be *"a second test runner"* in the sentence forbidding one. Accepting a human declaration was rejected by `BR-0144` and `FR-DFR-063`. Reading CI directly was rejected as the bespoke per-tool path `EPIC-032`'s `AttestationSource` already refuses. **The cost is that verification and closure refuse until an owner exists**, which is the honest failing state and is stated rather than hidden |
 | **An outbound route whose destination does not implement it** | `FR-DFR-076` routes a Requirement Gap to `EPIC-033` as new intent; `EPIC-033` has no inbound route and does not name this Epic as a source (`R-035-4`) | Routing gaps to the Change Room was rejected by `FR-DFR-076` in terms — there is no baseline to change, and that absence *is* the gap. Creating the requirement here was rejected by `FR-DFR-002`. **The cost is that gap routing refuses until `EPIC-033` gains a route**, and the item stays visibly unrouted rather than marked routed to somewhere that never received it. Recorded as a cross-Epic handover, the same shape as `EPIC-033`'s own `C1` |
 | **A repair task must claim an engine produced it** | `TaskRecord.engineName` and `engineVersion` are non-optional and `FR-DFR-051` forbids a Room-local task model, so a human-authored repair task has no truthful value for either (`R-035-3`) | Extending `TaskRecord` was rejected: that model is `EPIC-012`'s and its provenance is `BR-0151`, `U-12`, unowned — changing it here crosses `FR-DFR-002`. Encoding the defect id in `description` was rejected: a link only a regular expression can follow is not traceability. **The cost is a documented sentinel, asserted by test so it cannot drift into looking like a real engine name**, and a handover naming `BR-0151` in the closing report |
