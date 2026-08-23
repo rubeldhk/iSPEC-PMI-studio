@@ -1,5 +1,12 @@
 /**
- * T943 — the programme/tenant split. `FR-GEL-009`, clarified 2026-08-22.
+ * T943 — the programme/tenant split. `FR-GEL-009`, `SC-GEL-010`, clarified
+ * 2026-08-22.
+ *
+ * `SC-GEL-010`: *"zero loop configuration changes take effect without authorized
+ * human approval, under any tenant policy — verified by enumerating the tenant
+ * configuration surface."* This file is that enumeration: `stages` is the one
+ * field a tenant could reach that changes what the loop DOES, and every way of
+ * changing it — remove, add, reorder — is refused.
  *
  * Two halves of one configuration, and only one of them is a tenant's to write:
  *

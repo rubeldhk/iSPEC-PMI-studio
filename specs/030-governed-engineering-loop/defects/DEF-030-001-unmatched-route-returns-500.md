@@ -1,6 +1,13 @@
 # DEF-030-001 — every unmatched route answers `500`, never `404`
 
-**Epic**: `EPIC-030` | **Raised**: 2026-08-23 | **Status**: OPEN
+**Epic**: `EPIC-030` | **Raised**: 2026-08-23 | **Status**: **CLOSED — DEFERRED to `EPIC-001` 2026-08-23** (`T990`)
+
+> **Deferred, not fixed, and not dismissed.** `backend/src/core/error.filter.ts` and `errors.ts` are `EPIC-001`'s (`T018`), and `FR-GEL-002` puts them outside this Epic. The fix is one line in a file with an application-wide blast radius, which is exactly the change that should go through the Epic that owns it.
+>
+> `DOR-11` reads `DEFERRED` with a named owner as closed, and its own comment says why:
+> *"deferred-with-an-owner is a decision … treating it as open would punish recording the
+> decision."* The defect below is real and unfixed; what is closed is `EPIC-030`'s
+> obligation to carry it.
 
 **Originating task**: `T934` (Constitution XI Tier 1) · found by that test's **anti-vacuity**
 assertion, not by its subject

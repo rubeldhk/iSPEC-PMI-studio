@@ -235,16 +235,16 @@ Ordered as the constitution's *"Quality gates in order"* states them: unit tests
 user-facing capability exercised through its real entry point → convergence clean → defect folder
 empty → promote.
 
-- [ ] T984 Confirm every implementation task has a passing unit test or conformance check
-- [ ] T985 **Constitution XI Tier 1 (ALWAYS)** — `T934` drives a transition through the real HTTP route against the composed module graph via the real `AppModule`, and `T981` proved it fails when the module is unregistered. **Not satisfied by a mocked collaborator**
-- [ ] T986 **Constitution XI Tier 2 (Epics delivering a journey)** — **NOT APPLICABLE**: this Epic delivers no user-facing journey; loop progress becomes visible when a Room renders it (`EPIC-033`–`035`). Recorded rather than deleted, per the `EPIC-029` `F1` precedent
-- [ ] T987 Converge `ADR-0018` — move it to Accepted, or restate its `Awaits` against what actually remains
-- [ ] T988 Confirm the `BR-0065` SRS edit has landed — PMI-DOC-004 v2.0 §6.7 and `specs/brs-v2-reconciliation.md` §3.1/§4 read `EPIC-030`, with a §17 revision-history entry. **Project owner's act**; until it lands the SRS wins (Constitution II)
-- [ ] T989 Run `/speckit-converge`; append and complete any remaining unbuilt work
-- [ ] T990 Triage `specs/030-governed-engineering-loop/defects/`; every record closed or deferred to a named Epic
-- [ ] T991 Re-run the full suite green after defect fixes — `pnpm lint && pnpm typecheck && pnpm test && pnpm test:governance`
-- [ ] T992 Promote `local → dev` (then dev → stage → prod; no environment skipped)
-- [ ] T993 Publish the Epic closing report: work completed, work deferred, the four mutation observations, the measured performance figures, and the recommended next Epic/command (Constitution IX). Refresh the Delivery Board or restate its staleness
+- [X] T984 Confirm every implementation task has a passing unit test or conformance check
+- [X] T985 **Constitution XI Tier 1 (ALWAYS)** — `T934` drives a transition through the real HTTP route against the composed module graph via the real `AppModule`, and `T981` proved it fails when the module is unregistered. **Not satisfied by a mocked collaborator**
+- [X] T986 **Constitution XI Tier 2 (Epics delivering a journey)** — **NOT APPLICABLE**: this Epic delivers no user-facing journey; loop progress becomes visible when a Room renders it (`EPIC-033`–`035`). Recorded rather than deleted, per the `EPIC-029` `F1` precedent
+- [X] T987 Converge `ADR-0018` — move it to Accepted, or restate its `Awaits` against what actually remains
+- [ ] T988 Confirm the `BR-0065` SRS edit has landed — PMI-DOC-004 v2.0 §6.7 and `specs/brs-v2-reconciliation.md` §3.1/§4 read `EPIC-030`, with a §17 revision-history entry. **Project owner's act**; until it lands the SRS wins (Constitution II) **NOT DONE — project owner.** PMI-DOC-004 v2.0 is an APPROVED SRS; amending it is the project owner's act with a §17 entry, not an implementation session's. Line 300 still reads `→ EPIC-012`, and `brs-v2-reconciliation.md` line 117 agrees while line 168 still records `U-06` as UNOWNED. Both are now factually wrong. See closure.md.
+- [X] T989 Run `/speckit-converge`; append and complete any remaining unbuilt work
+- [X] T990 Triage `specs/030-governed-engineering-loop/defects/`; every record closed or deferred to a named Epic
+- [X] T991 Re-run the full suite green after defect fixes — `pnpm lint && pnpm typecheck && pnpm test && pnpm test:governance`
+- [ ] T992 Promote `local → dev` (then dev → stage → prod; no environment skipped) **NOT DONE — no reachable environment.** This session reaches `local` only: the work is on `epic/030-governed-engineering-loop`, unmerged, and promotion is a deployment act rather than a code change. Recorded rather than claimed. See closure.md.
+- [X] T993 Publish the Epic closing report: work completed, work deferred, the four mutation observations, the measured performance figures, and the recommended next Epic/command (Constitution IX). Refresh the Delivery Board or restate its staleness
 
 ---
 

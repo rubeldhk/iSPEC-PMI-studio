@@ -1,6 +1,10 @@
 /**
- * T956 — two attempts, one winner, both recorded. `R-030-1`, `FR-GEL-012`,
- * `FR-GEL-015`.
+ * T956 — two attempts, one winner, both recorded. `R-030-1`, `SC-GEL-011`,
+ * `FR-GEL-012`, `FR-GEL-015`.
+ *
+ * `SC-GEL-011`: *"zero pairs both succeed; the loser is refused with a recorded
+ * conflict in 100% of cases."* The 20-round loop below is what makes "100%"
+ * more than one lucky interleaving.
  *
  * *First commit wins* is easy to implement and easy to get subtly wrong in a way
  * nothing notices:

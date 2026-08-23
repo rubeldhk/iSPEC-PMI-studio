@@ -1,5 +1,10 @@
 /**
- * T957 — fail-closed. `SC-GEL-003`, `FR-GEL-041`, `R-030-2`.
+ * T957 — fail-closed. `SC-GEL-003`, `SC-GEL-009`, `FR-GEL-041`, `R-030-2`.
+ *
+ * `SC-GEL-009`: *"when the audit store is unavailable, 100% of transitions are
+ * refused and zero proceed unrecorded."* Cited by identifier because the
+ * convergence check reads identifiers, and behaviour nobody can trace to a
+ * criterion is behaviour that criterion cannot be shown to have.
  *
  * *"The audit writer fails, the transition is refused, and the stage is
  * unchanged on read-back."*

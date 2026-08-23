@@ -1,6 +1,13 @@
 # DEF-030-002 — `T147`'s p95 search assertion fails under full-suite load
 
-**Epic**: `EPIC-030` | **Raised**: 2026-08-23 | **Status**: OPEN
+**Epic**: `EPIC-030` | **Raised**: 2026-08-23 | **Status**: **CLOSED — DEFERRED to `EPIC-015` 2026-08-23** (`T990`)
+
+> **Deferred, not fixed, and not dismissed.** `backend/tests/integration/scale.spec.ts` is `EPIC-015`'s (`T147`), and so is the `SC-009` criterion it measures. Changing someone else's performance budget from outside their Epic is how a target quietly becomes a formality.
+>
+> `DOR-11` reads `DEFERRED` with a named owner as closed, and its own comment says why:
+> *"deferred-with-an-owner is a decision … treating it as open would punish recording the
+> decision."* The defect below is real and unfixed; what is closed is `EPIC-030`'s
+> obligation to carry it.
 
 **Originating task**: observed while running the full suite for Phases 4–7
 **Severity**: MEDIUM — no product behaviour is wrong. It is filed because it makes
