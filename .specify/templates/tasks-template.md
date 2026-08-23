@@ -190,11 +190,25 @@ Each task below is complete only when its paired unit test passes.
 
 ---
 
-## Phase Z: Epic Closure (MANDATORY - Constitution IV, VI, VII, IX)
+## Phase Z: Epic Closure (MANDATORY - Constitution IV, VI, VII, IX, XI)
 
 **Purpose**: Gate the Epic before it may be promoted out of `local`
 
+Ordered as the constitution's *"Quality gates in order"* states them: unit tests green → every
+user-facing capability exercised through its real entry point → convergence clean → defect folder
+empty → promote.
+
 - [ ] TXXX Confirm every implementation task has a passing unit test
+- [ ] TXXX **Constitution XI Tier 1 (ALWAYS)** — a test drives each user-facing capability through
+      its **real entry point** (actual route, CLI command or job handler) against the **composed
+      module graph**, using the real composition root. A mocked collaborator does **not** satisfy
+      this. Prove it by inversion: unregister the module and observe the test fail. An Epic with no
+      user-facing capability records that here rather than deleting the task
+- [ ] TXXX **Constitution XI Tier 2 (Epics delivering a journey)** — the journey is exercised
+      against a **running application** and a **run-generated** transcript is committed and passes
+      its conformance check. Hand-written evidence is a constitution violation of the first order.
+      Not applicable to libraries, contracts, governance and infrastructure Epics — record which
+      applies
 - [ ] TXXX Run `/speckit-converge`; append and complete any remaining unbuilt work
 - [ ] TXXX Triage `specs/[epic-id]/defects/`; every record closed or deferred to a named Epic
 - [ ] TXXX Re-run full test suite green after defect fixes
