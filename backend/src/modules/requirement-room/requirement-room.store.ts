@@ -109,6 +109,31 @@ export interface ClarificationRow {
   createdAt: Date;
 }
 
+/** `requirement_decisions`. Data-model §4. */
+export interface DecisionRow {
+  id: string;
+  workspaceId: string;
+  roomObjectId: string;
+  decidedBy: string;
+  /**
+   * `FR-RQR-041`. The type has one inhabitant this Room ever writes, and the
+   * `requirement_decisions_are_human` CHECK constraint refuses the other at the
+   * row — the belt beside the braces.
+   */
+  decidedByKind: 'human';
+  /** `EPIC-031`'s words for why this was permitted — consumed, not authored. */
+  authorityBasis: string;
+  objectVersion: number;
+  chosenOption: string;
+  /** `FR-RQR-023` — the options NOT taken, in full rather than by id. */
+  declinedOptions: readonly unknown[];
+  /** `BR-0025` — required. */
+  rationale: string;
+  /** → `EPIC-031`'s Decision. Also the Decision Inbox link (`FR-RQR-044`). */
+  decisionId: string;
+  decidedAt: Date;
+}
+
 /** `baselines`. Data-model §5. */
 export interface BaselineRow {
   id: string;
@@ -201,6 +226,14 @@ export interface RequirementRoomStore {
   /** The one permitted update — see the note above. */
   supersede(id: string, byVersion: number): Promise<BaselineRow>;
 
+  /**
+   * `T339p`. Append-only by omission: there is no update and no delete, because
+   * a decision that can be rewritten is not a decision anybody can rely on
+   * having been taken.
+   */
+  createDecision(row: DecisionRow): Promise<DecisionRow>;
+  listDecisions(workspaceId: string, roomObjectId: string): Promise<DecisionRow[]>;
+
   createBaselineExceptions(rows: readonly BaselineExceptionRow[]): Promise<BaselineExceptionRow[]>;
   /** `FR-RQR-033` — one lookup, by baseline. Never per requirement. */
   listBaselineExceptions(workspaceId: string, baselineId: string): Promise<BaselineExceptionRow[]>;
@@ -216,6 +249,8 @@ export class InMemoryRequirementRoomStore implements RequirementRoomStore {
   private readonly clarificationOrder: string[] = [];
   private readonly exceptions = new Map<string, BaselineExceptionRow>();
   private readonly exceptionOrder: string[] = [];
+  private readonly decisions = new Map<string, DecisionRow>();
+  private readonly decisionOrder: string[] = [];
 
   async createCandidates(rows: readonly CandidateRow[]): Promise<CandidateRow[]> {
     return rows.map((row) => {
@@ -341,6 +376,27 @@ export class InMemoryRequirementRoomStore implements RequirementRoomStore {
       .filter((row) => row.projectId === projectId)
       .map((row) => row.version);
     return versions.length === 0 ? 1 : Math.max(...versions) + 1;
+  }
+
+  async createDecision(row: DecisionRow): Promise<DecisionRow> {
+    const stored: DecisionRow = {
+      ...row,
+      id: row.id || randomUUID(),
+      declinedOptions: [...row.declinedOptions],
+    };
+    this.decisions.set(stored.id, stored);
+    this.decisionOrder.push(stored.id);
+    return { ...stored, declinedOptions: [...stored.declinedOptions] };
+  }
+
+  async listDecisions(workspaceId: string, roomObjectId: string): Promise<DecisionRow[]> {
+    return this.decisionOrder
+      .map((id) => this.decisions.get(id))
+      .filter(
+        (row): row is DecisionRow =>
+          row !== undefined && row.workspaceId === workspaceId && row.roomObjectId === roomObjectId,
+      )
+      .map((row) => ({ ...row, declinedOptions: [...row.declinedOptions] }));
   }
 
   async createBaselineExceptions(

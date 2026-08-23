@@ -15,6 +15,8 @@ import { RequirementRoomService } from './requirement-room.service.js';
 import type {
   AnalysisQuery,
   ClarificationRequest,
+  DecideRequest,
+  OptionsRequest,
   ReadinessQuery,
 } from './requirement-room.service.js';
 
@@ -55,13 +57,19 @@ export class RequirementRoomController {
   }
 
   @Post('rooms/requirement/:id/options')
-  options(@Param('id') id: string): Promise<unknown> {
-    return this.room.options(id);
+  options(@Param('id') id: string, @Body() body: OptionsRequest): Promise<unknown> {
+    return this.room.options(id, body);
   }
 
+  /**
+   * `403` on a policy refusal, carrying the `EPIC-031` decision id and its
+   * explanation so `UX-0033` can render the rule that refused (`FR-RQR-043`).
+   * `DecisionRefusedError` is a `ForbiddenError`, so `toHttpStatus` produces
+   * the status and `toErrorBody` carries the details — no mapping here.
+   */
   @Post('rooms/requirement/:id/decide')
-  decide(@Param('id') id: string): Promise<unknown> {
-    return this.room.decide(id);
+  decide(@Param('id') id: string, @Body() body: DecideRequest): Promise<unknown> {
+    return this.room.decide(id, body);
   }
 
   @Post('rooms/requirement/:id/baseline')

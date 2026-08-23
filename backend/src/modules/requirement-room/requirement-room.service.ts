@@ -26,6 +26,8 @@ import type {
   BaselineService,
 } from './baseline.service.js';
 import type { AskedQuestion, ClarificationService } from './clarification.service.js';
+import type { DecisionService } from './decision.service.js';
+import type { OptionsService, PresentedOption, ProposedOption } from './options.service.js';
 import { projectReadiness } from './readiness.projection.js';
 import type { BaselineReadiness, EvidenceStatus } from './readiness.projection.js';
 import type { EvidenceContractSource } from './baseline.service.js';
@@ -35,7 +37,9 @@ import type {
   IntakeCommand,
   IntakeService,
 } from './intake.service.js';
-import type { CandidateRow, ClarificationRow } from './requirement-room.store.js';
+import type { CandidateRow, ClarificationRow, DecisionRow } from './requirement-room.store.js';
+import type { ActorRef } from '@pmi/loop-contract';
+import type { Labelled } from '@pmi/room-contract';
 
 /** `POST /rooms/requirement/:id/clarifications` — ask a set, or answer one. */
 export interface ClarificationRequest {
@@ -50,6 +54,21 @@ export interface AnalysisQuery {
   readonly workspaceId: string;
   readonly projectId: string;
   readonly correlationId?: string;
+}
+
+/** `POST /rooms/requirement/:id/options`. */
+export interface OptionsRequest {
+  readonly options?: readonly ProposedOption[];
+}
+
+/** `POST /rooms/requirement/:id/decide`. */
+export interface DecideRequest {
+  readonly workspaceId: string;
+  readonly objectVersion?: number;
+  readonly actor: ActorRef;
+  readonly options?: readonly ProposedOption[];
+  readonly chosenOptionId: string;
+  readonly rationale: string;
 }
 
 /** `GET /rooms/requirement/:id/readiness`. */
@@ -80,6 +99,8 @@ export class RequirementRoomService {
     private readonly baselines: BaselineService,
     private readonly analysisService: AnalysisService,
     private readonly clarificationService: ClarificationService,
+    private readonly optionsService: OptionsService,
+    private readonly decisionService: DecisionService,
     private readonly store: RequirementRoomStore,
     /** Absent ⇒ readiness reports the Contract as unevaluated, which blocks. */
     private readonly evidence?: EvidenceContractSource | undefined,
@@ -165,14 +186,50 @@ export class RequirementRoomService {
     });
   }
 
-  /** FR-RQR-020 — two or more options, each a recommendation. Lands at T339n. */
-  options(_roomObjectId: string): Promise<unknown> {
-    throw new NotYetImplementedError('options', 'T339n');
+  /**
+   * T339r — `FR-RQR-020`–`FR-RQR-022`. Two or more, each a recommendation,
+   * none pre-selected.
+   *
+   * Returns the labelled set. Options are not persisted: `RequirementDecision`
+   * records the chosen one and the declined ones, which is what `FR-RQR-023`
+   * asks to retain (data-model §4).
+   */
+  async options(
+    roomObjectId: string,
+    input: OptionsRequest,
+  ): Promise<Labelled<PresentedOption>[]> {
+    if (!roomObjectId) {
+      throw new ValidationFailedError('options require a Room object id in the path');
+    }
+    return this.optionsService.present(input?.options ?? []);
   }
 
-  /** FR-RQR-040 — an authorized human decision. Lands at T339p. */
-  decide(_roomObjectId: string): Promise<unknown> {
-    throw new NotYetImplementedError('decide', 'T339p');
+  /**
+   * T339r — `FR-RQR-040`–`FR-RQR-044`. An authorized human decision.
+   *
+   * The options are re-presented before deciding, so a decision cannot be taken
+   * against a set that would have been refused at `POST .../options` — a
+   * single-option "choice", or one whose declined half was never analysed.
+   *
+   * A policy refusal surfaces as `403` carrying `EPIC-031`'s decision id and
+   * explanation, which is what `UX-0033` renders (`FR-RQR-043`).
+   */
+  async decide(roomObjectId: string, input: DecideRequest): Promise<DecisionRow> {
+    if (!roomObjectId) {
+      throw new ValidationFailedError('a decision requires a Room object id in the path');
+    }
+    if (!input?.workspaceId) {
+      throw new ValidationFailedError('a decision requires: workspaceId');
+    }
+    return this.decisionService.decide({
+      workspaceId: input.workspaceId,
+      roomObjectId,
+      objectVersion: input.objectVersion ?? 0,
+      actor: input.actor,
+      options: this.optionsService.present(input.options ?? []),
+      chosenOptionId: input.chosenOptionId,
+      rationale: input.rationale,
+    });
   }
 
   /**

@@ -198,13 +198,13 @@ as a warning; one Epic later it decides how the next two are written.**
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 5 and 6
 
-- [ ] T339m [P] [US4] Write failing unit tests for option generation in `backend/tests/unit/requirement-room-options.spec.ts` — **two or more**, each with trade-offs, dependencies, risks and reasoning, each marked a recommendation, **none pre-selected** (`FR-RQR-020`, `FR-RQR-021`, `FR-RQR-022`, `SC-RQR-005`)
-- [ ] T339n [US4] Implement `backend/src/modules/requirement-room/options.service.ts` (unit test: T339m)
-- [ ] T339o [P] [US4] Write failing unit tests for decision recording in `backend/tests/unit/requirement-room-decision.spec.ts` — chosen option, rationale and **declined options** all retained (`FR-RQR-023`, `FR-RQR-040`)
-- [ ] T339p [US4] Implement decision recording in `backend/src/modules/requirement-room/decision.service.ts` (unit test: T339o) — uses `EPIC-031`'s published `BR-0005` authority record, **not a Room-local one** (`FR-RQR-042`)
-- [ ] T339q [P] [US4] Write the failing integration test for AI-decision refusal in `backend/tests/integration/requirement-room-no-ai-decision.spec.ts` — refused by the **database check constraint**, not only a service branch (`FR-RQR-041`, `SC-RQR-004`)
-- [ ] T339r [US4] Implement `POST /rooms/requirement/:id/options` and `POST /rooms/requirement/:id/decide` in the controller (integration test: T337x) — `403` carrying the `EPIC-031` decision id so the Room can render the refusing policy (`FR-RQR-043`, `UX-0033`)
-- [ ] T339s [US4] Implement Decision Inbox surfacing in `backend/src/modules/requirement-room/decision.service.ts` (unit test: T339o) — `FR-RQR-044`, decisions appear in `EPIC-031`'s queue rather than only inside this Room
+- [X] T339m [P] [US4] Write failing unit tests for option generation in `backend/tests/unit/requirement-room-options.spec.ts` — **two or more**, each with trade-offs, dependencies, risks and reasoning, each marked a recommendation, **none pre-selected** (`FR-RQR-020`, `FR-RQR-021`, `FR-RQR-022`, `SC-RQR-005`)
+- [X] T339n [US4] Implement `backend/src/modules/requirement-room/options.service.ts` (unit test: T339m)
+- [X] T339o [P] [US4] Write failing unit tests for decision recording in `backend/tests/unit/requirement-room-decision.spec.ts` — chosen option, rationale and **declined options** all retained (`FR-RQR-023`, `FR-RQR-040`)
+- [X] T339p [US4] Implement decision recording in `backend/src/modules/requirement-room/decision.service.ts` (unit test: T339o) — uses `EPIC-031`'s published `BR-0005` authority record, **not a Room-local one** (`FR-RQR-042`)
+- [X] T339q [P] [US4] Write the failing integration test for AI-decision refusal in `backend/tests/integration/requirement-room-no-ai-decision.spec.ts` — refused by the **database check constraint**, not only a service branch (`FR-RQR-041`, `SC-RQR-004`)
+- [X] T339r [US4] Implement `POST /rooms/requirement/:id/options` and `POST /rooms/requirement/:id/decide` in the controller (integration test: T337x) — `403` carrying the `EPIC-031` decision id so the Room can render the refusing policy (`FR-RQR-043`, `UX-0033`)
+- [X] T339s [US4] Implement Decision Inbox surfacing in `backend/src/modules/requirement-room/decision.service.ts` (unit test: T339o) — `FR-RQR-044`, decisions appear in `EPIC-031`'s queue rather than only inside this Room
 
 **Checkpoint**: US4 demonstrable — decisions are human, recorded, and visible outside the Room
 

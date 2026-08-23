@@ -35,6 +35,8 @@ import { RequirementsService } from '../requirements/requirements.service.js';
 import { AnalysisService } from './analysis.service.js';
 import { BaselineService } from './baseline.service.js';
 import { ClarificationService } from './clarification.service.js';
+import { DecisionService } from './decision.service.js';
+import { OptionsService } from './options.service.js';
 import { IntakeService } from './intake.service.js';
 import { EpicSevenRequirementRegister } from './register.adapter.js';
 import { RequirementRoomController } from './requirement-room.controller.js';
@@ -116,12 +118,28 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         new ClarificationService(store),
     },
     {
+      provide: OptionsService,
+      useFactory: (): OptionsService => new OptionsService(),
+    },
+    {
+      provide: DecisionService,
+      inject: [REQUIREMENT_ROOM_STORE],
+      useFactory: (store: RequirementRoomStore): DecisionService =>
+        // No PolicyProvider. ROOM_PORTS declares `refuse` for that seam, and
+        // EPIC-031 binds it at the composition root. Until it does, `decide`
+        // refuses rather than recording a decision nobody authorised —
+        // FR-GEL-062: an undecided decision is not an approval.
+        new DecisionService(store, undefined),
+    },
+    {
       provide: RequirementRoomService,
       inject: [
         IntakeService,
         BaselineService,
         AnalysisService,
         ClarificationService,
+        OptionsService,
+        DecisionService,
         EDIT_VETO_REGISTERED,
         REQUIREMENT_ROOM_STORE,
       ],
@@ -130,13 +148,24 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         baselines: BaselineService,
         analysis: AnalysisService,
         clarifications: ClarificationService,
+        options: OptionsService,
+        decisions: DecisionService,
         _veto: true,
         store: RequirementRoomStore,
       ): RequirementRoomService =>
         // No EvidenceContractSource: EPIC-032 binds it at the composition root.
         // Until it does, `readiness` reports the Contract as UNEVALUATED, which
         // blocks — "cannot tell" is never "ready" (T339g).
-        new RequirementRoomService(intake, baselines, analysis, clarifications, store, undefined),
+        new RequirementRoomService(
+          intake,
+          baselines,
+          analysis,
+          clarifications,
+          options,
+          decisions,
+          store,
+          undefined,
+        ),
     },
   ],
   exports: [
@@ -145,6 +174,8 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
     BaselineService,
     AnalysisService,
     ClarificationService,
+    OptionsService,
+    DecisionService,
     REQUIREMENT_ROOM_STORE,
   ],
 })
