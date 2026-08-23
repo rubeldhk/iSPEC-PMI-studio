@@ -216,14 +216,14 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 **Purpose**: the measurements and mutation proofs the Epic is judged on
 
-- [ ] T976 [P] Add stage-residency instrumentation so "which stage, and for how long" is answerable without opening the object, in `backend/src/modules/loop/loop.service.ts` (unit test: T977) — `SC-GEL-006`
-- [ ] T977 [P] Write failing unit tests for stage-residency measurement in `backend/tests/unit/loop-residency.spec.ts`
-- [ ] T978 **Mutation proof — `FR-GEL-021`**: add a `satisfied`-by-default branch to `backend/src/modules/loop/gate-evaluator.ts`, revert (unit test: T967 — it must fail while the mutation stands). `SC-GEL-008`. Record the observation in this Epic's closing report — a gate check that cannot fail is decoration (Constitution V)
-- [ ] T979 **Mutation proof — `FR-GEL-041`**: split the transition and audit writes in `backend/src/modules/loop/transition-writer.ts`, revert (integration test: T957 — it must fail while the mutation stands). Record the observation
-- [ ] T980 **Mutation proof — `FR-GEL-016`**: remove the `approvedBy`/`approvalRef` requirement from `backend/src/modules/loop/loop-config.loader.ts`, revert (unit test: T937 — it must fail while the mutation stands). Record the observation (`SC-GEL-010`)
-- [ ] T981 **Mutation proof — Constitution XI Tier 1**: remove `LoopModule` from `backend/src/app.module.ts`, revert (integration test: T934 — it must fail while the mutation stands). Record the observation — a test importing `LoopModule` directly would still pass, which is the defect class Principle XI was ratified over
-- [ ] T982 [P] Verify the `R-030-6` performance targets — transition overhead p95 < 50 ms, end-to-end p95 < 150 ms, projection p95 < 100 ms, ≥ 50 transitions/second per workspace — and record the measured figures in this Epic's closing report
-- [ ] T983 Run every scenario in [quickstart.md](./quickstart.md) end to end and record the results
+- [X] T976 [P] Add stage-residency instrumentation so "which stage, and for how long" is answerable without opening the object, in `backend/src/modules/loop/loop.service.ts` (unit test: T977) — `SC-GEL-006`
+- [X] T977 [P] Write failing unit tests for stage-residency measurement in `backend/tests/unit/loop-residency.spec.ts`
+- [X] T978 **Mutation proof — `FR-GEL-021`**: add a `satisfied`-by-default branch to `backend/src/modules/loop/gate-evaluator.ts`, revert (unit test: T967 — it must fail while the mutation stands). `SC-GEL-008`. Record the observation in this Epic's closing report — a gate check that cannot fail is decoration (Constitution V)
+- [X] T979 **Mutation proof — `FR-GEL-041`**: split the transition and audit writes in `backend/src/modules/loop/transition-writer.ts`, revert (integration test: T957 — it must fail while the mutation stands). Record the observation
+- [X] T980 **Mutation proof — `FR-GEL-016`**: remove the `approvedBy`/`approvalRef` requirement from `backend/src/modules/loop/loop-config.loader.ts`, revert (unit test: T937 — it must fail while the mutation stands). Record the observation (`SC-GEL-010`)
+- [X] T981 **Mutation proof — Constitution XI Tier 1**: remove `LoopModule` from `backend/src/app.module.ts`, revert (integration test: T934 — it must fail while the mutation stands). Record the observation — a test importing `LoopModule` directly would still pass, which is the defect class Principle XI was ratified over
+- [X] T982 [P] Verify the `R-030-6` performance targets — transition overhead p95 < 50 ms, end-to-end p95 < 150 ms, projection p95 < 100 ms, ≥ 50 transitions/second per workspace — and record the measured figures in this Epic's closing report
+- [X] T983 Run every scenario in [quickstart.md](./quickstart.md) end to end and record the results
 
 ---
 
