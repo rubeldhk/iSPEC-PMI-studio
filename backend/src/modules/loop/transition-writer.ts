@@ -31,6 +31,7 @@ import type {
   TransitionResult,
 } from '@pmi/loop-contract';
 import { evaluateAuthority, transitionKey, type AuthorityMap } from './authority.js';
+import { evaluateGates, type GateException } from './gate-evaluator.js';
 import type { ResolvedLoopConfig } from './loop-config.loader.js';
 import type { LoopObjectRow, LoopStore, LoopTransitionRow } from './loop.store.js';
 
@@ -51,6 +52,8 @@ export interface TransitionRequest {
   /** `FR-GEL-031` — required when `actor.kind` is `automation`. */
   readonly trigger?: { readonly ruleId: string; readonly eventId: string };
   readonly gates: readonly GateOutcome[];
+  /** `FR-GEL-021` — exceptions granted for this transition, each with an authorizer and a reason. */
+  readonly exceptions?: readonly GateException[];
 }
 
 export class TransitionWriter {
@@ -90,15 +93,31 @@ export class TransitionWriter {
       return this.#refuse(request, this.#requiredAuthorityLabel(request), verdict.reason);
     }
 
-    // FR-GEL-021 — a gate that did not resolve `satisfied` stops the transition,
-    // and the outcome is recorded rather than the transition silently proceeding.
-    const blocking = request.gates.find((gate) => gate.result !== 'satisfied');
-    if (blocking) {
+    // FR-GEL-021 — evaluated from the DECLARED gates, not from what a provider
+    // happened to return.
+    //
+    // The naive form — `request.gates.find(g => g.result !== 'satisfied')` —
+    // reads only the outcomes that came back, so a gate the provider never
+    // answered for is simply not in the list and the transition proceeds. That
+    // is the silent pass BR-0060 forbids, and it arrives as an absence rather
+    // than as a bug anyone wrote. `evaluateGates` returns one outcome per
+    // declared gate and resolves a missing one to `violation`.
+    const declared = config.transitionFor(from, toStage)?.requiredGates ?? [];
+    const evaluation = evaluateGates({
+      declared,
+      reported: request.gates,
+      ...(request.exceptions ? { exceptions: request.exceptions } : {}),
+    });
+    if (!evaluation.passed) {
+      const blocking = evaluation.blocking;
       return this.#refuse(
         request,
         verdict.basis,
-        `gate "${blocking.gateId}" resolved ${blocking.result} (FR-GEL-021)`,
-        blocking.result === 'violation' ? 'violation' : 'exception',
+        `gate "${blocking?.gateId ?? 'unknown'}" resolved ${blocking?.result ?? 'unknown'}` +
+          `${blocking?.detail ? ` — ${blocking.detail}` : ''} (FR-GEL-021)`,
+        blocking?.result === 'violation' ? 'violation' : 'exception',
+        null,
+        evaluation.outcomes,
       );
     }
 
@@ -126,6 +145,7 @@ export class TransitionWriter {
         refusalReason: null,
         wonBy: null,
         authorityBasis: verdict.basis,
+        gateOutcomes: evaluation.outcomes,
       });
       return { kind: 'accepted' as const, row, version: advanced.version };
     });
@@ -202,6 +222,14 @@ export class TransitionWriter {
     reason: string,
     outcome: 'refused' | 'conflict' | 'exception' | 'violation' = 'refused',
     wonBy: string | null = null,
+    /**
+     * The EVALUATED outcomes, when gates were the cause.
+     *
+     * Recorded rather than the reported ones, so a transition refused for an
+     * unevaluated gate carries a row saying which gate never ran — which is
+     * what `FR-GEL-022` reads.
+     */
+    gateOutcomes: readonly GateOutcome[] = request.gates,
   ): Promise<TransitionResult> {
     const row = await this.#recordAndAudit(request, {
       fromStage: request.object.currentStage,
@@ -209,6 +237,7 @@ export class TransitionWriter {
       refusalReason: reason,
       wonBy,
       authorityBasis,
+      gateOutcomes,
     });
     return {
       outcome,
@@ -239,6 +268,7 @@ export class TransitionWriter {
       refusalReason: string | null;
       wonBy: string | null;
       authorityBasis: string;
+      gateOutcomes: readonly GateOutcome[];
     },
   ): Promise<LoopTransitionRow> {
     return this.store.runInTransaction((tx) => this.#append(request, tx, fields));
@@ -254,6 +284,7 @@ export class TransitionWriter {
       refusalReason: string | null;
       wonBy: string | null;
       authorityBasis: string;
+      gateOutcomes: readonly GateOutcome[];
     },
   ): Promise<LoopTransitionRow> {
     {
@@ -276,7 +307,7 @@ export class TransitionWriter {
           triggerRuleId: request.trigger?.ruleId ?? null,
           triggerEventId: request.trigger?.eventId ?? null,
           configVersion: request.object.configVersion,
-          gateOutcomes: request.gates,
+          gateOutcomes: fields.gateOutcomes,
         },
         tx,
       );

@@ -187,11 +187,11 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 7
 
-- [ ] T967 [P] [US4] Write failing unit tests for gate-outcome completeness in `backend/tests/unit/loop-gate-completeness.spec.ts` — a declared gate with no recorded outcome makes the transition invalid, not passed — `FR-GEL-020`, `FR-GEL-021`, `SC-GEL-008`
-- [ ] T968 [US4] Implement gate evaluation and the four-outcome resolution in `backend/src/modules/loop/gate-evaluator.ts` (unit test: T967) — refuse / exception / violation, never satisfied-by-omission — `FR-GEL-020`, `SC-GEL-008`
-- [ ] T969 [P] [US4] Write failing unit tests for exception recording in `backend/tests/unit/loop-gate-exception.spec.ts` — authorizer and reason required — `FR-GEL-021`
-- [ ] T970 [US4] Implement exception and violation recording in `backend/src/modules/loop/gate-evaluator.ts` (unit test: T969)
-- [ ] T971 [US4] Implement `GET /loop/objects/:id/exceptions` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `FR-GEL-022`
+- [X] T967 [P] [US4] Write failing unit tests for gate-outcome completeness in `backend/tests/unit/loop-gate-completeness.spec.ts` — a declared gate with no recorded outcome makes the transition invalid, not passed — `FR-GEL-020`, `FR-GEL-021`, `SC-GEL-008`
+- [X] T968 [US4] Implement gate evaluation and the four-outcome resolution in `backend/src/modules/loop/gate-evaluator.ts` (unit test: T967) — refuse / exception / violation, never satisfied-by-omission — `FR-GEL-020`, `SC-GEL-008`
+- [X] T969 [P] [US4] Write failing unit tests for exception recording in `backend/tests/unit/loop-gate-exception.spec.ts` — authorizer and reason required — `FR-GEL-021`
+- [X] T970 [US4] Implement exception and violation recording in `backend/src/modules/loop/gate-evaluator.ts` (unit test: T969)
+- [X] T971 [US4] Implement `GET /loop/objects/:id/exceptions` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934) — `FR-GEL-022`
 
 **Checkpoint**: US4 is independently demonstrable — no gate can be passed by omission
 
@@ -203,10 +203,10 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 **Independent test**: request the projection for two different workflow types and compare vocabularies
 
-- [ ] T972 [P] [US5] Write failing unit tests for the progress projection in `backend/tests/unit/loop-progress.spec.ts` — every stage exactly one of done/current/pending, omitted stages visible — `FR-GEL-050`, `FR-GEL-008`
-- [ ] T973 [US5] Implement the progress projection in `backend/src/modules/loop/progress.projection.ts` (unit test: T972)
-- [ ] T974 [P] [US5] Write failing unit tests for vocabulary identity across workflow types in `backend/tests/unit/loop-progress-vocabulary.spec.ts` — `FR-GEL-051`, `SC-GEL-007`
-- [ ] T975 [US5] Implement `GET /loop/objects/:id/progress` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934)
+- [X] T972 [P] [US5] Write failing unit tests for the progress projection in `backend/tests/unit/loop-progress.spec.ts` — every stage exactly one of done/current/pending, omitted stages visible — `FR-GEL-050`, `FR-GEL-008`
+- [X] T973 [US5] Implement the progress projection in `backend/src/modules/loop/progress.projection.ts` (unit test: T972)
+- [X] T974 [P] [US5] Write failing unit tests for vocabulary identity across workflow types in `backend/tests/unit/loop-progress-vocabulary.spec.ts` — `FR-GEL-051`, `SC-GEL-007`
+- [X] T975 [US5] Implement `GET /loop/objects/:id/progress` in `backend/src/modules/loop/loop.controller.ts` (integration test: T934)
 
 **Checkpoint**: all five user stories are independently demonstrable
 

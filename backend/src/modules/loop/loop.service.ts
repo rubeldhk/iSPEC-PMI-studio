@@ -30,6 +30,7 @@ import type { LoopConfigRegistry } from './config-registry.js';
 import type { LoopStore, LoopTransitionRow } from './loop.store.js';
 import { TransitionWriter } from './transition-writer.js';
 import type { AuthorityMap } from './authority.js';
+import { projectFor } from './progress.projection.js';
 import {
   projectProgress,
   type AuditSink,
@@ -267,15 +268,9 @@ export class LoopService {
     const object = await this.store.findObject(objectId);
     if (!object) throw new NotFoundError(`no loop object ${objectId}`);
     const config = this.configs.require(object.workflowType);
-    const rows = await this.history(objectId);
-    const completedStages = rows
-      .filter((r) => r.outcome === 'accepted')
-      .map((r) => r.fromStage)
-      .filter((s): s is LoopStage => s !== null);
-    return this.progressForConfig(config, {
-      currentStage: object.currentStage,
-      completedStages,
-    });
+    // T973 — the derivation lives in `progress.projection.ts` so the service and
+    // the Room cannot compute "completed" two different ways.
+    return projectFor({ object, config, history: await this.history(objectId) });
   }
 
   /**
