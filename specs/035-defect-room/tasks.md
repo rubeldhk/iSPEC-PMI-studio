@@ -27,7 +27,7 @@ identifier. The trace is two-hop, deliberate, and consistent across every Wave 1
 here rather than described, because `EPIC-034`'s analysis finding `C2` was that citation drifting to
 a local architecture test that checked nothing about the file.
 
-**Organization**: grouped by the seven user stories of [spec.md](./spec.md).
+**Organization**: grouped by the eight user stories of [spec.md](./spec.md).
 
 ## ⚠ Task identifiers — three bases, and the scheme ends here
 
@@ -39,13 +39,15 @@ prefixes are in use; `T997`, `T998` and `T999` are what remain, and each carries
 | Base | Phases |
 |---|---|
 | `T997` | Phase 1 Setup (bare, `a`–`d`) · Phase 2 Foundational (`e`–`z`) |
-| `T998` | Phase 3 US1 (bare, `a`–`f`) · Phase 4 US2 (`g`–`n`) · Phase 5 US3 (`o`–`t`) · Phase 6 US4 (`u`–`z`) |
+| `T998` | Phase 3 US1 (bare, `a`–`f`) · Phase 4 US2 (`g`–`n`) · Phase 5 US3 (`o`–`t`) · Phase 6 US4 (`u`–`x`) · Phase 6b US8 (`y`–`z`) |
 | `T999` | Phase 7 US5 (bare, `a`–`c`) · Phase 8 US6 (`d`–`f`) · Phase 9 US7 (`g`–`k`) · Phase N Polish (`l`–`q`) · Phase Z Closure (`r`–`z`) |
 
 **Identifiers do not sort into execution order.** The table above is the map.
 
-**What the ceiling cost this document, stated rather than hidden** (`R-035-11`). Seven user stories
-and forty-six requirements were written into 81 identifiers. **Test-and-implementation pairing did
+**What the ceiling cost this document, stated rather than hidden** (`R-035-11`). **Eight** user stories
+and **forty-seven** requirements were written into 81 identifiers — the eighth story and the
+forty-seventh requirement were both added by the analysis remediation of 2026-08-23 **without a
+single new identifier**, because a phase costs a heading and a requirement costs a citation. **Test-and-implementation pairing did
 not compress** — `DOR-08` and Constitution V both read it, and compressing it would trade a real
 guarantee for a numbering convenience. What compressed instead is the *confirmation* tasks in Polish
 and the *restatement* tasks in Closure: where `EPIC-034` used one task per unowned capability, this
@@ -76,7 +78,7 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: can run in parallel (different files, no dependencies)
-- **[Story]**: US1–US7
+- **[Story]**: US1–US8
 - Exact file paths in every description
 
 ## Path Conventions
@@ -94,7 +96,7 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 - [ ] T997a Confirm `EPIC-033` Phase 2 is built and `packages/room-contract` resolves — this Epic **imports** `RoomShellProps`, `Epistemic`, `Labelled<T>` and `RoomObjectRef` and derives none of them. If it is not built, stop
 - [ ] T997b [P] Add `backend/src/modules/defect-room` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
 - [ ] T997c [P] Confirm `supertest` is present from `EPIC-030`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
-- [ ] T997d **Re-confirm the three absent collaborators before building against them** (`R-035-1`, `R-035-4`, `R-035-3`): that no callable test-execution surface exists, that `EPIC-033` still has no Requirement-Gap intake route, and that `TaskRecord` still has no provenance field. **If any now exists, the port stops being a refusal and becomes an integration** — and the plan's Complexity Tracking row for it is discharged rather than carried
+- [ ] T997d **Re-confirm the three absent collaborators before building against them** (`R-035-1`, `R-035-4`, `R-035-3`): that no callable test-execution surface exists, that `EPIC-033` still has no Requirement-Gap intake route, and that `TaskRecord` still has no provenance field. **If any now exists, the port stops being a refusal and becomes an integration** — and the plan's Complexity Tracking row for it is discharged rather than carried. **Confirm `EPIC-033` `T338u`/`T338v` are on that branch and scheduled**: they add the Requirement-Gap inbound route, and **Epic Exit Criterion 5 cannot hold until they land**. *Raised here rather than in the closing report from 2026-08-23 (analysis finding `C1`): `T999x` named the obligation at closure, by which time `EPIC-033`'s task list is fixed and nothing there is scheduled to build it*
 
 ---
 
@@ -169,8 +171,8 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 - [ ] T998i [P] [US2] Write the failing integration test for the three guards in `backend/tests/integration/defect-room-test-first.spec.ts` — the type, the loop configuration and the database `CHECK` must **each** refuse a fix with no failing test, exercised by going around the service (`FR-DFR-041`, `SC-DFR-001`)
 - [ ] T998j [P] [US2] Write failing unit tests for the non-automatable exception in `backend/tests/unit/defect-room-not-automatable.spec.ts` — the reason is **required**, alternative evidence is required, and the exceptions are **enumerable** (`FR-DFR-043`)
 - [ ] T998k [US2] Implement reproduction capture and the non-automatable path in `backend/src/modules/defect-room/reproduction.service.ts`, plus `POST /rooms/defect/:id/reproduction` (unit tests: T998j; integration test: T997v) — evidence goes **through `EPIC-032`**, which already refuses to read around artifact access, so `FR-DFR-032` and `FR-DFR-033` are one composition, not two mechanisms (`R-035-7`)
-- [ ] T998l [P] [US2] Write the failing integration test for regression scope in `backend/tests/integration/defect-room-regression-scope.spec.ts` — a fix in Epic A that breaks a test in Epic B is refused closure, naming the failing regression; **applicability is not bounded by the defect's own Epic** (`FR-DFR-060`, `FR-DFR-061`, `SC-DFR-007`)
-- [ ] T998m [P] [US2] Write failing unit tests for verification and closure in `backend/tests/unit/defect-room-verification.spec.ts` — closure requires the defect test **and** applicable regression evidence; a **declaration of completion is not evidence**; and with `TestExecution` absent, closure **refuses with `503`** and never passes on the grounds that no failure was observed (`FR-DFR-060`, `FR-DFR-062`, `FR-DFR-063`, `BR-0144`, `R-035-1`)
+- [ ] T998l [P] [US2] Write the failing integration test for regression scope in `backend/tests/integration/defect-room-regression-scope.spec.ts` — a fix in Epic A that breaks a test in Epic B is refused closure, naming the failing regression; **applicable** is the transitive test set reachable from the artifacts the fix touched through `EPIC-011`'s chain, which crosses Epic boundaries wherever the artifacts do — a derivable set, not a chosen one (`FR-DFR-060`, `FR-DFR-061`, `SC-DFR-007`; *defined 2026-08-23, analysis finding `A1`*)
+- [ ] T998m [P] [US2] Write failing unit tests for verification and closure in `backend/tests/unit/defect-room-verification.spec.ts` — closure requires the defect test **and** applicable regression evidence; a **declaration of completion is not evidence**; with `TestExecution` absent, closure **refuses with `503`** and never passes on the grounds that no failure was observed; and where the transitive set **cannot be computed** — an incomplete chain, or an unavailable runner — closure is **refused rather than falling back to the defect test alone**, because an unknown regression set and an empty one must not behave alike (`FR-DFR-060`, `FR-DFR-062`, `FR-DFR-063`, `FR-DFR-064`, `BR-0144`, `R-035-1`)
 - [ ] T998n [US2] Implement `backend/src/modules/defect-room/verification.service.ts` and `POST /rooms/defect/:id/verify` and `POST /rooms/defect/:id/close` (unit tests: T998m; integration tests: T998i, T998l) — **requests runs, owns no runner**
 
 **Checkpoint**: US2 demonstrable — and "we could not run the tests" never reads as "the tests passed"
@@ -204,10 +206,27 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 - [ ] T998v [US4] Implement `backend/src/modules/defect-room/evidence-check.service.ts` and `POST /rooms/defect/:id/evidence-check` — the three paths **and** intermittency handling, one file and one task (unit tests: T998u, T998w; integration test: T997v)
 - [ ] T998w [P] [US4] Write failing unit tests for intermittency in `backend/tests/unit/defect-room-intermittency.spec.ts` — a **single** passing run neither closes nor reclassifies an intermittent defect, and an evidence check may be entered more than once (`FR-DFR-031`)
 - [ ] T998x [P] [US4] Write the failing integration test for the missing edge in `backend/tests/integration/defect-room-type-isolation.spec.ts` — driving PASS → `change-request` directly is refused because the loop configuration **has no such transition**, and a Defect Room object cannot transition under another Room's stages, authorities or gates (`FR-DFR-001`, `FR-DFR-044`, `SC-DFR-011`, via `EPIC-030` `T944a`)
-- [ ] T998y [P] [US4] Write failing component tests for the Room page in `frontend/src/pages/DefectRoom.test.tsx` — six regions composed through the **imported** `RoomShell` (`FR-DFR-090`), region names identical to the shared pattern (`FR-DFR-091`), AI triage output visually distinct from recorded fact and human decision (`FR-DFR-092`, `UX-0031`), what is blocking visible without opening another screen (`FR-DFR-093`, `UX-0032`), a policy-refused action showing the refusing policy (`FR-DFR-094`, `UX-0033`), and state, decision and evidence visible at **360px** (`FR-DFR-095`, `UX-0040`). *Each requirement written out rather than as a range: a range is legible to a reader and invisible to extraction, which is how `EPIC-033`'s `A1` failed three times*
-- [ ] T998z [US4] Implement `frontend/src/pages/DefectRoom.tsx` (component test: T998y) — imports `EPIC-033`'s `RoomShell` and its `EPIC-029` epistemic token mapping; **derives no region vocabulary and sets no breakpoints of its own**
-
 **Checkpoint**: US4 demonstrable — the failure mode `ADR-0016` names is unrepresentable, not merely forbidden
+
+---
+
+## Phase 6b: User Story 8 - The Room reads like the other two (Priority: P3)
+
+**Goal**: `UX-0030`, `UX-0035` — inherited, not invented
+
+**Independent test**: [quickstart.md](./quickstart.md) Scenario 16
+
+> *Split from Phase 6 on 2026-08-23 to close analysis finding `I1`.* These two tasks carry six
+> requirements and the whole Room surface, and were labelled `[US4]` inside a phase about passing
+> reproduction tests, whose independent test does not render the Room. **A phase costs no
+> identifiers**, only a heading — so the fix is available even with the numbering exhausted, and the
+> two tasks keep their `T998` identifiers. `US8` was added to [spec.md](./spec.md) in the same pass;
+> both sibling Rooms already had this story.
+
+- [ ] T998y [P] [US8] Write failing component tests for the Room page in `frontend/src/pages/DefectRoom.test.tsx` — six regions composed through the **imported** `RoomShell` (`FR-DFR-090`), region names identical to the shared pattern (`FR-DFR-091`), AI triage output visually distinct from recorded fact and human decision (`FR-DFR-092`, `UX-0031`), what is blocking visible without opening another screen (`FR-DFR-093`, `UX-0032`), a policy-refused action showing the refusing policy (`FR-DFR-094`, `UX-0033`), and state, decision and evidence visible at **360px** (`FR-DFR-095`, `UX-0040`). *Each requirement written out rather than as a range: a range is legible to a reader and invisible to extraction, which is how `EPIC-033`'s `A1` failed three times*
+- [ ] T998z [US8] Implement `frontend/src/pages/DefectRoom.tsx` (component test: T998y) — imports `EPIC-033`'s `RoomShell` and its `EPIC-029` epistemic token mapping; **derives no region vocabulary and sets no breakpoints of its own**
+
+**Checkpoint**: US8 demonstrable — and verified by comparison against `EPIC-033`'s, not by review
 
 ---
 
@@ -260,7 +279,7 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 
 - [ ] T999l **Mutation proof — `FR-DFR-041`**: add a path accepting a fix with no failing test to `backend/src/modules/defect-room/defect-test.service.ts`, revert (integration test: T998i — it must fail while the mutation stands). Record the observation (`SC-DFR-001`). **Test-first is this Room's reason to exist**
 - [ ] T999m **Mutation proof — `FR-DFR-044`**: add automatic reclassification of a passing reproduction test to `backend/src/modules/defect-room/evidence-check.service.ts` **and** the corresponding edge to `packages/loop-contract/workflows/defect-room.json`, revert both (unit test: T998u **and** integration test: T998x — both must fail while the mutation stands). Record both observations (`SC-DFR-004`). `ADR-0016` names this failure mode explicitly and the spec calls it the easiest requirement here to "simplify" into a defect
-- [ ] T999n **Mutation proofs — the two the exit criteria do not require**, recorded here so the extra rigour is visible rather than accidental: (a) **`FR-DFR-077`** — make a `Classification` writable with a null destination, revert (unit test: T997e and integration test: T997u must both fail); (b) **Constitution XI Tier 1** — remove `DefectRoomModule` from `backend/src/app.module.ts`, revert (integration test: T997v must fail). Record both observations
+- [ ] T999n **Mutation proofs — the third and fourth**, now Epic Exit Criteria in their own right *(promoted 2026-08-23, analysis finding `L1`; the task list carried them while the gate did not require them)*: (a) **`FR-DFR-077`** — make a `Classification` writable with a null destination, revert (unit test: T997e and integration test: T997u must both fail); (b) **Constitution XI Tier 1** — remove `DefectRoomModule` from `backend/src/app.module.ts`, revert (integration test: T997v must fail). Record both observations
 - [ ] T999o [P] Verify the `R-035-9` targets — triage p95 < 1.5 s excluding model time, reproduction evidence write p95 < 800 ms excluding the `EPIC-032` call, aggregation over 5,000 closed defects p95 < 2 s, Room load p95 < 1.2 s, close-path p95 < 300 ms **excluding the test run** — and record the measured figures
 - [ ] T999p [P] **Consolidated boundary confirmations** *(one task where `EPIC-034` used five — the identifier ceiling, `R-035-11`)*: the Room-load figure matches `EPIC-033`'s and `EPIC-034`'s, since it is the same shell; no requirement, specification or evidence payload is stored in this Epic's tables; unused loop stages render as **omitted** rather than absent (`FR-GEL-008`); region names match `packages/room-contract` **by programmatic comparison, not review** (`FR-DFR-091`, `UX-0035`); and this Epic published **no package**
 - [ ] T999q Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (judged against approved behaviour), **Scenario 2** (Requirement Gap, and the third outcome cannot be dropped), **Scenario 3** (no fix without a failing test, service and constraint), **Scenario 4** (not automatable says why), **Scenario 5** (passing test → evidence check, no auto-reclassify), **Scenario 6** (one passing run closes nothing), **Scenario 7** (regression scope unbounded by Epic), **Scenario 8** (a declaration is not evidence), **Scenario 9** (transfer states why), **Scenario 10** (declined and refused transfers), **Scenario 11** (gap reaches the Requirement Room, or refuses), **Scenario 12** (repair work is `EPIC-012` tasks), **Scenario 13** (reclassified record and its tasks both visible), **Scenario 14** (six origins, always linked), **Scenario 15** (analytics say what they cannot see), **Scenario 16** (cannot diverge from siblings), **Scenario 17** (XI Tier 1), **Scenario 18** (XI Tier 2 keyboard journey)
@@ -277,7 +296,7 @@ Ordered as the constitution's *"Quality gates in order"* states them.
 - [ ] T999u [P] Write the transcript conformance check in `backend/tests/architecture/defect-room-transcript.spec.ts` — asserts the transcript exists, names the run, covers all **seven** steps, records keyboard-only navigation, and was **generated** rather than authored
 - [ ] T999v **Demonstrate all three classification outcomes routed end to end** — Confirmed Defect to repair, Change Request to `EPIC-034` (jointly, `FR-DFR-071`), Requirement Gap to `EPIC-033` as new intent (jointly, `FR-DFR-076`). **Two outcomes is the shape this Epic is most likely to ship by accident**, and an unrouted third is how the shape returns wearing three names. Where `EPIC-033`'s inbound route does not exist, record the refusal as the observed result and carry the handover in `T999x` rather than marking the criterion met
 - [ ] T999w **Converge `ADR-0016`** — move it to Accepted, or restate its `Awaits` against what actually remains. Its current `Awaits` reads *"the Defect Room epic, which does not yet exist"*, and this Epic is it. The three outcomes, the never-delete rule and the evidence-check path are all now built and tested; what remains, if anything, is the runtime behaviour only implementation could confirm
-- [ ] T999x **Restate the four unowned dependencies in the closing report** *(one task where `EPIC-034` used three — the identifier ceiling, `R-035-11`, and each is named in full so the compression costs legibility and not content)*: (a) **`BR-0080` product-side test execution has no owner anywhere in the programme** — `EPIC-015` delivered programme validation, not a callable surface, and `brs-v2-reconciliation.md` has no `U-` area for it, so nothing currently records it as missing; (b) **`BR-0163` operational feedback is `U-19` and unowned**, so this Room's delivery must not be read as having closed the telemetry loop; (c) **`BR-0151` task provenance is `U-12` and unowned**, which is why a repair task carries a sentinel in an engine field; (d) **`EPIC-033` needs an inbound route for a routed Requirement Gap** (`R-035-4`) — raise it on that Epic by name, as `EPIC-033`'s own `T405y` raised the shared Room artifacts
+- [ ] T999x **Restate the four unowned dependencies in the closing report** *(one task where `EPIC-034` used three — the identifier ceiling, `R-035-11`, and each is named in full so the compression costs legibility and not content)*: (a) **`BR-0080` product-side test execution has no owner anywhere in the programme** — `EPIC-015` delivered programme validation, not a callable surface, and `brs-v2-reconciliation.md` has no `U-` area for it, so nothing currently records it as missing; (b) **`BR-0163` operational feedback is `U-19` and unowned**, so this Room's delivery must not be read as having closed the telemetry loop; (c) **`BR-0151` task provenance is `U-12` and unowned**, which is why a repair task carries a sentinel in an engine field; (d) **`EPIC-033`'s Requirement-Gap inbound route** (`R-035-4`) — report whether `T338u`/`T338v` landed, since **Exit Criterion 5 cannot hold until they do**. The obligation is raised at `T997d`, not here; this line reports its state
 - [ ] T999y Run `/speckit-converge`; append and complete any remaining unbuilt work; triage `specs/035-defect-room/defects/` — the repository's own Constitution VI folder, which this Epic's **product** capability does not replace — leaving no open record; and re-run the full suite green (`pnpm lint && pnpm typecheck && pnpm test && pnpm test:governance`)
 - [ ] T999z Promote `local → dev` (no environment skipped) and publish the Epic closing report: work completed, work deferred, the four mutation observations, the measured performance figures, and the recommended next command (Constitution IX). **State that the task-identifier scheme is now exhausted** — 999 of 999 prefixes in use after this Epic, no base remains, and `EPIC-026` must widen `T\d{3}[a-z]?` to four digits or retire the adjacency meaning of the suffix before any further Epic can be tasked (`EPIC-034` `T995y`). Refresh the Delivery Board or restate its staleness
 
@@ -294,6 +313,8 @@ Ordered as the constitution's *"Quality gates in order"* states them.
 - **US5 (Phase 7)**: Phase 2 only — intake is independent of classification
 - **US6 (Phase 8)**: `T997z`'s escape capture, and closed defects to aggregate
 - **US7 (Phase 9)**: US1's classification (`FR-DFR-052`) and US2's `DefectTest`
+- **US8 (Phase 6b)**: `EPIC-033`'s `RoomShell`, and every region's data source — so in practice last
+  among the story phases despite its identifiers sitting in the `T998` range
 - **Polish, Closure**: last
 
 ### Cross-Epic dependencies

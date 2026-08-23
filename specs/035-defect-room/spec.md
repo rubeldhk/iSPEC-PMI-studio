@@ -298,6 +298,33 @@ classification has happened.
 4. **Given** a defect reclassified after tasks were created, **When** the record is read, **Then**
    the tasks and the reclassification are both visible — the tasks are not silently orphaned.
 
+### User Story 8 - The Room reads like the other two (Priority: P3)
+
+The same six regions, the same vocabulary, the same treatment of AI output as in the Requirement and
+Change Rooms.
+
+**Why this priority**: `UX-0030`, `UX-0035`. P3 because it is inherited rather than invented here —
+`EPIC-033` sets the pattern and this Room must not diverge from it. *Added 2026-08-23 to close
+analysis finding `I1`: `FR-DFR-090`–`FR-DFR-095` had no user story, so the whole Room surface was
+carried inside `US4`, a story about passing reproduction tests, whose independent test does not
+render the Room. Both sibling Rooms have this story; this one did not.*
+
+**Independent Test**: [quickstart.md](./quickstart.md) Scenario 16 — assert all six regions present,
+region names identical to `packages/room-contract` and to `EPIC-033`'s by programmatic comparison,
+and that a Defect Room object cannot transition under another Room's stages.
+
+**Acceptance Scenarios**:
+
+1. **Given** the Defect Room, **When** it renders, **Then** all six required regions are present with
+   names identical to the shared pattern (`FR-DFR-090`, `FR-DFR-091`).
+2. **Given** AI triage output, **When** it is displayed, **Then** it is visually distinguishable from
+   recorded fact and from human decision (`FR-DFR-092`, `UX-0031`).
+3. **Given** a blocked defect, **When** the Room renders, **Then** what is blocking is visible without
+   opening another screen, and a policy-refused action shows the refusing policy (`FR-DFR-093`,
+   `FR-DFR-094`).
+4. **Given** a 360px viewport, **When** the Room renders, **Then** state, decision and evidence remain
+   visible (`FR-DFR-095`, `UX-0040`, `UX-0042`).
+
 ### Edge Cases
 
 - **The contested behaviour has no approved baseline at all** — **Requirement Gap**, the third
@@ -376,8 +403,9 @@ classification has happened.
 
 *Verification — `BR-0056`.*
 
-- **FR-DFR-060**: Closure MUST require the defect test **plus applicable regression tests** to pass, with the evidence retained.
-- **FR-DFR-061**: Applicable regression scope MUST NOT be bounded by the defect's own Epic.
+- **FR-DFR-060**: Closure MUST require the defect test **plus applicable regression tests** to pass, with the evidence retained. **Applicable** means the **transitive test set reachable from the artifacts the fix touched**, through `EPIC-011`'s traceability chain — not a set someone selects *(defined 2026-08-23, analysis finding `A1`; the term gated this requirement and `SC-DFR-007` and was defined in none of the seven artifacts)*.
+- **FR-DFR-061**: Applicable regression scope MUST NOT be bounded by the defect's own Epic — which follows from `FR-DFR-060`'s definition rather than merely constraining it: the chain crosses Epic boundaries wherever the artifacts do. Stated separately because it is the case most likely to be got wrong.
+- **FR-DFR-064**: Where the transitive set cannot be computed — because the chain is incomplete or `TestExecution` is unavailable — closure MUST be **refused**, and MUST NOT fall back to the defect test alone. An unknown regression set and an empty one must not behave alike.
 - **FR-DFR-062**: Test execution MUST be requested from `EPIC-015` (`BR-0080`); this Epic MUST NOT build a second test runner.
 - **FR-DFR-063**: A declaration of completion MUST NOT substitute for the passing evidence (`BR-0144`).
 
@@ -428,7 +456,7 @@ classification has happened.
 - **SC-DFR-004**: **Zero** passing reproduction tests are automatically reclassified as Change Requests.
 - **SC-DFR-005**: **Zero** reclassified defect records are deleted; all are retained as reclassified.
 - **SC-DFR-006**: **100%** of defects carry an Epic and project link, or are visibly held for triage.
-- **SC-DFR-007**: **100%** of closures required the defect test plus applicable regression tests to pass, with evidence retained.
+- **SC-DFR-007**: **100%** of closures required the defect test plus applicable regression tests to pass, with evidence retained — *applicable* as `FR-DFR-060` defines it, so the percentage is taken over a **derivable** set rather than a chosen one.
 - **SC-DFR-008**: Escape point and origin are aggregatable across closed defects without opening individual records.
 - **SC-DFR-009**: A person can carry a defect from report to closure **using only a keyboard**, with focus visible at every step (`BR-0193`, `EPIC-029`).
 - **SC-DFR-010**: **100%** of Requirement Gap classifications reach the Requirement Room as new intent, with the defect record retained and marked reclassified; **zero** rest in a classified state with no destination *(clarified 2026-08-22)*.
@@ -455,8 +483,10 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] Every implementation task has a passing unit test — or, for the loop-instance configuration and Room pattern outputs, a passing executable conformance check (Constitution V)
 - [ ] **`FR-DFR-041` is mutation-tested**: a path accepting a fix with no failing test is added, and the suite observed failing (`SC-DFR-001`). Test-first is this Room's reason to exist
 - [ ] **`FR-DFR-044` is mutation-tested**: automatic reclassification of a passing reproduction test is added, and the suite observed failing (`SC-DFR-004`). `ADR-0016` names this failure mode explicitly and it is the easiest of the eight requirements to "simplify" into a defect
+- [ ] **`FR-DFR-077` is mutation-tested**: a `Classification` is made writable with a null destination, and the suite observed failing. This is the guarantee `R-035-5` and `ADR-0016` both rest on, and the task list carried the proof while the gate did not require it *(added 2026-08-23, analysis finding `L1`)*
+- [ ] **Constitution XI Tier 1 is mutation-tested**: `DefectRoomModule` is removed from `app.module.ts`, and the reachability test observed failing. A reachability test that passes when the module is unregistered proves nothing *(added 2026-08-23, analysis finding `L1`)*
 - [ ] All **three** classification outcomes are demonstrated **and routed** — Confirmed Defect to repair, Change Request to `EPIC-034`, Requirement Gap to `EPIC-033` as new intent. Two outcomes is the shape this Epic is most likely to ship by accident, and an unrouted third is how the shape returns wearing three names
-- [ ] A **Requirement Gap** has been routed end to end into the Requirement Room, jointly with `EPIC-033` (`FR-DFR-076`)
+- [ ] A **Requirement Gap** has been routed end to end into the Requirement Room, jointly with `EPIC-033` (`FR-DFR-076`). **This criterion depends on work in `EPIC-033`, not in this Epic**: that Room had no inbound route for a routed gap when this Epic was planned, because `FR-DFR-076` was added by a clarification after `EPIC-033` was planned. `EPIC-033` `T338u`/`T338v` add it. **Until they land this criterion cannot hold, and the Epic cannot be declared complete** — stated so that *"cannot close yet"* is visibly different from *"nobody did it"* *(recorded 2026-08-23, analysis finding `C1`)*
 - [ ] **`ADR-0016` is converged** — moved to Accepted, or its `Awaits` restated against what actually remains. Its current `Awaits` is this Epic
 - [ ] A transfer to the Change Room has been exercised end to end with context and evidence preserved, jointly with `EPIC-034` (`FR-DFR-071`)
 - [ ] Region names are verified identical to `EPIC-033`'s by comparison rather than by review

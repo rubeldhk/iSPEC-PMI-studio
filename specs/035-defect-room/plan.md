@@ -66,9 +66,13 @@ outcomes enforced by a total `Record` over the outcome union; a failing test enf
 loop configuration **and** by a database `CHECK`; `TestExecution` and `RequirementIntake` **refuse**
 rather than degrade.
 
-**Scale/Scope**: **46 functional requirements across ten groups**, 12 success criteria, 7 user
-stories, 14 exit criteria, 8 new tables, 13 HTTP routes, 9 ports, 18 quickstart scenarios, 0 new
+**Scale/Scope**: **47 functional requirements across ten groups**, 12 success criteria, **8 user
+stories**, **16 exit criteria**, 8 new tables, 13 HTTP routes, 9 ports, 18 quickstart scenarios, 0 new
 packages.
+
+> **Four of these figures moved on 2026-08-23**, from the analysis remediation and not from a
+> miscount: `FR-DFR-064` was added to close `A1`, `User Story 8` to close `I1`, and two mutation
+> proofs became exit criteria to close `L1`. Re-extracted after the edits.
 
 > **Every figure above was extracted by script from the artifacts**, and this note claims nothing
 > wider than that. `EPIC-030` stated a wrong count, `EPIC-031` reproduced it, `EPIC-033` reproduced
@@ -153,7 +157,8 @@ backend/src/modules/defect-room/        # NEW
 └── defect-room.tokens.ts               # the 9 ports
 
 frontend/src/pages/
-└── DefectRoom.tsx                      # NEW — composes EPIC-033's RoomShell, derives nothing
+├── DefectRoom.tsx                      # NEW — composes EPIC-033's RoomShell, derives nothing
+└── DefectRoom.test.tsx                 # the six regions, epistemic labels, 360px floor
 
 backend/prisma/
 ├── schema.prisma                       # + DefectRecord, Classification, Reproduction, DefectTest,
@@ -161,6 +166,10 @@ backend/prisma/
 └── migrations/                         # two hand-edited CHECK constraints (R-035-8)
 
 backend/tests/
+├── unit/
+│   ├── defect-room-classification-type.spec.ts   # the total Record over three outcomes
+│   ├── defect-room-test-first.types.spec.ts      # firstObservedFailingAt is non-optional
+│   └── … 23 further per-service unit specs, named in tasks.md
 ├── integration/
 │   ├── defect-room-reachability.spec.ts     # XI Tier 1 — imports AppModule
 │   ├── defect-room-constraints.spec.ts      # both CHECKs reject — and notice if a later
