@@ -34,8 +34,8 @@ model Organization {
 }
 
 model Workspace {
-  id   String @id @default(uuid())
-  name String
+  id             String   @id @default(uuid())
+  name           String
   // Required — a workspace belongs to exactly one organization. The default
   // points at the seeded default organization so pre-organization callers
   // (and every seed written before this epic) stay valid (T227).
@@ -78,6 +78,9 @@ model Workspace {
   storageConnections    StorageConnection[]
   publishRecords        PublishRecord[]
   publishedFiles        PublishedFileReference[]
+  loopConfigurations    LoopInstanceConfiguration[]
+  loopObjects           LoopObject[]
+  loopTransitions       LoopTransition[]
 
   @@map("workspaces")
 }
@@ -364,7 +367,7 @@ enum FindingSeverity {
 }
 
 model ValidationFinding {
-  id                     String           @id @default(uuid())
+  id                     String          @id @default(uuid())
   workspaceId            String
   specificationId        String
   specificationVersionId String
@@ -372,7 +375,7 @@ model ValidationFinding {
   location               String
   severity               FindingSeverity
   message                String
-  createdAt              DateTime         @default(now())
+  createdAt              DateTime        @default(now())
 
   workspace            Workspace            @relation(fields: [workspaceId], references: [id])
   specification        Specification        @relation(fields: [specificationId], references: [id])
@@ -563,29 +566,29 @@ enum JobFailureReason {
 }
 
 model GenerationJob {
-  id             String            @id @default(uuid())
-  workspaceId    String
-  projectId      String
+  id            String            @id @default(uuid())
+  workspaceId   String
+  projectId     String
   // Idempotency: a duplicate submission joins the existing job rather than
   // starting — and billing — a second engine run.
-  jobKey         String
-  kind           JobKind
-  requestedById  String
-  engineName     String
-  engineVersion  String
+  jobKey        String
+  kind          JobKind
+  requestedById String
+  engineName    String
+  engineVersion String
   // Correlation identifier, carried API -> queue -> worker -> sandbox (PC-3).
-  correlationId  String
-  inputRefs      Json
-  state          JobState          @default(queued)
-  failureReason  JobFailureReason?
+  correlationId String
+  inputRefs     Json
+  state         JobState          @default(queued)
+  failureReason JobFailureReason?
   // T845 (EPIC-008) — the artifact a succeeded job produced. Null until there
   // is one, and null forever on a job that failed, was cancelled, or timed out:
   // there is nothing to point at (FR-027, SC-006). Written in the same
   // transaction as the specification itself.
-  resultRef      String?
-  startedAt      DateTime?
-  endedAt        DateTime?
-  createdAt      DateTime          @default(now())
+  resultRef     String?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime          @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   project   Project   @relation(fields: [projectId], references: [id])
@@ -894,23 +897,23 @@ enum RunState {
 }
 
 model Run {
-  id          String       @id @default(uuid())
-  workspaceId String
-  projectId   String
-  mode        RunMode
-  stopRange   RunStopRange
-  state       RunState     @default(running)
+  id             String       @id @default(uuid())
+  workspaceId    String
+  projectId      String
+  mode           RunMode
+  stopRange      RunStopRange
+  state          RunState     @default(running)
   // FR-ACC-028 / R-002-4 — resolved grants at start, read from, never
   // re-queried. Written by EPIC-024; null until that epic lands.
   accessSnapshot Json?
   initiatedById  String
-  startedAt      DateTime  @default(now())
+  startedAt      DateTime     @default(now())
   endedAt        DateTime?
   // Why it stopped, when not a clean stop point (FR-RUN-008). On a clean stop
   // it reports that the run stopped at the selected range (FR-RUN-008a).
-  outcomeReason String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  outcomeReason  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   workspace     Workspace          @relation(fields: [workspaceId], references: [id])
   project       Project            @relation(fields: [projectId], references: [id])
@@ -926,18 +929,18 @@ model Run {
 // FR-RUN-004, FR-RUN-007). Context is REQUIRED: enough for someone who did
 // not start the run to understand what is being asked.
 model RecordedQuestion {
-  id                String @id @default(uuid())
-  workspaceId       String
-  runId             String
-  context           String
-  optionsConsidered Json
-  suggestedAnswer   String
+  id                       String   @id @default(uuid())
+  workspaceId              String
+  runId                    String
+  context                  String
+  optionsConsidered        Json
+  suggestedAnswer          String
   // What the run actually proceeded on — a provisional answer, not a decision.
   provisionalAnswerApplied String?
   // True when the asker's grants hide the artifact it concerns: shown as
   // restricted rather than silently omitted (parent edge case).
-  restricted Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  restricted               Boolean  @default(false)
+  createdAt                DateTime @default(now())
 
   workspace Workspace            @relation(fields: [workspaceId], references: [id])
   run       Run                  @relation(fields: [runId], references: [id])
@@ -1027,20 +1030,20 @@ model ReviewSession {
 // resolution (FR-RUN-013a) selects a winner and deletes nothing — the record
 // has to show that the disagreement happened (SC-015).
 model Answer {
-  id         String      @id @default(uuid())
-  workspaceId String
-  questionId  String
-  value       String
-  authorId    String
-  recordedAt  DateTime    @default(now())
-  note        String?
-  state       AnswerState @default(draft)
-  conflict    Boolean     @default(false)
+  id                   String      @id @default(uuid())
+  workspaceId          String
+  questionId           String
+  value                String
+  authorId             String
+  recordedAt           DateTime    @default(now())
+  note                 String?
+  state                AnswerState @default(draft)
+  conflict             Boolean     @default(false)
   // T802 — conflict resolution, restricted to owner or initiator.
-  selectedAsWinner     Boolean   @default(false)
+  selectedAsWinner     Boolean     @default(false)
   conflictResolvedById String?
   conflictResolvedAt   DateTime?
-  updatedAt            DateTime  @updatedAt
+  updatedAt            DateTime    @updatedAt
 
   workspace Workspace        @relation(fields: [workspaceId], references: [id])
   question  RecordedQuestion @relation(fields: [questionId], references: [id])
@@ -1137,19 +1140,19 @@ enum PublishFailureReason {
 }
 
 model StorageConnection {
-  id           String           @id @default(uuid())
-  workspaceId  String
-  providerName String
+  id                    String           @id @default(uuid())
+  workspaceId           String
+  providerName          String
   // Folder or bucket within the provider (FR-PUB-029).
-  destination  String
-  status       ConnectionStatus @default(healthy)
-  authorisedById String
+  destination           String
+  status                ConnectionStatus @default(healthy)
+  authorisedById        String
   // Encrypted at rest; never returned by any endpoint; nulled on disconnect.
   refreshTokenEncrypted String?
   lastCheckedAt         DateTime?
   disconnectedAt        DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   workspace      Workspace       @relation(fields: [workspaceId], references: [id])
   publishRecords PublishRecord[]
@@ -1162,11 +1165,11 @@ model StorageConnection {
 // (FR-PUB-034). The record SURVIVES a failed publish, stating what did and
 // did not land — and survives provider switches (FR-PUB-038, SC-010).
 model PublishRecord {
-  id            String               @id @default(uuid())
-  workspaceId   String
-  projectId     String
-  connectionId  String
-  initiatedById String
+  id                   String                @id @default(uuid())
+  workspaceId          String
+  projectId            String
+  connectionId         String
+  initiatedById        String
   artifactsIncluded    Json
   // Each exclusion carries its reason (FR-PUB-033).
   artifactsExcluded    Json
@@ -1211,20 +1214,143 @@ model PublishedFileReference {
 // An artifact generated with no steering in scope has one with an empty set —
 // not a missing row (SC-ENH-001).
 model SteeringApplication {
-  id           String   @id @default(uuid())
-  workspaceId  String
-  artifactId   String
-  artifactType String
+  id               String   @id @default(uuid())
+  workspaceId      String
+  artifactId       String
+  artifactType     String
   // The exact document versions that constrained this generation.
   appliedDocuments Json
   // FR-ENH-005 — {winning, overridden} pairs; the broader rule is recorded,
   // not discarded.
-  overrides Json
-  appliedAt DateTime @default(now())
+  overrides        Json
+  appliedAt        DateTime @default(now())
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@unique([artifactType, artifactId])
   @@index([workspaceId])
   @@map("steering_applications")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EPIC-030 — the Governed Engineering Loop. T926.
+//
+// Three models and no fourth. GateOutcome is embedded as JSON on the
+// transition (data-model §5), not a table: the loop stores gate OUTCOMES, and
+// the gates themselves are EPIC-021's — which already owns a `GateOutcome`
+// model here for a different purpose.
+//
+// subjectType and subjectId stay opaque throughout. FR-GEL-061 forbids Room
+// vocabulary in the loop, and a foreign key to a requirements table would be
+// exactly that. The Room owns the join.
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum LoopTransitionOutcome {
+  accepted
+  refused
+  conflict
+  exception
+  violation
+}
+
+enum LoopActorKind {
+  human
+  automation
+}
+
+// The versioned binding of one workflow type to the model. FR-GEL-005.
+//
+// NEVER UPDATED. A change writes a new configVersion and sets supersededBy on
+// the prior row, which is what makes FR-GEL-006 hold by construction: an
+// in-flight object's pinned configVersion still resolves to the bytes it
+// started under. An UPDATE here would rewrite history for every object mid-loop.
+model LoopInstanceConfiguration {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  workflowType  String
+  configVersion Int
+  // Derived from the programme file, not writable by a tenant (FR-GEL-009).
+  stages        Json
+  // Per transition. The tenant-configured half.
+  authorities   Json
+  requiredGates Json
+  triggerRules  Json
+  // FR-GEL-016 / R-030-7 — both present or the configuration does not load.
+  // The reviewed commit now; the EPIC-031 decision id once that lands.
+  approvedBy    String
+  approvalRef   String
+  approvedAt    DateTime @default(now())
+  // The configVersion that replaced this one; null while current.
+  supersededBy  Int?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, workflowType, configVersion])
+  @@index([workspaceId, workflowType])
+  @@map("loop_instance_configurations")
+}
+
+// The governed object under a loop. This Epic owns its POSITION, not what it is.
+model LoopObject {
+  id            String    @id @default(uuid())
+  workspaceId   String
+  projectId     String
+  workflowType  String
+  // FR-GEL-006 — fixed at creation, never rewritten.
+  configVersion Int
+  // Opaque to this Epic (FR-GEL-061).
+  subjectType   String
+  subjectId     String
+  // Derived from the transitions; there is no other writer.
+  currentStage  String
+  // R-030-1 — the OCC token. Every accepted transition increments it.
+  version       Int       @default(0)
+  closedAt      DateTime?
+  createdAt     DateTime  @default(now())
+
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id])
+  transitions LoopTransition[]
+
+  // SC-GEL-006 — which stage is it in and how long has it been there, without a scan.
+  @@index([workspaceId, workflowType, currentStage])
+  @@index([workspaceId, subjectType, subjectId])
+  @@map("loop_objects")
+}
+
+// Every state change. APPEND-ONLY: no UPDATE, no DELETE, enforced by trigger in
+// the migration the way EPIC-004 enforces audit immutability.
+model LoopTransition {
+  id             String                @id @default(uuid())
+  workspaceId    String
+  objectId       String
+  // FR-GEL-012 — the OCC token the attempt was made against, kept even when the
+  // attempt lost, because a conflict is a fact worth reading later.
+  objectVersion  Int
+  // Null only for the initial Event.
+  fromStage      String?
+  toStage        String
+  outcome        LoopTransitionOutcome
+  // FR-GEL-014 — required when outcome != accepted, by CHECK constraint.
+  refusalReason  String?
+  // FR-GEL-015 — on conflict, the transition that won.
+  wonBy          String?
+  actorId        String
+  // FR-GEL-032 — distinguishable without inference.
+  actorKind      LoopActorKind
+  authorityBasis String
+  // FR-GEL-031 — required when actorKind = automation, by CHECK constraint.
+  // RULE-11 turns on this one, which is why it is not a service check.
+  triggerRuleId  String?
+  triggerEventId String?
+  configVersion  Int
+  // data-model §5 — embedded, one entry per required gate.
+  gateOutcomes   Json
+  occurredAt     DateTime              @default(now())
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id])
+  object    LoopObject @relation(fields: [objectId], references: [id])
+
+  @@index([objectId, occurredAt])
+  @@index([workspaceId, outcome])
+  @@map("loop_transitions")
 }

@@ -93,8 +93,8 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 ### Persistence — `backend/prisma`
 
-- [ ] T926 Add `LoopInstanceConfiguration`, `LoopObject` and `LoopTransition` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §2–§4
-- [ ] T927 Generate the migration under `backend/prisma/migrations/` including the `actorKind = 'automation' ⇒ triggerRuleId IS NOT NULL` constraint (`FR-GEL-031`) and the partial unique index on `(objectId, triggerEventId, triggerRuleId) WHERE outcome = 'accepted'` (`FR-GEL-033`)
+- [X] T926 Add `LoopInstanceConfiguration`, `LoopObject` and `LoopTransition` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §2–§4
+- [X] T927 Generate the migration under `backend/prisma/migrations/` including the `actorKind = 'automation' ⇒ triggerRuleId IS NOT NULL` constraint (`FR-GEL-031`) and the partial unique index on `(objectId, triggerEventId, triggerRuleId) WHERE outcome = 'accepted'` (`FR-GEL-033`)
 - [ ] T928 [P] Write failing integration test asserting `LoopTransition` rejects `UPDATE` and `DELETE` in `backend/tests/integration/loop-append-only.spec.ts` — `FR-GEL-040`, following the `audit-immutability.spec.ts` precedent
 - [ ] T929 [P] Write failing integration test asserting the automation constraint rejects a rule-less automated transition at the database level in `backend/tests/integration/loop-automation-constraint.spec.ts` — `FR-GEL-031`
 
