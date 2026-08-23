@@ -79,7 +79,7 @@ stories, 6 new tables, 9 HTTP routes, 6 ports, 0 new packages.
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | **PASS** — nine questions across five Epics in one questionnaire; this run paused for nothing |
 | XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph, not a hand-assembled one; a mocked collaborator does not satisfy this. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application is planned as closure evidence. An Epic with no user-facing capability records that, rather than omitting the row | **PASS** — Tier 1 planned (quickstart 13). **Tier 2 applies in full** (`R-034-9`, quickstart 14), covering the whole request-to-re-baseline chain |
 | — | Repository was synced from GitHub before this work started | **PASS** — `git fetch --all` this session; `main` level with `origin/main` |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | **FAIL** — see Complexity Tracking |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | **PASS** — **discharged 2026-08-23**. Implementation runs in the dedicated worktree `.claude/worktrees/epic-034-change-room`, created this date; the primary checkout returned to `main`. Discharged by **isolation, not exclusivity** — the reading `EPIC-029` recorded on 2026-08-21 and `EPIC-030` on 2026-08-22. See Complexity Tracking |
 
 Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking below.
 
@@ -91,6 +91,16 @@ changed status.** Gate V strengthened: Phase 1 moved four guarantees into the ty
 eight-member `Record` for impact areas, a minimum-length tuple for options, a six-member `Record` for
 trade-offs, and an import ban for `TaskRegenerationService`. Each is a check that cannot be forgotten
 because there is nothing to remember.
+
+**Post-discharge re-check (2026-08-23)**: the concurrent-session gate moved **FAIL → PASS**
+when the worktree `.claude/worktrees/epic-034-change-room` was created and the primary checkout returned to
+`main`. **It is the only status that changed.** `DOR-06` reads the leading word of each status
+cell and now finds no `FAIL`, so this plan no longer holds the Epic out of `Ready`.
+
+The gate was never asserted to pass. It was **discharged**, and the difference matters: this
+checkout still shows 10+ `claude.exe` processes and exclusivity is still unverifiable. What
+changed is that this Epic's implementation no longer shares a working tree with anything else —
+which is what the rule protects, and the only part of it this session could establish.
 
 ## Project Structure
 
@@ -166,7 +176,7 @@ named for what they *are*: a composer that owns no graph, and a recorder that pe
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| **Constitution gate: "No other Claude session is active on this checkout" — FAIL** | Planning writes no application code; the isolation rule binds implementation. 10+ `claude.exe` processes, exclusivity unverifiable | **Discharge before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-034-change-room`. `EPIC-030` proved the step; the gate then moves FAIL → PASS and `DOR-06` clears |
+| **Constitution gate: "No other Claude session is active on this checkout" — was FAIL, ✅ discharged 2026-08-23** | Planning writes no application code; the isolation rule binds implementation. 10+ `claude.exe` processes, exclusivity unverifiable | **Discharge before `/speckit-implement`**: a worktree at `.claude/worktrees/epic-034-change-room`. `EPIC-030` proved the step; the gate then moves FAIL → PASS and `DOR-06` clears |
 | **A requirement is satisfied by *recording* rather than *doing*** | `FR-CHR-062` requires downstream work be updated; this Epic records a `RePlanObligation` and executes nothing | Calling `TaskRegenerationService.regenerate()` was rejected and **banned by architecture test**: it replaces the task list, so it would satisfy `FR-CHR-062`'s wording, pass its tests, and destroy the completed-work history `BR-0154` protects. Building a non-destructive merge here was also rejected — that *is* `BR-0154`, it belongs to `U-12`, and building it would cross `FR-CHR-002`. **The cost is a requirement that is only half-dischargeable until `U-12` is declared**, which is stated rather than hidden |
 | **Two impact areas can be permanently `unknown`** | `BR-0073` (architecture violation) and parts of operational effects are `U-17`'s and unowned | Omitting those areas was rejected by `FR-CHR-032` — an absent row and a clean row look identical. Reporting them as `not-impacted` was rejected as a false negative: it would claim a check ran. `unknown` with a stated reason is the honest third state, and Constitution IX's rule — a check that has not run must not be reported as passing — is what makes it required rather than merely available |
 | **Depending on `EPIC-033` Phase 2 before it is built** | `packages/room-contract` and `RoomShell` are imported, not derived | Deriving a Change Room shell was rejected: `UX-0035` forbids divergence, and `EPIC-033` made the six regions required named props specifically so divergence cannot compile. **The cost is a hard build-order dependency**, recorded in this Epic's Assumptions on 2026-08-22 after `EPIC-033`'s analysis finding `C1` observed that neither Room named the artifact it must import |
