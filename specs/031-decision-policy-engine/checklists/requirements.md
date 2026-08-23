@@ -57,8 +57,10 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
-      → classify, decide, queue, explain, propose-not-assign, gate. No band and no constraint is
-      exercised by zero stories.
+      → classify, decide, queue, explain, propose-not-assign, gate, **and automation triggers**.
+      The seventh story was added 2026-08-22 to close analysis finding `C1`: `BR-0069` had
+      requirements and a delegation from `EPIC-030` but **no story**, and `/speckit-tasks` organises
+      by story — so it produced no tasks for it, silently and without failing any check.
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification
 

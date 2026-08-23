@@ -253,6 +253,37 @@ return and assert "satisfied" is not among them.
 2. **Given** an exception, **When** it is recorded, **Then** it carries its authorizer, reason and
    expiry, and is enumerable later as an exception.
 
+### User Story 7 - An automated decision names the rule that caused it (Priority: P2)
+
+An engineer finds a governed action that executed with nobody involved. They open it and see the
+rule that permitted it, the event that triggered it, and the policy version that rule came from —
+and they can tell at a glance that no human decided it.
+
+**Why this priority**: `BR-0069` and `RULE-11`. `ADR-0025` names the failure mode in one line:
+*"'Risk-adaptive' is one bad default away from 'the AI decided it was low risk and shipped it'."*
+`EPIC-030` enforces the loop-side half — an automated transition with no citable rule is refused at
+configuration load — and **explicitly delegates the policy half here**: *"which rules may exist, and
+what they may trigger, is `EPIC-031`'s."* Added 2026-08-22 to close analysis finding `C1`, which
+found that `BR-0069` had requirements, a delegation from another Epic, and **no user story** — so
+`/speckit-tasks`, which organises by user story, produced no tasks for it.
+
+**Independent Test**: configure a reactive trigger, fire it, and assert the resulting decision names
+its rule, its event and its policy version and is marked as automation. Then load a policy declaring
+an automated action with no citable rule and assert refusal.
+
+**Acceptance Scenarios**:
+
+1. **Given** a policy permitting a workflow to react to an event, **When** the event fires, **Then**
+   the resulting decision executes and records the rule, the triggering event and the policy version.
+2. **Given** a policy declaring an automated action with **no citable rule**, **When** it is loaded,
+   **Then** it is refused, naming the action — the same load-time fence `FR-DPE-012` uses, applied to
+   automation.
+3. **Given** an automated decision and a human decision side by side, **When** their records are
+   read, **Then** which is which is apparent **without inference**.
+4. **Given** an automated decision, **When** its explanation is requested, **Then** it names the
+   visible rule that fired it, and an explanation that cannot name one is a defect rather than a
+   blank field.
+
 ### Edge Cases
 
 - **The policy engine is unavailable** — governed actions fail **closed**. `ADR-0025` names

@@ -21,9 +21,12 @@ skill describes tests as optional; **the constitution overrides it**.
 **classification-rule steering documents**; their executable conformance check is `T733`, written
 failing-first, and `T734` makes the rules pass it.
 
-**Organization**: grouped by the six user stories of [spec.md](./spec.md).
+**Organization**: grouped by the **seven** user stories of [spec.md](./spec.md) — the seventh added 2026-08-22 to close analysis finding `C1`.
 
-**Task ID range**: `T716`–`T799`, 84 tasks. **Chosen, not continued.** `EPIC-030` occupies
+**Task ID range**: `T716`–`T799`, **92 tasks** — 84 originally, plus eight suffixed (`T728a`/`T728b`,
+`T780a`–`T780f`) added 2026-08-22 to close analysis findings `C1` and `C2`. Suffixes are this
+repository's convention for tasks inserted after a list is written (`T886a`, `T899a`, `T900a`,
+`T900b`), and they keep execution order readable without renumbering. **Chosen, not continued.** `EPIC-030` occupies
 `T913`–`T993`, and continuing from there would have reached `T1000` after six tasks — a four-digit
 id the governance regex `T\d{3}[a-z]?\b` does not match, making the task **invisible** to `G-26-15`
 and `DOR-08` rather than rejected. `T716`–`T799` is the largest contiguous free run in the corpus,
@@ -47,7 +50,7 @@ refresh it or restate the staleness.
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: can run in parallel (different files, no dependencies)
-- **[Story]**: US1–US6
+- **[Story]**: US1–US7
 - Exact file paths in every description
 
 ## Path Conventions
@@ -87,6 +90,11 @@ Per [plan.md](./plan.md) Structure Decision:
 - [ ] T728 Implement `SteeringSource`, `GateProvider`, `EvidenceContractSource` and `AuditSink` in `packages/decision-contract/src/ports.ts` (unit test: T727) — `FR-DPE-050`
 - [ ] T729 Implement the export barrel `packages/decision-contract/src/index.ts` (unit test: T721)
 
+### Binding the contract to EPIC-019 steering
+
+- [ ] T728a [P] Write failing unit tests for the steering adapter in `backend/tests/unit/decision-steering-adapter.spec.ts` — binds `SteeringSource` to `EPIC-019`'s `SteeringService`, filters to `subject: 'risk-classification'`, and returns `resolveSteering()`'s `SteeringOverride` intact
+- [ ] T728b Implement `backend/src/modules/decision/steering.adapter.ts` and register it against the `SteeringSource` token in `decision.module.ts` (unit test: T728a) — `R-031-1`'s reuse premise, which had no implementer before analysis finding `C2`
+
 ### Persistence
 
 - [ ] T730 Add `Decision`, `Explanation`, `Exception` and `TenantPolicy` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §2–§5
@@ -97,7 +105,7 @@ Per [plan.md](./plan.md) Structure Decision:
 
 - [ ] T733 [P] Write the failing conformance check in `backend/tests/architecture/classification-rules-conformance.spec.ts` — fails on a `risk-classification` steering document naming no band, no action pattern, or a band outside `RISK_BANDS`
 - [ ] T734 Author the initial `risk-classification` steering documents and make them pass (conformance: T733) — Constitution V for a non-code output
-- [ ] T735 [P] Write the failing architecture test in `backend/tests/architecture/decision-independence.spec.ts` — no Room vocabulary, no loop stage names, and `RISK_BANDS.length === 3` — `FR-DPE-051`
+- [ ] T735 [P] Write the failing architecture test in `backend/tests/architecture/decision-independence.spec.ts` — no Room vocabulary, **no loop stage name**, **no evidence-contract type**, and `RISK_BANDS.length === 3`. Enforces every clause of [contracts/decision-contract.md](./contracts/decision-contract.md) §8 rather than the first one — `FR-DPE-051`, `FR-DPE-052`
 
 ### Module skeleton and wiring
 
@@ -135,7 +143,7 @@ Per [plan.md](./plan.md) Structure Decision:
 - [ ] T745 [P] [US2] Write failing unit tests for band treatment in `backend/tests/unit/decision-evaluator.spec.ts` — low MAY auto-execute, medium requires gates, high requires human — `FR-DPE-010`
 - [ ] T746 [US2] Implement `backend/src/modules/decision/evaluator.ts` with Cedar's default-deny and forbid-overrides-permit, and **without skip-on-error** (unit test: T745) — `R-031-2`
 - [ ] T747 [P] [US2] Write failing unit tests asserting an auto-executed action still produces an audit record and evidence reference in `backend/tests/unit/decision-auto-execute-record.spec.ts` — `FR-DPE-016`
-- [ ] T748 [US2] Implement audit emission on every outcome in `backend/src/modules/decision/evaluator.ts` (unit test: T747) — constraint 4: *low risk means no human in the loop, not no record*
+- [ ] T748 [US2] Implement audit emission on every outcome in `backend/src/modules/decision/evaluator.ts` (unit test: T747) — constraint 4: *low risk means no human in the loop, not no record*. `SC-DPE-005`
 - [ ] T749 [P] [US2] Write failing unit tests for self-approval refusal in `backend/tests/unit/decision-self-approval.spec.ts` — refused unless policy permits for that action class, and the permission appears in the explanation — `FR-DPE-015`
 - [ ] T750 [US2] Implement self-approval evaluation in `backend/src/modules/decision/evaluator.ts` (unit test: T749)
 - [ ] T751 [US2] Implement `POST /decisions/:id/approve` in `backend/src/modules/decision/decision.controller.ts` (integration test: T736) — `FR-DPE-014`
@@ -155,9 +163,9 @@ Per [plan.md](./plan.md) Structure Decision:
 - [ ] T754 [P] [US3] Write failing unit tests for blocker naming in `backend/tests/unit/decision-inbox-blockers.spec.ts` — the missing evidence, pending approver or refusing policy is named, never a generic not-ready — `FR-DPE-025`
 - [ ] T755 [US3] Implement blocker resolution in `backend/src/modules/decision/inbox.projection.ts` (unit test: T754)
 - [ ] T756 [US3] Implement `GET /inbox` in `backend/src/modules/decision/decision.controller.ts` (integration test: T736) — `FR-DPE-021`, `FR-DPE-023`
-- [ ] T757 [P] [US3] Write failing component tests for the Inbox page in `frontend/src/pages/DecisionInbox.test.tsx` — loading, empty, populated and error states, and an empty state that says so rather than rendering blank — `UX-0051`
+- [ ] T757 [P] [US3] Write failing component tests for the Inbox page in `frontend/src/pages/DecisionInbox.test.tsx` — loading, empty, populated and error states, and an empty state that says so rather than rendering blank — `FR-DPE-026`, `UX-0051`
 - [ ] T758 [US3] Implement `frontend/src/pages/DecisionInbox.tsx` (unit test: T757) — `UX-0021`, styled against the `EPIC-029` system
-- [ ] T759 [US3] Wire the Inbox into primary navigation so it is reachable in one action from every screen (unit test: T757) — `UX-0021`, `UX-0003`
+- [ ] T759 [US3] Wire the Inbox into primary navigation so it is reachable in one action from every screen (unit test: T757) — `FR-DPE-026`, `UX-0021`, `UX-0003`
 - [ ] T760 [P] [US3] Write failing accessibility tests for the Inbox in `frontend/src/pages/DecisionInbox.a11y.test.tsx` — keyboard-only operation with visible focus (`BR-0193`)
 - [ ] T761 [US3] Implement keyboard operation and focus management in `frontend/src/pages/DecisionInbox.tsx` (unit test: T760)
 - [ ] T762 [P] [US3] Write the role-change integration test in `backend/tests/integration/decision-inbox-role.spec.ts` — the visible set follows the new role; no entry persists because it was once visible (`SC-DPE-004`)
@@ -192,7 +200,7 @@ Per [plan.md](./plan.md) Structure Decision:
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 4 and 5
 
 - [ ] T771 [P] [US5] Write failing unit tests for proposal handling in `backend/tests/unit/decision-proposed-class.spec.ts` — `effectiveClass` comes from policy; `proposedClass` is retained separately and never merged — `FR-DPE-003`
-- [ ] T772 [US5] Implement proposal retention in `backend/src/modules/decision/classifier.ts` (unit test: T771)
+- [ ] T772 [US5] Implement proposal retention in `backend/src/modules/decision/classifier.ts` (unit test: T771) — `SC-DPE-003`
 - [ ] T773 [P] [US5] Write failing unit tests for visible disagreement in `backend/tests/unit/decision-proposal-disagreement.spec.ts` — a proposal differing from policy is visible, not reconciled silently
 - [ ] T774 [US5] Implement disagreement surfacing in `backend/src/modules/decision/explanation.builder.ts` (unit test: T773)
 - [ ] T775 [US5] Implement rule immutability for taken decisions in `backend/src/modules/decision/classifier.ts` (unit test: T771) — `FR-DPE-006`: a rule change does not alter a decision already taken
@@ -217,6 +225,28 @@ Per [plan.md](./plan.md) Structure Decision:
 
 ---
 
+## Phase 9: User Story 7 - An automated decision names the rule that caused it (Priority: P2)
+
+**Goal**: `RULE-11` — no invisible automation. **Added 2026-08-22 to close analysis finding `C1`.**
+
+`EPIC-030` enforces the loop-side half and delegates the policy half here. Without this phase
+`BR-0069` ships half-enforced with two Epics each believing the other did it.
+
+**Independent test**: [quickstart.md](./quickstart.md) — configure a reactive trigger, fire it,
+assert the decision names rule, event and policy version; then load a rule-less automated action and
+assert refusal
+
+- [ ] T780a [P] [US7] Write failing unit tests for reactive-trigger permission in `backend/tests/unit/decision-trigger-permission.spec.ts` — policy MAY permit reaction to events, schedules or artifact changes; a workflow reacting without that permission is refused — `FR-DPE-030`
+- [ ] T780b [US7] Implement trigger permission evaluation in `backend/src/modules/decision/evaluator.ts` (unit test: T780a) — `FR-DPE-030`
+- [ ] T780c [P] [US7] Write failing unit tests for rule citation in `backend/tests/unit/decision-trigger-rule-citation.spec.ts` — **a policy declaring an automated action with no citable rule MUST NOT load**, refused at load time naming the action — `FR-DPE-031`, `RULE-11`
+- [ ] T780d [US7] Implement the load-time rule-citation fence in `backend/src/modules/decision/policy.loader.ts` (unit test: T780c) — `FR-DPE-031`. The same fence shape as `FR-DPE-012`, applied to automation
+- [ ] T780e [P] [US7] Write failing unit tests for actor-kind distinguishability in `backend/tests/unit/decision-actor-kind.spec.ts` — an automated decision is distinguishable from a human one **without inference**, and the explanation names the rule that fired it — `FR-DPE-032`
+- [ ] T780f [US7] Implement `actorKind` recording and rule attribution in `backend/src/modules/decision/evaluator.ts` (unit test: T780e) — `FR-DPE-032`, feeding `explanation.builder.ts`
+
+**Checkpoint**: `BR-0069` is fully covered — the half `EPIC-030` delegated here now exists
+
+---
+
 ## Phase N: Polish & Cross-Cutting Concerns
 
 - [ ] T781 [P] Write the fail-closed integration test in `backend/tests/integration/decision-fail-closed.spec.ts` — steering source failing, decision refused with reason recorded (`SC-DPE-007`)
@@ -226,7 +256,7 @@ Per [plan.md](./plan.md) Structure Decision:
 - [ ] T785 **Mutation proof — Constitution XI Tier 1**: remove `DecisionModule` from `backend/src/app.module.ts`, revert (integration test: T736 — it must fail while the mutation stands). Record the observation
 - [ ] T786 [P] Verify the `R-031-6` targets — decide p95 < 40 ms excluding gate providers, end-to-end p95 < 120 ms, Inbox read p95 < 250 ms **at 500 open items**, ≥ 50 decisions/second per workspace — and record the measured figures
 - [ ] T787 [P] Confirm the decide budget composes inside `EPIC-030`'s 50 ms transition budget, and record the combined measurement
-- [ ] T788 Run every scenario in [quickstart.md](./quickstart.md) end to end and record the results
+- [ ] T788 Run **all twelve** scenarios in [quickstart.md](./quickstart.md) end to end — enumerated 1–12 by number, not as a catch-all — and record each result. A scenario that silently stopped being exercised would otherwise be invisible
 
 ---
 
@@ -258,6 +288,7 @@ Ordered as the constitution's *"Quality gates in order"* states them.
 - **US4 (Phase 6)**: Phase 2, plus US1's classifier
 - **US5 (Phase 7)**: US1's classifier and US4's explanation builder
 - **US6 (Phase 8)**: US2's evaluator
+- **US7 (Phase 9)**: US1's policy loader (`T742`) and US2's evaluator (`T746`) — added to close `C1`
 - **Polish, Closure**: last
 
 ### Cross-Epic dependencies
