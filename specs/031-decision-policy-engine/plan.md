@@ -79,7 +79,7 @@ contract.
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | **PASS** — the clarification round asked nine questions across five Epics in **one** questionnaire; this plan has paused for nothing |
 | XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph, not a hand-assembled one; a mocked collaborator does not satisfy this. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application is planned as closure evidence. An Epic with no user-facing capability records that, rather than omitting the row | **PASS** — Tier 1 planned (`R-031-7`, quickstart 11), reusing `EPIC-030`'s pattern. **Tier 2 applies in full**: the Decision Inbox is a journey, and quickstart 12 requires a run-generated transcript |
 | — | Repository was synced from GitHub before this work started | **PASS** — `git fetch --all` this session; `main` level with `origin/main` |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | **FAIL** — see Complexity Tracking |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | **PASS** — **discharged 2026-08-23**. Implementation runs in the dedicated worktree `.claude/worktrees/epic-031-decision-policy-engine`, created this date; the primary checkout returned to `main`. Discharged by **isolation, not exclusivity** — the reading `EPIC-029` recorded on 2026-08-21 and `EPIC-030` on 2026-08-22. See Complexity Tracking |
 
 Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking below.
 
@@ -95,6 +95,16 @@ Any FAIL blocks Phase 0. Record justified deviations in Complexity Tracking belo
 three mutation checks into concrete quickstart scenarios (1, 3, 8) with the inversion each must
 survive, and moved two guarantees from service code into the type system and the schema, where a
 test cannot forget to check them.
+
+**Post-discharge re-check (2026-08-23)**: the concurrent-session gate moved **FAIL → PASS**
+when the worktree `.claude/worktrees/epic-031-decision-policy-engine` was created and the primary checkout returned to
+`main`. **It is the only status that changed.** `DOR-06` reads the leading word of each status
+cell and now finds no `FAIL`, so this plan no longer holds the Epic out of `Ready`.
+
+The gate was never asserted to pass. It was **discharged**, and the difference matters: this
+checkout still shows 10+ `claude.exe` processes and exclusivity is still unverifiable. What
+changed is that this Epic's implementation no longer shares a working tree with anything else —
+which is what the rule protects, and the only part of it this session could establish.
 
 ## Project Structure
 
@@ -164,6 +174,6 @@ is `EPIC-016`'s ADR store (`AdrRecord`), a different thing sharing a word. Namin
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| **Constitution gate: "No other Claude session is active on this checkout" — FAIL** | Planning writes no application code, and the isolation rule's rationale binds implementation. This checkout still shows 10+ `claude.exe` processes and exclusivity cannot be asserted, so it is recorded as FAIL rather than assumed — the same honest reading `EPIC-029` and `EPIC-030` took | Asserting the gate passes was rejected as unverifiable. **Discharge, before `/speckit-implement`**: a dedicated worktree at `.claude/worktrees/epic-031-decision-policy-engine`, the convention `EPIC-030` established and four siblings already follow. `EPIC-030` proved the step: the gate then moves FAIL → PASS and `DOR-06` clears |
+| **Constitution gate: "No other Claude session is active on this checkout" — was FAIL, ✅ discharged 2026-08-23** | Planning writes no application code, and the isolation rule's rationale binds implementation. This checkout still shows 10+ `claude.exe` processes and exclusivity cannot be asserted, so it is recorded as FAIL rather than assumed — the same honest reading `EPIC-029` and `EPIC-030` took | Asserting the gate passes was rejected as unverifiable. **Discharge, before `/speckit-implement`**: a dedicated worktree at `.claude/worktrees/epic-031-decision-policy-engine`, the convention `EPIC-030` established and four siblings already follow. `EPIC-030` proved the step: the gate then moves FAIL → PASS and `DOR-06` clears |
 | **A fifth `*-contract` package** | `packages/decision-contract` is the fifth | A shared `packages/contracts` barrel was rejected for `EPIC-030` and is rejected again for the same reason: `TS-004` requires each package to typecheck independently, and a barrel couples five release cadences |
 | **Classification rules stored outside this Epic's schema** | `R-031-1` puts them in `EPIC-019` steering, so this Epic's correctness depends on another Epic's store | Owning them here was rejected: it would mean a second precedence implementation beside `BR-0071`'s working one. The cost is a real coupling, recorded rather than hidden — and `FR-DPE-050` makes an unreadable ruleset **refuse**, so the coupling fails safe |
