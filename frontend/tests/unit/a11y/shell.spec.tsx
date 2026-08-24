@@ -25,6 +25,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+
+// EPIC-036 `T441q` — `App` now requires a Router in EVERY branch, not only the
+// signed-in one. It reads the address to keep the shell's project selection
+// honest against a deep link (convergence `F1`), so `useLocation` runs before
+// the sign-in branch is chosen. Mounting it bare was always a half-truth: the
+// signed-in branch has rendered `ShellRoutes` since `T437f`.
 import { expectNoViolations, runWcag } from './axe';
 import { App } from '../../../src/main';
 import type { ApiClient, Project, WhoAmI } from '../../../src/services/api';
@@ -82,7 +88,11 @@ beforeEach(() => {
 
 describe('T930 · the composed shell passes the WCAG 2.2 AA harness', () => {
   it('signed out — the shell above the sign-in page', async () => {
-    render(<App api={signedOut} />);
+    render(
+      <MemoryRouter>
+        <App api={signedOut} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     await expectNoViolations();
   });
@@ -97,10 +107,9 @@ describe('T930 · the composed shell passes the WCAG 2.2 AA harness', () => {
   // both halves of the scope `BR-0001` is about, where the old one checked a
   // single page name.
   it('signed in — the shell above Home, breadcrumb naming workspace and area', async () => {
-    // A router is needed only for the signed-in branch: the breadcrumb's area
-    // segment is derived from the address (`FR-SHL-017`). Sign-in has no
-    // workspace and therefore no breadcrumb, which is why the tests above
-    // still mount `App` bare.
+    // The breadcrumb's area segment is derived from the address
+    // (`FR-SHL-017`), which is why this one names an entry explicitly rather
+    // than taking the router's default.
     const { container } = render(
       <MemoryRouter initialEntries={['/']}>
         <App api={signedIn} />
@@ -122,14 +131,22 @@ describe('T930 · the composed shell passes the WCAG 2.2 AA harness', () => {
     // R-029-3). Scanning "both themes" with axe would otherwise be a loop that
     // cannot fail, which this Epic treats as decoration.
     window.localStorage.setItem('pmi.theme', 'dark');
-    render(<App api={signedOut} />);
+    render(
+      <MemoryRouter>
+        <App api={signedOut} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     expect(document.documentElement.dataset['theme']).toBe('dark');
     await expectNoViolations();
   });
 
   it('the shell region itself is scanned, not merely the page inside it', async () => {
-    const { container } = render(<App api={signedOut} />);
+    const { container } = render(
+      <MemoryRouter>
+        <App api={signedOut} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     const topbar = container.querySelector('.ds-topbar');
     expect(topbar, 'the composed app rendered no .ds-topbar to scan').not.toBeNull();
@@ -143,7 +160,11 @@ describe('T930 · the composed shell passes the WCAG 2.2 AA harness', () => {
 
 describe('T930 · MUTATION — a violation planted in the shell is caught', () => {
   it('an unlabelled control injected into the REAL rendered top bar fails the scan', async () => {
-    const { container } = render(<App api={signedOut} />);
+    const { container } = render(
+      <MemoryRouter>
+        <App api={signedOut} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     const topbar = container.querySelector('.ds-topbar') as HTMLElement;
 
@@ -163,7 +184,11 @@ describe('T930 · MUTATION — a violation planted in the shell is caught', () =
   });
 
   it('and passes again once the violation is removed — the failure was the input, not the shell', async () => {
-    render(<App api={signedOut} />);
+    render(
+      <MemoryRouter>
+        <App api={signedOut} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     await expectNoViolations();
   });

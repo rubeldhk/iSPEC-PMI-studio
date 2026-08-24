@@ -55,11 +55,18 @@ declared with no screen built: `QA & Releases`, `Architecture & Decisions`, `Gov
 **Proves**: `SC-SHL-004`, `FR-SHL-002`.
 
 Add an area to `frontend/src/shell/areas.ts` with `status: 'delivered'` and an element — or move
-one of the three `declared-not-delivered` areas to `delivered`, which is what their owning Epics
-will do. Change nothing else.
+one of the four `declared-not-delivered` areas to `delivered`, which is what their owning Epics will
+do. Add the binding that `element` points at in `frontend/src/shell/area-views.tsx`. Change nothing
+else.
 
-**Expected**: it appears in navigation, in its group, with a working route. **Zero** other files
-edited — `git diff --name-only` shows one path.
+**Expected**: it appears in navigation, in its group, with a working route. **Zero shell logic
+changed** — `git diff --name-only` shows exactly those **two** data files and nothing else: no
+change to `Navigation.tsx`, `routes.tsx`, `navigation-model.ts` or `AppShell.tsx`.
+
+> **Corrected 2026-08-24 (`T441w`, convergence `F6`).** This read *"one path"*. It is two: an entry
+> in the registry and the binding its `element` points at, because a page needs workspace and
+> project handed to it from somewhere. `SC-SHL-004` measures **shell code changes** and those are
+> still zero — but the check as written was a claim about `git diff`, and `git diff` disagreed.
 
 > This is the criterion that makes eighteen areas over four releases bearable. If it fails, each
 > future area is a shell change, and the shell becomes the bottleneck the registry exists to remove.

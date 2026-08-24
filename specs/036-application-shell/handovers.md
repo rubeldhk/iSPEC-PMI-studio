@@ -23,10 +23,21 @@ leads nowhere is `DEF-010-001` through the front door.
 
 Every one of those Epics is at stage **`Ready`** — planned and tasked, nothing implemented.
 
-**What clears it.** One line in `frontend/src/shell/areas.ts`: change `status` from
-`'declared-not-delivered'` to `'delivered'` and give the entry an `element`. Nothing else, in any
-file. That is not a hope — `T437q` asserts it by construction, and `frontend/tests/unit/shell/registry-extensibility.spec.ts`
-uses **Governance itself** as the worked example.
+**What clears it.** Two edits in `frontend/src/shell/`, and no more than two:
+
+1. `areas.ts` — change `status` from `'declared-not-delivered'` to `'delivered'` and give the
+   entry an `element`;
+2. `area-views.tsx` — the binding that `element` points at, which reads workspace and project from
+   `ShellContext` and hands them to the page the owning Epic built.
+
+`T437q` asserts the **derivation** is total — navigation and the route tree are functions of the
+registry, so a delivered entry cannot fail to reach them — using Governance as its worked example
+in `frontend/tests/unit/shell/registry-extensibility.spec.ts`. **No shell logic changes.**
+
+> **Corrected 2026-08-24 (`T441w`, convergence `F6`).** This section, and `quickstart.md` §2, both
+> said *one* file. `SC-SHL-004` measures **shell code changes** at zero and that still holds — a
+> binding is a prop hand-off, not shell logic — but *"`git diff --name-only` shows one path"* was
+> simply not true of the code, and a claim that specific is worth being right about.
 
 **What must not clear it.** Building any of these four screens inside the shell. `FR-SHL-003`
 forbids the shell implementing an area's content, and a placeholder is worse than an absence: it
@@ -36,6 +47,45 @@ claims the product has a working area when it does not.
 > so this obligation has a debtor rather than disappearing. Filing it as a defect against this Epic
 > would move the debt onto the shell, which is exactly the mistake the third state was added to
 > prevent (see [analysis.md](./analysis.md) `C1`).
+
+---
+
+## `T441w` — the workspace half of `FR-SHL-020`, owed by `EPIC-004`
+
+**The shell shows the workspace and offers no way to change it, and nothing says why.**
+
+`FR-SHL-020` asks for an explicit workspace **and** project selection; `FR-SHL-022` asks that
+switching **either** keeps the current area. The project half is built. The workspace half is not,
+and the reason is the same shape as Home's two missing sections: **there is no endpoint behind it.**
+
+| What exists | What does not |
+|---|---|
+| `GET /v1/auth/me` → `workspace.id` — the one workspace an identity has | Anything that **enumerates** workspaces. `frontend/src/services/api.ts` has no `listWorkspaces`; the only workspace-scoped route is `/workspaces/:id/storage-connections` |
+
+`FR-SHL-025` is explicit that `EPIC-004` owns scoping and supplies the selectable set, and that the
+shell **may not invent its selector**. With no set to render, there is nothing for the shell to
+build — so this is a dependency, not an omission.
+
+**Why it is recorded rather than rendered.** Home names `EPIC-031` and `EPIC-032` on screen because
+a user looking at Home would otherwise read *"nothing is blocked"* — a false conclusion they would
+act on. Nobody draws a false conclusion from the absence of a control they never saw, and putting a
+permanent *"you cannot switch workspace"* notice on every screen would be noise about a capability
+that has exactly one possible value today. **The absence is unexplained in the artifacts, which is
+where this fixes it.**
+
+**What clears it**: an endpoint that enumerates the workspaces an identity may use. The shell then
+renders a second control beside the project one, on the same terms — `FR-SHL-022` already requires
+the area to survive the switch, and the address is untouched by selection, so it will.
+
+### A smaller one in the same place
+
+**A failed project fetch has no state of its own.** `frontend/src/main.tsx` clears
+`projectsLoading` in a `finally`, so a request that *failed* renders as *"No projects in this
+workspace"* — the third thing `T441u` just separated from the other two, minus its own name.
+Bounded, and wrong. `FR-SHL-062` says a failed section reports as failed, and the selector is a
+shell-owned surface. **Not fixed here**: it needs an error state on the control and a decision about
+what a user does next when the set cannot be loaded at all, which is a larger question than this
+task. Recorded so the next converge run finds it written down rather than rediscovering it.
 
 ---
 

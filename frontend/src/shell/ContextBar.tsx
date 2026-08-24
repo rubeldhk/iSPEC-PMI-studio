@@ -25,7 +25,7 @@ import { useCurrentArea, useCurrentProject, useShell } from './shell-context';
 const NO_PROJECT = '';
 
 export function ContextBar(): ReactElement {
-  const { workspaceId, projects, selectProject } = useShell();
+  const { workspaceId, projects, projectsLoading, selectProject } = useShell();
   const project = useCurrentProject();
   const area = useCurrentArea();
 
@@ -44,10 +44,17 @@ export function ContextBar(): ReactElement {
 
       <label className="shell-context__project" htmlFor="shell-project">
         Project
+        {/* `T441u` (convergence `F3`) — three states, not two.
+            `projects.length === 0` meant both *"the workspace has none"* and
+            *"we have not been told yet"*, and the control rendered them
+            identically. `DEF-007-001` is the same ambiguity one layer down, and
+            it matters because only one of the two is worth waiting for.
+            `loading` marks the control `aria-busy` and disables it; the empty
+            answer gets its own option, and only once it IS the answer. */}
         <Select
           id="shell-project"
           value={project?.id ?? NO_PROJECT}
-          emptyMessage="No projects in this workspace"
+          loading={projectsLoading}
           onChange={(event): void => {
             // `FR-SHL-022` — switching does not touch the address, so the user
             // stays in the area they were in and its content re-scopes.
@@ -55,7 +62,13 @@ export function ContextBar(): ReactElement {
             selectProject(value === NO_PROJECT ? null : value);
           }}
         >
-          <option value={NO_PROJECT}>No project selected</option>
+          <option value={NO_PROJECT}>
+            {projectsLoading
+              ? 'Loading projects…'
+              : projects.length === 0
+                ? 'No projects in this workspace'
+                : 'No project selected'}
+          </option>
           {projects.map((candidate) => (
             <option key={candidate.id} value={candidate.id}>
               {candidate.name}

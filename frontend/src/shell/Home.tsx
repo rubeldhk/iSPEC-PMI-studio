@@ -35,9 +35,26 @@ async function load(api: ApiClient, projectId: string): Promise<HomeModel> {
   return homeModel([await pendingApprovals(api, projectId), policyBlocks(), missingEvidence()]);
 }
 
+/**
+ * Where a user goes when a section has nothing in it — `T441w`, `FR-SHL-061`.
+ *
+ * *"Say what is absent"* was done; *"and what to do next"* was not. An empty
+ * state with no way forward is a dead end wearing a friendly face, and the
+ * `EmptyState` component has taken an action since `EPIC-029` built it.
+ *
+ * Only `pending-approval` has one, because only that source exists. Offering a
+ * next step for a section whose Epic is unbuilt would send the user somewhere
+ * that cannot help them, which is worse than offering none.
+ */
+const NEXT_STEP: Partial<Record<AttentionKind, { label: string; href: string }>> = {
+  'pending-approval': { label: 'See all runs', href: '/runs' },
+};
+
 function Section({ kind, model }: { kind: AttentionKind; model: HomeModel }): ReactElement {
   const source = model.sources.find((candidate) => candidate.kind === kind)!;
   const items = model.items.filter((item) => item.kind === kind);
+  const next = NEXT_STEP[kind];
+  const navigate = useNavigate();
 
   return (
     <section aria-label={KIND_LABELS[kind]}>
@@ -64,6 +81,14 @@ function Section({ kind, model }: { kind: AttentionKind; model: HomeModel }): Re
         <EmptyState
           title={`Nothing ${KIND_LABELS[kind].toLowerCase()}`}
           explanation="This section is working and has nothing to show for the current project."
+          {...(next
+            ? {
+                actionLabel: next.label,
+                onAction: (): void => {
+                  void navigate(next.href);
+                },
+              }
+            : {})}
         />
       )}
 

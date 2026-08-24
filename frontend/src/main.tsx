@@ -30,13 +30,13 @@ import './design/components/components.css';
 import './shell/shell.css';
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
+import { BrowserRouter, useLocation } from 'react-router';
 import { initTheme } from './design/theme';
 import { ThemeControl } from './design/ThemeControl';
 import { LoadingIndicator } from './design/components/LoadingIndicator';
 import { SignIn } from './pages/SignIn';
 import { ContextBar } from './shell/ContextBar';
-import { ShellProvider } from './shell/shell-context';
+import { ShellProvider, projectIdFromPathname } from './shell/shell-context';
 import { ShellRoutes } from './shell/routes';
 import { ApiClient, type Project, type WhoAmI } from './services/api';
 
@@ -50,6 +50,21 @@ import { ApiClient, type Project, type WhoAmI } from './services/api';
 export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
   const [identity, setIdentity] = useState<WhoAmI | null>(null);
   const [projects, setProjects] = useState<readonly Project[]>([]);
+  /**
+   * Which workspace's project set we have actually received — not a `loading`
+   * boolean.
+   *
+   * A separate flag has a lifecycle of its own, and it was wrong in the gap
+   * between *"identity arrived"* and *"the fetch effect ran"*: for one render
+   * `loading` was false with an empty list, so the selector claimed the
+   * workspace had no projects before it had asked. The full suite caught it;
+   * the isolated run did not.
+   *
+   * Derived, there is no such gap — the moment an identity exists and nothing
+   * has been recorded for it, we are loading. Same reasoning `data-model.md` §3
+   * gives for deriving `areaId` from the address rather than holding it.
+   */
+  const [projectsLoadedFor, setProjectsLoadedFor] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(true);
 
@@ -96,6 +111,7 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
     let live = true;
     if (identity === null) {
       setProjects([]);
+      setProjectsLoadedFor(null);
       return (): void => {
         live = false;
       };
@@ -107,15 +123,39 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
       })
       .catch(() => {
         if (live) setProjects([]);
+      })
+      .finally(() => {
+        // `finally`, so a failed request stops claiming to be in flight. It
+        // then reads as "no projects", which is wrong but bounded — and
+        // `handovers.md` records that a failed set has no state of its own yet.
+        if (live) setProjectsLoadedFor(identity.workspace.id);
       });
     return (): void => {
       live = false;
     };
   }, [api, identity]);
 
+  const projectsLoading = identity !== null && projectsLoadedFor !== identity.workspace.id;
+
   const selectProject = useCallback((next: string | null): void => {
     setProjectId(next);
   }, []);
+
+  // T441q (EPIC-036 convergence, `F1` — not `EPIC-029`'s F1 above) — the
+  // address is the stronger claim about which project the
+  // user is looking at. Reaching a project by clicking selects it on the way;
+  // reaching it by address did not, so a deep link rendered a project under a
+  // breadcrumb reading "No project selected". `FR-SHL-021` asks for the scope
+  // to be VISIBLE rather than implied, and a scope that is visibly wrong is
+  // worse than one that is absent.
+  //
+  // This sits beside the state it corrects rather than inside the shell: the
+  // shell derives what it shows, and `App` owns what is selected.
+  const { pathname } = useLocation();
+  const addressProjectId = projectIdFromPathname(pathname);
+  useEffect(() => {
+    if (addressProjectId !== null) setProjectId(addressProjectId);
+  }, [addressProjectId]);
 
   // `EPIC-029`'s adopted frame — prototype parity row 10, held by `T924` and
   // scanned by `T930`. The theme control sits in it rather than inside the
@@ -163,6 +203,7 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
       identity={identity}
       projectId={projectId}
       projects={projects}
+      projectsLoading={projectsLoading}
       selectProject={selectProject}
     >
       {frame(<ContextBar />, <ShellRoutes />)}
