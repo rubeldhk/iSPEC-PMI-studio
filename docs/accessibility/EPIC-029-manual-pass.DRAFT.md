@@ -168,6 +168,79 @@ All 15 stops matched `:focus-visible` and carried a non-empty accessible name.
 **Nothing in Part 1b ticks `T885`.** It is the same machine-observable half, refreshed. The
 announcements are still unheard.
 
+---
+
+## Run sheet — everything you need to do Part 2 in one sitting
+
+*Added 2026-08-24. Part 2 is not long; it was slow because nothing said where to start. This is
+that. An agent prepared the sheet; only you can execute it.*
+
+### 1. Bring the stack up (three commands, ~40 seconds)
+
+```bash
+docker start pmi-postgres pmi-valkey
+```
+
+```bash
+cd "C:/myPersonal/PMI studio/iSPEC-PMI-studio/.claude/worktrees/epic-029-design-system" && cp ../../../.env .env && cd backend && ../node_modules/.bin/tsx src/main.ts
+```
+
+```bash
+cd "C:/myPersonal/PMI studio/iSPEC-PMI-studio/.claude/worktrees/epic-029-design-system/frontend" && ./node_modules/.bin/vite --port 5173 --strictPort
+```
+
+Then open `http://localhost:5173` and sign in as `uat@pmi.test` / `uat-password-123`
+(the committed local fixture — `specs/005-identity-signin/defects/DEF-005-001…`).
+
+### 2. Screen reader
+
+This machine has **Narrator** (Windows 11, build 10.0.26100) and no NVDA. Either is acceptable to
+`T884`; NVDA is the more common choice for web testing and is free, and its **Speech Viewer**
+(`NVDA menu → Tools → Speech Viewer`) prints every announcement as text, which makes the notes
+below much easier to fill in. If you use Narrator instead:
+
+| Action | Keys |
+|---|---|
+| Start / stop Narrator | `Ctrl` + `Win` + `Enter` |
+| Silence current speech | `Ctrl` |
+| Move between controls | `Tab` / `Shift`+`Tab` — **this is the whole test** |
+| Activate a control | `Enter` or `Space` |
+| Toggle scan mode | `Caps Lock` + `Space` |
+
+**Put the mouse somewhere you cannot reach.** The one thing this pass proves that nothing else can
+is that the journey completes without it.
+
+### 3. What to listen for, in order
+
+The tab orders in Part 1b tell you *where focus goes*. Part 2 is about what you *hear* at each stop.
+Three specific things are already known to be worth judging:
+
+1. **Sign-in error announcement** — sign in with a wrong password on purpose. The page renders the
+   error in a `role="alert"`. Did you actually hear it, and did it say which field and what to fix?
+2. **`DEF-029-004`** — on the project surface, `Type` and `Priority` are each announced **twice** in
+   one tab cycle: stops 8/9 are register filters, stops 13/14 are editor fields. Heard linearly,
+   with no visual grouping, is that ambiguous? If yes, what wording would you have wanted?
+3. **`DEF-029-005`** — save a requirement. It is created, but the register still announces
+   *"No requirements match"* until a filter moves. How badly does that mislead?
+
+And one new question Phase 9 created:
+
+4. **The theme control is now the first tab stop on every page** (it moved into the shell's top
+   bar). Conventional for a banner landmark — but every keyboard user now passes a global
+   preference control before reaching the page they came for. Right or wrong?
+
+### 4. When you are done
+
+Fill Part 2 below, save the file as `docs/accessibility/EPIC-029-manual-pass.md` (drop `.DRAFT`),
+keeping Parts 1, 1b and this sheet, then:
+
+```bash
+cd "C:/myPersonal/PMI studio/iSPEC-PMI-studio/.claude/worktrees/epic-029-design-system" && pnpm vitest run --project governance tests/governance/accessibility-record.spec.ts
+```
+
+It needs a named screen reader, a version containing a digit, at least one journey and a date.
+Then tick `T884` and `T885` — and `T901`, `T904` follow.
+
 ## Part 2 — TO BE COMPLETED BY A HUMAN (this is the actual `T885`)
 
 Fill every field. Nothing below may be filled by an agent.
