@@ -171,6 +171,7 @@ path added or removed without updating this document fails the build.
 - `specs/028-agent-execution-seam/`
 - `specs/029-design-system/`
 - `specs/030-governed-engineering-loop/`
+- `specs/031-decision-policy-engine/`
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T918`)
 
