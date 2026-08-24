@@ -204,6 +204,28 @@ export interface ReviewQuestion {
   answers: ReviewAnswer[];
 }
 
+/**
+ * T200d — a run, as `GET /projects/:projectId/runs` returns it.
+ *
+ * The backend has served this since `EPIC-023` and no frontend surface called
+ * it, which is why `ReviewSession` had no parent and `DEF-010-001` counted it
+ * among the five unreachable pages. Dates arrive as ISO strings over the wire;
+ * the backend's `RunBody` types them as `Date` because that is what it holds
+ * before serialisation.
+ */
+export interface Run {
+  id: string;
+  projectId: string;
+  mode: string;
+  stopRange: string;
+  state: string;
+  /** FR-RUN-008a — the run reports that it stopped where the user asked. */
+  stoppedAtSelectedRange: boolean;
+  outcomeReason: string | null;
+  startedAt: string;
+  endedAt: string | null;
+}
+
 export interface ReviewSession {
   id: string;
   runId: string;
@@ -470,6 +492,17 @@ export class ApiClient {
   }
 
   // ---- review sessions (EPIC-023) ----
+
+  /**
+   * T200d — the runs of a project.
+   *
+   * The endpoint predates this by an Epic; what was missing was any caller.
+   * `RunsPage` is the only one, and it is what gives `ReviewSessionPage` a
+   * `runId` to be opened with (`DEF-010-001`).
+   */
+  async listRuns(projectId: string): Promise<Run[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/runs`);
+  }
 
   async getRunReview(runId: string): Promise<ReviewSession> {
     return this.request('GET', `/runs/${encodeURIComponent(runId)}/review`);

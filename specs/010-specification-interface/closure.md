@@ -82,3 +82,38 @@ WCAG 2.2 AA exit criterion below.
 
 `/speckit-implement EPIC-015` — it owns the two open conditions here (WCAG automation, and the
 QA harness the SC-001 e2e run needs).
+
+---
+
+## Phase C — `DEF-010-001`, closed 2026-08-23
+
+**The defect**: nine page components existed and `main.tsx` imported four.
+`Specification`, `SpecificationList`, `Tasks`, `ReviewSession` and
+`StorageConnections` were imported by nothing, anywhere in `frontend/src/` —
+five delivered capabilities a user could not reach at all. The eighth
+built-but-never-wired defect in this programme, and the largest.
+
+**The decision (`T200b`)**: route all five. Four chain off the existing project
+view, which already holds the ids they need. `ReviewSession` needed a `runId`
+and nothing produced one, so the run list was built (`T200d`) rather than having
+the shell invent an id.
+
+**`T200c` — mutation observation, recorded as required by Constitution V.**
+`T200a` (`frontend/tests/unit/design/page-reachability.spec.ts`) was verified by
+removing the `RunsPage` import from `frontend/src/main.tsx` and re-running it:
+
+```
+× T200a · every delivered page is reachable from the application root
+    → expected [ 'pages/Runs.tsx' ] to deeply equal []
+```
+
+The check failed, and named exactly the page whose route was removed — not a
+generic failure, and not a false pass. The import was restored and the check
+returned to green (4 of 4). Observed 2026-08-23.
+
+**What `T200a` still does not cover, stated so the closure is not read as more
+than it is**: reachability of a **route**. A page imported and rendered inside a
+view state that no control ever sets would pass it. Proving that needs a driven
+browser run enumerating the navigation graph — `T900a`'s tier.
+`shell-page-routes.spec.ts` (`T200e`) closes part of the gap by clicking the
+real controls, but only for the routes it knows to click.
