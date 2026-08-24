@@ -16,6 +16,13 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+
+// EPIC-036 `T441q` — `App` now requires a Router in EVERY branch, not only the
+// signed-in one. It reads the address to keep the shell's project selection
+// honest against a deep link (convergence `F1`), so `useLocation` runs before
+// the sign-in branch is chosen. Mounting it bare was always a half-truth: the
+// signed-in branch has rendered `ShellRoutes` since `T437f`.
 // The REAL entry module. Its side effects import tokens.css, themes.css and
 // components.css; its App is the tree the production root renders. (The
 // module's own createRoot call is a no-op here — jsdom has no #root element.)
@@ -33,12 +40,20 @@ const api = {
 
 describe('T899a · XI Tier 1 — the composed application renders styled', () => {
   it('mounts at the root and reaches a delivered page', async () => {
-    render(<App api={api} />);
+    render(
+      <MemoryRouter>
+        <App api={api} />
+      </MemoryRouter>,
+    );
     expect(await screen.findByRole('button', { name: /sign in/i })).toBeDefined();
   });
 
   it('the token stylesheets actually reach the document — not merely the import line', async () => {
-    render(<App api={api} />);
+    render(
+      <MemoryRouter>
+        <App api={api} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     const styles = [...document.querySelectorAll('style')].map((s) => s.textContent ?? '').join('\n');
     // Sentinels are chosen to be UNIQUE to their file: the first mutation run
@@ -52,7 +67,11 @@ describe('T899a · XI Tier 1 — the composed application renders styled', () =>
   });
 
   it('and the delivered page consumes it — the sign-in button is a design-system button', async () => {
-    render(<App api={api} />);
+    render(
+      <MemoryRouter>
+        <App api={api} />
+      </MemoryRouter>,
+    );
     const button = await screen.findByRole('button', { name: /sign in/i });
     expect(button.className).toContain('ds-button');
   });
@@ -74,13 +93,21 @@ describe('T913 · XI Tier 1 — the theme override is WIRED, not merely built', 
 
   it('a stored preference is applied when the app mounts (FR-DS-011: persistent)', async () => {
     window.localStorage.setItem('pmi.theme', 'dark');
-    render(<App api={api} />);
+    render(
+      <MemoryRouter>
+        <App api={api} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     expect(document.documentElement.dataset['theme']).toBe('dark');
   });
 
   it('a theme control is reachable in the composed app and the override persists', async () => {
-    render(<App api={api} />);
+    render(
+      <MemoryRouter>
+        <App api={api} />
+      </MemoryRouter>,
+    );
     const control = await screen.findByLabelText(/theme/i);
     fireEvent.change(control, { target: { value: 'dark' } });
     expect(document.documentElement.dataset['theme']).toBe('dark');
@@ -89,7 +116,11 @@ describe('T913 · XI Tier 1 — the theme override is WIRED, not merely built', 
 
   it('choosing follow-system clears the override and returns to the OS', async () => {
     window.localStorage.setItem('pmi.theme', 'light');
-    render(<App api={api} />);
+    render(
+      <MemoryRouter>
+        <App api={api} />
+      </MemoryRouter>,
+    );
     const control = await screen.findByLabelText(/theme/i);
     fireEvent.change(control, { target: { value: '' } });
     expect(document.documentElement.dataset['theme']).toBeUndefined();

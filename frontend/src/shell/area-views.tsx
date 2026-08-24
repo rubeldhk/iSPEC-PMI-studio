@@ -155,12 +155,21 @@ export function RunsArea(): ReactElement {
 
 export function WorkspaceAdministrationArea(): ReactElement {
   const { api, workspaceId } = useShell();
+  const navigate = useNavigate();
   if (workspaceId === null) {
     return (
       <main>
+        {/* `T441w`, `FR-SHL-061` — what is absent AND what to do next. There is
+            no action the user can take about an identity with no workspace, so
+            the honest next step is somewhere they can act, not a control that
+            pretends to fix it. */}
         <EmptyState
           title="No workspace"
           explanation="The signed-in identity carries no workspace, so there is nothing to administer."
+          actionLabel="Go to Home"
+          onAction={(): void => {
+            void navigate('/');
+          }}
         />
       </main>
     );

@@ -33,6 +33,16 @@ export interface ShellContextValue {
   readonly projectId: string | null;
   /** The set `EPIC-004` supplies. The shell renders it and decides nothing. */
   readonly projects: readonly Project[];
+  /**
+   * Whether that set is still being fetched (`T441u`, convergence finding
+   * `F3`).
+   *
+   * An empty `projects` means two different things — *"the workspace has none"*
+   * and *"we have not been told yet"* — and the selector rendered them
+   * identically. `DEF-007-001` is the same ambiguity one layer down. Carrying
+   * the distinction here is what lets the control state which one it is.
+   */
+  readonly projectsLoading: boolean;
   readonly selectProject: (projectId: string | null) => void;
 }
 
@@ -47,6 +57,7 @@ export function ShellProvider({
   identity,
   projectId,
   projects,
+  projectsLoading,
   selectProject,
   children,
 }: ShellProviderProps): ReactElement {
@@ -57,9 +68,10 @@ export function ShellProvider({
       workspaceId: identity?.workspace.id ?? null,
       projectId,
       projects,
+      projectsLoading,
       selectProject,
     }),
-    [api, identity, projectId, projects, selectProject],
+    [api, identity, projectId, projects, projectsLoading, selectProject],
   );
   return <ShellContextObject.Provider value={value}>{children}</ShellContextObject.Provider>;
 }
@@ -92,6 +104,29 @@ export function areaForPathname(pathname: string): Area | undefined {
 export function useCurrentArea(): Area | undefined {
   const { pathname } = useLocation();
   return areaForPathname(pathname);
+}
+
+/**
+ * The project an address names, when it names one — otherwise null.
+ *
+ * `T441q`, from the convergence finding `F1`. Reaching a project by **clicking**
+ * selects it on the way; reaching it by **address** did not, so a deep link to
+ * `/projects/:projectId` rendered that project under a breadcrumb reading
+ * *"No project selected"*. `FR-SHL-017` added deep links in this very Epic, so
+ * the entry path that broke `FR-SHL-021` is one this Epic created.
+ *
+ * The failure was not a missing breadcrumb. It was a breadcrumb that **said
+ * something false about the screen beside it** — and `BR-0001`'s failure mode
+ * is precisely a plausible screen.
+ *
+ * **The address wins.** When it carries a project, that is what the user is
+ * looking at, and any session selection disagreeing with it is stale. When it
+ * carries none, the session selection stands — which is what lets Runs and
+ * Specifications stay scoped after the user leaves the project view.
+ */
+export function projectIdFromPathname(pathname: string): string | null {
+  const match = /^\/projects\/([^/]+)/.exec(pathname);
+  return match?.[1] === undefined ? null : decodeURIComponent(match[1]);
 }
 
 /** The current project, resolved from the set `EPIC-004` supplies. */

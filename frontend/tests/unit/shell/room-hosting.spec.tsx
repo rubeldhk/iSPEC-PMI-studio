@@ -57,6 +57,47 @@ describe('T441a · the six regions are the contract’s, and there is no seventh
   });
 });
 
+describe('T441t · FR-SHL-042 — the shell ADOPTS the contract, not merely abstains from it', () => {
+  // The convergence finding (`F2`), and the reason it survived a green suite.
+  //
+  // `T441d` below asserts the shell does not RE-DERIVE `RoomShellProps` or
+  // `RoomRegion`. That is true — and it is equally true of a shell that has
+  // never heard of `@pmi/room-contract`, which is exactly the state `T441e`
+  // left it in while being marked complete. An absence-only assertion cannot
+  // tell adoption from ignorance.
+  //
+  // `FR-SHL-042` says the shared artifacts MUST be **adopted**. This is the
+  // half that says so.
+  it('imports @pmi/room-contract somewhere in the shell', () => {
+    const importers = shellSources().filter(({ text }) => text.includes("from '@pmi/room-contract'"));
+    expect(
+      importers.map((source) => source.name),
+      'no shell module imports the Room contract — FR-SHL-042 is not satisfied by abstinence',
+    ).not.toEqual([]);
+  });
+
+  it('adopts the contract’s own types rather than a local shape', () => {
+    const adopting = shellSources().filter(({ text }) =>
+      /import\s+(?:type\s+)?\{[^}]*\bRoomShellProps\b[^}]*\}\s+from\s+'@pmi\/room-contract'/.test(text),
+    );
+    expect(
+      adopting.map((source) => source.name),
+      'RoomShellProps is not imported anywhere in the shell',
+    ).not.toEqual([]);
+  });
+
+  it('would notice if the import disappeared', () => {
+    // Anti-vacuity for the two assertions above: they must be able to fail,
+    // and the shape they check must be the one that actually appears in
+    // source. A matcher that never matched would report "adopted" forever.
+    const sample = "import { ROOM_REGIONS, type RoomShellProps } from '@pmi/room-contract';";
+    expect(sample.includes("from '@pmi/room-contract'")).toBe(true);
+    expect("import { Outlet } from 'react-router';".includes("from '@pmi/room-contract'")).toBe(
+      false,
+    );
+  });
+});
+
 describe('T441d · FR-SHL-042 — EPIC-033’s Room artifacts are adopted, not re-derived', () => {
   it('leaves frontend/src/rooms/ to EPIC-033', () => {
     // The shell consumes that directory and does not move, fork or restate it.

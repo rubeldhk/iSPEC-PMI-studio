@@ -10,7 +10,7 @@
  * "Without opening a menu" is the testable half: the scope is **rendered**,
  * not behind a control.
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { PROJECT, WORKSPACE_ID, renderAt, stubApi } from './harness';
 
@@ -42,6 +42,57 @@ describe('T438a · the scope is on screen, not behind a control', () => {
     await waitFor(() =>
       expect(within(select as HTMLElement).getAllByRole('option').length).toBeGreaterThan(1),
     );
+  });
+});
+
+describe('T441v · FR-SHL-060 — the selector tells loading from empty', () => {
+  // The convergence finding (`F3`). While `listProjects()` was in flight the
+  // control read "No project selected" and nothing else — the same thing it
+  // reads for a workspace that genuinely has no projects. Two different facts,
+  // one appearance, on a surface the user sees on every screen.
+  //
+  // `DEF-007-001` is this class one layer down: a project-scoped list that
+  // could not tell "no such project" from "this project is empty". The
+  // difference matters because only one of them is worth waiting for.
+  it('marks the control busy while the set is in flight', async () => {
+    const api = stubApi();
+    let release: ((projects: never[]) => void) | undefined;
+    (api.listProjects as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => new Promise((resolve) => { release = resolve as never; }),
+    );
+    renderAt('/', api);
+    const select = await screen.findByLabelText('Project');
+    expect(select.getAttribute('aria-busy'), 'the control is not marked busy').toBe('true');
+    release?.([]);
+  });
+
+  it('stops being busy once the set has arrived', async () => {
+    renderAt('/');
+    const select = await screen.findByLabelText('Project');
+    await waitFor(() => expect(select.getAttribute('aria-busy')).toBeNull());
+  });
+
+  it('says the workspace has no projects only once it knows that', async () => {
+    // The other half: an empty answer is a real answer, and it reads
+    // differently from a question that has not come back yet.
+    renderAt('/', stubApi({ projects: [] }));
+    const select = await screen.findByLabelText('Project');
+    await waitFor(() =>
+      expect(within(select as HTMLElement).getByText(/no projects in this workspace/i)).toBeTruthy(),
+    );
+    expect(select.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('does not claim the workspace is empty while it is still asking', async () => {
+    const api = stubApi();
+    let release: ((projects: never[]) => void) | undefined;
+    (api.listProjects as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => new Promise((resolve) => { release = resolve as never; }),
+    );
+    renderAt('/', api);
+    const select = await screen.findByLabelText('Project');
+    expect(within(select as HTMLElement).queryByText(/no projects in this workspace/i)).toBeNull();
+    release?.([]);
   });
 });
 

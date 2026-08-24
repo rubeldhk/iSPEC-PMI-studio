@@ -19,6 +19,26 @@ import { PROJECT, renderAt, stubApi } from './harness';
 
 afterEach(cleanup);
 
+/**
+ * Choose the project, once the option for it exists.
+ *
+ * `fireEvent.change` naming a value the `<select>` does not yet carry is
+ * **silently ignored** — the set arrives from `EPIC-004` asynchronously, so
+ * under load the option can still be missing. The test then fails several
+ * assertions later for a reason unrelated to what it is testing, and only
+ * sometimes. Found by the full `test:unit` run, which is slower than
+ * `--project frontend` alone; `DEF-030-002` is the same shape.
+ */
+async function chooseProject(): Promise<void> {
+  const select = await screen.findByLabelText('Project');
+  await waitFor(() =>
+    expect(
+      within(select as HTMLElement).getByRole('option', { name: PROJECT.name }),
+    ).toBeTruthy(),
+  );
+  fireEvent.change(select, { target: { value: PROJECT.id } });
+}
+
 describe('areaForPathname · the address decides the area', () => {
   it('matches an area exactly', () => {
     expect(areaForPathname('/runs')?.id).toBe('runs');
@@ -50,7 +70,7 @@ describe('T438e · FR-SHL-022 — switching project keeps the area', () => {
       expect(screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent).toContain('Runs'),
     );
 
-    fireEvent.change(await screen.findByLabelText('Project'), { target: { value: PROJECT.id } });
+    await chooseProject();
 
     // Still in Runs…
     await waitFor(() =>
@@ -68,13 +88,69 @@ describe('T438e · FR-SHL-022 — switching project keeps the area', () => {
       ),
     );
     const before = screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent;
-    fireEvent.change(await screen.findByLabelText('Project'), { target: { value: PROJECT.id } });
+    await chooseProject();
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent).toContain(
         'Workspace & Administration',
       ),
     );
     expect(before).toContain('Workspace & Administration');
+  });
+});
+
+describe('T441r · FR-SHL-021 — a project reached by address is the project the shell names', () => {
+  // The convergence finding (`F1`). Every test above arrives by CLICKING, and
+  // clicking calls `selectProject` on the way. A deep link does not — and
+  // `FR-SHL-017` added deep links in this very Epic, so the entry path that
+  // breaks this is one this Epic created.
+  //
+  // The failure is not a missing breadcrumb. It is a breadcrumb that says
+  // "No project selected" while the screen renders a project, which is worse:
+  // `BR-0001`'s failure mode is a plausible screen, and `UX-0011` asks for the
+  // scope to be visible rather than implied.
+  it('names the project in the breadcrumb when its address is opened directly', async () => {
+    renderAt(`/projects/${PROJECT.id}`);
+    await waitFor(() =>
+      expect(
+        screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent,
+        'the breadcrumb does not name the project the address opened',
+      ).toContain(PROJECT.name),
+    );
+  });
+
+  it('does not say "No project selected" over a rendered project', async () => {
+    renderAt(`/projects/${PROJECT.id}`);
+    const crumb = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+    await waitFor(() => expect(crumb.textContent).toContain(PROJECT.name));
+    expect(crumb.textContent).not.toContain('No project selected');
+  });
+
+  it('scopes the other areas to it, so leaving the sub-view keeps the project', async () => {
+    // The selection has to reach `ShellContext`, not merely the breadcrumb.
+    // A breadcrumb fixed on its own would be a second answer to "which
+    // project", and the two would disagree the moment the user left.
+    const api = stubApi();
+    renderAt(`/projects/${PROJECT.id}`, api);
+    await waitFor(() =>
+      expect(screen.getByRole('navigation', { name: 'Breadcrumb' }).textContent).toContain(
+        PROJECT.name,
+      ),
+    );
+
+    const runs = screen
+      .getAllByRole('navigation')
+      .flatMap((nav) => within(nav).queryAllByRole('button'))
+      .find((button) => button.textContent?.trim() === 'Runs');
+    fireEvent.click(runs!);
+
+    await waitFor(() => expect(api.listRuns).toHaveBeenCalledWith(PROJECT.id));
+  });
+
+  it('leaves the selection alone for an address that carries no project', async () => {
+    renderAt('/runs');
+    const crumb = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+    await waitFor(() => expect(crumb.textContent).toContain('Runs'));
+    expect(crumb.textContent).toContain('No project selected');
   });
 });
 
@@ -109,7 +185,7 @@ describe('T438g · FR-SHL-024 — an area with no project says so', () => {
     const main = await screen.findByRole('main');
     await waitFor(() => expect(within(main).getByText('No project selected')).toBeTruthy());
 
-    fireEvent.change(screen.getByLabelText('Project'), { target: { value: PROJECT.id } });
+    await chooseProject();
     await waitFor(() => expect(api.listRuns).toHaveBeenCalledWith(PROJECT.id));
     expect(within(await screen.findByRole('main')).queryByText('No project selected')).toBeNull();
   });

@@ -27,6 +27,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+
+// EPIC-036 `T441q` — `App` now requires a Router in EVERY branch, not only the
+// signed-in one. It reads the address to keep the shell's project selection
+// honest against a deep link (convergence `F1`), so `useLocation` runs before
+// the sign-in branch is chosen. Mounting it bare was always a half-truth: the
+// signed-in branch has rendered `ShellRoutes` since `T437f`.
 import { Button } from '../../../src/design/components/Button';
 import { Modal } from '../../../src/design/components/Modal';
 import { Navigation } from '../../../src/design/components/Navigation';
@@ -275,7 +282,11 @@ describe('T924 · every adopted prototype pattern is present', () => {
         throw new Error('no session');
       },
     } as unknown as ApiClient;
-    const { container } = render(<App api={api} />);
+    const { container } = render(
+      <MemoryRouter>
+        <App api={api} />
+      </MemoryRouter>,
+    );
     await screen.findByRole('button', { name: /sign in/i });
     expect(shellProblem(container)).toBeNull();
   });
