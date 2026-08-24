@@ -109,6 +109,38 @@ const CASES: Array<[string, () => ReactNode]> = [
   ],
   ['PageHeader, loading', () => <PageHeader title="Projects" level={2} loading />],
   ['StatusPill', () => <StatusPill tone="success">active</StatusPill>],
+
+  // T931 (Phase 10) — the Phase 9 configurations. T894's cases above render
+  // each component in its MINIMAL usage and were written before these regions
+  // existed, so every one of them is markup the harness had never seen.
+  [
+    // The one with real assistive-technology substance: `count` puts
+    // visually-hidden text inside the button, so the number is part of the
+    // accessible name rather than a figure floating beside it.
+    'Navigation, vertical with counts (T922)',
+    () => (
+      <Navigation
+        label="Primary"
+        orientation="vertical"
+        items={[
+          { id: 'r', label: 'Requirements', count: 12, current: true },
+          { id: 'd', label: 'Decisions', count: 0 },
+          { id: 's', label: 'Specifications' },
+        ]}
+        onSelect={vi.fn()}
+      />
+    ),
+  ],
+  [
+    'PageHeader, with description (T917)',
+    () => (
+      <PageHeader
+        title="Requirements"
+        level={2}
+        description="Everything captured for this project, and what it traces to."
+      />
+    ),
+  ],
   // T913 — not an inventory row, but it renders on every page of the composed
   // application, so it belongs in the sweep every page is held to.
   ['ThemeControl', () => <ThemeControl />],
@@ -123,6 +155,32 @@ describe('T894 · every component passes the WCAG 2.2 AA harness', () => {
   it('Modal, open', async () => {
     render(
       <Modal open title="Confirm archive" onClose={vi.fn()}>
+        <p>Archiving hides the project from lists.</p>
+      </Modal>,
+    );
+    await expectNoViolations();
+  });
+
+  // T931 (Phase 10) — the head/body/foot Modal T921 produced. Both the header
+  // (title beside its own close affordance) and the footer (the caller's
+  // actions) are regions the case above never renders populated.
+  it('Modal, open with actions in its footer (T921)', async () => {
+    render(
+      <Modal
+        open
+        title="Confirm archive"
+        onClose={vi.fn()}
+        actions={
+          <>
+            <Button variant="secondary" onClick={vi.fn()}>
+              Keep project
+            </Button>
+            <Button variant="danger" onClick={vi.fn()}>
+              Archive project
+            </Button>
+          </>
+        }
+      >
         <p>Archiving hides the project from lists.</p>
       </Modal>,
     );
