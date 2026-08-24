@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "workflowType": "requirement-room",
+  "stages": ["Event", "Context", "Analyze", "Decide", "Evidence", "Outcome"],
+  "transitions": [
+    {
+      "from": "Event",
+      "to": "Context",
+      "requiredGates": [],
+      "trigger": {
+        "ruleId": "requirement-room.intake-normalized",
+        "description": "Intake has produced candidates. Automated, and it names the rule that fires it — FR-GEL-031."
+      }
+    },
+    {
+      "from": "Context",
+      "to": "Analyze",
+      "requiredGates": [],
+      "trigger": null
+    },
+    {
+      "from": "Analyze",
+      "to": "Decide",
+      "requiredGates": ["requirement-room.clarifications-resolved"],
+      "trigger": null
+    },
+    {
+      "from": "Decide",
+      "to": "Evidence",
+      "requiredGates": ["requirement-room.human-decision"],
+      "trigger": null
+    },
+    {
+      "from": "Evidence",
+      "to": "Outcome",
+      "requiredGates": ["requirement-room.evidence-contract-met"],
+      "trigger": null
+    }
+  ],
+  "approvedBy": "epic-033",
+  "approvalRef": "specs/033-requirement-room/tasks.md#T337t"
+}

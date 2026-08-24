@@ -81,6 +81,9 @@ model Workspace {
   loopConfigurations    LoopInstanceConfiguration[]
   loopObjects           LoopObject[]
   loopTransitions       LoopTransition[]
+  requirementCandidates RequirementCandidate[]
+  requirementDecisions  RequirementDecision[]
+  baselines             Baseline[]
 
   @@map("workspaces")
 }
@@ -1353,4 +1356,211 @@ model LoopTransition {
   @@index([objectId, occurredAt])
   @@index([workspaceId, outcome])
   @@map("loop_transitions")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EPIC-033 — the Requirement Room. T337u.
+//
+// Six tables. What is NOT here matters as much: no requirement TEXT and no
+// second requirement register. FR-RQR-002 and D-33 — EPIC-007 owns the
+// register, and this Room consumes it. A Baseline freezes EPIC-007 requirement
+// VERSION IDS, never copies of what they say (R-033-5), because a copy is a
+// second source of truth that drifts silently and looks right the whole time.
+//
+// AiAnalysis is embedded on the candidate rather than a table of its own
+// (data-model §3): it is epistemically typed output ABOUT a candidate, not an
+// entity with a lifecycle.
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum RoomEpistemic {
+  fact
+  inference
+  recommendation
+  open_question
+}
+
+enum DecidedByKind {
+  human
+  agent
+}
+
+// Raw intent, normalized, before anything is decided. FR-RQR-010.
+model RequirementCandidate {
+  id            String        @id @default(uuid())
+  workspaceId   String
+  projectId     String
+  // The EPIC-030 loop object this Room instance governs.
+  roomObjectId  String
+  // Which intake it came from — document, direct input, imported artifact.
+  sourceRef     String
+  normalizedText String
+  // FR-RQR-011, R-033-4 — REQUIRED. An unlabelled element must not be
+  // presentable, and the cheapest guarantee is that it cannot be stored.
+  epistemic     RoomEpistemic
+  // AI output about this candidate, epistemically typed (data-model §3).
+  aiAnalysis    Json?
+  // The EPIC-007 requirement id once decided; null while a candidate.
+  // A REFERENCE, never a copy — EPIC-007 owns the text.
+  promotedTo    String?
+  // FR-RQR-030, T339b — the criteria the baseline gate reads.
+  //
+  // Held HERE rather than passed in with an approval, so the gate reads data
+  // this Room owns. A caller that supplied its own answer to "does this have
+  // criteria" could assert its way past SC-RQR-003's "zero", which is the one
+  // number that requirement is.
+  //
+  // Null and [] are the same state — no criteria — and both block. The column
+  // is nullable only because the rows that predate it are.
+  acceptanceCriteria Json?
+  // DEFAULT TRUE, and that is the whole point: a candidate is presumed to need
+  // criteria until somebody says otherwise. Defaulting false would make the
+  // gate fire only for candidates a caller had already flagged, which is a
+  // default that permits — the failure `requirement-room.tokens.ts` names.
+  intendedForImplementation Boolean @default(true)
+  createdAt     DateTime      @default(now())
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  clarifications Clarification[]
+
+  @@index([workspaceId, roomObjectId])
+  @@index([workspaceId, projectId])
+  @@map("requirement_candidates")
+}
+
+// FR-RQR-012 — asked as one set, answerable in place, and RETAINED once
+// answered (FR-RQR-013): the answer is part of the requirement record, not
+// scaffolding to discard.
+model Clarification {
+  id          String    @id @default(uuid())
+  // FR-002 / BR-0001 — every tenant-scoped model carries workspaceId from the
+  // FIRST migration, so row-level security is a switch rather than a data
+  // migration. Reachable via the candidate is not the same as scoped.
+  workspaceId String
+  roomObjectId String
+  candidateId String?
+  question    String
+  // Actor id, or an AgentExecutionRecord id when AI-generated.
+  askedBy     String
+  answer      String?
+  answeredBy  String?
+  answeredAt  DateTime?
+  // Derived: an open question on a candidate intended for implementation.
+  blocksBaseline Boolean @default(false)
+  createdAt   DateTime  @default(now())
+
+  candidate RequirementCandidate? @relation(fields: [candidateId], references: [id])
+
+  @@index([workspaceId])
+  @@index([roomObjectId])
+  @@index([roomObjectId, blocksBaseline])
+  @@map("clarifications")
+}
+
+// FR-RQR-040, FR-RQR-041 — a human decision, with its rationale.
+model RequirementDecision {
+  id             String        @id @default(uuid())
+  workspaceId    String
+  roomObjectId   String
+  decidedBy      String
+  // FR-RQR-041 — enforced by CHECK constraint as well as by EPIC-031's policy.
+  // The belt beside the braces: a caller can go around a service.
+  decidedByKind  DecidedByKind
+  // The BR-0005 record, CONSUMED from EPIC-031 and not redefined here.
+  authorityBasis String
+  objectVersion  Int
+  chosenOption   String
+  // FR-RQR-023 — the options NOT taken are retained. A decision with only the
+  // chosen option recorded cannot answer "what else was considered".
+  declinedOptions Json
+  // BR-0025 — REQUIRED. A decision with no rationale is a decision nobody can
+  // review, and it looks identical to one that was reasoned.
+  rationale      String
+  // → EPIC-031's Decision, which evaluated the authority.
+  decisionId     String?
+  decidedAt      DateTime      @default(now())
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id])
+  baselines Baseline[]
+
+  @@index([workspaceId, roomObjectId])
+  @@map("requirement_decisions")
+}
+
+// BR-0026 — the entity this Epic exists to add.
+//
+// APPEND-ONLY. A baseline is superseded, never rewritten: RULE-02 says
+// baselines do not mutate silently, and rewriting one would change what an
+// approved decision approved.
+model Baseline {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  // Monotonic per project; never reused.
+  version     Int
+  // R-033-5 — the EPIC-007 requirement VERSION IDS frozen. Never their text.
+  memberVersionIds Json
+  // Content hash over the member set, via requirement-hash.ts. FR-RQR-051's
+  // in-place-edit refusal asserts this is unchanged.
+  setHash     String
+  approvedBy  String
+  approvedAt  DateTime @default(now())
+  rationale   String
+  decisionId  String
+  // The baseline that replaced this one; null while current.
+  supersededBy Int?
+  // → EPIC-032, satisfied before approval completes (FR-RQR-053).
+  evidenceContractRef String?
+
+  workspace  Workspace           @relation(fields: [workspaceId], references: [id])
+  decision   RequirementDecision @relation(fields: [decisionId], references: [id])
+  exceptions BaselineException[]
+  handoffs   Handoff[]
+
+  @@unique([projectId, version])
+  @@index([workspaceId, projectId])
+  @@map("baselines")
+}
+
+// FR-RQR-032 — a member baselined without acceptance criteria needs an
+// explicit, authorized exception. Both fields required: an exception nobody
+// granted, or with no stated reason, is a bypass with a nicer name.
+model BaselineException {
+  id                   String   @id @default(uuid())
+  // FR-002 / BR-0001 — see Clarification.
+  workspaceId          String
+  baselineId           String
+  requirementVersionId String
+  // Which precondition was waived — currently only missing acceptance criteria.
+  condition            String
+  authorizedBy         String
+  reason               String
+  createdAt            DateTime @default(now())
+
+  baseline Baseline @relation(fields: [baselineId], references: [id])
+
+  @@index([workspaceId])
+  @@index([baselineId])
+  @@map("baseline_exceptions")
+}
+
+// FR-RQR-060, FR-RQR-062 — a baselined set selected as specification input.
+model Handoff {
+  id              String   @id @default(uuid())
+  // FR-002 / BR-0001 — see Clarification.
+  workspaceId     String
+  baselineId      String
+  // The VERSION selected, not the baseline generally: a handoff records which
+  // frozen set went to specification.
+  baselineVersion Int
+  // Opaque, ENGINE-AGNOSTIC (FR-RQR-062). A typed reference to one engine's
+  // workflow would put an engine's model in this Room.
+  specificationWorkflowRef String
+  selectedBy      String
+  selectedAt      DateTime @default(now())
+
+  baseline Baseline @relation(fields: [baselineId], references: [id])
+
+  @@index([workspaceId])
+  @@index([baselineId])
+  @@map("handoffs")
 }

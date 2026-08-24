@@ -125,6 +125,18 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-033 T337c — the SHARED Room pattern, imported by EPIC-034 and
+    // EPIC-035. No `passWithNoTests`: TS-005 makes an empty suite a failure, and
+    // an empty suite here would mean the six-region guarantee three Rooms depend
+    // on is asserted by nothing.
+    test: {
+      name: 'room-contract',
+      root: './packages/room-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     // EPIC-030 T915 — the fifth contract package. No `passWithNoTests`: TS-005
     // makes an empty suite a failure, and this project is registered in the same
     // change as the first spec that fills it (the T537/T539 rule).

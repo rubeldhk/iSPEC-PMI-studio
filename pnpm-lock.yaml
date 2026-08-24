@@ -80,6 +80,9 @@ importers:
       '@pmi/observability':
         specifier: workspace:*
         version: link:../packages/observability
+      '@pmi/room-contract':
+        specifier: workspace:*
+        version: link:../packages/room-contract
       '@pmi/storage-contract':
         specifier: workspace:*
         version: link:../packages/storage-contract
@@ -178,6 +181,9 @@ importers:
 
   frontend:
     dependencies:
+      '@pmi/room-contract':
+        specifier: workspace:*
+        version: link:../packages/room-contract
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -227,6 +233,8 @@ importers:
       '@pmi/engine-contract':
         specifier: workspace:*
         version: link:../engine-contract
+
+  packages/room-contract: {}
 
   packages/storage-adapters/fixture:
     dependencies:

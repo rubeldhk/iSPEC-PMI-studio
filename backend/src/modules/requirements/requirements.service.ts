@@ -13,6 +13,7 @@
 import { randomUUID } from 'node:crypto';
 import { ConflictError, NotFoundError } from '../../core/errors.js';
 import { assertSameWorkspace, type RefusalRecord } from '../../core/workspace.guard.js';
+import type { EditableRequirement } from './edit-authority.js';
 import { requirementContentHash } from './requirement-hash.js';
 import type { RequirementVersionRecord, RequirementVersionService } from './requirement-version.service.js';
 import {
@@ -101,11 +102,23 @@ export interface RequirementsServiceOptions {
    * depend on the specification module, exactly as it does not depend on audit.
    */
   onContentChanged?: (change: RequirementContentChange) => void;
+  /**
+   * T338h (`EPIC-033`) — FR-RQR-051 / `RULE-02`. A veto consulted before an
+   * edit lands, wired to `EditAuthorityRegistry` at the composition root.
+   *
+   * A HOOK, not a call, for the same reason `onContentChanged` is one: this
+   * register must not depend on the Requirement Room. It asks whether the edit
+   * may proceed; it does not know that baselines exist.
+   */
+  onBeforeEdit?: (ctx: ActingContext, requirement: EditableRequirement) => Promise<void> | void;
 }
 
 export class RequirementsService {
   private readonly onRefused: ((record: RefusalRecord) => void) | undefined;
   private readonly onContentChanged: ((change: RequirementContentChange) => void) | undefined;
+  private readonly onBeforeEdit:
+    | ((ctx: ActingContext, requirement: EditableRequirement) => Promise<void> | void)
+    | undefined;
 
   constructor(
     private readonly store: RequirementStore,
@@ -114,6 +127,7 @@ export class RequirementsService {
   ) {
     this.onRefused = options.onRefused;
     this.onContentChanged = options.onContentChanged;
+    this.onBeforeEdit = options.onBeforeEdit;
   }
 
   async create(
@@ -196,6 +210,14 @@ export class RequirementsService {
       next.type === existing.type &&
       next.priority === existing.priority;
     if (unchanged) return existing;
+
+    // T338h (EPIC-033) — FR-RQR-051. Asked here and not earlier, so a request
+    // that changes nothing stays the no-op it has always been: refusing one
+    // would report an in-place edit that nobody attempted. Asked before the
+    // append, so a refused edit leaves no version row for a change that never
+    // happened. This register does not know what the answer depends on; see
+    // `edit-authority.ts`.
+    await this.onBeforeEdit?.(ctx, existing);
 
     await this.history.append({
       workspaceId: existing.workspaceId,

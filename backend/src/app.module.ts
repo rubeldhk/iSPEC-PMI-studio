@@ -18,6 +18,7 @@ import { ReviewModule } from './modules/review/review.module.js';
 import { AccessModule } from './modules/access/access.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { LoopModule } from './modules/loop/loop.module.js';
+import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
 
 /**
  * Application composition root.
@@ -63,6 +64,8 @@ import { LoopModule } from './modules/loop/loop.module.js';
     // tested and never registered is the defect class DEF-005-001 shipped
     // with 15/15 tasks green.
     LoopModule,
+    // T337y — EPIC-033. The wiring T337x exists to prove.
+    RequirementRoomModule,
   ],
 })
 export class AppModule {}
