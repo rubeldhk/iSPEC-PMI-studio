@@ -49,23 +49,27 @@ Committed source. Not a database row.
 ### Why `status` has three values and not two
 
 This model carried a boolean `declared` until the cross-artifact analysis of 2026-08-24
-([analysis.md](./analysis.md) `C1`). A boolean cannot hold the state three areas are actually in.
+([analysis.md](./analysis.md) `C1`). A boolean cannot hold the state **four** areas are actually in.
 
 | `status` | Means | Count | In navigation? | Address answers |
 |---|---|---|---|---|
-| `delivered` | the owning Epic has shipped the screen | **6** | yes | the area |
-| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **3** | **no** | not found |
+| `delivered` | the owning Epic has shipped the screen | **5** | yes | the area |
+| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **4** | **no** | not found |
 | `undeclared` | PMI-DOC-006 names no declared owner — `UX-0060` forbids building it | **9** | no | not found |
 
-**The middle state is the finding.** `QA & Releases`, `Architecture & Decisions` and `Governance`
-have declared owners — `EPIC-014`/`EPIC-015`, `EPIC-016`, `EPIC-019`/`EPIC-021`/`EPIC-024` — and
-every one of those Epics is at stage `Ready`, unimplemented. No component exists in
+**The middle state is the finding.** `QA & Releases`, `Architecture & Decisions`, `Governance` and
+`Plan & Tasks` have declared owners — `EPIC-014`/`EPIC-015`, `EPIC-016`,
+`EPIC-019`/`EPIC-021`/`EPIC-024`, `EPIC-012` — and the first three are at stage `Ready`,
+unimplemented. **`Plan & Tasks` is the fourth and the different one**: `EPIC-012` shipped
+`Tasks.tsx`, but it is scoped to one specification, so its only address is
+`/specifications/:id/tasks` — and navigation links to `Area.path`, which cannot carry a `:param`
+(`N1`). No component exists in
 `frontend/src/pages/` and **no `tasks.md` in the corpus builds one**. Under the old boolean they
 were `declared: true`, which required an `element` that nothing could supply, while `FR-SHL-003`
 forbids this Epic supplying it or rendering a placeholder. There was no correct value.
 
 **Why not simply call them undeclared.** Because that is false, and it is load-bearing:
-`UX-0060`'s prohibition turns on whether an *Epic* is declared, and marking these three
+`UX-0060`'s prohibition turns on whether an *Epic* is declared, and marking these four
 `undeclared` would claim the SRS forbids building them when the SRS assigns them owners. The
 middle state records the debt with the debtor's name on it rather than erasing it.
 
@@ -74,22 +78,24 @@ are recorded, and how `FR-SHL-017` answers *not found* for an address naming one
 would make a specified area indistinguishable from a typo. `FR-SHL-003` keeps them out of
 navigation; it does not keep them out of the list.
 
-### The eighteen, the six, and the twelve
+### The eighteen, the five, and the thirteen
 
 | Group | Areas | `delivered` | `declared-not-delivered` |
 |---|---|---|---|
 | **Overview** | Home · Projects · Decision Inbox | Home, Projects | — |
 | **Intent & Control** | Requirement Room · Specifications · Change Room · Defect Room · Architecture & Decisions | Specifications | Architecture & Decisions |
-| **Delivery** | Plan & Tasks · Engineering Experts · Runs · Evidence & Compliance · QA & Releases | Plan & Tasks, Runs | QA & Releases |
+| **Delivery** | Plan & Tasks · Engineering Experts · Runs · Evidence & Compliance · QA & Releases | Runs | Plan & Tasks, QA & Releases |
 | **Platform** | Context · Integrations · Reports · Governance · Workspace & Administration | Workspace & Administration | Governance |
 
-**Six delivered, three awaiting their owners, nine undeclared.** The rule is now applied **once**:
+**Five delivered, four awaiting their owners, nine undeclared.** The rule is now applied **once**:
 an area reaches navigation when its screen exists. That is the rule this document already used for
 the Rooms — `EPIC-033` is 68 of 102 and `EPIC-034`/`EPIC-035` are 0, so none is `delivered` — and
 the analysis found it was not being applied to the other three. When any of the twelve ships, it
 becomes a registry edit and nothing else (`SC-SHL-004`).
 
 **Home is `delivered` because this Epic delivers it.** It is the one area here that is not hosted.
+
+> **Corrected 2026-08-24 (`T442s`).** This said six delivered and three awaiting an owner. `C1`'s remediation set those numbers across every artifact; `N1` then moved **Plan & Tasks** to `declared-not-delivered` during the Phase 2 implementation and only `areas.ts`, the handovers and the tests followed. `T442t` is the check that now disagrees when a document and the registry drift.
 
 ---
 

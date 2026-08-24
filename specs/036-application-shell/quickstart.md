@@ -63,15 +63,14 @@ different stack answers a different question.
 
 **Proves**: `SC-SHL-001`, `SC-SHL-003`, `FR-SHL-010`–`FR-SHL-013`.
 
-Sign in. Without using browser history or typing a URL, reach each of the **six delivered** areas
-from primary navigation: Home, Projects, Specifications, Plan & Tasks, Runs, Workspace &
-Administration.
+Sign in. Without using browser history or typing a URL, reach each of the **five delivered** areas
+from primary navigation: Home, Projects, Specifications, Runs, Workspace & Administration.
 
-**Expected**: all six reachable; presented in the four groups of PMI-DOC-006 §4.1; no area in two
-groups; the current area marked. **None of the other twelve appears at all** — not disabled, not
-greyed, not a placeholder. That is nine undeclared areas (`UX-0060`) **and** three that are
-declared with no screen built: `QA & Releases`, `Architecture & Decisions`, `Governance`
-([analysis.md](./analysis.md) `C1`).
+**Expected**: all five reachable; presented in the four groups of PMI-DOC-006 §4.1; no area in two
+groups; the current area marked. **None of the other thirteen appears at all** — not disabled, not
+greyed, not a placeholder. That is nine undeclared areas (`UX-0060`) **and** four that are
+declared with no screen built: `Plan & Tasks`, `QA & Releases`, `Architecture & Decisions` and
+`Governance` ([analysis.md](./analysis.md) `C1`, `N1`).
 
 > **Mutation check, required at exit.** Remove one delivered area's route and `FR-SHL-016` must fail
 > naming that area. This is `G-UX-01`'s navigation half and the guard `DEF-010-001` did not have.
@@ -168,7 +167,7 @@ announced as groups and the current area as current; zero axe violations in both
 
 **Proves**: Constitution XI Tier 2, and it is **closure evidence**, not a test.
 
-Against the running stack, drive: sign in → Home → each of the six delivered areas → back → switch
+Against the running stack, drive: sign in → Home → each of the five delivered areas → back → switch
 project → one address naming a declared-but-unbuilt area, observing not-found. Record the verbatim
 transcript to `docs/accessibility/EPIC-036-shell-transcript.md`.
 
@@ -189,6 +188,7 @@ reachability transcript is the precedent and the format.
   `index.html` for unknown paths. Nothing in this repository serves the built client at all
   (`R-036-3`).
 - **That project health is anywhere.** `BR-0013` left this Epic at clarification, owner `U-03`.
-- **That `UX-0003` is satisfied for every area with a declared owner.** It is satisfied for the six
-  delivered ones. `QA & Releases`, `Architecture & Decisions` and `Governance` have owners and no
-  screens; the remainder lands with `EPIC-014`/`015`, `EPIC-016` and `EPIC-019`/`021`/`024`.
+- **That `UX-0003` is satisfied for every area with a declared owner.** It is satisfied for the five
+  delivered ones. `Plan & Tasks`, `QA & Releases`, `Architecture & Decisions` and `Governance` have
+  owners and no navigable screen; the remainder lands with `EPIC-012`, `EPIC-014`/`015`, `EPIC-016`
+  and `EPIC-019`/`021`/`024`.

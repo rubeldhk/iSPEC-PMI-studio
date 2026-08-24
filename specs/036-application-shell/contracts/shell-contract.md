@@ -30,15 +30,23 @@ export interface Area {
   readonly epic: string | null;
   readonly status: AreaStatus;
   /** What renders. Present ONLY when `status` is 'delivered'. */
-  readonly element?: () => ReactElement;
+  readonly element?: ComponentType;
+  /**
+   * Why an area is not delivered, in the user's terms. Rendered by the
+   * not-found page, so a reader is told which Epic owes the screen rather
+   * than only that the address does not resolve.
+   */
+  readonly note?: string;
 }
 
 export const AREAS: readonly Area[];
 ```
 
-**Six areas are `delivered`, three are `declared-not-delivered`, nine are `undeclared`.** Only the
-first six reach navigation and the route tree. The middle three carry their owning Epic's
-identifier so the outstanding obligation has a name rather than disappearing.
+**Five areas are `delivered`, four are `declared-not-delivered`, nine are `undeclared`.** Only the
+five reach navigation and the route tree. The middle four carry their owning Epic's identifier so
+the outstanding obligation has a name rather than disappearing.
+
+> **Corrected 2026-08-24 (`T442s`).** This said six delivered and three awaiting an owner. `C1`'s remediation set those numbers across every artifact; `N1` then moved **Plan & Tasks** to `declared-not-delivered` during the Phase 2 implementation and only `areas.ts`, the handovers and the tests followed. `T442t` is the check that now disagrees when a document and the registry drift.
 
 **Navigation, the route tree and `FR-SHL-016`'s check all read `AREAS` and nothing else.** That is
 the whole point of the shape: `SC-SHL-004` requires a **delivered** area to reach navigation with zero
@@ -63,19 +71,20 @@ PMI-DOC-006 §4.1 are recorded, and how an address naming one is answered *not f
 /traceability                  → (within Projects)          sub-view
 /specifications                → Specifications             delivered
 /specifications/:id            → one specification          sub-view
-/specifications/:id/tasks      → Plan & Tasks               delivered
+/specifications/:id/tasks      → a specification's tasks     sub-view
 /runs                          → Runs                       delivered
 /runs/:runId                   → a run's review session     sub-view
 /storage                       → Workspace & Administration delivered
 *                              → not found
 ```
 
-**Six routed areas, and that is the whole table.** `/architecture` and `/governance` were listed
+**Five routed areas, and that is the whole table.** `/architecture` and `/governance` were listed
 here as declared until the analysis of 2026-08-24 ([../analysis.md](../analysis.md) `I1`); neither
-has a component to render, and `QA & Releases` was never given a path at all — which is how the
-eight-versus-nine disagreement surfaced. All three are now `declared-not-delivered` and have **no
-route**: their addresses answer not-found until their owners ship, exactly as an undeclared area's
-does.
+has a component to render, and `QA & Releases` was never given a path at all. **`Plan & Tasks`
+left the table too** (`N1`): `/specifications/:id/tasks` is a sub-view of Specifications, and a
+path carrying a `:param` cannot be a navigation destination because navigation links to
+`Area.path`. All four are now `declared-not-delivered` and have **no route**: their addresses
+answer not-found until their owners ship, exactly as an undeclared area's does.
 
 **Every path above is `Area.path` or a sub-view of one**, and the tree is generated from `AREAS`.
 A route added by hand would be reachable and invisible to `FR-SHL-016`, which is the defect this
