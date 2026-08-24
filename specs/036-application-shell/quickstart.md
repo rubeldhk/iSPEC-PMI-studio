@@ -31,18 +31,21 @@ discharge: `.claude/worktrees/epic-036-application-shell`.
 
 ---
 
-## Scenario 1 — Every declared area is reachable from one navigation 🎯 MVP
+## Scenario 1 — Every delivered area is reachable from one navigation 🎯 MVP
 
 **Proves**: `SC-SHL-001`, `SC-SHL-003`, `FR-SHL-010`–`FR-SHL-013`.
 
-Sign in. Without using browser history or typing a URL, reach each of the nine declared areas from
-primary navigation.
+Sign in. Without using browser history or typing a URL, reach each of the **six delivered** areas
+from primary navigation: Home, Projects, Specifications, Plan & Tasks, Runs, Workspace &
+Administration.
 
-**Expected**: all nine reachable; presented in the four groups of PMI-DOC-006 §4.1; no area in two
-groups; the current area marked. **None of the nine undeclared areas appears at all** — not
-disabled, not greyed, not a placeholder (`UX-0060`).
+**Expected**: all six reachable; presented in the four groups of PMI-DOC-006 §4.1; no area in two
+groups; the current area marked. **None of the other twelve appears at all** — not disabled, not
+greyed, not a placeholder. That is nine undeclared areas (`UX-0060`) **and** three that are
+declared with no screen built: `QA & Releases`, `Architecture & Decisions`, `Governance`
+([analysis.md](./analysis.md) `C1`).
 
-> **Mutation check, required at exit.** Remove one declared area's route and `FR-SHL-016` must fail
+> **Mutation check, required at exit.** Remove one delivered area's route and `FR-SHL-016` must fail
 > naming that area. This is `G-UX-01`'s navigation half and the guard `DEF-010-001` did not have.
 
 ---
@@ -51,8 +54,9 @@ disabled, not greyed, not a placeholder (`UX-0060`).
 
 **Proves**: `SC-SHL-004`, `FR-SHL-002`.
 
-Add an area to `frontend/src/shell/areas.ts` with `declared: true` and an element. Change nothing
-else.
+Add an area to `frontend/src/shell/areas.ts` with `status: 'delivered'` and an element — or move
+one of the three `declared-not-delivered` areas to `delivered`, which is what their owning Epics
+will do. Change nothing else.
 
 **Expected**: it appears in navigation, in its group, with a working route. **Zero** other files
 edited — `git diff --name-only` shows one path.
@@ -69,8 +73,9 @@ edited — `git diff --name-only` shows one path.
 Navigate to Runs. Copy the address. Open it in a new tab. Press refresh. Press back.
 
 **Expected**: the address changed when you navigated; the new tab lands on Runs; refresh stays on
-Runs; back returns to where you were. Then request an address naming an **undeclared** area
-(`/change-room`): **not found**, never an empty area inside working chrome.
+Runs; back returns to where you were. Then request an address naming an area the shell does not
+host — an undeclared one (`/change-room`) and a declared-but-unbuilt one (`/governance`):
+**not found** for both, never an empty area inside working chrome.
 
 > **Today the address bar never leaves `/`** — the product has no routing at all. That is the state
 > this scenario is written against.
@@ -128,8 +133,9 @@ announced as groups and the current area as current; zero axe violations in both
 
 **Proves**: Constitution XI Tier 2, and it is **closure evidence**, not a test.
 
-Against the running stack, drive: sign in → Home → each of the nine declared areas → back → switch
-project. Record the verbatim transcript to `docs/accessibility/EPIC-036-shell-transcript.md`.
+Against the running stack, drive: sign in → Home → each of the six delivered areas → back → switch
+project → one address naming a declared-but-unbuilt area, observing not-found. Record the verbatim
+transcript to `docs/accessibility/EPIC-036-shell-transcript.md`.
 
 **Expected**: every step observed, with what was seen beside what was expected. `EPIC-029`'s
 reachability transcript is the precedent and the format.
@@ -143,8 +149,11 @@ reachability transcript is the precedent and the format.
 ## What this Epic does not prove, and must not claim to
 
 - **That an unauthorized user cannot see an area.** `FR-SHL-014` is deferred to `EPIC-024`; the
-  shell gates nothing and every declared area is visible to any signed-in identity.
+  shell gates nothing and every delivered area is visible to any signed-in identity.
 - **That deep links work in production.** They work against the dev server, which serves
   `index.html` for unknown paths. Nothing in this repository serves the built client at all
   (`R-036-3`).
 - **That project health is anywhere.** `BR-0013` left this Epic at clarification, owner `U-03`.
+- **That `UX-0003` is satisfied for every area with a declared owner.** It is satisfied for the six
+  delivered ones. `QA & Releases`, `Architecture & Decisions` and `Governance` have owners and no
+  screens; the remainder lands with `EPIC-014`/`015`, `EPIC-016` and `EPIC-019`/`021`/`024`.

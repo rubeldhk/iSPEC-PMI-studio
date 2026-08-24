@@ -60,7 +60,7 @@ point.
 `{ id, group, label, path, epic, declared }` — imported by navigation, by the router, and by
 `FR-SHL-016`'s check.
 
-**Rationale**: `FR-SHL-002` requires a declared area to reach navigation with **no shell code
+**Rationale**: `FR-SHL-002` requires a delivered area to reach navigation with **no shell code
 change**, and `SC-SHL-004` measures that at zero. That is only true if navigation, routes and the
 reachability check are all *derived* from one list. Three hand-maintained lists that must agree is
 the shape `DEF-010-001` already took once — nine pages, four imported, and every check green.
@@ -135,7 +135,7 @@ it is. `FR-SHL-016` adds a **second** check over the area registry, and the two 
 
 **Rationale**: they answer different questions. `T200a` asks *"is every delivered page module
 imported and rendered from the application root?"* — a static import-graph property. `FR-SHL-016`
-asks *"is every **declared area** reachable from primary navigation in the built application?"* —
+asks *"is every **delivered area** reachable from primary navigation in the built application?"* —
 `G-UX-01`'s navigation half, which `T200a`'s own header says it cannot see.
 
 Merging them would produce one check that half-answers both. `EPIC-010`'s `T200e` routing — the four

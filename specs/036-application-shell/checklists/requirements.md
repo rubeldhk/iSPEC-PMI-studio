@@ -71,9 +71,16 @@ What changed underneath the unchanged boxes:
 
 ### On scope — the boundary that took the most care
 
-Eighteen areas are specified; **nine are declared and in scope**. `FR-SHL-003` forbids the shell
+Eighteen areas are specified; **six are delivered and in scope**. `FR-SHL-003` forbids the shell
 implementing an area's content, and `UX-0060` forbids an undeclared area appearing at all. The
-Assumptions state which nine, so the boundary is a list rather than a judgement at plan time.
+Assumptions state which six, so the boundary is a list rather than a judgement at plan time.
+
+**Revised 2026-08-24** by [../analysis.md](../analysis.md) `C1`. This read *"nine are declared"*,
+which conflated two different questions — is the area's **Epic** declared, and has its **screen**
+been built. `QA & Releases`, `Architecture & Decisions` and `Governance` answer yes to the first and
+no to the second, and the boolean the registry carried had no correct value for them. The registry
+now has three states and the boundary is drawn at *delivered*, which is the rule this Epic already
+applied to the three Rooms.
 
 `Home` is the one area this Epic **delivers** rather than hosts, because no Epic owns it and
 `BR-0192` has no surface without one. Since the clarification session it delivers **attention items

@@ -17,7 +17,7 @@ context, and a Home that shows what is waiting.
 `BR-0190` — *"Core lifecycle capabilities MUST be navigable as one coherent application"* — is a
 **MUST** that no Epic has owned. The technical approach is small on purpose: **React Router v7 in
 declarative mode** (`R-036-1`) over **one registry that navigation, routes and the reachability
-check all read** (`R-036-2`), so adding a declared area is a data change rather than a shell change.
+check all read** (`R-036-2`), so adding a delivered area is a data change rather than a shell change.
 Home ships the attention items whose sources exist and **says so** about the two whose sources do
 not (`R-036-4`).
 
@@ -47,10 +47,13 @@ that fails under suite load and passes alone, and an unscoped target inherits th
 
 **Constraints**: 360px floor · WCAG 2.2 AA via PMI-DOC-005 · no second authorization model
 (`FR-SHL-003`, `FR-SHL-014` deferred) · no Home store and no shell-only aggregation endpoint
-(`FR-SHL-034`) · nine declared areas in scope, nine unowned areas MUST NOT appear (`UX-0060`)
+(`FR-SHL-034`) · **six delivered areas in scope**; the nine undeclared (`UX-0060`) and the three
+declared-but-unbuilt MUST NOT appear
 
-**Scale/Scope**: 18 areas specified, **9 declared and in scope**; 4 navigation groups; 1 new area
-delivered (Home); ~6 existing areas re-hosted from `EPIC-010` `T200e`'s buttons
+**Scale/Scope**: 18 areas specified, **6 delivered and in scope**; 4 navigation groups; 1 new area
+built here (Home); 5 existing areas re-hosted from `EPIC-010` `T200e`'s buttons. **3 areas are
+declared and unbuilt** — `QA & Releases`, `Architecture & Decisions`, `Governance` — and 9 are
+undeclared. Revised from 9-in-scope by [analysis.md](./analysis.md) `C1`
 
 ## Constitution Check
 
@@ -68,12 +71,19 @@ delivered (Home); ~6 existing areas re-hosted from `EPIC-010` `T200e`'s buttons
 | VIII | Session/clone is labelled with the working Epic (`EPIC-### <name>`), or the first command | **PASS** — label this session `EPIC-036 Application Shell` |
 | IX | Every stop in this run ends with an executable next action; full stops close with a Work Completed + Recommended Next Task report | **PASS** — this plan ends with `/speckit-tasks` |
 | X | Decision-phase questions were batched into one questionnaire with recommended defaults; execution phases run without confirmation pauses | **PASS** — five questions in one round, 2026-08-24; implementation runs without pausing |
-| XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application | **PASS** — Tier 1: `FR-SHL-016` drives the real `App` and asserts every declared area is reachable, mutation-verified by removing one route. Tier 2: this Epic delivers a journey (sign-in → navigate → Home), so a driven transcript against the running stack is planned closure evidence. `EPIC-029`'s reachability transcript is the precedent |
+| XI | **Tier 1 (always)** — every user-facing capability has a planned test driving it through its **real entry point** against the composed module graph. **Tier 2 (Epics delivering a journey)** — a **run-generated** transcript against a running application | **PASS** — Tier 1: `FR-SHL-016` drives the real `App` and asserts every delivered area is reachable, mutation-verified by removing one route. Tier 2: this Epic delivers a journey (sign-in → navigate → Home), so a driven transcript against the running stack is planned closure evidence. `EPIC-029`'s reachability transcript is the precedent |
 | — | Repository was synced from GitHub before this work started | **PASS** — remote `origin` is `github.com/rubeldhk/iSPEC-PMI-studio`; this checkout is `main` with every Wave 1 branch merged 2026-08-23 |
-| — | No other Claude session is active on this checkout (else: work in a separate clone) | **FAIL at planning — discharged by the first task.** This plan was written on `main`. Implementation MUST run in a dedicated worktree at `.claude/worktrees/epic-036-application-shell`, which is `EPIC-030`–`EPIC-035`'s established pattern and this Epic's `T1` |
+| — | No other Claude session is active on this checkout (else: work in a separate clone) | **PASS** — **discharged by `T436a`**. Planning writes no application code and the isolation rule binds implementation; exclusivity did not hold when this plan was written on `main`, so implementation MUST run in the dedicated worktree `.claude/worktrees/epic-036-application-shell`. `EPIC-030`–`EPIC-035`'s established pattern, and this Epic's first task. Recorded, not waived |
 
-Any FAIL blocks Phase 0. The one FAIL is the concurrent-session gate, discharged by the first task
-exactly as `EPIC-033` `T337a` discharged it — recorded rather than waived.
+No gate blocks Phase 0.
+
+> **The concurrent-session row was reworded on 2026-08-24** ([analysis.md](./analysis.md) `P1`). It
+> read `**FAIL at planning — discharged by the first task**`, and `DOR-06` reads the **leading word**
+> of a Constitution Check row's last cell, so this Epic could not reach `Ready` at all. `EPIC-033`,
+> `EPIC-034` and `EPIC-035` recorded the identical condition — plan written on `main`, discharged by
+> a worktree task — and led with `**PASS** — discharged`. One fact, two spellings, and only this Epic
+> was held. **What the row discloses is unchanged**; only where the status word sits. The condition
+> itself is still discharged by `T436a` and by nothing else.
 
 ## Project Structure
 
@@ -131,6 +141,7 @@ content; only its hosting changes. **No backend work**: every source Home reads 
 | **A new runtime dependency (`D-30`, React Router 7.x)** | `FR-SHL-017` needs addresses that survive a refresh, support back/forward, and answer not-found for undeclared areas. The product has no routing at all | Hand-rolling is history push/pop, `popstate`, path matching with params, nested layouts, scroll restoration and the not-found case — a router with none of a router's test suite behind it, owned by an Epic that did not set out to write one (`PP-014` inverted) |
 | **Gate VII cannot be fully satisfied** | Promotion beyond `local` requires `dev`/`stage`/`prod`, and none exist | Nothing simpler exists to reject. **No Epic owns building a deployable artifact**; `EPIC-014` `T156` presupposes one. This Epic records the gap rather than inventing a pipeline it does not own |
 | **Deep links depend on a server that has no owner** (`R-036-3`) | A client-side router needs the server to return the app for unknown paths. Vite's dev server does; nothing serves the built client at all | A hash router (`#/areas/runs`) needs no server support — rejected because it makes every address worse to route around a deployment gap that is organisational, not technical |
+| **Three specified areas have owners and no screens** (`C1`) | `QA & Releases`, `Architecture & Decisions` and `Governance` are declared under PMI-DOC-006 §9, and `EPIC-014`/`015`, `EPIC-016` and `EPIC-019`/`021`/`024` are all at stage `Ready` with nothing built. `UX-0003` asks for their reachability and there is nothing to reach | Building the screens here is `FR-SHL-003` inverted — the shell implementing area content. Marking them `undeclared` is false and load-bearing, because `UX-0060`'s prohibition turns on whether an *Epic* is declared and the SRS assigns these three owners. The registry carries a third state instead, so the debt has a debtor rather than disappearing |
 | **Home degrades on two of its three sources** (`R-036-4`) | `FR-SHL-032` names approvals, policy blocks and missing evidence. `EPIC-031` (0/92) and `EPIC-032` (0/83) supply the last two | Delaying Home blocks `BR-0192`'s only surface on two unstarted Epics; stubbing the sources fabricates governance state, which is worse than an absent one. Visible degradation is `EPIC-033`'s posture for its unbound gateway, applied here |
 
 ## Post-Design Constitution Re-Check

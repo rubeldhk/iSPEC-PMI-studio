@@ -12,6 +12,14 @@ What the shell exposes, what it consumes, and what it must never contain. Entiti
 ```ts
 export type AreaGroup = 'overview' | 'intent-and-control' | 'delivery' | 'platform';
 
+/**
+ * Three states, not two. `declared-not-delivered` is an area whose Epic IS
+ * declared but whose screen does not exist — see data-model.md and the C1
+ * finding in analysis.md. A boolean could not hold it, and the value it was
+ * forced into required an `element` nothing could supply.
+ */
+export type AreaStatus = 'delivered' | 'declared-not-delivered' | 'undeclared';
+
 export interface Area {
   readonly id: string;
   readonly group: AreaGroup;
@@ -20,52 +28,62 @@ export interface Area {
   readonly path: string;
   /** The Epic that owns this area's content, or null where PMI-DOC-006 names no owner. */
   readonly epic: string | null;
-  /** True only when `epic` is a DECLARED Epic. Drives UX-0060. */
-  readonly declared: boolean;
-  /** What renders. Absent when `declared` is false — there is nothing to render. */
+  readonly status: AreaStatus;
+  /** What renders. Present ONLY when `status` is 'delivered'. */
   readonly element?: () => ReactElement;
 }
 
 export const AREAS: readonly Area[];
 ```
 
+**Six areas are `delivered`, three are `declared-not-delivered`, nine are `undeclared`.** Only the
+first six reach navigation and the route tree. The middle three carry their owning Epic's
+identifier so the outstanding obligation has a name rather than disappearing.
+
 **Navigation, the route tree and `FR-SHL-016`'s check all read `AREAS` and nothing else.** That is
-the whole point of the shape: `SC-SHL-004` requires a declared area to reach navigation with zero
+the whole point of the shape: `SC-SHL-004` requires a **delivered** area to reach navigation with zero
 shell code changes, which is only true when there is one list. Three lists that must agree is
 `DEF-010-001`'s shape — nine pages, four imported, every check green.
 
 **`group` is a closed union, not a string.** A mistyped group is a compile error rather than a
 heading nobody notices is empty.
 
-**An undeclared area stays in `AREAS`** with `declared: false` and no `element`. It is how the
-eighteen of PMI-DOC-006 §4.1 are recorded, and how an address naming one is answered *not found*
-rather than *unknown path*. Deleting it would make an undeclared area indistinguishable from a typo.
+**Every non-`delivered` area stays in `AREAS`** with no `element`. It is how the eighteen of
+PMI-DOC-006 §4.1 are recorded, and how an address naming one is answered *not found* rather than
+*unknown path*. Deleting them would make a specified area indistinguishable from a typo.
 
 ---
 
 ## 2. Routes — derived, never hand-written
 
 ```
-/                              → Home                     (declared)
-/projects                      → Projects                 (declared)
-/projects/:projectId           → a project
-/specifications                → Specifications           (declared)
-/specifications/:id            → one specification
-/specifications/:id/tasks      → Plan & Tasks             (declared)
-/runs                          → Runs                     (declared)
-/runs/:runId                   → a run's review session
-/storage                       → Workspace & Administration (declared)
-/traceability                  → (within Projects)
-/architecture                  → Architecture & Decisions  (declared)
-/governance                    → Governance               (declared)
+/                              → Home                       delivered  (this Epic)
+/projects                      → Projects                   delivered
+/projects/:projectId           → a project                  sub-view
+/traceability                  → (within Projects)          sub-view
+/specifications                → Specifications             delivered
+/specifications/:id            → one specification          sub-view
+/specifications/:id/tasks      → Plan & Tasks               delivered
+/runs                          → Runs                       delivered
+/runs/:runId                   → a run's review session     sub-view
+/storage                       → Workspace & Administration delivered
 *                              → not found
 ```
+
+**Six routed areas, and that is the whole table.** `/architecture` and `/governance` were listed
+here as declared until the analysis of 2026-08-24 ([../analysis.md](../analysis.md) `I1`); neither
+has a component to render, and `QA & Releases` was never given a path at all — which is how the
+eight-versus-nine disagreement surfaced. All three are now `declared-not-delivered` and have **no
+route**: their addresses answer not-found until their owners ship, exactly as an undeclared area's
+does.
 
 **Every path above is `Area.path` or a sub-view of one**, and the tree is generated from `AREAS`.
 A route added by hand would be reachable and invisible to `FR-SHL-016`, which is the defect this
 contract exists to prevent.
 
-`*` answers **not found**, including for an address naming an undeclared area (`FR-SHL-017`).
+`*` answers **not found** for every address that is not one of the ten above (`FR-SHL-017`) —
+including one naming an area that is specified but not delivered. *Not found* is the honest answer
+to *"that screen does not exist"*; a blank area inside working chrome is not.
 
 > **`DEF-001-006` is not this Epic's to fix, and must not be made worse.** Every unmatched path in
 > the *API* currently answers `500` rather than `404` because `ErrorFilter` is a bare `@Catch()`.
@@ -155,7 +173,7 @@ Asserted by the Epic's own architecture check:
 | Check | Asks | Level |
 |---|---|---|
 | `T200a` (`EPIC-010`, exists) | is every delivered page module imported and rendered from the application root? | import graph |
-| `FR-SHL-016` (this Epic) | is every **declared area** reachable from primary navigation in the built application? | `G-UX-01`'s navigation half |
+| `FR-SHL-016` (this Epic) | is every **`delivered` area** reachable from primary navigation in the built application? | `G-UX-01`'s navigation half |
 
 **Both are kept** (`R-036-5`). `T200a`'s own header states it cannot see route reachability;
 `FR-SHL-016` drives the real `App` and clicks. Merging them yields one check that half-answers both.

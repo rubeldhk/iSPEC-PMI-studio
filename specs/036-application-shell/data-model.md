@@ -21,7 +21,7 @@ organising rule, and it is what `FR-SHL-034` and `FR-SHL-003` both turn on.
                                                                when they exist)
 ```
 
-Three consumers, **one list**. `FR-SHL-002` requires a declared area to reach navigation with no
+Three consumers, **one list**. `FR-SHL-002` requires a delivered area to reach navigation with no
 shell code change, and `SC-SHL-004` measures that at zero — which is only true if navigation, the
 route tree and the reachability check are all derived from the same declaration. Three
 hand-maintained lists that must agree is precisely the shape `DEF-010-001` took: nine pages, four
@@ -40,29 +40,56 @@ Committed source. Not a database row.
 | `label` | what navigation shows |
 | `path` | the address (`FR-SHL-017`). Unique; leading `/` |
 | `epic` | the Epic that owns the area's content — `EPIC-###`, or `null` for an area PMI-DOC-006 names with no owner |
-| `declared` | **`true` only when `epic` is a declared Epic.** Drives `UX-0060` |
-| `element` | what renders. Absent for an undeclared area, because there is nothing to render |
+| `status` | `delivered` · `declared-not-delivered` · `undeclared`. A closed union of **three**, not a boolean — see below |
+| `element` | what renders. Present **only** when `status` is `delivered`. For the other two there is nothing to point it at |
 
 **An area MUST NOT appear in two groups** (`FR-SHL-011`). The registry is a flat ordered list and
 `group` is a field, so a second membership is unrepresentable rather than forbidden by review.
 
-**`declared: false` areas stay in the registry.** They are how PMI-DOC-006 §4.1's eighteen are
-recorded, and how `FR-SHL-017` answers *not found* for an address that names one — deleting them
-would make an undeclared area indistinguishable from a typo. `FR-SHL-003` keeps them out of
+### Why `status` has three values and not two
+
+This model carried a boolean `declared` until the cross-artifact analysis of 2026-08-24
+([analysis.md](./analysis.md) `C1`). A boolean cannot hold the state three areas are actually in.
+
+| `status` | Means | Count | In navigation? | Address answers |
+|---|---|---|---|---|
+| `delivered` | the owning Epic has shipped the screen | **6** | yes | the area |
+| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **3** | **no** | not found |
+| `undeclared` | PMI-DOC-006 names no declared owner — `UX-0060` forbids building it | **9** | no | not found |
+
+**The middle state is the finding.** `QA & Releases`, `Architecture & Decisions` and `Governance`
+have declared owners — `EPIC-014`/`EPIC-015`, `EPIC-016`, `EPIC-019`/`EPIC-021`/`EPIC-024` — and
+every one of those Epics is at stage `Ready`, unimplemented. No component exists in
+`frontend/src/pages/` and **no `tasks.md` in the corpus builds one**. Under the old boolean they
+were `declared: true`, which required an `element` that nothing could supply, while `FR-SHL-003`
+forbids this Epic supplying it or rendering a placeholder. There was no correct value.
+
+**Why not simply call them undeclared.** Because that is false, and it is load-bearing:
+`UX-0060`'s prohibition turns on whether an *Epic* is declared, and marking these three
+`undeclared` would claim the SRS forbids building them when the SRS assigns them owners. The
+middle state records the debt with the debtor's name on it rather than erasing it.
+
+**All three non-`delivered` states stay in the registry.** They are how PMI-DOC-006 §4.1's eighteen
+are recorded, and how `FR-SHL-017` answers *not found* for an address naming one — deleting them
+would make a specified area indistinguishable from a typo. `FR-SHL-003` keeps them out of
 navigation; it does not keep them out of the list.
 
-### The eighteen, and the nine
+### The eighteen, the six, and the twelve
 
-| Group | Areas | Declared |
-|---|---|---|
-| **Overview** | Home · Projects · Decision Inbox | Home, Projects |
-| **Intent & Control** | Requirement Room · Specifications · Change Room · Defect Room · Architecture & Decisions | Specifications, Architecture & Decisions |
-| **Delivery** | Plan & Tasks · Engineering Experts · Runs · Evidence & Compliance · QA & Releases | Plan & Tasks, Runs, QA & Releases |
-| **Platform** | Context · Integrations · Reports · Governance · Workspace & Administration | Governance, Workspace & Administration |
+| Group | Areas | `delivered` | `declared-not-delivered` |
+|---|---|---|---|
+| **Overview** | Home · Projects · Decision Inbox | Home, Projects | — |
+| **Intent & Control** | Requirement Room · Specifications · Change Room · Defect Room · Architecture & Decisions | Specifications | Architecture & Decisions |
+| **Delivery** | Plan & Tasks · Engineering Experts · Runs · Evidence & Compliance · QA & Releases | Plan & Tasks, Runs | QA & Releases |
+| **Platform** | Context · Integrations · Reports · Governance · Workspace & Administration | Workspace & Administration | Governance |
 
-**Nine declared, nine not.** The Rooms are `EPIC-033`–`EPIC-035`: `EPIC-033` is 68 of 102 and the
-other two are 0 — none is *delivered*, so none is declared here. When one is, it becomes a registry
-edit and nothing else (`SC-SHL-004`).
+**Six delivered, three awaiting their owners, nine undeclared.** The rule is now applied **once**:
+an area reaches navigation when its screen exists. That is the rule this document already used for
+the Rooms — `EPIC-033` is 68 of 102 and `EPIC-034`/`EPIC-035` are 0, so none is `delivered` — and
+the analysis found it was not being applied to the other three. When any of the twelve ships, it
+becomes a registry edit and nothing else (`SC-SHL-004`).
+
+**Home is `delivered` because this Epic delivers it.** It is the one area here that is not hosted.
 
 ---
 
@@ -138,9 +165,9 @@ its payload rather than in a comment.
 
 | View | Derivation | Requirement |
 |---|---|---|
-| `NavigationModel` | the registry, filtered to `declared`, grouped by `group`, in registry order | `FR-SHL-010`–`FR-SHL-013` |
+| `NavigationModel` | the registry, filtered to `status === 'delivered'`, grouped by `group`, in registry order | `FR-SHL-010`–`FR-SHL-013` |
 | `Breadcrumb` | `workspace / project / area` from `ShellContext` + the matched area | `FR-SHL-023`, `UX-0012` |
-| `RouteTree` | the registry, filtered to `declared`, mapped to `path` → `element` | `FR-SHL-017` |
+| `RouteTree` | the registry, filtered to `status === 'delivered'`, mapped to `path` → `element` | `FR-SHL-017` |
 
 All three are functions of the registry and the context. None is stored, and none can drift from
 another.
@@ -155,5 +182,6 @@ another.
 | The selectable workspace/project set | `EPIC-004` — consumed via `FR-SHL-025`, never defined |
 | Project health | **out of scope** — `BR-0013`, owner `U-03` (clarification, 2026-08-24) |
 | Any area's content | the Epic that owns it. `FR-SHL-003` |
+| The screens for `QA & Releases`, `Architecture & Decisions` and `Governance` | **`EPIC-014`/`EPIC-015`, `EPIC-016`, `EPIC-019`/`EPIC-021`/`EPIC-024`** — all at stage `Ready`. Recorded as `declared-not-delivered`; each becomes a one-line registry edit when its owner ships (`SC-SHL-004`) |
 | The Room regions | `EPIC-033`'s `packages/room-contract` — adopted, never re-derived (`FR-SHL-040`–`FR-SHL-043`) |
 | Anything persisted | nothing. No table, no migration, no store |

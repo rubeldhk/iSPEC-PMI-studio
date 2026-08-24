@@ -62,6 +62,11 @@ rather than filling a blank: `FR-SHL-014` became a deferral, and `BR-0013` left 
 > risk. `D-44` discharged it on 2026-08-24, and `UX-0003` was scoped to **declared** areas in the
 > same act — which is the requirement this Epic is built on, so it matters that it now says what it
 > means.
+>
+> **And that scoping does not go far enough, which this Epic found rather than inherited.** `D-44`
+> separated areas whose Epic is declared from areas whose Epic is not. It did not separate a declared
+> Epic that has **shipped a screen** from one that has not, and three areas sit in that gap. See
+> `FR-SHL-013` and Assumptions; the finding is [analysis.md](./analysis.md) `C1`.
 
 ## Principle Conformance & Deferrals *(mandatory — PMI-DOC-003, decision D-6)*
 
@@ -92,7 +97,7 @@ rather than filling a blank: `FR-SHL-014` became a deferral, and `BR-0013` left 
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Every declared area is reachable from one navigation (Priority: P1) 🎯 MVP
+### User Story 1 - Every delivered area is reachable from one navigation (Priority: P1) 🎯 MVP
 
 A signed-in user sees a single persistent navigation listing every area the product currently has,
 grouped so that eighteen destinations stay legible. They can reach any of them from anywhere,
@@ -102,20 +107,24 @@ without returning to a project page to find a button.
 `DEF-010-001` was possible. Everything else in this Epic is an improvement on a shell; this **is**
 the shell.
 
-**Independent Test**: sign in, and reach every declared area from the navigation without using
+**Independent Test**: sign in, and reach every **delivered** area from the navigation without using
 browser history or a URL. Delivers the coherent application `BR-0190` requires.
 
 **Acceptance Scenarios**:
 
 1. **Given** a signed-in user, **When** they open the application, **Then** primary navigation
-   presents every declared area in the four groups of PMI-DOC-006 §4.1, and no area appears twice.
+   presents every **delivered** area in the four groups of PMI-DOC-006 §4.1, and no area appears
+   twice.
 2. **Given** any area, **When** the user selects it, **Then** that area renders and the navigation
    remains present and marks where they are.
 3. **Given** an area whose Epic is **not** declared, **When** navigation renders, **Then** the area
    is absent — not disabled, not a placeholder (`UX-0060`).
-4. **Given** a newly declared area, **When** it is added to the registry, **Then** it appears in
+4. **Given** an area whose Epic **is** declared but which has **no screen** — `QA & Releases`,
+   `Architecture & Decisions`, `Governance` — **When** navigation renders, **Then** it is absent on
+   the same terms, and its address answers not-found rather than an empty area.
+5. **Given** an area newly marked `delivered`, **When** the registry is edited, **Then** it appears in
    navigation **without a change to the shell's code**.
-5. **Given** any area, **When** its address is opened directly or the page is refreshed, **Then**
+6. **Given** any area, **When** its address is opened directly or the page is refreshed, **Then**
    the same area renders — and the browser's back control returns to where the user was.
 
 ---
@@ -215,12 +224,16 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 
 ### Edge Cases
 
-- **An area is declared mid-release.** Navigation must gain it from the registry alone. If the shell
+- **An area is delivered mid-release.** Navigation must gain it from the registry alone. If the shell
   needs a code change per area, `FR-SHL-002` has failed and eighteen areas over four releases become
   eighteen shell changes.
-- **A group contains no declared area.** It must not render as an empty heading.
-- **A deep link into an undeclared area.** Must answer as not-found, not as an empty area — the
-  distinction `DEF-001-006` currently gets wrong platform-wide, and this Epic must not add to it.
+- **A group contains no delivered area.** It must not render as an empty heading. Two groups are one
+  area away from this today — **Intent & Control** holds only Specifications and **Platform** only
+  Workspace & Administration — so it is a live case, not a hypothetical.
+- **A deep link into an area that is not delivered.** Must answer as not-found, not as an empty area
+  — the distinction `DEF-001-006` currently gets wrong platform-wide, and this Epic must not add to
+  it. This holds for the nine undeclared areas **and** the three awaiting their owners: from an
+  address's point of view *"forbidden to build"* and *"not built yet"* are the same answer.
 - **An address that named an area before its Epic was undeclared, or after.** Same rule: not found,
   and never a blank area with a working chrome around it.
 - **A user's permissions change mid-session.** *Out of scope while `FR-SHL-014` is deferred* — the
@@ -228,7 +241,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
   discharges the deferral, and is recorded here so it is not mistaken for an oversight.
 - **The dashboard's source is unavailable.** Home must report a failed section as failed, not as
   empty — `FR-SHL-062`.
-- **Navigation at 360px with all eighteen areas declared.** The drawer (`FR-SHL-054`) must still
+- **Navigation at 360px with all eighteen areas delivered.** The drawer (`FR-SHL-054`) must still
   reach every area; a scrolling grouped list is the answer, and hiding a group is not.
 
 ## Requirements *(mandatory)*
@@ -237,12 +250,13 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 
 *Scope and ownership — `UX-0060`, `BR-0190`.*
 
-- **FR-SHL-001**: The shell MUST present the product as one coherent application: every declared area
-  reachable from one persistent navigation (`BR-0190`).
+- **FR-SHL-001**: The shell MUST present the product as one coherent application: every **delivered**
+  area reachable from one persistent navigation (`BR-0190`).
 - **FR-SHL-002**: Areas MUST be declared in a **committed registry**, and navigation MUST be derived
-  from it. Adding a declared area MUST NOT require a change to the shell's own code.
-- **FR-SHL-003**: The shell MUST NOT implement the content of any area. An area whose Epic is not
-  declared MUST NOT appear (`UX-0060`), and the shell MUST NOT render a placeholder for it.
+  from it. Adding a **delivered** area MUST NOT require a change to the shell's own code.
+- **FR-SHL-003**: The shell MUST NOT implement the content of any area. An area the shell does not
+  host — because its Epic is undeclared (`UX-0060`), or because its Epic is declared but has not
+  delivered a screen — MUST NOT appear, and the shell MUST NOT render a placeholder for either.
 
 *Navigation — PMI-DOC-006 §4.1.*
 
@@ -251,8 +265,17 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 - **FR-SHL-011**: An area MUST NOT appear in two groups.
 - **FR-SHL-012**: Navigation MUST mark the current area, and MUST remain present while an area is
   open.
-- **FR-SHL-013**: Every area whose Epic is declared MUST be reachable from primary navigation
-  (`UX-0003`, as scoped by `D-44`).
+- **FR-SHL-013**: Every area whose owning Epic has **delivered its screen** MUST be reachable from
+  primary navigation. An area whose Epic is declared but whose screen does not exist is recorded in
+  the registry as `declared-not-delivered`, carries its owner's Epic identifier, and MUST NOT appear
+  — offering a destination that leads nowhere is `DEF-010-001` through the front door.
+
+  > **`UX-0003` is satisfied for delivered areas and carried as an open obligation for three others**
+  > (Assumptions; [analysis.md](./analysis.md) `C1`). `QA & Releases`, `Architecture & Decisions` and
+  > `Governance` have declared owners — `EPIC-014`/`EPIC-015`, `EPIC-016`,
+  > `EPIC-019`/`EPIC-021`/`EPIC-024` — and every one is at stage `Ready` with no component built. The
+  > remainder of `UX-0003` lands with **those Epics**, and each discharges it with a one-line registry
+  > edit (`SC-SHL-004`).
 - **FR-SHL-014**: *(**DEFERRED** — Clarifications, 2026-08-24. Owner: `EPIC-024`.)* Navigation MUST
   be role-aware: an area the current identity cannot act in is hidden or visibly disabled **with a
   reason**, never present-and-failing on click (`UX-0002`, `BR-0003`, `BR-0174`). **Not built in
@@ -260,13 +283,14 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
   second authorization model beside `EPIC-024`'s (`FR-SHL-003`). Until it is discharged, every
   **declared** area is visible to any signed-in identity, and the shell claims no role awareness it
   does not have.
-- **FR-SHL-015**: A group containing no declared area MUST NOT render as an empty heading.
+- **FR-SHL-015**: A group containing no **delivered** area MUST NOT render as an empty heading.
 - **FR-SHL-016**: An executable check MUST assert `FR-SHL-013` against the built application and MUST
   be mutation-verified by removing one area's route (`G-UX-01`).
 - **FR-SHL-017**: Every area, and every key sub-view within one, MUST have its own address. Opening
   that address MUST resolve to the same place; refreshing MUST NOT lose it; and the browser's back
   and forward controls MUST move between visited locations (Clarifications, 2026-08-24). An address
-  naming an area whose Epic is not declared MUST answer as **not found**, never as an empty area.
+  naming an area the shell does not host — undeclared, or declared and not delivered — MUST answer as
+  **not found**, never as an empty area.
 
 *Persistent context — PMI-DOC-006 §4.2.*
 
@@ -336,8 +360,9 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 ### Key Entities
 
 - **Area**: a navigable destination. Carries its identifier, group, label, the Epic that owns it, and
-  whether that Epic is declared. Owned by the registry; the shell reads it.
-- **Area registry**: the committed declaration of which areas exist and which are declared. The
+  its **status** — `delivered`, `declared-not-delivered`, or `undeclared`. Owned by the registry;
+  the shell reads it.
+- **Area registry**: the committed declaration of which areas exist and what state each is in. The
   single source `FR-SHL-002` and `FR-SHL-016` both read.
 - **Shell context**: the current workspace and project selection, and the current area. Persisted
   across navigation, not across identities.
@@ -348,12 +373,13 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 
 ### Measurable Outcomes
 
-- **SC-SHL-001**: **100%** of areas whose Epic is declared are reachable from primary navigation —
-  mutation-verified by removing one route and observing the check fail.
-- **SC-SHL-002**: **Zero** areas whose Epic is undeclared appear in navigation, as a placeholder or
-  otherwise.
-- **SC-SHL-003**: A user can reach any declared area from any other in **at most two actions**.
-- **SC-SHL-004**: **Zero** shell code changes are required to add a declared area to navigation.
+- **SC-SHL-001**: **100%** of `delivered` areas are reachable from primary navigation —
+  mutation-verified by removing one route and observing the check fail. **Six today.**
+- **SC-SHL-002**: **Zero** areas that are not `delivered` appear in navigation, as a placeholder or
+  otherwise — the nine undeclared and the three awaiting their owners alike. **Twelve today.**
+- **SC-SHL-003**: A user can reach any `delivered` area from any other in **at most two actions**.
+- **SC-SHL-004**: **Zero** shell code changes are required to move an area to `delivered` and into
+  navigation.
 - **SC-SHL-005**: **100%** of shell-owned surfaces render loading, empty, error and partial states
   distinguishably — verified by driving each state, not by inspection.
 - **SC-SHL-006**: Navigation responds to a selection in **under 1 second** at the 95th percentile on
@@ -362,16 +388,28 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 - **SC-SHL-008**: **Zero** axe violations on the shell in both themes.
 - **SC-SHL-009**: A user asked *"which workspace and project am I in?"* can answer from the screen in
   **under 5 seconds**, without opening a menu.
-- **SC-SHL-010**: **100%** of declared areas resolve from their own address after a refresh, and the
-  back control returns to the previous location in **100%** of navigations.
-- **SC-SHL-011**: **Zero** addresses naming an undeclared area render an empty area; every one
-  answers as not found.
+- **SC-SHL-010**: **100%** of `delivered` areas resolve from their own address after a refresh, and
+  the back control returns to the previous location in **100%** of navigations.
+- **SC-SHL-011**: **Zero** addresses naming an area that is not `delivered` render an empty area;
+  every one answers as not found.
 
 ## Assumptions
 
-- **The eighteen areas of PMI-DOC-006 §4.1 are the target set**, of which **nine are declared** today
-  (Home, Projects, Specifications, Plan & Tasks, Runs, QA & Releases, Architecture & Decisions,
-  Governance, Workspace & Administration). Nine are unowned and out of scope until declared.
+- **The eighteen areas of PMI-DOC-006 §4.1 are the target set**, of which **six are delivered** and
+  in scope for navigation today: Home (built here), Projects, Specifications, Plan & Tasks, Runs and
+  Workspace & Administration. Each has a component in `frontend/src/pages/`, or in Home's case is
+  built by this Epic.
+- **Three areas are specified, owned, and not built — and this Epic must not pretend otherwise.**
+  `QA & Releases` (`EPIC-014`, `EPIC-015`), `Architecture & Decisions` (`EPIC-016`) and `Governance`
+  (`EPIC-019`, `EPIC-021`, `EPIC-024`) have **declared** owners under PMI-DOC-006 §9, and every one
+  of those Epics is at stage `Ready` with no screen delivered and no task in any `tasks.md` that
+  builds one. They are recorded as `declared-not-delivered`: absent from navigation, addressing
+  not-found, and named in the registry with their owner so the obligation has a debtor.
+  **Revised 2026-08-24 by [analysis.md](./analysis.md) `C1`** — the earlier assumption of nine
+  declared areas required an `element` that nothing could supply, while `FR-SHL-003` forbade this
+  Epic supplying it.
+- **Nine areas are undeclared** — no declared owner — and `UX-0060` forbids building them. They stay
+  in the registry so an address naming one answers not-found rather than unknown-path.
 - **Home is delivered by this Epic**, and delivers **attention items only** — pending approvals,
   policy blocks, missing evidence (`BR-0192`). **Project health (`BR-0013`) is out of scope**, owned
   by `U-03` when declared (Clarifications, 2026-08-24). It leaves now rather than being built here
@@ -392,7 +430,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
   new work either way.
 - **This Epic defines no permissions of its own, and does no role-gating.** `FR-SHL-014` is deferred
   to `EPIC-024`: nothing maps an identity to an *area*, and `EPIC-024` governs artifacts. Every
-  declared area is visible to any signed-in identity, and the shell does not claim an awareness it
+  delivered area is visible to any signed-in identity, and the shell does not claim an awareness it
   does not have.
 - **The workspace/project selector is rendered here and governed by `EPIC-004`.** `FR-SHL-025`. This
   is the reconciliation of `prototype-parity.md`'s declined row, recorded rather than left as a
@@ -412,8 +450,10 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] **`FR-SHL-016` is mutation-tested**: one area's route is removed and the reachability check
       observed failing (`SC-SHL-001`). This is `G-UX-01`'s navigation half, and the guard that would
       have caught `DEF-010-001`
-- [ ] **`FR-SHL-002` is proven by adding an area**: a declared area reaches navigation with no shell
-      code change (`SC-SHL-004`)
+- [ ] **`FR-SHL-002` is proven by adding an area**: an area moved to `delivered` reaches navigation
+      with no shell code change (`SC-SHL-004`)
+- [ ] **The three `declared-not-delivered` areas are absent from navigation and answer not-found**,
+      and each names its owning Epic in the registry (Assumptions; [analysis.md](./analysis.md) `C1`)
 - [ ] **`FR-SHL-062` is mutation-tested**: a failing section is made to render as empty and the suite
       observed failing
 - [ ] The keyboard and screen-reader pass is recorded by a **person** — `EPIC-029` `T885`'s standard,
