@@ -90,8 +90,14 @@ navigation; it does not keep them out of the list.
 **Five delivered, four awaiting their owners, nine undeclared.** The rule is now applied **once**:
 an area reaches navigation when its screen exists. That is the rule this document already used for
 the Rooms — `EPIC-033` is 68 of 102 and `EPIC-034`/`EPIC-035` are 0, so none is `delivered` — and
-the analysis found it was not being applied to the other three. When any of the twelve ships, it
+the analysis found it was not being applied to the other four. When any of the thirteen ships, it
 becomes a registry edit and nothing else (`SC-SHL-004`).
+
+> **Corrected 2026-08-24 (`T442u`).** This sentence said *"the other three"* and *"any of the
+> twelve"*. `T442s` corrected the heading four lines above it and stopped, because `T442t` checked
+> two of the four counts and not this one. `T442v` added the third count and an assertion that all
+> three **sum to eighteen** — a total cannot be right while a part is wrong, which is the property
+> that would have caught this sentence and did not exist when it was written.
 
 **Home is `delivered` because this Epic delivers it.** It is the one area here that is not hosted.
 
