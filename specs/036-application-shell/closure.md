@@ -1,7 +1,7 @@
 # Closure record: EPIC-036 Application Shell & Dashboard
 
 **Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o` and `T442q` ·
-**Session**: `/speckit-implement` and **seven** `/speckit-converge` passes (counted 2026-08-24), executed in the worktree
+**Session**: `/speckit-implement` and **eight** `/speckit-converge` passes (counted 2026-08-24), executed in the worktree
 `.claude/worktrees/epic-036-application-shell` (concurrent-session rule, `T436a`)
 · **Released by**: PMI-DOC-006 v1.0 (APPROVED, `D-44`) · PMI-DOC-004 v2.0 `BR-0190`
 
@@ -13,7 +13,7 @@
 
 ## Work completed
 
-**100 of 102 tasks, across fifteen phases — counted 2026-08-24.** The two outstanding are a
+**102 of 104 tasks, across sixteen phases — counted 2026-08-24.** The two outstanding are a
 person's, not this session's, and are named below.
 
 > **The date is the point** (`T442q`). This line has been wrong twice, both times because a
@@ -39,6 +39,7 @@ person's, not this session's, and are named below.
 | **13 Convergence** | `T442n`–`T442o` | Two figures Phase 12 left wrong — the coverage table and this Suites paragraph |
 | **14 Convergence** | `T442p`–`T442q` | A discharged handover still recorded as owed, and three documents disagreeing on how many handovers there are |
 | **15 Convergence** | `T442r` | `research.md` and `plan.md` still calling the dependency new, and naming a `D-30` that never existed |
+| **16 Convergence** | `T442s`–`T442t` | Six documents describing six delivered areas when there are five, and the check that now disagrees |
 
 **Artifacts.**
 
@@ -47,7 +48,7 @@ person's, not this session's, and are named below.
   `shell-context.tsx`, `Home.tsx`, `home-model.ts`, `home-sources.ts`, `NotFound.tsx`, `shell.css`
 - `frontend/src/main.tsx` — **modified**: the `useState<View>` union removed, `BrowserRouter`
   mounted, the project selection synced from the address
-- `frontend/tests/unit/shell/` — **18 spec files**, 1 harness
+- `frontend/tests/unit/shell/` — **19 spec files**, 1 harness
 - `tests/governance/dependency-register.spec.ts` — **new**, `TS-001`'s first check
 - `specs/_shared/dependencies.md` — `D-13` raised to 7.x, with a "D-13 in detail" section
 - `docs/accessibility/EPIC-036-shell-transcript.md` — Constitution XI Tier 2
@@ -66,8 +67,8 @@ person's, not this session's, and are named below.
 
 | Suite | Result |
 |---|---|
-| `frontend` | **537 of 537** in 59 files |
-| `test:unit` | **2630 of 2630** in 291 files |
+| `frontend` | **555 of 555** in 60 files |
+| `test:unit` | **2648 of 2648** in 292 files |
 | `test:arch` | **84 of 84** in 8 files |
 | `test:contract` | **170 of 170** in 16 files |
 | `test:integration` | **208 passed, 1 failed, 2 skipped** of 209 in 32 files — see below |
@@ -91,12 +92,28 @@ person's, not this session's, and are named below.
 
 Typecheck clean.
 
-## What seven convergence passes found, and what that says
+## What eight convergence passes found, and what that says
 
-**7 findings → 4 → 3 → 3 → 2 → 2 → 1.** The last **four** passes found **no code gap at all**; every
-finding in them was a record disagreeing with the code.
+**7 findings → 4 → 3 → 3 → 2 → 2 → 1 → 2.** The trajectory went back **up** at the eighth, and it
+should have: *"no code gap"* was true four passes running while six documents described a product
+with one more navigable area than the one that was built.
 
-**Four of the seven passes found faults created by the pass before.** That is the part worth keeping,
+**Four of the eight passes found faults created by the pass before**, and the eighth found one
+created eight phases earlier that every pass since had walked past:
+
+- `C1`'s remediation set *six delivered, three awaiting an owner* across every artifact. `N1` then
+  moved `Plan & Tasks` to `declared-not-delivered` **during the Phase 2 implementation**, and only
+  `areas.ts`, `handovers.md`, `closure.md` and the tests followed. **Six specification documents did
+  not**, including the contract's route table, which went on presenting `/specifications/:id/tasks`
+  as a delivered area — the exact shape `N1` ruled out, in the document an implementer would build
+  from.
+- Every earlier pass checked `data-model.md` for the **existence** of the `status` union. The union
+  was there. **Nobody read the number beside it**, three passes running.
+
+`T442t` is the answer and the one worth carrying forward: `T436f` checked the registry's invariants
+and nothing checked that the documents *defining* it said what it said. Constitution V asks a
+non-code output to carry an executable check that can fail — **the registry had one, its
+specification did not.** That is the part worth keeping,
 and it did not stop when the work moved from code into paperwork:
 
 1. **`T441v` split *loading* from *empty*** on the project selector and left **failed** collapsed

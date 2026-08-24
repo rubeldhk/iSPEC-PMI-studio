@@ -71,7 +71,7 @@ What changed underneath the unchanged boxes:
 
 ### On scope — the boundary that took the most care
 
-Eighteen areas are specified; **six are delivered and in scope**. `FR-SHL-003` forbids the shell
+Eighteen areas are specified; **five are delivered and in scope**. `FR-SHL-003` forbids the shell
 implementing an area's content, and `UX-0060` forbids an undeclared area appearing at all. The
 Assumptions state which six, so the boundary is a list rather than a judgement at plan time.
 
