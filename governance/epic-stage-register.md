@@ -46,6 +46,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-033](../specs/033-requirement-room/) | Requirement Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-034](../specs/034-change-room/) | Change Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-035](../specs/035-defect-room/) | Defect Room | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-036](../specs/036-application-shell/) | Application Shell & Dashboard | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 
 ## Findings
 
@@ -54,3 +55,4 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | Epic | Finding | Severity |
 |---|---|---|
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
+| EPIC-036 | Checklisted evidence present without the stage before it — stage held at Specified | report |

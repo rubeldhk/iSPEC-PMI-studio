@@ -176,6 +176,7 @@ path added or removed without updating this document fails the build.
 - `specs/033-requirement-room/`
 - `specs/034-change-room/`
 - `specs/035-defect-room/`
+- `specs/036-application-shell/`
 - `packages/room-contract/` — the SHARED Room pattern: `RoomShellProps`, `Epistemic`,
   `RoomObjectRef`. Imported by `EPIC-034` and `EPIC-035`, whose first tasks stop if it is not
   built — breaking this path breaks two Epics that cannot be built without it (EPIC-033 `T337d`)
