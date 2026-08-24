@@ -86,9 +86,29 @@ consumes rather than by inventing an `FR`:
 | `specs/036-application-shell/research.md` | `R-036-3` | **The origin.** A recorded gap naming this Epic as its owner — not an SRS requirement, and not treated as one |
 
 **No SRS document requires the platform to be containerised.** That is stated rather than papered
-over: the scope is justified by `BR-0090`'s first rung and by a recorded gap, and if the programme
-wants containerisation as a business requirement it needs an SRS back-fill. Owner of that back-fill:
-**unassigned** — raise it at this Epic's convergence gate rather than assuming it.
+over: the scope is justified by `BR-0090`'s first rung and by a recorded gap (`R-036-3`).
+
+**The back-fill question, and who answers it.** Whether containerisation should become a *business
+requirement* in `PMI-DOC-004` is a question about product scope, and this Epic cannot answer it —
+amending the BRS is the **project owner's** decision, taken the way `D-44` and `D-45` were taken.
+It is **raised at this Epic's convergence gate** (`T214`), where it must be answered one of two
+ways and recorded either way:
+
+| Answer | What follows |
+|---|---|
+| **Back-fill it** | A `BR-####` is added to `PMI-DOC-004`, this Epic's traceability table cites it, and F-11.3 stops being SRS-unsourced |
+| **Accept it unsourced** | Recorded as a decision with its reasoning — that `BR-0090`'s promotion pipeline implies a first rung, and a rung nobody can run is not a rung |
+
+**Until then F-11.3 proceeds as SRS-unsourced infrastructure**, which is the same standing `T149`
+(the seed) and `T150` (the README) have had since 2026-08-03 and is why *Requirements owned* reads
+*None directly*.
+
+> **Corrected 2026-08-24 (analysis `C1`).** This paragraph named the back-fill owner as
+> **`unassigned`**, which Constitution II's *"list + back-fill owner"* does not accept and which
+> `EPIC-036`'s `handovers.md` discipline exists to prevent — **owner-less debt is this programme's
+> recurring failure mode, and an unowned line is how it starts.** The owner is the project owner,
+> the venue is `T214`, and the two admissible answers are written down so the question cannot be
+> closed by drift.
 
 ## Requirements owned
 

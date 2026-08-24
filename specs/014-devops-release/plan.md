@@ -34,12 +34,22 @@ This epic no longer performs per-epic closure. Each epic discharges its own `Pha
 
 ## Scope
 
-| Function | Tasks | What it delivers |
-|---|---|---|
-| F-11.1 Developer enablement | 3 | Seed script, `README.md`, and their checks |
-| F-11.2 Platform release gate | 10 | Confirm 15 closure records, architecture and security reviews, quickstart, SRS back-fill, promotion |
-| **F-11.3 Containerised local deployment** *(new, `D-45`)* | see [tasks.md](./tasks.md) | One application image serving `/v1` and the built client on one origin, wired to the existing `postgres` and `valkey`; the SPA history fallback that closes `R-036-3`; a credential conformance check; the broken `dev` script |
-| Phase Z Epic closure | 4 | Per-epic gate (Constitution IV, V, VI, IX) |
+| Function | What it delivers |
+|---|---|
+| F-11.1 Developer enablement | Seed script, `README.md`, and their checks |
+| F-11.2 Platform release gate | Confirm 15 closure records, architecture and security reviews, quickstart, SRS back-fill, promotion |
+| **F-11.3 Containerised local deployment** *(new, `D-45`)* | One application image serving `/v1` and the built client on one origin, wired to the existing `postgres` and `valkey`; the SPA history fallback that closes `R-036-3`; a credential conformance check; the broken `dev` script |
+| Phase Z Epic closure | Per-epic gate (Constitution IV, V, VI, IX) |
+
+> **Corrected 2026-08-24 (analysis `I1`, `D1`).** This table carried a **Tasks** column, and it said
+> F-11.1 had **3** when [tasks.md](./tasks.md) listed **4** — `T452` was added and the number was
+> not. **That is finding `F1` from the 2026-08-19 session recurring**: `T686` closed it by deleting
+> the *total* from this document and left the *per-function* counts, so the same drift reopened in
+> the same table. The header four lines up has said *"counted there, never restated here"* the whole
+> time, which made this table a contradiction of its own document.
+>
+> **The column is deleted, not resynchronised.** A number restated in two places drifts; a number
+> stated in one does not. `tasks.md` is where tasks are counted.
 
 ## Technical Context
 
@@ -113,16 +123,30 @@ gates it touches are re-run rather than inherited:
 | II | Requirements trace to cited SRS documents | ⚠️ **PASS with a stated debt.** F-11.3 adds no numbered requirement and traces to `BR-0090`'s first rung, consuming `BR-0173`/`BR-0135` (owned by `EPIC-028`). **No SRS document requires the platform to be containerised** — [spec.md](./spec.md) says so plainly and records the back-fill owner as **unassigned**. That is a debt named, not a gate dodged |
 | III | Epic → Feature → Task decomposition | PASS — F-11.3 is a function; tasks come from `/speckit-tasks` |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `Phase Z` unchanged |
-| V | Every implementation task carries a unit test, or an executable conformance check for non-code output | ⚠️ **The gate that binds hardest here.** A `Dockerfile` and a `docker-compose.yml` are **non-code outputs**, so each needs a check that can fail. Three are specified: the credential check, the history-fallback check, and the `dev`-entry-point check — each with a mutation in [quickstart.md](./quickstart.md). **This is the gate to fail this scope on**, and the one `T150` failed for months (see G-14.1) |
+| V | Every implementation task carries a unit test, or an executable conformance check for non-code output | ⚠️ **The gate that binds hardest here.** A `Dockerfile` and a `docker-compose.yml` are **non-code outputs**, so each needs a check that can fail. **Four checks, four pieces of fail-first evidence** — see the table below. **This is the gate to fail this scope on**, and the one `T150` failed for months (see G-14.1) |
 | VI | `defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | **PASS, and F-11.3 does not touch it.** This scope delivers `local` only. A container on a developer's machine proves nothing about a deployed environment, and both [spec.md](./spec.md) and [contracts/container-stack.md](./contracts/container-stack.md) say so rather than implying otherwise |
 | VIII | Session labelled with the working Epic | PASS — this pass ran under `EPIC-036` UAT and switched to `EPIC-014`; stated in the closing report |
 | IX | Run closes with a Work Completed + Recommended Next Task report | PASS |
 | — | Dependency register current | ⚠️ **Actionable, not yet done.** `@nestjs/serve-static` needs row **`D-30`** in `_shared/dependencies.md`. `TS-001` — built by `EPIC-036` `T436c` — goes red the moment the package is installed without it. **This is the first time that check binds an Epic other than the one that wrote it** |
 
-**Post-design re-check**: **PASS**, with Gate II's debt and the `D-30` register row carried as named
-actions rather than as assumptions. No gate was weakened by the design; Gate V was made **stricter**
-by it, because the scope introduces two non-code outputs where the Epic previously had one.
+#### Gate V in full — every check, and how each is seen to fail
+
+*Analysis `I2`, 2026-08-24. This row previously said **"three checks, each with a mutation"** while
+`T150m` ran three mutations covering a **different** set: the `dev`-entry-point check had none, and
+the unreachable-database mutation belonged to no check named here. Four and four, reconciled:*
+
+| Check | Task | How it is seen to fail |
+|---|---|---|
+| No credential in a container artifact | `T150a` | **Mutation** — bake a dummy `SEED_USER_PASSWORD` into the `Dockerfile`; the check must go red (`T150m`, quickstart Scenario 5) |
+| The SPA history fallback | `T150c` + `T150l` | **Mutation** — remove the static fallback; Scenario 3 must fail on a refresh of `/runs` (`T150m`) |
+| Migration runs before the process | `T150d` | **Mutation** — point `DATABASE_URL` at an unreachable database; the stack must fail at migration and the API must **not** start (`T150m`, quickstart Scenario 1) |
+| Every `package.json` script entry resolves | `T150b` | **Fail-first ordering, not a mutation.** `T150b` is written before `T150f` and **must go red on the unfixed `dev` script**, which is the same guarantee reached by the same standard (`T200c`) — the check is observed failing against the real fault rather than an injected one. It is arguably the stronger evidence of the four |
+
+**Post-design re-check**: **PASS**, with Gate II's debt (now owned — see [spec.md](./spec.md), answered
+at `T214`) and the `D-30` register row carried as named actions rather than as assumptions. No gate
+was weakened by the design; Gate V was made **stricter** by it, because the scope introduces two
+non-code outputs where the Epic previously had one.
 
 ## Review of the existing task list
 
