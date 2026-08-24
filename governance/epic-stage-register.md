@@ -39,7 +39,12 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-029](../specs/029-design-system/) | Design System | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-029](../specs/029-design-system/) | Design System | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-030](../specs/030-governed-engineering-loop/) | Governed Engineering Loop | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-031](../specs/031-decision-policy-engine/) | Decision & Policy Engine | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-032](../specs/032-evidence-store-contracts/) | Evidence Store & Evidence Contracts | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-033](../specs/033-requirement-room/) | Requirement Room | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-034](../specs/034-change-room/) | Change Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-035](../specs/035-defect-room/) | Defect Room | delivery | Ready | — | Ready | `/speckit-implement` |
 
 ## Findings
