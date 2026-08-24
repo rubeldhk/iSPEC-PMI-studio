@@ -1,6 +1,6 @@
 # Epic Specification: DevOps & Release
 
-**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 17
+**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 17 *(+ containerised local deployment, scope added 2026-08-24 by [`D-45`](./decisions/D-45-containerised-local-deployment-lands-in-epic-014.md); task count is restated by `/speckit-tasks`, not here)*
 
 **Parent product spec**: [../_shared/platform-spec.md](../_shared/platform-spec.md)
 **Shared design**: [../_shared/](../_shared/) — architecture, schema, contracts, research, RAID
@@ -16,6 +16,55 @@
 
 Developer enablement and the mandatory Epic closure gate — including the architecture and security reviews the MPS quality gates require, and the promotion pipeline.
 
+**Two halves, and they do not run at the same time.** Developer enablement — the seed (`T149`), the
+README (`T150`) and **containerised local deployment** (below) — depends on nothing and has been
+delivering since 2026-08-20. The closure gate (`T151`–`T156`, `F-11.2`) genuinely runs last. See
+*Depends on*, and [`D-45`](./decisions/D-45-containerised-local-deployment-lands-in-epic-014.md).
+
+### Containerised local deployment *(added 2026-08-24 — `D-45`)*
+
+**The platform cannot currently be run from this repository as containers.** `docker-compose.yml`
+defines only `postgres` and `valkey`; there is no `Dockerfile` anywhere; the API runs from source
+through `tsx` on the host; and **nothing serves the built web client at all**.
+
+`EPIC-036` recorded that rather than filling it. [`R-036-3`](../036-application-shell/research.md)
+names the consequence and the owner: *"the production case belongs to whoever owns serving the
+client — which today is nobody"*, and *"the gap is `EPIC-014`'s."* `EPIC-036`'s closure record
+therefore states that the Epic does **not** prove deep links survive a refresh outside the Vite dev
+server. `EPIC-029`'s UAT had to serve `dist/` from a scratchpad static server with a hand-rolled
+`/v1` proxy for the same reason. This section gives that gap its owner.
+
+**In scope.**
+
+- A **runnable containerised local stack**: the API and the built web client as images, wired to the
+  existing `postgres` and `valkey` services, reachable on **one origin** so the `/v1` path the
+  client already assumes keeps working without the client changing.
+- **Unknown paths serve the application, not a 404.** A client-side router needs the server to
+  return the app for `/runs/abc`. The Vite dev server does this and nothing else here does — which
+  is the whole of `R-036-3`.
+- **The reference local stack keeps working, and stays distinguishable.** `EPIC-036` `T442l` defines
+  it and `SC-SHL-006`'s p95 was measured on it. The containerised stack is an **addition**; a
+  measurement taken on one is not a measurement of the other, and the documentation must not let
+  them be confused.
+- **The broken `dev` script.** `pnpm --filter @pmi/backend dev` fails outright — the invocation is
+  `tsx --env-file-if-exists=../.env watch src/main.ts`, and `tsx` reads `watch` as a filename
+  because the flag precedes it, so it dies with `Cannot find module '…/backend/watch'`. It is in
+  scope because an image that shells the same wrong invocation inherits the defect, and because
+  developer enablement is this Epic's job. Found during `EPIC-036` UAT on 2026-08-24.
+
+**Out of scope, explicitly.**
+
+- **`dev`, `stage` and `prod`.** This Epic delivers **local**. `BR-0090` owns environment promotion
+  and Constitution VII's `local → dev → stage → prod` is untouched. **A container that runs on a
+  developer's machine proves nothing about a deployed environment**, and this scope must not be read
+  as claiming otherwise.
+- **Baking any credential into any image.** `backend/prisma/seed.ts` already refuses
+  `NODE_ENV=production` and has **no default password** — an unset one fails loudly rather than
+  creating a predictable account. That posture is a requirement of this work, not a detail of it
+  (`BR-0173` secret handling, owner `EPIC-028`; `BR-0135` credential isolation).
+- **A registry, a CI publish step, or image signing.** Those belong with the promotion pipeline
+  (`T156`) and are not needed to run the stack locally.
+
 ## SRS Traceability *(Constitution II)*
 
 This epic **inherits** the SRS traceability table in the
@@ -24,6 +73,22 @@ behind the requirements below. No requirement in this epic originates outside th
 
 Authority is layered per decision **D-12**: the MPS governs product content, PMI-DOC-000 governs
 documentation standards, PMI-DOC-003 governs principles.
+
+**Where the containerisation scope traces** (`D-45`). It adds **no numbered requirement** — this
+Epic owns none, by design — so Constitution II is satisfied by naming the sources it serves and
+consumes rather than by inventing an `FR`:
+
+| Source | Requirement | Relationship |
+|---|---|---|
+| `SRS/PMI-DOC-004…v2.0` | `BR-0090` — environment promotion | **Served.** The delivery posture above already states this Epic implements it. Containerising **local** builds the first rung; `dev`/`stage`/`prod` remain out of scope and unproven |
+| `SRS/PMI-DOC-004…v2.0` | `BR-0173` — secret handling | **Consumed, owned by `EPIC-028`.** No image may carry a credential; this Epic conforms and does not redefine |
+| `SRS/PMI-DOC-004…v2.0` | `BR-0135` — credential isolation | **Consumed, owned by `EPIC-028`.** Same posture |
+| `specs/036-application-shell/research.md` | `R-036-3` | **The origin.** A recorded gap naming this Epic as its owner — not an SRS requirement, and not treated as one |
+
+**No SRS document requires the platform to be containerised.** That is stated rather than papered
+over: the scope is justified by `BR-0090`'s first rung and by a recorded gap, and if the programme
+wants containerisation as a business requirement it needs an SRS back-fill. Owner of that back-fill:
+**unassigned** — raise it at this Epic's convergence gate rather than assuming it.
 
 ## Requirements owned
 
@@ -43,8 +108,20 @@ functional requirement. See Purpose and Exit Criteria.
 
 ## Depends on
 
-- **Every other epic, including EPIC-015** — this is the final closure gate and runs last
-- The dependency is one-way: QA validates the product epics, then DevOps closes and promotes
+**The dependency is on the release gate, not on the Epic** (`D-45`, 2026-08-24).
+
+- **The release gate (`T151`–`T156`, `F-11.2`) depends on every other epic, including EPIC-015**,
+  and runs last. Confirming fifteen `closure.md` records cannot precede the records existing.
+  The dependency is one-way: QA validates the product epics, then DevOps closes and promotes.
+- **Developer enablement depends on nothing** and runs whenever it is needed — the seed (`T149`),
+  the README (`T150`) and containerised local deployment.
+
+> **Corrected 2026-08-24 (`D-45`).** This section read *"**Every other epic** … this is the final
+> closure gate and runs last"*, without qualification. **That was already untrue when it was
+> written**: `T149`, `T149a`, `T150` and `T452` ran and closed on 2026-08-20, long before the other
+> Epics. The sentence described the gate and was read as describing the Epic, which would have made
+> a `Dockerfile` wait on fifteen closure records. Splitting the two halves is a correction, and it
+> weakens the gate by nothing — every clause governing `T151`–`T156` is unchanged.
 
 ## Clarifications
 
@@ -74,6 +151,15 @@ Closure now includes the **architecture review (T152a)** and **security review (
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI)*
 
 - [ ] Every implementation task in [tasks.md](./tasks.md) has a passing unit test (Constitution V)
+- [ ] **The containerised local stack starts from a clean checkout**, serves the client on one
+      origin, answers `/v1` from the API, and returns the application — not a 404 — for an address
+      the client routes itself (`R-036-3`). Verified by **running it**, not by inspecting the files
+- [ ] **No image contains a credential.** Asserted by an executable conformance check, not by
+      review — Constitution V requires a non-code output to carry one, and a `Dockerfile` is exactly
+      that kind of output. The seed's refusal of `NODE_ENV=production` and its absent default
+      password both survive containerisation
+- [ ] **The reference local stack (`EPIC-036` `T442l`) still runs**, and the documentation states
+      which stack any published measurement was taken on
 - [ ] `/speckit-converge` reports no unbuilt work for this epic
 - [ ] `specs/014-devops-release/defects/` contains no open defect records
 - [ ] Principle deltas above still hold; any deferral retains a valid owner
