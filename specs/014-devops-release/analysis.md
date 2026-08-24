@@ -57,3 +57,79 @@ Findings from this session were acted on the same day by EPIC-026 `T686` and `T6
 
 The findings above are left as recorded. They state what the pass returned on the day it ran; a
 later fix does not change what was found.
+
+---
+
+# Analysis: DevOps & Release — F-11.3
+
+**Epic**: `EPIC-014` · **Session**: 2026-08-24
+
+Produced by `/speckit-analyze` against `spec.md`, `plan.md` and `tasks.md`.
+
+**Why a second session, appended rather than replacing the first.** The 2026-08-19 record above ends
+*"The findings above are left as recorded… a later fix does not change what was found."* Overwriting
+it would destroy the only evidence that the earlier pass ran, which is the whole reason
+`FR-ESK-019` makes this command write a dated artifact at all. Two sessions, two dates, both
+readable.
+
+**Scope of this pass**: the `F-11.3 Containerised local deployment` function, added the same day by
+[`D-45`](./decisions/D-45-containerised-local-deployment-lands-in-epic-014.md), together with the
+plan and task changes that came with it. The release gate (F-11.1, F-11.2) was re-read but is
+unchanged since 2026-08-19 except where noted in `I1`.
+
+## Findings
+
+| ID | Category | Severity | Summary | Recommendation |
+|---|---|---|---|---|
+| I1 | Inconsistency | HIGH | `plan.md`'s Scope table says F-11.1 has **3** tasks; `tasks.md` lists **4** — `T452` was added and the count was not. **This is `F1` from the 2026-08-19 session recurring**: that finding was closed by `T686` deleting the *total* from `plan.md` while leaving the *per-function* counts, so the same class of drift reopened in the same table | Delete the `Tasks` column from the Scope table rather than resynchronising it. A number restated in two documents is the PP-002 fault itself, and `T686` already established that only `tasks.md` carries counts |
+| C1 | Constitution | HIGH | `spec.md`'s new SRS traceability note records the containerisation back-fill owner as **`unassigned`**. Constitution II is the gate and the spec template asks for *"list + back-fill owner"*. `EPIC-036`'s `handovers.md` discipline exists precisely because owner-less debt is this programme's recurring failure mode | Name an owner, or record explicitly that the programme accepts containerisation as SRS-unsourced and why. **`unassigned` is neither of those things** — it is the absence of a decision wearing the shape of one |
+| D1 | Duplication | MEDIUM | `plan.md`'s header states *"counted there, never restated here (`T686`, PP-002)"* and its Scope table three lines below restates three counts. The document contradicts itself about whether it restates counts — which is how `I1` happened | Same fix as `I1`. The header is correct; the table is the violation |
+| U1 | Underspecification | MEDIUM | `T150i` asks to *extend* `.dockerignore` so the build context excludes `.env`, `node_modules`, `.git`, `dist` and `specs/`. **All of them are already excluded**, along with `.env.*`, `SRS/`, `adr/`, `coverage/`, `*.log` and `Dockerfile*`. As written the task is a no-op that will be marked `[X]` having changed nothing | Rewrite as *verify and assert* — the exclusions become an assertion in `T150a` rather than an edit nobody needs to make |
+| U2 | Underspecification | MEDIUM | `T150n` cites *"(conformance: `T452`, extended to cover the container path)"*, but **`T452` is marked `[X]`**. Extending a completed task's check has no task of its own, so the extension has no owner and no fail-first evidence | Give the extension its own identifier, or state that `T150n` edits `tests/governance/readme-conformance.spec.ts` directly and carries the check itself |
+| I2 | Inconsistency | MEDIUM | `plan.md` Gate V names **three** checks needing mutations — credential, history-fallback and **dev-entry-point**. `T150m`'s three mutations are credential, history-fallback and **unreachable-database**. The dev-entry-point check has no mutation; the database mutation belongs to no check Gate V names | Either add the fourth mutation, or state in Gate V that `T150b`'s **fail-first ordering is** its mutation evidence — it must go red on the unfixed `dev` script before `T150f` runs, which is the same guarantee arrived at differently |
+| L1 | Inconsistency | LOW | The 2026-08-19 Remediation section above records `F2` as *"unremediated — it needs `/speckit-clarify` to actually run"*, but `spec.md` now carries `### Session 2026-08-19` with a taxonomy scan. The note is stale, most probably because clarify ran later that same day | Recorded here rather than by editing the earlier session. **`F2` is discharged**: the spec has its dated session |
+| L2 | Terminology | LOW | *"Containerised local deployment"* (spec, plan) · *"the containerised local stack"* (contract, quickstart) · *"container stack"* (the transcript filename in `T150l`) | Pick one form. No reader will be misled; recorded for completeness rather than because it costs anything |
+
+**Blocking findings (CRITICAL or HIGH): 2** — `I1` and `C1`. `DOR-09` blocks on CRITICAL or HIGH, so
+**this Epic does not pass the Definition-of-Ready gate until they are resolved.** Neither is a defect
+in the design; both are governance debt, and both are cheap.
+
+## Coverage
+
+`EPIC-014` owns **no numbered `FR-###` or `SC-###`** — stated in `spec.md`, and correct for an
+infrastructure Epic. Coverage is therefore measured against its **nine Exit Criteria**, the only
+requirement-shaped inventory it has.
+
+| Exit criterion | Has task? | Task IDs |
+|---|---|---|
+| Every task has a unit test or an executable conformance check | ✅ | `T150a`–`T150d`, `T213` |
+| Container stack starts from a clean checkout; one origin; `/v1`; a routed address is not a 404 | ✅ | `T150l` (Scenarios 1–3) |
+| No image contains a credential, asserted executably | ✅ | `T150a`, `T150m` |
+| The reference local stack still runs; documentation states which stack is which | ✅ | `T150l` (Scenario 7), `T150n` |
+| `/speckit-converge` reports no unbuilt work | ✅ | `T214` |
+| `defects/` contains no open records | ✅ | `T215` |
+| Principle deltas still hold | ✅ | `T216` |
+| Closure recorded; Epic release-eligible | ✅ | Phase Z |
+| Release gate: fifteen `closure.md` records, then promotion | ✅ | `T151`–`T156` |
+
+**Coverage: 9 of 9.** No unmapped tasks — every one of the fifteen F-11.3 tasks traces to an Exit
+Criterion or to a decision in [research.md](./research.md).
+
+## Metrics
+
+- Numbered requirements owned: **0** (by design) · Exit Criteria used as the inventory: **9**
+- Total tasks: **33** — 4 complete, 29 open · F-11.3: **15**
+- Coverage: **100%** of Exit Criteria carry at least one task
+- Ambiguity: **0** · Duplication: **1** · **CRITICAL: 0** · HIGH: **2** · MEDIUM: **4** · LOW: **2**
+
+## Method, and what this pass cannot see
+
+Six detection passes ran: duplication, ambiguity, underspecification, constitution alignment,
+coverage gaps and inconsistency. Counts were verified by recounting `tasks.md` rather than by reading
+what any document claimed. `.dockerignore` was read rather than assumed, which is how `U1` was found.
+
+**What it did not check.** Nobody has run `docker compose up` — the design is analysed, not
+executed, and `T150l`/`T150m` are where it meets reality. Whether `@nestjs/serve-static`'s `exclude`
+behaves as `R-014-1` expects against this particular route table is a claim from documentation, not
+an observation. And, as the 2026-08-19 session recorded of itself, a systematic pass does not
+substitute for a domain expert reading the specification.

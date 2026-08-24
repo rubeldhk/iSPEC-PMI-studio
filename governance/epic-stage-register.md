@@ -24,7 +24,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-011](../specs/011-traceability/) | Traceability | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-012](../specs/012-workflow-tasks/) | Workflow & Tasks | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-013](../specs/013-engine-api-selection/) | Engine API & Selection | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-014](../specs/014-devops-release/) | DevOps & Release | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-014](../specs/014-devops-release/) | DevOps & Release | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-015](../specs/015-qa-validation/) | QA & Validation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-016](../specs/016-architecture-decision-records/) | Architecture Decision Records | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-017](../specs/017-enhancement-model/) | Enhancement Model for Spec-Driven Engineering | parent-design | Planned | — | n/a | — |
