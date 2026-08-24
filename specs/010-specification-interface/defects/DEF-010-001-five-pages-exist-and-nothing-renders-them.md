@@ -1,7 +1,7 @@
 # DEF-010-001 — five page components exist and nothing renders them
 
 **Epic**: `EPIC-010` (owns the specification interface) · spans EPIC-012, EPIC-023, EPIC-025
-**Raised**: 2026-08-21 | **Status**: **OPEN**
+**Raised**: 2026-08-21 | **Status**: **CLOSED — FIXED 2026-08-23** (`T200a`–`T200e`)
 **Found by**: building the product screen inventory for the Figma brief — counting screens the
 product has against screens a user can reach
 **Severity**: **HIGH** — five delivered pages are unreachable; the capability behind them cannot be
@@ -66,7 +66,21 @@ pages rather than one function.
 **module**, and `T913` proved the same point one layer down — a stylesheet arriving is not code
 running.
 
-## Remaining work
+## Closed — what was done
+
+- **`T200b` decided: route all five.** Four chain off the project view. `ReviewSession` takes a
+  `runId` and nothing produced one, so `T200d` built the run list rather than having the shell
+  invent an id — `GET /projects/:projectId/runs` had served since `EPIC-023` with no caller.
+- **`T200e` routed them**: `specifications` → `specification` → `tasks`, plus `storage` and
+  `runs` → `review-session`, each with a way back.
+- **`T200a` is the check**, and it derives the five rather than listing them. **`T200c`
+  mutation-verified it**: removing the `RunsPage` import made it fail naming `pages/Runs.tsx`, and
+  restoring the import returned it to green. Recorded in [closure.md](../closure.md).
+- **`T200a` still does not prove route reachability** — a page rendered inside a view state no
+  control sets would pass it. That needs `T900a`'s driven browser tier, and the limit is stated in
+  the check's own header rather than left for a reader to discover.
+
+## Remaining work (as raised — now discharged)
 
 - Decide, per page, whether it should be routed or removed. Five unreachable pages may mean five
   missing routes, or it may mean work that landed ahead of its navigation and should wait.
