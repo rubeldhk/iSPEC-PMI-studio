@@ -56,6 +56,23 @@ export type ProjectSetState =
   | { readonly kind: 'ready'; readonly projects: readonly Project[] }
   | { readonly kind: 'failed'; readonly reason: string };
 
+/**
+ * The set when nobody is signed in — `T442i`, third convergence pass (`F2`).
+ *
+ * **Not `ready` with an empty list.** That reads *"we asked, and this workspace
+ * has none"*, about a workspace that does not exist and a request never made.
+ * `loading` is the true statement: no answer yet, because nothing has been
+ * asked.
+ *
+ * The difference is invisible today — `T442h` signs in for real and shows that
+ * React commits the identity and the fetch together, so `ContextBar` never sees
+ * the stale value. That test is a regression guard, not the reason for this
+ * constant. **The reason is that the union's whole claim is that no variant is
+ * a lie**, and `loading` and `failed` were each unreachable-but-wrong for
+ * exactly one round before becoming reachable-and-wrong.
+ */
+export const NO_IDENTITY_PROJECT_SET: ProjectSetState = Object.freeze({ kind: 'loading' });
+
 /** The contents, whatever state the set is in. */
 export function projectsOf(state: ProjectSetState): readonly Project[] {
   return state.kind === 'ready' ? state.projects : [];

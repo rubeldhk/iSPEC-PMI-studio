@@ -12,6 +12,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { NO_IDENTITY_PROJECT_SET, projectsOf } from '../../../src/shell/shell-context';
 import { PROJECT, WORKSPACE_ID, renderAt, stubApi } from './harness';
 
 afterEach(cleanup);
@@ -158,6 +159,60 @@ describe('T442a · FR-SHL-062 — a failed project set reports as failed, not as
     renderAt('/');
     await screen.findByLabelText('Project');
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  });
+});
+
+describe('T442h · FR-SHL-062 — no identity is not an empty workspace', () => {
+  // The third convergence pass (`F2`). The signed-out branch set
+  // `{ kind: 'ready', projects: [] }` — *"we asked, and this workspace has
+  // none"* — about a workspace that does not exist and a request never made.
+  //
+  // The converge note called it latent because `App` renders `SignIn` in the
+  // same pass. **This test is written to find out whether that is true**, by
+  // signing in for real: the identity arrives, `App` re-renders with the
+  // stale set, and `ContextBar` mounts before the fetch effect runs. If the
+  // window exists, the selector says the workspace is empty for one frame,
+  // on a claim nothing supports.
+  it('never claims the workspace is empty on the way in from sign-in', async () => {
+    const api = stubApi({ signedIn: false });
+    (api.signIn as unknown as ReturnType<typeof vi.fn>) = vi.fn(async () => ({
+      user: { id: 'u1', email: 'uat@pmi.test', displayName: 'UAT' },
+      workspace: { id: WORKSPACE_ID },
+    }));
+    // The set never answers, so anything the control says is what it says
+    // BEFORE an answer exists.
+    (api.listProjects as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+      async () => new Promise(() => undefined),
+    );
+
+    renderAt('/', api);
+    fireEvent.change(await screen.findByLabelText(/email/i), {
+      target: { value: 'uat@pmi.test' },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await screen.findByLabelText('Project');
+    expect(
+      within(projectSelect()).queryByText(/no projects in this workspace/i),
+      'the shell claimed an empty workspace before it had asked',
+    ).toBeNull();
+    expect(within(projectSelect()).getByText(/loading projects/i)).toBeTruthy();
+  });
+
+  it('holds a value that is true rather than merely unrendered', () => {
+    // **This assertion, not the one above, is why `T442i` changed anything.**
+    //
+    // The sign-in test passes with the old value too: React commits the
+    // identity and the fetch together, so nothing ever renders the stale set.
+    // Unreachable is not the same as correct, and `loading` and `failed` were
+    // each unreachable-but-wrong for exactly one round before becoming
+    // reachable-and-wrong. This checks the value itself.
+    expect(NO_IDENTITY_PROJECT_SET.kind, 'no identity is not an answered, empty workspace').not.toBe(
+      'ready',
+    );
+    expect(NO_IDENTITY_PROJECT_SET.kind).toBe('loading');
+    expect(projectsOf(NO_IDENTITY_PROJECT_SET)).toEqual([]);
   });
 });
 

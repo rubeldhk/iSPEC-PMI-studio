@@ -77,6 +77,36 @@ where this fixes it.**
 renders a second control beside the project one, on the same terms — `FR-SHL-022` already requires
 the area to survive the switch, and the address is untouched by selection, so it will.
 
+## `T442g` — `SC-SHL-009` on two addresses, owed by `EPIC-023`
+
+**`SC-SHL-009`**: a user asked *"which workspace and project am I in?"* answers from the screen in
+under five seconds, without opening a menu. **Satisfied on seven of the nine addresses this Epic
+routes. Not on two.**
+
+`/runs/:runId` and `/specifications/:specificationId` scope themselves by their own identifier, and
+the breadcrumb reads **"Scoped by this link"** rather than naming a project (`T442e`). That is the
+honest answer of three:
+
+| Option | Why not |
+|---|---|
+| Name the selected project | A guess. The run may belong to a different project entirely — `F1` again with better odds |
+| Say "No project selected" | Implies the page is unscoped when it is scoped, by the address the user followed |
+| Require a project first | Makes *"send me the link"* unanswerable, which is what `FR-SHL-017` exists to fix |
+
+**Honest is not the same as satisfied.** The user still cannot answer the question, and the shell
+cannot tell them: `GET /v1/runs/:id/review` returns
+`{ id, runId, state, openedAt, submittedAt, questions }` — **no project** — and `FR-SHL-003` forbids
+the shell fetching domain data to work it out.
+
+**What clears it.** The run or review response carrying the project it belongs to. The shell then
+names it in the breadcrumb and the criterion holds on all nine addresses. `listRuns(projectId)`
+already goes the other way, so the association exists; it is simply not on the response a deep link
+lands on.
+
+**Owner: `EPIC-023`**, which owns runs and review sessions.
+
+---
+
 ### A smaller one in the same place
 
 **A failed project fetch has no state of its own.** `frontend/src/main.tsx` clears
