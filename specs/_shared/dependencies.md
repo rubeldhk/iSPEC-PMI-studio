@@ -45,8 +45,8 @@ since. **Valkey** is the BSD-licensed fork, wire-compatible and a drop-in replac
 
 | ID | Component | Line | Purpose | Expected licence | Verified | Risk |
 |----|-----------|------|---------|------------------|----------|------|
-| D-12 | React | 18.x | UI framework | MIT | ☐ | Low |
-| D-13 | React Router | 6.x | Client routing | MIT | ☐ | Low |
+| D-12 | React | 18.x | UI framework (covers `react` and `react-dom`) | MIT | ☐ | Low |
+| **D-13** | **React Router** | **7.x** | Client routing — **declarative mode only** (`BrowserRouter`/`Routes`/`Route`/`Outlet`), never framework mode. Adopted by `EPIC-036` for `FR-SHL-017`: addresses that survive a refresh, support back/forward, and answer not-found | MIT | ☐ | Low — v7 bridges React 18 to 19, so the `18.3.1` pin is unaffected |
 | D-14 | TanStack Query | 5.x | Server state, polling job status | MIT | ☐ | Low |
 | D-15 | Vite | 5.x | Build and dev server | MIT | ☐ | Low |
 
@@ -118,6 +118,36 @@ recorded would be false.
   Express (`D-03`). Calling controller methods directly — rejected outright; that is precisely the
   hand-assembled graph Constitution XI Tier 1 forbids.
 - **Licence**: MIT, both packages.
+
+### D-13 in detail — recorded by EPIC-036 `T436b`, and the same lesson a second time
+
+`EPIC-036`'s plan and `research.md` `R-036-1` both call React Router **new**, and name it `D-30`.
+It is not new. `D-13` has carried *"React Router, 6.x, Client routing"* since the platform
+specification, declared for routing that was never built — `frontend/src/main.tsx` has held a
+`useState` view union since `T003` and the address bar never leaves `/`. The register was ahead of
+the code again, which is the direction that costs nothing.
+
+So `T436b` **raised this row from 6.x to 7.x** rather than adding a `D-30` beside it, exactly as
+`T993d` did for `D-22` above. Twice now an Epic has read "no such dependency in `package.json`" as
+"no such dependency in the register"; the two questions have different answers and the register is
+the one `TS-001` asks about.
+
+- **Purpose here**: `FR-SHL-017` — every area and key sub-view addressable, surviving a refresh,
+  with working back and forward, and answering **not found** for an area the shell does not host.
+- **Version**: 7.x rather than the registered 6.x. v7 bridges React 18 to 19, so the `18.3.1` pin in
+  `frontend/package.json` is unaffected; `T436e` asserts both facts so a silent React bump fails.
+- **Mode**: **declarative only** — the component tree. Framework mode brings its own build,
+  file-system routes, loaders and server rendering, which would replace Vite's role and reach far
+  outside this Epic. Recorded here because the register row cannot express it and the distinction
+  is the whole of `R-036-1`.
+- **Package name**: v7 publishes `react-router`. The v6-era `react-router-dom` is superseded, and a
+  `react-router-dom` import in this repository is a mistake rather than a style choice.
+- **Alternatives considered**: hand-rolled routing — history push/pop, `popstate`, path matching,
+  nested layouts, scroll restoration and not-found, a router with none of a router's test suite;
+  TanStack Router — no precedent here and nothing in the requirements needs what it adds; a hash
+  router — needs no server fallback and makes every address worse to work around a deployment gap
+  that is organisational (`R-036-3`).
+- **Licence**: MIT.
 
 ## Infrastructure
 
