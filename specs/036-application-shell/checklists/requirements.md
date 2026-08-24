@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Application Shell & Dashboard
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-08-24
+**Created**: 2026-08-24 · **Re-validated**: 2026-08-24, after the clarification session
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -48,6 +48,27 @@ not the same as specifying how to build one.
 
 No language, framework or API shape appears anywhere in the requirements.
 
+### Re-validation after clarification (2026-08-24)
+
+**16/16 → 16/16 items passing. No checkbox changed state**, and that is the honest result: the five
+answers sharpened the spec without exposing a failing criterion. Two of them narrowed scope, which
+if anything makes *"scope is clearly bounded"* pass more strongly than before.
+
+What changed underneath the unchanged boxes:
+
+- **`FR-SHL-014` became a deferral with an owner** (`EPIC-024`), and `PP-008` moved from *Satisfied*
+  to *Deferred*. The deferral count is now **1**. A requirement built on an authorization model that
+  does not exist would have failed *"requirements are testable"* at plan time; declared as a
+  deferral it is honest and checkable.
+- **`BR-0013` left the Epic** to `U-03`, taking one user-story scenario with it. The SRS
+  traceability row is kept and marked out of scope rather than deleted, so the trace still shows
+  where the requirement went.
+- **`FR-SHL-017` (addressable areas) and `FR-SHL-054` (the drawer) were added**, each with a success
+  criterion and, for the first, an exit-criteria mutation test.
+- **`FR-SHL-025` resolves a contradiction** the first draft carried: `prototype-parity.md` declines
+  the workspace/project selector to the shell, and the draft had the shell owning it. The shell now
+  renders a control `EPIC-004` governs.
+
 ### On scope — the boundary that took the most care
 
 Eighteen areas are specified; **nine are declared and in scope**. `FR-SHL-003` forbids the shell
@@ -55,8 +76,9 @@ implementing an area's content, and `UX-0060` forbids an undeclared area appeari
 Assumptions state which nine, so the boundary is a list rather than a judgement at plan time.
 
 `Home` is the one area this Epic **delivers** rather than hosts, because no Epic owns it and
-`BR-0192` and `BR-0013` have no surface without one. The Assumptions record what happens to that
-work if `U-03` (Portfolio & project health) is later declared.
+`BR-0192` has no surface without one. Since the clarification session it delivers **attention items
+only**: `BR-0013`'s derived project health went to `U-03` rather than being built here and moved
+later.
 
 ### Two success criteria worth checking at plan time
 
@@ -69,6 +91,8 @@ work if `U-03` (Portfolio & project health) is later declared.
 
 ### Not a gap, recorded so it is not re-raised
 
-The spec does **not** decide whether a routing library is adopted. `frontend/src/main.tsx` records
-that *"a router arrives with EPIC-010"*, and `specs/_shared/dependencies.md` makes a new runtime
-dependency a plan change rather than a task decision. That belongs to `/speckit-plan`.
+The spec requires areas to be **addressable** (`FR-SHL-017`) and deliberately does not decide
+**how**. `frontend/src/main.tsx` records that *"a router arrives with EPIC-010"*, and
+`specs/_shared/dependencies.md` makes a new runtime dependency a plan change rather than a task
+decision. Whether that is a routing library or hand-rolled belongs to `/speckit-plan`. The product
+has no URL routing at all today, so it is new work either way.
