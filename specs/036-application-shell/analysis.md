@@ -49,16 +49,27 @@ fault as one that reports outstanding work as finished, in the direction nobody 
 
 ## Coverage
 
-34 functional requirements and 11 success criteria, mapped against 76 tasks.
+34 functional requirements and 11 success criteria, mapped against **99 tasks**.
+
+**Re-measured 2026-08-24 (`T442n`).** This table read *"37 of 45 — 82.2% (was 80.0% before `C2`'s
+fix)"* while `C4` sat marked ✅ six lines above with a note giving the figure as 44 of 45. **The
+document contradicted itself**, and the stale half was the one a reader would quote: `T442j` closed
+`C4` in Phase 9's successor and `T442m` marked it resolved without touching the metrics. Every value
+below was measured on the date above, not carried forward.
 
 | Measure | Value |
 |---|---|
 | Requirements defined | 45 (34 `FR-SHL-*`, 11 `SC-SHL-*`) |
-| Covered by a task citing the identifier | 37 of 45 — **82.2%** (was 80.0% before `C2`'s fix) |
-| Covered in substance | 44 of 45 — **97.8%** |
-| Not covered, correctly | `FR-SHL-014` — a declared deferral, owner `EPIC-024`, `PP-008` |
-| Covered only in part | `FR-SHL-061` (`C3`). `FR-SHL-003` was joined by `T436m` ✅ |
+| Covered by a task citing the identifier | **44 of 45 — 97.8%** (80.0% at analysis, 82.2% after `C2`, 97.8% after `C4`) |
+| Not covered, correctly | `FR-SHL-014` — a declared deferral, owner `EPIC-024`, `PP-008`. **The only one**, and it should stay that way |
+| Covered only in part | **none.** `FR-SHL-003` was joined by `T436m` ✅ and `FR-SHL-061` by `T441w` ✅ |
 | Success criteria covered | **11 of 11**, each by a named task |
+
+> **Why a naive scan reads 45 of 45.** **Three** task lines — `T442j`, `T442m` and `T442n` — name
+> `FR-SHL-014` while explaining that it should *not* be cited, and each new one that explains it
+> adds another. A counter cannot tell a citation from a note about one; **44** is the figure, and
+> the test is whether a task *implements or asserts* the requirement, not whether a line mentions
+> it.
 
 Every success criterion has a task. `SC-SHL-001` `T437j`, `SC-SHL-002` `T437k`, `SC-SHL-003`
 `T437p`, `SC-SHL-004` `T437q`, `SC-SHL-005` `T439g`/`T441h`, `SC-SHL-006` `T441f`, `SC-SHL-007`

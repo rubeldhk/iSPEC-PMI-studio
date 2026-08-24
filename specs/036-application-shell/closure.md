@@ -1,18 +1,19 @@
 # Closure record: EPIC-036 Application Shell & Dashboard
 
-**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k` · **Session**: `/speckit-implement`
-and four `/speckit-converge` passes, executed in the worktree
+**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o` ·
+**Session**: `/speckit-implement` and **five** `/speckit-converge` passes, executed in the worktree
 `.claude/worktrees/epic-036-application-shell` (concurrent-session rule, `T436a`)
 · **Released by**: PMI-DOC-006 v1.0 (APPROVED, `D-44`) · PMI-DOC-004 v2.0 `BR-0190`
 
 > **Rewritten 2026-08-24 (`T442k`).** The first version of this record was accurate for about an
 > hour. It reported 75 of 77 tasks, ended at Phase 8, and quoted the frontend suite at 508 — before
-> three convergence passes added fifteen tasks and changed four source files. Constitution IX asks
-> for a report of *what was done*; that one described what had been done by lunchtime.
+> five convergence passes added twenty-two tasks and changed four source files. Constitution IX asks
+> for a report of *what was done*; that one described what had been done by lunchtime. **This
+> version has itself been corrected once** (`T442o`), for the same fault in miniature.
 
 ## Work completed
 
-**95 of 97 tasks, across twelve phases.** The two outstanding are a person's, not this session's,
+**97 of 99 tasks, across thirteen phases.** The two outstanding are a person's, not this session's,
 and are named below.
 
 | Phase | Tasks | Outcome |
@@ -29,6 +30,7 @@ and are named below.
 | **10 Convergence** | `T442a`–`T442f` | The failed project set, the Room seam **rendered**, address-scoped breadcrumb, a dead export removed |
 | **11 Convergence** | `T442g`–`T442j` | `SC-SHL-009` handover, the no-identity set, six requirements cited |
 | **12 Convergence** | `T442k`–`T442m` | The reference stack defined, the analysis record corrected, this rewrite |
+| **13 Convergence** | `T442n`–`T442o` | Two figures Phase 12 left wrong — the coverage table and this Suites paragraph |
 
 **Artifacts.**
 
@@ -51,15 +53,42 @@ and are named below.
 - `frontend/tests/unit/a11y/shell.spec.tsx`, `design/app-root.spec.tsx`,
   `design/prototype-parity.spec.tsx` — **modified**: `App` requires a Router in every branch now
 
-**Suites.** `frontend` **535 of 535** in 59 files. `test:unit` **2630 of 2630** in 291 files.
-`architecture` **84 of 84**. `governance` **893 of 895** — the two failures are `T884`, red **by
-design** until a person runs the manual accessibility pass. Typecheck clean.
+**Suites, measured 2026-08-24** — every figure taken on that date, none carried forward:
 
-## What four convergence passes found, and what that says
+| Suite | Result |
+|---|---|
+| `frontend` | **537 of 537** in 59 files |
+| `test:unit` | **2630 of 2630** in 291 files |
+| `test:arch` | **84 of 84** in 8 files |
+| `test:contract` | **170 of 170** in 16 files |
+| `test:integration` | **208 passed, 1 failed, 2 skipped** of 209 in 32 files — see below |
+| `governance` | **893 of 895** in 69 files — the two are `T884` |
+| `typecheck` | clean |
 
-**7 findings → 4 → 3 → 3.** Passes 10, 11 and 12 introduced none; pass 12 found no code gap at all.
+**Two reds, neither this Epic's, both named rather than omitted.**
 
-**Passes 9 and 10 each found faults created by the pass before.** That is the part worth keeping:
+- **`governance` ×2 — `T884`**, red **by design** until a person runs the manual accessibility pass
+  (`T441k`). It is the correct state, not a defect.
+- **`test:integration` ×1 — `T147`'s p95 search assertion** in `backend/tests/integration/scale.spec.ts`,
+  at 1247 ms against a 1000 ms target. **It passes alone** — 4 of 4, verified the same day — and
+  fails only under full-suite load. That is `DEF-030-002`, filed against `EPIC-030` and owned there.
+  This Epic changed no backend code.
+
+> **The first version of this paragraph reported `frontend` at 535 and listed four suites.** It was
+> 537, and had been since Phase 11; `test:contract` and `test:integration` had **never been run** in
+> this Epic at all. `T442k` rewrote this document *because its figures were stale* and copied one
+> forward without re-measuring — which is how `T442o` came to exist. Every number above was measured
+> fresh, and the integration red was found by measuring rather than assumed absent.
+
+Typecheck clean.
+
+## What five convergence passes found, and what that says
+
+**7 findings → 4 → 3 → 3 → 2.** The last two passes found **no code gap at all**; every finding in
+them was a record disagreeing with the code.
+
+**Three of the five passes found faults created by the pass before.** That is the part worth
+keeping, and it did not stop when the work moved from code into paperwork:
 
 1. **`T441v` split *loading* from *empty*** on the project selector and left **failed** collapsed
    into empty — so a rejected request read as *"this workspace has no projects"*. `FR-SHL-062`
@@ -68,21 +97,34 @@ design** until a person runs the manual accessibility pass. Typecheck clean.
    called `hostRoom` either. `T441t` asserted the *import*, which was the previous fault and not
    that one.
 
-The pattern in both: **the fix was asserted at the level the previous fault was found at, and the
-new fault sat one level up.** The state ended as a three-variant union rather than flags precisely
-because two attempts with booleans were each wrong in a different way.
+3. **`T442k` rewrote this document because its figures were stale** — and copied `frontend`'s
+   figure forward from two phases earlier without re-measuring. `T442m` marked `C4` resolved in
+   `analysis.md` and left the metrics table above it reading the pre-`C4` number, so that document
+   stated both figures at once.
 
-## Two load-sensitive tests of my own
+The pattern in the first two: **the fix was asserted at the level the previous fault was found at,
+and the new fault sat one level up.** The state ended as a three-variant union rather than flags
+precisely because two attempts with booleans were each wrong in a different way.
 
-Both passed in isolation and failed under the full suite, which is the only reason either was found:
+The pattern in the third is plainer, and worse for being obvious: **a document about stale numbers
+was written without measuring the numbers.** `T442o` re-measured every suite, which is how the
+`test:integration` red above came to be in this record at all — it had never been run in this
+Epic.
+
+## Three load-sensitive tests of my own
+
+All three passed in isolation and failed under the full suite, which is the only reason any was
+found:
 
 - `fireEvent.change` naming a value the `<select>` does not yet carry is **silently ignored** — the
   set arrives asynchronously.
 - **Holding a DOM node across a state change** leaves the reference detached while the live element
-  updates.
+  updates — twice, in `ContextBar` and then in `NavigationDrawer`.
 
-`DEF-030-002` is the same shape one Epic over. Every query re-runs now, and `test:unit` has been
-clean four consecutive times.
+`DEF-030-002` is the same shape one Epic over, and it is the `test:integration` red in the table
+above. After the third occurrence the fix moved from the test to the harness: `clickByName`
+re-queries at click time, with the reason written on it, so the next test does not reinvent the
+mistake.
 
 ## What is NOT done, and why
 
@@ -116,9 +158,15 @@ Neither blocks `/speckit-converge`; both block the Epic Exit Criteria, and the E
 /speckit-converge 036
 ```
 
-A fifth pass should return `converged`: pass 12 found no code gap and its three findings were all
-records, which this run corrected. After that, the specified scope is closed apart from the two
-human items, and the Epic goes to its exit gate.
+A **sixth** pass. The fifth was predicted to return `converged` and did not — it found the two
+figures this phase has just corrected. That prediction has now been wrong twice, so this record
+makes none: the last two passes found no gap in the **code**, and both found one in the **records**,
+including in this document.
+
+What would make a clean pass credible rather than hoped for: every figure here was measured on
+2026-08-24 rather than carried forward, `analysis.md`'s coverage table was re-measured the same way,
+and the suites that had never been run in this Epic — `test:contract` and `test:integration` — now
+have been.
 
 Then, in order of what unblocks most: the four Epics in [handovers.md](./handovers.md) each clear
 their `UX-0003` remainder with a registry edit and a binding, `EPIC-023` gives the review response
