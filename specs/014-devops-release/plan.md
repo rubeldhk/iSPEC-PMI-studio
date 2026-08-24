@@ -2,7 +2,12 @@
 
 **Epic**: `EPIC-014` | **Module**: M-11 | **Date**: 2026-08-07 | **Spec**: [spec.md](./spec.md)
 
-**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) · [tasks.md](./tasks.md) | **Posture**: ⏸ **HELD** (decision D-10)
+**Tasks**: see [tasks.md](./tasks.md) — counted there, never restated here (`T686`, PP-002) | **Posture**: ▶ **PROCEEDING** (D-10 discharged 2026-08-20; see [spec.md](./spec.md))
+
+> **Corrected 2026-08-24 (`D-45`).** This header read **⏸ HELD (decision D-10)** while
+> [spec.md](./spec.md)'s delivery posture had read **▶ PROCEEDING** since **2026-08-20** — the hold
+> was discharged by PMI-DOC-004 v1.0 and the plan was never updated. Four days of a plan and its
+> spec disagreeing about whether the Epic was allowed to run.
 
 **Shared design** — not duplicated here: [`../_shared/`](../_shared/)
 ([platform-spec](../_shared/platform-spec.md) · [system-design](../_shared/system-design.md) · [data-model](../_shared/data-model.md) · [schema](../_shared/schema.sql) · [platform-api](../_shared/contracts/platform-api.md)))
@@ -13,6 +18,11 @@
 > never passed a Constitution Check. This plan records the technical context they assumed and
 > **reviews the existing task list**. It is one of eleven written on 2026-08-07 to close finding
 > **C3**, and it adds no design: everything this epic needs already exists in `_shared/`.
+>
+> **That last clause stopped being true on 2026-08-24** (`D-45`). **F-11.3 adds design** — eight
+> decisions, a contract and a quickstart, none of which `_shared/` answers, because `_shared/`
+> describes a platform that has never been containerised. The retroactive framing still holds for
+> F-11.1 and F-11.2; it does not extend to F-11.3.
 
 ## Summary
 
@@ -28,6 +38,7 @@ This epic no longer performs per-epic closure. Each epic discharges its own `Pha
 |---|---|---|
 | F-11.1 Developer enablement | 3 | Seed script, `README.md`, and their checks |
 | F-11.2 Platform release gate | 10 | Confirm 15 closure records, architecture and security reviews, quickstart, SRS back-fill, promotion |
+| **F-11.3 Containerised local deployment** *(new, `D-45`)* | see [tasks.md](./tasks.md) | One application image serving `/v1` and the built client on one origin, wired to the existing `postgres` and `valkey`; the SPA history fallback that closes `R-036-3`; a credential conformance check; the broken `dev` script |
 | Phase Z Epic closure | 4 | Per-epic gate (Constitution IV, V, VI, IX) |
 
 ## Technical Context
@@ -45,7 +56,30 @@ Repeating the per-epic checks here would recreate the bottleneck the split remov
 **Two MPS quality gates land here**: architecture review (`T152a`) and security review (`T152b`),
 discharging PMI-TASK-001 T-306.
 
-**NEEDS CLARIFICATION**: none.
+### F-11.3 — what containerisation adds to the technical context *(`D-45`, 2026-08-24)*
+
+The inherited stack is unchanged. What is new is that **it must run without a host toolchain**:
+
+| | Decision | Where |
+|---|---|---|
+| Client serving | the **API serves the built client** via `@nestjs/serve-static`; one image, one origin, `renderPath: '*'` as the SPA history fallback and `exclude` keeping `/v1` on the API | `R-014-1` |
+| New dependency | `@nestjs/serve-static` → registered as **`D-30`** in [`../_shared/dependencies.md`](../_shared/dependencies.md) in the same change, because `TS-001` will otherwise go red | `R-014-2` |
+| API runtime | **`tsx` from source, no compiler added.** `backend/package.json` has no build script by design — see [`D-40`](./decisions/D-40-runtime-metadata-vs-explicit-tokens.md) and `DEF-001-005` | `R-014-3` |
+| Prisma | Client generated **inside** the image so the default `native` target is correct; schema copied to `./prisma` preserving structure, before install | `R-014-4` |
+| Migrations | `prisma migrate deploy` as a **separate step before** the process, so a schema failure stops the stack loudly | `R-014-5` |
+| Seed | **stays manual.** No image runs it; no image carries a password | `R-014-6` |
+| Adapter | `@nestjs/platform-express` — Express fallthrough applies, so the Fastify-only `serveStaticOptions.fallthrough` caveat does not | `R-014-1` |
+
+**NEEDS CLARIFICATION**: none. Every question this scope raised is answered in
+[research.md](./research.md).
+
+**Risks carried, not resolved here**:
+
+| Risk | Disposition |
+|---|---|
+| `DEF-001-006` — unmatched **API** paths answer `500`, not `404` (`EPIC-001`'s open defect) | The static fallback MUST NOT be configured broadly enough to hide it. Asserted by quickstart Scenario 4 |
+| The broken `dev` script (`R-014-8`) | Fixed in this scope. **If this scope is ever descoped, this must be re-filed as a defect under Constitution VI** — it is a one-line `package.json` fault that stops the documented developer entry point |
+| Serving static assets from the API process | A **local** choice. Explicitly not the programme's production answer; a split topology is a `dev`/`stage`/`prod` decision |
 
 ## Constitution Check
 
@@ -68,7 +102,27 @@ discharging PMI-TASK-001 T-306.
 
 **Any FAIL blocks Phase 0.** No FAIL. Gate V's basis changed on 2026-08-05 and is recorded below.
 
-**Post-design re-check**: PASS. No new design was produced, so no gate could be weakened by it.
+### Re-evaluated for F-11.3 *(2026-08-24, `D-45`)*
+
+The table above was written for an Epic that produced **no design**. F-11.3 produces design, so the
+gates it touches are re-run rather than inherited:
+
+| # | Gate | Status for F-11.3 |
+|---|------|-------------------|
+| I | Code produced only via Spec Kit commands | PASS — scope added by `D-45`, designed here, tasks to follow from `/speckit-tasks` |
+| II | Requirements trace to cited SRS documents | ⚠️ **PASS with a stated debt.** F-11.3 adds no numbered requirement and traces to `BR-0090`'s first rung, consuming `BR-0173`/`BR-0135` (owned by `EPIC-028`). **No SRS document requires the platform to be containerised** — [spec.md](./spec.md) says so plainly and records the back-fill owner as **unassigned**. That is a debt named, not a gate dodged |
+| III | Epic → Feature → Task decomposition | PASS — F-11.3 is a function; tasks come from `/speckit-tasks` |
+| IV | `/speckit-converge` scheduled as the exit gate | PASS — `Phase Z` unchanged |
+| V | Every implementation task carries a unit test, or an executable conformance check for non-code output | ⚠️ **The gate that binds hardest here.** A `Dockerfile` and a `docker-compose.yml` are **non-code outputs**, so each needs a check that can fail. Three are specified: the credential check, the history-fallback check, and the `dev`-entry-point check — each with a mutation in [quickstart.md](./quickstart.md). **This is the gate to fail this scope on**, and the one `T150` failed for months (see G-14.1) |
+| VI | `defects/` exists | PASS |
+| VII | Promotion follows local → dev → stage → prod | **PASS, and F-11.3 does not touch it.** This scope delivers `local` only. A container on a developer's machine proves nothing about a deployed environment, and both [spec.md](./spec.md) and [contracts/container-stack.md](./contracts/container-stack.md) say so rather than implying otherwise |
+| VIII | Session labelled with the working Epic | PASS — this pass ran under `EPIC-036` UAT and switched to `EPIC-014`; stated in the closing report |
+| IX | Run closes with a Work Completed + Recommended Next Task report | PASS |
+| — | Dependency register current | ⚠️ **Actionable, not yet done.** `@nestjs/serve-static` needs row **`D-30`** in `_shared/dependencies.md`. `TS-001` — built by `EPIC-036` `T436c` — goes red the moment the package is installed without it. **This is the first time that check binds an Epic other than the one that wrote it** |
+
+**Post-design re-check**: **PASS**, with Gate II's debt and the `D-30` register row carried as named
+actions rather than as assumptions. No gate was weakened by the design; Gate V was made **stricter**
+by it, because the scope introduces two non-code outputs where the Epic previously had one.
 
 ## Review of the existing task list
 
@@ -81,6 +135,16 @@ by an **executable conformance check**, not a unit test.
 `T150` currently has neither. ⚠️ **Open**: it needs a check asserting the README matches
 `_shared/quickstart.md`, or it is the one task in this epic that fails Principle V as amended.
 
+> **✅ Closed 2026-08-24 (`D-45` review).** `T452` — *"Conformance check asserting `README.md`
+> exists at the repository root and…"* — is in [tasks.md](./tasks.md) and is marked `[X]`. **This
+> section had said "Open" since 2026-08-05 while the task that closed it sat completed two files
+> away.** Found by reading the task list during this plan pass, not by a check: nothing compares a
+> plan's open findings against the tasks that discharge them, which is a gap worth naming even
+> though closing it is not this scope's job.
+>
+> The lesson generalises to F-11.3 and is why Gate V above names **three** checks with **three**
+> mutations rather than trusting that a task will produce them.
+
 ### G-14.2 · `T153` covers V1–V12 and V14 — ✅ current
 
 Updated on 2026-08-05 when EPIC-016's `T143c` added quickstart **V14** for ADRs. Without that update
@@ -92,7 +156,10 @@ it — the numbering lives in `_shared/quickstart.md` and the gate that runs it 
 ## Build order
 
 ```text
-F-11.1  T149a check ──► T149 seed ──► T150 README
+F-11.1  T149a check ──► T149 seed ──► T150 README ──► T452 README check
+
+F-11.3  dependency row D-30 ──► image + compose service ──► the three checks
+        (depends on NOTHING else in this Epic — see spec.md "Depends on")
 
 F-11.2  (all fifteen epics closed first)
         T151 unit-test records ──► T154 converge records ──► T155 defect records
@@ -111,15 +178,31 @@ pipeline has exactly one entry point, and this is it.
 
 ## Phase 0 / Phase 1 outputs
 
-**None.** Every technical question this epic raises was answered when `_shared/research.md`,
-`data-model.md`, `schema.sql`, and `contracts/` were written. Generating a per-epic `research.md`
-recording "no decisions" would be an artifact pretending to be work — the same judgement EPIC-016's
-plan made.
+**For F-11.1 and F-11.2: none, and that judgement stands.** Every technical question the release
+gate raises was answered when `_shared/research.md`, `data-model.md`, `schema.sql` and `contracts/`
+were written. A per-epic `research.md` recording *"no decisions"* would be an artifact pretending
+to be work — the same judgement EPIC-016's plan made.
+
+**For F-11.3: three artifacts, because it genuinely decides things** (`D-45`, 2026-08-24):
+
+| Artifact | Why it exists |
+|---|---|
+| [research.md](./research.md) | Eight decisions (`R-014-1`–`R-014-8`) with alternatives and the Context7 library IDs behind them |
+| [contracts/container-stack.md](./contracts/container-stack.md) | The services, the one origin, what the image must never contain, and **what the stack does not prove** |
+| [quickstart.md](./quickstart.md) | Seven scenarios with three mutation checks — how to prove it works without reading it |
+
+**No `data-model.md`.** This scope persists nothing, defines no entity and adds no migration. The
+existing `_shared/data-model.md` is untouched, and writing a per-Epic one saying *"no entities"*
+would be the artifact-pretending-to-be-work this plan already refuses once above.
 
 ## Definition of done
 
-- [ ] 17 tasks complete (Constitution V, as amended by v1.2.0)
-- [ ] **G-14.1 closed** — `T150` has an executable conformance check
+- [ ] Every task complete (Constitution V, as amended by v1.2.0) — counted in [tasks.md](./tasks.md), not here
+- [X] **G-14.1 closed** — `T452` gave `T150` its executable conformance check
+- [ ] **F-11.3**: the stack starts from a clean checkout with no host toolchain; a deep link
+      survives a refresh (`R-036-3` discharged); the three conformance checks pass **and each has
+      been seen to fail**; `@nestjs/serve-static` is registered as `D-30`; the reference local
+      stack (`EPIC-036` `T442l`) still runs and `dev` is fixed
 - [ ] All fifteen `closure.md` records present and clean
 - [ ] Architecture and security reviews held and recorded
 - [ ] Promotion follows `local → dev → stage → prod` with no environment skipped
