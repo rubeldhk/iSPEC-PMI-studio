@@ -20,7 +20,7 @@ four findings are marked ✅ and the artifacts they name were changed.
 | ID | Category | Severity | Location(s) | Summary | Recommendation |
 |----|----------|----------|-------------|---------|----------------|
 | C1 ✅ | Coverage Gap | CRITICAL | data-model.md §1 "The eighteen, and the nine"; spec.md Assumptions; tasks.md `T436f`, `T436g` | **Three of the nine "declared" areas have nothing to render and no task anywhere that builds one.** `QA & Releases`, `Architecture & Decisions` and `Governance` have no component in `frontend/src/pages/`; their owning Epics (`EPIC-014`/`015`, `EPIC-016`, `EPIC-019`/`021`/`024`) are all at stage **Ready**, unimplemented; and no `specs/*/tasks.md` in the corpus builds any of the three. `T436f` asserts `declared: true` implies an `element`, and `FR-SHL-003` forbids the shell supplying one or rendering a placeholder — so `T436g` has no correct completion | Decide the meaning of `declared` **once** and apply it uniformly. data-model.md §1 already applies *delivered, not merely owned* to the Rooms — excluding `EPIC-033` at 68 of 102 — then applies *Epic exists* to these three at 0. Under the Rooms' rule the count is **six**, not nine. Amend data-model.md §1, spec.md Assumptions, quickstart.md and `T436g` together, or add the three areas' screens to an Epic that owns them. **Resolved 2026-08-24.** `Area.declared: boolean` became `Area.status: 'delivered' | 'declared-not-delivered' | 'undeclared'`. Six areas are `delivered`; the three named here are `declared-not-delivered`, carry their owning Epic, appear in no navigation and answer not-found; nine are `undeclared`. Applied across data-model.md §1, contracts §1–§2, spec.md (`FR-SHL-001`/`002`/`003`/`013`/`015`/`017`, `SC-SHL-001`–`004`/`010`/`011`, Assumptions, Edge Cases, Exit Criteria), plan.md Scale/Scope and Complexity Tracking, quickstart.md, checklists, and tasks.md `T436f`/`T436g`. `T441p` was added to hand the remainder of `UX-0003` to the three owing Epics |
-| I1 ✅ | Inconsistency | HIGH | contracts/shell-contract.md §2 route table vs data-model.md §1, spec.md Assumptions, quickstart.md Scenario 1 | **The route table declares eight areas; every other artifact says nine.** `QA & Releases` has no row in §2. An implementer building the route tree from the contract produces eight routes, and `T437h` — which asserts every `declared: true` area is reachable — then fails against a registry built from the data model | Add the missing row to §2, or remove the area everywhere at once. This is the first symptom of `C1` an implementer meets, and it is worth fixing separately because the route table is what `T436k` and `T437m` are written against. **Resolved 2026-08-24.** The route table is now six routed areas plus four sub-views and `*`. `/architecture` and `/governance` are removed; `QA & Releases` never had a path and gains none. All three answer not-found until their owners ship |
+| I1 ✅ | Inconsistency | HIGH | contracts/shell-contract.md §2 route table vs data-model.md §1, spec.md Assumptions, quickstart.md Scenario 1 | **The route table declares eight areas; every other artifact says nine.** `QA & Releases` has no row in §2. An implementer building the route tree from the contract produces eight routes, and `T437h` — which asserts every `declared: true` area is reachable — then fails against a registry built from the data model | Add the missing row to §2, or remove the area everywhere at once. This is the first symptom of `C1` an implementer meets, and it is worth fixing separately because the route table is what `T436k` and `T437m` are written against. **Resolved 2026-08-24.** The route table is now **five routed areas plus five sub-views** and `*`. `/architecture` and `/governance` are removed; `QA & Releases` never had a path and gains none. All three answer not-found until their owners ship. **Corrected 2026-08-24 (`T442x`)**: this note said *"six routed areas plus four sub-views"*, which was true when written and stopped being true when `N1` — two rows below, resolved later the same day — moved `Plan & Tasks` out of the table and its `/specifications/:id/tasks` row down to a sub-view. Two adjacent rows of this table disagreed about the same number for ten convergence passes |
 | C2 ✅ | Coverage Gap | HIGH | contracts/shell-contract.md §6 vs tasks.md `T436m` | **`FR-SHL-003`'s first clause is asserted by nothing.** contracts §6 lists six prohibitions "asserted by the Epic's own architecture check". `T436m` enumerates five and omits exactly one: **no area content — the shell hosts screens and implements none**. That clause is the one keeping `FR-SHL-003` from being prose, and it is the clause `C1` puts under pressure | Add the sixth clause to `T436m`'s enumeration. It is a one-line change to a task that already exists, and `T436n`'s anti-vacuity companion already covers the new assertion. **Resolved 2026-08-24.** `T436m` now enumerates **all six** prohibitions, the first being *no area content: the shell hosts screens and implements none*. `FR-SHL-003` went from 0 tasks citing it to 1 |
 | C3 ✅ | Coverage Gap | MEDIUM | spec.md `FR-SHL-061`; tasks.md `T438g`, `T439g`, `T441h` | **`FR-SHL-061` ("an empty state MUST say what is absent and what to do next") is checked for one case only.** `T438g` asserts it for the no-project state. `T439g` and `T441h` assert that the four states are *distinguishable*, which is `FR-SHL-060` — distinguishable is not the same claim as informative, and an empty state can be unmistakably empty while saying nothing | Extend `T441h` to assert the **content** of every shell-owned empty state, not only that it differs from loading and error. **Resolved 2026-08-24 by `T441w`.** Home's working-but-empty section offers *"See all runs"*, the no-workspace state offers *"Go to Home"*, and `RequireProject` offers *"Choose a project"*. The two `unavailable` sections deliberately get none — a next step into an Epic that does not exist would send the user somewhere that cannot help them. |
 | A1 ✅ | Ambiguity | MEDIUM | spec.md `SC-SHL-006`; plan.md Performance Goals; tasks.md `T441f` | **"The reference local stack" is named in three artifacts and defined in none.** checklists/requirements.md records the phrasing as deliberate — it scopes the measurement so `SC-SHL-006` does not inherit `DEF-030-002`'s suite-load ambiguity — but a scope with no value still lets two runs measure different things and both report a pass | Define the stack once where `SC-SHL-006` is stated: which services, on what, at what data volume. `T441f`'s "recorded with the stack named" defers this to execution, which is a report, not a criterion. **Resolved 2026-08-24 by `T442l`.** *"The reference local stack"* is defined in `quickstart.md` — services, versions, data volume, browser, what is timed and how many samples — so the criterion is scoped for the next measurement and not only for the one that was taken. The transcript's §7 now points at that definition rather than standing in for it. |
@@ -102,6 +102,15 @@ status word, never by softening what the row discloses.
 
 Applied 2026-08-24, on explicit authorisation, after the read-only pass above.
 
+> **Read this table as history, not as the current state** (`T442x`). It records what *this*
+> remediation changed, and the numbers in it were true at that moment. `N1` was resolved later the
+> same day and moved `Plan & Tasks` to `declared-not-delivered`, so the row below reading *"six
+> routed areas, four sub-views"* describes an intermediate state that lasted about an hour. It is
+> left standing deliberately: rewriting it would erase the very drift the rest of this document
+> exists to explain. **The current numbers are five routed areas and five sub-views** — `data-model.md`
+> and `contracts/shell-contract.md` are authoritative, and `registry-documented.spec.ts` holds them
+> to the registry.
+
 | Artifact | What changed |
 |---|---|
 | `data-model.md` | `declared: boolean` → `status: 'delivered' \| 'declared-not-delivered' \| 'undeclared'`; a new section on why the middle state exists; the eighteen/nine table became eighteen/six/twelve; §5 derivations filter on `delivered`; §6 names the three owing Epics |
@@ -113,15 +122,25 @@ Applied 2026-08-24, on explicit authorisation, after the read-only pass above.
 | `checklists/requirements.md` | the scope note, with why *"nine are declared"* conflated two questions |
 
 **What was deliberately not changed.** The `UX-0003` obligation is **not** waived — it is satisfied
-for six areas and carried, with named owners, for three. `EPIC-014`, `EPIC-016` and `EPIC-019` each
-discharge it with a one-line registry edit, which is the claim `T437q` exists to prove. And `P1`'s
-fix moved a status word without softening a single thing the row discloses.
+for **five** areas and carried, with named owners, for **four**. `EPIC-012`, `EPIC-014`, `EPIC-016`
+and `EPIC-019` each discharge it with a one-line registry edit, which is the claim `T437q` exists to
+prove. And `P1`'s fix moved a status word without softening a single thing the row discloses.
+
+> **Corrected 2026-08-24 (`T442x`).** This paragraph said *"six areas … for three"* and named three
+> Epics. `N1` added `EPIC-012` as the fourth debtor the same day, and `handovers.md` has carried
+> four obligations ever since — so this was the only document still counting three. It is prose in a
+> dated record rather than a specification, which is why `T442t`'s parser does not read this file
+> (see `EXEMPT` in `registry-documented.spec.ts`) and why a person had to find it.
 
 ## What this analysis could not check
 
-- **Whether the six remaining declared areas render acceptably inside the shell.** Their pages exist
-  (`Projects.tsx`, `SpecificationList.tsx`, `Tasks.tsx`, `Runs.tsx`, `StorageConnections.tsx`, plus
-  Home built here) but none has been composed into a shell, so this is an implementation question.
+- **Whether the five delivered areas render acceptably inside the shell.** Their pages exist
+  (`Projects.tsx`, `SpecificationList.tsx`, `Runs.tsx`, `StorageConnections.tsx`, plus Home built
+  here) but none had been composed into a shell when this was written, so it was an implementation
+  question. **Corrected 2026-08-24 (`T442x`)**: this said *"six"* and listed `Tasks.tsx` among them.
+  `N1` established that `Tasks.tsx` is a **sub-view of Specifications**, not an area — it is scoped
+  to one specification and its only address carries a `:param`, which `Area.path` cannot. Listing it
+  here preserved the exact mistake `N1` was raised to correct.
 - **`SC-SHL-009`, and the keyboard and screen-reader pass.** Both are human measures.
   checklists/requirements.md already records why, and `T441k` is a person's task.
 - **Whether `react-router@7` behaves as `R-036-1` describes.** The dependency is not yet installed;
