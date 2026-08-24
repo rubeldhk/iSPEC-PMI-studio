@@ -170,6 +170,15 @@ path added or removed without updating this document fails the build.
 - `specs/027-ai-native-amendment/`
 - `specs/028-agent-execution-seam/`
 - `specs/029-design-system/`
+- `specs/030-governed-engineering-loop/`
+- `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
+  `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T918`)
+
+> **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
+> disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
+> rather than left implied: the four older contract packages — `engine-contract`,
+> `agent-contract`, `execution-contract`, `observability` — are **not listed either**, and adding
+> them belongs to whichever Epic owns this guard, not to this one.
 
 ## Deliberately not covered here
 

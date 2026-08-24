@@ -125,6 +125,17 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-030 T915 — the fifth contract package. No `passWithNoTests`: TS-005
+    // makes an empty suite a failure, and this project is registered in the same
+    // change as the first spec that fills it (the T537/T539 rule).
+    test: {
+      name: 'loop-contract',
+      root: './packages/loop-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     test: {
       name: 'agent-adapters',
       root: './agent-adapters',

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "workflowType": "example-workflow",
+  "stages": ["Event", "Analyze", "Decide", "Outcome"],
+  "transitions": [
+    {
+      "from": "Event",
+      "to": "Analyze",
+      "requiredGates": [],
+      "trigger": {
+        "ruleId": "example-intake-complete",
+        "description": "An automated advance, and it names the rule that fires it — FR-GEL-031. This entry exists so the worked example demonstrates the automated case, not only the easy one."
+      }
+    },
+    {
+      "from": "Analyze",
+      "to": "Decide",
+      "requiredGates": ["example-review"],
+      "trigger": null
+    },
+    {
+      "from": "Decide",
+      "to": "Outcome",
+      "requiredGates": [],
+      "trigger": null
+    }
+  ],
+  "approvedBy": "epic-030",
+  "approvalRef": "specs/030-governed-engineering-loop/tasks.md#T930"
+}
