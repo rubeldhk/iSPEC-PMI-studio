@@ -36,9 +36,13 @@ import { ThemeControl } from './design/ThemeControl';
 import { LoadingIndicator } from './design/components/LoadingIndicator';
 import { SignIn } from './pages/SignIn';
 import { ContextBar } from './shell/ContextBar';
-import { ShellProvider, projectIdFromPathname } from './shell/shell-context';
+import {
+  ShellProvider,
+  projectIdFromPathname,
+  type ProjectSetState,
+} from './shell/shell-context';
 import { ShellRoutes } from './shell/routes';
-import { ApiClient, type Project, type WhoAmI } from './services/api';
+import { ApiClient, type WhoAmI } from './services/api';
 
 /**
  * The application, minus the router.
@@ -49,22 +53,17 @@ import { ApiClient, type Project, type WhoAmI } from './services/api';
  */
 export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
   const [identity, setIdentity] = useState<WhoAmI | null>(null);
-  const [projects, setProjects] = useState<readonly Project[]>([]);
   /**
-   * Which workspace's project set we have actually received — not a `loading`
-   * boolean.
+   * The selectable set and how the asking went — one value, three states.
    *
-   * A separate flag has a lifecycle of its own, and it was wrong in the gap
-   * between *"identity arrived"* and *"the fetch effect ran"*: for one render
-   * `loading` was false with an empty list, so the selector claimed the
-   * workspace had no projects before it had asked. The full suite caught it;
-   * the isolated run did not.
-   *
-   * Derived, there is no such gap — the moment an identity exists and nothing
-   * has been recorded for it, we are loading. Same reasoning `data-model.md` §3
-   * gives for deriving `areaId` from the address rather than holding it.
+   * This has been wrong twice. First a bare list, which could not tell
+   * *"loading"* from *"empty"*. Then a list plus a boolean, which could not
+   * tell *"failed"* from *"empty"* — and a separate flag also had a lifecycle
+   * of its own, briefly reading `false` before the fetch had started. A union
+   * has neither problem: there is no combination to get wrong, and the failure
+   * cannot be dropped without deleting a branch somebody has to look at.
    */
-  const [projectsLoadedFor, setProjectsLoadedFor] = useState<string | null>(null);
+  const [projectSet, setProjectSet] = useState<ProjectSetState>({ kind: 'loading' });
   const [projectId, setProjectId] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(true);
 
@@ -110,32 +109,32 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
   useEffect(() => {
     let live = true;
     if (identity === null) {
-      setProjects([]);
-      setProjectsLoadedFor(null);
+      setProjectSet({ kind: 'ready', projects: [] });
       return (): void => {
         live = false;
       };
     }
+    setProjectSet({ kind: 'loading' });
     void api
       .listProjects()
       .then((loaded) => {
-        if (live) setProjects(loaded);
+        if (live) setProjectSet({ kind: 'ready', projects: loaded });
       })
-      .catch(() => {
-        if (live) setProjects([]);
-      })
-      .finally(() => {
-        // `finally`, so a failed request stops claiming to be in flight. It
-        // then reads as "no projects", which is wrong but bounded — and
-        // `handovers.md` records that a failed set has no state of its own yet.
-        if (live) setProjectsLoadedFor(identity.workspace.id);
+      .catch((error: unknown) => {
+        // `FR-SHL-062` — a failed set reports as failed. It used to land in an
+        // empty list, which reads as "this workspace has no projects": a
+        // statement about the workspace, made because a request did not come
+        // back. No `finally` here, because there is nothing left to reset.
+        if (live)
+          setProjectSet({
+            kind: 'failed',
+            reason: error instanceof Error ? error.message : 'The projects service did not answer.',
+          });
       });
     return (): void => {
       live = false;
     };
   }, [api, identity]);
-
-  const projectsLoading = identity !== null && projectsLoadedFor !== identity.workspace.id;
 
   const selectProject = useCallback((next: string | null): void => {
     setProjectId(next);
@@ -202,8 +201,7 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
       api={api}
       identity={identity}
       projectId={projectId}
-      projects={projects}
-      projectsLoading={projectsLoading}
+      projectSet={projectSet}
       selectProject={selectProject}
     >
       {frame(<ContextBar />, <ShellRoutes />)}

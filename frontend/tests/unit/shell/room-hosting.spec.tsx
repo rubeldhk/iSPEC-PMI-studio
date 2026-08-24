@@ -16,8 +16,25 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
-import { ROOM_REGIONS } from '@pmi/room-contract';
+import type { ReactNode } from 'react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { ROOM_REGIONS, type RoomRegion, type RoomShellProps } from '@pmi/room-contract';
+import { hostRoom } from '../../../src/shell/AppShell';
+
+/**
+ * `EPIC-033`'s accessible names for the six regions, restated here ONLY as the
+ * expectation of a test — not as a second vocabulary. `T441c` asserts the shell
+ * itself declares none, and this file is not the shell.
+ */
+const LABELS: Record<RoomRegion, string> = {
+  objectState: 'Object state',
+  loopProgress: 'Loop progress',
+  aiAnalysis: 'AI analysis',
+  decision: 'Decision',
+  evidence: 'Evidence',
+  activityTimeline: 'Activity timeline',
+};
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SHELL = join(HERE, '..', '..', '..', 'src', 'shell');
@@ -54,6 +71,66 @@ describe('T441a · the six regions are the contract’s, and there is no seventh
         expect(code, `${name} hard-codes the region "${region}"`).not.toContain(`'${region}'`);
       }
     }
+  });
+});
+
+describe('T442c · FR-SHL-040 — the seam is rendered, not merely declared', () => {
+  // The second convergence pass (`F2`), and a fault the first pass created.
+  // `T441s` added `hostRoom` because nothing imported the contract, and then
+  // **nothing called `hostRoom` either** — not in `src`, not in any test.
+  // `T441t` asserts the import exists, which was the previous fault and is not
+  // this one.
+  //
+  // A seam that has never been rendered is the same built-but-unexercised
+  // shape, one level up. This renders it.
+  const regions: RoomShellProps<ReactNode> = {
+    objectState: <p>state</p>,
+    loopProgress: <p>progress</p>,
+    aiAnalysis: <p>analysis</p>,
+    decision: <p>decision</p>,
+    evidence: <p>evidence</p>,
+    activityTimeline: <p>timeline</p>,
+  };
+
+  afterEach(cleanup);
+
+  it('renders all six regions of the contract, and nothing else', () => {
+    render(hostRoom(regions));
+    for (const region of ROOM_REGIONS) {
+      expect(
+        screen.getByRole('region', { name: LABELS[region] }),
+        `${region} did not render`,
+      ).toBeDefined();
+    }
+    expect(screen.getAllByRole('region')).toHaveLength(ROOM_REGIONS.length);
+  });
+
+  it('delegates to EPIC-033’s RoomShell rather than laying regions out itself', () => {
+    const { container } = render(hostRoom(regions));
+    expect(
+      container.querySelector('[data-testid="room-shell"]'),
+      'the shell rendered a Room without EPIC-033’s component',
+    ).not.toBeNull();
+  });
+
+  it('cannot be handed a seventh region', () => {
+    // `FR-SHL-041`, enforced by the contract's own type rather than by review.
+    // `RoomShellProps` is `Record<RoomRegion, TNode>`, so an extra key is an
+    // excess-property error on an object literal — asserted here as a
+    // `@ts-expect-error`, which FAILS TO COMPILE if the extra key ever becomes
+    // acceptable.
+    // @ts-expect-error a seventh region is not representable
+    const seventh: RoomShellProps<ReactNode> = { ...regions, shellExtras: <p>no</p> };
+    expect(Object.keys(seventh)).toHaveLength(ROOM_REGIONS.length + 1);
+  });
+
+  it('keeps every region in the DOM at the narrowest viewport', () => {
+    // `UX-0042` via `EPIC-033`: `RoomShell` prioritises three regions at 360px
+    // and removes none. The shell must not change that by hosting — which it
+    // could only do by laying them out itself, which the assertion above
+    // forbids.
+    render(hostRoom(regions));
+    expect(screen.getAllByRole('region')).toHaveLength(6);
   });
 });
 

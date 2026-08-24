@@ -102,3 +102,11 @@
 .shell-drawer__panel {
   margin-top: var(--space-3);
 }
+
+/* `T442b`, `FR-SHL-061`/`FR-SHL-062` — the failure notice beside the project
+   selector. Rendered only when the set failed, so it never becomes furniture. */
+.shell-context__error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-danger);
+}

@@ -154,6 +154,70 @@ describe('T441r · FR-SHL-021 — a project reached by address is the project th
   });
 });
 
+describe('T442d · FR-SHL-021 — an address that scopes itself says so', () => {
+  // The second convergence pass (`F3`). `T441q` fixed the case where the
+  // address CARRIES the project. `/specifications/:id` and `/runs/:id` carry an
+  // identifier the shell cannot resolve to a project without fetching — and
+  // `FR-SHL-003` says the shell does not fetch domain data.
+  //
+  // That left a third option nobody chose: a breadcrumb reading "No project
+  // selected" over a review session that certainly belongs to one. Not false
+  // the way `F1` was, but not *"visible rather than implied"* either — it
+  // implies the page is unscoped when it is scoped by its own address.
+  //
+  // The decision (`T442e`): **keep the deep link working and state the limit**.
+  // Wrapping these in `RequireProject` would have made "send me the link"
+  // unanswerable, which is what `FR-SHL-017` exists to fix.
+  it.each([
+    ['/specifications/s1', 'Specifications'],
+    ['/runs/run_1', 'Runs'],
+  ])('%s says its scope comes from the link, not from the selector', async (path, area) => {
+    renderAt(path);
+    const crumb = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+    await waitFor(() => expect(crumb.textContent).toContain(area));
+    expect(crumb.textContent).toContain('Scoped by this link');
+    expect(crumb.textContent, 'it still implies the page is unscoped').not.toContain(
+      'No project selected',
+    );
+  });
+
+  it('says it even when a project IS selected, because the two may differ', async () => {
+    // The stronger half. Naming the selected project here would be a guess:
+    // this run may belong to another one entirely, and a breadcrumb that
+    // guesses is `F1` again with better odds.
+    renderAt('/runs/run_1');
+    await screen.findByRole('navigation', { name: 'Breadcrumb' });
+    await chooseProject();
+    const crumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    await waitFor(() => expect(crumb.textContent).toContain('Scoped by this link'));
+    expect(crumb.textContent).not.toContain(PROJECT.name);
+  });
+
+  it('leaves an address that does NOT scope itself alone', async () => {
+    renderAt('/runs');
+    const crumb = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+    await waitFor(() => expect(crumb.textContent).toContain('Runs'));
+    expect(crumb.textContent).toContain('No project selected');
+    expect(crumb.textContent).not.toContain('Scoped by this link');
+  });
+
+  it('leaves /projects/:projectId alone — that address DOES carry a project', async () => {
+    renderAt(`/projects/${PROJECT.id}`);
+    const crumb = await screen.findByRole('navigation', { name: 'Breadcrumb' });
+    await waitFor(() => expect(crumb.textContent).toContain(PROJECT.name));
+    expect(crumb.textContent).not.toContain('Scoped by this link');
+  });
+
+  it('and /specifications/:id/tasks is project-scoped, not address-scoped', async () => {
+    // `TasksView` already requires a project, because `TasksPage` needs one.
+    // Two sub-views under the same area, scoped differently — which is why the
+    // list is explicit rather than a prefix rule.
+    renderAt('/specifications/s1/tasks');
+    const main = await screen.findByRole('main');
+    await waitFor(() => expect(within(main).getByText('No project selected')).toBeTruthy());
+  });
+});
+
 describe('T438g · FR-SHL-024 — an area with no project says so', () => {
   it.each([
     ['/runs', 'Runs'],
