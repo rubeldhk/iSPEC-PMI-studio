@@ -47,6 +47,26 @@ adds **`D-30` — React Router, 7.x, MIT** to `specs/_shared/dependencies.md`, a
 `T993d` sets the precedent for how a new row is justified. **The register entry is a task in this
 Epic, ordered before the install.**
 
+> ### ⚠ Corrected at implementation — this paragraph's premise was false (`T442r`)
+>
+> **React Router was already in the register.** `D-13` has carried it since the platform
+> specification, declared at **6.x** for *"Client routing"* that nobody built — which is the same
+> reason this Epic exists. So `T436b` **raised `D-13` from 6.x to 7.x** and added a *"D-13 in
+> detail"* section to `specs/_shared/dependencies.md`. It did **not** add a `D-30`, and `D-30` is
+> not this Epic's identifier for anything.
+>
+> **`T993d` is the precedent, but for the opposite lesson.** `EPIC-030` read *"supertest is absent
+> from `backend/package.json`"* as *"supertest is absent from the register"* and nearly added a
+> `D-30` beside the `D-22` that already carried it. This paragraph made the identical mistake six
+> Epics later, and `dependencies.md` now records both.
+>
+> **Why the note rather than a rewrite.** The decision is unchanged and correct: React Router 7, in
+> declarative mode, for `FR-SHL-017`. What was wrong is the premise that the dependency was new, and
+> a research record that quietly became right would hide the thing worth learning — *the register is
+> ahead of the code more often than anyone expects, and `TS-001` asks about the register.*
+> `tests/governance/dependency-register.spec.ts` (`T436c`) is the check that now answers the
+> question instead of the reader.
+
 **Docs consulted**: Context7 `/remix-run/react-router` — *declarative mode setup in an existing Vite
 React 18 SPA; `BrowserRouter`/`Routes`/`Route`; `Outlet` for nested routes*. Confirmed current: v7
 imports from `react-router` (not `react-router-dom`), and `BrowserRouter` is the declarative entry
@@ -59,6 +79,14 @@ point.
 **Decision**: areas are declared in a single committed module — an ordered list of
 `{ id, group, label, path, epic, declared }` — imported by navigation, by the router, and by
 `FR-SHL-016`'s check.
+
+> **`declared` became `status` at implementation** (`C1`, and corrected here by `T442r` while
+> nearby). A boolean could not hold the state four areas were in: their Epic **is** declared and no
+> screen exists, so `declared: true` demanded an `element` nothing could supply while `FR-SHL-003`
+> forbade the shell supplying one. The field is now
+> `status: 'delivered' | 'declared-not-delivered' | 'undeclared'`, and `data-model.md` §1 carries the
+> reasoning. **The decision this section records — one committed list, three consumers — is
+> unchanged**; only the shape of one field is.
 
 **Rationale**: `FR-SHL-002` requires a delivered area to reach navigation with **no shell code
 change**, and `SC-SHL-004` measures that at zero. That is only true if navigation, routes and the
@@ -163,7 +191,7 @@ shell is not a page and would then be checked by `T200a` as one.
 
 | Question | Decision |
 |---|---|
-| How are areas addressable? | `R-036-1` — React Router v7, declarative mode; `D-30` registered first |
+| How are areas addressable? | `R-036-1` — React Router v7, declarative mode; **`D-13` raised 6.x → 7.x** before the install (`T442r` — this table said `D-30 registered first`, and the row already existed) |
 | How does an area reach navigation without a code change? | `R-036-2` — one committed registry, read by nav, routes and the check |
 | Do deep links survive a refresh in production? | `R-036-3` — in dev yes; production serving has no owner and is named, not assumed |
 | What can Home actually show? | `R-036-4` — approvals today; policy and evidence degrade visibly until `EPIC-031`/`032` |

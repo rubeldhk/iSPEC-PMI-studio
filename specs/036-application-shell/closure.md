@@ -1,7 +1,7 @@
 # Closure record: EPIC-036 Application Shell & Dashboard
 
 **Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o` and `T442q` ·
-**Session**: `/speckit-implement` and **six** `/speckit-converge` passes, executed in the worktree
+**Session**: `/speckit-implement` and **seven** `/speckit-converge` passes (counted 2026-08-24), executed in the worktree
 `.claude/worktrees/epic-036-application-shell` (concurrent-session rule, `T436a`)
 · **Released by**: PMI-DOC-006 v1.0 (APPROVED, `D-44`) · PMI-DOC-004 v2.0 `BR-0190`
 
@@ -13,7 +13,7 @@
 
 ## Work completed
 
-**99 of 101 tasks, across fourteen phases — counted 2026-08-24.** The two outstanding are a
+**100 of 102 tasks, across fifteen phases — counted 2026-08-24.** The two outstanding are a
 person's, not this session's, and are named below.
 
 > **The date is the point** (`T442q`). This line has been wrong twice, both times because a
@@ -38,6 +38,7 @@ person's, not this session's, and are named below.
 | **12 Convergence** | `T442k`–`T442m` | The reference stack defined, the analysis record corrected, this rewrite |
 | **13 Convergence** | `T442n`–`T442o` | Two figures Phase 12 left wrong — the coverage table and this Suites paragraph |
 | **14 Convergence** | `T442p`–`T442q` | A discharged handover still recorded as owed, and three documents disagreeing on how many handovers there are |
+| **15 Convergence** | `T442r` | `research.md` and `plan.md` still calling the dependency new, and naming a `D-30` that never existed |
 
 **Artifacts.**
 
@@ -90,12 +91,12 @@ person's, not this session's, and are named below.
 
 Typecheck clean.
 
-## What six convergence passes found, and what that says
+## What seven convergence passes found, and what that says
 
-**7 findings → 4 → 3 → 3 → 2 → 2.** The last **three** passes found **no code gap at all**; every
+**7 findings → 4 → 3 → 3 → 2 → 2 → 1.** The last **four** passes found **no code gap at all**; every
 finding in them was a record disagreeing with the code.
 
-**Four of the six passes found faults created by the pass before.** That is the part worth keeping,
+**Four of the seven passes found faults created by the pass before.** That is the part worth keeping,
 and it did not stop when the work moved from code into paperwork:
 
 1. **`T441v` split *loading* from *empty*** on the project selector and left **failed** collapsed
