@@ -167,6 +167,12 @@ on `localhost:5174`, API on `localhost:3000`, Postgres and Valkey in docker comp
 no runs, Chrome at 1280×720, machine otherwise idle. A different stack is a different number and
 this figure should not be quoted for one.
 
+> **`T442l` — the definition now lives with the criterion, not only with this run.** Naming the
+> stack *here* scoped the measurement that was taken and left the next one unscoped, which was the
+> half `analysis.md` `A1` actually asked for. **The reference local stack** is defined in
+> [../../specs/036-application-shell/quickstart.md](../../specs/036-application-shell/quickstart.md)
+> § *"The reference local stack"*; this section is the record of one run against it.
+
 **What it does not measure**: a production build (this is the dev server), a populated database
 (one project, zero runs), or a cold start. It measures what `SC-SHL-006` asks about — the shell's
 response to a navigation selection — and nothing else.

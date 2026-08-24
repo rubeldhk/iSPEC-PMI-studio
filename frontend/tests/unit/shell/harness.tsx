@@ -9,7 +9,7 @@
  * passing, because the cast is what hid it. Every method below is declared with
  * its real return type so the compiler checks the shape.
  */
-import { render, type RenderResult } from '@testing-library/react';
+import { fireEvent, render, screen, type RenderResult } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { vi } from 'vitest';
 import { App } from '../../../src/main';
@@ -112,6 +112,24 @@ export function stubApi({ signedIn = true, runs = [RUN], projects = [PROJECT] }:
       specificationCount: 0,
     })),
   } as unknown as ApiClient;
+}
+
+/**
+ * Click a control by its accessible name, **re-querying it at click time**.
+ *
+ * Three tests in this Epic have now failed under the full suite and passed
+ * alone for the same reason: a node captured by `findBy*` is stale by the time
+ * it is used, because React replaced it when an async load resolved. The click
+ * then lands on a detached element and does nothing, and the assertion fails
+ * several lines later for a reason that has nothing to do with what it tests.
+ *
+ * `DEF-030-002` is the same shape one Epic over — load-sensitive, green in
+ * isolation. Holding a DOM node across a state change is the cause here, so
+ * nothing holds one.
+ */
+export async function clickByName(name: string | RegExp): Promise<void> {
+  await screen.findByRole('button', { name });
+  fireEvent.click(screen.getByRole('button', { name }));
 }
 
 /** Render the REAL `App` at an address, through the real route tree. */
