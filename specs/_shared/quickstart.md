@@ -10,8 +10,8 @@ behind it is produced by `/speckit-implement`, never by hand (Constitution I).
 | Requirement | Notes |
 |-------------|-------|
 | Node.js 22 LTS + pnpm | Monorepo tooling |
-| Docker | PostgreSQL, Redis, and the engine sandbox (research R-006) |
-| PostgreSQL 16 + Redis | Via `docker compose`; not installed on the host |
+| Docker | PostgreSQL, Valkey, and the engine sandbox (research R-006) |
+| PostgreSQL 16 + Valkey 7 | Via `docker compose`; not installed on the host. **Valkey, not Redis** — `ADR-0003`, after the 2024 relicensing; it speaks the same protocol, so BullMQ and ioredis are unchanged |
 | AI provider credentials | **Only** for the real-engine smoke test. Every other check runs against the fixture adapter |
 
 Nothing here requires a Spec Kit installation on your machine — the `specify` CLI and AI agent CLI
@@ -21,7 +21,7 @@ live inside the engine container image.
 
 ```bash
 pnpm install
-docker compose up -d postgres redis
+docker compose up -d postgres valkey
 pnpm --filter backend prisma migrate dev
 pnpm --filter backend seed          # one workspace, one user
 pnpm dev                             # api :3000, worker, web :5173

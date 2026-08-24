@@ -26,10 +26,10 @@ paired unit-test task, written to fail first.
 
 ## F-11.1 · Developer enablement
 
-- [ ] T149a [P] Unit tests asserting the seed script is idempotent and creates exactly one workspace and one user with a hashed password, in `backend/tests/unit/core/seed.spec.ts`
-- [ ] T149 [P] Add seed script creating one workspace and user in `backend/prisma/seed.ts` (unit test: T149a)
-- [ ] T452 [P] Conformance check asserting `README.md` exists at the repository root and covers every setup step in `specs/_shared/quickstart.md` — the executable check Constitution V (v1.2.0) requires for a document output, since manual review does not satisfy the gate — in `tests/governance/readme-conformance.spec.ts`
-- [ ] T150 Create `README.md` at the repository root with developer setup documentation matching `specs/_shared/quickstart.md` — the repository currently holds only `readme.txt` (conformance check: T452)
+- [X] T149a [P] Unit tests asserting the seed script is idempotent and creates exactly one workspace and one user with a hashed password, in `backend/tests/unit/core/seed.spec.ts`
+- [X] T149 [P] Add seed script creating one workspace and user in `backend/prisma/seed.ts` (unit test: T149a) — plus the `seed` script in `backend/package.json` that `specs/_shared/quickstart.md` invokes, which did not exist either. Seeds the `org_default` organization first: `Workspace.organizationId` is an `onDelete: Restrict` relation, so a workspace without it fails on the foreign key on a fresh database
+- [X] T452 [P] Conformance check asserting `README.md` exists at the repository root and covers every setup step in `specs/_shared/quickstart.md` — the executable check Constitution V (v1.2.0) requires for a document output, since manual review does not satisfy the gate — in `tests/governance/readme-conformance.spec.ts`
+- [X] T150 Create `README.md` at the repository root with developer setup documentation matching `specs/_shared/quickstart.md` — the repository currently holds only `readme.txt` (conformance check: T452). *Writing it found `DEF-014-001`: the quickstart's Setup block said `docker compose up -d postgres redis` and `docker-compose.yml` defines no `redis` service — `ADR-0003` chose Valkey after the 2024 relicensing. Step two of the documented setup had never worked. Corrected in the quickstart and in the README, and `T452` now also refuses a README that starts a service the compose file does not define.*
 
 ## F-11.2 · Platform release gate
 
