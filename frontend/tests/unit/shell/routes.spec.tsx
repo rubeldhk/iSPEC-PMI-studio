@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { AREAS, deliveredAreas } from '../../../src/shell/areas';
 import { SUB_VIEWS } from '../../../src/shell/routes';
+import { ADDRESS_SCOPED_PATTERNS, isAddressScoped } from '../../../src/shell/shell-context';
 
 describe('T436j · routes come from the registry', () => {
   it('declares a sub-view set, or the assertions below prove nothing', () => {
@@ -50,6 +51,36 @@ describe('T436j · routes come from the registry', () => {
         SUB_VIEWS.some((view) => view.path === area.path),
         `${area.label} is not delivered but has a route`,
       ).toBe(false);
+    }
+  });
+
+  it('scopes every sub-view either by project or by its own address (T442d)', () => {
+    // The list in `shell-context.tsx` is explicit rather than a prefix rule,
+    // so it can drift from the route table. This is the assertion that stops
+    // it: every address-scoped pattern must match a real sub-view, and every
+    // sub-view must be one or the other on purpose.
+    const examples = SUB_VIEWS.map(({ path }) =>
+      path.replace(/:projectId/, 'p1').replace(/:specificationId/, 's1').replace(/:runId/, 'r1'),
+    );
+    for (const pattern of ADDRESS_SCOPED_PATTERNS) {
+      expect(
+        examples.some((example) => pattern.test(example)),
+        `${pattern} matches no route in the table`,
+      ).toBe(true);
+    }
+    // The two that scope themselves, and only those.
+    expect(examples.filter((example) => isAddressScoped(example)).sort()).toEqual([
+      '/runs/r1',
+      '/specifications/s1',
+    ]);
+  });
+
+  it('never treats an area path itself as address-scoped', () => {
+    // An area is scoped by the selector; only a sub-view carrying its own
+    // identifier is not. A pattern that swallowed `/runs` would silence the
+    // "No project selected" state the whole of `FR-SHL-024` rests on.
+    for (const area of AREAS) {
+      expect(isAddressScoped(area.path), `${area.path} is an area, not a sub-view`).toBe(false);
     }
   });
 

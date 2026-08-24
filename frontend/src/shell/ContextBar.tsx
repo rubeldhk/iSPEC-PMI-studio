@@ -20,14 +20,19 @@
  */
 import type { ReactElement } from 'react';
 import { Select } from '../design/components/Select';
-import { useCurrentArea, useCurrentProject, useShell } from './shell-context';
+import { useLocation } from 'react-router';
+import { isAddressScoped, useCurrentArea, useCurrentProject, useShell } from './shell-context';
 
 const NO_PROJECT = '';
 
 export function ContextBar(): ReactElement {
-  const { workspaceId, projects, projectsLoading, selectProject } = useShell();
+  const { workspaceId, projects, projectSet, selectProject } = useShell();
   const project = useCurrentProject();
   const area = useCurrentArea();
+  const { pathname } = useLocation();
+  // `T442e` — this address scopes itself, so the selector's project is not what
+  // the page is showing. Saying which project it IS would be a guess.
+  const addressScoped = isAddressScoped(pathname);
 
   return (
     <div className="shell-context">
@@ -37,24 +42,37 @@ export function ContextBar(): ReactElement {
       <nav aria-label="Breadcrumb" className="ds-topbar__location">
         <ol className="shell-context__crumbs">
           <li>{workspaceId === null ? 'No workspace' : `Workspace ${workspaceId}`}</li>
-          <li>{project === null ? 'No project selected' : project.name}</li>
+          <li>
+            {addressScoped
+              ? 'Scoped by this link'
+              : project === null
+                ? 'No project selected'
+                : project.name}
+          </li>
           <li aria-current="page">{area?.label ?? 'Not found'}</li>
         </ol>
       </nav>
 
       <label className="shell-context__project" htmlFor="shell-project">
         Project
-        {/* `T441u` (convergence `F3`) — three states, not two.
-            `projects.length === 0` meant both *"the workspace has none"* and
-            *"we have not been told yet"*, and the control rendered them
-            identically. `DEF-007-001` is the same ambiguity one layer down, and
-            it matters because only one of the two is worth waiting for.
-            `loading` marks the control `aria-busy` and disables it; the empty
-            answer gets its own option, and only once it IS the answer. */}
+        {/* Four things this control can be saying, and they are four different
+            things (`T441u`, `T442b`; `FR-SHL-060`, `FR-SHL-062`):
+
+              loading  we have not been told yet
+              failed   we asked and did not get an answer
+              empty    we asked, and this workspace has none
+              ready    here they are
+
+            It has been wrong twice — first collapsing loading into empty, then
+            failed into empty. `DEF-007-001` is the same ambiguity one layer
+            down, and `FR-SHL-062` calls the second one a defect rather than a
+            fallback. The union in `ShellContext` is what makes leaving one out
+            a missing branch instead of a silent default. */}
         <Select
           id="shell-project"
           value={project?.id ?? NO_PROJECT}
-          loading={projectsLoading}
+          loading={projectSet.kind === 'loading'}
+          invalid={projectSet.kind === 'failed'}
           onChange={(event): void => {
             // `FR-SHL-022` — switching does not touch the address, so the user
             // stays in the area they were in and its content re-scopes.
@@ -63,11 +81,13 @@ export function ContextBar(): ReactElement {
           }}
         >
           <option value={NO_PROJECT}>
-            {projectsLoading
+            {projectSet.kind === 'loading'
               ? 'Loading projects…'
-              : projects.length === 0
-                ? 'No projects in this workspace'
-                : 'No project selected'}
+              : projectSet.kind === 'failed'
+                ? 'Projects could not be loaded'
+                : projects.length === 0
+                  ? 'No projects in this workspace'
+                  : 'No project selected'}
           </option>
           {projects.map((candidate) => (
             <option key={candidate.id} value={candidate.id}>
@@ -76,6 +96,14 @@ export function ContextBar(): ReactElement {
           ))}
         </Select>
       </label>
+
+      {/* `FR-SHL-061` — what is absent AND what to do next. Rendered only when
+          the set failed: a notice that is always there is not a notice. */}
+      {projectSet.kind === 'failed' && (
+        <p className="shell-context__error" role="alert">
+          Projects could not be loaded — {projectSet.reason} Reload the page to try again.
+        </p>
+      )}
     </div>
   );
 }

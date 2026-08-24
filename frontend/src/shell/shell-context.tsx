@@ -31,24 +31,40 @@ export interface ShellContextValue {
   /** `BR-0001` — every data-bearing screen scopes to this. */
   readonly workspaceId: string | null;
   readonly projectId: string | null;
-  /** The set `EPIC-004` supplies. The shell renders it and decides nothing. */
-  readonly projects: readonly Project[];
   /**
-   * Whether that set is still being fetched (`T441u`, convergence finding
-   * `F3`).
+   * The set `EPIC-004` supplies, **and how the asking went**. The shell renders
+   * it and decides nothing about its contents.
    *
-   * An empty `projects` means two different things — *"the workspace has none"*
-   * and *"we have not been told yet"* — and the selector rendered them
-   * identically. `DEF-007-001` is the same ambiguity one layer down. Carrying
-   * the distinction here is what lets the control state which one it is.
+   * A union rather than a list plus flags, because this state has now been
+   * wrong twice. `T441u` split *loading* from *empty* using a boolean and left
+   * **failed** collapsed into empty, which `FR-SHL-062` calls a defect in as
+   * many words. Three states that cannot be held simultaneously are three
+   * variants; two booleans beside a list are four combinations, one of which is
+   * a lie.
+   *
+   * Same shape as `HomeModel.sources` for the same reason: make the absence
+   * part of the type, so it has to be rendered or deliberately discarded.
    */
-  readonly projectsLoading: boolean;
+  readonly projectSet: ProjectSetState;
+  /** Convenience for consumers that only need the contents. Never a claim. */
+  readonly projects: readonly Project[];
   readonly selectProject: (projectId: string | null) => void;
+}
+
+export type ProjectSetState =
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'ready'; readonly projects: readonly Project[] }
+  | { readonly kind: 'failed'; readonly reason: string };
+
+/** The contents, whatever state the set is in. */
+export function projectsOf(state: ProjectSetState): readonly Project[] {
+  return state.kind === 'ready' ? state.projects : [];
 }
 
 const ShellContextObject = createContext<ShellContextValue | null>(null);
 
-export interface ShellProviderProps extends Omit<ShellContextValue, 'workspaceId'> {
+export interface ShellProviderProps
+  extends Omit<ShellContextValue, 'workspaceId' | 'projects'> {
   children: ReactNode;
 }
 
@@ -56,8 +72,7 @@ export function ShellProvider({
   api,
   identity,
   projectId,
-  projects,
-  projectsLoading,
+  projectSet,
   selectProject,
   children,
 }: ShellProviderProps): ReactElement {
@@ -67,11 +82,12 @@ export function ShellProvider({
       identity,
       workspaceId: identity?.workspace.id ?? null,
       projectId,
-      projects,
-      projectsLoading,
+      projectSet,
+      // Derived, so `projects` and `projectSet` cannot disagree.
+      projects: projectsOf(projectSet),
       selectProject,
     }),
-    [api, identity, projectId, projects, projectsLoading, selectProject],
+    [api, identity, projectId, projectSet, selectProject],
   );
   return <ShellContextObject.Provider value={value}>{children}</ShellContextObject.Provider>;
 }
@@ -127,6 +143,38 @@ export function useCurrentArea(): Area | undefined {
 export function projectIdFromPathname(pathname: string): string | null {
   const match = /^\/projects\/([^/]+)/.exec(pathname);
   return match?.[1] === undefined ? null : decodeURIComponent(match[1]);
+}
+
+/**
+ * Addresses whose scope comes from **their own identifier**, not from the
+ * project selector — `T442e`, second convergence pass (`F3`).
+ *
+ * `/runs/:runId` shows one run. The shell cannot say which project that run
+ * belongs to without fetching, and `FR-SHL-003` says the shell does not fetch
+ * domain data. So it has three options and only one is honest:
+ *
+ *   - name the selected project — a guess, and `F1` again with better odds:
+ *     the run may belong to another project entirely;
+ *   - say "No project selected" — implies the page is unscoped when it is
+ *     scoped, by the address the user followed;
+ *   - **say where the scope came from.**
+ *
+ * Requiring a project instead, as `TasksView` does, was rejected: it makes
+ * *"send me the link"* unanswerable, which is the thing `FR-SHL-017` exists to
+ * fix.
+ *
+ * **Explicit, not a prefix rule.** `/specifications/:id/tasks` sits under the
+ * same area and IS project-scoped, because `TasksPage` needs a project. Two
+ * sub-views of one area, scoped differently — a rule over path shape would get
+ * one of them wrong. `T442d` asserts this list against the route table.
+ */
+export const ADDRESS_SCOPED_PATTERNS: readonly RegExp[] = Object.freeze([
+  /^\/specifications\/[^/]+$/,
+  /^\/runs\/[^/]+$/,
+]);
+
+export function isAddressScoped(pathname: string): boolean {
+  return ADDRESS_SCOPED_PATTERNS.some((pattern) => pattern.test(pathname));
 }
 
 /** The current project, resolved from the set `EPIC-004` supplies. */

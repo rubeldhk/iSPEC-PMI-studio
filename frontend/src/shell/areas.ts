@@ -244,11 +244,6 @@ export function deliveredAreas(): readonly Area[] {
   return AREAS.filter((area) => area.status === 'delivered');
 }
 
-/** The area whose path is exactly this, or undefined. */
-export function areaByPath(path: string): Area | undefined {
-  return AREAS.find((area) => area.path === path);
-}
-
 export const GROUP_LABELS: Readonly<Record<AreaGroup, string>> = Object.freeze({
   overview: 'Overview',
   'intent-and-control': 'Intent & Control',

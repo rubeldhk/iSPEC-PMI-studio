@@ -16,6 +16,19 @@ import { PROJECT, WORKSPACE_ID, renderAt, stubApi } from './harness';
 
 afterEach(cleanup);
 
+/**
+ * The project `<select>`, re-queried every time.
+ *
+ * **Never hold the node across a state change.** React can replace the element
+ * when the shell swaps frames, and a captured reference then sits detached
+ * while the live one updates — so the assertion waits forever on a node nothing
+ * is rendering into. It passes alone and fails under the full suite, which is
+ * the only reason it was ever found.
+ */
+function projectSelect(): HTMLElement {
+  return screen.getByLabelText('Project');
+}
+
 function breadcrumb(): HTMLElement {
   return screen.getByRole('navigation', { name: 'Breadcrumb' });
 }
@@ -35,12 +48,12 @@ describe('T438a · the scope is on screen, not behind a control', () => {
 
   it('offers the project selector as a rendered control on every screen', async () => {
     renderAt('/runs');
-    const select = await screen.findByLabelText('Project');
+    await screen.findByLabelText('Project');
     // The set arrives from `EPIC-004` asynchronously; the control is rendered
     // before it does, which is correct — an absent selector would be worse
     // than an empty one.
     await waitFor(() =>
-      expect(within(select as HTMLElement).getAllByRole('option').length).toBeGreaterThan(1),
+      expect(within(projectSelect()).getAllByRole('option').length).toBeGreaterThan(1),
     );
   });
 });
@@ -61,26 +74,26 @@ describe('T441v · FR-SHL-060 — the selector tells loading from empty', () => 
       async () => new Promise((resolve) => { release = resolve as never; }),
     );
     renderAt('/', api);
-    const select = await screen.findByLabelText('Project');
-    expect(select.getAttribute('aria-busy'), 'the control is not marked busy').toBe('true');
+    await screen.findByLabelText('Project');
+    expect(projectSelect().getAttribute('aria-busy'), 'the control is not marked busy').toBe('true');
     release?.([]);
   });
 
   it('stops being busy once the set has arrived', async () => {
     renderAt('/');
-    const select = await screen.findByLabelText('Project');
-    await waitFor(() => expect(select.getAttribute('aria-busy')).toBeNull());
+    await screen.findByLabelText('Project');
+    await waitFor(() => expect(projectSelect().getAttribute('aria-busy')).toBeNull());
   });
 
   it('says the workspace has no projects only once it knows that', async () => {
     // The other half: an empty answer is a real answer, and it reads
     // differently from a question that has not come back yet.
     renderAt('/', stubApi({ projects: [] }));
-    const select = await screen.findByLabelText('Project');
+    await screen.findByLabelText('Project');
     await waitFor(() =>
-      expect(within(select as HTMLElement).getByText(/no projects in this workspace/i)).toBeTruthy(),
+      expect(within(projectSelect()).getByText(/no projects in this workspace/i)).toBeTruthy(),
     );
-    expect(select.getAttribute('aria-busy')).toBeNull();
+    expect(projectSelect().getAttribute('aria-busy')).toBeNull();
   });
 
   it('does not claim the workspace is empty while it is still asking', async () => {
@@ -90,9 +103,61 @@ describe('T441v · FR-SHL-060 — the selector tells loading from empty', () => 
       async () => new Promise((resolve) => { release = resolve as never; }),
     );
     renderAt('/', api);
-    const select = await screen.findByLabelText('Project');
-    expect(within(select as HTMLElement).queryByText(/no projects in this workspace/i)).toBeNull();
+    await screen.findByLabelText('Project');
+    expect(within(projectSelect()).queryByText(/no projects in this workspace/i)).toBeNull();
     release?.([]);
+  });
+});
+
+describe('T442a · FR-SHL-062 — a failed project set reports as failed, not as empty', () => {
+  // The second convergence pass (`F1`), and a fault the first pass created.
+  // `T441v` separated *loading* from *empty* and left the third state
+  // undriven — so a request that **rejected** landed in `.catch` (list
+  // emptied) and then read as a workspace with no projects.
+  //
+  // `FR-SHL-062` does not leave room for interpretation: *"A failed section
+  // MUST report as failed. Rendering a failure as an empty state is a defect,
+  // not a fallback."* An untested state is how that sentence stayed true of
+  // the document and false of the code.
+  function failing(): ReturnType<typeof stubApi> {
+    const api = stubApi();
+    (api.listProjects as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('the projects service did not answer'),
+    );
+    return api;
+  }
+
+  it('does not claim the workspace is empty when the request failed', async () => {
+    renderAt('/', failing());
+    await screen.findByLabelText('Project');
+    await waitFor(() => expect(projectSelect().getAttribute('aria-busy')).toBeNull());
+    expect(
+      within(projectSelect()).queryByText(/no projects in this workspace/i),
+      'a failed request rendered as an empty workspace',
+    ).toBeNull();
+  });
+
+  it('says the set could not be loaded, and marks the control invalid', async () => {
+    renderAt('/', failing());
+    await screen.findByLabelText('Project');
+    await waitFor(() =>
+      expect(within(projectSelect()).getByText(/could not be loaded/i)).toBeTruthy(),
+    );
+    expect(projectSelect().getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('offers what to do next, and says why (FR-SHL-061)', async () => {
+    renderAt('/', failing());
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('did not answer');
+    expect(alert.textContent).toMatch(/reload/i);
+  });
+
+  it('shows no failure notice when the set loads', async () => {
+    // The other half — an alert that is always present is not an alert.
+    renderAt('/');
+    await screen.findByLabelText('Project');
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   });
 });
 
@@ -129,13 +194,13 @@ describe('T438c · the breadcrumb reads workspace / project / area (UX-0012)', (
 
   it('names the project once one is selected', async () => {
     renderAt('/');
-    const select = await screen.findByLabelText('Project');
+    await screen.findByLabelText('Project');
     // The option has to exist before it can be chosen: a `change` naming a
     // value the select does not have is silently ignored.
     await waitFor(() =>
-      expect(within(select as HTMLElement).getByRole('option', { name: PROJECT.name })).toBeTruthy(),
+      expect(within(projectSelect()).getByRole('option', { name: PROJECT.name })).toBeTruthy(),
     );
-    fireEvent.change(select, { target: { value: PROJECT.id } });
+    fireEvent.change(projectSelect(), { target: { value: PROJECT.id } });
     await waitFor(() => expect(breadcrumb().textContent).toContain(PROJECT.name));
   });
 
