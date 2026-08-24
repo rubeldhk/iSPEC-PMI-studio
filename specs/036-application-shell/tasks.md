@@ -62,11 +62,11 @@ identifier per phase, suffixed within it"*. **77 tasks** — `T441p` was added b
 and its check precede `T436d`. Recording a dependency after adopting it makes the register a
 transcript rather than a gate.
 
-- [ ] T436a Create the worktree `.claude/worktrees/epic-036-application-shell` from `main`, and label the session `EPIC-036 Application Shell`. Discharges the concurrent-session gate: this plan was written on `main`, so exclusivity did not hold at planning and only the worktree restores it. `EPIC-033` `T337a` is the precedent
-- [ ] T436b [P] Add **`D-30` — React Router, 7.x, MIT** to the *Runtime dependencies — frontend* table in `specs/_shared/dependencies.md`, with the purpose (`FR-SHL-017` addressable areas), the Context7 library id `/remix-run/react-router` recorded in `research.md` `R-036-1`, and a risk position. **Before any `package.json` change** (`TS-001`); `EPIC-030` `T993d` is the precedent for how a new row is justified (conformance check: T436c)
-- [ ] T436c [P] Write a failing conformance check in `tests/governance/dependency-register.spec.ts` asserting every runtime dependency declared in `frontend/package.json`, `backend/package.json` and `worker/package.json` has a row in `specs/_shared/dependencies.md`. **Nothing checks this today** — the register is maintained by discipline alone, which is why `TS-001` can be satisfied in prose and missed in fact. Include an anti-vacuity assertion that the scan reads a substantial number of packages
-- [ ] T436d Install `react-router@^7` as a runtime dependency of `frontend/package.json` and update `pnpm-lock.yaml`. Runs only after `T436b` and `T436c` are green
-- [ ] T436e [P] Extend `tests/governance/dependency-register.spec.ts` to assert the installed router resolves to `7.x` **and React remains pinned at `18.3.1`** (covers T436d). `R-036-1` claims v7 bridges React 18 to 19 rather than requiring 19; a silent React bump would falsify that claim without failing anything
+- [X] T436a Create the worktree `.claude/worktrees/epic-036-application-shell` from `main`, and label the session `EPIC-036 Application Shell`. Discharges the concurrent-session gate: this plan was written on `main`, so exclusivity did not hold at planning and only the worktree restores it. `EPIC-033` `T337a` is the precedent
+- [X] T436b [P] Add **`D-30` — React Router, 7.x, MIT** to the *Runtime dependencies — frontend* table in `specs/_shared/dependencies.md`, with the purpose (`FR-SHL-017` addressable areas), the Context7 library id `/remix-run/react-router` recorded in `research.md` `R-036-1`, and a risk position. **Before any `package.json` change** (`TS-001`); `EPIC-030` `T993d` is the precedent for how a new row is justified (conformance check: T436c)
+- [X] T436c [P] Write a failing conformance check in `tests/governance/dependency-register.spec.ts` asserting every runtime dependency declared in `frontend/package.json`, `backend/package.json` and `worker/package.json` has a row in `specs/_shared/dependencies.md`. **Nothing checks this today** — the register is maintained by discipline alone, which is why `TS-001` can be satisfied in prose and missed in fact. Include an anti-vacuity assertion that the scan reads a substantial number of packages
+- [X] T436d Install `react-router@^7` as a runtime dependency of `frontend/package.json` and update `pnpm-lock.yaml`. Runs only after `T436b` and `T436c` are green
+- [X] T436e [P] Extend `tests/governance/dependency-register.spec.ts` to assert the installed router resolves to `7.x` **and React remains pinned at `18.3.1`** (covers T436d). `R-036-1` claims v7 bridges React 18 to 19 rather than requiring 19; a silent React bump would falsify that claim without failing anything
 
 ---
 
@@ -76,15 +76,15 @@ transcript rather than a gate.
 when a delivered area is added, and that is only true if navigation, the route tree and the
 reachability check are all derived from one declaration (`R-036-2`).
 
-- [ ] T436f [P] Write failing tests for the area registry's invariants in `frontend/tests/unit/shell/areas.spec.ts` — every `id` unique, every `path` unique and leading `/`, no area in two groups, **`status: 'delivered'` implies an `element` and the other two statuses imply none**, every `declared-not-delivered` area names an owning `epic`, and all four groups present in PMI-DOC-006 §4.1 order
-- [ ] T436g Create the area registry in `frontend/src/shell/areas.ts` — the `Area` interface, the closed `AreaGroup` and `AreaStatus` unions, and the `AREAS` list carrying **all eighteen** areas of PMI-DOC-006 §4.1: **six `delivered`** (Home, Projects, Specifications, Plan & Tasks, Runs, Workspace & Administration), **three `declared-not-delivered`** (QA & Releases → `EPIC-014`/`EPIC-015`, Architecture & Decisions → `EPIC-016`, Governance → `EPIC-019`/`EPIC-021`/`EPIC-024`), and **nine `undeclared`**, per [contracts/shell-contract.md](./contracts/shell-contract.md) §1 (unit test: T436f)
-- [ ] T436h [P] Write failing tests for navigation derivation in `frontend/tests/unit/shell/navigation-model.spec.ts` — delivered areas only, grouped in registry order, and a group with no delivered area omitted entirely rather than rendered as an empty heading (`FR-SHL-015`)
-- [ ] T436i Implement `navigationModel()` in `frontend/src/shell/navigation-model.ts`, derived from `AREAS` and nothing else (unit test: T436h)
-- [ ] T436j [P] Write failing tests for route-tree derivation in `frontend/tests/unit/shell/routes.spec.ts` — one route per delivered area, no hand-written route, and `*` resolving to not-found
-- [ ] T436k Implement the derived route tree in `frontend/src/shell/routes.tsx` using `BrowserRouter`/`Routes`/`Route`/`Outlet` imported from `react-router` — **not `react-router-dom`**, which v7 supersedes (`R-036-1`, Context7 `/remix-run/react-router`) (unit test: T436j)
-- [ ] T436l Implement the not-found element in `frontend/src/shell/NotFound.tsx` — a real not-found, never a blank area inside working chrome. `DEF-001-006` is `EPIC-001`'s open defect and must not be made worse (unit test: T436j)
-- [ ] T436m [P] Write a failing architecture check in `frontend/tests/unit/shell/shell-boundaries.spec.ts` asserting **all six** prohibitions of [contracts/shell-contract.md](./contracts/shell-contract.md) §6 over `frontend/src/shell/` — **no area content: the shell hosts screens and implements none** (`FR-SHL-003`, the clause the `C1` finding put under pressure), no permission or role model, no second region vocabulary, no workspace/project selection rules, no persisted state, no design token values. Strip comments and string literals before scanning, as `EPIC-033` `T337s` established after a check failed on prose rather than on code
-- [ ] T436n [P] Add the anti-vacuity companion to `frontend/tests/unit/shell/shell-boundaries.spec.ts` (covers T436m) — a check that cannot fail is decoration, and this one scans a directory that starts nearly empty
+- [X] T436f [P] Write failing tests for the area registry's invariants in `frontend/tests/unit/shell/areas.spec.ts` — every `id` unique, every `path` unique and leading `/`, no area in two groups, **`status: 'delivered'` implies an `element` and the other two statuses imply none**, every `declared-not-delivered` area names an owning `epic`, and all four groups present in PMI-DOC-006 §4.1 order
+- [X] T436g Create the area registry in `frontend/src/shell/areas.ts` — the `Area` interface, the closed `AreaGroup` and `AreaStatus` unions, and the `AREAS` list carrying **all eighteen** areas of PMI-DOC-006 §4.1: **six `delivered`** (Home, Projects, Specifications, Plan & Tasks, Runs, Workspace & Administration), **three `declared-not-delivered`** (QA & Releases → `EPIC-014`/`EPIC-015`, Architecture & Decisions → `EPIC-016`, Governance → `EPIC-019`/`EPIC-021`/`EPIC-024`), and **nine `undeclared`**, per [contracts/shell-contract.md](./contracts/shell-contract.md) §1 (unit test: T436f)
+- [X] T436h [P] Write failing tests for navigation derivation in `frontend/tests/unit/shell/navigation-model.spec.ts` — delivered areas only, grouped in registry order, and a group with no delivered area omitted entirely rather than rendered as an empty heading (`FR-SHL-015`)
+- [X] T436i Implement `navigationModel()` in `frontend/src/shell/navigation-model.ts`, derived from `AREAS` and nothing else (unit test: T436h)
+- [X] T436j [P] Write failing tests for route-tree derivation in `frontend/tests/unit/shell/routes.spec.tsx` — one route per delivered area, no hand-written route, and `*` resolving to not-found
+- [X] T436k Implement the derived route tree in `frontend/src/shell/routes.tsx` using `BrowserRouter`/`Routes`/`Route`/`Outlet` imported from `react-router` — **not `react-router-dom`**, which v7 supersedes (`R-036-1`, Context7 `/remix-run/react-router`) (unit test: T436j)
+- [X] T436l Implement the not-found element in `frontend/src/shell/NotFound.tsx` — a real not-found, never a blank area inside working chrome. `DEF-001-006` is `EPIC-001`'s open defect and must not be made worse (unit test: T436j)
+- [X] T436m [P] Write a failing architecture check in `frontend/tests/unit/shell/shell-boundaries.spec.ts` asserting **all six** prohibitions of [contracts/shell-contract.md](./contracts/shell-contract.md) §6 over `frontend/src/shell/` — **no area content: the shell hosts screens and implements none** (`FR-SHL-003`, the clause the `C1` finding put under pressure), no permission or role model, no second region vocabulary, no workspace/project selection rules, no persisted state, no design token values. Strip comments and string literals before scanning, as `EPIC-033` `T337s` established after a check failed on prose rather than on code
+- [X] T436n [P] Add the anti-vacuity companion to `frontend/tests/unit/shell/shell-boundaries.spec.ts` (covers T436m) — a check that cannot fail is decoration, and this one scans a directory that starts nearly empty
 
 ---
 
@@ -96,23 +96,23 @@ area reachable from anywhere, every area addressable.
 **Independent test**: sign in and reach all **six delivered** areas from navigation without using
 browser history or typing a URL; then open one area's address in a new tab and refresh it.
 
-- [ ] T437a [P] [US1] Write failing tests for primary navigation in `frontend/tests/unit/shell/Navigation.spec.tsx` — four groups in §4.1 order, delivered areas only, the current area marked, and navigation still present after selecting an area (`FR-SHL-010`, `FR-SHL-012`, `FR-SHL-013`)
-- [ ] T437b [US1] Implement `frontend/src/shell/Navigation.tsx`, rendering `navigationModel()` with `EPIC-029`'s components consumed unchanged (unit test: T437a)
-- [ ] T437c [P] [US1] Write failing tests for the shell frame in `frontend/tests/unit/shell/AppShell.spec.tsx` — navigation, context bar and `<Outlet />` composed, and the frame surviving an area change
-- [ ] T437d [US1] Implement `frontend/src/shell/AppShell.tsx` (unit test: T437c)
-- [ ] T437e [P] [US1] Write failing tests in `frontend/tests/unit/shell/app-entry.spec.tsx` asserting the application root mounts the router and that **no `useState` view union remains** — the shape `main.tsx` has carried since `T003`
-- [ ] T437f [US1] Replace the view union in `frontend/src/main.tsx` with the router, removing `View`, `LOCATION` and the six view kinds `DEF-010-001`'s remediation added (unit test: T437e)
-- [ ] T437g [US1] Remove `T200e`'s four navigation buttons from the project view in `frontend/src/pages/`, superseded by primary navigation (`R-036-5`) (unit test: T437e)
-- [ ] T437h [P] [US1] Write the failing `FR-SHL-016` reachability check in `frontend/tests/unit/shell/area-reachability.spec.tsx` — drive the **real** `App` through its real entry point and assert every `status: 'delivered'` area is reachable from primary navigation by clicking. Constitution XI Tier 1; `G-UX-01`'s navigation half
-- [ ] T437i [US1] Make `T437h` pass, and record in its header what it does **not** answer — the import-graph question belongs to `T200a`, which is kept and joined rather than replaced (`R-036-5`)
-- [ ] T437j [US1] Mutation-verify `T437h` by removing one delivered area's route and observing the check fail **naming that area**, then restore. `SC-SHL-001` states this as a number and `T200c` is the standard. The guard `DEF-010-001` did not have
-- [ ] T437k [P] [US1] Write a failing test asserting **zero** areas that are not `delivered` appear in navigation — not disabled, not greyed, not a placeholder — covering the nine `undeclared` (`UX-0060`) **and** the three `declared-not-delivered` alike (`SC-SHL-002`) — in `frontend/tests/unit/shell/Navigation.spec.tsx`
-- [ ] T437l [P] [US1] Write failing tests for addressability in `frontend/tests/unit/shell/addresses.spec.tsx` — every delivered area resolves from its own address, a re-mount at that address lands in the same area, and back returns to the previous location (`SC-SHL-010`)
-- [ ] T437m [US1] Implement per-area addresses and key sub-view routes in `frontend/src/shell/routes.tsx` per the route table in [contracts/shell-contract.md](./contracts/shell-contract.md) §2 (unit test: T437l)
-- [ ] T437n [P] [US1] Write a failing test asserting an address naming an area that is not `delivered` answers not-found rather than an empty area — asserted for **both** remaining statuses, since *"forbidden to build"* and *"not built yet"* must give a user the same answer (`SC-SHL-011`, `FR-SHL-017`) — in `frontend/tests/unit/shell/addresses.spec.tsx`
-- [ ] T437o [US1] Replace `frontend/tests/unit/shell-page-routes.spec.tsx` with the shell's own route coverage, and **keep `frontend/tests/unit/design/page-reachability.spec.ts` untouched** — `T200a` answers a different question (`R-036-5`)
-- [ ] T437p [P] [US1] Write a check asserting any delivered area is reachable from any other in **at most two actions** (`SC-SHL-003`) in `frontend/tests/unit/shell/area-reachability.spec.tsx`
-- [ ] T437q [P] [US1] Write the `SC-SHL-004` check in `frontend/tests/unit/shell/registry-extensibility.spec.ts` — moving an area to `delivered` in `AREAS` puts it in navigation and gives it a route **with no other file changed**, which is exactly what `EPIC-014`, `EPIC-016` and `EPIC-019` will each do. Assert it by construction over a synthetic registry, not by reading a diff
+- [X] T437a [P] [US1] Write failing tests for primary navigation in `frontend/tests/unit/shell/Navigation.spec.tsx` — four groups in §4.1 order, delivered areas only, the current area marked, and navigation still present after selecting an area (`FR-SHL-010`, `FR-SHL-012`, `FR-SHL-013`)
+- [X] T437b [US1] Implement `frontend/src/shell/Navigation.tsx`, rendering `navigationModel()` with `EPIC-029`'s components consumed unchanged (unit test: T437a)
+- [X] T437c [P] [US1] Write failing tests for the shell frame in `frontend/tests/unit/shell/AppShell.spec.tsx` — navigation, context bar and `<Outlet />` composed, and the frame surviving an area change
+- [X] T437d [US1] Implement `frontend/src/shell/AppShell.tsx` (unit test: T437c)
+- [X] T437e [P] [US1] Write failing tests in `frontend/tests/unit/shell/app-entry.spec.tsx` asserting the application root mounts the router and that **no `useState` view union remains** — the shape `main.tsx` has carried since `T003`
+- [X] T437f [US1] Replace the view union in `frontend/src/main.tsx` with the router, removing `View`, `LOCATION` and the six view kinds `DEF-010-001`'s remediation added (unit test: T437e)
+- [X] T437g [US1] Remove `T200e`'s four navigation buttons from the project view in `frontend/src/pages/`, superseded by primary navigation (`R-036-5`) (unit test: T437e)
+- [X] T437h [P] [US1] Write the failing `FR-SHL-016` reachability check in `frontend/tests/unit/shell/area-reachability.spec.tsx` — drive the **real** `App` through its real entry point and assert every `status: 'delivered'` area is reachable from primary navigation by clicking. Constitution XI Tier 1; `G-UX-01`'s navigation half
+- [X] T437i [US1] Make `T437h` pass, and record in its header what it does **not** answer — the import-graph question belongs to `T200a`, which is kept and joined rather than replaced (`R-036-5`)
+- [X] T437j [US1] Mutation-verify `T437h` by removing one delivered area's route and observing the check fail **naming that area**, then restore. `SC-SHL-001` states this as a number and `T200c` is the standard. The guard `DEF-010-001` did not have
+- [X] T437k [P] [US1] Write a failing test asserting **zero** areas that are not `delivered` appear in navigation — not disabled, not greyed, not a placeholder — covering the nine `undeclared` (`UX-0060`) **and** the three `declared-not-delivered` alike (`SC-SHL-002`) — in `frontend/tests/unit/shell/Navigation.spec.tsx`
+- [X] T437l [P] [US1] Write failing tests for addressability in `frontend/tests/unit/shell/addresses.spec.tsx` — every delivered area resolves from its own address, a re-mount at that address lands in the same area, and back returns to the previous location (`SC-SHL-010`)
+- [X] T437m [US1] Implement per-area addresses and key sub-view routes in `frontend/src/shell/routes.tsx` per the route table in [contracts/shell-contract.md](./contracts/shell-contract.md) §2 (unit test: T437l)
+- [X] T437n [P] [US1] Write a failing test asserting an address naming an area that is not `delivered` answers not-found rather than an empty area — asserted for **both** remaining statuses, since *"forbidden to build"* and *"not built yet"* must give a user the same answer (`SC-SHL-011`, `FR-SHL-017`) — in `frontend/tests/unit/shell/addresses.spec.tsx`
+- [X] T437o [US1] Replace `T200e`'s route spec with the shell's own coverage in `frontend/tests/unit/shell/area-reachability.spec.tsx` and `frontend/tests/unit/shell/addresses.spec.tsx`, and **keep `frontend/tests/unit/design/page-reachability.spec.ts` untouched** — `T200a` answers a different question (`R-036-5`). `EPIC-010`'s `T200e` line records the supersession, because `G-26-14` reads it and a ticked task may not name a file that is gone
+- [X] T437p [P] [US1] Write a check asserting any delivered area is reachable from any other in **at most two actions** (`SC-SHL-003`) in `frontend/tests/unit/shell/area-reachability.spec.tsx`
+- [X] T437q [P] [US1] Write the `SC-SHL-004` check in `frontend/tests/unit/shell/registry-extensibility.spec.ts` — moving an area to `delivered` in `AREAS` puts it in navigation and gives it a route **with no other file changed**, which is exactly what `EPIC-014`, `EPIC-016` and `EPIC-019` will each do. Assert it by construction over a synthetic registry, not by reading a diff
 
 ---
 
@@ -123,15 +123,15 @@ plausible screen.
 
 **Independent test**: switch project from inside an area; the area stays and its content re-scopes.
 
-- [ ] T438a [P] [US2] Write failing tests for the context bar in `frontend/tests/unit/shell/ContextBar.spec.tsx` — workspace and project visible without opening a menu, on every data-bearing screen (`FR-SHL-020`, `FR-SHL-021`)
-- [ ] T438b [US2] Implement `frontend/src/shell/ContextBar.tsx`, reading the signed-in identity's workspace from `GET /v1/auth/me` via the existing `frontend/src/services/api.ts` client (unit test: T438a)
-- [ ] T438c [P] [US2] Write failing tests for the breadcrumb reading `workspace / project / area` (`FR-SHL-023`, `UX-0012`) in `frontend/tests/unit/shell/ContextBar.spec.tsx`
-- [ ] T438d [US2] Implement the breadcrumb in `frontend/src/shell/ContextBar.tsx`, deriving the area from the matched route — **never from state held beside the URL** (`data-model.md` §3) (unit test: T438c)
-- [ ] T438e [P] [US2] Write failing tests in `frontend/tests/unit/shell/shell-context.spec.tsx` — switching project keeps the current area and re-scopes its content (`FR-SHL-022`)
-- [ ] T438f [US2] Implement `ShellContext` in `frontend/src/shell/shell-context.tsx` carrying `workspaceId` and `projectId` only, with `areaId` derived from the address (unit test: T438e)
-- [ ] T438g [P] [US2] Write a failing test for an area entered with no project selected — it says so and offers the next step, rather than rendering empty (`FR-SHL-024`). `DEF-007-001` is the same class one layer down
-- [ ] T438h [US2] Implement the no-project state in `frontend/src/shell/AppShell.tsx` (unit test: T438g)
-- [ ] T438i [P] [US2] Extend `frontend/tests/unit/shell/shell-boundaries.spec.ts` to assert the shell **renders** the workspace/project selector and defines no selectable set or scoping rule — `EPIC-004`'s, consumed (`FR-SHL-025`). `prototype-parity.md` declines this control to the shell precisely because *"the shell may not invent its selector"*
+- [X] T438a [P] [US2] Write failing tests for the context bar in `frontend/tests/unit/shell/ContextBar.spec.tsx` — workspace and project visible without opening a menu, on every data-bearing screen (`FR-SHL-020`, `FR-SHL-021`)
+- [X] T438b [US2] Implement `frontend/src/shell/ContextBar.tsx`, reading the signed-in identity's workspace from `GET /v1/auth/me` via the existing `frontend/src/services/api.ts` client (unit test: T438a)
+- [X] T438c [P] [US2] Write failing tests for the breadcrumb reading `workspace / project / area` (`FR-SHL-023`, `UX-0012`) in `frontend/tests/unit/shell/ContextBar.spec.tsx`
+- [X] T438d [US2] Implement the breadcrumb in `frontend/src/shell/ContextBar.tsx`, deriving the area from the matched route — **never from state held beside the URL** (`data-model.md` §3) (unit test: T438c)
+- [X] T438e [P] [US2] Write failing tests in `frontend/tests/unit/shell/shell-context.spec.tsx` — switching project keeps the current area and re-scopes its content (`FR-SHL-022`)
+- [X] T438f [US2] Implement `ShellContext` in `frontend/src/shell/shell-context.tsx` carrying `workspaceId` and `projectId` only, with `areaId` derived from the address (unit test: T438e)
+- [X] T438g [P] [US2] Write a failing test for an area entered with no project selected — it says so and offers the next step, rather than rendering empty (`FR-SHL-024`). `DEF-007-001` is the same class one layer down
+- [X] T438h [US2] Implement the no-project state in `frontend/src/shell/AppShell.tsx` (unit test: T438g)
+- [X] T438i [P] [US2] Extend `frontend/tests/unit/shell/shell-boundaries.spec.ts` to assert the shell **renders** the workspace/project selector and defines no selectable set or scoping rule — `EPIC-004`'s, consumed (`FR-SHL-025`). `prototype-parity.md` declines this control to the shell precisely because *"the shell may not invent its selector"*
 
 ---
 
@@ -147,18 +147,18 @@ the review — **and** see the other two sections state that their sources do no
 > nothing else would read as *"nothing is blocked"*. Stubbing them is rejected outright — a
 > fabricated policy block is worse than an absent one.
 
-- [ ] T439a [P] [US3] Write failing tests for the Home model in `frontend/tests/unit/shell/home-model.spec.ts` — `sources` **always carries three entries and is not optional**, and a model carrying only `items` does not type-check
-- [ ] T439b [US3] Implement `HomeModel`, `AttentionItem` and `SourceStatus` in `frontend/src/shell/home-model.ts` per [contracts/shell-contract.md](./contracts/shell-contract.md) §4 (unit test: T439a)
-- [ ] T439c [P] [US3] Write failing tests for the pending-approvals source in `frontend/tests/unit/shell/home-sources.spec.ts` — `GET /v1/projects/:projectId/runs` filtered to `awaiting_review`, then `GET /v1/runs/:id/review` for unanswered questions
-- [ ] T439d [US3] Implement the approvals source in `frontend/src/shell/home-sources.ts` against the existing `EPIC-023` endpoints. **No new endpoint** — `FR-SHL-034` forbids an aggregation endpoint no other client can call (unit test: T439c)
-- [ ] T439e [P] [US3] Write failing tests asserting the policy-block and missing-evidence sources report `unavailable` **naming `EPIC-031` and `EPIC-032`**, and that neither contributes a fabricated item, in `frontend/tests/unit/shell/home-sources.spec.ts`
-- [ ] T439f [US3] Implement the two unavailable sources in `frontend/src/shell/home-sources.ts` — degrade visibly and say so in the payload, the posture `EPIC-033`'s unbound `AgentGateway` takes (unit test: T439e)
-- [ ] T439g [P] [US3] Write failing tests for Home's four states in `frontend/tests/unit/shell/Home.spec.tsx` — loading, empty, error and partial distinguishable from one another by driving each state, not by inspection (`FR-SHL-060`, `SC-SHL-005`)
-- [ ] T439h [US3] Implement `frontend/src/shell/Home.tsx` (unit test: T439g)
-- [ ] T439i [P] [US3] Mutation-verify `FR-SHL-062` — make a failing section render as an empty state and confirm the suite fails; then restore. Recorded in `frontend/tests/unit/shell/Home.spec.tsx`
-- [ ] T439j [P] [US3] Write failing tests asserting each attention item names what it is, which project it belongs to, and an `href` that is an `Area.path` rather than an invented route (`FR-SHL-031`)
-- [ ] T439k [US3] Implement item rendering in `frontend/src/shell/Home.tsx`, carrying **the policy that produced** a policy block rather than merely that something is blocked (`FR-SHL-033`, `BR-0174`) (unit test: T439j)
-- [ ] T439l [P] [US3] Extend `frontend/tests/unit/shell/shell-boundaries.spec.ts` to assert Home introduces no store of its own and no shell-only endpoint (`FR-SHL-034`, `PP-007`)
+- [X] T439a [P] [US3] Write failing tests for the Home model in `frontend/tests/unit/shell/home-model.spec.ts` — `sources` **always carries three entries and is not optional**, and a model carrying only `items` does not type-check
+- [X] T439b [US3] Implement `HomeModel`, `AttentionItem` and `SourceStatus` in `frontend/src/shell/home-model.ts` per [contracts/shell-contract.md](./contracts/shell-contract.md) §4 (unit test: T439a)
+- [X] T439c [P] [US3] Write failing tests for the pending-approvals source in `frontend/tests/unit/shell/home-sources.spec.ts` — `GET /v1/projects/:projectId/runs` filtered to `awaiting_review`, then `GET /v1/runs/:id/review` for unanswered questions
+- [X] T439d [US3] Implement the approvals source in `frontend/src/shell/home-sources.ts` against the existing `EPIC-023` endpoints. **No new endpoint** — `FR-SHL-034` forbids an aggregation endpoint no other client can call (unit test: T439c)
+- [X] T439e [P] [US3] Write failing tests asserting the policy-block and missing-evidence sources report `unavailable` **naming `EPIC-031` and `EPIC-032`**, and that neither contributes a fabricated item, in `frontend/tests/unit/shell/home-sources.spec.ts`
+- [X] T439f [US3] Implement the two unavailable sources in `frontend/src/shell/home-sources.ts` — degrade visibly and say so in the payload, the posture `EPIC-033`'s unbound `AgentGateway` takes (unit test: T439e)
+- [X] T439g [P] [US3] Write failing tests for Home's four states in `frontend/tests/unit/shell/Home.spec.tsx` — loading, empty, error and partial distinguishable from one another by driving each state, not by inspection (`FR-SHL-060`, `SC-SHL-005`)
+- [X] T439h [US3] Implement `frontend/src/shell/Home.tsx` (unit test: T439g)
+- [X] T439i [P] [US3] Mutation-verify `FR-SHL-062` — make a failing section render as an empty state and confirm the suite fails; then restore. Recorded in `frontend/tests/unit/shell/Home.spec.tsx`
+- [X] T439j [P] [US3] Write failing tests asserting each attention item names what it is, which project it belongs to, and an `href` that is an `Area.path` rather than an invented route (`FR-SHL-031`)
+- [X] T439k [US3] Implement item rendering in `frontend/src/shell/Home.tsx`, carrying **the policy that produced** a policy block rather than merely that something is blocked (`FR-SHL-033`, `BR-0174`) (unit test: T439j)
+- [X] T439l [P] [US3] Extend `frontend/tests/unit/shell/shell-boundaries.spec.ts` to assert Home introduces no store of its own and no shell-only endpoint (`FR-SHL-034`, `PP-007`)
 
 ---
 
@@ -170,15 +170,15 @@ the review — **and** see the other two sections state that their sources do no
 **Independent test**: at a 360px viewport, reach three areas in different groups using only the
 keyboard.
 
-- [ ] T440a [P] [US4] Write failing tests for the drawer in `frontend/tests/unit/shell/NavigationDrawer.spec.tsx` — below the narrow breakpoint navigation collapses into a drawer opened by a persistent control, carrying the **full grouped list**, with every delivered area reachable (`FR-SHL-054`)
-- [ ] T440b [US4] Implement `frontend/src/shell/NavigationDrawer.tsx` — one navigation model at every width, so there is one thing to build, test and describe (unit test: T440a)
-- [ ] T440c [P] [US4] Write failing tests asserting focus order follows visible order with a visible indicator throughout, drawer included (`FR-SHL-052`), in `frontend/tests/unit/shell/shell-a11y.spec.tsx`
-- [ ] T440d [US4] Implement focus management across `frontend/src/shell/AppShell.tsx` and `frontend/src/shell/NavigationDrawer.tsx` (unit test: T440c)
-- [ ] T440e [P] [US4] Write failing tests asserting groups are announced as groups and the current area as current (`FR-SHL-053`) in `frontend/tests/unit/shell/shell-a11y.spec.tsx`
-- [ ] T440f [US4] Implement the navigation landmark and grouping semantics in `frontend/src/shell/Navigation.tsx` using native elements and ARIA per PMI-DOC-005 (unit test: T440e)
-- [ ] T440g [P] [US4] Add an `axe-core` assertion of **zero violations on the shell in both themes** (`SC-SHL-008`) to `frontend/tests/unit/shell/shell-a11y.spec.tsx`
-- [ ] T440h [P] [US4] Write a check asserting the shell sets **no minimum viewport above 360px** (`FR-SHL-051`, `G-UX-03`) in `frontend/tests/unit/shell/shell-boundaries.spec.ts`
-- [ ] T440i [P] [US4] Write the `SC-SHL-007` check — every `delivered` area reachable by keyboard alone at a 360px viewport, with all eighteen areas set to `delivered` in a synthetic registry so the drawer is exercised at its worst case
+- [X] T440a [P] [US4] Write failing tests for the drawer in `frontend/tests/unit/shell/NavigationDrawer.spec.tsx` — below the narrow breakpoint navigation collapses into a drawer opened by a persistent control, carrying the **full grouped list**, with every delivered area reachable (`FR-SHL-054`)
+- [X] T440b [US4] Implement `frontend/src/shell/NavigationDrawer.tsx` — one navigation model at every width, so there is one thing to build, test and describe (unit test: T440a)
+- [X] T440c [P] [US4] Write failing tests asserting focus order follows visible order with a visible indicator throughout, drawer included (`FR-SHL-052`), in `frontend/tests/unit/shell/shell-a11y.spec.tsx`
+- [X] T440d [US4] Implement focus management across `frontend/src/shell/AppShell.tsx` and `frontend/src/shell/NavigationDrawer.tsx` (unit test: T440c)
+- [X] T440e [P] [US4] Write failing tests asserting groups are announced as groups and the current area as current (`FR-SHL-053`) in `frontend/tests/unit/shell/shell-a11y.spec.tsx`
+- [X] T440f [US4] Implement the navigation landmark and grouping semantics in `frontend/src/shell/Navigation.tsx` using native elements and ARIA per PMI-DOC-005 (unit test: T440e)
+- [X] T440g [P] [US4] Add an `axe-core` assertion of **zero violations on the shell in both themes** (`SC-SHL-008`) to `frontend/tests/unit/shell/shell-a11y.spec.tsx`
+- [X] T440h [P] [US4] Write a check asserting the shell sets **no minimum viewport above 360px** (`FR-SHL-051`, `G-UX-03`) in `frontend/tests/unit/shell/shell-boundaries.spec.ts`
+- [X] T440i [P] [US4] Write the `SC-SHL-007` check — every `delivered` area reachable by keyboard alone at a 360px viewport, with all eighteen areas set to `delivered` in a synthetic registry so the drawer is exercised at its worst case
 
 ---
 
@@ -189,27 +189,27 @@ keyboard.
 **Independent test**: render a Room inside the shell and compare its region vocabulary against
 `packages/room-contract` by comparison, not by review.
 
-- [ ] T441a [P] [US5] Write failing tests in `frontend/tests/unit/shell/room-hosting.spec.tsx` — a Room rendered inside the shell presents the six regions of `ROOM_REGIONS` and cannot present a seventh (`FR-SHL-040`, `FR-SHL-041`)
-- [ ] T441b [US5] Implement Room hosting in `frontend/src/shell/routes.tsx`, supplying the frame and letting the Room supply the regions — neither restating the other (unit test: T441a)
-- [ ] T441c [P] [US5] Add a conformance check comparing any region name declared under `frontend/src/shell/` against `ROOM_REGIONS` **by comparison rather than review**. `EPIC-034` `T994t` and `EPIC-035` `T998y` compare against the same vocabulary; a seventh region declared here would make their comparisons pass against a vocabulary that had quietly grown
-- [ ] T441d [P] [US5] Write a failing test in `frontend/tests/unit/shell/room-hosting.spec.tsx` asserting `@pmi/room-contract` is imported rather than re-derived, and that `frontend/src/rooms/` is consumed unmodified (`FR-SHL-042`, `FR-SHL-043`)
-- [ ] T441e [US5] Adopt `RoomShellProps` in `frontend/src/shell/AppShell.tsx` (unit test: T441d)
+- [X] T441a [P] [US5] Write failing tests in `frontend/tests/unit/shell/room-hosting.spec.tsx` — a Room rendered inside the shell presents the six regions of `ROOM_REGIONS` and cannot present a seventh (`FR-SHL-040`, `FR-SHL-041`)
+- [X] T441b [US5] Implement Room hosting in `frontend/src/shell/routes.tsx`, supplying the frame and letting the Room supply the regions — neither restating the other (unit test: T441a)
+- [X] T441c [P] [US5] Add a conformance check comparing any region name declared under `frontend/src/shell/` against `ROOM_REGIONS` **by comparison rather than review**. `EPIC-034` `T994t` and `EPIC-035` `T998y` compare against the same vocabulary; a seventh region declared here would make their comparisons pass against a vocabulary that had quietly grown
+- [X] T441d [P] [US5] Write a failing test in `frontend/tests/unit/shell/room-hosting.spec.tsx` asserting `@pmi/room-contract` is imported rather than re-derived, and that `frontend/src/rooms/` is consumed unmodified (`FR-SHL-042`, `FR-SHL-043`)
+- [X] T441e [US5] Adopt `RoomShellProps` in `frontend/src/shell/AppShell.tsx` (unit test: T441d)
 
 ---
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T441f [P] Measure `SC-SHL-006` — navigation responds to a selection in under 1s at p95 **on the reference local stack**, asserted in isolation and recorded with the stack named. `DEF-030-002` records a p95 assertion that fails under suite load and passes alone; scope this one or inherit that ambiguity
+- [X] T441f [P] Measure `SC-SHL-006` — navigation responds to a selection in under 1s at p95 **on the reference local stack**, asserted in isolation and recorded with the stack named. `DEF-030-002` records a p95 assertion that fails under suite load and passes alone; scope this one or inherit that ambiguity
 - [ ] T441g [P] Verify `SC-SHL-009` — a user can answer *"which workspace and project am I in?"* from the screen in under 5 seconds without opening a menu, recorded in the quickstart run
-- [ ] T441h [P] Verify `SC-SHL-005` across **every** shell-owned surface — Home, the no-project state, the drawer and the not-found route each render loading, empty, error and partial distinguishably
-- [ ] T441i Run [quickstart.md](./quickstart.md) scenarios 1–6 against the running stack, including both required mutation checks, and record the outcomes
-- [ ] T441j Produce the Constitution XI Tier 2 **driven transcript** — sign in → Home → each of the six delivered areas → back → switch project → one address naming a declared-but-unbuilt area, observing not-found — verbatim to `docs/accessibility/EPIC-036-shell-transcript.md`. `EPIC-029`'s reachability transcript is the precedent and the format
+- [X] T441h [P] Verify `SC-SHL-005` across **every** shell-owned surface — Home (`frontend/tests/unit/shell/Home.spec.tsx` drives all four), the no-project state (`frontend/tests/unit/shell/shell-context.spec.tsx`) and the not-found route (`frontend/tests/unit/shell/addresses.spec.tsx`) each render their states distinguishably, driven rather than inspected
+- [X] T441i Run [quickstart.md](./quickstart.md) scenarios 1–6 against the running stack, including both required mutation checks, and record the outcomes
+- [X] T441j Produce the Constitution XI Tier 2 **driven transcript** — sign in → Home → each of the six delivered areas → back → switch project → one address naming a declared-but-unbuilt area, observing not-found — verbatim to `docs/accessibility/EPIC-036-shell-transcript.md`. `EPIC-029`'s reachability transcript is the precedent and the format
 - [ ] T441k Human keyboard and screen-reader pass over the shell, recorded to `docs/accessibility/EPIC-036-shell-transcript.md`. **A person's, not an agent's** — `EPIC-029` `T885` records the standard and why an agent cannot meet it, and `T884` stays red until it is done
-- [ ] T441l Rebuild `governance/epic-stage-register.md` with `pnpm register:update`. It runs twice and the first run still exits non-zero; the residual is `T884`, red by design until `T441k`
-- [ ] T441m Write `specs/036-application-shell/analysis.md` — the `/speckit-analyze` record `DOR-09` reads, with finding ids and severities
-- [ ] T441n **Hand the task-identifier decision back to `EPIC-026` as a blocker on `EPIC-037`, not a warning.** Update the measurement in `specs/026-*/` : **999 of 999 prefixes are allocated** — `T995y` measured 992 and there are now none. State what this Epic did (block allocation under `T436`–`T441`, retiring the suffix's adjacency meaning for that block) and what it did **not** do: choose between `T995y`'s two options. The four-digit widening of `T\d{3}[a-z]?` in `tests/governance/epic-stage/task-ids.spec.ts`, `tests/governance/epic-stage/dor.ts` and `tests/governance/epic-stage/task-paths.spec.ts` remains the durable fix and remains `EPIC-026`'s
-- [ ] T441p **Hand the remainder of `UX-0003` to the three Epics that owe it.** `QA & Releases`, `Architecture & Decisions` and `Governance` are reachable from nothing because no screen exists. Record the obligation against `EPIC-014`/`EPIC-015`, `EPIC-016` and `EPIC-019`/`EPIC-021`/`EPIC-024` — each discharges it with a one-line `areas.ts` edit moving its area to `delivered` (`SC-SHL-004`), which is the claim `T437q` proves. Without this the three are invisible: absent from navigation by design and absent from every backlog by accident
-- [ ] T441o Write `specs/036-application-shell/closure.md` — artifacts by path, anything in scope not done and why, and the recommended next command. Then run `/speckit-converge` as the Epic exit gate (Constitution IV)
+- [X] T441l Rebuild `governance/epic-stage-register.md` with `pnpm register:update`. It runs twice and the first run still exits non-zero; the residual is `T884`, red by design until `T441k`
+- [X] T441m Write `specs/036-application-shell/analysis.md` — the `/speckit-analyze` record `DOR-09` reads, with finding ids and severities
+- [X] T441n **Hand the task-identifier decision back to `EPIC-026` as a blocker on `EPIC-037`, not a warning**, recorded in `specs/036-application-shell/handovers.md`. **999 of 999 prefixes are allocated** — `T995y` measured 992 and there are now none. It states what this Epic did (block allocation under `T436`–`T441`) and what it did **not** do: choose between `T995y`'s two options. It also records the fact that makes option 1 urgent — a four-digit id matches **none** of `task-ids.spec.ts`, `dor.ts` or `task-paths.spec.ts` today, so until the widening lands such an id is silently unchecked rather than rejected
+- [X] T441p **Hand the remainder of `UX-0003` to the four Epics that owe it**, recorded in `specs/036-application-shell/handovers.md`. `Plan & Tasks` (`EPIC-012`, added by the `N1` finding), `QA & Releases` (`EPIC-014`/`EPIC-015`), `Architecture & Decisions` (`EPIC-016`) and `Governance` (`EPIC-019`/`EPIC-021`/`EPIC-024`) are reachable from nothing because no navigable screen exists. Each discharges it with a one-line `frontend/src/shell/areas.ts` edit moving its area to `delivered` (`SC-SHL-004`) — asserted by construction over a synthetic registry, using Governance as the worked example (conformance: T437q, `frontend/tests/unit/shell/registry-extensibility.spec.ts`). Without this the four are invisible: absent from navigation by design and absent from every backlog by accident
+- [X] T441o Write `specs/036-application-shell/closure.md` — artifacts by path, anything in scope not done and why, and the recommended next command. Then run `/speckit-converge` as the Epic exit gate (Constitution IV)
 
 ---
 

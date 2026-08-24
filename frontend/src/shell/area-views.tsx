@@ -50,15 +50,22 @@ export function RequireProject({
   const { projectId } = useShell();
   const navigate = useNavigate();
   if (projectId === null) {
+    // The landmark belongs to THIS branch, not to the caller. Whether a
+    // `<main>` is needed depends on which branch renders — the fulfilled one
+    // may hand off to a page that carries its own — so a wrapper around the
+    // whole component would nest one landmark or leave the other with none.
+    // `T440e` found exactly that at `/storage`.
     return (
-      <EmptyState
-        title="No project selected"
-        explanation="This area shows one project at a time, and none is selected yet."
-        actionLabel="Choose a project"
-        onAction={(): void => {
-          void navigate('/projects');
-        }}
-      />
+      <main>
+        <EmptyState
+          title="No project selected"
+          explanation="This area shows one project at a time, and none is selected yet."
+          actionLabel="Choose a project"
+          onAction={(): void => {
+            void navigate('/projects');
+          }}
+        />
+      </main>
     );
   }
   return children(projectId);
@@ -110,9 +117,9 @@ export function SpecificationsArea(): ReactElement {
   const { api } = useShell();
   const navigate = useNavigate();
   return (
-    <MainLandmark>
-      <RequireProject>
-        {(projectId): ReactElement => (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
           <SpecificationList
             api={api}
             projectId={projectId}
@@ -120,9 +127,9 @@ export function SpecificationsArea(): ReactElement {
               void navigate(`/specifications/${encodeURIComponent(specificationId)}`);
             }}
           />
-        )}
-      </RequireProject>
-    </MainLandmark>
+        </MainLandmark>
+      )}
+    </RequireProject>
   );
 }
 
@@ -130,9 +137,9 @@ export function RunsArea(): ReactElement {
   const { api } = useShell();
   const navigate = useNavigate();
   return (
-    <MainLandmark>
-      <RequireProject>
-        {(projectId): ReactElement => (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
           <RunsPage
             api={api}
             projectId={projectId}
@@ -140,9 +147,9 @@ export function RunsArea(): ReactElement {
               void navigate(`/runs/${encodeURIComponent(runId)}`);
             }}
           />
-        )}
-      </RequireProject>
-    </MainLandmark>
+        </MainLandmark>
+      )}
+    </RequireProject>
   );
 }
 
@@ -150,10 +157,12 @@ export function WorkspaceAdministrationArea(): ReactElement {
   const { api, workspaceId } = useShell();
   if (workspaceId === null) {
     return (
-      <EmptyState
-        title="No workspace"
-        explanation="The signed-in identity carries no workspace, so there is nothing to administer."
-      />
+      <main>
+        <EmptyState
+          title="No workspace"
+          explanation="The signed-in identity carries no workspace, so there is nothing to administer."
+        />
+      </main>
     );
   }
   return (
@@ -220,11 +229,13 @@ export function ProjectDetailView(): ReactElement {
 export function TraceabilityView(): ReactElement {
   const { api } = useShell();
   return (
-    <MainLandmark>
-      <RequireProject>
-        {(projectId): ReactElement => <TraceabilityPage api={api} projectId={projectId} />}
-      </RequireProject>
-    </MainLandmark>
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
+          <TraceabilityPage api={api} projectId={projectId} />
+        </MainLandmark>
+      )}
+    </RequireProject>
   );
 }
 
