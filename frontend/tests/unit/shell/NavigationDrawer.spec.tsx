@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { deliveredAreas } from '../../../src/shell/areas';
 import { navigationModel } from '../../../src/shell/navigation-model';
-import { renderAt } from './harness';
+import { clickByName, renderAt } from './harness';
 
 function setViewport(narrow: boolean): void {
   Object.defineProperty(window, 'matchMedia', {
@@ -54,7 +54,7 @@ describe('T440a · the drawer at a narrow width', () => {
 
   it('carries the FULL grouped list when opened', async () => {
     renderAt('/');
-    fireEvent.click(await screen.findByRole('button', { name: 'Menu' }));
+    await clickByName('Menu');
 
     await waitFor(() => {
       for (const group of navigationModel()) {
@@ -63,15 +63,17 @@ describe('T440a · the drawer at a narrow width', () => {
           `group "${group.label}" is missing from the drawer`,
         ).toBeDefined();
       }
+      // Inside the wait, not after it: the groups can be present a render
+      // before their buttons are.
+      for (const area of deliveredAreas()) {
+        expect(navLabels(), `${area.label} is unreachable at this width`).toContain(area.label);
+      }
     });
-    for (const area of deliveredAreas()) {
-      expect(navLabels(), `${area.label} is unreachable at this width`).toContain(area.label);
-    }
   });
 
   it('renders the same navigation the sidebar does, not a copy of it', async () => {
     renderAt('/');
-    fireEvent.click(await screen.findByRole('button', { name: 'Menu' }));
+    await clickByName('Menu');
     await waitFor(() => expect(navLabels()).toContain('Runs'));
     const narrow = navLabels().sort();
 
@@ -84,9 +86,9 @@ describe('T440a · the drawer at a narrow width', () => {
 
   it('tells assistive technology whether it is open', async () => {
     renderAt('/');
-    const toggle = await screen.findByRole('button', { name: 'Menu' });
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(toggle);
+    await screen.findByRole('button', { name: 'Menu' });
+    expect(screen.getByRole('button', { name: 'Menu' }).getAttribute('aria-expanded')).toBe('false');
+    await clickByName('Menu');
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Close menu' }).getAttribute('aria-expanded')).toBe(
         'true',
@@ -98,7 +100,7 @@ describe('T440a · the drawer at a narrow width', () => {
     // A drawer left open over the area it just opened hides the thing the user
     // asked for, at the width where there is least room for it.
     renderAt('/');
-    fireEvent.click(await screen.findByRole('button', { name: 'Menu' }));
+    await clickByName('Menu');
     await waitFor(() => expect(navLabels()).toContain('Runs'));
 
     const runs = screen

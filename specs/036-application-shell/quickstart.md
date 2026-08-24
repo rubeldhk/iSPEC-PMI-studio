@@ -26,8 +26,36 @@ pnpm --filter frontend dev           # web  :5173
 **The seed is not optional.** A migrated database holds no workspace and no user, so sign-in is
 impossible without it — and every scenario below starts by signing in.
 
-**Work in a worktree.** The plan records the concurrent-session gate as **FAIL** and `T1` is its
-discharge: `.claude/worktrees/epic-036-application-shell`.
+**Work in a worktree.** `T436a` is the discharge of the concurrent-session gate:
+`.claude/worktrees/epic-036-application-shell`.
+
+### The reference local stack — what `SC-SHL-006` measures on
+
+**Task `T442l`.** `SC-SHL-006` sets navigation response at **under 1s at p95 on the reference local
+stack**, `plan.md` repeats the phrase, and until now **nothing said what it was**. A criterion whose
+scope is named but undefined is the ambiguity it was written to avoid: `DEF-030-002` records a p95
+assertion that fails under suite load and passes alone, and *"the reference local stack"* was
+scoped in wording only.
+
+It is this, and a measurement on anything else is a different number:
+
+| | |
+|---|---|
+| **Client** | Vite dev server, `pnpm --filter frontend dev`, one origin proxying `/v1` |
+| **API** | `pnpm --filter backend dev` on `:3000` — a dev process, **not** a production build |
+| **Data stores** | `postgres` and `valkey` from `docker-compose.yml`, on the same machine |
+| **Data volume** | one workspace, **one project**, zero runs — the seeded state, not a populated one |
+| **Browser** | Chromium at 1280×720, no throttling |
+| **Machine** | a developer workstation, otherwise idle |
+| **What is timed** | click on a primary-navigation control → the breadcrumb naming the destination. The breadcrumb is derived from the address, so it cannot report arrival early |
+| **Sample** | at least 40 navigations across every delivered area, measured in isolation — **not** during a test run |
+
+**Measured 2026-08-24: p95 = 20.5 ms**, min 3.0, median 9.7, max 37.5, over 40 samples. Recorded in
+[../../docs/accessibility/EPIC-036-shell-transcript.md](../../docs/accessibility/EPIC-036-shell-transcript.md) §7.
+
+**What this stack deliberately is not**: a production build, a populated database, or a cold start.
+`SC-SHL-006` asks about the shell's response to a navigation selection, and a number from a
+different stack answers a different question.
 
 ---
 

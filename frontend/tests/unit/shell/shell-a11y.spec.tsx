@@ -16,7 +16,7 @@ import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { expectNoViolations } from '../a11y/axe';
 import { AREAS, GROUP_LABELS, deliveredAreas } from '../../../src/shell/areas';
 import { navigationModel } from '../../../src/shell/navigation-model';
-import { renderAt } from './harness';
+import { clickByName, renderAt } from './harness';
 
 /** jsdom implements no `matchMedia`; the shell treats its absence as "wide". */
 function setViewport(narrow: boolean): void {
@@ -132,10 +132,10 @@ describe('T440i · SC-SHL-007 — every area reachable by keyboard at 360px', ()
   it('reaches all of them through the drawer at the narrow width', async () => {
     setViewport(true);
     renderAt('/');
-    const toggle = await screen.findByRole('button', { name: 'Menu' });
-    expect(toggle.hasAttribute('disabled')).toBe(false);
+    await screen.findByRole('button', { name: 'Menu' });
+    expect(screen.getByRole('button', { name: 'Menu' }).hasAttribute('disabled')).toBe(false);
 
-    toggle.click();
+    await clickByName('Menu');
     await waitFor(() => {
       const inDrawer = screen
         .getAllByRole('navigation')
@@ -170,8 +170,7 @@ describe('T440g · SC-SHL-008 — zero axe violations on the shell', () => {
   it('passes at the narrow width, with the drawer open', async () => {
     setViewport(true);
     renderAt('/');
-    const toggle = await screen.findByRole('button', { name: 'Menu' });
-    toggle.click();
+    await clickByName('Menu');
     await waitFor(() => expect(screen.getAllByRole('navigation').length).toBeGreaterThan(1));
     await expectNoViolations();
   });
