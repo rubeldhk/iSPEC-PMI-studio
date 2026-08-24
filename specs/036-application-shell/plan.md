@@ -25,7 +25,7 @@ not (`R-036-4`).
 
 **Language/Version**: TypeScript 5.x, React 18.3.1 (ES2023 target, `tsconfig.base.json`)
 
-**Primary Dependencies**: React 18.3.1 · **React Router 7.x — NEW, `D-30`, registered before install**
+**Primary Dependencies**: React 18.3.1 · **React Router 7.x — `D-13` raised from 6.x, registered before install**
 (`R-036-1`, Context7 `/remix-run/react-router`) · `@pmi/room-contract` (workspace) ·
 `frontend/src/design/` component layer (`EPIC-029`, consumed unchanged)
 
@@ -65,7 +65,7 @@ undeclared. Revised from 9-in-scope by [analysis.md](./analysis.md) `C1`
 | II | Every requirement traces to a cited `SRS/` document; untraced items listed in Assumptions | **PASS** — and, for the first time in this family, **against an APPROVED document**. `PMI-DOC-006` was signed 2026-08-24 (`D-44`); `EPIC-030`–`EPIC-035` each carried its `PROPOSED` status as a named risk. `BR-0013` left scope at clarification and its row is marked out-of-scope rather than deleted |
 | III | Work is decomposed Epic → Feature → Task; Epic ID assigned and `specs/<epic-id>/` exists | **PASS** — `EPIC-036`, `specs/036-application-shell/`, registered in `repository-layout.md` (`G-05d`) |
 | IV | `/speckit-converge` is scheduled as the Epic exit gate before any promotion | **PASS** — Epic Exit Criteria |
-| V | Every implementation task carries a mandatory unit-test task, written to fail first — or, for document/configuration outputs, an executable conformance check that can fail | **PASS** — the non-code outputs are the **area registry** and the **`D-30` register entry**; the registry's check is `FR-SHL-016`, and `TS-001`'s own check covers the register row |
+| V | Every implementation task carries a mandatory unit-test task, written to fail first — or, for document/configuration outputs, an executable conformance check that can fail | **PASS** — the non-code outputs are the **area registry** and the **`D-13` register row**; the registry's check is `FR-SHL-016`, and `TS-001`'s own check — `tests/governance/dependency-register.spec.ts`, which did not exist when this was written — covers the register row |
 | VI | `specs/<epic-id>/defects/` exists and is the sole intake for defects in this Epic | **PASS** — exists, tracked via `.gitkeep` (`G-26-13`) |
 | VII | Changes land in the local Claude repo first; promotion follows local → dev → stage → prod | **PASS for what exists** — local first. **`dev`, `stage` and `prod` do not exist**: no Dockerfiles, and `EPIC-014` `T156` presupposes a deployable artifact no Epic owns. Recorded in Complexity Tracking; this Epic cannot discharge a pipeline it does not own |
 | VIII | Session/clone is labelled with the working Epic (`EPIC-### <name>`), or the first command | **PASS** — label this session `EPIC-036 Application Shell` |
@@ -126,7 +126,7 @@ frontend/
         ├── shell/                # NEW — navigation, drawer, context, Home, routes
         └── design/page-reachability.spec.ts   # EPIC-010 T200a — KEPT (R-036-5)
 
-specs/_shared/dependencies.md     # MODIFIED — D-30, before the install (TS-001)
+specs/_shared/dependencies.md     # MODIFIED — D-13 raised 6.x -> 7.x, before the install (TS-001)
 ```
 
 **Structure Decision**: frontend-only, in a new `frontend/src/shell/` directory (`R-036-6`).
@@ -138,11 +138,23 @@ content; only its hosting changes. **No backend work**: every source Home reads 
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| **A new runtime dependency (`D-30`, React Router 7.x)** | `FR-SHL-017` needs addresses that survive a refresh, support back/forward, and answer not-found for undeclared areas. The product has no routing at all | Hand-rolling is history push/pop, `popstate`, path matching with params, nested layouts, scroll restoration and the not-found case — a router with none of a router's test suite behind it, owned by an Epic that did not set out to write one (`PP-014` inverted) |
+| **A newly INSTALLED runtime dependency (`D-13`, React Router, raised 6.x → 7.x)** | `FR-SHL-017` needs addresses that survive a refresh, support back/forward, and answer not-found for undeclared areas. The product has no routing at all | Hand-rolling is history push/pop, `popstate`, path matching with params, nested layouts, scroll restoration and the not-found case — a router with none of a router's test suite behind it, owned by an Epic that did not set out to write one (`PP-014` inverted) |
 | **Gate VII cannot be fully satisfied** | Promotion beyond `local` requires `dev`/`stage`/`prod`, and none exist | Nothing simpler exists to reject. **No Epic owns building a deployable artifact**; `EPIC-014` `T156` presupposes one. This Epic records the gap rather than inventing a pipeline it does not own |
 | **Deep links depend on a server that has no owner** (`R-036-3`) | A client-side router needs the server to return the app for unknown paths. Vite's dev server does; nothing serves the built client at all | A hash router (`#/areas/runs`) needs no server support — rejected because it makes every address worse to route around a deployment gap that is organisational, not technical |
 | **Three specified areas have owners and no screens** (`C1`) | `QA & Releases`, `Architecture & Decisions` and `Governance` are declared under PMI-DOC-006 §9, and `EPIC-014`/`015`, `EPIC-016` and `EPIC-019`/`021`/`024` are all at stage `Ready` with nothing built. `UX-0003` asks for their reachability and there is nothing to reach | Building the screens here is `FR-SHL-003` inverted — the shell implementing area content. Marking them `undeclared` is false and load-bearing, because `UX-0060`'s prohibition turns on whether an *Epic* is declared and the SRS assigns these three owners. The registry carries a third state instead, so the debt has a debtor rather than disappearing |
 | **Home degrades on two of its three sources** (`R-036-4`) | `FR-SHL-032` names approvals, policy blocks and missing evidence. `EPIC-031` (0/92) and `EPIC-032` (0/83) supply the last two | Delaying Home blocks `BR-0192`'s only surface on two unstarted Epics; stubbing the sources fabricates governance state, which is worse than an absent one. Visible degradation is `EPIC-033`'s posture for its unbound gateway, applied here |
+
+> ### ⚠ Corrected at implementation — `D-30` was never this Epic's identifier (`T442r`)
+>
+> Four places above said **NEW** and **`D-30`**. React Router has been in the register as **`D-13`**
+> since the platform specification, declared at 6.x for routing nobody built; `T436b` **raised that
+> row to 7.x** rather than adding one. The dependency is newly *installed*, not newly *registered* —
+> a distinction `TS-001` turns on, and one `EPIC-030` `T993d` got wrong six Epics earlier with
+> `supertest` and `D-22`.
+>
+> The technical decision is unchanged: React Router 7, declarative mode, for `FR-SHL-017`. Only the
+> premise was wrong, and `specs/_shared/dependencies.md` § *"D-13 in detail"* carries the full
+> record. Corrected in place rather than left for a later Epic to copy.
 
 ## Post-Design Constitution Re-Check
 
