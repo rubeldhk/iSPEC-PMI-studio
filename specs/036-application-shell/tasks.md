@@ -287,3 +287,24 @@ been in.
 - **That deep links work in production.** They work against Vite's dev server. Nothing in this
   repository serves the built client at all, and that gap has no owner (`R-036-3`).
 - **That project health is anywhere.** `BR-0013` left this Epic at clarification, owner `U-03`.
+
+---
+
+## Phase 9: Convergence
+
+Appended by `/speckit-converge 036` on 2026-08-24, after `/speckit-implement` closed 75 of 77
+tasks. Findings are what the **code** does not yet satisfy, read against `spec.md`, `plan.md` and
+this file. Nothing above was renumbered, reworded or removed.
+
+> **Identifiers continue the block rather than the number.** The append contract says
+> `T{M+1:03d}`, which would be `T442` — and `T442` is already declared elsewhere in the corpus.
+> `T441q`–`T441w` were verified unused before allocation. This is the same exhaustion `T441n` hands
+> to `EPIC-026`, met again three commands later.
+
+- [ ] T441q Set `ShellContext.projectId` from the address when a project sub-view is opened directly, in `frontend/src/shell/shell-context.tsx` and `frontend/src/shell/area-views.tsx` per `FR-SHL-021` (contradicts) — `ProjectDetailView` reads the project from `useParams`, and nothing calls `selectProject` from the address, so a deep link to `/projects/:projectId` renders that project while the breadcrumb reads *"No project selected"*. `FR-SHL-017` created that entry path and `UX-0011` requires the scope **visible rather than implied**; a breadcrumb that contradicts the content is worse than one that is merely absent, and `BR-0001`'s failure mode is exactly a plausible screen (unit test: T441r)
+- [ ] T441r Write a failing test in `frontend/tests/unit/shell/shell-context.spec.tsx` asserting that every sub-view address carrying a project identifier leaves the breadcrumb naming that project, per `FR-SHL-021` (missing) — covers T441q. Drive it through the real `App` at `/projects/:projectId`, not through the provider in isolation, because the fault is in the composition
+- [ ] T441s Adopt `RoomShellProps` from `@pmi/room-contract` in `frontend/src/shell/AppShell.tsx` per `FR-SHL-042` (missing) — **nothing under `frontend/src/shell/` imports the contract at all**; only a comment mentions it. `T441e` claims this and `T441d` does not check it: that test asserts the shell does not **re-derive** the Room types, which is true and is a different claim from adopting them. The gap is latent today because no Room area is delivered, and it stops being latent the moment one is (conformance: T441t)
+- [ ] T441t Extend `frontend/tests/unit/shell/room-hosting.spec.tsx` to assert the shell **imports** `@pmi/room-contract` rather than only that it declares no vocabulary of its own, per `FR-SHL-042` (partial) — covers T441s. An absence-only assertion passes just as well over a shell that has never heard of the contract, which is the state it is in
+- [ ] T441u Pass `loading` to the project `Select` in `frontend/src/shell/ContextBar.tsx` while `listProjects()` is in flight, per `FR-SHL-060` (partial) — the control renders `emptyMessage` *"No projects in this workspace"* during the request, so **loading is indistinguishable from empty** on a shell-owned surface. `DEF-007-001` is this class one layer down, and `EPIC-029`'s `Select` already supports the state (unit test: T441v)
+- [ ] T441v Write a failing test in `frontend/tests/unit/shell/ContextBar.spec.tsx` asserting the project selector says it is loading while the set is in flight and says it is empty only once it is not, per `FR-SHL-060` (missing) — covers T441u
+- [ ] T441w Give every shell-owned empty state a next step, and record the two scope gaps this run found, per `FR-SHL-061` (partial) — three parts, none of them code-heavy. (a) Home's empty sections and the no-workspace state in `frontend/src/shell/area-views.tsx` say what is absent and offer nothing; `EmptyState` takes `actionLabel`/`onAction` and neither uses them. (b) **The workspace half of `FR-SHL-020`/`FR-SHL-022` is silently absent** — the shell shows the workspace and offers no way to switch it, and no endpoint enumerates workspaces, so record the missing selectable set with its owner the way Home records `EPIC-031` and `EPIC-032` rather than leaving the absence unexplained. (c) `quickstart.md` §2 claims `git diff --name-only` shows **one** path when an area is delivered; it shows **two**, because `element` must come from a binding in `area-views.tsx` — reconcile the claim with the code, and correct the same overstatement in `handovers.md` (unit test: T441v)
