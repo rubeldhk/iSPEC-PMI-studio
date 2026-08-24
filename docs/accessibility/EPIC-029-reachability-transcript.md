@@ -135,3 +135,58 @@ costs them a few minutes on top of work they are already doing.
 
 Until then, **Constitution XI Tier 2 is satisfied for SignIn and the shell, and stale for Projects
 and Requirements.** `T901a` may not be re-confirmed on the strength of this run alone.
+
+## T927 completed — the authenticated half, 2026-08-24
+
+**Provenance**: same driver, same stack (`http://localhost:5173` → backend `:3000` → local Postgres
+and Valkey), signed in as the committed local UAT fixture `uat@pmi.test`
+(`specs/005-identity-signin/defects/DEF-005-001…`). A project was created and a requirement
+captured through the rendered UI so the register had a row to render. Records verbatim.
+
+```json
+[
+{"step":"Requirements (project surface) at 360x640, 100% text, light theme","at":"2026-08-24T00:20:36.103Z","url":"http://localhost:5173/","layoutViewport":"360x640","rootFontSize":"16px","theme":"light","resolved":{"--color-canvas":"#f6f7f9","--color-surface":"#ffffff","bodyBackground":"rgb(246, 247, 249)","statusPill":{"text":"active","background":"rgb(230, 244, 234)","color":"rgb(22, 101, 52)"},"columnHeaderTransform":"uppercase","shellTopbarPosition":"sticky"},"horizontalOverflow":"none","widerThanViewport":[".ds-table","THEAD","TR","TBODY","TR"]},
+{"step":"Requirements (project surface) at 360x640, 200% text zoom, light theme","at":"2026-08-24T00:20:36.342Z","url":"http://localhost:5173/","layoutViewport":"360x640","rootFontSize":"32px","theme":"light","resolved":{"--color-canvas":"#f6f7f9","--color-surface":"#ffffff","bodyBackground":"rgb(246, 247, 249)","statusPill":{"text":"active","background":"rgb(230, 244, 234)","color":"rgb(22, 101, 52)"},"columnHeaderTransform":"uppercase","shellTopbarPosition":"sticky"},"horizontalOverflow":"none","widerThanViewport":[".ds-table","THEAD","TR","TBODY","TR"]},
+{"step":"Requirements (project surface) at 360x640, 100% text, dark theme","at":"2026-08-24T00:20:36.508Z","url":"http://localhost:5173/","layoutViewport":"360x640","rootFontSize":"16px","theme":"dark","resolved":{"--color-canvas":"#0b1120","--color-surface":"#111827","bodyBackground":"rgb(11, 17, 32)","statusPill":{"text":"active","background":"rgb(22, 48, 31)","color":"rgb(74, 222, 128)"},"columnHeaderTransform":"uppercase","shellTopbarPosition":"sticky"},"horizontalOverflow":"none","widerThanViewport":[".ds-table","THEAD","TR","TBODY","TR"]},
+{"step":"Requirements (project surface) at 360x640, 200% text zoom, dark theme","at":"2026-08-24T00:20:36.722Z","url":"http://localhost:5173/","layoutViewport":"360x640","rootFontSize":"32px","theme":"dark","resolved":{"--color-canvas":"#0b1120","--color-surface":"#111827","bodyBackground":"rgb(11, 17, 32)","statusPill":{"text":"active","background":"rgb(22, 48, 31)","color":"rgb(74, 222, 128)"},"columnHeaderTransform":"uppercase","shellTopbarPosition":"sticky"},"horizontalOverflow":"none","widerThanViewport":[".ds-table","THEAD","TR","TBODY","TR"]},
+{"step":"Projects at 360x640, 100% text, light theme","at":"2026-08-24T00:21:03.684Z","url":"http://localhost:5173/","heading":"Projects","breadcrumb":"PMI Studio / Projects","layoutViewport":"360x640","rootFontSize":"16px","theme":"light","resolved":{"--color-canvas":"#f6f7f9","bodyBackground":"rgb(246, 247, 249)","shellTopbarPosition":"sticky","contentColumn":true},"horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"Projects at 360x640, 200% text zoom, light theme","at":"2026-08-24T00:21:03.899Z","url":"http://localhost:5173/","heading":"Projects","breadcrumb":"PMI Studio / Projects","layoutViewport":"360x640","rootFontSize":"32px","theme":"light","resolved":{"--color-canvas":"#f6f7f9","bodyBackground":"rgb(246, 247, 249)","shellTopbarPosition":"sticky","contentColumn":true},"horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"Projects at 360x640, 100% text, dark theme","at":"2026-08-24T00:21:04.066Z","url":"http://localhost:5173/","heading":"Projects","breadcrumb":"PMI Studio / Projects","layoutViewport":"360x640","rootFontSize":"16px","theme":"dark","resolved":{"--color-canvas":"#0b1120","bodyBackground":"rgb(11, 17, 32)","shellTopbarPosition":"sticky","contentColumn":true},"horizontalOverflow":"none","widerThanViewport":[]},
+{"step":"Projects at 360x640, 200% text zoom, dark theme","at":"2026-08-24T00:21:04.278Z","url":"http://localhost:5173/","heading":"Projects","breadcrumb":"PMI Studio / Projects","layoutViewport":"360x640","rootFontSize":"32px","theme":"dark","resolved":{"--color-canvas":"#0b1120","bodyBackground":"rgb(11, 17, 32)","shellTopbarPosition":"sticky","contentColumn":true},"horizontalOverflow":"none","widerThanViewport":[]}
+]
+```
+
+### What the authenticated half establishes
+
+- **Projects and Requirements both render from the Phase 9 token layer** — the canvas resolves
+  `#f6f7f9` / `#0b1120` and the body follows it, on the authenticated pages and not only on
+  SignIn.
+- **The tinted StatusPill is live and token-derived**: `rgb(230, 244, 234)` on
+  `rgb(22, 101, 52)` in light, `rgb(22, 48, 31)` on `rgb(74, 222, 128)` in dark — exactly
+  `--color-success-subtle` on `--color-success`, the pair `T925` proves at WCAG AA.
+- **The `T918` column-header treatment reaches a delivered page**: `textTransform: uppercase`
+  on the requirement register's headers.
+- **The `T923` shell holds on both**: the top bar stays `sticky` and the breadcrumb tracks the
+  view (`PMI Studio / Projects`).
+- **No horizontal overflow on the document in any of the eight conditions.**
+
+### One entry that is not a defect, read carefully
+
+`widerThanViewport` lists `.ds-table` and its rows on the Requirements surface. The **table** is
+wider than 360px; the **document** is not (`horizontalOverflow: "none"`). The grid scrolls inside
+`.ds-table-wrap`'s `overflow-x: auto`, which is the intended behaviour for a data table at the
+minimum viewport — `FR-DS-040` requires the page not to overflow, not that every table fit in
+360 CSS pixels. It is recorded rather than filtered out so the next reader does not have to
+rediscover why it is there.
+
+### Two open defects reproduced on this build
+
+- **`DEF-029-005`** — the requirement was created (`POST …/requirements → 201 Created`, observed
+  in the network log) and the register still read *"No requirements match."* until a filter was
+  changed. Unchanged by Phase 9; still proposed for deferral to EPIC-011.
+- **`DEF-029-004`** — "Type" and "Priority" still each appear twice in one tab cycle, at stops
+  8/9 (register filters) and 13/14 (editor fields). Machine-observable; whether it is *confusing*
+  remains a `T885` judgement.
+
+**Constitution XI Tier 2 is now satisfied for all three delivered surfaces on the Phase 9 build.**
+`DEF-029-007` is closed.

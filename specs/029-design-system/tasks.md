@@ -344,7 +344,7 @@ records the resulting split — **ten adopted patterns, eight declined with reas
 `T924`'s check reads that table, so a declined row cannot be quietly adopted later and an adopted
 row cannot be quietly dropped.
 
-**IDs `T915`–`T928`** (corpus max was `T914`). **14 tasks.**
+**IDs `T915`–`T929`** (corpus max was `T914`). **15 tasks.**
 
 ### Tests first (MANDATORY — Constitution V)
 
@@ -366,8 +366,12 @@ row cannot be quietly dropped.
 
 ### Reachability — Phase 9 changed the surfaces the XI Tier 2 evidence measured
 
-- [ ] T927 Re-drive the **Constitution XI Tier 2** run against the restyled build and append the verbatim records to `docs/accessibility/EPIC-029-reachability-transcript.md` (`DEF-029-007`). The 2026-08-21 transcript records `bodyBackground: rgb(255, 255, 255)`; the page now sits on `--color-canvas`, so that run describes a build that no longer exists. **Partially done 2026-08-23**: SignIn and the shell re-driven — sticky top bar, content column, canvas resolved in both themes, **no horizontal overflow at 1280×800 or 360×640, at 100% or 200% text zoom, either theme**. **Still open: Projects and Requirements**, which need a signed-in session and therefore belong to the same human sitting as `T885`
+- [X] T927 Re-drive the **Constitution XI Tier 2** run against the restyled build and append the verbatim records to `docs/accessibility/EPIC-029-reachability-transcript.md` (`DEF-029-007`). The 2026-08-21 transcript records `bodyBackground: rgb(255, 255, 255)`; the page now sits on `--color-canvas`, so that run describes a build that no longer exists. **Done in two sittings**: SignIn and the shell on 2026-08-23; **Projects and Requirements on 2026-08-24**, signed in as the committed local UAT fixture, with a project created and a requirement captured through the rendered UI so the register had a row to render. **No horizontal overflow on the document in any of the eight conditions**; the tinted StatusPill and the uppercase column headers observed resolving live from the Phase 9 tokens. `DEF-029-007` closed
 - [X] T928 Close the gap in the check that let `T927` happen: extend `tests/governance/reachability-transcript.spec.ts` so the transcript must carry the `--color-canvas` and `--color-surface` values `themes.css` **currently** declares, in both themes, failing with the token name and "re-run T900a". `T900b` tested that the file was evidence and never that it was evidence of *this* build — so it stayed green for two days after the palette moved under it. **Mutation-verified** against the literal miss: a transcript saying `rgb(255, 255, 255)` against a canvas of `#f6f7f9`. A hand cannot satisfy this without running the application
+
+### Found by the T927 run
+
+- [X] T929 Record `DEF-029-008` — **the `Table` component is called by no delivered page**. Five importers, every one a test; `Requirements.tsx` uses a plain `<table className="ds-table">` for a documented and correct reason (its filtering is a database query, not a client-side sieve), and the other two delivered pages render no table. So `T918`'s tools bar reaches nobody, though its CSS header treatment does. The seventh built-tested-called-by-nothing in this programme and the third in this Epic. **Recorded, not fixed**: both defensible resolutions — give `Table` a server-filter mode, or accept it serves future screens — are decisions about screens this Epic does not own (`PMI-DOC-005` `RULE-03`), so the disposition is `T904`'s and the choice belongs to EPIC-010 or EPIC-011
 
 **Checkpoint**: `pnpm lint` clean, the parity check green and observed failing on a removed row,
 and every existing suite still passing — the prototype's form, this Epic's values.

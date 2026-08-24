@@ -95,6 +95,79 @@ Every one of the 13 stops matched `:focus-visible` and carried a non-empty acces
 
 ---
 
+---
+
+## Part 1b — re-recorded against the Phase 9 build (2026-08-24)
+
+> **Part 1 above is stale.** Phase 9 moved the theme control into the shell's new top bar, which
+> **changed the tab order on every page** — the global control now comes first, before the page's
+> own content. The orders below replace it. Part 1 is left in place because the comparison is
+> itself the finding: a restyle silently re-ordered the keyboard path, and nothing but a re-walk
+> would have shown it.
+
+**Method**: real `Tab` key events against the running application at `http://localhost:5173`
+(Phase 9 build, signed in as the committed local UAT fixture). A `focusin` listener recorded each
+stop's element, computed accessible name, `:focus-visible` match and resolved outline. **Same
+honest caveat as Part 1**: control *activation* had to be done with a pointer, because the
+automation harness's synthetic `Enter`/`Space` do not trigger activation behaviour — the tab-order
+enumerations were keyboard-driven throughout, but this is **not** a no-mouse walk. That remains
+yours.
+
+### Focus order — sign-in page
+
+```text
+1. select#theme-control          — "Theme"    — :focus-visible ✓ — outline: rgb(96,165,250) solid 2px
+2. input[type=email]#sign-in-email    — "Email"    — :focus-visible ✓ — outline: rgb(96,165,250) solid 2px
+3. input[type=password]#sign-in-password — "Password" — :focus-visible ✓ — outline: rgb(96,165,250) solid 2px
+4. button[type=submit]           — "Sign in"  — :focus-visible ✓ — outline: rgb(96,165,250) solid 2px
+   (the 5th Tab returns to stop 1 — the cycle closes, no keyboard trap)
+```
+
+### Focus order — projects page
+
+```text
+1. select#theme-control      — "Theme"                        ← now FIRST (Phase 9)
+2. input[type=text]#project-name — "Project name"
+3. button[type=submit]       — "Create"
+4. button[type=button]       — "<project name>"
+   (wraps cleanly back to 1)
+```
+
+### Focus order — project surface (requirement capture)
+
+```text
+ 1. select#theme-control            — "Theme"          ← now FIRST (Phase 9)
+ 2. button                          — "Back to projects"
+ 3. button                          — "Archive"
+ 4. input#project-rename            — "Name"
+ 5. button[submit]                  — "Rename"
+ 6. select#engine-selector          — "Engine"
+ 7. button                          — "Traceability"   ← now a ds-button--secondary (DEF-029-003)
+ 8. select#requirements-type        — "Type"           ← register filter
+ 9. select#requirements-priority    — "Priority"       ← register filter
+10. select#requirements-status      — "Status"         ← register filter
+11. button                          — "REQ-001"
+12. textarea#requirement-description — "Description"
+13. select#requirement-type         — "Type"           ← editor field (same name as 8)
+14. select#requirement-priority     — "Priority"       ← editor field (same name as 9)
+15. button[submit]                  — "Save"
+   (the 16th Tab returns to stop 1 — the cycle closes)
+```
+
+All 15 stops matched `:focus-visible` and carried a non-empty accessible name.
+
+### What changed since Part 1, for you to judge
+
+- **The theme control is now the first stop on every page.** It sits in the shell's top bar, which
+  is conventional for a banner landmark — but it means every keyboard user passes a global
+  preference control before reaching the page they came for. **Is that right?** A machine cannot
+  tell you; it is a judgement about what should come first.
+- `DEF-029-004` (duplicate "Type"/"Priority") **is unchanged** and still needs your Part 2 verdict.
+- `DEF-029-003` is fixed — the shell's two controls are design-system buttons now.
+
+**Nothing in Part 1b ticks `T885`.** It is the same machine-observable half, refreshed. The
+announcements are still unheard.
+
 ## Part 2 — TO BE COMPLETED BY A HUMAN (this is the actual `T885`)
 
 Fill every field. Nothing below may be filled by an agent.
