@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx --env-file-if-exists=../.env prisma/seed.ts",
+    "dev": "tsx --env-file-if-exists=../.env watch src/main.ts",
+    "start": "tsx --env-file-if-exists=../.env src/main.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

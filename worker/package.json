@@ -10,7 +10,9 @@
     "./agent-composition": "./src/agent-composition.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx --env-file-if-exists=../.env watch src/main.ts",
+    "start": "tsx --env-file-if-exists=../.env src/main.ts"
   },
   "dependencies": {
     "@pmi/engine-contract": "workspace:*",

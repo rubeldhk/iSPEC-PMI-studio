@@ -24,7 +24,11 @@ pnpm install
 docker compose up -d postgres valkey
 pnpm --filter backend prisma migrate dev
 pnpm --filter backend seed          # one workspace, one user
-pnpm dev                             # api :3000, worker, web :5173
+# Three terminals — there is no process runner, and adding one would be a
+# dependency change rather than a task decision (DEF-014-002).
+pnpm --filter backend dev            # api  :3000
+pnpm --filter worker dev             # worker
+pnpm --filter frontend dev           # web  :5173 (proxies /v1 to the api)
 ```
 
 ## Test suite
