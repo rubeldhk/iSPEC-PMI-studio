@@ -1,7 +1,7 @@
 # Closure record: EPIC-036 Application Shell & Dashboard
 
-**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o` ·
-**Session**: `/speckit-implement` and **five** `/speckit-converge` passes, executed in the worktree
+**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o` and `T442q` ·
+**Session**: `/speckit-implement` and **six** `/speckit-converge` passes, executed in the worktree
 `.claude/worktrees/epic-036-application-shell` (concurrent-session rule, `T436a`)
 · **Released by**: PMI-DOC-006 v1.0 (APPROVED, `D-44`) · PMI-DOC-004 v2.0 `BR-0190`
 
@@ -13,8 +13,14 @@
 
 ## Work completed
 
-**97 of 99 tasks, across thirteen phases.** The two outstanding are a person's, not this session's,
-and are named below.
+**99 of 101 tasks, across fourteen phases — counted 2026-08-24.** The two outstanding are a
+person's, not this session's, and are named below.
+
+> **The date is the point** (`T442q`). This line has been wrong twice, both times because a
+> convergence pass appended after it was written. A count in a snapshot document is stale the moment
+> the next pass runs; **dating it makes that visible instead of misleading.** The Suites table below
+> carries a date for the same reason, and for the same reason it should not be trusted undated
+> either.
 
 | Phase | Tasks | Outcome |
 |---|---|---|
@@ -31,6 +37,7 @@ and are named below.
 | **11 Convergence** | `T442g`–`T442j` | `SC-SHL-009` handover, the no-identity set, six requirements cited |
 | **12 Convergence** | `T442k`–`T442m` | The reference stack defined, the analysis record corrected, this rewrite |
 | **13 Convergence** | `T442n`–`T442o` | Two figures Phase 12 left wrong — the coverage table and this Suites paragraph |
+| **14 Convergence** | `T442p`–`T442q` | A discharged handover still recorded as owed, and three documents disagreeing on how many handovers there are |
 
 **Artifacts.**
 
@@ -43,9 +50,10 @@ and are named below.
 - `tests/governance/dependency-register.spec.ts` — **new**, `TS-001`'s first check
 - `specs/_shared/dependencies.md` — `D-13` raised to 7.x, with a "D-13 in detail" section
 - `docs/accessibility/EPIC-036-shell-transcript.md` — Constitution XI Tier 2
-- `specs/036-application-shell/handovers.md` — **three** handovers: `UX-0003`'s remainder
-  (`T441p`), the identifier decision (`T441n`), and the workspace/`SC-SHL-009` gaps (`T441w`,
-  `T442g`)
+- `specs/036-application-shell/handovers.md` — **four** obligations, each with an owner:
+  `UX-0003`'s remainder (`EPIC-012`, `EPIC-014`/`015`, `EPIC-016`, `EPIC-019`/`021`/`024`), the
+  workspace half of `FR-SHL-020` (`EPIC-004`), `SC-SHL-009` on two addresses (`EPIC-023`), and the
+  task-identifier decision (`EPIC-026`). A fifth entry is marked ✅ and owed by nobody
 - `frontend/tests/unit/shell-page-routes.spec.tsx` — **deleted**, superseded (`R-036-5`);
   `EPIC-010` `T200e` records it
 - `frontend/tests/unit/shell-traceability-route.spec.tsx` — **rewritten** for the router; every
@@ -82,13 +90,13 @@ and are named below.
 
 Typecheck clean.
 
-## What five convergence passes found, and what that says
+## What six convergence passes found, and what that says
 
-**7 findings → 4 → 3 → 3 → 2.** The last two passes found **no code gap at all**; every finding in
-them was a record disagreeing with the code.
+**7 findings → 4 → 3 → 3 → 2 → 2.** The last **three** passes found **no code gap at all**; every
+finding in them was a record disagreeing with the code.
 
-**Three of the five passes found faults created by the pass before.** That is the part worth
-keeping, and it did not stop when the work moved from code into paperwork:
+**Four of the six passes found faults created by the pass before.** That is the part worth keeping,
+and it did not stop when the work moved from code into paperwork:
 
 1. **`T441v` split *loading* from *empty*** on the project selector and left **failed** collapsed
    into empty — so a rejected request read as *"this workspace has no projects"*. `FR-SHL-062`
@@ -106,10 +114,19 @@ The pattern in the first two: **the fix was asserted at the level the previous f
 and the new fault sat one level up.** The state ended as a three-variant union rather than flags
 precisely because two attempts with booleans were each wrong in a different way.
 
+4. **`T441w` handed over a gap** — a failed project fetch with no state of its own — and the next
+   pass refused the framing: `FR-SHL-062` is a MUST, and recording a MUST is not discharging one.
+   `T442b` closed it in four lines of JSX and one union variant. The handover entry then sat for
+   three more phases still saying *"Not fixed here"* and still naming a variable that had been
+   deleted, until `T442p`.
+
 The pattern in the third is plainer, and worse for being obvious: **a document about stale numbers
 was written without measuring the numbers.** `T442o` re-measured every suite, which is how the
-`test:integration` red above came to be in this record at all — it had never been run in this
-Epic.
+`test:integration` red above came to be in this record at all — it had never been run in this Epic.
+
+The pattern in the fourth is the one to carry into the next Epic: **a handover is a claim that
+something cannot be done here, and it should be tested like any other claim.** One of the four was
+false, and the cost of finding out was smaller than the cost of writing it down.
 
 ## Three load-sensitive tests of my own
 
