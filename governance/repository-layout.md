@@ -174,6 +174,7 @@ path added or removed without updating this document fails the build.
 - `specs/031-decision-policy-engine/`
 - `specs/032-evidence-store-contracts/`
 - `specs/033-requirement-room/`
+- `specs/034-change-room/`
 - `packages/room-contract/` — the SHARED Room pattern: `RoomShellProps`, `Epistemic`,
   `RoomObjectRef`. Imported by `EPIC-034` and `EPIC-035`, whose first tasks stop if it is not
   built — breaking this path breaks two Epics that cannot be built without it (EPIC-033 `T337d`)
@@ -181,7 +182,6 @@ path added or removed without updating this document fails the build.
   and the `UX-0040` 360px floor, so no Room sets its own
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T918`)
-
 > **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
 > disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
 > rather than left implied: the four older contract packages — `engine-contract`,
