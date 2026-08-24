@@ -375,3 +375,26 @@ row cannot be quietly dropped.
 
 **Checkpoint**: `pnpm lint` clean, the parity check green and observed failing on a removed row,
 and every existing suite still passing — the prototype's form, this Epic's values.
+
+---
+
+## Phase 10: Convergence
+
+*Appended by `/speckit-converge`, 2026-08-24 (third run, after Phase 9). Two findings, both the
+same shape and both created by Phase 9 itself: **the shell it added is a delivered surface no
+accessibility check reaches.** Four further gaps were assessed and produce no task — see below.*
+
+- [ ] T930 Run the accessibility harness over the **composed application shell** in `frontend/tests/unit/a11y/shell.spec.tsx`: mount `App` at its root (the tree `main.tsx` builds) and assert zero violations on the signed-out surface, in **both themes** per `FR-DS-031` and `SC-DS-001` (missing). Since `T923` the shell renders a `banner` landmark, a breadcrumb and the theme control **on every page**, and no rule has ever examined it: `T883` renders page components in isolation inside its own `<main>` host, and `app-root.spec.tsx` and `prototype-parity.spec.tsx` — the only files that mount `App` — import no axe harness. `T914` anticipated exactly this ("extend `T883`'s page-level assertions to the shell") and Phase 9 delivered the shell without delivering the extension. **Mutation-verify** by adding a second `<header>` landmark or an unlabelled control to the bar: the check MUST fail
+- [ ] T931 Extend `frontend/tests/unit/a11y/components.spec.tsx` to the **Phase 9 configurations** per `FR-DS-031` (partial): `Modal` with `actions` (header and footer both populated), `Navigation` `orientation="vertical"` with a `count` — which puts `.ds-visually-hidden` text inside a button, a real assistive-technology construct scanned by nothing today — and `PageHeader` with a `description`. `T894` scans each component in its **minimal** usage and was written before these regions existed, so every one of them is markup the harness has never seen
+
+### Findings that produced no task, and why
+
+| Finding | Source | Why no task here |
+|---|---|---|
+| `Table` is imported only by tests — no delivered page uses it (`DEF-029-008`) | `T927` run | `FR-DS-023` requires the inventory to **exist**, and it does; no requirement is unmet. Both candidate resolutions are decisions about screens this Epic does not own (`PMI-DOC-005` `RULE-03`). Recorded, and the disposition is `T904`'s — appending a task would restate an open decision as though it were settled work |
+| The manual keyboard and screen-reader record (`FR-DS-032`/`FR-DS-034`, `SC-DS-002`/`SC-DS-008`) | spec | Already tracked by open `T884`/`T885`, and it is human work `/speckit-implement` cannot perform. Same reasoning Phase 7 recorded; converge does not duplicate an open task |
+| Two controls share one accessible name (`DEF-029-004`) | `T885` machine half | Whether duplicate names are *ambiguous when heard* is the `T885` judgement, not a mechanical result. It stays with the record it belongs to |
+| A captured requirement does not reach the register until a filter moves (`DEF-029-005`) | `T927` run | Not an EPIC-029 requirement — the register's fetch behaviour belongs to EPIC-011, and the record already proposes that deferral |
+
+**Checkpoint**: the shell a user actually looks at is covered by the same gate every page and
+component already passes — which is what `FR-DS-031` said all along, before there was a shell.
