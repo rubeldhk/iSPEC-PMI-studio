@@ -21,6 +21,19 @@
  * It is deliberately literal — it reads the committed markdown rather than a
  * generated summary — because the failure mode is a human writing a number in
  * prose and nothing disagreeing with them.
+ *
+ * ## What it does NOT check, and why
+ *
+ * **Free-prose totals**, like *"When any of the twelve ships"* or *"None of the
+ * other thirteen appears"*. `T442v` tried, and every matcher wide enough to
+ * catch them also caught *"the other two sections"* and *"for the other two
+ * there is nothing to point it at"* — neither about areas. A checker cannot
+ * reliably tell those apart, and one that fires on correct prose gets disabled.
+ *
+ * **The status table's sum stands in for them.** Three per-status counts that
+ * each match the registry *and* add up to eighteen leave no arithmetic for a
+ * prose total to get right on its own — and unlike a prose matcher, the table
+ * is a structured statement with exactly one meaning.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -81,25 +94,34 @@ const NUMBER = '(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|
 /**
  * Every "<n> delivered" / "<n> routed areas" style claim in a document.
  *
- * **Two shapes are deliberately not claims**, and both appear in these files:
+ * **Three shapes are deliberately not claims**, and all three appear in these
+ * files:
  *
  *   - `` `EPIC-033` delivered MUST be adopted `` — the number is an Epic
  *     identifier and `delivered` is a verb, so a preceding `EPIC-` rejects it.
  *   - `Remove one delivered area's route` — a single instance, not a count, so
  *     a following **singular** `area` rejects it. The plural `areas` does not,
  *     because `\barea\b` cannot match inside it.
+ *   - `marking these four undeclared would claim…` — an action performed on
+ *     four areas, not a statement that four exist. The demonstrative is what
+ *     says so, and a preceding `these`/`those` rejects it.
  *
- * A check that cried wolf on ordinary prose would be read once and then
- * ignored, which is worse than no check at all.
+ * Each was a false positive on the first run of this check (`T442v`). **A check
+ * that cried wolf on ordinary prose would be read once and then ignored**,
+ * which is worse than no check at all — so every exemption is asserted from
+ * both sides below rather than trusted.
  */
 function claims(text: string, subject: RegExp): { token: string; n: number }[] {
   const found: { token: string; n: number }[] = [];
   const pattern = new RegExp(
-    `(EPIC-)?${NUMBER}\\s+(?:are\\s+|of\\s+the\\s+)?(?:${subject.source})(\\s+area\\b)?`,
+    `(these|those|EPIC-)?\\s*${NUMBER}\\s+(?:are\\s+|of\\s+the\\s+)?(?:${subject.source})(\\s+area\\b)?`,
     'gi',
   );
   for (const match of flat(text).matchAll(pattern)) {
-    if (match[1] !== undefined) continue; // an Epic identifier, not a count
+    // `EPIC-033 delivered` — an identifier. `marking these four undeclared
+    // would claim…` — an ACTION on four areas, not a statement that four
+    // exist; the demonstrative is what says so.
+    if (match[1] !== undefined) continue;
     if (match[3] !== undefined) continue; // "one delivered area's" — an instance
     const n = value(match[2]!);
     if (n !== null) found.push({ token: match[2]!, n });
@@ -164,6 +186,45 @@ describe('T442t · the registry and the documents that define it agree', () => {
     },
   );
 
+  it.each(ARTIFACTS.map((parts) => [parts.join('/'), parts] as const))(
+    '%s states the undeclared count the registry has',
+    (name, parts) => {
+      const wrong = claims(doc(...parts), /undeclared/)
+        .filter((claim) => claim.n !== ACTUAL.undeclared)
+        .map((claim) => claim.token);
+      expect(
+        wrong,
+        `${name} claims ${wrong.join(', ')} undeclared areas; the registry has ${ACTUAL.undeclared}`,
+      ).toEqual([]);
+    },
+  );
+
+  it('data-model.md’s status table sums to the whole registry', () => {
+    // **The assertion that closes the shape rather than moving it.**
+    //
+    // Three times in this Epic a fix was asserted at exactly the level the
+    // previous fault sat, and the gap moved one step sideways: `T441v` left
+    // *failed* undriven, `T441s` left `hostRoom` unrendered, and `T442t`
+    // checked two of four counts — which is how the stale "twelve" on line 93
+    // survived `T442s` correcting the heading four lines above it.
+    //
+    // A **total** cannot be right while a part is wrong. Whatever phrasing a
+    // future edit invents, this reads the table itself and compares every
+    // number, so a part and the whole have to agree at once.
+    const table = flat(doc('data-model.md'));
+    const stated: Partial<Record<AreaStatus, number>> = {};
+    for (const status of Object.keys(ACTUAL) as AreaStatus[]) {
+      const match = new RegExp(`\\|\\s*${status}\\s*\\|[^|]*\\|\\s*(\\d+)\\s*\\|`, 'i').exec(table);
+      if (match) stated[status] = Number(match[1]);
+    }
+    expect(Object.keys(stated), 'the status table was not parsed at all').toHaveLength(3);
+    expect(stated).toEqual(ACTUAL);
+    expect(
+      Object.values(stated).reduce((a, b) => a + b, 0),
+      'the stated counts do not account for all eighteen areas',
+    ).toBe(AREAS.length);
+  });
+
   it('the contract route table lists exactly the delivered areas', () => {
     // The worst site of the `N1` divergence: the table marked
     // `/specifications/:id/tasks` as a delivered area — a parameterised path
@@ -196,6 +257,8 @@ describe('T442t · the registry and the documents that define it agree', () => {
     // And the two shapes that are NOT counts, both taken from these documents.
     expect(claims('`EPIC-033` delivered MUST be adopted', /delivered/)).toEqual([]);
     expect(claims("Remove one delivered area's route", /delivered/)).toEqual([]);
+    expect(claims('marking these four undeclared would be false', /undeclared/)).toEqual([]);
+    expect(claims('nine undeclared.', /undeclared/)).toEqual([{ token: 'nine', n: 9 }]);
     expect(claims('each of the six delivered areas', /delivered/)).toEqual([
       { token: 'six', n: 6 },
     ]);

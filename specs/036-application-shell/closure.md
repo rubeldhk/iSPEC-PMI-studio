@@ -1,7 +1,7 @@
 # Closure record: EPIC-036 Application Shell & Dashboard
 
-**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o` and `T442q` ·
-**Session**: `/speckit-implement` and **eight** `/speckit-converge` passes (counted 2026-08-24), executed in the worktree
+**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o`, `T442q` and `T442w` ·
+**Session**: `/speckit-implement` and **nine** `/speckit-converge` passes (counted 2026-08-24), executed in the worktree
 `.claude/worktrees/epic-036-application-shell` (concurrent-session rule, `T436a`)
 · **Released by**: PMI-DOC-006 v1.0 (APPROVED, `D-44`) · PMI-DOC-004 v2.0 `BR-0190`
 
@@ -13,7 +13,7 @@
 
 ## Work completed
 
-**102 of 104 tasks, across sixteen phases — counted 2026-08-24.** The two outstanding are a
+**104 of 106 tasks, across seventeen phases — counted 2026-08-24.** The two outstanding are a
 person's, not this session's, and are named below.
 
 > **The date is the point** (`T442q`). This line has been wrong twice, both times because a
@@ -40,6 +40,7 @@ person's, not this session's, and are named below.
 | **14 Convergence** | `T442p`–`T442q` | A discharged handover still recorded as owed, and three documents disagreeing on how many handovers there are |
 | **15 Convergence** | `T442r` | `research.md` and `plan.md` still calling the dependency new, and naming a `D-30` that never existed |
 | **16 Convergence** | `T442s`–`T442t` | Six documents describing six delivered areas when there are five, and the check that now disagrees |
+| **17 Convergence** | `T442u`–`T442v` | Two numbers the new check did not read, and the assertion that makes a part impossible to get wrong alone |
 
 **Artifacts.**
 
@@ -67,22 +68,24 @@ person's, not this session's, and are named below.
 
 | Suite | Result |
 |---|---|
-| `frontend` | **555 of 555** in 60 files |
-| `test:unit` | **2648 of 2648** in 292 files |
+| `frontend` | **562 of 562** in 60 files |
+| `test:unit` | **2655 of 2655** in 292 files |
 | `test:arch` | **84 of 84** in 8 files |
 | `test:contract` | **170 of 170** in 16 files |
-| `test:integration` | **208 passed, 1 failed, 2 skipped** of 209 in 32 files — see below |
+| `test:integration` | **207 passed, 2 skipped, 0 failed** of 209 in 32 files — **green this run**; see below |
 | `governance` | **893 of 895** in 69 files — the two are `T884` |
 | `typecheck` | clean |
 
-**Two reds, neither this Epic's, both named rather than omitted.**
+**One red, not this Epic's, named rather than omitted — and one that did not reproduce.**
 
 - **`governance` ×2 — `T884`**, red **by design** until a person runs the manual accessibility pass
   (`T441k`). It is the correct state, not a defect.
-- **`test:integration` ×1 — `T147`'s p95 search assertion** in `backend/tests/integration/scale.spec.ts`,
-  at 1247 ms against a 1000 ms target. **It passes alone** — 4 of 4, verified the same day — and
-  fails only under full-suite load. That is `DEF-030-002`, filed against `EPIC-030` and owned there.
-  This Epic changed no backend code.
+- **`test:integration` was green on this run**, where the Phase 13 measurement recorded `T147`'s p95
+  search assertion in `backend/tests/integration/scale.spec.ts` failing at 1247 ms against a 1000 ms
+  target. **That is `DEF-030-002` behaving exactly as filed** — it is load-sensitive, passes in
+  isolation, and fails only when the machine is busy enough. **A green run is not a fix**, and this
+  record does not report one: the defect stays open against `EPIC-030`, which owns it. This Epic
+  changed no backend code in either direction.
 
 > **The first version of this paragraph reported `frontend` at 535 and listed four suites.** It was
 > 537, and had been since Phase 11; `test:contract` and `test:integration` had **never been run** in
@@ -92,13 +95,14 @@ person's, not this session's, and are named below.
 
 Typecheck clean.
 
-## What eight convergence passes found, and what that says
+## What nine convergence passes found, and what that says
 
-**7 findings → 4 → 3 → 3 → 2 → 2 → 1 → 2.** The trajectory went back **up** at the eighth, and it
-should have: *"no code gap"* was true four passes running while six documents described a product
-with one more navigable area than the one that was built.
+**7 findings → 4 → 3 → 3 → 2 → 2 → 1 → 2 → 2.** The trajectory went back **up** at the eighth and
+held there at the ninth, and both times it should have: *"no code gap"* was true five passes running
+while six documents described a product with one more navigable area than the one that was built —
+and then while the check written to catch that read two of its four numbers.
 
-**Four of the eight passes found faults created by the pass before**, and the eighth found one
+**Five of the nine passes found faults created by the pass before**, and the eighth found one
 created eight phases earlier that every pass since had walked past:
 
 - `C1`'s remediation set *six delivered, three awaiting an owner* across every artifact. `N1` then
@@ -113,8 +117,14 @@ created eight phases earlier that every pass since had walked past:
 `T442t` is the answer and the one worth carrying forward: `T436f` checked the registry's invariants
 and nothing checked that the documents *defining* it said what it said. Constitution V asks a
 non-code output to carry an executable check that can fail — **the registry had one, its
-specification did not.** That is the part worth keeping,
-and it did not stop when the work moved from code into paperwork:
+specification did not.** That is the part worth keeping.
+
+**And the ninth pass found the same shape inside that answer.** `T442t` read `delivered` and
+`declared-not-delivered` and stopped, so `undeclared` and the non-delivered total were unguarded —
+and one of them was the wrong number, in `data-model.md`, four lines below a heading `T442s` had
+just corrected. A check that reads two of four numbers reports agreement about the two it reads.
+
+This did not stop when the work moved from code into paperwork:
 
 1. **`T441v` split *loading* from *empty*** on the project selector and left **failed** collapsed
    into empty — so a rejected request read as *"this workspace has no projects"*. `FR-SHL-062`
@@ -123,26 +133,33 @@ and it did not stop when the work moved from code into paperwork:
    called `hostRoom` either. `T441t` asserted the *import*, which was the previous fault and not
    that one.
 
-3. **`T442k` rewrote this document because its figures were stale** — and copied `frontend`'s
+3. **`T442t` checked two of the registry's four counts** — written specifically because six
+   documents had drifted from the registry, and green while one of them still had. `T442v`'s
+   answer is the assertion that the three counts **sum to eighteen**: a total cannot be right
+   while a part is wrong, which is the first assertion in this Epic that closes the shape instead
+   of moving it one step sideways.
+
+4. **`T442k` rewrote this document because its figures were stale** — and copied `frontend`'s
    figure forward from two phases earlier without re-measuring. `T442m` marked `C4` resolved in
    `analysis.md` and left the metrics table above it reading the pre-`C4` number, so that document
    stated both figures at once.
 
-The pattern in the first two: **the fix was asserted at the level the previous fault was found at,
-and the new fault sat one level up.** The state ended as a three-variant union rather than flags
-precisely because two attempts with booleans were each wrong in a different way.
+The pattern in the first three: **the fix was asserted at the level the previous fault was found
+at, and the new fault sat one level up.** Three times, and the third was in the check written to
+end the second. The state ended as a three-variant union rather than flags precisely because two
+attempts with booleans were each wrong in a different way.
 
-4. **`T441w` handed over a gap** — a failed project fetch with no state of its own — and the next
+5. **`T441w` handed over a gap** — a failed project fetch with no state of its own — and the next
    pass refused the framing: `FR-SHL-062` is a MUST, and recording a MUST is not discharging one.
    `T442b` closed it in four lines of JSX and one union variant. The handover entry then sat for
    three more phases still saying *"Not fixed here"* and still naming a variable that had been
    deleted, until `T442p`.
 
-The pattern in the third is plainer, and worse for being obvious: **a document about stale numbers
-was written without measuring the numbers.** `T442o` re-measured every suite, which is how the
-`test:integration` red above came to be in this record at all — it had never been run in this Epic.
+The pattern in the fourth is plainer, and worse for being obvious: **a document about stale numbers
+was written without measuring the numbers.** `T442o` re-measured every suite, which is how
+`DEF-030-002` came to be in this record at all — `test:integration` had never been run in this Epic.
 
-The pattern in the fourth is the one to carry into the next Epic: **a handover is a claim that
+The pattern in the fifth is the one to carry into the next Epic: **a handover is a claim that
 something cannot be done here, and it should be tested like any other claim.** One of the four was
 false, and the cost of finding out was smaller than the cost of writing it down.
 
@@ -193,15 +210,18 @@ Neither blocks `/speckit-converge`; both block the Epic Exit Criteria, and the E
 /speckit-converge 036
 ```
 
-A **sixth** pass. The fifth was predicted to return `converged` and did not — it found the two
-figures this phase has just corrected. That prediction has now been wrong twice, so this record
-makes none: the last two passes found no gap in the **code**, and both found one in the **records**,
-including in this document.
+A **tenth** pass. This record has twice predicted `converged` and been wrong twice, so it predicts
+nothing: the last **three** passes found no gap in the code and all three found one in the records,
+including in this document and, at the ninth, inside the check written to stop exactly that.
 
-What would make a clean pass credible rather than hoped for: every figure here was measured on
-2026-08-24 rather than carried forward, `analysis.md`'s coverage table was re-measured the same way,
-and the suites that had never been run in this Epic — `test:contract` and `test:integration` — now
-have been.
+What is different this time is narrower than a prediction and easier to check. **Every count that
+describes the registry is now asserted against the registry, and the three are asserted to sum to
+eighteen** — so a document can no longer be right about two states and wrong about the third, which
+is the failure the last two passes both found. **What remains unguarded is stated rather than
+implied**: free-prose totals are not machine-checked, the reason is written in
+`registry-documented.spec.ts`'s header, and the two that were wrong were corrected by hand at
+`T442u`. Every figure above was measured on 2026-08-24, none carried forward, and the integration
+suite was re-run rather than quoted — which is why its line changed.
 
 Then, in order of what unblocks most: the four Epics in [handovers.md](./handovers.md) each clear
 their `UX-0003` remainder with a registry edit and a binding, `EPIC-023` gives the review response
