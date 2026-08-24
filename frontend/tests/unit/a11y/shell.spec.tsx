@@ -24,6 +24,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { expectNoViolations, runWcag } from './axe';
 import { App } from '../../../src/main';
 import type { ApiClient, Project, WhoAmI } from '../../../src/services/api';
@@ -86,10 +87,29 @@ describe('T930 · the composed shell passes the WCAG 2.2 AA harness', () => {
     await expectNoViolations();
   });
 
-  it('signed in — the shell above Projects, breadcrumb moved', async () => {
-    const { container } = render(<App api={signedIn} />);
+  // EPIC-036 `T437f` moved what the top bar says. It read "PMI Studio /
+  // Projects" from a `useState` view union; it now reads the breadcrumb
+  // `UX-0012` requires — workspace, project, area — derived from the address.
+  // The signed-in landing is Home rather than Projects for the same reason:
+  // there are areas now, and one of them is the front door.
+  //
+  // The assertion is stronger than the one it replaces, not weaker: it checks
+  // both halves of the scope `BR-0001` is about, where the old one checked a
+  // single page name.
+  it('signed in — the shell above Home, breadcrumb naming workspace and area', async () => {
+    // A router is needed only for the signed-in branch: the breadcrumb's area
+    // segment is derived from the address (`FR-SHL-017`). Sign-in has no
+    // workspace and therefore no breadcrumb, which is why the tests above
+    // still mount `App` bare.
+    const { container } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <App api={signedIn} />
+      </MemoryRouter>,
+    );
     await screen.findByText('Platform');
-    expect(container.querySelector('.ds-topbar__location')?.textContent).toContain('Projects');
+    const location = container.querySelector('.ds-topbar__location')?.textContent ?? '';
+    expect(location, 'the breadcrumb names no workspace').toContain('ws_a');
+    expect(location, 'the breadcrumb names no area').toContain('Home');
     await expectNoViolations();
   });
 

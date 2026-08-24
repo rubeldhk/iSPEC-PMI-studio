@@ -1,0 +1,104 @@
+/*
+ * T437d (EPIC-036) — the shell's layout, and only its layout.
+ *
+ * **No token values are defined here** (`contracts/shell-contract.md` §6).
+ * PMI-DOC-005 is authoritative and `prototype-parity.md` already declined the
+ * prototype's own colour, focus-ring and type values as illustrative. Every
+ * colour, space and radius below is a `var(--…)` from `design/tokens.css`; a
+ * literal in this file would be a second design system.
+ *
+ * `UX-0040` — the floor is 360px, and nothing here sets a minimum above it
+ * (`FR-SHL-051`, asserted by `T440h`).
+ */
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) 1fr;
+  grid-template-areas: 'sidebar main';
+  min-height: 100%;
+}
+
+.shell__sidebar {
+  grid-area: sidebar;
+  padding: var(--space-3);
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.shell__main {
+  grid-area: main;
+  padding: var(--space-4);
+  min-width: 0; /* so wide content scrolls inside main rather than the page */
+}
+
+.shell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.shell-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.shell-context__crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-muted);
+}
+
+.shell-context__crumbs li + li::before {
+  content: '/';
+  margin-right: var(--space-2);
+}
+
+.shell-context__crumbs li[aria-current='page'] {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.shell-context__project {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+/*
+ * `FR-SHL-054` — below the narrow breakpoint the sidebar becomes a drawer.
+ * The grid collapses to one column so the drawer's control sits in the flow
+ * rather than over the content.
+ */
+@media (max-width: 767px) {
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'sidebar'
+      'main';
+  }
+
+  .shell__sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+.shell-drawer {
+  grid-area: sidebar;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.shell-drawer__panel {
+  margin-top: var(--space-3);
+}

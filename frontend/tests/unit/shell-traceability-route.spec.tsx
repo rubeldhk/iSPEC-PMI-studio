@@ -9,17 +9,42 @@
  * scenario opens with "the user views…", so the Epic's entire user story was
  * unreachable from the product — built, tested, and invisible, the same shape
  * `T462`, `T651` and `DEF-001-005` all had.
+ *
+ * ---
+ *
+ * **Rewritten by EPIC-036 `T437f`, and kept.** The `View` union is gone and the
+ * shell is a router, so the mechanics below changed: a `MemoryRouter` supplies
+ * the address, and the project is opened through it. **Every assertion is the
+ * one it was.**
+ *
+ * The control it clicks survived `T437g`, which removed `T200e`'s three
+ * buttons. Traceability is not one of PMI-DOC-006 §4.1's eighteen areas —
+ * `contracts/shell-contract.md` records it as *"within Projects"* — so it has
+ * no navigation entry to inherit, and deleting the link would put US7 back
+ * exactly where convergence found it.
+ *
+ * The `me` stub is the **real `WhoAmI` shape**, typed so the compiler checks
+ * it. It was `{ userId, workspaceId, email }` — a shape the API never returns,
+ * laundered through `as unknown as`. `DEF-029-006` is that exact fault: a stub
+ * of the wrong shape makes the component throw mid-render while the test goes
+ * on passing.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 import { App } from '../../src/main';
-import type { ApiClient } from '../../src/services/api';
+import type { ApiClient, WhoAmI } from '../../src/services/api';
 
 const PROJECT = { id: 'p1', name: 'Payments', description: null, status: 'active', engineName: null };
 
 function stubApi(): ApiClient {
   return {
-    me: vi.fn(async () => ({ userId: 'u1', workspaceId: 'ws_a', email: 'a@b.test' })),
+    me: vi.fn(
+      async (): Promise<WhoAmI> => ({
+        user: { id: 'u1', email: 'a@b.test', displayName: 'A' },
+        workspace: { id: 'ws_a' },
+      }),
+    ),
     listProjects: vi.fn(async () => [PROJECT]),
     getProject: vi.fn(async () => PROJECT),
     listRequirements: vi.fn(async () => []),
@@ -37,10 +62,20 @@ function stubApi(): ApiClient {
 
 afterEach(cleanup);
 
+/** Sign in, reach Projects, and open one — through the real route tree. */
 async function openProject(api: ApiClient): Promise<void> {
-  render(<App api={api} />);
-  await waitFor(() => expect(screen.getByText('Payments')).toBeTruthy());
-  fireEvent.click(screen.getByText('Payments'));
+  render(
+    <MemoryRouter initialEntries={['/projects']}>
+      <App api={api} />
+    </MemoryRouter>,
+  );
+  // Inside `<main>` on purpose: the project's name now appears twice — once in
+  // the list, and once as the selected option in the shell's project selector
+  // (`FR-SHL-020`). Clicking the option would do nothing at all, and the test
+  // would fail several assertions later with no clue why.
+  const main = await screen.findByRole('main');
+  await waitFor(() => expect(within(main).getByText('Payments')).toBeTruthy());
+  fireEvent.click(within(main).getByText('Payments'));
 }
 
 describe('the shell routes to traceability (US7)', () => {
@@ -84,7 +119,10 @@ describe('the shell routes to traceability (US7)', () => {
     fireEvent.click(await screen.findByRole('button', { name: /traceability/i }));
     await waitFor(() => expect(api.getProjectCoverage).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to project' }));
+    // The way back is now the product's own navigation rather than a button
+    // this view had to carry — which is `BR-0190` doing the job `T200e`'s
+    // per-page "Back to project" controls were standing in for.
+    fireEvent.click(screen.getByRole('button', { name: 'Projects' }));
     await waitFor(() => expect(screen.queryByText(/r_uncovered/)).toBeNull());
   });
 });

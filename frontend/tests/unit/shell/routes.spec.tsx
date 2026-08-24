@@ -1,0 +1,61 @@
+/**
+ * T436j (EPIC-036) — the route tree is derived, never hand-written.
+ *
+ * A route added by hand would be reachable and **invisible to `FR-SHL-016`**,
+ * which is the defect this contract exists to prevent: a page you can get to
+ * that the reachability check does not know to look for. So the assertion is
+ * not *"these routes exist"* but *"the routes are exactly the registry's, plus
+ * the declared sub-views, plus `*`"*.
+ */
+import { describe, expect, it } from 'vitest';
+import { AREAS, deliveredAreas } from '../../../src/shell/areas';
+import { SUB_VIEWS } from '../../../src/shell/routes';
+
+describe('T436j · routes come from the registry', () => {
+  it('declares a sub-view set, or the assertions below prove nothing', () => {
+    expect(SUB_VIEWS.length).toBeGreaterThan(0);
+    expect(deliveredAreas().length).toBeGreaterThan(0);
+  });
+
+  it('gives every sub-view a path inside an area it belongs to', () => {
+    // A sub-view whose prefix matches no area is an orphan route: reachable,
+    // and outside every area's identity. `/traceability` is the deliberate
+    // exception — PMI-DOC-006 §4.1 names no Traceability area and the contract
+    // records it as "within Projects".
+    const areaPaths = AREAS.map((area) => area.path).filter((path) => path !== '/');
+    for (const { path } of SUB_VIEWS) {
+      const owned =
+        path === '/traceability' || areaPaths.some((areaPath) => path.startsWith(`${areaPath}/`));
+      expect(owned, `sub-view ${path} belongs to no area`).toBe(true);
+    }
+  });
+
+  it('gives every sub-view a unique path that is not an area path', () => {
+    const paths = SUB_VIEWS.map((view) => view.path);
+    expect(new Set(paths).size).toBe(paths.length);
+    for (const path of paths) {
+      expect(
+        AREAS.some((area) => area.path === path),
+        `${path} is both a sub-view and an area path`,
+      ).toBe(false);
+    }
+  });
+
+  it('routes no area that is not delivered', () => {
+    // The other twelve have paths so an address naming one can be answered,
+    // and no route so the answer is not-found.
+    for (const area of AREAS) {
+      if (area.status === 'delivered') continue;
+      expect(
+        SUB_VIEWS.some((view) => view.path === area.path),
+        `${area.label} is not delivered but has a route`,
+      ).toBe(false);
+    }
+  });
+
+  it('has an element for every delivered area', () => {
+    for (const area of deliveredAreas()) {
+      expect(area.element, `${area.label} would route to nothing`).toBeTypeOf('function');
+    }
+  });
+});
