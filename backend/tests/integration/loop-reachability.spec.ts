@@ -18,7 +18,7 @@
  *
  *   1. `@nestjs/testing` is not installed, and adding it would enter a
  *      dependency into `package.json` with no `specs/_shared/dependencies.md`
- *      entry — the rule `T916` exists to enforce, breached in the act of
+ *      entry — the rule `T993d` exists to enforce, breached in the act of
  *      satisfying `T934`.
  *   2. `NestFactory.create(AppModule)` is *literally what `main.ts` does*.
  *      `Test.createTestingModule({ imports: [AppModule] })` builds a testing

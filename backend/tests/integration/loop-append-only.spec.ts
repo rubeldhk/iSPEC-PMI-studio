@@ -1,5 +1,5 @@
 /**
- * T928 — `loop_transitions` is append-only BY THE DATABASE (`FR-GEL-040`).
+ * T993p — `loop_transitions` is append-only BY THE DATABASE (`FR-GEL-040`).
  *
  * Why an integration test and not a unit test: a mocked repository cannot fail
  * it. Asserting the service never calls `update` proves the service is well
@@ -29,7 +29,7 @@ const MIGRATIONS = resolve(here, '../../prisma/migrations');
 const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
 const suite = noRuntime ? describe.skip : describe;
 
-suite('T928 · loop_transitions is append-only, enforced by PostgreSQL (FR-GEL-040)', () => {
+suite('T993p · loop_transitions is append-only, enforced by PostgreSQL (FR-GEL-040)', () => {
   let container: StartedPostgreSqlContainer;
   let db: Client;
 
@@ -109,7 +109,7 @@ suite('T928 · loop_transitions is append-only, enforced by PostgreSQL (FR-GEL-0
   });
 });
 
-suite('T928 · a loop configuration is superseded, never rewritten (FR-GEL-006)', () => {
+suite('T993p · a loop configuration is superseded, never rewritten (FR-GEL-006)', () => {
   let container: StartedPostgreSqlContainer;
   let db: Client;
 

@@ -61,7 +61,7 @@ requirement with functional requirements and no story — does **not** recur; `U
 
 **None.** Checked specifically against where the previous four Epics failed:
 
-- **Constitution V (non-code output)** — `T997w` cites `conformance: T931`, `EPIC-030`'s actual
+- **Constitution V (non-code output)** — `T997w` cites `conformance: T993s`, `EPIC-030`'s actual
   configuration check, and names the cross-Epic dependency. `EPIC-034`'s `C2` does not recur.
 - **Constitution V (task-level tests)** — `DOR-08` unpaired **0**; failing tests with no
   implementation partner **0**.

@@ -10,7 +10,7 @@
  * operator would go looking for a missing file that is sitting right there.
  *
  * This is the same directory `backend/tests/architecture/loop-config-conformance.spec.ts`
- * (`T931`) checks. Two readers, one rule: the test asserts the files conform
+ * (`T993s`) checks. Two readers, one rule: the test asserts the files conform
  * before anything runs; this refuses at composition if they do not.
  */
 

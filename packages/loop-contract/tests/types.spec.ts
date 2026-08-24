@@ -1,5 +1,5 @@
 /**
- * T923 — result and projection types, written to fail first.
+ * T993k — result and projection types, written to fail first.
  *
  * Two guarantees, both structural:
  *

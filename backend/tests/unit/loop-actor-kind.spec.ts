@@ -122,7 +122,7 @@ describe('T963 · the kind is recorded, not inferred', () => {
   });
 
   it('offers exactly two kinds, so a third cannot be introduced by a caller', async () => {
-    // The database enum has two members (T927) and so does the record type. An
+    // The database enum has two members (T993o) and so does the record type. An
     // `agent` kind at the API surface maps onto `automation` here deliberately:
     // FR-GEL-032 asks for the distinction that matters — a person, or not a
     // person — and a third value would divide the not-a-person half without

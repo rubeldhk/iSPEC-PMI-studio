@@ -28,7 +28,7 @@ Two guarantees are structural rather than procedural: `explanation` is non-optio
 
 **Primary Dependencies**: NestJS `^10.4.15`, Prisma `^5`, React 18 (the Inbox page). **No new
 runtime dependency** — `R-031-2` rejects a policy engine, with reasons. `supertest` arrives via
-`EPIC-030` `T916`/`T917`; if that has not merged when this Epic implements, its `TS-001` register
+`EPIC-030` `T993d`/`T993e`; if that has not merged when this Epic implements, its `TS-001` register
 entry becomes this Epic's task.
 
 **Storage**: PostgreSQL via Prisma (`ADR-0003`). Four new tables. **Classification rules are not

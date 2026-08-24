@@ -317,7 +317,7 @@ perform, so no duplicate task is appended for it.*
 produces a task. The other three are recorded here and deliberately produce none — converge appends
 remaining work, and work owned elsewhere or requiring human judgement is not this Epic's to append.*
 
-- [X] T914 Restyle the shell's own controls onto the component layer per `SC-DS-003` (partial): the "Traceability" button at `frontend/src/main.tsx:100` and "Back to project" at `:124` carry no class and render browser-default on two delivered surfaces, beside components that are fully styled. `FR-DS-050` named four pages and two components and **`main.tsx` was owned by no restyle task** — the shell is where nobody's job collects, the same shape as `T913`. Note the lint rule provably cannot catch this: **an absence of styling contains no literal value** (`DEF-029-003`; visual consistency check: extend `T883`'s page-level assertions to the shell)
+- [X] T914 Restyle the shell's own controls onto the component layer per `SC-DS-003` (partial): the "Traceability" button at `frontend/src/main.tsx:100` and "Back to project" at `:124` carry no class and render browser-default on two delivered surfaces, beside components that are fully styled. `FR-DS-050` named four pages and two components and **`main.tsx` was owned by no restyle task** — the shell is where nobody's job collects, the same shape as `T913`. Note the lint rule provably cannot catch this: **an absence of styling contains no literal value** (`DEF-029-003`; unit test: `T883`, whose page-level assertions were extended to the shell in `frontend/tests/unit/a11y/shell.spec.tsx`)
 
 ### Findings that produced no task, and why
 
@@ -354,7 +354,7 @@ row cannot be quietly dropped.
 ### Implementation
 
 - [X] T915 Add the surface and tint tokens the prototype's card language needs — `--color-canvas` and `--color-accent-subtle`, `--color-success-subtle`, `--color-warning-subtle`, `--color-danger-subtle` — to `frontend/src/design/tokens.css` and all three blocks of `themes.css`. Values are **this Epic's neutral palette** (`FR-DS-005`, `UI-0005`), not the prototype's hexes, which its header rules illustrative (conformance check: T925)
-- [X] T916 Add the **card surface** as a layout class `.ds-card` in `frontend/src/design/components/components.css`, and put the page on `--color-canvas` so a surface reads as raised against it. Not a sixteenth component: `T886` fixes the inventory at fifteen and the prototype's `.card` is a container, not a control (parity row 3)
+- [X] T916 Add the **card surface** as a layout class `.ds-card` in `frontend/src/design/components/components.css`, and put the page on `--color-canvas` so a surface reads as raised against it. Not a sixteenth component: `T886` fixes the inventory at fifteen and the prototype's `.card` is a container, not a control (parity row 3 — unit test: `T924`, which asserts `.ds-card` in `frontend/tests/unit/design/prototype-parity.spec.tsx`)
 - [X] T917 [P] `PageHeader` gains **`description`** — the prototype's `.pagehead` is a title, a sentence saying what the page is for, and actions to the right (parity row 4; unit test: T889's structure suite)
 - [X] T918 [P] `Table`: move the filter into a **tools bar** (`.ds-table__tools`) above the grid and give column headers the prototype's small, uppercase, muted treatment on a raised ground. Filtering itself is unchanged — it is already `FR-DS-041` (parity row 5; unit test: T889)
 - [X] T919 [P] `StatusPill` tones become **tinted grounds** rather than outlines, on the `T915` tint tokens (parity row 6; unit test: T889)

@@ -27,15 +27,22 @@ failing-first, and `T734` makes the rules pass it.
 `T780a`–`T780f`) added 2026-08-22 to close analysis findings `C1` and `C2`. Suffixes are this
 repository's convention for tasks inserted after a list is written (`T886a`, `T899a`, `T900a`,
 `T900b`), and they keep execution order readable without renumbering. **Chosen, not continued.** `EPIC-030` occupies
-`T913`–`T993`, and continuing from there would have reached `T1000` after six tasks — a four-digit
+`T932`–`T993` (plus `T993a`–`T993s`, renumbered on merge — see below), and continuing from
+there would have reached `T1000` after six tasks — a four-digit
 id the governance regex `T\d{3}[a-z]?\b` does not match, making the task **invisible** to `G-26-15`
 and `DOR-08` rather than rejected. `T716`–`T799` is the largest contiguous free run in the corpus,
 computed across `main` and every Wave 1 branch.
 
 > **The uniqueness check cannot see the collision it would prevent.** `G-26-15` reads `specs/` in
-> the current checkout, and `EPIC-030`'s tasks live on another branch — so `T913`+ *looks* free here
-> and would collide on merge. The block above was allocated against the union of all branches
-> deliberately.
+> the current checkout, and `EPIC-030`'s tasks live on another branch — so `T913`+ *looked* free
+> here and would collide on merge. The block above was allocated against the union of all
+> branches deliberately.
+>
+> **It happened.** `EPIC-029` and `EPIC-030` both took `T913`–`T931` — neither could see the
+> other — and the collision surfaced the moment every branch reached `main` on 2026-08-23.
+> `EPIC-030` gave way (75 references against `EPIC-029`'s 158) and its nineteen ids became
+> `T993a`–`T993s`. This Epic's own block was unaffected, which is what allocating against the
+> union bought.
 
 **Before starting**: sync from GitHub, and **work in a dedicated worktree** at
 `.claude/worktrees/epic-031-decision-policy-engine` — the plan's Constitution Check records the
@@ -70,7 +77,7 @@ Per [plan.md](./plan.md) Structure Decision:
 - [ ] T717 [P] Scaffold `packages/decision-contract/package.json` and `packages/decision-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
 - [ ] T718 [P] Register a `decision-contract` project in `vitest.workspace.ts` without `passWithNoTests` (`TS-005`)
 - [ ] T719 [P] Add `packages/decision-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
-- [ ] T720 Confirm `supertest` is present from `EPIC-030` `T916`/`T917`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
+- [ ] T720 Confirm `supertest` is present from `EPIC-030` `T993d`/`T993e`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
 
 ---
 
@@ -163,10 +170,10 @@ Per [plan.md](./plan.md) Structure Decision:
 - [ ] T754 [P] [US3] Write failing unit tests for blocker naming in `backend/tests/unit/decision-inbox-blockers.spec.ts` — the missing evidence, pending approver or refusing policy is named, never a generic not-ready — `FR-DPE-025`
 - [ ] T755 [US3] Implement blocker resolution in `backend/src/modules/decision/inbox.projection.ts` (unit test: T754)
 - [ ] T756 [US3] Implement `GET /inbox` in `backend/src/modules/decision/decision.controller.ts` (integration test: T736) — `FR-DPE-021`, `FR-DPE-023`
-- [ ] T757 [P] [US3] Write failing component tests for the Inbox page in `frontend/src/pages/DecisionInbox.test.tsx` — loading, empty, populated and error states, and an empty state that says so rather than rendering blank — `FR-DPE-026`, `UX-0051`
+- [ ] T757 [P] [US3] Write failing component tests for the Inbox page in `frontend/tests/unit/pages/DecisionInbox.spec.tsx` — loading, empty, populated and error states, and an empty state that says so rather than rendering blank — `FR-DPE-026`, `UX-0051` *Path corrected 2026-08-23: the task named a `*.test.tsx` path under `frontend/src/`, which the `frontend` vitest project never collects — it takes `tests/unit/**/*.spec.{ts,tsx}` and nothing else, so a test written there would never run, and a test that never runs is worse than no test because it reads as coverage. Surfaced by `T148` when every branch reached `main`. The SOURCE path is unchanged.*
 - [ ] T758 [US3] Implement `frontend/src/pages/DecisionInbox.tsx` (unit test: T757) — `UX-0021`, styled against the `EPIC-029` system
 - [ ] T759 [US3] Wire the Inbox into primary navigation so it is reachable in one action from every screen (unit test: T757) — `FR-DPE-026`, `UX-0021`, `UX-0003`
-- [ ] T760 [P] [US3] Write failing accessibility tests for the Inbox in `frontend/src/pages/DecisionInbox.a11y.test.tsx` — keyboard-only operation with visible focus (`BR-0193`)
+- [ ] T760 [P] [US3] Write failing accessibility tests for the Inbox in `frontend/tests/unit/pages/DecisionInbox.a11y.spec.tsx` — keyboard-only operation with visible focus (`BR-0193`) *Path corrected 2026-08-23: the task named a `*.test.tsx` path under `frontend/src/`, which the `frontend` vitest project never collects — it takes `tests/unit/**/*.spec.{ts,tsx}` and nothing else, so a test written there would never run, and a test that never runs is worse than no test because it reads as coverage. Surfaced by `T148` when every branch reached `main`. The SOURCE path is unchanged.*
 - [ ] T761 [US3] Implement keyboard operation and focus management in `frontend/src/pages/DecisionInbox.tsx` (unit test: T760)
 - [ ] T762 [P] [US3] Write the role-change integration test in `backend/tests/integration/decision-inbox-role.spec.ts` — the visible set follows the new role; no entry persists because it was once visible (`SC-DPE-004`)
 - [ ] T763 [US3] Implement `GET /decisions/metrics` in `backend/src/modules/decision/decision.controller.ts` (integration test: T736) — band distribution and auto-execution rate, `FR-DPE-033`, `SC-DPE-008`
@@ -326,7 +333,7 @@ schema; the mutation is what proves the fence is load-bearing rather than decora
 
 ## Notes
 
-- **The task id block was allocated, not continued.** `EPIC-030` holds `T913`–`T993`; continuing
+- **The task id block was allocated, not continued.** `EPIC-030` holds `T932`–`T993`; continuing
   would have hit `T1000`, which the governance regex does not match — the task would be **invisible**
   to `G-26-15`, not rejected by it. `T716`–`T799` was computed as the largest contiguous free run
   across `main` and every Wave 1 branch, because `G-26-15` reads only the current checkout and

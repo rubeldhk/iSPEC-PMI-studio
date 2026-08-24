@@ -76,7 +76,7 @@ rename the entity, which would have put the code out of step with the requiremen
 - [ ] T855b [P] Scaffold `packages/evidence-contract/package.json` and `packages/evidence-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
 - [ ] T855c [P] Register an `evidence-contract` project in `vitest.workspace.ts` without `passWithNoTests` (`TS-005`)
 - [ ] T855d [P] Add `packages/evidence-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
-- [ ] T855e Confirm `supertest` is present from `EPIC-030` `T916`/`T917`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
+- [ ] T855e Confirm `supertest` is present from `EPIC-030` `T993d`/`T993e`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
 
 ---
 

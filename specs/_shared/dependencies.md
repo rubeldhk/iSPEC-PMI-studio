@@ -97,7 +97,7 @@ of them.
 | D-26 | Prettier | 3.x | Formatting | MIT | ☐ |
 | D-27 | pnpm | 9.x | Workspace and package management | MIT | ☐ |
 
-### D-22 in detail — recorded by EPIC-030 `T916`, and it was already here
+### D-22 in detail — recorded by EPIC-030 `T993d`, and it was already here
 
 `TS-001` requires a register entry before a dependency enters a `package.json`. EPIC-030's research
 verified `supertest` was absent from `backend/package.json` and **no `createNestApplication` test
@@ -105,7 +105,7 @@ existed anywhere in the repository** — both true — and concluded it was a ne
 `D-22` has carried it since the platform specification, declared for *"API contract tests"* that were
 never written. The register was ahead of the code, which is the direction that costs nothing.
 
-So `T916` **augmented** this row rather than adding a `D-30` beside it. A second row for one library
+So `T993d` **augmented** this row rather than adding a `D-30` beside it. A second row for one library
 is the duplication a register exists to prevent, and claiming to have recorded something already
 recorded would be false.
 

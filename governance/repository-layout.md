@@ -182,7 +182,7 @@ path added or removed without updating this document fails the build.
 - `frontend/src/rooms/` — `RoomShell` and the region primitives; owns the `UX-0041` breakpoints
   and the `UX-0040` 360px floor, so no Room sets its own
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
-  `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T918`)
+  `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T993f`)
 > **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
 > disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
 > rather than left implied: the four older contract packages — `engine-contract`,

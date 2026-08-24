@@ -21,19 +21,19 @@ prior practice conflicts with it, this document wins."*
 
 **Non-code outputs count too** (Constitution V, v1.2.0). This Epic's non-code output is the set of
 loop instance configuration files under `packages/loop-contract/workflows/`; their executable
-conformance check is `T931`, written failing-first, and `T932` makes the files pass it. A check
-that cannot fail is decoration, which is why `T931` precedes `T932` rather than describing it.
+conformance check is `T993s`, written failing-first, and `T932` makes the files pass it. A check
+that cannot fail is decoration, which is why `T993s` precedes `T932` rather than describing it.
 
 **Organization**: grouped by the five user stories of [spec.md](./spec.md), each independently
 implementable and testable.
 
-**Task ID range**: `T913`–`T993`, 83 tasks (`T944a`/`T944b` added 2026-08-22 to close analysis finding `C1`). The corpus high-water mark was `T912` when this list was
+**Task ID range**: `T993a`–`T993`, 83 tasks (`T944a`/`T944b` added 2026-08-22 to close analysis finding `C1`). The corpus high-water mark was `T912` when this list was
 written; identifiers are unique corpus-wide (`G-26-15`, `DEF-028-014`). Ids stay three-digit
 deliberately — the governance regex is `T\d{3}[a-z]?\b`, so a four-digit id would be **invisible** to
 both `G-26-15` and `DOR-08` rather than rejected by them.
 
 **Before starting**: sync the repository from GitHub, and **work in a dedicated worktree** — the
-plan's Constitution Check records the concurrent-session gate as **FAIL**, and `T913` is its
+plan's Constitution Check records the concurrent-session gate as **FAIL**, and `T993a` is its
 discharge. Label the session `EPIC-030 Governed Engineering Loop` (Constitution VIII).
 
 **Before finishing**: close with a report — artifacts by path, anything in scope not done and why,
@@ -66,12 +66,12 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 **Purpose**: make the workspace able to hold a fifth contract package, and discharge the failing gate
 
-- [X] T913 Create the dedicated worktree at `.claude/worktrees/epic-030-governed-engineering-loop` — `git worktree add .claude/worktrees/epic-030-governed-engineering-loop epic/030-governed-engineering-loop` — and work there. Discharges the plan's one failing Constitution gate (concurrent-session isolation), following the EPIC-029 precedent. **Done 2026-08-22**; the path is the repository's own convention (gitignored, three siblings already), not the `../ispec-epic-030` the first draft named
-- [X] T914 [P] Scaffold `packages/loop-contract/package.json` and `packages/loop-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
-- [X] T915 [P] Register a `loop-contract` project in `vitest.workspace.ts` without `passWithNoTests` — `TS-005`, an empty suite is a failure
-- [X] T916 [P] Record `supertest` and `@types/supertest` in `specs/_shared/dependencies.md` with purpose, alternatives considered and licence (`TS-001`, `TS-002`) — verified absent from the repository today
-- [X] T917 Add `supertest` and `@types/supertest` to `backend/package.json` devDependencies and refresh `pnpm-lock.yaml` (`TS-003`)
-- [X] T918 [P] Add `packages/loop-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
+- [X] T993a Create the dedicated worktree at `.claude/worktrees/epic-030-governed-engineering-loop` — `git worktree add .claude/worktrees/epic-030-governed-engineering-loop epic/030-governed-engineering-loop` — and work there. Discharges the plan's one failing Constitution gate (concurrent-session isolation), following the EPIC-029 precedent. **Done 2026-08-22**; the path is the repository's own convention (gitignored, three siblings already), not the `../ispec-epic-030` the first draft named
+- [X] T993b [P] Scaffold `packages/loop-contract/package.json` and `packages/loop-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
+- [X] T993c [P] Register a `loop-contract` project in `vitest.workspace.ts` without `passWithNoTests` — `TS-005`, an empty suite is a failure
+- [X] T993d [P] Record `supertest` and `@types/supertest` in `specs/_shared/dependencies.md` with purpose, alternatives considered and licence (`TS-001`, `TS-002`) — verified absent from the repository today
+- [X] T993e Add `supertest` and `@types/supertest` to `backend/package.json` devDependencies and refresh `pnpm-lock.yaml` (`TS-003`)
+- [X] T993f [P] Add `packages/loop-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
 
 ---
 
@@ -83,26 +83,26 @@ split already used by `engine-contract`, `agent-contract` and `execution-contrac
 
 ### The stage vocabulary and ports — `packages/loop-contract`
 
-- [X] T919 [P] Write failing unit tests for the stage vocabulary in `packages/loop-contract/tests/stages.spec.ts` — asserts exactly eight stages in model order and that the tuple is readonly
-- [X] T920 Implement `LOOP_STAGES` and the `LoopStage` type in `packages/loop-contract/src/stages.ts` (unit test: T919) — `FR-GEL-001`, `FR-GEL-002`
-- [X] T921 [P] Write failing unit tests for the five port shapes in `packages/loop-contract/tests/ports.spec.ts` — asserts `GateOutcome.result` has exactly four members and no default, and that `AuditSink.record` requires a non-optional transaction handle
-- [X] T922 Implement `StageHandler`, `PolicyProvider`, `EvidenceProvider`, `GateProvider` and `AuditSink` in `packages/loop-contract/src/ports.ts` (unit test: T921) — `FR-GEL-021`, `FR-GEL-041`, `FR-GEL-062`
-- [X] T923 [P] Write failing unit tests for result and projection types in `packages/loop-contract/tests/types.spec.ts`
-- [X] T924 Implement `TransitionResult`, `LoopProgress`, `GateOutcome` and `LoopObjectRef` in `packages/loop-contract/src/types.ts` (unit test: T923)
-- [X] T925 Implement the export barrel `packages/loop-contract/src/index.ts` (unit test: T919)
+- [X] T993g [P] Write failing unit tests for the stage vocabulary in `packages/loop-contract/tests/stages.spec.ts` — asserts exactly eight stages in model order and that the tuple is readonly
+- [X] T993h Implement `LOOP_STAGES` and the `LoopStage` type in `packages/loop-contract/src/stages.ts` (unit test: T993g) — `FR-GEL-001`, `FR-GEL-002`
+- [X] T993i [P] Write failing unit tests for the five port shapes in `packages/loop-contract/tests/ports.spec.ts` — asserts `GateOutcome.result` has exactly four members and no default, and that `AuditSink.record` requires a non-optional transaction handle
+- [X] T993j Implement `StageHandler`, `PolicyProvider`, `EvidenceProvider`, `GateProvider` and `AuditSink` in `packages/loop-contract/src/ports.ts` (unit test: T993i) — `FR-GEL-021`, `FR-GEL-041`, `FR-GEL-062`
+- [X] T993k [P] Write failing unit tests for result and projection types in `packages/loop-contract/tests/types.spec.ts`
+- [X] T993l Implement `TransitionResult`, `LoopProgress`, `GateOutcome` and `LoopObjectRef` in `packages/loop-contract/src/types.ts` (unit test: T993k)
+- [X] T993m Implement the export barrel `packages/loop-contract/src/index.ts` (unit test: T993g)
 
 ### Persistence — `backend/prisma`
 
-- [X] T926 Add `LoopInstanceConfiguration`, `LoopObject` and `LoopTransition` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §2–§4
-- [X] T927 Generate the migration under `backend/prisma/migrations/` including the `actorKind = 'automation' ⇒ triggerRuleId IS NOT NULL` constraint (`FR-GEL-031`) and the partial unique index on `(objectId, triggerEventId, triggerRuleId) WHERE outcome = 'accepted'` (`FR-GEL-033`)
-- [X] T928 [P] Write failing integration test asserting `LoopTransition` rejects `UPDATE` and `DELETE` in `backend/tests/integration/loop-append-only.spec.ts` — `FR-GEL-040`, following the `audit-immutability.spec.ts` precedent
-- [X] T929 [P] Write failing integration test asserting the automation constraint rejects a rule-less automated transition at the database level in `backend/tests/integration/loop-automation-constraint.spec.ts` — `FR-GEL-031`
+- [X] T993n Add `LoopInstanceConfiguration`, `LoopObject` and `LoopTransition` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §2–§4
+- [X] T993o Generate the migration under `backend/prisma/migrations/` including the `actorKind = 'automation' ⇒ triggerRuleId IS NOT NULL` constraint (`FR-GEL-031`) and the partial unique index on `(objectId, triggerEventId, triggerRuleId) WHERE outcome = 'accepted'` (`FR-GEL-033`)
+- [X] T993p [P] Write failing integration test asserting `LoopTransition` rejects `UPDATE` and `DELETE` in `backend/tests/integration/loop-append-only.spec.ts` — `FR-GEL-040`, following the `audit-immutability.spec.ts` precedent
+- [X] T993q [P] Write failing integration test asserting the automation constraint rejects a rule-less automated transition at the database level in `backend/tests/integration/loop-automation-constraint.spec.ts` — `FR-GEL-031`
 
 ### Configuration files and their conformance check — the non-code output
 
-- [X] T930 [P] Author the loop instance configuration JSON schema and one worked example in `packages/loop-contract/workflows/` per [contracts/loop-contract.md](./contracts/loop-contract.md) §5 — `FR-GEL-005`, `FR-GEL-020` (a transition carries its named required gates)
-- [X] T931 [P] Write the failing executable conformance check in `backend/tests/architecture/loop-config-conformance.spec.ts` — fails on a stage outside `LOOP_STAGES`, an unregistered stage handler, a trigger with no rule id, or absent `approvedBy`/`approvalRef`
-- [X] T932 Make every file in `packages/loop-contract/workflows/` pass T931 (conformance: T931) — Constitution V for a non-code output, `FR-GEL-005`
+- [X] T993r [P] Author the loop instance configuration JSON schema and one worked example in `packages/loop-contract/workflows/` per [contracts/loop-contract.md](./contracts/loop-contract.md) §5 — `FR-GEL-005`, `FR-GEL-020` (a transition carries its named required gates)
+- [X] T993s [P] Write the failing executable conformance check in `backend/tests/architecture/loop-config-conformance.spec.ts` — fails on a stage outside `LOOP_STAGES`, an unregistered stage handler, a trigger with no rule id, or absent `approvedBy`/`approvalRef`
+- [X] T932 Make every file in `packages/loop-contract/workflows/` pass T993s (conformance: T993s) — Constitution V for a non-code output, `FR-GEL-005`
 - [X] T933 [P] Write the failing architecture test in `backend/tests/architecture/loop-independence.spec.ts` — asserts `packages/loop-contract` imports nothing from a Room module and contains no Room vocabulary, modelled on `engine-independence.spec.ts` — `FR-GEL-061`
 
 ### Module skeleton and its wiring
@@ -252,7 +252,7 @@ empty → promote.
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: no dependencies — start immediately. `T913` first: it discharges the failing gate
+- **Setup (Phase 1)**: no dependencies — start immediately. `T993a` first: it discharges the failing gate
 - **Foundational (Phase 2)**: depends on Phase 1. **Blocks every user story**
 - **US1 (Phase 3)**: depends on Phase 2 only
 - **US2 (Phase 4)**: depends on Phase 2. Independent of US1 — but US1 first is the MVP
@@ -272,9 +272,9 @@ depending on three others.
 ### Parallel Example: Phase 2
 
 ```text
-T919, T921, T923  — three test files, no shared state
-T928, T929        — two integration tests
-T930, T931, T933  — configuration, its check, the independence check
+T993g, T993i, T993k  — three test files, no shared state
+T993p, T993q        — two integration tests
+T993r, T993s, T933  — configuration, its check, the independence check
 T934              — the reachability test, written before T935/T936 exist
 ```
 
@@ -319,5 +319,5 @@ told you nothing, and this Epic's whole value to five other Epics is that its gu
 - **`T988` is not this Epic's to complete.** The `BR-0065` SRS edit is a project-owner act on an
   APPROVED document. It is listed so closure cannot be claimed while two documents disagree, not
   because an implementer should make the edit.
-- `T913` comes first for a reason. The plan records the concurrent-session gate as **FAIL**, and
+- `T993a` comes first for a reason. The plan records the concurrent-session gate as **FAIL**, and
   every task after it writes application code into a checkout that cannot be asserted exclusive.

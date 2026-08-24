@@ -154,7 +154,7 @@ describe('FR-GEL-032 · human and automation are distinguishable without inferen
   });
 
   it('REFUSES automation that names no rule, before writing anything (RULE-11)', async () => {
-    // The database rejects this too (T929). Both, because the database catches
+    // The database rejects this too (T993q). Both, because the database catches
     // what goes around the service and the service explains what the database
     // would only reject.
     const { object, store, writer } = await seed();

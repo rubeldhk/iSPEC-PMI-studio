@@ -1,4 +1,4 @@
--- EPIC-030 — the Governed Engineering Loop. T927.
+-- EPIC-030 — the Governed Engineering Loop. T993o.
 --
 -- Three tables. `loop_transitions` is the append-only core and the only writer
 -- of `loop_objects.currentStage`; `loop_instance_configurations` is never

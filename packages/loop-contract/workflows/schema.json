@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pmi.studio/schemas/loop-instance-configuration/1",
   "title": "Loop instance configuration",
-  "description": "EPIC-030 T930. The programme-defined half of a governed workflow type (FR-GEL-004, FR-GEL-005, FR-GEL-009). The tenant-configured half — authorities, gates, trigger rules — lives in the loop_instance_configurations row keyed to this file. `stages` is programme-defined and NOT writable by a tenant. The executable conformance check is backend/tests/architecture/loop-config-conformance.spec.ts; this schema documents the shape, that check enforces it, and the check is the authority where the two could disagree.",
+  "description": "EPIC-030 T993r. The programme-defined half of a governed workflow type (FR-GEL-004, FR-GEL-005, FR-GEL-009). The tenant-configured half — authorities, gates, trigger rules — lives in the loop_instance_configurations row keyed to this file. `stages` is programme-defined and NOT writable by a tenant. The executable conformance check is backend/tests/architecture/loop-config-conformance.spec.ts; this schema documents the shape, that check enforces it, and the check is the authority where the two could disagree.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "workflowType", "stages", "transitions", "approvedBy", "approvalRef"],

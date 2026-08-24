@@ -1,5 +1,5 @@
 /**
- * T919 — the stage vocabulary, written to fail first.
+ * T993g — the stage vocabulary, written to fail first.
  *
  * `FR-GEL-001` fixes the loop at eight stages in model order, and `FR-GEL-002`
  * makes that order part of the contract rather than a convention. The tuple is

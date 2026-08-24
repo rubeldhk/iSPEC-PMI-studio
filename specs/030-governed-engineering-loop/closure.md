@@ -10,8 +10,8 @@ the worktree `.claude/worktrees/epic-030-governed-engineering-loop` (concurrent-
 
 | Phase | Tasks | Outcome |
 |---|---|---|
-| 1 Setup | `T913`–`T918` | `packages/loop-contract` scaffolded, registered, `supertest` declared |
-| 2 Foundational | `T919`–`T936` | Contract, schema, migration, conformance check, independence test, XI Tier 1 |
+| 1 Setup | `T993a`–`T993f` | `packages/loop-contract` scaffolded, registered, `supertest` declared |
+| 2 Foundational | `T993g`–`T936` | Contract, schema, migration, conformance check, independence test, XI Tier 1 |
 | 3 US1 — declared as configuration | `T937`–`T946` | Loader, stage registry, type isolation, `declareObject` |
 | 4 US2 — explicit, authorized, answerable | `T947`–`T960` | Authority, transition record, refusal recording, OCC, atomic write |
 | 5 US3 — automation traces to its rule | `T961`–`T966` | Trigger validation, `actorKind`, idempotent dispatch |

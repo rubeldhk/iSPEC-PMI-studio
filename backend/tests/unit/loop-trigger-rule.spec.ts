@@ -13,7 +13,7 @@
  *   2. **at the service** — an automated actor arriving without a trigger is
  *      refused and the refusal is recorded (`T949`);
  *   3. **at the database** — a `CHECK` constraint, because a caller can go
- *      around the service (`T929`).
+ *      around the service (`T993q`).
  *
  * Three is not redundancy. Each catches a different population: a wrong file, a
  * wrong call, a wrong writer.

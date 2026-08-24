@@ -1,6 +1,6 @@
 # Loop instance configurations
 
-**EPIC-030 `T930`.** The programme-defined half of every governed workflow type — `FR-GEL-004`,
+**EPIC-030 `T993r`.** The programme-defined half of every governed workflow type — `FR-GEL-004`,
 `FR-GEL-005`, `FR-GEL-009`.
 
 One file per workflow type, named `<workflowType>.json`. `stages` is programme-defined and **not
@@ -10,13 +10,13 @@ is the `loop_instance_configurations` row keyed to it.
 ## What checks these
 
 [`schema.json`](./schema.json) documents the shape.
-**`backend/tests/architecture/loop-config-conformance.spec.ts` (`T931`) enforces it**, and is the
+**`backend/tests/architecture/loop-config-conformance.spec.ts` (`T993s`) enforces it**, and is the
 authority where the two could disagree: it is the executable conformance check Constitution V
 requires for a non-code output, it reads **every** file in this directory, and it demonstrably fails
 on each of the four faults rather than only describing them.
 
 A later Epic adding a file here is covered without editing that check. `EPIC-034` `T406v` and
-`EPIC-035` `T997w` both cite `T931` by number for exactly this reason.
+`EPIC-035` `T997w` both cite `T993s` by number for exactly this reason.
 
 ## `example-workflow.json` is an example, not a product workflow
 

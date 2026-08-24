@@ -402,7 +402,7 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] **`FR-CHR-032` is mutation-tested**: an undeterminable impact area is made to render as absent rather than unknown, and the suite observed failing (`SC-CHR-002`)
 - [ ] **`FR-CHR-054` is mutation-tested**: a silent retarget onto a newer baseline is added, and the suite observed failing (`SC-CHR-009`). This is the one that would ship an approval referring to a baseline no longer in force
 - [ ] **`FR-CHR-062` is mutation-tested**: `TaskRegenerationService.regenerate()` is imported and called from the re-plan recorder, and **both** the architecture test and the re-plan safety test observed failing. *Added 2026-08-23 (analysis finding `L1`): the task list already carried this proof and the gate did not require it, so a later reader could satisfy the gate while dropping the proof of the one trap this Epic's plan names*
-- [ ] The Room is demonstrably a **configured instance** of `EPIC-030`'s loop, shown by the instance configuration, and its workflow file passes `EPIC-030`'s `T931` conformance check (Constitution V, non-code output)
+- [ ] The Room is demonstrably a **configured instance** of `EPIC-030`'s loop, shown by the instance configuration, and its workflow file passes `EPIC-030`'s `T993s` conformance check (Constitution V, non-code output)
 - [ ] Region names are verified identical to `EPIC-033`'s by comparison rather than by review (`SC-CHR-008`)
 - [ ] A Defect Room transfer has been exercised end to end with context and evidence preserved (`FR-CHR-012`), jointly with `EPIC-035`
 - [ ] **Constitution XI Tier 1** — a test drives the Room through its **real entry point** against the composed module graph

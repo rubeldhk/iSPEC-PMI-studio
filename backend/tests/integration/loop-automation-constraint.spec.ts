@@ -1,5 +1,5 @@
 /**
- * T929 — `RULE-11` at the database (`FR-GEL-031`, `FR-GEL-014`, `FR-GEL-033`).
+ * T993q — `RULE-11` at the database (`FR-GEL-031`, `FR-GEL-014`, `FR-GEL-033`).
  *
  * *"Every automated transition MUST be explainable from a visible rule."* A
  * service check satisfies that for callers who go through the service. This
@@ -76,7 +76,7 @@ function insertTransition(
   );
 }
 
-suite('T929 · the database refuses a transition record nobody could interpret', () => {
+suite('T993q · the database refuses a transition record nobody could interpret', () => {
   let container: StartedPostgreSqlContainer;
   let db: Client;
 

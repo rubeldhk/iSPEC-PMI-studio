@@ -210,7 +210,7 @@ forever, which is a stronger assumption than storing a row.
 | NestJS (`@nestjs/core` `^10.4.15`) | `/nestjs/docs.nestjs.com` | composed-graph e2e testing — pattern established by `EPIC-030` `R-030-8`, reused unchanged |
 | Prisma (`@prisma/client` `^5`) | `/prisma/web` | as `EPIC-030` `R-030-1`; no new Prisma concept is introduced here |
 
-**No new runtime dependency.** `supertest` is added by `EPIC-030` `T916`/`T917` with its `TS-001`
+**No new runtime dependency.** `supertest` is added by `EPIC-030` `T993d`/`T993e` with its `TS-001`
 register entry; this Epic depends on that landing rather than duplicating it. If `EPIC-030` has not
 merged when this Epic implements, the register entry is this Epic's to make — a task, not an
 assumption.

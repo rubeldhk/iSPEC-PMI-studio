@@ -24,7 +24,7 @@ that satisfying an item by assignment is **not expressible** (`data-model.md` §
 
 **Primary Dependencies**: NestJS `^10.4.15`, Prisma `^5`. **No new runtime dependency** —
 `R-032-1` adopts a JSON schema, which is not adopting a package. `supertest` arrives via `EPIC-030`
-`T916`/`T917`.
+`T993d`/`T993e`.
 
 **Storage**: PostgreSQL via Prisma (`ADR-0003`) for attestations and Contract bindings; referenced
 payloads via `EPIC-025`'s `StorageProvider`. **4 new tables.**

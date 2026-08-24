@@ -1,5 +1,5 @@
 /**
- * T920 — the stage vocabulary. `FR-GEL-001`, `FR-GEL-002`.
+ * T993h — the stage vocabulary. `FR-GEL-001`, `FR-GEL-002`.
  *
  * Event → Context → Analyze → Decide → Execute → Verify → Evidence → Outcome,
  * and then the next Event. Eight stages, one definition, exported by reference.

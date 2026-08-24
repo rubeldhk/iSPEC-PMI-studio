@@ -1,5 +1,5 @@
 /**
- * T931 — the executable conformance check for a non-code output.
+ * T993s — the executable conformance check for a non-code output.
  *
  * Constitution V, v1.2.0: *"for document/configuration outputs, an executable
  * conformance check that can fail"*. The loop instance configuration files under
@@ -132,7 +132,7 @@ const VALID = {
   approvalRef: 'commit_abc',
 };
 
-describe('T931 · the conformance check can fail — each of the four faults', () => {
+describe('T993s · the conformance check can fail — each of the four faults', () => {
   it('accepts a conforming configuration, or every assertion below means nothing', () => {
     expect(conformanceViolations(VALID, LOOP_STAGES)).toEqual([]);
   });
