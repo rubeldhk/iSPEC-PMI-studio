@@ -1,9 +1,17 @@
 # Closure record: EPIC-036 Application Shell & Dashboard
 
-**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o`, `T442q` and `T442w` ·
-**Session**: `/speckit-implement` and **nine** `/speckit-converge` passes (counted 2026-08-24), executed in the worktree
+**Date**: 2026-08-24 · **Task**: `T441o`, rewritten by `T442k`, corrected by `T442o`, `T442q`, `T442u`/`T442v` and `T442z` ·
+**Session**: `/speckit-implement` and **ten** `/speckit-converge` passes (counted 2026-08-24), executed in the worktree
 `.claude/worktrees/epic-036-application-shell` (concurrent-session rule, `T436a`)
 · **Released by**: PMI-DOC-006 v1.0 (APPROVED, `D-44`) · PMI-DOC-004 v2.0 `BR-0190`
+
+> **Corrected 2026-08-24 (`T442z`).** The Date line above credited **`T442w`**, a task that existed
+> nowhere in `tasks.md` — Phase 17's correction was `T442u`/`T442v`. The pass that made the
+> correction wrote the wrong id into the record of it. `T442y` now asserts that every task this
+> Epic's records cite is a task `tasks.md` defines, **and that check would not have caught this
+> one**: `T442w` was allocated by Phase 18, so the reference resolved the moment it was wrong in a
+> new way. An existence check catches a dangling id, never a wrong one. Reading the sentence is
+> still somebody's job, and this line is the standing example of why.
 
 > **Rewritten 2026-08-24 (`T442k`).** The first version of this record was accurate for about an
 > hour. It reported 75 of 77 tasks, ended at Phase 8, and quoted the frontend suite at 508 — before
@@ -13,7 +21,7 @@
 
 ## Work completed
 
-**104 of 106 tasks, across seventeen phases — counted 2026-08-24.** The two outstanding are a
+**108 of 110 tasks, across eighteen phases — counted 2026-08-24.** The two outstanding are a
 person's, not this session's, and are named below.
 
 > **The date is the point** (`T442q`). This line has been wrong twice, both times because a
@@ -41,6 +49,7 @@ person's, not this session's, and are named below.
 | **15 Convergence** | `T442r` | `research.md` and `plan.md` still calling the dependency new, and naming a `D-30` that never existed |
 | **16 Convergence** | `T442s`–`T442t` | Six documents describing six delivered areas when there are five, and the check that now disagrees |
 | **17 Convergence** | `T442u`–`T442v` | Two numbers the new check did not read, and the assertion that makes a part impossible to get wrong alone |
+| **18 Convergence** | `T442w`–`T442z` | Two set-level claims resting on hand-maintained lists — the surfaces `SC-SHL-005` counts, and the documents the count check reads |
 
 **Artifacts.**
 
@@ -49,7 +58,7 @@ person's, not this session's, and are named below.
   `shell-context.tsx`, `Home.tsx`, `home-model.ts`, `home-sources.ts`, `NotFound.tsx`, `shell.css`
 - `frontend/src/main.tsx` — **modified**: the `useState<View>` union removed, `BrowserRouter`
   mounted, the project selection synced from the address
-- `frontend/tests/unit/shell/` — **19 spec files**, 1 harness
+- `frontend/tests/unit/shell/` — **20 spec files**, 1 harness
 - `tests/governance/dependency-register.spec.ts` — **new**, `TS-001`'s first check
 - `specs/_shared/dependencies.md` — `D-13` raised to 7.x, with a "D-13 in detail" section
 - `docs/accessibility/EPIC-036-shell-transcript.md` — Constitution XI Tier 2
@@ -68,24 +77,28 @@ person's, not this session's, and are named below.
 
 | Suite | Result |
 |---|---|
-| `frontend` | **562 of 562** in 60 files |
-| `test:unit` | **2655 of 2655** in 292 files |
+| `frontend` | **576 of 576** in 61 files |
+| `test:unit` | **2669 of 2669** in 293 files |
 | `test:arch` | **84 of 84** in 8 files |
 | `test:contract` | **170 of 170** in 16 files |
-| `test:integration` | **207 passed, 2 skipped, 0 failed** of 209 in 32 files — **green this run**; see below |
+| `test:integration` | **1 failed on the first run, 0 on the second** — 209 in 32 files, no code changed between them; see below |
 | `governance` | **893 of 895** in 69 files — the two are `T884` |
 | `typecheck` | clean |
 
-**One red, not this Epic's, named rather than omitted — and one that did not reproduce.**
+**One red, not this Epic's, named rather than omitted — and one that flickered inside a single session.**
 
 - **`governance` ×2 — `T884`**, red **by design** until a person runs the manual accessibility pass
   (`T441k`). It is the correct state, not a defect.
-- **`test:integration` was green on this run**, where the Phase 13 measurement recorded `T147`'s p95
-  search assertion in `backend/tests/integration/scale.spec.ts` failing at 1247 ms against a 1000 ms
-  target. **That is `DEF-030-002` behaving exactly as filed** — it is load-sensitive, passes in
-  isolation, and fails only when the machine is busy enough. **A green run is not a fix**, and this
-  record does not report one: the defect stays open against `EPIC-030`, which owns it. This Epic
-  changed no backend code in either direction.
+- **`test:integration` failed once and passed once, minutes apart, with no change between them.**
+  Phase 13 measured `T147`'s p95 search assertion in `backend/tests/integration/scale.spec.ts` at
+  1247 ms against a 1000 ms target; Phase 18 saw 1 failure and then 207 of 207 clean, the second
+  run showing that same search assertion taking 23.8 s of wall clock. **That is `DEF-030-002`
+  behaving exactly as filed** — load-sensitive, green in isolation, red when the machine is busy,
+  and this run was measured with the UAT stack and its containers running. **Both observations are
+  recorded because reporting only the green one is the same selective reading this Epic keeps
+  catching** — though the failing assertion's name was not captured in the red run, so it is named
+  here as the known candidate rather than as a confirmed identification. A green run is not a fix.
+  The defect stays open against `EPIC-030`, which owns it; this Epic changed no backend code.
 
 > **The first version of this paragraph reported `frontend` at 535 and listed four suites.** It was
 > 537, and had been since Phase 11; `test:contract` and `test:integration` had **never been run** in
@@ -95,12 +108,15 @@ person's, not this session's, and are named below.
 
 Typecheck clean.
 
-## What nine convergence passes found, and what that says
+## What ten convergence passes found, and what that says
 
-**7 findings → 4 → 3 → 3 → 2 → 2 → 1 → 2 → 2.** The trajectory went back **up** at the eighth and
-held there at the ninth, and both times it should have: *"no code gap"* was true five passes running
-while six documents described a product with one more navigable area than the one that was built —
-and then while the check written to catch that read two of its four numbers.
+**7 findings → 4 → 3 → 3 → 2 → 2 → 1 → 2 → 2 → 4.** The trajectory went **up** at the eighth, held
+at the ninth and **doubled at the tenth** — and every time it should have. *"No code gap"* was true
+six passes running: first while six documents described a product with one more navigable area than
+the one built, then while the check written to catch that read two of its four numbers, and finally
+while **two set-level claims rested on lists somebody maintained by hand** — the surfaces
+`SC-SHL-005` counts, and the documents the count check reads. **A rising count late in an Epic is
+not a regression; it is the checks getting sharp enough to see what was always there.**
 
 **Five of the nine passes found faults created by the pass before**, and the eighth found one
 created eight phases earlier that every pass since had walked past:
@@ -123,6 +139,20 @@ specification did not.** That is the part worth keeping.
 `declared-not-delivered` and stopped, so `undeclared` and the non-delivered total were unguarded —
 and one of them was the wrong number, in `data-model.md`, four lines below a heading `T442s` had
 just corrected. A check that reads two of four numbers reports agreement about the two it reads.
+
+**And the tenth pass found the shape a second time, in a different noun.** `SC-SHL-005` sets its
+target at *100% of shell-owned surfaces* and says how to verify it — **"by driving each state, not
+by inspection."** What verified it was `T441h`: a completed task naming **three** surfaces in its
+own description. The `ContextBar` project selector was not among them, and one pass later `T441v`
+and `T442b` found that surface rendering a failed fetch as an empty one. **The list was already
+wrong when it was ticked, and being a list is why nothing said so.** `T442w` now drives every state
+of every surface through the real `App` and asserts the enumeration covers the directory — and it
+caught an undeclared module on its first run.
+
+The through-line of passes eight to ten: **wherever a claim was about a *set*, the set was
+maintained by a person and checked by nobody.** Areas, then states, then surfaces, then documents.
+Each fix closed one instance and left the next standing, because they were not variants of one bug
+— they were the same design decision made four times.
 
 This did not stop when the work moved from code into paperwork:
 
@@ -210,11 +240,15 @@ Neither blocks `/speckit-converge`; both block the Epic Exit Criteria, and the E
 /speckit-converge 036
 ```
 
-A **tenth** pass. This record has twice predicted `converged` and been wrong twice, so it predicts
-nothing: the last **three** passes found no gap in the code and all three found one in the records,
-including in this document and, at the ninth, inside the check written to stop exactly that.
+An **eleventh** pass. This record has twice predicted `converged` and been wrong twice, so it
+predicts nothing: the last **four** passes found no gap in the code and every one found a gap in
+the records or the checks — including in this document, and twice inside a check written to close
+the previous pass's finding.
 
-What is different this time is narrower than a prediction and easier to check. **Every count that
+What is different this time, stated narrowly enough to be checked rather than hoped for: the four
+set-level claims this Epic makes — which areas exist, which states they are in, which surfaces the
+shell owns, and which documents describe them — are now **all four derived and asserted**, none
+left to a list. **Every count that
 describes the registry is now asserted against the registry, and the three are asserted to sum to
 eighteen** — so a document can no longer be right about two states and wrong about the third, which
 is the failure the last two passes both found. **What remains unguarded is stated rather than

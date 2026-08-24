@@ -35,7 +35,7 @@
  * prose total to get right on its own — and unlike a prose matcher, the table
  * is a structured statement with exactly one meaning.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -129,14 +129,56 @@ function claims(text: string, subject: RegExp): { token: string; n: number }[] {
   return found;
 }
 
-const ARTIFACTS: readonly (readonly string[])[] = [
-  ['data-model.md'],
-  ['contracts', 'shell-contract.md'],
-  ['spec.md'],
-  ['plan.md'],
-  ['quickstart.md'],
-  ['checklists', 'requirements.md'],
-];
+/**
+ * Every markdown file under the feature directory, as a `/`-joined path.
+ *
+ * **Read, not listed** (`T442y`). This was a hand-maintained array of six paths
+ * while the directory held eleven, and nothing said which five were missing or
+ * why — so `analysis.md` was omitted by nobody in particular, and `analysis.md`
+ * was the one that had drifted. That is `DEF-010-001`'s shape at the document
+ * level: a list that must agree with a directory, and no check that it does.
+ */
+function featureDocuments(dir: string = SPECS, prefix = ''): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
+    if (entry.isDirectory()) found.push(...featureDocuments(join(dir, entry.name), rel));
+    else if (entry.name.endsWith('.md')) found.push(rel);
+  }
+  return found.sort();
+}
+
+/**
+ * Documents whose counts are **not** checked, and why.
+ *
+ * Every line here is a decision somebody made, not a file somebody forgot.
+ * That is the entire difference between this map and the array it replaced:
+ * the omission is now readable, arguable and wrong-able.
+ *
+ * **`analysis.md`'s exemption is the load-bearing one.** It is a dated session
+ * record — its Remediation table opens *"Applied 2026-08-24"* and describes
+ * what that remediation did, which was true when written and was superseded by
+ * `N1` an hour later. Count-checking a history document would demand that
+ * history be rewritten to stay green, which is the opposite of what a record is
+ * for. **The cost is real and is stated rather than hidden**: its numbers are
+ * not machine-checked, `T442x` had to correct three of them by hand, and the
+ * only guard on the next drift is a person reading it.
+ */
+const EXEMPT: Readonly<Record<string, string>> = Object.freeze({
+  'analysis.md':
+    'a dated session record — its resolution notes and Remediation table describe what was true when applied, and N1 superseded C1 the same day. Corrected by hand at T442x.',
+  'closure.md':
+    'a dated snapshot that quotes superseded figures on purpose, so the drift it describes stays legible.',
+  'tasks.md':
+    'task descriptions quote the wrong numbers verbatim — that is what a remediation task is.',
+  'handovers.md':
+    'states obligations and owners rather than area totals; its one count is prose the parser cannot scope.',
+  'research.md': 'records decisions and alternatives; it states no area counts.',
+});
+
+const ARTIFACTS: readonly (readonly string[])[] = featureDocuments()
+  .filter((rel) => EXEMPT[rel] === undefined)
+  .map((rel) => rel.split('/'));
 
 describe('T442t · the registry and the documents that define it agree', () => {
   it('reads a registry with all three states, or this check proves nothing', () => {
@@ -148,6 +190,68 @@ describe('T442t · the registry and the documents that define it agree', () => {
     for (const [status, n] of Object.entries(ACTUAL)) {
       expect(n, `no areas are ${status}`).toBeGreaterThan(0);
     }
+  });
+
+  it('checks every document in the feature directory, or says why not', () => {
+    // The list is derived, so the only way to omit a file is to declare it —
+    // and the only way to declare a file that is gone is to be wrong.
+    const documents = featureDocuments();
+    const unaccounted = documents.filter(
+      (rel) => EXEMPT[rel] === undefined && !ARTIFACTS.some((parts) => parts.join('/') === rel),
+    );
+    expect(unaccounted, `${unaccounted.join(', ')} is neither checked nor exempt`).toEqual([]);
+
+    const orphaned = Object.keys(EXEMPT).filter((rel) => !documents.includes(rel));
+    expect(orphaned, `EXEMPT names ${orphaned.join(', ')}, which no longer exists`).toEqual([]);
+
+    // An exemption with no reason is an omission with better manners.
+    for (const [rel, reason] of Object.entries(EXEMPT)) {
+      expect(reason.length, `${rel} is exempt with no reason given`).toBeGreaterThan(30);
+    }
+  });
+
+  it("every task this Epic's records cite is a task this Epic has", () => {
+    // `T442z`: `closure.md` credited `T442w`, which existed nowhere. A record
+    // that attributes work to a task nobody can look up is a dead end for the
+    // next reader, and `G-26-14` guards the reverse direction only.
+    //
+    // **This catches a DANGLING id, not a WRONG one.** `T442w` was allocated by
+    // the very phase that fixed the reference, so this assertion would have
+    // gone green on the bad line the moment the id existed. Green here means
+    // "these ids resolve", never "these ids are the right ones" — reading the
+    // sentence is still somebody's job.
+    // **The letter is required.** Every task this Epic owns is `T436a`–`T442z`
+    // — the sub-lettered blocks the header explains, because 999 of 999
+    // three-digit prefixes were already allocated. So a bare `T436` in prose
+    // names the *block*, not a task, and `handovers.md` uses it that way three
+    // times. Treating those as ids would make the check cry wolf on correct
+    // writing, which is how a check stops being read.
+    const OWN_BLOCK = /^T(43[6-9]|44[0-2])[a-z]$/;
+    const defined = new Set(
+      [...doc('tasks.md').matchAll(/^- \[[ xX]\] (T\d{3}[a-z]?)/gm)].map((m) => m[1]!),
+    );
+    expect(defined.size, 'no tasks parsed out of tasks.md').toBeGreaterThan(50);
+
+    const dangling: string[] = [];
+    const examined = new Set<string>();
+    for (const rel of featureDocuments()) {
+      if (rel === 'tasks.md') continue;
+      for (const match of doc(...rel.split('/')).matchAll(/\bT\d{3}[a-z]?\b/g)) {
+        const id = match[0];
+        // Ids outside this Epic's allocated blocks belong to other Epics —
+        // `T200e` is `EPIC-010`'s, `T884` is `EPIC-029`'s — and this file has
+        // no standing to say whether those exist.
+        if (!OWN_BLOCK.test(id)) continue;
+        examined.add(id);
+        if (!defined.has(id)) dangling.push(`${rel} cites ${id}`);
+      }
+    }
+    // Anti-vacuity: a scan that found no citations would report every record
+    // clean forever, which is the failure mode this whole file exists to name.
+    expect(examined.size, 'no task citations were found to check').toBeGreaterThan(20);
+    expect([...new Set(dangling)], 'a record names a task that tasks.md does not define').toEqual(
+      [],
+    );
   });
 
   it('finds count claims to check, in every artifact that makes them', () => {
