@@ -37,6 +37,7 @@ import { LoadingIndicator } from './design/components/LoadingIndicator';
 import { SignIn } from './pages/SignIn';
 import { ContextBar } from './shell/ContextBar';
 import {
+  NO_IDENTITY_PROJECT_SET,
   ShellProvider,
   projectIdFromPathname,
   type ProjectSetState,
@@ -109,7 +110,9 @@ export function App({ api: injected }: { api?: ApiClient } = {}): ReactElement {
   useEffect(() => {
     let live = true;
     if (identity === null) {
-      setProjectSet({ kind: 'ready', projects: [] });
+      // Not `ready, []` — see `NO_IDENTITY_PROJECT_SET`. There is no workspace
+      // to have no projects.
+      setProjectSet(NO_IDENTITY_PROJECT_SET);
       return (): void => {
         live = false;
       };
