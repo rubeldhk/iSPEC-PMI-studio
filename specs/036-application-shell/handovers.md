@@ -1,9 +1,26 @@
 # Handovers: `EPIC-036` Application Shell & Dashboard
 
-**Session**: 2026-08-24 · Tasks `T441n`, `T441p` · Closure: [closure.md](./closure.md)
+**Session**: 2026-08-24 · Tasks `T441n`, `T441p`, `T441w`, `T442g`, `T442p`, `T442q` ·
+Closure: [closure.md](./closure.md)
 
-Two obligations this Epic **cannot discharge** and must not leave implicit. Both are recorded with
-their owner, their measurement, and the exact change that clears them.
+**Four obligations** this Epic **cannot discharge** and must not leave implicit. Each is recorded
+with its owner, its measurement, and the exact change that clears it.
+
+| # | Obligation | Owner |
+|---|---|---|
+| 1 | The remainder of `UX-0003` — four areas specified, owned and unbuilt | `EPIC-012`, `EPIC-014`/`015`, `EPIC-016`, `EPIC-019`/`021`/`024` |
+| 2 | The workspace half of `FR-SHL-020` — no endpoint enumerates workspaces | `EPIC-004` |
+| 3 | `SC-SHL-009` on two addresses — the review response carries no project | `EPIC-023` |
+| 4 | The task-identifier decision — 999 of 999 prefixes allocated | `EPIC-026` |
+
+A fifth entry follows them, marked ✅: a gap that **was** handed over and then closed one phase
+later. It is kept as history and owed by nobody.
+
+> **Corrected 2026-08-24 (`T442q`).** This header said *"Two obligations… Both are recorded"* over
+> four sections, and named two of the six tasks that wrote them; `closure.md` called the same file
+> *"three handovers"*. **Three documents, three counts.** In a file seven Epics are meant to read to
+> find what they owe, the count is not decoration — the table above exists so the next reader does
+> not have to trust a sentence.
 
 ---
 
@@ -107,15 +124,29 @@ lands on.
 
 ---
 
-### A smaller one in the same place
+### ✅ A smaller one in the same place — **discharged, not owed**
 
-**A failed project fetch has no state of its own.** `frontend/src/main.tsx` clears
-`projectsLoading` in a `finally`, so a request that *failed* renders as *"No projects in this
-workspace"* — the third thing `T441u` just separated from the other two, minus its own name.
-Bounded, and wrong. `FR-SHL-062` says a failed section reports as failed, and the selector is a
-shell-owned surface. **Not fixed here**: it needs an error state on the control and a decision about
-what a user does next when the set cannot be loaded at all, which is a larger question than this
-task. Recorded so the next converge run finds it written down rather than rediscovering it.
+**Kept as history, not as an obligation.** Nobody owes this; it is here because it is the clearest
+example in this Epic of a handover being the wrong answer.
+
+**What was recorded (2026-08-24, `T441w`):** *"A failed project fetch has no state of its own.
+`frontend/src/main.tsx` clears `projectsLoading` in a `finally`, so a request that failed renders as
+'No projects in this workspace'. **Not fixed here**: it needs an error state on the control and a
+decision about what a user does next when the set cannot be loaded at all, which is a larger
+question than this task."*
+
+**What happened next.** The very next convergence pass found it as `F1` and did not accept the
+framing: `FR-SHL-062` says *"rendering a failure as an empty state is a defect, not a fallback"*, and
+**recording a MUST is not discharging one**. `T442b` replaced `projectsLoading` with the
+`ProjectSetState` union, so a failed set now reads *"Projects could not be loaded"* on an
+`aria-invalid` control beside a `role="alert"` carrying the reason and the next step. `T442a` drives
+it. The "larger question" turned out to be one variant of a union and four lines of JSX.
+
+> **Corrected 2026-08-24 (`T442p`).** This section survived three phases still saying *"Not fixed
+> here"* and still naming `projectsLoading`, which has not existed since `T442b`. Anyone reading it
+> to find what they owed would have gone looking for a variable that was gone. **A handover file is
+> read by people who were not there**, which is exactly why a stale entry in it costs more than a
+> stale entry anywhere else in this Epic.
 
 ---
 
