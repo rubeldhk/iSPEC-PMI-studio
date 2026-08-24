@@ -1,0 +1,111 @@
+/*
+ * T869 (EPIC-029) — the token layer: the single definition every surface
+ * consumes (FR-DS-002). Conformance: tests/governance/design-tokens.spec.ts.
+ *
+ * A NEUTRAL SYSTEM PALETTE, making no brand claim (FR-DS-005). Values here are
+ * deliberately replaceable; names are the contract (contracts/tokens.md).
+ * Colour roles never hues — a `--color-blue-500` would leak the palette into
+ * every consumer and defeat re-theming.
+ *
+ * This file is the ONLY place a literal visual value may live (FR-DS-051).
+ * Themed tokens (color, elevation) carry their LIGHT value here as the
+ * default; themes.css re-states light and supplies dark. The conformance
+ * check asserts the two never drift.
+ */
+:root {
+  /* -- colour roles — all themed ---------------------------------------- */
+  /* Three grounds, deepest first: canvas is the page, surface is what sits
+   * on it, raised is what sits on that. T915 (Phase 9) added canvas — the
+   * prototype's `--bg`: without a ground below the surface, a card cannot
+   * read as a card (contracts/prototype-parity.md row 1). */
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f3f4f6;
+  --color-text: #1a1d21;
+  --color-text-muted: #4b5563;
+  --color-border: #d1d5db;
+  --color-accent: #1d4ed8;
+  --color-on-accent: #ffffff;
+  --color-danger: #b91c1c;
+  --color-success: #166534;
+  --color-warning: #854d0e;
+  --color-focus: #1d4ed8;
+
+  /* Tinted grounds — a status carries a wash of its own hue (parity row 2).
+   * These are tokens rather than `color-mix(… 12% …)` because the percentage
+   * would be a literal, and the rule is right to reject it: a tint IS a
+   * design decision, so it gets a name and a contrast pair like any other.
+   * Neutral has no tint token — --color-surface-raised already is one. */
+  --color-accent-subtle: #e9edff;
+  --color-success-subtle: #e6f4ea;
+  --color-warning-subtle: #fbf1e0;
+  --color-danger-subtle: #fbeaea;
+
+  /* -- space — fixed ratio 1.5 from 0.25rem (FR-DS-003), never themed ---- */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.375rem;
+  --space-3: 0.5625rem;
+  --space-4: 0.84375rem;
+  --space-5: 1.265625rem;
+  --space-6: 1.8984375rem;
+  --space-7: 2.84765625rem;
+  --space-8: 4.271484375rem;
+
+  /* -- type — five steps of a ceiling of seven (FR-DS-004) --------------- */
+  --type-1-size: 0.75rem;
+  --type-1-line: 1rem;
+  --type-1-weight: 400;
+  --type-2-size: 0.875rem;
+  --type-2-line: 1.25rem;
+  --type-2-weight: 400;
+  --type-3-size: 1rem;
+  --type-3-line: 1.5rem;
+  --type-3-weight: 400;
+  --type-4-size: 1.25rem;
+  --type-4-line: 1.75rem;
+  --type-4-weight: 600;
+  --type-5-size: 1.5rem;
+  --type-5-line: 2rem;
+  --type-5-weight: 600;
+
+  /* -- radius ------------------------------------------------------------ */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-full: 9999px;
+
+  /* -- elevation — themed; shadows differ on dark surfaces --------------- */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(17, 24, 39, 0.08);
+  --elevation-2: 0 2px 8px rgba(17, 24, 39, 0.12);
+  --elevation-3: 0 8px 24px rgba(17, 24, 39, 0.16);
+
+  /* -- motion — durations; zeroed under reduced motion ------------------- */
+  --motion-fast: 100ms;
+  --motion-base: 200ms;
+  --motion-slow: 400ms;
+}
+
+/*
+ * T882 — the focus-visible treatment, token-driven (FR-DS-033). Lives here
+ * because this file is lint-exempt (R-029-5) and the treatment must be global:
+ * a per-component focus style is a component someone forgets.
+ * --color-focus is checked at ≥ 3:1 against every surface, both themes.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * T875 — reduced motion zeroes durations and ONLY durations; the test asserts
+ * this block declares nothing that could move layout (spec Edge Cases).
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+}

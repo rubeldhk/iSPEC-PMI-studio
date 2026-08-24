@@ -132,3 +132,29 @@ describe('T537 · the new packages are scaffolded as their tasks promise', () =>
     expect(existsSync(join(ROOT, dir, 'tsconfig.json'))).toBe(true);
   });
 });
+
+describe('T867 (EPIC-029) · the design test areas are collected, not assumed', () => {
+  // The `frontend` project's glob is `tests/unit/**/*.spec.{ts,tsx}` — wide
+  // enough to cover `design/` and `a11y/` without a config change. That is
+  // exactly the condition T537 exists to distrust: a glob that silently
+  // matches nothing still passes. So each area must contain at least one file
+  // the glob actually matches.
+  const hasSpec = (dir: string): boolean =>
+    existsSync(dir) && readdirSync(dir).some((f) => /\.spec\.(ts|tsx)$/.test(f));
+
+  it('frontend/tests/unit/design holds at least one spec the frontend project collects', () => {
+    expect(hasSpec(join(ROOT, 'frontend/tests/unit/design'))).toBe(true);
+  });
+
+  it('frontend/tests/unit/a11y holds at least one spec the frontend project collects', () => {
+    expect(hasSpec(join(ROOT, 'frontend/tests/unit/a11y'))).toBe(true);
+  });
+
+  it('the frontend project glob covers both areas', () => {
+    // Assert against the config text so narrowing the glob to exclude either
+    // directory fails here rather than passing with fewer tests collected.
+    const frontendProject = /name:\s*'frontend'[\s\S]*?include:\s*\[([^\]]*)\]/.exec(vitestConfig);
+    expect(frontendProject, 'the frontend project is not in vitest.workspace.ts').not.toBeNull();
+    expect(frontendProject![1]).toContain('tests/unit/**/*.spec.{ts,tsx}');
+  });
+});

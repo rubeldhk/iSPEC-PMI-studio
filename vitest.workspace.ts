@@ -161,6 +161,11 @@ export default defineWorkspace([
       root: './frontend',
       include: ['tests/unit/**/*.spec.{ts,tsx}'],
       environment: 'jsdom',
+      // EPIC-029 T867/T899a — process CSS imports so the app-root reachability
+      // test can assert the token stylesheets actually reach the document.
+      // Without this, `import './design/tokens.css'` is stubbed to an empty
+      // module and no test can tell a present stylesheet from a missing one.
+      css: true,
     },
   },
   {

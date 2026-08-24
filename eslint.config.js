@@ -1,5 +1,6 @@
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import design from './eslint-rules/design-tokens.mjs';
 
 /**
  * T008 — lint plus the dependency-boundary rules.
@@ -115,5 +116,32 @@ export default [
         },
       ],
     },
+  },
+  // ------------------------------------------------------------------------
+  // EPIC-029 T878 — no literal visual value outside the token file
+  // (FR-DS-051, research R-029-5). The rule and its CSS processor live in
+  // eslint-rules/design-tokens.mjs; the mutation test proving the rule can
+  // fail is tests/governance/eslint-design-tokens.spec.ts (T876/T877), the
+  // dependency-boundary precedent (T541) applied to visual values.
+  // ------------------------------------------------------------------------
+  {
+    // Stylesheets: the processor wraps CSS so the rule can read it. The two
+    // token files are the ONE home literals have and are exempt by design.
+    files: ['frontend/src/**/*.css'],
+    ignores: ['frontend/src/design/tokens.css', 'frontend/src/design/themes.css'],
+    plugins: { design },
+    processor: 'design/css',
+  },
+  {
+    // The virtual blocks the processor emits from those stylesheets.
+    files: ['frontend/src/**/*.css/*.js'],
+    plugins: { design },
+    rules: { 'design/no-literal-visual-values': 'error' },
+  },
+  {
+    // Inline style= props in application sources.
+    files: ['frontend/src/**/*.ts', 'frontend/src/**/*.tsx'],
+    plugins: { design },
+    rules: { 'design/no-literal-visual-values': 'error' },
   },
 ];

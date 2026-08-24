@@ -3,9 +3,17 @@
  *
  * The session itself is an HTTP-only cookie the browser carries; this page's
  * whole job is credentials in, identity out to `onSignedIn`, errors readable.
+ *
+ * Restyled onto the design system (EPIC-029 T895): tokens and components
+ * only — FormField owns the labels, Button carries the busy state without
+ * losing its words (FR-DS-042).
  */
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { ApiError, type ApiClient, type WhoAmI } from '../services/api';
+import { Button } from '../design/components/Button';
+import { FormField } from '../design/components/FormField';
+import { PageHeader } from '../design/components/PageHeader';
+import { TextInput } from '../design/components/TextInput';
 
 export interface SignInProps {
   api: ApiClient;
@@ -33,32 +41,36 @@ export function SignIn({ api, onSignedIn }: SignInProps): ReactElement {
   }
 
   return (
-    <main>
-      <h1>PMI Studio</h1>
-      <form onSubmit={(e) => void submit(e)}>
-        <label>
-          Email
-          <input
+    <main className="ds-page">
+      <PageHeader title="PMI Studio" />
+      <form className="ds-stack" onSubmit={(e) => void submit(e)}>
+        <FormField id="sign-in-email" label="Email">
+          <TextInput
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="username"
           />
-        </label>
-        <label>
-          Password
-          <input
+        </FormField>
+        <FormField id="sign-in-password" label="Password">
+          <TextInput
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
           />
-        </label>
-        <button type="submit" disabled={busy}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
+        </FormField>
+        <div className="ds-row">
+          <Button type="submit" loading={busy}>
+            {busy ? 'Signing in…' : 'Sign in'}
+          </Button>
+        </div>
       </form>
-      {error !== null && <p role="alert">{error}</p>}
+      {error !== null && (
+        <p className="ds-field__error" role="alert">
+          {error}
+        </p>
+      )}
     </main>
   );
 }

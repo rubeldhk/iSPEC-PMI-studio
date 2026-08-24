@@ -1,0 +1,84 @@
+/*
+ * T871 (EPIC-029) — light and dark theme values (FR-DS-010, FR-DS-011).
+ * Conformance: tests/governance/design-tokens.spec.ts (T870 completeness,
+ * T872 contrast — both computed, both themes).
+ *
+ * Three blocks, one mechanism:
+ *   1. no data-theme attribute → the @media block follows the OS (the default)
+ *   2. data-theme='dark'       → explicit dark, regardless of OS
+ *   3. data-theme='light'      → explicit light, regardless of OS
+ * theme.ts (T874) writes the attribute; clearing it returns to the OS.
+ * The media block re-states dark for users who never chose; the conformance
+ * check asserts it never drifts from the attribute block.
+ */
+
+:root[data-theme='light'] {
+  --color-canvas: #f6f7f9;
+  --color-accent-subtle: #e9edff;
+  --color-success-subtle: #e6f4ea;
+  --color-warning-subtle: #fbf1e0;
+  --color-danger-subtle: #fbeaea;
+  --color-text: #1a1d21;
+  --color-text-muted: #4b5563;
+  --color-surface: #ffffff;
+  --color-surface-raised: #f3f4f6;
+  --color-border: #d1d5db;
+  --color-accent: #1d4ed8;
+  --color-on-accent: #ffffff;
+  --color-danger: #b91c1c;
+  --color-success: #166534;
+  --color-warning: #854d0e;
+  --color-focus: #1d4ed8;
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(17, 24, 39, 0.08);
+  --elevation-2: 0 2px 8px rgba(17, 24, 39, 0.12);
+  --elevation-3: 0 8px 24px rgba(17, 24, 39, 0.16);
+}
+
+:root[data-theme='dark'] {
+  --color-canvas: #0b1120;
+  --color-accent-subtle: #1e2a4a;
+  --color-success-subtle: #16301f;
+  --color-warning-subtle: #3a2f0b;
+  --color-danger-subtle: #3a1a1a;
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+  --color-surface: #111827;
+  --color-surface-raised: #1f2937;
+  --color-border: #374151;
+  --color-accent: #60a5fa;
+  --color-on-accent: #111827;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+  --color-warning: #facc15;
+  --color-focus: #60a5fa;
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --elevation-2: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --elevation-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-canvas: #0b1120;
+  --color-accent-subtle: #1e2a4a;
+  --color-success-subtle: #16301f;
+  --color-warning-subtle: #3a2f0b;
+  --color-danger-subtle: #3a1a1a;
+  --color-text: #e5e7eb;
+    --color-text-muted: #9ca3af;
+    --color-surface: #111827;
+    --color-surface-raised: #1f2937;
+    --color-border: #374151;
+    --color-accent: #60a5fa;
+    --color-on-accent: #111827;
+    --color-danger: #f87171;
+    --color-success: #4ade80;
+    --color-warning: #facc15;
+    --color-focus: #60a5fa;
+    --elevation-0: none;
+    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --elevation-2: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --elevation-3: 0 8px 24px rgba(0, 0, 0, 0.6);
+  }
+}
