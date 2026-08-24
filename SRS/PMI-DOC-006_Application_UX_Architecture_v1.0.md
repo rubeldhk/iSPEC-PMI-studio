@@ -1,7 +1,8 @@
 # PMI-DOC-006 — Application UX Architecture
 
-**Document ID**: PMI-DOC-006 · **Version**: 1.0 · **Status**: PROPOSED — REQUIRES PROJECT OWNER APPROVAL
-**Owner**: Project Owner (Product) · **Date**: 2026-08-21
+**Document ID**: PMI-DOC-006 · **Version**: 1.0 · **Status**: APPROVED 2026-08-24
+**Owner**: Project Owner (Product) · **Date**: 2026-08-21 · **Approved**: 2026-08-24
+**Authorised by**: decision [`D-44`](../specs/_shared/decisions/D-44-application-ux-architecture-approved.md)
 **Depends on**: PMI-DOC-000 (structure, identifiers), PMI-DOC-004 v2.0 (business requirements),
 PMI-DOC-005 (design system and UX standards)
 **Actions**: PMI-DOC-004A Amendment G and gap `G-30`; decision 6 of PMI-DOC-004A §14
@@ -70,7 +71,7 @@ navigation groups of §4, the Room pattern of §6 and the cross-cutting surfaces
    (`RULE-01`).
 
 What the prototype *is* good for: settling structural arguments quickly, and showing that the
-seventeen navigation areas of §4 fit in one coherent shell without a second-level menu.
+eighteen navigation areas of §4 fit in one coherent shell without a second-level menu.
 
 ---
 
@@ -79,7 +80,7 @@ seventeen navigation areas of §4 fit in one coherent shell without a second-lev
 ### 4.1 Structure
 
 Primary navigation is a single persistent sidebar with four labeled groups. Grouping is what keeps
-seventeen areas navigable; a flat seventeen-item list is not.
+eighteen areas navigable; a flat eighteen-item list is not.
 
 | Group | Areas | Satisfies |
 |---|---|---|
@@ -94,9 +95,16 @@ appear in two groups.
 `UX-0002` — Navigation MUST be role-aware: an area the current identity cannot act in is hidden or
 visibly disabled with a reason, never present-and-failing on click (`BR-0003`, `BR-0174`).
 
-`UX-0003` — Every area listed in §4.1 MUST be reachable from primary navigation. A built screen that
-nothing links to is a defect, not an unfinished feature — this is the rule `DEF-010-001` exists
-because nobody had written.
+`UX-0003` — Every area in §4.1 **whose Epic is declared** (§9) MUST be reachable from primary
+navigation. A built screen that nothing links to is a defect, not an unfinished feature — this is
+the rule `DEF-010-001` exists because nobody had written.
+
+> **Scoped to declared areas, and the scope is what makes it enforceable.** `UX-0060` forbids
+> implementing an area before its Epic is declared. An unscoped `UX-0003` would therefore require
+> reachability for the nine areas §9 marks **unowned** and `UX-0060` forbids building — a rule that
+> cannot hold, and a check (`G-UX-01`) that could never pass. Navigation is still designed as a
+> whole (§9); what is *required to be reachable* grows as Epics are declared.
+> *(Scoped 2026-08-24 at approval: the two requirements contradicted each other as first written.)*
 
 ### 4.2 Persistent context
 
@@ -248,7 +256,7 @@ document defines where it will go, not permission to build it.
 
 | Check | Asserts |
 |---|---|
-| `G-UX-01` | Every area in §4.1 is reachable from primary navigation in the built application — the automated form of `UX-0003` and the check that would have caught `DEF-010-001` |
+| `G-UX-01` | Every area in §4.1 **whose Epic is declared** is reachable from primary navigation in the built application — the automated form of `UX-0003` and the check that would have caught `DEF-010-001`. Its module-level half exists: `frontend/tests/unit/design/page-reachability.spec.ts` (`EPIC-010` `T200a`, 2026-08-23) asserts every delivered page is imported and rendered from the application root. The navigation half waits on the shell Epic |
 | `G-UX-02` | Every `UX-` requirement in this document cites at least one `BR-` from PMI-DOC-004 v2.0 |
 | `G-UX-03` | No screen sets a minimum viewport above 360px (`UX-0040`) |
 
@@ -273,4 +281,5 @@ Recorded as required. None runs in CI yet.
 
 | Version | Date | Change |
 |---|---|---|
+| 1.0 | 2026-08-24 | **APPROVED** (`D-44`). Two corrections made at signature: the area count in §3 and §4.1 read *seventeen*, inherited from the prototype, while §4.1's table lists **eighteen** — the prototype has no **Workspace & Administration** area and this document adds it (`BR-0001`–`BR-0005`). And `UX-0003` was scoped to **declared** areas, because as first written it required reachability for the nine areas `UX-0060` forbids building |
 | 1.0 | 2026-08-21 | Created under PMI-DOC-004A Amendment G / `G-30`. Defines navigation architecture, shell, Room pattern, cross-cutting surfaces, and the shell viewport policy closing `G-32`. Keeps PMI-DOC-005 screen-agnostic |

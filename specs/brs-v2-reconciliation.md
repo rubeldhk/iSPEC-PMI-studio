@@ -286,7 +286,7 @@ Six from PMI-DOC-004A §14, plus one this reconciliation added.
 | 3 | Move context curation, Engineering Experts, Change Room, Defect Room, evidence/compliance, capability abstraction and Workspace Fabric into target-product core | **SIGNED 2026-08-22** — v2.0 §3.1 |
 | 4 | Keep public marketplace, billing/licensing and broad SDK outside the core MVP | **SIGNED 2026-08-22** — v2.0 §3.3 |
 | 5 | Treat "enterprise-ready" as an architecture/governance quality while targeting teams needing a ready-to-use platform | **SIGNED 2026-08-22** — v2.0 `BG-10` |
-| 6 | Create a companion Application UX Architecture specification; keep PMI-DOC-005 screen-agnostic | **done** — [PMI-DOC-006](../SRS/PMI-DOC-006_Application_UX_Architecture_v1.0.md) created; the document's **own v1.0 status is still PROPOSED** and needs a separate signature |
+| 6 | Create a companion Application UX Architecture specification; keep PMI-DOC-005 screen-agnostic | **SIGNED 2026-08-24** — [PMI-DOC-006](../SRS/PMI-DOC-006_Application_UX_Architecture_v1.0.md) v1.0 **APPROVED** under [`D-44`](./_shared/decisions/D-44-application-ux-architecture-approved.md), which also records the two corrections made at signature: the stale *seventeen* area count, and `UX-0003` scoped to **declared** areas so it and `UX-0060` can both hold. Every document in `SRS/` is now approved |
 | **7** | **Preserve v1.0 `BR-` identifier meanings (R-01)** | **decided 2026-08-21** — applied throughout v2.0, asserted by `G-BRS-02` |
 | **8** | **Confirm `EPIC-027` Finding A — the three Rooms are builds, not enhancements** | **CONFIRMED 2026-08-22** — `ADR-0015` Open → Accepted; sizing basis for `U-01`, `U-04`, `U-05` |
 
@@ -304,8 +304,10 @@ epic in four cases.
 the same discipline `G-27-14` asserts for `EPIC-027`. The register is byte-identical after the
 approval.
 
-**Still unsigned** — PMI-DOC-006 v1.0 carries its own `PROPOSED — REQUIRES PROJECT OWNER APPROVAL`
-status. Decision 6 approved *creating* it; approving it *as a standard* is a separate act.
+**Signed 2026-08-24** — PMI-DOC-006 v1.0 carried its own
+`PROPOSED — REQUIRES PROJECT OWNER APPROVAL` status until `D-44`. Decision 6 approved *creating*
+it; approving it *as a standard* was a separate act, and has now happened. Every document in `SRS/`
+is approved.
 
 **Since signed** — decision 8, `EPIC-027` Finding A, confirmed 2026-08-22. It was not part of the
 BRS approval and is recorded separately because it settles a question of **fact** (whether the

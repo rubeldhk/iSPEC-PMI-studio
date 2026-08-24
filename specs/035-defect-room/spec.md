@@ -65,7 +65,7 @@ in Epic Exit Criteria — its shape includes runtime behaviour only implementati
 
 **Requirements not yet covered by SRS**: **None.** Every requirement traces to an approved `BR-` in
 PMI-DOC-004 v2.0 §6.6 or to `ADR-0016`. `FR-DFR-072` and `FR-DFR-090`–`FR-DFR-095` additionally cite
-PMI-DOC-006 v1.0, which is **PROPOSED, not approved** — the back-fill owner is named under
+PMI-DOC-006 v1.0, which was **PROPOSED** when this was written and is **APPROVED** as of 2026-08-24 (`D-44`) — the back-fill owner is named under
 Assumptions.
 
 ### Ownership notes — read before planning
@@ -465,7 +465,7 @@ and that a Defect Room object cannot transition under another Room's stages.
 
 ## Assumptions
 
-- **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-DFR-072` cites `UX-0034`, which is the only `UX-` requirement written specifically for this Room. **Back-fill owner: project owner**, through the approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
+- **PMI-DOC-006 v1.0 was `PROPOSED` when this was written and is **APPROVED** as of 2026-08-24 (`D-44`); the exposure below is discharged.** `FR-DFR-072` cites `UX-0034`, which is the only `UX-` requirement written specifically for this Room. **Back-fill owner: project owner**, through the approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
 - **The Room pattern is a SHARED ARTIFACT, and this Epic imports it rather than deriving it** *(recorded 2026-08-22, `EPIC-033` analysis finding `C1`)*. `EPIC-033` Phase 2 produces **`packages/room-contract`** — `RoomShellProps` (six required named region slots), `Epistemic`/`Labelled<T>` (the required epistemic discriminant) and `RoomObjectRef` — and **`frontend/src/rooms/RoomShell.tsx`**, which owns the `UX-0041` breakpoints and the `UX-0040` 360px floor. This Epic MUST import both and MUST NOT re-derive the pattern: `UX-0035` forbids the three Rooms diverging, and a second derivation is how they would. The regions are **required named props, not `children`**, so omitting one does not compile and a seventh has nowhere to go. **`EPIC-033` Phase 2 is therefore a hard prerequisite of this Epic's implementation**, not merely a related Epic.
 - **`ADR-0016` is Open and this Epic is expected to converge it.** Its `Awaits` names *"the Defect Room epic, which does not yet exist"* — as of this declaration, it does. Its Negative consequence is discharged: approved baselines depend on the Requirement Room, which is `EPIC-033`, declared in this Wave. Convergence is in Epic Exit Criteria.
 - **`BR-0163` operational feedback is `U-19` and unowned.** This Room accepts monitoring- and incident-originated defects (`BR-0051`); **automatic linkage from production telemetry is not this Epic**, and `FR-DFR-083` requires the Room to say so rather than present a partial origin distribution as complete. `brs-v2-reconciliation.md` §4 records `U-19` as depending on `U-04` and `U-05` — both declared in this Wave, so its blocker is now Epic declaration alone.

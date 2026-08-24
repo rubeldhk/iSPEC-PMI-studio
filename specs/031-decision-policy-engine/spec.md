@@ -55,7 +55,7 @@ not an ambiguity in this specification.
 
 **Requirements not yet covered by SRS**: **None.** Every requirement traces to an approved `BR-` in
 PMI-DOC-004 v2.0 or to the Accepted `ADR-0025`. `FR-DPE-020`/`026`/`043` additionally cite
-PMI-DOC-006 v1.0, which is **PROPOSED, not approved** — the back-fill owner is named under
+PMI-DOC-006 v1.0, which was **PROPOSED** when this was written and is **APPROVED** as of 2026-08-24 (`D-44`) — the back-fill owner is named under
 Assumptions.
 
 ### Ownership notes — read before planning
@@ -390,7 +390,7 @@ an automated action with no citable rule and assert refusal.
 
 ## Assumptions
 
-- **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-DPE-020`, `FR-DPE-026` and `FR-DPE-043` cite `UX-0021`, `UX-0033` and `UX-0051`. Each restates an approved `BR-` (`BR-0068`, `BR-0174`, `BR-0195`), so none depends on the proposed document for authority — the Inbox's placement in the shell does. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
+- **PMI-DOC-006 v1.0 was `PROPOSED` when this was written and is **APPROVED** as of 2026-08-24 (`D-44`); the exposure below is discharged.** `FR-DPE-020`, `FR-DPE-026` and `FR-DPE-043` cite `UX-0021`, `UX-0033` and `UX-0051`. Each restates an approved `BR-` (`BR-0068`, `BR-0174`, `BR-0195`), so none depends on the proposed document for authority — the Inbox's placement in the shell does. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
 - **`BR-0005` is unowned (`U-02`), and this Epic now publishes its contract provisionally** *(settled 2026-08-22)*. `FR-DPE-014` requires the decision-authority record; `ADR-0015` names `BR-0005` as settling it. This Epic defines the record's **shape** as a published contract, which `U-02` adopts unchanged when declared. It does **not** define a second authority model, and the shape is not private to this Epic.
 - **`ADR-0025`'s open question is answered** *(2026-08-22)*: classification rules live in the **`BR-0070` steering hierarchy** (`FR-DPE-005`). **Consequence for `EPIC-019`**: it owns their storage, scoping and conflict resolution as a steering subject; this Epic owns their meaning. `ADR-0025` itself still says *Open* on this point and must be updated — listed in Epic Exit Criteria.
 - Depends on `EPIC-030` for the loop and its Decide seam. The dependency is one-directional: `EPIC-030` declares the seam and defaults it to refuse; this Epic fills it.

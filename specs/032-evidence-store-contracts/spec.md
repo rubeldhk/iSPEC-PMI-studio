@@ -345,7 +345,7 @@ the gate treats it identically.
 
 ## Assumptions
 
-- **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-EVS-027` cites its Room Evidence region. The requirement it serves — `BR-0140`–`BR-0142` — is approved, so only the projection's shape depends on the proposed document. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
+- **PMI-DOC-006 v1.0 was `PROPOSED` when this was written and is **APPROVED** as of 2026-08-24 (`D-44`); the exposure below is discharged.** `FR-EVS-027` cites its Room Evidence region. The requirement it serves — `BR-0140`–`BR-0142` — is approved, so only the projection's shape depends on the proposed document. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 in `brs-v2-reconciliation.md` §7.
 - **`U-08` stands as this new Epic** *(settled 2026-08-22)*. `brs-v2-reconciliation.md` §4 recorded the home as *"new epic, or `EPIC-015` extension"* — the only area whose assignment was an alternative. The store, the Contract mechanism and the gate are substrate for **every** governed workflow, so `EPIC-015` becomes a **consumer** rather than the host. `FR-EVS-050` still prevents a second validation path, now in the confirmed direction. `brs-v2-reconciliation.md` §4 should be updated to drop the alternative — listed in Epic Exit Criteria.
 - **`BR-0143` and `BR-0036` are `U-09` and stay unowned.** `ADR-0022` remains Open on exactly that. Declaring this Epic does not converge that ADR and must not be reported as doing so.
 - Depends on `EPIC-030` for the loop's **Evidence** stage seam. The dependency is one-directional.

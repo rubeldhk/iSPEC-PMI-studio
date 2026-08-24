@@ -66,7 +66,7 @@ strongest SRS dependency — it should be discharged before `EPIC-034` plans aga
 
 **Requirements not yet covered by SRS**: **None.** Every requirement traces to an approved `BR-` in
 PMI-DOC-004 v2.0 §6.3 or to the Accepted `ADR-0015`. `FR-RQR-070`–`FR-RQR-075` additionally cite
-PMI-DOC-006 v1.0, which is **PROPOSED, not approved** — the back-fill owner is named under
+PMI-DOC-006 v1.0, which was **PROPOSED** when this was written and is **APPROVED** as of 2026-08-24 (`D-44`) — the back-fill owner is named under
 Assumptions.
 
 ### Ownership notes — read before planning
@@ -390,7 +390,7 @@ pattern definition rather than from this Room's own vocabulary.
 
 ## Assumptions
 
-- **PMI-DOC-006 v1.0 is `PROPOSED`, not approved.** `FR-RQR-070`–`FR-RQR-075` cite `UX-0030`–`UX-0035` and `UX-0040`. `BR-0191`, which requires the shared Room pattern, is *SHOULD* in PMI-DOC-004 — so the pattern's binding force comes largely from the proposed document. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 of `brs-v2-reconciliation.md` §7. This is the strongest SRS dependency of the three Rooms and should be discharged before `EPIC-034` plans against the same pattern.
+- **PMI-DOC-006 v1.0 was `PROPOSED` when this was written and is **APPROVED** as of 2026-08-24 (`D-44`); the exposure below is discharged.** `FR-RQR-070`–`FR-RQR-075` cite `UX-0030`–`UX-0035` and `UX-0040`. `BR-0191`, which requires the shared Room pattern, is *SHOULD* in PMI-DOC-004 — so the pattern's binding force comes largely from the proposed document. **Back-fill owner: project owner**, through the PMI-DOC-006 approval outstanding as decision 6 of `brs-v2-reconciliation.md` §7. This is the strongest SRS dependency of the three Rooms and should be discharged before `EPIC-034` plans against the same pattern.
 - **`BR-0004` stakeholder access is `U-02` and unowned — confirmed 2026-08-22, no interim path.** *"Authorized external stakeholders review assigned requirements without receiving broader engineering access"* is a Requirement Room-adjacent capability this Epic does **not** own. `FR-RQR-004` now states the prohibition as a requirement rather than an intention: an interim path would be a second authorization model beside `EPIC-024`'s. **Owner: product owner**, when `U-02` is declared.
 - **`BR-0106` session cost limits are `U-11` and unowned.** AI clarification and options generation invoke models. This Room MUST NOT build its own budget mechanism; it consumes whatever `U-11` supplies and, until then, records model usage without enforcing a ceiling.
 - **This Room is a destination for `EPIC-035`, and did not know it** *(recorded 2026-08-23, `EPIC-035` analysis finding `C1`)*. `EPIC-035` `FR-DFR-076` routes a **Requirement Gap** — its third classification outcome, where no approved behaviour exists at all — here as **new intent**, because a gap needs a requirement written rather than a baseline amended. That requirement was added by a clarification **after this Epic was planned**, so nothing here received it: `EPIC-034` has an explicit `transfer-intake` route and this Room had none. `T338u`/`T338v` add `POST /rooms/requirement/gap-intake`, and **`EPIC-035` cannot be declared complete until they land**. *Observed while fixing it, and left as it stands because it is out of this remediation's scope: the contract's existing `POST /rooms/requirement/intake` cites `FR-RQR-010`, which is clarification-question generation — this Room has no intake requirement of its own.*
