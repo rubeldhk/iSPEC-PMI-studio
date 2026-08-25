@@ -18,6 +18,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { enumerateEpics } from './derive';
+import { completedTaskIdentifierOf } from './task-id-format';
 
 /** Backticked strings that look like repository paths, not prose. */
 const PATHISH = /`([A-Za-z0-9_@./-]+\/[A-Za-z0-9_@./-]+\.[A-Za-z0-9]+)`/g;
@@ -53,9 +54,8 @@ export function pathsNamedByCompletedTasks(epicPath: string, epicId: string): Na
 
   const found: NamedPath[] = [];
   for (const line of readFileSync(tasksFile, 'utf8').split(/\r?\n/)) {
-    const done = /^\s*- \[[xX]\]\s*(T\d{3}[a-z]?)/.exec(line);
-    if (!done) continue;
-    const task = done[1];
+    // T864h — completed-only, and the shape comes from configuration (`FR-ESK-025`).
+    const task = completedTaskIdentifierOf(line);
     if (!task) continue;
     for (const match of line.matchAll(PATHISH)) {
       const path = match[1];

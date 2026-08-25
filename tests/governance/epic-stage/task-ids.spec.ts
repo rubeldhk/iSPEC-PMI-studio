@@ -18,6 +18,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { enumerateEpics } from './derive';
+import { taskIdentifierOf } from './task-id-format';
 
 interface TaskLine {
   readonly id: string;
@@ -32,8 +33,9 @@ function allTaskLines(): TaskLine[] {
     const path = join('specs', epic.directory, 'tasks.md');
     if (!existsSync(path)) continue;
     for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
-      const match = /^\s*- \[[xX ]\]\s*(T\d{3}[a-z]?)\b/.exec(line);
-      if (match?.[1]) found.push({ id: match[1], epic: epic.id, text: line.trim().slice(0, 90) });
+      // T864f — the shape comes from configuration (`FR-ESK-025`), not from here.
+      const id = taskIdentifierOf(line);
+      if (id) found.push({ id, epic: epic.id, text: line.trim().slice(0, 90) });
     }
   }
   return found;

@@ -23,6 +23,25 @@ instead, and each such check is mutation-verified: a check that cannot fail is d
 
 **Task IDs**: `T865`–`T904`, plus `T866a`, `T888a` added by the analyse pass of 2026-08-20; `T886a`, `T899a`, `T900a`, `T900b`, `T901a` added by the re-plan of 2026-08-20; and `T900c` added by the second analyse pass to close finding `F3` (corpus max was `T864`; the `a`-suffix convention keeps a later addition adjacent to what it pairs with — the `T549a`/`T576a` precedent). **48 tasks.**
 
+> **Superseded 2026-08-25 by `EPIC-026` `FR-ESK-025` (`T864j`).** The sentence above is **left as
+> written** — it was true when written, and it records what this Epic actually did. What changed is
+> the rule, not the history.
+>
+> **A trailing letter is now a shape, and carries no adjacency claim.** It no longer means *"a later
+> addition adjacent to what it pairs with"*. The meaning was retired because it had already stopped
+> being true: `EPIC-014` allocated `T150a`–`T153h` and `EPIC-036` allocated `T442a`–`T442v` as
+> **ordinary blocks**, adjacent to nothing — the convention described something two Epics no longer
+> did.
+>
+> It was also the reason the corpus felt full. `EPIC-036` `T441n` put it exactly: *"The identifier
+> space is not exhausted… the block `T436`–`T442` alone held 182 unused ones. **The prefix-block
+> convention is.**"* The letters were always there; the meaning attached to them is what made using
+> them feel wrong.
+>
+> The rule now lives in `governance/epic-stage.config.json` as `taskIdentifierPattern`, which also
+> widened to four-or-more digits. Nothing here becomes invalid: every identifier on this line still
+> matches.
+
 **Re-planned 2026-08-20** against **constitution v1.5.0** and the now-settled `D-42`. Principle XI (the reachability gate) is new and **changes this Epic's exit conditions**; the original 42 tasks were never checked against it because it did not exist. Five tasks were added:
 
 | Task | Why it did not exist before |

@@ -169,6 +169,73 @@ Release-eligible is a claim about this epic's scope: the register exists, is gen
 cannot drift, and the DOR has teeth. It is **not** a claim that the programme's Epics are in good
 order — the register's first run says the opposite, loudly, and that is the point of building it.
 
+## F-26.9 — the task-identifier format *(added 2026-08-25)*
+
+`FR-ESK-025`. Twelve tasks, `T864a`–`T864l`. **`T864` was the last free three-digit prefix in the
+corpus, and it was spent on the work that ends the shortage** — the one use of it that cannot be
+second-guessed.
+
+### `T864k` — the corpus sweep, and what it found
+
+The retroactive risk `plan.md` recorded was that *unrecognised-fails* applies to every Epic at once,
+and might surface work belonging to Epics already closed. Measured against the whole tree:
+
+| | |
+|---|---|
+| Epics with a `tasks.md` | **34** |
+| Task lines read | **1,610** |
+| **Identifiers no rule admits** | **0** |
+
+**Nothing was surfaced, and that is a result rather than an absence of one.** Every identifier in
+the corpus — including `EPIC-014`'s `T150a`–`T153h` and `EPIC-036`'s `T442a`–`T442v` — is admitted
+unchanged by `^T\d{3,}[a-z]?$`. The widening is purely additive; no Epic inherits work from it.
+
+### `T864l` — both mutations, observed
+
+**Mutation 1 — the widening and the refusal.**
+
+```
++ - [ ] T1000 …    Tests  26 passed          ← accepted; before this, it matched NOTHING
++ - [ ] T99 …      × the whole corpus is recognised, or the build fails naming what is not
+                     → identifiers no rule admits: 026-epic-stage-kanban: T99
+```
+
+`T1000` is the change. `T99` is the guarantee — it **fails naming its Epic**, where before
+`FR-ESK-025` a malformed identifier passed uniqueness, pairing and path checks by never being seen.
+
+**Mutation 2 — collapsing the two patterns into one.** The recogniser was narrowed to equal the
+pattern, and `T99` re-added:
+
+```
+× the recogniser is STRICTLY broader than the pattern
+  → the recogniser no longer sees malformed ids — unrecognised ones would be skipped again
+× reports a malformed id, naming the token and the line
+  → T99 was not reported: expected [] to deeply equal [ 'T99' ]
+```
+
+Both restored → `26 passed`. **This is the mutation that matters**, because it is the one that shows
+the structure — not the values — is what carries the guarantee. A single pattern cannot report what
+it does not match, and the second assertion above is `T441n`'s hazard reproduced exactly: `T99`
+present, and the checker returning an empty list.
+
+### One deviation from the task text, and why
+
+`T864i` says *"wire it into the three checks"*. It is wired into **one** — the corpus sweep in
+`task-id-format.spec.ts`, which reads every `tasks.md` in the tree and fails the build naming any
+offender. Putting the same rule in three places would be **three copies of one rule**, which is the
+exact fault `FR-ESK-025` exists to remove; the three consumers now share the identifier *shape*, and
+the *unrecognised* rule is asserted once over everything they would each see a slice of.
+
+### What F-26.9 does NOT claim
+
+- **That every identifier is well-chosen** — only that every one is recognised. Uniqueness is
+  `G-26-15`'s, and it is unchanged.
+- **That allocation is governed.** How an Epic picks its next block is still not written down
+  anywhere, and does not need to be: uniqueness is checked, allocation is not
+  (`contracts/task-identifier-format.md` §5).
+- **That `T864` was the right prefix to spend.** That is a judgement recorded in `tasks.md`'s block
+  header, not a fact any check verifies.
+
 ## Recommended Next Task
 
 **`PMI-DOC-004` and approved business scope.** Unchanged, and now with nothing left standing beside
