@@ -177,6 +177,7 @@ path added or removed without updating this document fails the build.
 - `specs/034-change-room/`
 - `specs/035-defect-room/`
 - `specs/036-application-shell/`
+- `specs/037-governed-execution-registry/`
 - `specs/038-engineering-context/`
 - `specs/039-integration-hub/`
 - `specs/040-metrics-reporting/`
