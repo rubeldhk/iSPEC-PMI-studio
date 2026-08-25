@@ -216,3 +216,22 @@ reached four delivered Epics.
 - [X] T850 Re-run the browser UAT path — sign in, list projects, create a project, list
       requirements — and close `DEF-001-005` with its resolving tasks and guard named
       (Constitution VI, IX)
+
+## Phase: `DEF-001-006` intake *(appended 2026-08-25 — Constitution VI)*
+
+**A defect fix re-enters as tasks, never as an untracked edit.** `DEF-001-006` was raised
+2026-08-21 and left `OPEN` with *"No code was changed by the session that found this."* The
+EPIC-014 release gate (`specs/_shared/release-readiness-report.md`, finding `R-2`) found it still
+open and unmentioned in this epic's closure, which is what brings it back here now.
+
+**One correction to the record's proposed remedy, made before writing these tasks.** `DEF-001-006`
+says *"Map `HttpException` to its own status in `toHttpStatus`"*. `toHttpStatus` lives in
+`backend/src/core/errors.ts`, whose header states *"Framework-free by design (PC-1) … Nothing here
+imports an HTTP type"*, and `backend/tests/architecture/transport-independence.spec.ts` enforces it.
+Doing it there would trade a status bug for a PC-1 violation. The fix goes in the **transport half**,
+`backend/src/core/error.filter.ts`, which already imports `@nestjs/common` because that is its job.
+
+- [x] T1009 [P] Write failing tests in `backend/tests/unit/core/error-filter.spec.ts` for the two behaviours `DEF-001-006` requires, both **observed failing first** (Constitution V) — an unmatched route (a Nest `NotFoundException`) MUST reach the client as **404**, and an unrecognised non-HTTP error MUST still be **500** with **no detail leaked**. Assert the second from both sides: the status, and that the body carries neither the exception's own message nor any of its properties. The leak guard is the half most likely to be lost while fixing the status, because `toErrorBody` refuses to echo unknown text *"because it may carry a connection string, a token, or engine output"* — and that refusal is correct and must survive
+- [x] T1010 Recognise `HttpException` in `backend/src/core/error.filter.ts`, taking its status and emitting a **fixed message per status** from a known-safe set, per `DEF-001-006` (unit test: T1009) — never the exception's own text, since a framework error the platform did not raise is exactly an error whose text it cannot vouch for. **Leave `backend/src/core/errors.ts` untouched**: it stays framework-free (PC-1), so `toHttpStatus` continues to answer 500 for anything that is not a `PlatformError`, and the transport layer is the only place that knows `HttpException` exists
+- [x] T1011 Sweep `backend/src/` for handlers that already throw a Nest `HttpException` subclass expecting it to survive the filter, per `DEF-001-006` (conformance: T1009) — every one of them has been returning 500 since the filter was written, so each is either a latent bug fixed by T1010 or a place that worked around the filter and now needs its workaround removed. Record the count in the defect record; if the sweep finds none, say so, because "no handlers throw Nest exceptions" is itself the finding and explains why this went unnoticed
+- [x] T1017 Tighten the two reachability anti-vacuity assertions now that `DEF-001-006` is fixed, and close `DEF-030-001`, per `Constitution VI`, `Constitution XI` (conformance: T1009) — `backend/tests/integration/loop-reachability.spec.ts` and `backend/tests/integration/requirement-room-reachability.spec.ts` both assert `expect(unowned.status).toBe(500)`. **They assert the bug**, deliberately and with the reason written beside them: *"This should assert 404 and cannot: `DEF-030-001` … **Tighten this back to 404 when `DEF-030-001` is fixed** — leaving it loose after the cause is gone would keep a real guarantee weak for no reason."* `DEF-030-001` is the same root cause as `DEF-001-006`, recorded `CLOSED — DEFERRED to EPIC-001`, and EPIC-001 has now fixed it. Assert **404** on the unowned route, keep the owned-route 400 and the distinguishability check, and record the resolution in `specs/030-governed-engineering-loop/defects/DEF-030-001-unmatched-route-returns-500.md`. **These two failures were not caught when `T1009`–`T1011` landed** because that verification ran governance, frontend, backend-unit and architecture and never ran `backend-integration` — the gap is recorded here rather than left as a lucky catch

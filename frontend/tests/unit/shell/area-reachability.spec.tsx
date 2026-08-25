@@ -19,7 +19,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { AREAS, deliveredAreas, type Area } from '../../../src/shell/areas';
+import { AREAS, reachableAreas, type Area } from '../../../src/shell/areas';
 import { navigationModel } from '../../../src/shell/navigation-model';
 import { renderAt } from './harness';
 
@@ -42,10 +42,10 @@ describe('T437h · FR-SHL-016 — every delivered area is reachable from navigat
     // navigation would let every `for` below iterate over nothing.
     renderAt('/');
     await waitFor(() => expect(navButtons().length).toBeGreaterThan(0));
-    expect(deliveredAreas().length).toBeGreaterThan(0);
+    expect(reachableAreas().length).toBeGreaterThan(0);
   });
 
-  it.each(deliveredAreas().map((area) => [area.label, area] as const))(
+  it.each(reachableAreas().map((area) => [area.label, area] as const))(
     'reaches %s by clicking primary navigation',
     async (_label, area) => {
       renderAt('/');
@@ -78,7 +78,7 @@ describe('T437h · FR-SHL-016 — every delivered area is reachable from navigat
     renderAt('/');
     await waitFor(() => expect(navButtons().length).toBeGreaterThan(0));
     const before = navButtons().length;
-    fireEvent.click(navButtonFor(deliveredAreas().find((a) => a.id === 'runs')!)!);
+    fireEvent.click(navButtonFor(reachableAreas().find((a) => a.id === 'runs')!)!);
     await waitFor(() => {
       expect(navButtons().length).toBe(before);
     });
@@ -98,7 +98,7 @@ describe('T437j · MUTATION — removing an area from navigation fails the check
       group.areas.map((area) => area.id),
     );
 
-    const missing = deliveredAreas()
+    const missing = reachableAreas()
       .filter((area) => !reachable.includes(area.id))
       .map((area) => area.label);
 
@@ -107,7 +107,7 @@ describe('T437j · MUTATION — removing an area from navigation fails the check
 
   it('and the unmutated registry leaves nothing unreachable', async () => {
     const reachable = navigationModel().flatMap((group) => group.areas.map((area) => area.id));
-    const missing = deliveredAreas()
+    const missing = reachableAreas()
       .filter((area) => !reachable.includes(area.id))
       .map((area) => area.label);
     expect(missing).toEqual([]);
@@ -123,9 +123,9 @@ describe('T437p · SC-SHL-003 — any area is two actions from any other', () =>
     renderAt('/');
     await waitFor(() => expect(navButtons().length).toBeGreaterThan(0));
 
-    for (const area of deliveredAreas()) {
+    for (const area of reachableAreas()) {
       expect(navButtonFor(area), `"${area.label}" is not one click away`).toBeDefined();
     }
-    expect(navButtons()).toHaveLength(deliveredAreas().length);
+    expect(navButtons()).toHaveLength(reachableAreas().length);
   });
 });

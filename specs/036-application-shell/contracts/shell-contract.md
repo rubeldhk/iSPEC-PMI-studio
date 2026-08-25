@@ -42,8 +42,11 @@ export interface Area {
 export const AREAS: readonly Area[];
 ```
 
-**Five areas are `delivered`, four are `declared-not-delivered`, nine are `undeclared`.** Only the
-five reach navigation and the route tree. The middle four carry their owning Epic's identifier so
+**Three areas are `delivered`, two are `partly-delivered`, thirteen are `declared-not-delivered`, and zero are `undeclared`.**
+
+> **Corrected 2026-08-25 (Constitution XII Step B, `T1015`).** This said *five delivered*. The registry now reads **3 delivered · 2 partly-delivered · 13 declared-not-delivered · 0 undeclared** across eighteen areas; across the **seventeen V2 prototype screens** it is **2 / 2 / 13 / 0**. Both denominators are stated wherever a count appears — a figure that does not say what it counts is how two published counts came to disagree.
+ Only the
+the reachable ones reach navigation and the route tree — three `delivered` and two `partly-delivered`. The middle four carry their owning Epic's identifier so
 the outstanding obligation has a name rather than disappearing.
 
 > **Corrected 2026-08-24 (`T442s`).** This said six delivered and three awaiting an owner. `C1`'s remediation set those numbers across every artifact; `N1` then moved **Plan & Tasks** to `declared-not-delivered` during the Phase 2 implementation and only `areas.ts`, the handovers and the tests followed. `T442t` is the check that now disagrees when a document and the registry drift.
@@ -78,12 +81,12 @@ PMI-DOC-006 §4.1 are recorded, and how an address naming one is answered *not f
 *                              → not found
 ```
 
-**Five routed areas, and that is the whole table.** `/architecture` and `/governance` were listed
+**Three delivered and two partly-delivered areas are routed, and that is the whole table.** `/architecture` and `/governance` were listed
 here as declared until the analysis of 2026-08-24 ([../analysis.md](../analysis.md) `I1`); neither
 has a component to render, and `QA & Releases` was never given a path at all. **`Plan & Tasks`
 left the table too** (`N1`): `/specifications/:id/tasks` is a sub-view of Specifications, and a
 path carrying a `:param` cannot be a navigation destination because navigation links to
-`Area.path`. All four are now `declared-not-delivered` and have **no route**: their addresses
+`Area.path`. All thirteen are now `declared-not-delivered` and have **no route**: their addresses
 answer not-found until their owners ship, exactly as an undeclared area's does.
 
 **Every path above is `Area.path` or a sub-view of one**, and the tree is generated from `AREAS`.

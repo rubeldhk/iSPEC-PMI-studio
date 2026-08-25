@@ -99,3 +99,25 @@ anything but a framework exception, preserving the reason the conservative defau
 **Route to**: `EPIC-001`, or the next Epic that touches `backend/src/core/`. A one-line change with
 an application-wide blast radius is exactly what `RULE-02`-style change control is for, and this
 Epic does not own the file.
+
+---
+
+## Resolution — 2026-08-25 (`T1017`)
+
+**Fixed in EPIC-001, where this record deferred it.** `DEF-001-006` is the same root cause recorded
+in the Epic that owns `backend/src/core/`, and its fix (`T1009`–`T1011`) teaches `ErrorFilter` to
+recognise `HttpException` and keep its status, while `toErrorBody` continues to refuse echoing an
+unrecognised error's text.
+
+**The two assertions this defect weakened are now tightened.** `loop-reachability.spec.ts` and
+`requirement-room-reachability.spec.ts` each asserted `expect(unowned.status).toBe(500)` — asserting
+the bug — with the instruction written beside them: *"Tighten this back to 404 when `DEF-030-001` is
+fixed."* Both now assert **404**.
+
+**Verified end to end**: against the rebuilt container, `GET /v1/no-such-route` returns
+`404 not_found`; `/v1/engines` and `/v1/projects` still return `401 unauthenticated`, so the
+`PlatformError` path is untouched. `backend-integration` 207/207.
+
+*Worth recording: these two failures were not caught when `T1009`–`T1011` landed, because that
+verification ran governance, frontend, backend-unit and architecture and never ran
+`backend-integration`. The defect chain closed correctly, but a full-suite run is what found it.*

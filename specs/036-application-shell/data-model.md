@@ -40,22 +40,23 @@ Committed source. Not a database row.
 | `label` | what navigation shows |
 | `path` | the address (`FR-SHL-017`). Unique; leading `/` |
 | `epic` | the Epic that owns the area's content — `EPIC-###`, or `null` for an area PMI-DOC-006 names with no owner |
-| `status` | `delivered` · `declared-not-delivered` · `undeclared`. A closed union of **three**, not a boolean — see below |
-| `element` | what renders. Present **only** when `status` is `delivered`. For the other two there is nothing to point it at |
+| `status` | `delivered` · `partly-delivered` · `declared-not-delivered` · `undeclared`. A closed union of **four**, not a boolean — see below |
+| `element` | what renders. Present exactly when the area is **reachable** — `delivered` or `partly-delivered`. For the other two there is nothing to point it at |
 
 **An area MUST NOT appear in two groups** (`FR-SHL-011`). The registry is a flat ordered list and
 `group` is a field, so a second membership is unrepresentable rather than forbidden by review.
 
-### Why `status` has three values and not two
+### Why `status` has four values and not two
 
 This model carried a boolean `declared` until the cross-artifact analysis of 2026-08-24
-([analysis.md](./analysis.md) `C1`). A boolean cannot hold the state **four** areas are actually in.
+([analysis.md](./analysis.md) `C1`). A boolean cannot hold the state **four** areas were actually in, and three values could not hold the state Home is in — reachable, and missing two of the V2 prototype's three panels (`T1012`, 2026-08-25).
 
 | `status` | Means | Count | In navigation? | Address answers |
 |---|---|---|---|---|
-| `delivered` | the owning Epic has shipped the screen | **5** | yes | the area |
-| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **4** | **no** | not found |
-| `undeclared` | PMI-DOC-006 names no declared owner — `UX-0060` forbids building it | **9** | no | not found |
+| `delivered` | the owning Epic has shipped the screen, conforming to the prototype | **3** | yes | the area |
+| `partly-delivered` | the screen is **reachable** but a prototype element is absent | **2** | yes | the area |
+| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **13** | **no** | not found |
+| `undeclared` | no Epic owns the area — `UX-0060` forbids building it | **0** | no | not found |
 
 **The middle state is the finding.** `QA & Releases`, `Architecture & Decisions`, `Governance` and
 `Plan & Tasks` have declared owners — `EPIC-014`/`EPIC-015`, `EPIC-016`,
@@ -73,21 +74,24 @@ forbids this Epic supplying it or rendering a placeholder. There was no correct 
 `undeclared` would claim the SRS forbids building them when the SRS assigns them owners. The
 middle state records the debt with the debtor's name on it rather than erasing it.
 
-**All three non-`delivered` states stay in the registry.** They are how PMI-DOC-006 §4.1's eighteen
+**All three non-`delivered` states stay in the registry.** *(`undeclared` is now empty and is retained so a future area declared before its Epic exists can still be recorded honestly.)* They are how PMI-DOC-006 §4.1's eighteen
 are recorded, and how `FR-SHL-017` answers *not found* for an address naming one — deleting them
 would make a specified area indistinguishable from a typo. `FR-SHL-003` keeps them out of
 navigation; it does not keep them out of the list.
 
-### The eighteen, the five, and the thirteen
+### The eighteen: three delivered, two partly, thirteen owed
 
-| Group | Areas | `delivered` | `declared-not-delivered` |
+| Group | Areas | `delivered` / `partly-delivered` | `declared-not-delivered` |
 |---|---|---|---|
-| **Overview** | Home · Projects · Decision Inbox | Home, Projects | — |
+| **Overview** | Home · Projects · Decision Inbox | Home *(partly)*, Projects *(partly)* | Decision Inbox |
 | **Intent & Control** | Requirement Room · Specifications · Change Room · Defect Room · Architecture & Decisions | Specifications | Architecture & Decisions |
 | **Delivery** | Plan & Tasks · Engineering Experts · Runs · Evidence & Compliance · QA & Releases | Runs | Plan & Tasks, QA & Releases |
 | **Platform** | Context · Integrations · Reports · Governance · Workspace & Administration | Workspace & Administration | Governance |
 
-**Five delivered, four awaiting their owners, nine undeclared.** The rule is now applied **once**:
+**Three delivered, two partly delivered, thirteen awaiting their owners, zero undeclared.**
+
+> **Corrected 2026-08-25 (Constitution XII Step B, `T1015`).** This said *five delivered*. The registry now reads **3 delivered · 2 partly-delivered · 13 declared-not-delivered · 0 undeclared** across eighteen areas; across the **seventeen V2 prototype screens** it is **2 / 2 / 13 / 0**. Both denominators are stated wherever a count appears — a figure that does not say what it counts is how two published counts came to disagree.
+ The rule is now applied **once**:
 an area reaches navigation when its screen exists. That is the rule this document already used for
 the Rooms — `EPIC-033` is 68 of 102 and `EPIC-034`/`EPIC-035` are 0, so none is `delivered` — and
 the analysis found it was not being applied to the other four. When any of the thirteen ships, it

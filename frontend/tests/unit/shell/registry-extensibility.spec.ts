@@ -16,7 +16,7 @@
  * (`T441p`).
  */
 import { describe, expect, it } from 'vitest';
-import { AREAS, AREA_GROUPS, type Area } from '../../../src/shell/areas';
+import { AREAS, AREA_GROUPS, isReachable, type Area } from '../../../src/shell/areas';
 import { navigableAreas, navigationModel } from '../../../src/shell/navigation-model';
 
 function synthetic(id: string, group: Area['group'], status: Area['status']): Area {
@@ -27,7 +27,7 @@ function synthetic(id: string, group: Area['group'], status: Area['status']): Ar
     path: `/${id}`,
     epic: 'EPIC-999',
     status,
-    ...(status === 'delivered' ? { element: (): null => null } : {}),
+    ...(isReachable(status) ? { element: (): null => null } : {}),
   } as Area;
 }
 

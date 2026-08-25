@@ -12,7 +12,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
-import { AREAS, GROUP_LABELS, deliveredAreas } from '../../../src/shell/areas';
+import { AREAS, GROUP_LABELS, isReachable, reachableAreas } from '../../../src/shell/areas';
 import { navigationModel } from '../../../src/shell/navigation-model';
 import { renderAt } from './harness';
 
@@ -62,10 +62,10 @@ describe('T437k · SC-SHL-002 — nothing that is not delivered appears', () => 
   it('shows exactly the delivered areas and no others', async () => {
     renderAt('/');
     await waitFor(() => expect(labels().length).toBeGreaterThan(0));
-    expect(labels().sort()).toEqual(deliveredAreas().map((area) => area.label).sort());
+    expect(labels().sort()).toEqual(reachableAreas().map((area) => area.label).sort());
   });
 
-  it.each(AREAS.filter((area) => area.status !== 'delivered').map((a) => [a.label, a.status]))(
+  it.each(AREAS.filter((area) => !isReachable(area.status)).map((a) => [a.label, a.status]))(
     'does not offer %s (%s) — not disabled, not greyed, not a placeholder',
     async (label) => {
       renderAt('/');

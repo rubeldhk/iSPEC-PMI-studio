@@ -47,12 +47,12 @@ that fails under suite load and passes alone, and an unscoped target inherits th
 
 **Constraints**: 360px floor · WCAG 2.2 AA via PMI-DOC-005 · no second authorization model
 (`FR-SHL-003`, `FR-SHL-014` deferred) · no Home store and no shell-only aggregation endpoint
-(`FR-SHL-034`) · **five delivered areas in scope**; the nine undeclared (`UX-0060`) and the four
+(`FR-SHL-034`) · **three delivered and two partly-delivered areas in scope**; the zero undeclared (`UX-0060`) and the four
 declared-but-unbuilt MUST NOT appear
 
-**Scale/Scope**: 18 areas specified, **5 delivered and in scope**; 4 navigation groups; 1 new area
+**Scale/Scope**: 18 areas specified, **3 delivered and 2 partly delivered**; 4 navigation groups; 1 new area
 built here (Home); 4 existing areas re-hosted. **4 areas are declared and unbuilt** —
-`Plan & Tasks`, `QA & Releases`, `Architecture & Decisions`, `Governance` — and 9 are undeclared.
+`Plan & Tasks`, `QA & Releases`, `Architecture & Decisions`, `Governance` — and 0 are undeclared.
 Revised from 9-in-scope by [analysis.md](./analysis.md) `C1`, then from 6 to 5 by `N1` and
 `T442s`
 

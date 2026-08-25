@@ -115,17 +115,13 @@ describe('T934 · the loop is reachable through the composed application (Consti
     // Anti-vacuity. If the application answered every path the same way, the
     // assertion above would pass over a completely unwired module.
     //
-    // This should assert 404 and cannot: `DEF-030-001`. `ErrorFilter` is a bare
-    // `@Catch()`, so NestJS's own `NotFoundException` reaches `toHttpStatus`,
-    // which maps anything that is not a `PlatformError` to `internal_error` —
-    // and every unmatched path in the application returns 500. Found by this
-    // assertion on its first run, in `EPIC-001`'s file, which `FR-GEL-002` puts
-    // outside this Epic.
-    //
-    // So the weaker property, stated honestly: an unowned path is
-    // DISTINGUISHABLE from an owned one. **Tighten this back to 404 when
-    // DEF-030-001 is fixed** — leaving it loose after the cause is gone would
-    // keep a real guarantee weak for no reason.
+    // TIGHTENED 2026-08-25 (`T1017`). This asserted 500 and said so:
+    // `DEF-030-001` made 404 impossible, because `ErrorFilter` was a bare
+    // `@Catch()` and NestJS's own `NotFoundException` reached `toHttpStatus`,
+    // which mapped anything that is not a `PlatformError` to `internal_error`.
+    // `DEF-001-006` fixed that in `EPIC-001` — the filter now recognises
+    // `HttpException` and keeps its status — so the weaker property is retired
+    // and the real guarantee is asserted: **an unmatched route is 404**.
     const unowned = await request(app.getHttpServer()).get(
       `/${PREFIX}/loop/objects/probe/not-a-real-sub-resource`,
     );
@@ -137,7 +133,7 @@ describe('T934 · the loop is reachable through the composed application (Consti
       .send({ workflowType: 'example-workflow' });
 
     expect(owned.status).toBe(400);
-    expect(unowned.status).toBe(500);
+    expect(unowned.status, "an unmatched route must be 404 (DEF-001-006)").toBe(404);
     expect(unowned.status).not.toBe(owned.status);
   });
 });

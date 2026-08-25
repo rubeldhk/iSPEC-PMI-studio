@@ -11,7 +11,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { deliveredAreas } from '../../../src/shell/areas';
+import { reachableAreas } from '../../../src/shell/areas';
 import { renderAt } from './harness';
 
 afterEach(cleanup);
@@ -56,7 +56,7 @@ describe('T437c · the frame composes navigation, context and the outlet', () =>
   it('offers exactly the delivered areas, and no content of its own', async () => {
     renderAt('/');
     await waitFor(() => expect(navButtons().length).toBeGreaterThan(0));
-    expect(navButtons()).toHaveLength(deliveredAreas().length);
+    expect(navButtons()).toHaveLength(reachableAreas().length);
   });
 
   it('puts the theme control in the frame, not in an area', async () => {

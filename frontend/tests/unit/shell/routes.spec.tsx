@@ -8,14 +8,14 @@
  * the declared sub-views, plus `*`"*.
  */
 import { describe, expect, it } from 'vitest';
-import { AREAS, deliveredAreas } from '../../../src/shell/areas';
+import { AREAS, isReachable, reachableAreas } from '../../../src/shell/areas';
 import { SUB_VIEWS } from '../../../src/shell/routes';
 import { ADDRESS_SCOPED_PATTERNS, isAddressScoped } from '../../../src/shell/shell-context';
 
 describe('T436j · routes come from the registry', () => {
   it('declares a sub-view set, or the assertions below prove nothing', () => {
     expect(SUB_VIEWS.length).toBeGreaterThan(0);
-    expect(deliveredAreas().length).toBeGreaterThan(0);
+    expect(reachableAreas().length).toBeGreaterThan(0);
   });
 
   it('gives every sub-view a path inside an area it belongs to', () => {
@@ -46,7 +46,7 @@ describe('T436j · routes come from the registry', () => {
     // The other twelve have paths so an address naming one can be answered,
     // and no route so the answer is not-found.
     for (const area of AREAS) {
-      if (area.status === 'delivered') continue;
+      if (isReachable(area.status)) continue;
       expect(
         SUB_VIEWS.some((view) => view.path === area.path),
         `${area.label} is not delivered but has a route`,
@@ -85,7 +85,7 @@ describe('T436j · routes come from the registry', () => {
   });
 
   it('has an element for every delivered area', () => {
-    for (const area of deliveredAreas()) {
+    for (const area of reachableAreas()) {
       expect(area.element, `${area.label} would route to nothing`).toBeTypeOf('function');
     }
   });

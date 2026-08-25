@@ -19,7 +19,7 @@ import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router';
 import { AppShell } from './AppShell';
 import { NotFound } from './NotFound';
-import { deliveredAreas } from './areas';
+import { reachableAreas } from './areas';
 import {
   ProjectDetailView,
   ReviewSessionView,
@@ -54,7 +54,7 @@ export function ShellRoutes(): ReactElement {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        {deliveredAreas().map((area) => {
+        {reachableAreas().map((area) => {
           const Element = area.element!;
           return <Route key={area.id} path={area.path} element={<Element />} />;
         })}

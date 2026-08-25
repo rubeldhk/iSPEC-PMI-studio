@@ -101,7 +101,7 @@ describe('T337x · the Requirement Room is reachable through the composed applic
 
     expect(owned.status).toBe(400);
     expect((owned.body as { error?: { code?: string } }).error?.code).toBe('validation_failed');
-    expect(unowned.status).toBe(500);
+    expect(unowned.status, "an unmatched route must be 404 (DEF-001-006)").toBe(404);
     expect(unowned.status).not.toBe(owned.status);
   });
 

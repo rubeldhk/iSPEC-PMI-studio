@@ -1,6 +1,48 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.5.0 → 1.6.0
+Bump rationale: MINOR — one new principle added (XII. Execution Registration). Nothing removed,
+renamed, or redefined incompatibly; every prior obligation still holds. The amendment ratifies the
+project owner's authoritative product decision of 2026-08-25, recorded as Rev 3 of the Execution
+Governance Remediation package: PMI Studio is the control plane of record for governed Spec Kit
+execution, wherever that execution happens.
+
+Added principles:
+  - XII. Execution Registration (NON-NEGOTIABLE) — every governed Spec Kit command executed for
+    a PMI Studio-managed project MUST have an execution record, regardless of originating agent,
+    IDE, connector, sandbox, terminal or automation environment. Eight clauses: registration
+    precedes execution (with strict-block or provisional-offline handling); the event stream is
+    authoritative and append-only, and a terminal LIFECYCLE event ends execution without closing
+    governance; traceability is version-level and phase-aware; completion is mandatory; status
+    authority rests with the platform and validation does not imply application; separation of
+    duties is policy-driven with an absolute prohibition on AI self-approval; contract never the
+    database; transitions carry provenance.
+
+Modified principles:
+  - II. SRS as Requirement Source of Truth — adds that execution records are evidence subordinate
+    to the SRS, never a competing source of intent
+  - VII. Promotion Pipeline Discipline — adds that promotion evidence MUST include the execution
+    records for the governed commands that produced the promoted artifacts
+
+Added sections: none
+Removed sections: none
+
+Templates requiring updates (v1.6.0):
+  ✅ .specify/templates/plan-template.md   — Constitution Check gains the XII gate row
+  ✅ .specify/templates/tasks-template.md  — Phase Z heading extended to XII; closure task added
+  ✅ .specify/templates/spec-template.md   — reviewed; no change required (XII binds delivery
+     conduct and closure evidence, not specification structure)
+  ✅ .claude/skills/speckit-*/SKILL.md     — reviewed; no agent-specific or contrary hard-coded
+     behavior; XII binds them via the constitution they load
+
+Follow-up TODOs (v1.6.0):
+  ⚠ Principle XII is enforceable in full only once EPIC-037 (Governed Execution Registry) exists.
+    Until then the XII gate row and Phase Z task are answered honestly as "no governed execution
+    caused" or "records pending EPIC-037", never as PASS by omission. Enforcement mechanism lands
+    with EPIC-037 step C.
+
+--- previous report (v1.5.0) ---
 Version change: 1.4.0 → 1.5.0
 Bump rationale: MINOR — one new principle added (XI. Reachability Gate Per Epic). Nothing removed,
 renamed, or redefined incompatibly; every prior obligation still holds. The amendment discharges
@@ -142,6 +184,11 @@ back-fill. Where a spec and the SRS disagree, the SRS wins and the spec MUST be 
 `SRS/` is the permanent, incrementally-consumed enterprise documentation repository. Spec Kit
 reads from it; Spec Kit does not silently invent requirements outside it.
 
+**Execution records are evidence, not a competing source of truth** (Principle XII). An execution
+record proves what was done and by whom; it never establishes what SHOULD be done. Where an
+execution record and the SRS disagree about intent, the SRS wins and the execution record stands as
+the evidence that something happened outside it.
+
 **Rationale**: A single authoritative requirement source prevents specification drift across
 hundreds of features and keeps the delivered product answerable to documented intent.
 
@@ -226,6 +273,9 @@ local (Claude working repo) → dev → stage → prod
   tests (Principle V).
 - Direct commits or pushes to `dev`, `stage`, or `prod` that did not originate from `local` are
   PROHIBITED.
+- Promotion evidence MUST include the **execution records** for the governed commands that produced
+  the artifacts being promoted (Principle XII). An artifact whose producing command has no execution
+  record has no provenance, and provenance is what promotion is asserting.
 
 **Rationale**: A single entry point with a one-way pipeline guarantees that everything running
 in a downstream environment passed the same gates.
@@ -377,6 +427,76 @@ that cannot start."* Every instance was found by a human opening a browser, alwa
 had been declared closed. A test suite that never crosses a real entry point measures whether the
 parts work, not whether the product does.
 
+### XII. Execution Registration (NON-NEGOTIABLE)
+
+PMI Studio is the **authoritative system of record for governed Spec Kit executions**. Every
+governed Spec Kit command executed for a PMI Studio-managed project MUST have an execution record
+in PMI Studio, regardless of the agent, IDE, connector, sandbox, terminal or automation environment
+that originated it.
+
+**1 — Registration precedes execution.** In connected operation, authoritative registration MUST
+complete before a governed command begins. Where the control plane is unreachable,
+**strict-governance mode MUST block the command**; permitted offline mode MUST create a durable
+*provisional* record — client-generated execution ID, correlation ID and idempotency key — before
+execution, record subsequent events locally, and mark the execution `pending_sync` by appending an
+immutable `execution-sync-queued` event. A provisional execution **MUST NOT be represented as
+governed**; it becomes governed only when PMI Studio accepts and reconciles it.
+
+**2 — The event stream is authoritative.** Execution history MUST be an append-only sequence of
+immutable events. Current state MAY be projected for query efficiency, but the projection is
+derived and never authoritative. Mutable update operations MUST NOT be used as the audit mechanism.
+
+**A terminal lifecycle event ends command execution; it does not close governance.** No *lifecycle*
+event may follow a terminal lifecycle event. *Governance, approval, comment, redaction and
+reconciliation* events MAY follow it where valid, because a command may complete successfully and
+have its proposed transition approved or refused hours or days later. **A terminal execution MUST
+NEVER be reopened**; a rerun is a new linked execution.
+
+**3 — Traceability is version-level, and phase-aware.** At registration each execution MUST bind
+its **input** identity where applicable — target ID, target version or baseline, repository, branch,
+worktree, `commitBefore`, and input artifact digests. At completion it MUST bind its **output**
+identity where applicable — `commitAfter`, resulting specification version or baseline, generated
+artifact digests, and evidence references. **A link to a mutable top-level record is not
+sufficient.** Registration MUST NOT require output identity that cannot yet exist.
+
+**4 — Completion is mandatory.** After every execution the responsible agent or adapter MUST submit
+a completion update carrying outcome, evidence, artifacts, validation results, a completion comment,
+and any *requested* status transition.
+
+**5 — Status authority rests with the platform.** An agent or connector **requests** a transition;
+PMI Studio's governed workflow engine determines whether it is applied automatically, validated,
+sent for approval, refused, or marked inconsistent and requiring reconciliation. Connectors MUST NOT
+interpret lifecycle-transition policy.
+
+**Successful validation does not imply application.** Validation is normally an intermediate
+condition. A transition is applied only where policy authorizes application, and a passed validation
+that policy routes to approval remains unapplied until an authorized human approves it.
+
+**6 — Separation of duties is policy-driven.** An AI agent MUST NEVER approve its own
+approval-gated transition. Whether a human initiator may approve their own is determined by tenant
+or project separation-of-duties policy; high-risk transitions MAY require a different human,
+multiple approvers, or a named role. Every approval and refusal MUST be recorded with actor, basis
+and reason.
+
+**7 — Contract, never the database.** Agents and connectors MUST NOT write to PMI Studio tables.
+They MUST use an authenticated, authorized, versioned integration contract. Every integration MUST
+use idempotency and correlation controls so a retry cannot create a duplicate execution.
+
+**8 — Transitions carry provenance.** Every specification status transition MUST identify actor,
+reason, source execution, evidence, timestamp, previous state and resulting state.
+
+**Independence is preserved and is not a licence.** This principle does not make PMI Studio an IDE
+and does not bind it to any provider, agent, Spec Kit implementation or execution environment. What
+it forbids is the inference that independence permits *untracked* execution: the platform stays
+neutral about *where* a command runs and absolute about *that it is recorded*.
+
+**Rationale**: Principle IV finds work specified but never built; Principle XI finds work built but
+never wired. Neither sees work **performed but never recorded**. A governed command run in an editor
+and never registered leaves the specification's status, evidence chain and audit trail silently
+wrong, and every downstream gate — convergence, release readiness, traceability — reads a corpus
+that no longer describes reality. The operating principle is: **execute anywhere through an approved
+integration; govern, record and trace everything in PMI Studio.**
+
 ## Repository & Environment Governance
 
 **Hosting**: The canonical remote is GitHub — `https://github.com/rubeldhk/iSPEC-PMI-studio.git`.
@@ -466,9 +586,9 @@ Epics comply.
 **Compliance review**: Every `/speckit-plan` MUST complete its Constitution Check gate before
 Phase 0 research and re-check it after Phase 1 design. Every `/speckit-analyze` MUST report
 constitution violations as blocking findings. Every Epic convergence MUST confirm Principles I,
-IV, V, VI, VII, and XI were honored. Every command run MUST end with the closing report required by
+IV, V, VI, VII, XI, and XII were honored. Every command run MUST end with the closing report required by
 Principle IX and MUST honor the interaction budget of Principle X for its phase. Complexity or
 deviation MUST be justified in the plan's Complexity Tracking table, or the work MUST be
 simplified.
 
-**Version**: 1.5.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-20
+**Version**: 1.6.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-25

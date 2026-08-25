@@ -39,9 +39,38 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { AREAS, deliveredAreas, type AreaStatus } from '../../../src/shell/areas';
+import { AREAS, deliveredAreas, reachableAreas, type AreaStatus } from '../../../src/shell/areas';
 
-const SPECS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', 'specs', '036-application-shell');
+// T1002 — the identifier shape is configuration (`EPIC-026` `FR-ESK-025`), not
+// something this file may restate. It held the PRE-WIDENING three-digit shape in
+// two places, in the very file whose `T441n` raised the exhaustion.
+//
+// **This file cannot import the shared module, established by compiling rather
+// than assumed**: this package's tsconfig sets `rootDir` to `frontend/`, so a
+// repository-root `.ts` import fails with TS6059. Vitest resolves it happily —
+// only `tsc` says no, which is why an import that ran green was still wrong.
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
+const SPECS = join(ROOT, 'specs', '036-application-shell');
+
+/** The identifier shape, unanchored, from governance configuration. */
+function identifierShape(): string {
+  const config = JSON.parse(
+    readFileSync(join(ROOT, 'governance', 'epic-stage.config.json'), 'utf8'),
+  ) as { taskIdentifierRecogniser: string };
+  return config.taskIdentifierRecogniser.replace(/^\^/, '').replace(/\$$/, '');
+}
+
+/** Identifier-shaped tokens cited in prose, as a FRESH global regex each call. */
+function citedIdentifiers(): RegExp {
+  return new RegExp(`\\b${identifierShape()}\\b`, 'g');
+}
+
+/** The identifiers a tasks.md declares, by checkbox line. */
+function declaredIdentifiers(tasks: string): string[] {
+  return [...tasks.matchAll(new RegExp(`^- \\[[ xX]\\] (${identifierShape()})`, 'gm'))].map(
+    (m) => m[1]!,
+  );
+}
 
 function doc(...parts: string[]): string {
   return readFileSync(join(SPECS, ...parts), 'utf8');
@@ -50,6 +79,10 @@ function doc(...parts: string[]): string {
 /** The registry's own counts — the thing every document below must agree with. */
 const ACTUAL: Record<AreaStatus, number> = {
   delivered: AREAS.filter((a) => a.status === 'delivered').length,
+  // T1016 — `partly-delivered` joined the vocabulary with Constitution XII
+  // Step B. Omitting it here would leave two areas uncounted while the sum
+  // still looked deliberate.
+  'partly-delivered': AREAS.filter((a) => a.status === 'partly-delivered').length,
   'declared-not-delivered': AREAS.filter((a) => a.status === 'declared-not-delivered').length,
   undeclared: AREAS.filter((a) => a.status === 'undeclared').length,
 };
@@ -181,14 +214,22 @@ const ARTIFACTS: readonly (readonly string[])[] = featureDocuments()
   .map((rel) => rel.split('/'));
 
 describe('T442t · the registry and the documents that define it agree', () => {
-  it('reads a registry with all three states, or this check proves nothing', () => {
+  it('reads a registry with all four states, or this check proves nothing', () => {
     // Anti-vacuity. A regex that matched nothing, or a registry that lost a
     // state, would let every assertion below pass over an empty list — which
     // is precisely how the divergence survived eight passes.
     expect(AREAS.length).toBe(18);
-    expect(ACTUAL.delivered + ACTUAL['declared-not-delivered'] + ACTUAL.undeclared).toBe(18);
-    for (const [status, n] of Object.entries(ACTUAL)) {
-      expect(n, `no areas are ${status}`).toBeGreaterThan(0);
+    const summed = Object.values(ACTUAL).reduce((a, b) => a + b, 0);
+    expect(summed, 'the four states do not account for every area').toBe(18);
+
+    // T1016 — `undeclared` is deliberately EMPTY after Step B: every area names
+    // its Epic. The old guard required every status to have members, which
+    // would now force a false entry to satisfy it. The state is retained for a
+    // future area declared before its Epic exists, so assert the zero and its
+    // reason rather than demanding it be non-zero.
+    expect(ACTUAL.undeclared, 'an area names no owning Epic').toBe(0);
+    for (const status of ['delivered', 'partly-delivered', 'declared-not-delivered'] as const) {
+      expect(ACTUAL[status], `no areas are ${status}`).toBeGreaterThan(0);
     }
   });
 
@@ -228,7 +269,7 @@ describe('T442t · the registry and the documents that define it agree', () => {
     // writing, which is how a check stops being read.
     const OWN_BLOCK = /^T(43[6-9]|44[0-2])[a-z]$/;
     const defined = new Set(
-      [...doc('tasks.md').matchAll(/^- \[[ xX]\] (T\d{3}[a-z]?)/gm)].map((m) => m[1]!),
+      declaredIdentifiers(doc('tasks.md')),
     );
     expect(defined.size, 'no tasks parsed out of tasks.md').toBeGreaterThan(50);
 
@@ -236,7 +277,7 @@ describe('T442t · the registry and the documents that define it agree', () => {
     const examined = new Set<string>();
     for (const rel of featureDocuments()) {
       if (rel === 'tasks.md') continue;
-      for (const match of doc(...rel.split('/')).matchAll(/\bT\d{3}[a-z]?\b/g)) {
+      for (const match of doc(...rel.split('/')).matchAll(citedIdentifiers())) {
         const id = match[0];
         // Ids outside this Epic's allocated blocks belong to other Epics —
         // `T200e` is `EPIC-010`'s, `T884` is `EPIC-029`'s — and this file has
@@ -321,7 +362,7 @@ describe('T442t · the registry and the documents that define it agree', () => {
       const match = new RegExp(`\\|\\s*${status}\\s*\\|[^|]*\\|\\s*(\\d+)\\s*\\|`, 'i').exec(table);
       if (match) stated[status] = Number(match[1]);
     }
-    expect(Object.keys(stated), 'the status table was not parsed at all').toHaveLength(3);
+    expect(Object.keys(stated), 'the status table was not parsed at all').toHaveLength(4);
     expect(stated).toEqual(ACTUAL);
     expect(
       Object.values(stated).reduce((a, b) => a + b, 0),
@@ -329,14 +370,17 @@ describe('T442t · the registry and the documents that define it agree', () => {
     ).toBe(AREAS.length);
   });
 
-  it('the contract route table lists exactly the delivered areas', () => {
+  it('the contract route table lists exactly the REACHABLE areas', () => {
     // The worst site of the `N1` divergence: the table marked
     // `/specifications/:id/tasks` as a delivered area — a parameterised path
     // presented as a navigable destination, which is the bug `N1` ruled out.
     const table = doc('contracts', 'shell-contract.md');
     const routed = [...table.matchAll(/^(\/\S*)\s+→\s+.*?\bdelivered\b/gm)].map((m) => m[1]!);
     expect(routed.length, 'no delivered routes were parsed from the table').toBeGreaterThan(0);
-    expect(routed.sort()).toEqual(deliveredAreas().map((area) => area.path).sort());
+    // T1016 — reachable, not strictly delivered. A partly-delivered area is
+    // routed, and comparing against `deliveredAreas()` would demand the table
+    // omit two screens a user can open.
+    expect(routed.sort()).toEqual(reachableAreas().map((area) => area.path).sort());
   });
 
   it('no artifact presents a parameterised path as a delivered area', () => {

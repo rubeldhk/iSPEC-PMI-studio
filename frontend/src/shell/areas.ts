@@ -25,7 +25,25 @@ export const AREA_GROUPS = ['overview', 'intent-and-control', 'delivery', 'platf
 export type AreaGroup = (typeof AREA_GROUPS)[number];
 
 /**
- * Three states, not two.
+ * Four states, not three (`T1012`, Constitution XII Step B, 2026-08-25).
+ *
+ * **Reachability and completeness are different questions.** The three-state
+ * vocabulary could only answer the first. Home renders, and carries **one of
+ * the V2 prototype's three panels** — calling that `delivered` overstates the
+ * product, and calling it `declared-not-delivered` denies a screen a user can
+ * reach right now. The gap analysis of 2026-08-25 found this ambiguity was
+ * itself the reason two published screen counts disagreed with each other.
+ *
+ * So `partly-delivered` joins the vocabulary, and two predicates replace one:
+ * {@link reachableAreas} drives routing and navigation, {@link deliveredAreas}
+ * stays strictly delivered so the delivery report cannot quietly inflate.
+ *
+ * **`undeclared` now has no members, deliberately.** Every area names its Epic
+ * after Step B. The state is retained rather than deleted because a future area
+ * may be declared before its Epic exists, and the register must be able to say
+ * so honestly rather than mislabelling it.
+ *
+ * ## Why the original three
  *
  * The registry carried a boolean `declared` until the cross-artifact analysis
  * of 2026-08-24 (`specs/036-application-shell/analysis.md` `C1`). A boolean
@@ -40,7 +58,16 @@ export type AreaGroup = (typeof AREA_GROUPS)[number];
  * assigns all four owners. The middle state records the debt with the debtor's
  * name on it.
  */
-export type AreaStatus = 'delivered' | 'declared-not-delivered' | 'undeclared';
+export type AreaStatus =
+  | 'delivered'
+  | 'partly-delivered'
+  | 'declared-not-delivered'
+  | 'undeclared';
+
+/** Whether an area renders — `delivered` or `partly-delivered` (`T1012`). */
+export function isReachable(status: AreaStatus): boolean {
+  return status === 'delivered' || status === 'partly-delivered';
+}
 
 export interface Area {
   /** Stable. Never reused — an address outlives a rename. */
@@ -53,7 +80,11 @@ export interface Area {
   /** The Epic that owns this area's content, or null where §4.1 names none. */
   readonly epic: string | null;
   readonly status: AreaStatus;
-  /** What renders. Present ONLY when `status` is 'delivered'. */
+  /**
+   * What renders. Present exactly when the area is **reachable** — `delivered`
+   * or `partly-delivered` (`T1012`). Scoping this to `delivered` alone would
+   * strip a partly-delivered area of its route the moment it was reclassified.
+   */
   readonly element?: ComponentType;
   /**
    * Why an area is not delivered, in the user's terms — shown on the not-found
@@ -65,7 +96,8 @@ export interface Area {
 /**
  * All eighteen areas of PMI-DOC-006 §4.1, in §4.1's order.
  *
- * **Five delivered, four owed, nine undeclared.** An undelivered area stays
+ * **Two delivered, two partly delivered, thirteen owed, none undeclared**
+ * (`T1013`, 2026-08-25). An undelivered area stays
  * here rather than being deleted: it is how §4.1's eighteen are recorded, and
  * how an address naming one is answered *not found* rather than *unknown path*.
  * Deleting them would make a specified area indistinguishable from a typo.
@@ -78,7 +110,8 @@ export const AREAS: readonly Area[] = Object.freeze([
     label: 'Home',
     path: '/',
     epic: 'EPIC-036',
-    status: 'delivered',
+    status: 'partly-delivered',
+    note: 'Lifecycle health and Recent engineering activity are not built. Needs attention draws one of its three sources.',
     element: HomeArea,
   },
   {
@@ -87,7 +120,8 @@ export const AREAS: readonly Area[] = Object.freeze([
     label: 'Projects',
     path: '/projects',
     epic: 'EPIC-003',
-    status: 'delivered',
+    status: 'partly-delivered',
+    note: 'Per-project lifecycle health is not built (BR-0013 has no owner).',
     element: ProjectsArea,
   },
   {
@@ -95,8 +129,9 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'overview',
     label: 'Decision Inbox',
     path: '/decisions',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-031',
+    status: 'declared-not-delivered',
+    note: 'Decisions and policy are specified and not built yet.',
   },
   // ------------------------------------------------------- Intent & Control
   {
@@ -104,8 +139,9 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'intent-and-control',
     label: 'Requirement Room',
     path: '/requirement-room',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-033',
+    status: 'declared-not-delivered',
+    note: 'The Requirement Room is specified and partly built; its screen is not built yet.',
   },
   {
     id: 'specifications',
@@ -121,16 +157,18 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'intent-and-control',
     label: 'Change Room',
     path: '/change-room',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-034',
+    status: 'declared-not-delivered',
+    note: 'The Change Room is specified and not built yet.',
   },
   {
     id: 'defect-room',
     group: 'intent-and-control',
     label: 'Defect Room',
     path: '/defect-room',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-035',
+    status: 'declared-not-delivered',
+    note: 'The Defect Room is specified and not built yet.',
   },
   {
     id: 'architecture-decisions',
@@ -165,8 +203,9 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'delivery',
     label: 'Engineering Experts',
     path: '/experts',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-028',
+    status: 'declared-not-delivered',
+    note: 'Engineering Experts are specified and not built yet.',
   },
   {
     id: 'runs',
@@ -182,8 +221,9 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'delivery',
     label: 'Evidence & Compliance',
     path: '/evidence',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-032',
+    status: 'declared-not-delivered',
+    note: 'Evidence and compliance are specified and not built yet.',
   },
   {
     id: 'qa-releases',
@@ -200,24 +240,27 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'platform',
     label: 'Context',
     path: '/context',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-038',
+    status: 'declared-not-delivered',
+    note: 'Engineering Context is owned and not scheduled yet.',
   },
   {
     id: 'integrations',
     group: 'platform',
     label: 'Integrations',
     path: '/integrations',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-039',
+    status: 'declared-not-delivered',
+    note: 'The Integration Hub is owned and not scheduled yet.',
   },
   {
     id: 'reports',
     group: 'platform',
     label: 'Reports',
     path: '/reports',
-    epic: null,
-    status: 'undeclared',
+    epic: 'EPIC-040',
+    status: 'declared-not-delivered',
+    note: 'Metrics and reporting are owned and not scheduled yet.',
   },
   {
     id: 'governance',
@@ -242,6 +285,17 @@ export const AREAS: readonly Area[] = Object.freeze([
 /** The areas that reach navigation and the route tree. Registry order. */
 export function deliveredAreas(): readonly Area[] {
   return AREAS.filter((area) => area.status === 'delivered');
+}
+
+/**
+ * Every area a user can actually open (`T1012`).
+ *
+ * Routing, navigation and the not-found page read **this**, not
+ * {@link deliveredAreas} — a partly-delivered area is incomplete, not absent,
+ * and routing it to *not found* would hide a working screen.
+ */
+export function reachableAreas(): readonly Area[] {
+  return AREAS.filter((area) => isReachable(area.status));
 }
 
 export const GROUP_LABELS: Readonly<Record<AreaGroup, string>> = Object.freeze({
