@@ -5,7 +5,7 @@ description: "Task list for EPIC-014 — DevOps & Release"
 
 # Tasks: DevOps & Release
 
-**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 49
+**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 51
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -199,3 +199,18 @@ untouched after four convergence phases.
 
 - [X] T153d Derive Gate V's check inventory instead of listing it, in `tests/governance/container-secrets.spec.ts` and `specs/014-devops-release/plan.md`, per `plan: Constitution Check Gate V` (contradicts) — **the inventory has drifted twice in three passes and is stale again now.** Gate V lists **five** checks (`T150a`, `T150b`, `T150c`, `T150d`, `T150s`); **seven exist** — `T150i` and `T153c` are absent. The Definition of done further down the same document still reads *"the **three** conformance checks"*, never updated when Gate V went four to five. **`T150y` corrected this table by hand one pass ago and it was stale again within the same Epic**, which is the argument against correcting it a fifth time. Parse the `describe('T15…')` blocks from this Epic's four check files, parse the task ids Gate V's table names, and **fail when a check exists that the gate does not list** — the `T153c` pattern, turned on the gate that demands it of everyone else. Correct the DoD's count in the same change, and carry the anti-vacuity guard: a parser finding no `describe` blocks would report full coverage forever
 - [X] T153e [P] Mutate `T150i`'s `.dockerignore` assertions and record the result in `docs/deployment/EPIC-014-container-stack-transcript.md` §Mutations, per `plan: Gate V standard` (partial) — **they have never been seen to fail.** The transcript records exactly three mutations — bake a credential, remove the static fallback, unreachable database — and **none touches `.dockerignore`**. `T150i` was written *after* the exclusions were already present, so it went green on its first run and has been green since; the only thing that ever proved that gap real was a **build failure**, not this check. Gate V's whole standard is `T200c`'s — *a check nobody has seen fail is a check nobody knows works* — and this check has no fail-first evidence of any kind. Remove `**/node_modules` from `.dockerignore`, observe it go red naming the pattern, restore, and record both states. **It is the one assertion in this Epic still taken on trust**
+
+## Phase C-5 · Convergence — 2026-08-25
+
+**Fifth convergence pass over `F-11.3`.** Two findings, and the count stopped falling. Stated
+plainly: **`C-4`'s fix was one level shallower than the problem.** `T153d` derives *which checks
+Gate V lists* — from a **hand-written list of files**. That is the same fault it was written to
+remove, moved down one level, and it is the fifth time this Epic has produced that shape.
+
+Nothing is wrong in the running system. Nine checks exist and all pass; every documented command
+runs; four mutations and one fail-first ordering are recorded.
+
+**Identifier block: `T153f`–`T153g`.** `T864` remains untouched after five convergence phases.
+
+- [ ] T153f Derive `T153d`'s file set and recognise checks by the id they name, in `tests/governance/container-secrets.spec.ts`, per `plan: Constitution Check Gate V` (partial) — **`T153d` has two blind spots and a real check sits in both.** `T150p` — the README two-stack assertions from `C-1` — lives in `tests/governance/readme-conformance.spec.ts:76`, which is **not in `CHECK_FILES`**; and even were it added, `T150p` owns **no `describe` block** (it is `it('… (T150p)')` inside `describe('T452 · …')`), so the parser would still not see it. Gate V lists eight checks; **`T150p` is a ninth**. Two fixes, and neither is "add the file to the list": **(a)** glob `tests/governance/*.spec.ts` and `backend/tests/unit/core/*.spec.ts` instead of naming four files — `CHECK_FILES` is a hand-maintained list, which is the exact thing `T153d` was written to abolish; **(b)** recognise a check by **any `T15\d[a-z]` id a `describe` or `it` title names**, not by which block it happens to sit in, since where an assertion is nested is a formatting choice and the id is the claim. Keep the anti-vacuity guard, and expect the glob to surface ids belonging to other Epics — scope by the id range this Epic owns, not by the file (conformance: T153d, extended)
+- [ ] T153g [P] Mutate `T150p` and record it in `docs/deployment/EPIC-014-container-stack-transcript.md` §Mutations, per `plan: Gate V standard` (partial) — **it has never been seen to fail**, the same class `T153e` closed for `T150i` one pass ago, **missed because it is not in the inventory** — which is `T153f`'s point stated as a consequence. It was added in `C-1` alongside the README it checks, so it went green on its first run and has been green since; the transcript records four mutations and none touches it. Remove the containerised section from `README.md`, observe `T150p` go red naming the missing stack, restore, and record both states. After this, **every check this Epic owns will have been seen to fail** — a claim that was made once already at `C-4` and was wrong, because the inventory it was measured against was incomplete
