@@ -564,3 +564,121 @@ describe('T153c · the release gate runs every quickstart scenario', () => {
     );
   });
 });
+
+/**
+ * T153d (EPIC-014 F-11.3, convergence C-4) — Gate V must list every check
+ * that exists.
+ *
+ * **The inventory drifted twice in three passes.** `plan.md`'s Gate V table
+ * said four checks when there were five; `T150y` corrected it by hand in
+ * convergence `C-1`; and by `C-4` it said five when there were **seven** —
+ * `T150i` and `T153c` had appeared and nobody added a row. The Definition of
+ * done in the same document still said *"the three conformance checks"*,
+ * never updated at all.
+ *
+ * **Gate V is the gate that demands derived coverage of everything else.**
+ * `T442w` derives shell surfaces, `T442y` derives the document list, `T153c`
+ * derives the release gate's scenarios — and the table making that demand was
+ * the last thing in the Epic still counted by hand. Correcting it a fifth time
+ * would have been the fifth time.
+ *
+ * A `MUTATION` describe is **evidence for** a check, not a check of its own:
+ * `T150a · MUTATION — …` is how `T150a` is seen to fail, so both collapse to
+ * `T150a`. That is deliberate — counting them separately would make the gate's
+ * inventory depend on how a test file happens to be sectioned.
+ */
+describe('T153d · Gate V lists every check this Epic has', () => {
+  const PLAN = 'specs/014-devops-release/plan.md';
+
+  /** The files holding `F-11.3`'s conformance checks and unit tests. */
+  const CHECK_FILES = [
+    'tests/governance/container-secrets.spec.ts',
+    'tests/governance/package-scripts.spec.ts',
+    'backend/tests/unit/core/serve-static.spec.ts',
+    'backend/tests/unit/core/entrypoint.spec.ts',
+  ] as const;
+
+  /** Every task id that owns a `describe` block, deduplicated. */
+  function checksThatExist(): string[] {
+    const ids = new Set<string>();
+    for (const rel of CHECK_FILES) {
+      for (const match of read(rel).matchAll(/^describe\(\s*['"`](T1\d{2}[a-z]?)\b/gm)) {
+        ids.add(match[1]!);
+      }
+    }
+    return [...ids].sort();
+  }
+
+  /** The task ids Gate V's table names, read from its rows only. */
+  function checksGateVLists(): string[] {
+    const plan = read(PLAN);
+    const start = plan.indexOf('#### Gate V in full');
+    const end = plan.indexOf('**Post-design re-check**', start);
+    expect(start, 'Gate V’s table is gone from plan.md').toBeGreaterThan(-1);
+    const table = plan.slice(start, end === -1 ? undefined : end);
+    const ids = new Set<string>();
+    for (const row of table.split(/\r?\n/).filter((l) => l.trimStart().startsWith('|'))) {
+      // **Only the Task column names a check.** The evidence column cites the
+      // tasks that *provide* the evidence — `T150l` ran the scenarios, `T150m`
+      // and `T153e` ran the mutations — and none of those owns a `describe`
+      // block. An earlier version read the whole row and then needed a
+      // hardcoded allowlist of "ids that are evidence, not checks", which grew
+      // by one the moment a row was added. Reading the column the table
+      // actually defines removes the list instead of maintaining it.
+      const columns = row.split('|').map((c) => c.trim());
+      for (const match of (columns[2] ?? '').matchAll(/`(T1\d{2}[a-z]?)`/g)) ids.add(match[1]!);
+    }
+    return [...ids].sort();
+  }
+
+  it('finds checks and a table to compare, or this proves nothing', () => {
+    // Anti-vacuity. A parser that found no `describe` blocks would report the
+    // gate complete forever — the exact state that let the count drift twice.
+    expect(checksThatExist().length, 'no checks parsed from the check files').toBeGreaterThan(5);
+    expect(checksGateVLists().length, 'no task ids parsed from Gate V').toBeGreaterThan(3);
+  });
+
+  it('every check that exists appears in the Gate V table', () => {
+    const missing = checksThatExist().filter((id) => !checksGateVLists().includes(id));
+    expect(
+      missing,
+      `Gate V does not list ${missing.join(', ')}, which exist as checks.\n` +
+        'Gate V is the gate this scope is meant to be failed on. An inventory that undercounts ' +
+        'its own checks is the shape every other finding in this Epic ended at — so it is derived ' +
+        'here rather than corrected again.',
+    ).toEqual([]);
+  });
+
+  it('Gate V names no check that does not exist', () => {
+    // The other direction: a row for a deleted check reads as coverage.
+    const exist = checksThatExist();
+    const phantom = checksGateVLists().filter((id) => !exist.includes(id));
+    expect(
+      phantom,
+      `Gate V's Task column names ${phantom.join(', ')}, which own no describe block — ` +
+        'a row for a check that does not exist reads as coverage.',
+    ).toEqual([]);
+  });
+
+  it('the Definition of done does not restate the count', () => {
+    // `T150y` fixed the table and left this sentence saying "three". A count
+    // written in prose beside a table that lists the same things is the PP-002
+    // fault in miniature — so the sentence must not carry a number at all.
+    // **The bullet wraps**, and the first version of this assertion read only
+    // its first line — so it passed over "the three conformance checks" sitting
+    // on the second. A markdown bullet is one statement however it is folded,
+    // and a check that reads it line-by-line reads a different document than
+    // the person does.
+    const dod = read(PLAN).slice(read(PLAN).indexOf('## Definition of done'));
+    const bullets = dod
+      .split(/\r?\n(?=- \[)/) // split on the START of each bullet, not on newlines
+      .map((b) => b.replace(/\r?\n\s+/g, ' '));
+    const f113 = bullets.find((b) => b.includes('F-11.3')) ?? '';
+    expect(
+      f113,
+      `the Definition of done restates a check count: "${f113.trim()}"\n` +
+        'It said "the three conformance checks" while Gate V listed five and seven existed. ' +
+        'Point at the table instead of counting beside it.',
+    ).not.toMatch(/\b(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+conformance checks\b/i);
+  });
+});
