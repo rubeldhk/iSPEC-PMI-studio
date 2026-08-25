@@ -73,11 +73,62 @@ describe('T452 · README.md covers the documented setup', () => {
     expect(readme).toMatch(/test/i);
   });
 
+  it('documents BOTH stacks, and says which is which (T150p)', () => {
+    // `EPIC-014` F-11.3 added a containerised stack beside the reference local
+    // one. A README that documents only one of them is worse than a README
+    // that documents neither, because it reads as complete.
+    expect(readme, 'the README does not document the containerised stack').toMatch(
+      /docker compose up -d --build/,
+    );
+    expect(readme, 'the README does not document the reference local stack').toMatch(
+      /pnpm --filter frontend dev/,
+    );
+
+    // **And it must say which measurement belongs to which stack.** `T442l`
+    // pins the reference stack precisely because `SC-SHL-006`'s p95 was a
+    // criterion whose scope had been named and never defined. Two stacks in one
+    // document reopens exactly that ambiguity unless the document closes it.
+    expect(
+      readme,
+      'the README names no reference stack for SC-SHL-006 — two stacks and one unqualified number ' +
+        'is the ambiguity T442l was written to end',
+    ).toMatch(/SC-SHL-006/);
+  });
+
+  it('does not tell the reader to seed a production-mode container without overriding NODE_ENV', () => {
+    // Found by running it (T150l Scenario 6): the image sets NODE_ENV=production
+    // and backend/prisma/seed.ts refuses that outright. `quickstart.md`'s
+    // Scenario 6 command fails for exactly this reason. The refusal is correct;
+    // the instruction was wrong, and an instruction that cannot work is worse
+    // than an absent one.
+    const seedInContainer = [...readme.matchAll(/docker compose exec[^`]*?seed[^`]*/g)].map(
+      (m) => m[0],
+    );
+    for (const command of seedInContainer) {
+      expect(
+        command,
+        `the README seeds inside the container without NODE_ENV=development:
+  ${command}
+` +
+          'The image runs as production and the seed refuses it.',
+      ).toMatch(/NODE_ENV=development/);
+    }
+  });
+
   it('does not tell the reader to start a service the compose file does not define', () => {
     const compose = readFileSync(resolve(ROOT, 'docker-compose.yml'), 'utf8');
     const services = [...compose.matchAll(/^ {2}([a-z][\w-]*):$/gm)].map((m) => m[1]!);
     const named = [...readme.matchAll(/docker compose up[^\n]*/g)].flatMap((m) =>
-      m[0].split(/\s+/).slice(4),
+      // Everything after `docker compose up`, minus the shell noise. `T150n`
+      // added `docker compose up -d --build   # everything, on …`, and the
+      // original positional slice read first `--build` and then `#` as service
+      // names. **Neither counting positions nor trusting the line shape was
+      // ever the rule** — the rule is "the words that name services".
+      m[0]
+        .split('#')[0]!
+        .split(/\s+/)
+        .slice(3)
+        .filter((token) => token !== '' && !token.startsWith('-')),
     );
 
     // DEF-014-001 in check form, for the README half only. The quickstart half

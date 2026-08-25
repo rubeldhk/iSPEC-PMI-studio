@@ -105,6 +105,31 @@ checks answer different questions.
 
 ## `R-036-3` — Deep links need a server fallback, and one of the two servers does not have it
 
+> ## ✅ Discharged 2026-08-25 by `EPIC-014` `T150l`
+>
+> **Recorded here by `EPIC-014` (`T150o`), in this Epic's record, because the gap was this Epic's to
+> name and another Epic's to close.** `EPIC-036` did not close it retroactively and nothing below is
+> rewritten — the decision stood, and the dependency it named has now been met.
+>
+> `EPIC-014` F-11.3 serves the built client from the API itself
+> (`@nestjs/serve-static`, one origin), and the containerised stack was driven end to end. Observed:
+>
+> | Address | Status | Content-Type |
+> |---|---|---|
+> | `/runs` | **200** | `text/html` |
+> | `/specifications/abc` | **200** | `text/html` |
+> | `/v1/auth/me` | 401 | `application/json` |
+>
+> A routed address returns the application, and a **parameterised** one does too. The transcript is
+> [`docs/deployment/EPIC-014-container-stack-transcript.md`](../../docs/deployment/EPIC-014-container-stack-transcript.md),
+> and the fallback was **mutation-verified**: removing it turns `/runs` from `200 text/html` into
+> `500`.
+>
+> **What is still true.** The alternative rejected below — adding `preview.proxy` to
+> `vite.config.ts` — remains rejected and remains `EPIC-029`'s file. And this proves **local**
+> only: `BR-0090` still owns `dev`/`stage`/`prod`, and a container on a developer's machine proves
+> nothing about a deployed environment.
+
 **Decision**: `FR-SHL-017` is satisfied in development by Vite's dev server, which already serves
 `index.html` for unknown paths. **Production serving is an open dependency, not a task in this
 Epic.**

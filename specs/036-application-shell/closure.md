@@ -227,6 +227,15 @@ Neither blocks `/speckit-converge`; both block the Epic Exit Criteria, and the E
   `PP-008` is this Epic's one deferral. Every delivered area is visible to any signed-in identity.
 - **That deep links work in production.** They work against the dev server. **Nothing in this
   repository serves the built client at all** (`R-036-3`), and that gap has no owner.
+
+  > **Superseded 2026-08-25 by `EPIC-014` `T150o`.** The gap has an owner and is closed for
+  > **local**: `EPIC-014` F-11.3 serves the built client from the API on one origin, and the
+  > containerised stack was driven — `/runs` and `/specifications/abc` both return `200 text/html`,
+  > mutation-verified by removing the fallback and watching `/runs` become `500`. See
+  > [`docs/deployment/EPIC-014-container-stack-transcript.md`](../../docs/deployment/EPIC-014-container-stack-transcript.md).
+  > **The sentence above is left standing** because it was true when written and because `dev`,
+  > `stage` and `prod` remain unproven — `BR-0090` owns those, and a container on a developer's
+  > machine proves nothing about a deployed environment.
 - **That project health is anywhere.** `BR-0013` left this Epic at clarification, owner `U-03`.
 - **That the drawer re-renders on a live window resize.** The transcript records that a viewport
   change applied mid-session by the automation harness did not, and that a reload at 360px does. A
