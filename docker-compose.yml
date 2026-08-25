@@ -49,6 +49,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # **Named explicitly** (`T150r`). A service with `build:` and no `image:`
+    # is named from the compose PROJECT — which defaults to the directory —
+    # so the image name differs per checkout and cannot be written into
+    # documentation. `quickstart.md` Scenario 5 named `pmi-studio-app`, which
+    # existed nowhere, and that scenario is the credential check's own.
+    image: pmi-studio-app
     container_name: pmi-app
     depends_on:
       # `service_healthy`, not `service_started`. A container that starts before

@@ -179,3 +179,56 @@ Each was found by **running** the thing, not by reading it.
 **Finding 5 is the one worth carrying forward.** `T150c` originally asserted that the exclude list
 *mentioned* `/v1`. It did — in all three wrong versions. A configuration check that reads a string
 where the runtime reads a pattern will pass over every fault that lives in the pattern.
+
+---
+
+## §4 Convergence C-1 re-run — 2026-08-25
+
+**Both corrected commands were driven as written**, not reasoned about. `T150q` and `T150r` changed
+documentation and one compose line; this is the evidence they now work.
+
+### Scenario 5 — the credential command runs
+
+```
+$ docker run --rm --entrypoint sh pmi-studio-app -c 'ls -a /app | grep -c "^\.env$" || true'
+0
+```
+
+`0` — no `.env` in the image, which is what the scenario claims. **Before `T150r` this command
+failed**: no image named `pmi-studio-app` existed, because the `app` service declared `build:` with
+no `image:` and Docker named it from the checkout directory. `docker-compose.yml` now declares the
+name, so it is the repository's rather than the directory's.
+
+### Scenario 6 — the seed command runs
+
+```
+$ docker compose exec -e NODE_ENV=development \
+    -e SEED_USER_EMAIL=you@pmi.local -e SEED_USER_PASSWORD='choose-something' \
+    app pnpm --filter @pmi/backend exec tsx prisma/seed.ts
+seeded workspace ws_default and user you@pmi.local
+```
+
+**Before `T150q` this command failed twice over**: the env assignments sat in the host shell and
+never reached the container, and `NODE_ENV` was never overridden, so the seed refused. Both
+refusals in `backend/prisma/seed.ts` are unchanged and still fire — see §1.
+
+### The stack still serves
+
+| Address | Status |
+|---|---|
+| `/` | 200 |
+| `/runs` | 200 |
+| `/v1/auth/me` | 401 |
+| `/v1/no-such-endpoint` | 500 *(`DEF-001-006`, still visible)* |
+
+### What `T150s` caught, including in itself
+
+Written first, it went red on **`C2`** and **passed over `C1`** — the fault it existed for. Its
+filter required a line to *start* with `docker `, and the quickstart writes the seed as
+`SEED_USER_EMAIL=… \` then `docker compose exec …`. **An env-prefixed command is the normal shell
+idiom for exactly the kind of command this check inspects**, so requiring `docker` first was
+checking a shape rather than a meaning. Found by running the new check against the two known faults
+and noticing it caught one.
+
+Once corrected it was red on both, then green after `T150q` and `T150r` — which is the ordering the
+phase was written for.

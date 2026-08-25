@@ -230,3 +230,174 @@ describe('T150a · MUTATION — the check must catch what it claims to, and only
     expect(credentialAssignments('# SEED_USER_PASSWORD=example-only')).toEqual([]);
   });
 });
+
+/**
+ * T150s (EPIC-014 F-11.3, convergence C-1) — the documented container
+ * commands must be runnable.
+ *
+ * **This is the check whose absence let `C1` and `C2` through.** `T452` reads
+ * `README.md` and nothing reads `quickstart.md` at all — so two of the three
+ * container commands in the Epic's own validation guide were wrong, and the
+ * whole suite stayed green:
+ *
+ *   - Scenario 5 ran `docker run … pmi-studio-app`. **No image by that name
+ *     exists**: the `app` service declared `build:` with no `image:`, so Docker
+ *     named it from the compose project directory. It failed for everyone, and
+ *     it was the credential check's own scenario.
+ *   - Scenario 6 ran `docker compose exec app … seed`. **That command fails**:
+ *     the image runs `NODE_ENV=production` and `backend/prisma/seed.ts`
+ *     refuses it outright. The refusal is correct — it is `R-014-6`'s entire
+ *     point — and the instruction was what was wrong.
+ *
+ * Constitution V asks a non-code output to carry an executable check that can
+ * fail. `quickstart.md` is the document that claims the product runs, and
+ * **nothing was holding it to that claim**.
+ *
+ * It checks that commands are *runnable*, not that they succeed — running them
+ * needs Docker and a database, which is `T150l`'s job. What it can catch
+ * without infrastructure is the class both faults belonged to: a command that
+ * names something the repository does not define.
+ */
+describe('T150s · every documented container command is runnable', () => {
+  const DOCUMENTS = ['README.md', 'specs/014-devops-release/quickstart.md'] as const;
+
+  /**
+   * Documented lines that invoke docker, joined across `\` continuations and
+   * **with leading `VAR=value` assignments stripped**.
+   *
+   * The first draft of this filter required the line to *start* with `docker `,
+   * and it missed `C1` — the very fault it was written for — because the
+   * quickstart writes:
+   *
+   *     SEED_USER_EMAIL=… SEED_USER_PASSWORD='…' \
+   *       docker compose exec app … seed
+   *
+   * An env-prefixed command is the normal shell idiom for exactly the kind of
+   * command this file inspects, so requiring `docker` first was checking a
+   * shape rather than a meaning. Caught by running it against the two known
+   * faults and finding it caught only one.
+   */
+  function dockerCommands(rel: string): string[] {
+    const text = read(rel).replace(/\\\r?\n\s*/g, ' ');
+    return text
+      .split(/\r?\n/)
+      .map((line) => line.trim().replace(/^(?:[A-Za-z_][A-Za-z0-9_]*=(?:'[^']*'|"[^"]*"|\S*)\s+)+/, ''))
+      .filter((line) => line.startsWith('docker '));
+  }
+
+  /** Service names `docker-compose.yml` defines. */
+  function composeServices(): string[] {
+    const compose = read('docker-compose.yml');
+    const body = compose.slice(compose.indexOf('services:'));
+    return [...body.matchAll(/^ {2}([a-z][\w-]*):$/gm)].map((m) => m[1]!);
+  }
+
+  /** Image names `docker-compose.yml` declares, whether pulled or built. */
+  function composeImages(): string[] {
+    return [...read('docker-compose.yml').matchAll(/^\s*image:\s*(\S+)\s*$/gm)].map((m) => m[1]!);
+  }
+
+  it('finds container commands to check, or this file proves nothing', () => {
+    // Anti-vacuity, the guard every check in this Epic carries. A parser that
+    // matched nothing would report both documents clean forever — which is
+    // indistinguishable from the state that produced C1 and C2.
+    const all = DOCUMENTS.flatMap(dockerCommands);
+    expect(all.length, 'no docker commands were found in the documentation').toBeGreaterThan(4);
+    expect(composeServices(), 'no services parsed out of docker-compose.yml').toContain('app');
+  });
+
+  it.each(DOCUMENTS.map((d) => [d] as const))(
+    '%s runs no image the compose file does not define',
+    (rel) => {
+      const images = composeImages();
+      const wrong = dockerCommands(rel)
+        .filter((c) => /^docker run\b/.test(c))
+        .map((c) => {
+          // The image is the first token that is not the runner, a flag, or a
+          // flag's value. `--entrypoint sh` is the case that matters here.
+          const tokens = c.split(/\s+/).slice(2);
+          for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i]!;
+            if (token.startsWith('-')) {
+              if (!token.includes('=') && FLAGS_WITH_VALUES.has(token)) i++;
+              continue;
+            }
+            return { command: c, image: token };
+          }
+          return null;
+        })
+        .filter((found): found is { command: string; image: string } => found !== null)
+        .filter((found) => !images.includes(found.image));
+
+      expect(
+        wrong.map((w) => w.image),
+        `${rel} runs an image docker-compose.yml does not define:\n  ${wrong
+          .map((w) => `${w.image}  in  ${w.command}`)
+          .join('\n  ')}\n` +
+          'A service with `build:` and no `image:` is named from the compose PROJECT, which is ' +
+          'the directory — so the name differs per checkout and the command cannot be written down.',
+      ).toEqual([]);
+    },
+  );
+
+  it.each(DOCUMENTS.map((d) => [d] as const))('%s execs into a service that exists', (rel) => {
+    const services = composeServices();
+    const wrong = dockerCommands(rel)
+      .filter((c) => /^docker compose exec\b/.test(c))
+      .map((c) => {
+        const tokens = c.split(/\s+/).slice(3);
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i]!;
+          if (token.startsWith('-')) {
+            if (!token.includes('=') && FLAGS_WITH_VALUES.has(token)) i++;
+            continue;
+          }
+          return { command: c, service: token };
+        }
+        return null;
+      })
+      .filter((found): found is { command: string; service: string } => found !== null)
+      .filter((found) => !services.includes(found.service));
+
+    expect(
+      wrong.map((w) => w.service),
+      `${rel} execs into a service docker-compose.yml does not define`,
+    ).toEqual([]);
+  });
+
+  it.each(DOCUMENTS.map((d) => [d] as const))(
+    '%s does not seed inside the container without overriding NODE_ENV',
+    (rel) => {
+      // The image sets `NODE_ENV=production` and the seed refuses it. Driven
+      // and captured in the T150l transcript §1. An instruction that cannot
+      // work is worse than an absent one: the reader assumes the product is
+      // broken rather than the document.
+      const offenders = dockerCommands(rel).filter(
+        (c) => /docker compose exec/.test(c) && /\bseed\b/.test(c) && !/NODE_ENV=development/.test(c),
+      );
+      expect(
+        offenders,
+        `${rel} seeds inside the container without NODE_ENV=development:\n  ${offenders.join('\n  ')}\n` +
+          'The image runs as production and backend/prisma/seed.ts refuses that outright. ' +
+          'The refusal is correct (R-014-6) — the instruction is what must change.',
+      ).toEqual([]);
+    },
+  );
+});
+
+/** Docker flags that take a separate value, so the next token is not the image. */
+const FLAGS_WITH_VALUES = new Set([
+  '--entrypoint',
+  '-e',
+  '--env',
+  '--name',
+  '-v',
+  '--volume',
+  '-p',
+  '--publish',
+  '--network',
+  '-w',
+  '--workdir',
+  '-u',
+  '--user',
+]);

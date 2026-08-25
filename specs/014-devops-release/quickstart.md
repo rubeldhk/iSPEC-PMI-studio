@@ -120,6 +120,14 @@ docker run --rm --entrypoint sh pmi-studio-app -c 'ls -a /app | grep -c "^\.env$
 environment**, and names no password anywhere. No `.env` inside the image. No
 `SEED_USER_PASSWORD` in any layer.
 
+> **Corrected 2026-08-25 (`T150r`, convergence `C2`).** `pmi-studio-app` **did not exist**. The
+> `app` service declared `build:` with no `image:`, so Docker named the image from the compose
+> project — the checkout directory — making it `ispec-pmi-studio-app` here and something else
+> elsewhere. **The command failed for everyone**, in the scenario that proves the property this
+> Epic cares most about. `docker-compose.yml` now declares `image: pmi-studio-app`, so the name is
+> the repository's rather than the directory's, and `T150s` asserts every documented `docker run`
+> names an image the compose file defines.
+
 **And the seed still refuses.** Run it with no password and it must throw *"seed requires a
 password"*; run it with `NODE_ENV=production` and it must refuse outright. Both behaviours exist
 today in `backend/prisma/seed.ts` and this Epic must not soften either.
@@ -136,9 +144,29 @@ today in `backend/prisma/seed.ts` and this Epic must not soften either.
 **Proves**: the stack is actually usable, end to end.
 
 ```bash
-SEED_USER_EMAIL=you@pmi.local SEED_USER_PASSWORD='choose-something' \
-  docker compose exec app pnpm --filter @pmi/backend seed
+docker compose exec -e NODE_ENV=development \
+  -e SEED_USER_EMAIL=you@pmi.local -e SEED_USER_PASSWORD='choose-something' \
+  app pnpm --filter @pmi/backend exec tsx prisma/seed.ts
 ```
+
+**`NODE_ENV=development` is required for this one command.** The image runs as `production`, and
+`backend/prisma/seed.ts` refuses that outright:
+
+```
+Error: the development seed refuses to run with NODE_ENV=production
+```
+
+**That refusal is the point, not an obstacle** (`R-014-6`). A seed creates a known account with a
+known password — right for a developer machine, a backdoor anywhere else — so the image never runs
+it and never carries the credential. Overriding the variable for a single interactive command is a
+deliberate act by a person, which is exactly the property being protected.
+
+> **Corrected 2026-08-25 (`T150q`, convergence `C1`).** This block previously read
+> `SEED_USER_EMAIL=… docker compose exec app pnpm --filter @pmi/backend seed`. **That command
+> fails**, and had done since the image existed: the env assignments sat in the *host* shell and
+> never reached the container, and `NODE_ENV` was never overridden. `README.md` was corrected when
+> the fault was found (`T150n`) and this file — the one whose job is to prove the product runs —
+> was not. `T150s` now reads both documents, and would have caught it.
 
 Then sign in at `http://localhost:3000` and reach each delivered area.
 

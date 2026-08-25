@@ -47,6 +47,38 @@ judgement stands: an artifact recording *"no decisions"* is an artifact pretendi
   `R-036-3` rejected it: it makes every address uglier to work around a deployment gap, and the gap
   now has an owner.
 
+### The `exclude` pattern, and why it needed measuring *(added `T150w`, 2026-08-25)*
+
+**The pattern is `/v1(.*)`. It had to be measured, and two wrong ones shipped before it.**
+
+This decision originally recorded *that* `exclude` keeps `/v1` on the API and never recorded *what*
+to write — and the pattern turned out to be the whole difficulty. `@nestjs/serve-static@4` does not
+use Express's router for exclusions. It uses **`path-to-regexp@0.2.5`**, in
+`dist/utils/is-route-excluded.util.js`, and compares `re.exec(pathname + '/')`. Tested against that
+version inside the running container:
+
+| Pattern | Matches `/v1/auth/me`? | |
+|---|---|---|
+| `/v1{*splat}` | **no** | Express 5 / path-to-regexp 8 syntax |
+| `/v1*` | **no** | the Express 4 wildcard — still not this matcher's |
+| `/v1/*` | **no** | |
+| **`/v1(.*)`** | **yes** | and `/runs`, `/`, `/assets/x.js` correctly do **not** match |
+
+**A non-matching pattern does not throw.** It silently excludes nothing, so every unmatched `/v1`
+path returns `index.html` with a `200`, and the client reports a JSON parse error three layers from
+the cause. Both wrong patterns looked right and both passed a check that asked only whether the
+exclude list *mentioned* `/v1` — which all three versions did.
+
+`T150c` now loads **the same matcher the loader loads** and runs **the same comparison the loader
+runs**, asserting that `/v1/…` is excluded and `/runs`, `/` and `/assets/…` are not. The lesson
+generalises past this library: **a configuration check that reads a string where the runtime reads a
+pattern will pass over every fault that lives in the pattern.**
+
+> **One `unrequested` note, recorded for the next reader** (convergence `F5`). `T150l` created
+> `docs/deployment/` for its transcript. No artifact named that location; it mirrors
+> `EPIC-029`/`EPIC-036`'s `docs/accessibility/`, so the convention is consistent — but it was
+> established by use rather than by decision, and this sentence is the only place that says so.
+
 **What this decision does NOT claim.** Serving static assets from the API process is a **local**
 choice. It couples client delivery to API availability and puts no CDN or cache in the path. If a
 deployed environment ever wants a separate static host, that is a `dev`/`stage`/`prod` topology
@@ -211,6 +243,19 @@ file to run, so it tries to load `…/backend/watch` and dies with `ERR_MODULE_N
 documented developer entry point does not start**, which is squarely `F-11.1` developer enablement.
 Found during `EPIC-036` UAT on 2026-08-24, when the API had to be started with `start` instead —
 losing hot reload for the rest of that session.
+
+> **Corrected 2026-08-25 (`T150u`, convergence).** This decision named **one** package. There were
+> **two**: `worker/package.json` carried the identical `tsx --env-file-if-exists=../.env watch
+> src/main.ts`, and `T150f` fixed both.
+>
+> **The second one was found by the check, not by the research that motivated it.** `T150b` reads
+> every workspace manifest and resolves each declared entry point the way the runner would, so it
+> went red on `backend:dev` *and* `worker:dev` on its first run. Had the task simply fixed the
+> instance this decision named, `worker` would still be broken and nothing would say so.
+>
+> That is the argument for deriving a rule rather than enumerating a fix, and it is the same
+> argument `T442w` and `T442y` made in `EPIC-036` a day earlier: **wherever a claim is about a set,
+> the set must be derived or something will be missing from it.**
 
 It belongs in this scope because **an image that shells the same invocation inherits the defect**,
 and because a script nothing executes is exactly the shape `T452` was written to catch for the
