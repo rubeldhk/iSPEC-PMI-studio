@@ -28,7 +28,7 @@
  *
  * Tasks: `T150a` (this file), `T150i` (the `.dockerignore` assertions).
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -590,20 +590,48 @@ describe('T153c · the release gate runs every quickstart scenario', () => {
 describe('T153d · Gate V lists every check this Epic has', () => {
   const PLAN = 'specs/014-devops-release/plan.md';
 
-  /** The files holding `F-11.3`'s conformance checks and unit tests. */
-  const CHECK_FILES = [
-    'tests/governance/container-secrets.spec.ts',
-    'tests/governance/package-scripts.spec.ts',
-    'backend/tests/unit/core/serve-static.spec.ts',
-    'backend/tests/unit/core/entrypoint.spec.ts',
+  /**
+   * The directories checks live in — **globbed, not listed** (`T153f`).
+   *
+   * The first version of this named four files, and `C-5` found a real check
+   * in neither of them: `T150p`'s README assertions live in
+   * `readme-conformance.spec.ts`. **A hand-maintained list of files is the
+   * exact thing this check was written to abolish**, and putting one inside it
+   * moved the fault down a level rather than removing it — the fifth time this
+   * Epic produced that shape.
+   */
+  const CHECK_DIRS = [
+    join(ROOT, 'tests', 'governance'),
+    join(ROOT, 'backend', 'tests', 'unit', 'core'),
   ] as const;
 
-  /** Every task id that owns a `describe` block, deduplicated. */
+  /**
+   * Every task id this Epic owns that a `describe` **or `it`** title names.
+   *
+   * **`it` matters as much as `describe`.** `T150p` is
+   * `it('… (T150p)')` inside `describe('T452 · …')`, and a parser reading only
+   * `describe` could not see it. Where an assertion is nested is a formatting
+   * choice; **the id is the claim**.
+   *
+   * Titles only — never comments. A comment mentioning `T150m` is a
+   * cross-reference, not a check, and counting those would make the gate demand
+   * rows for tasks that assert nothing.
+   *
+   * `T15\d[a-z]` is this Epic's own range (`T149`–`T156` plus sub-letters); the
+   * glob reaches files belonging to other Epics, so the scope is the **id**,
+   * not the file.
+   */
   function checksThatExist(): string[] {
     const ids = new Set<string>();
-    for (const rel of CHECK_FILES) {
-      for (const match of read(rel).matchAll(/^describe\(\s*['"`](T1\d{2}[a-z]?)\b/gm)) {
-        ids.add(match[1]!);
+    for (const dir of CHECK_DIRS) {
+      for (const name of readdirSync(dir)) {
+        if (!name.endsWith('.spec.ts')) continue;
+        const source = readFileSync(join(dir, name), 'utf8');
+        for (const match of source.matchAll(
+          /^\s*(?:describe|it)\(\s*(['"`])([^'"`]*?)\1/gm,
+        )) {
+          for (const id of match[2]!.matchAll(/\bT15\d[a-z]\b/g)) ids.add(id[0]);
+        }
       }
     }
     return [...ids].sort();

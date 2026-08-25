@@ -375,3 +375,52 @@ all reduce to, now enforced in five places across two Epics:
 > **A claim about a set drifts unless something derives it.**
 
 Areas, states, surfaces, documents, scenarios — and finally the gate that demanded it of all of them.
+
+---
+
+## §8 Convergence C-5 — 2026-08-25
+
+### `C-4`'s fix was one level too shallow
+
+`T153d` derived *which checks Gate V lists* — from a **hand-written list of four files**. That is
+the same fault it was written to abolish, moved down a level. `T150p` sat in both of its blind
+spots: its assertions live in `readme-conformance.spec.ts`, which the list did not name, **and** it
+owns no `describe` block — it is `it('… (T150p)')` inside `describe('T452 · …')`.
+
+`T153f` removes both: the directories are **globbed**, and a check is recognised by **any id a
+`describe` *or* `it` title names**. Where an assertion is nested is a formatting choice; the id is
+the claim. Titles only — a comment mentioning `T150m` is a cross-reference, not a check.
+
+First run after widening:
+
+```
+× T153d → Gate V does not list T150p, which exist as checks.
+```
+
+**Mutation** — a new check, in a file nothing listed, named only in an `it()` title:
+
+```
+$ it('a brand new check nobody added to Gate V (T156z)', …)   in readme-conformance.spec.ts
+× T153d → Gate V does not list T156z, which exist as checks.
+```
+
+Restored → green. **Both blind spots are closed by the same change.**
+
+### Mutation 5 — `T150p`, the check that was hiding in one of them
+
+```
+$ (remove the "Containerised — one command" section from README.md)
+× T452 · documents BOTH stacks, and says which is which (T150p)
+  → the README does not document the containerised stack
+Tests  1 failed | 12 passed
+```
+
+Restored → `13 passed`.
+
+**Nine checks, nine pieces of fail-first evidence** — five mutations and one fail-first ordering
+(`T150b`), plus `T153c` and `T153d` each red on their own first run.
+
+> **`C-4` claimed "every check in this Epic has now been seen to fail." That claim was wrong** — not
+> because a mutation was skipped, but because **the inventory it was measured against was
+> incomplete**. The claim is made again here, and this time against a derived set rather than a
+> listed one, which is the only difference that matters.
