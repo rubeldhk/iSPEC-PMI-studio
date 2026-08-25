@@ -5,7 +5,7 @@ description: "Task list for EPIC-014 — DevOps & Release"
 
 # Tasks: DevOps & Release
 
-**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 44
+**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 47
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -168,3 +168,19 @@ free three-digit prefix in the corpus — remains untouched.
 - [X] T150y [P] Add `T150s` as the fifth row of the Gate V table in `specs/014-devops-release/plan.md`, per `plan: Constitution Check Gate V` (partial) — the table lists four checks and four pieces of fail-first evidence; C-1 added a fifth. **Gate V is the gate this scope is meant to be failed on**, and an inventory that undercounts its own checks is the same shape as a spec undercounting its areas. `T150s`'s evidence is also the most instructive of the five and belongs on the record: it went red on `C2`, **passed over `C1` — the fault it was written for** — because its filter required a line to start with `docker ` while the quickstart writes `SEED_USER_EMAIL=… \` first; was corrected; went red on both; then green. A check that missed its own motivating fault, caught by running it against known faults rather than by review
 - [X] T150z [P] Correct the `.dockerignore` record left by `T150i`, per `tasks: T150i` (contradicts) — `T150i` is marked `[X]` and its text still instructs *"verify **no edit to `.dockerignore` is needed**"*. **An edit was needed and was made**: `**/node_modules` and `**/dist`, without which the build context cannot be assembled at all — pnpm puts a `node_modules` full of sibling symlinks in every workspace package and Docker refuses them outright. The task records the assumption the build disproved, and it traces back to analysis `U1`, which concluded no edit was needed because every **listed** pattern was present — and every listed pattern was. **The gap was a pattern nobody had listed.** Converge is append-only so the line stands; append the correction where a reader of `tasks.md` will meet it, and state the general form: *a check that verifies a list is complete verifies only that the list matches itself*
 
+
+## Phase C-3 · Convergence — 2026-08-25
+
+**Third convergence pass over `F-11.3`.** Three findings, and **all three are one gap seen from
+three angles**: the containerised stack is validated by this Epic and by **nothing that runs
+afterwards**. Every documented command now runs, every check has been seen to fail, and the prior
+passes' corrections hold — what remains is that the proof has no repeat.
+
+**Identifier block: `T153a`–`T153c`.** `T150a`–`T150z` is **exhausted** — twenty-six sub-letters,
+all used. `T153` is the block chosen because all three findings are about `T153`'s coverage, and it
+was verified corpus-free before use (`G-26-15`). **`T864` — the last free three-digit prefix —
+remains untouched**, which is now three phases of sub-lettering without spending it.
+
+- [ ] T153a Add a container scenario to `specs/_shared/quickstart.md` and extend `T153`'s scope to it, per `spec: Exit Criterion "starts from a clean checkout"` (missing) — **the platform release gate never exercises the containerised stack.** `T153` executes the shared quickstart's `V1`–`V12` and `V14`; that file mentions containers **zero times** and its Setup block documents only the reference local stack. So the Exit Criterion is proved **once**, by `T150l`'s dated transcript, and never again — `F-11.3` delivers a stack that the gate which ships the platform does not run. Add `V15` covering `docker compose up -d --build`, one origin, and a deep link surviving a refresh, mirroring `specs/014-devops-release/quickstart.md` Scenarios 1–3 rather than restating them; then extend `T153` to `V1`–`V12`, `V14` **and `V15`**. Keep it short: the gate confirms, it does not re-derive (conformance: T153c)
+- [ ] T153b Mark `G-14.2` not-current in `specs/014-devops-release/plan.md`, per `plan: G-14.2` (contradicts) — it is headed *"`T153` covers V1–V12 and V14 — **✅ current**"*, and it is not: `F-11.3` added seven scenarios and no `V`-number. **That same section predicted this**: *"This will need updating again whenever any epic adds a quickstart scenario. **Nothing enforces it** — the numbering lives in `_shared/quickstart.md` and the gate that runs it lives here."* The warning was written, the Epic then did the thing it warned about, and the ✅ never moved. **A warning that does not fire is a comment.** Record what happened, and note that `T153c` is the enforcement the section said did not exist
+- [ ] T153c [P] Assert `T153`'s scope covers every `V`-scenario the shared quickstart defines, in `tests/governance/container-secrets.spec.ts`, per `Constitution V` (missing) — covers T153a and T153b. Parse the `### V<n>` headings from `specs/_shared/quickstart.md`, parse the `V`-numbers `T153`'s task line claims, and **fail when a scenario exists that the gate does not run**. This is the enforcement `G-14.2` said was missing, and it closes the loop the same way `T442v` closed `EPIC-036`'s: **a number restated in two documents drifts unless something compares them.** Include the anti-vacuity guard every check in this Epic carries — a parser that found no `V`-headings would report full coverage forever
