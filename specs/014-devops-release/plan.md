@@ -123,7 +123,7 @@ gates it touches are re-run rather than inherited:
 | II | Requirements trace to cited SRS documents | ⚠️ **PASS with a stated debt.** F-11.3 adds no numbered requirement and traces to `BR-0090`'s first rung, consuming `BR-0173`/`BR-0135` (owned by `EPIC-028`). **No SRS document requires the platform to be containerised** — [spec.md](./spec.md) says so plainly and records the back-fill owner as **unassigned**. That is a debt named, not a gate dodged |
 | III | Epic → Feature → Task decomposition | PASS — F-11.3 is a function; tasks come from `/speckit-tasks` |
 | IV | `/speckit-converge` scheduled as the exit gate | PASS — `Phase Z` unchanged |
-| V | Every implementation task carries a unit test, or an executable conformance check for non-code output | ⚠️ **The gate that binds hardest here.** A `Dockerfile` and a `docker-compose.yml` are **non-code outputs**, so each needs a check that can fail. **Four checks, four pieces of fail-first evidence** — see the table below. **This is the gate to fail this scope on**, and the one `T150` failed for months (see G-14.1) |
+| V | Every implementation task carries a unit test, or an executable conformance check for non-code output | ⚠️ **The gate that binds hardest here.** A `Dockerfile` and a `docker-compose.yml` are **non-code outputs**, so each needs a check that can fail. **Every check below carries its own fail-first evidence** — the table is the inventory, and it is derived (`T153d`), so nothing counts it here. **This is the gate to fail this scope on**, and the one `T150` failed for months (see G-14.1) |
 | VI | `defects/` exists | PASS |
 | VII | Promotion follows local → dev → stage → prod | **PASS, and F-11.3 does not touch it.** This scope delivers `local` only. A container on a developer's machine proves nothing about a deployed environment, and both [spec.md](./spec.md) and [contracts/container-stack.md](./contracts/container-stack.md) say so rather than implying otherwise |
 | VIII | Session labelled with the working Epic | PASS — this pass ran under `EPIC-036` UAT and switched to `EPIC-014`; stated in the closing report |
@@ -217,7 +217,7 @@ it — the numbering lives in `_shared/quickstart.md` and the gate that runs it 
 ```text
 F-11.1  T149a check ──► T149 seed ──► T150 README ──► T452 README check
 
-F-11.3  dependency row D-30 ──► image + compose service ──► the three checks
+F-11.3  dependency row D-30 ──► image + compose service ──► the Gate V checks
         (depends on NOTHING else in this Epic — see spec.md "Depends on")
 
 F-11.2  (all fifteen epics closed first)

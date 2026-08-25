@@ -688,6 +688,83 @@ describe('T153d · Gate V lists every check this Epic has', () => {
     ).toEqual([]);
   });
 
+  /**
+   * A region of `plan.md` with **quoted history removed**.
+   *
+   * These sections record what the document *used to* say — *"This row
+   * previously said …"*, *"This table said …"* — and a quotation is not a
+   * claim. Without this, every correction note would trip the check that
+   * motivated it, and the only way to stay green would be to delete the
+   * history. That is the failure `flat()` guards against in `EPIC-036`'s
+   * `registry-documented.spec.ts`, and the rule is deliberately the same.
+   *
+   * Narrow on purpose: a line is skipped only if it is a blockquote **or**
+   * carries an explicit quotation marker. A stale number in ordinary prose is
+   * still caught — asserted from both sides below.
+   */
+  function liveProse(from: string, to?: string): string {
+    const plan = read(PLAN);
+    const start = plan.indexOf(from);
+    expect(start, `plan.md no longer contains "${from}"`).toBeGreaterThan(-1);
+    const end = to === undefined ? plan.length : plan.indexOf(to, start);
+    return plan
+      .slice(start, end === -1 ? undefined : end)
+      .split(/\r?\n/)
+      .filter((line) => {
+        const trimmed = line.trimStart();
+        if (trimmed.startsWith('>')) return false; // a blockquote correction note
+        return !/previously said|This table said|This said|used to say/i.test(line);
+      })
+      .join('\n');
+  }
+
+  /**
+   * Every region whose prose sits beside the Gate V inventory.
+   *
+   * **The fourth correction of one fault is where you stop correcting it.**
+   * The count was wrong in the table (`T150y`, `C-2`), in the Definition of
+   * done (`T153d`, `C-4`), and then in the row introducing the table *and* the
+   * diagram summarising it (`T153h`, `C-6`). Each fix touched the site that had
+   * just been found. This reads all three, so prose beside the inventory cannot
+   * drift from it again — **the table is the inventory; prose points at it and
+   * never counts it.**
+   */
+  const COUNT_FREE_REGIONS: readonly { name: string; from: string; to?: string }[] = [
+    { name: 'the Gate V row', from: '| V | Every implementation task carries a unit test, or an executable', to: '\n| VI |' },
+    { name: 'the Gate V table section', from: '#### Gate V in full', to: '**Post-design re-check**' },
+    { name: 'the Build order block', from: '## Build order', to: '## Design notes' },
+  ];
+
+  it.each(COUNT_FREE_REGIONS.map((r) => [r.name, r] as const))(
+    '%s does not restate the check count',
+    (name, region) => {
+      const prose = liveProse(region.from, region.to);
+      const counts = [
+        ...prose.matchAll(
+          /\b(one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(?:conformance\s+)?checks\b/gi,
+        ),
+      ].map((m) => m[0]);
+      expect(
+        counts,
+        `${name} restates the check count: ${counts.join(', ')}\n` +
+          'The Gate V table is the inventory. Prose beside it must point at it, never count it — ' +
+          'this fault has been corrected in three separate places in this document already.',
+      ).toEqual([]);
+    },
+  );
+
+  it('but quoted history is left alone, in both forms this document uses', () => {
+    // Both exemptions asserted, so neither can widen unnoticed. If either
+    // marker stops appearing, this fails and the rule gets re-examined.
+    const plan = read(PLAN);
+    expect(plan, 'the I2 correction note is gone').toMatch(/This row previously said/);
+    expect(plan, 'the T150y correction note is gone').toMatch(/This table said/);
+    expect(
+      liveProse('#### Gate V in full', '**Post-design re-check**'),
+      'a quotation marker stopped being recognised, so history now reads as a claim',
+    ).not.toMatch(/previously said|This table said/);
+  });
+
   it('the Definition of done does not restate the count', () => {
     // `T150y` fixed the table and left this sentence saying "three". A count
     // written in prose beside a table that lists the same things is the PP-002
