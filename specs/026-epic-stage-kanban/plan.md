@@ -68,21 +68,27 @@ edited first, so the registration is task F-26.7's, not an ad-hoc fix — and th
 
 ## Scope
 
-Task figures are **estimates** — `/speckit-tasks` has not run.
+**Counted in [tasks.md](./tasks.md), never here.**
 
-| Function | Est. tasks | What it delivers |
-|---|---|---|
-| F-26.1 Stage model and configuration | ~4 | The seven stages, their artifact evidence, posture kinds, DOR condition set, waiver roles — as `governance/epic-stage.config.json` |
-| F-26.2 Stage derivation and register generation | ~6 | Derivation from the file tree; the generated, committed `governance/epic-stage-register.md`; `pnpm register:update` |
-| F-26.3 Posture and kind declarations | ~5 | `governance/epic-declarations.json`; the three posture kinds; parent-design declarations for EPIC-002 and EPIC-017 (`FR-ESK-024`); the held postures for EPIC-009 and EPIC-012 |
-| F-26.4 Definition of Ready evaluation | ~6 | Twelve conditions `DOR-01`–`DOR-12`, each mechanically checkable; all-failures reporting |
-| F-26.5 Waivers | ~4 | Single-condition, owned, expiring waivers; `Ready (waived)` never reads as Ready |
-| F-26.6 Journey-step evidence | ~5 | `/speckit-clarify` records every session; `/speckit-analyze` writes `analysis.md` |
-| F-26.7 Governance integration | ~5 | Register the epic directory (fixes `G-05d`); layout map row; governance index row; `specs/README.md` de-duplication |
-| F-26.8 Conformance checks and CI wiring | ~8 | Checks `G-26-01` to `G-26-10` under `tests/governance/epic-stage/` |
-| **F-26.9 Task-identifier format** *(new, clarification 2026-08-25)* | see [tasks.md](./tasks.md) | `taskIdentifierPattern` as configuration; the widening to four-or-more digits; the letter's adjacency meaning retired; and an unrecognised identifier that **fails** rather than being skipped (`FR-ESK-025`) |
+> **Corrected 2026-08-25 (analysis `A1`).** This section opened *"Task figures are estimates —
+> `/speckit-tasks` has not run"* and carried an **Est. tasks** column plus *"Estimated total: ~42
+> tasks"*. `/speckit-tasks` had run: `tasks.md` holds **105** tasks, **93** of them complete.
+>
+> **This Epic's own `T686` deleted exactly this from eleven other plans**, and its Purpose section
+> cites `EPIC-018`'s 31 / 32 / 34 count drift as the motivating evidence. The column is **deleted,
+> not resynchronised** — a number restated in two documents drifts; a number stated in one does not.
 
-**Estimated total: ~42 tasks**, before the mandatory paired conformance checks and Phase Z closure.
+| Function | What it delivers |
+|---|---|
+| F-26.1 Stage model and configuration | The seven stages, their artifact evidence, posture kinds, DOR condition set, waiver roles — as `governance/epic-stage.config.json` |
+| F-26.2 Stage derivation and register generation | Derivation from the file tree; the generated, committed `governance/epic-stage-register.md`; `pnpm register:update` |
+| F-26.3 Posture and kind declarations | `governance/epic-declarations.json`; the three posture kinds; parent-design declarations for EPIC-002 and EPIC-017 (`FR-ESK-024`); the held postures for EPIC-009 and EPIC-012 |
+| F-26.4 Definition of Ready evaluation | Twelve conditions `DOR-01`–`DOR-12`, each mechanically checkable; all-failures reporting |
+| F-26.5 Waivers | Single-condition, owned, expiring waivers; `Ready (waived)` never reads as Ready |
+| F-26.6 Journey-step evidence | `/speckit-clarify` records every session; `/speckit-analyze` writes `analysis.md` |
+| F-26.7 Governance integration | Register the epic directory (fixes `G-05d`); layout map row; governance index row; `specs/README.md` de-duplication |
+| F-26.8 Conformance checks and CI wiring | Checks `G-26-01` to `G-26-10` under `tests/governance/epic-stage/` |
+| **F-26.9 Task-identifier format** *(new, clarification 2026-08-25)* | `taskIdentifierPattern` as configuration; the widening to four-or-more digits; the letter's adjacency meaning retired; and an unrecognised identifier that **fails** rather than being skipped (`FR-ESK-025`) |
 
 **Explicitly out of scope**: EPIC-009's product specification lifecycle (`draft → review → approved
 → baselined → implemented → archived`), which governs specifications authored *inside* PMI Studio
@@ -287,6 +293,11 @@ implementation, and `V26-9`'s first mutation is what will reveal the true count.
   so it is diff-stable and machine-comparable
 - [contracts/declarations-format.md](./contracts/declarations-format.md) — the declared posture and
   waiver file, the only hand-authored input to the register
+**No `data-model.md` change** (analysis `A3`). `FR-ESK-025` is a **format rule, not an entity**: it
+constrains the shape of an identifier the model already refers to, and adds no attribute,
+relationship or state transition. Recorded here rather than left silent, so the next reader does not
+have to work out whether the omission was a decision or an oversight.
+
 - [contracts/task-identifier-format.md](./contracts/task-identifier-format.md) — what an identifier
   may look like, the two-pattern structure that makes an unrecognised one fail, and what the
   format deliberately does **not** decide

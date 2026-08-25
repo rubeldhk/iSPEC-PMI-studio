@@ -36,7 +36,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-023](../specs/023-unattended-runs-review/) | Unattended Runs & Team Review | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-024](../specs/024-artifact-access-control/) | Artifact Access Control | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-025](../specs/025-external-storage-publishing/) | External Storage Publishing | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-029](../specs/029-design-system/) | Design System | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |

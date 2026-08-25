@@ -571,6 +571,17 @@ run the checks, and confirm the disagreement is reported with the Epic and condi
 - **SC-ESK-014**: Every DOR exception is visible: 100% of waivers name one condition, one owning
   role, a reason, and an expiry; zero Epics carrying a waiver read as plain Ready; and zero expired
   waivers reach the default branch.
+- **SC-ESK-015**: Task identifiers are governed from one place and none is silently skipped:
+  **zero** inline identifier patterns across the checks that read them — the pattern is
+  configuration (`FR-ESK-015`) — and **100%** of identifiers that do not match it are **reported as
+  unrecognised and fail**, rather than being passed over unseen.
+
+  *Added 2026-08-25 (analysis `A2`). `FR-ESK-025` was the only `FR-ESK-*` with no measurable
+  outcome — all fourteen criteria above predate it and none mentions identifiers. Both halves are
+  countable, which is what `FR-ESK-011` asks of every condition, and the second is the one that
+  matters: `EPIC-036` `T441n` recorded that an unrecognised identifier is* **"silently unchecked,
+  which is worse than a collision"** *— uniqueness, pairing and path checks all pass it by never
+  seeing it, so "zero failures" and "zero examinations" look identical from outside.*
 - **SC-ESK-008**: Zero register content duplicates convergence, defect, closure, or promotion state
   already governed by the constitution — every such reference is a link.
 - **SC-ESK-009**: The register and DOR are verified by executable checks in CI; a deliberately

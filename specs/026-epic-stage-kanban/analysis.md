@@ -82,13 +82,16 @@ Epic was re-read and is unchanged.
 
 | ID | Category | Severity | Summary | Recommendation |
 |---|---|---|---|---|
-| A1 | Inconsistency | HIGH | `plan.md:71` states *"Task figures are **estimates** — `/speckit-tasks` has not run."* **It has run**: `tasks.md` holds **105** tasks, **93 complete**. Line 85 states *"Estimated total: **~42** tasks"*. **This is a task count restated in a second document — inside the Epic whose own `T686` remediation removed exactly that from eleven other plans**, and whose Purpose section cites `EPIC-018`'s 31 / 32 / 34 drift as its motivating evidence | **Delete the `Est. tasks` column and the total**, as `T686` did elsewhere — do not resynchronise them. `tasks.md` is where tasks are counted, and a number stated in one place does not drift |
-| A2 | Coverage Gap | MEDIUM | **`FR-ESK-025` has no success criterion.** All fourteen `SC-ESK-*` predate it and **none mentions identifiers, patterns or uniqueness** (verified: zero matches). Every other `FR-ESK-*` maps to a measurable outcome; this one's definition of done lives only in a `plan.md` bullet, which is a plan-level statement rather than a spec-level target | Add `SC-ESK-015`: **zero** inline identifier patterns across the three checks, and **100%** of unrecognised identifiers reported rather than skipped. Both are countable, which is what `FR-ESK-011` asks of every condition |
-| A3 | Underspecification | LOW | `data-model.md` has **zero** mention of the identifier format, while `contracts/task-identifier-format.md` now exists with no counterpart in the model. A format rule is arguably not an entity — but the plan's Phase 1 outputs describe the model as *"the artifact model … and the derivation rules that join them"*, and this is a derivation rule | Either add a one-line pointer, or record in the plan that a format rule is deliberately **not** modelled as an entity. Silence leaves the next reader to guess which |
+| A1 ✅ | Inconsistency | HIGH | `plan.md:71` states *"Task figures are **estimates** — `/speckit-tasks` has not run."* **It has run**: `tasks.md` holds **105** tasks, **93 complete**. Line 85 states *"Estimated total: **~42** tasks"*. **This is a task count restated in a second document — inside the Epic whose own `T686` remediation removed exactly that from eleven other plans**, and whose Purpose section cites `EPIC-018`'s 31 / 32 / 34 drift as its motivating evidence | **Delete the `Est. tasks` column and the total**, as `T686` did elsewhere — do not resynchronise them. `tasks.md` is where tasks are counted, and a number stated in one place does not drift |
+| A2 ✅ | Coverage Gap | MEDIUM | **`FR-ESK-025` has no success criterion.** All fourteen `SC-ESK-*` predate it and **none mentions identifiers, patterns or uniqueness** (verified: zero matches). Every other `FR-ESK-*` maps to a measurable outcome; this one's definition of done lives only in a `plan.md` bullet, which is a plan-level statement rather than a spec-level target | Add `SC-ESK-015`: **zero** inline identifier patterns across the three checks, and **100%** of unrecognised identifiers reported rather than skipped. Both are countable, which is what `FR-ESK-011` asks of every condition |
+| A3 ✅ | Underspecification | LOW | `data-model.md` has **zero** mention of the identifier format, while `contracts/task-identifier-format.md` now exists with no counterpart in the model. A format rule is arguably not an entity — but the plan's Phase 1 outputs describe the model as *"the artifact model … and the derivation rules that join them"*, and this is a derivation rule | Either add a one-line pointer, or record in the plan that a format rule is deliberately **not** modelled as an entity. Silence leaves the next reader to guess which |
 
-**Blocking findings (CRITICAL or HIGH): 1** — `A1`. `DOR-09` blocks on CRITICAL or HIGH, so this
-Epic does not pass the Definition-of-Ready gate until it is resolved. It is not a defect in the
-design; it is a stale sentence and a stale number, and both are cheap.
+**Blocking findings when this pass ran (CRITICAL or HIGH): 1** — `A1`. **All three are now marked ✅
+and remediated** the same day; see *Remediation* below. `DOR-09` reads the ✅ marker and skips
+resolved rows, so the Definition-of-Ready gate is no longer held by this record.
+
+**The findings above are left as recorded**, the way the 2026-08-18 session left its own. They
+state what the pass returned; the ✅ says what happened next.
 
 ## Coverage
 
@@ -130,5 +133,19 @@ is a judgement recorded in `R-026-8`, not a fact this pass verified.
 
 ## Remediation — 2026-08-25
 
-*Not applied. This command writes this record and nothing else; `spec.md`, `plan.md` and `tasks.md`
-are untouched. Remediation requires explicit authorisation.*
+Applied the same day, on explicit authorisation, after the read-only pass above.
+
+| Finding | What changed |
+|---|---|
+| `A1` | **The `Est. tasks` column and the `~42` total are deleted from `plan.md`**, not resynchronised, along with the sentence claiming `/speckit-tasks` had not run. `tasks.md` is now the only place tasks are counted — which is what this Epic's own `T686` established for eleven other plans, and what its Purpose section cites `EPIC-018`'s 31 / 32 / 34 drift to justify. Resynchronising would have set up the third count |
+| `A2` | **`SC-ESK-015` added**: zero inline identifier patterns, and 100% of unrecognised identifiers reported rather than skipped. Both halves countable, per `FR-ESK-011`. The second half is the one that matters — *"zero failures"* and *"zero examinations"* are indistinguishable from outside, which is exactly why `T441n` called a silent skip worse than a collision |
+| `A3` | **Recorded rather than modelled.** `plan.md`'s Phase 1 outputs now state that `FR-ESK-025` is a **format rule, not an entity**: it constrains the shape of an identifier the model already refers to and adds no attribute, relationship or state transition. `data-model.md` is unchanged, and the omission is now a decision a reader can see rather than one they must infer |
+
+**What this remediation did not touch.** No task, no check, no configuration — `taskIdentifierPattern`
+still does not exist and the six inline patterns are still in place. That is `T864a`–`T864l`'s work.
+Every edit here was to `spec.md` or `plan.md`, which is the correct blast radius for findings about
+specification documents.
+
+**`A1` was this Epic's own fault, in its own subject.** `EPIC-026` exists because task counts drift
+when two documents restate them; its plan restated one, and had since before this session opened it.
+The Epic that owns the requirement was breaking it.
