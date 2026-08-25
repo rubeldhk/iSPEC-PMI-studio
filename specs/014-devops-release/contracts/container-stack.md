@@ -26,6 +26,28 @@ variables are already correct and are not this Epic's to reshape.
 container that starts before Postgres accepts connections fails its migration step, which is
 `R-014-5`'s loud failure arriving for the wrong reason.
 
+**Only one stack can run per machine** (`T150t`, convergence). All three services pin
+`container_name` — `pmi-postgres`, `pmi-valkey`, `pmi-app` — so a second compose project using this
+file conflicts on the name before it conflicts on a port:
+
+```
+Error response from daemon: Conflict. The container name "/pmi-valkey" is already in use
+```
+
+**Found by hitting it**: validating `T150l` required a separate project and an override, because a
+UAT stack was already holding those names.
+
+**The pins are not removed, and that is a decision.** They predate this Epic; §1 above already
+states that `postgres` and `valkey` are not this Epic's to reshape; and `docker exec pmi-postgres …`
+appears in existing documentation and in day-to-day use, which an unpinned name would break for a
+convenience nobody asked for. **Stop one stack before starting another** — and if two must coexist,
+use `-p <project>` with an override that clears the names, which is what the validation run did.
+
+**`app` declares `image: pmi-studio-app`** (`T150r`). A service with `build:` and no `image:` is
+named from the compose project — the checkout directory — so the image name would differ per clone
+and could not be written into documentation. `quickstart.md` Scenario 5 named an image that existed
+nowhere for exactly that reason.
+
 ---
 
 ## 2. The one origin
@@ -70,6 +92,10 @@ continue to exclude it, and the build must not depend on it existing.
 ## 4. What the image contains
 
 - the TypeScript sources and `tsx` — **no compiler, no `dist/`** for the API (`R-014-3`);
+- **`tsconfig.base.json`** (`T150v`). Every package's `tsconfig.json` extends `../tsconfig.base.json`,
+  and **vite resolves it while building `index.html`** — so without it the client build fails
+  outright with `failed to resolve "extends":"../tsconfig.base.json"`, a message that names the file
+  but not why it is absent. It was missing from the first two builds and from this list;
 - `node_modules` installed **inside** the image, with Prisma Client generated there so its `native`
   binary target resolves against the image's own platform (`R-014-4`);
 - the client's build output, produced by a build stage and copied in;
