@@ -259,7 +259,26 @@ describe('T150a · MUTATION — the check must catch what it claims to, and only
  * names something the repository does not define.
  */
 describe('T150s · every documented container command is runnable', () => {
-  const DOCUMENTS = ['README.md', 'specs/014-devops-release/quickstart.md'] as const;
+  /**
+   * Every document that tells a reader to run a container command.
+   *
+   * **`specs/_shared/quickstart.md` is here because of `DEF-014-001`**
+   * (`T150x`). That defect was `docker compose up -d postgres redis` sitting in
+   * *that file* for months against a compose file defining no `redis` — and
+   * when it was closed, the check gained a guard on `README.md` only. So the
+   * file the defect was actually in went back to being unwatched.
+   *
+   * The drift was catchable indirectly — `T452` derives the README's required
+   * steps from this quickstart, so a wrong service there breaks step-coverage —
+   * but it fails saying *"the README does not cover a step"*, **pointing at the
+   * wrong file**. A check that fires on the innocent document sends the reader
+   * to the wrong place, which costs more than the check saves.
+   */
+  const DOCUMENTS = [
+    'README.md',
+    'specs/014-devops-release/quickstart.md',
+    'specs/_shared/quickstart.md',
+  ] as const;
 
   /**
    * Documented lines that invoke docker, joined across `\` continuations and
@@ -339,6 +358,38 @@ describe('T150s · every documented container command is runnable', () => {
       ).toEqual([]);
     },
   );
+
+  it.each(DOCUMENTS.map((d) => [d] as const))('%s starts only services that exist', (rel) => {
+    // **`DEF-014-001` itself.** `docker compose up -d postgres redis` sat in
+    // `specs/_shared/quickstart.md` for months against a compose file defining
+    // no `redis` — step two of the documented setup had never worked.
+    //
+    // Adding that file to DOCUMENTS was **not enough on its own**, and the
+    // mutation proved it: reintroducing `redis` there left this file green,
+    // because none of the other assertions look at `docker compose up`. A file
+    // added to a list without the assertion it needed is decoration — the same
+    // shape as a check that reads a string where the runtime reads a pattern.
+    const services = composeServices();
+    const wrong = dockerCommands(rel)
+      .filter((c) => /^docker compose up\b/.test(c))
+      .flatMap((c) =>
+        c
+          .split('#')[0]!
+          .split(/\s+/)
+          .slice(3)
+          .filter((token) => token !== '' && !token.startsWith('-'))
+          .map((service) => ({ command: c, service })),
+      )
+      .filter((found) => !services.includes(found.service));
+
+    expect(
+      wrong.map((w) => w.service),
+      `${rel} starts a service docker-compose.yml does not define:\n  ${wrong
+        .map((w) => `${w.service}  in  ${w.command}`)
+        .join('\n  ')}\n` +
+        'This is DEF-014-001, which is why the file is read here at all.',
+    ).toEqual([]);
+  });
 
   it.each(DOCUMENTS.map((d) => [d] as const))('%s execs into a service that exists', (rel) => {
     const services = composeServices();

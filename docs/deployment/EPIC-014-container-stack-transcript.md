@@ -232,3 +232,47 @@ and noticing it caught one.
 
 Once corrected it was red on both, then green after `T150q` and `T150r` — which is the ordering the
 phase was written for.
+
+---
+
+## §5 Convergence C-2 — 2026-08-25
+
+### The mutation that proved a fix was decoration
+
+`T150x` added `specs/_shared/quickstart.md` to `T150s`'s documents — the file `DEF-014-001` was
+raised against. Before trusting that, the defect was reintroduced there:
+
+```
+$ sed -i 's/postgres valkey/postgres redis/' specs/_shared/quickstart.md
+Tests  33 passed          ← STILL GREEN
+```
+
+**Adding the file changed nothing.** None of `T150s`'s three assertions looked at
+`docker compose up <service>` — that property lived in `T452`, which reads `README.md` only. A file
+added to a list without the assertion it needed is decoration, and it would have read as coverage.
+
+With the `docker compose up` assertion added:
+
+```
+$ sed -i 's/postgres valkey/postgres redis/' specs/_shared/quickstart.md
+× T150s · specs/_shared/quickstart.md starts only services that exist
+  → specs/_shared/quickstart.md starts a service docker-compose.yml does not define
+Tests  1 failed | 35 passed
+```
+
+Restored → `36 passed`. **The check now names the file the defect is in**, rather than failing on
+README step-coverage and sending the reader to the wrong document.
+
+### Scenario 3's mutation expectation was wrong
+
+It said *"`/runs` on refresh must 404"*. §2 above records the observed value: **`500`**. The
+mutation works exactly as intended — with the fallback gone the request reaches the API and
+`DEF-001-006` answers `500`. **A mutation check whose expected value is wrong is worse than no
+mutation check**: it teaches the reader to distrust a working guard. Corrected by `T150x`.
+
+### What C-2 says about the shape of this Epic
+
+Three passes, and the faults got quieter each time: commands that did not run (`C-1`), then
+expectations that did not match (`C-2`), and in both, **a fix that looked complete and was not until
+it was mutated.** The consistent lesson is in `T150z`'s note: *a check that verifies a list is
+complete verifies only that the list matches itself.*
