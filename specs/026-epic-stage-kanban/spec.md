@@ -66,6 +66,17 @@ below is the stage register and DOR only — nothing here is open-ended.
 
 ## Clarifications
 
+### Session 2026-08-25
+
+*Prompted by `EPIC-036` `T441n` and `EPIC-034` `T995y`, which both handed this Epic a decision its
+specification did not cover: **999 of 999 three-digit task prefixes are allocated**, and the next
+Epic cannot allocate one.*
+
+- Q: Should the rule for how tasks are numbered become part of this Epic's written specification, or does it belong somewhere else? → A: **A — add a requirement here.** `G-26-15` is already this Epic's check, and a check enforcing a rule no requirement states is the gap `FR-ESK-011` and `FR-ESK-016` exist to close. Recorded as `FR-ESK-025`
+- Q: With all 999 three-digit task numbers used up, should we allow four-digit numbers, stop treating a trailing letter as meaning "added next to", or both? → A: **C — both.** Widening alone leaves the letter convention contradicted by the sub-lettered blocks six phases have already used; retiring the meaning alone leaves nothing to allocate
+- Q: Should the task-number pattern be held in one configuration file, the way the stage list and readiness conditions already are? → A: **A — one definition, imported by all three files**, added to `FR-ESK-015`'s list. It is currently hand-copied in six places across three files
+- Q: Until the pattern is widened, a four-digit task number is invisible to all three checks — should anything actively refuse it in the meantime? → A: **A — a check that fails on any unrecognised task-id shape.** `T441n` states the hazard exactly: an unrecognised id is *silently unchecked, which is worse than a collision*
+
 ### Session 2026-08-09
 
 - Q: The analysis step prints its findings and leaves no file behind — how should the register know it happened and passed? → A: **A — analysis writes a dated findings file into the epic folder**, which both the stage derivation and the DOR read. Chosen because every other stage in the journey already leaves an artifact; making this one the sole hand-declared exception would carve a hole in FR-ESK-003 on the day it is written. Adds **FR-ESK-019**; requires an ordinary edit to `.claude/skills/speckit-analyze/`, which Constitution I exempts.
@@ -468,8 +479,8 @@ run the checks, and confirm the disagreement is reported with the Epic and condi
 #### Verification and configuration
 
 - **FR-ESK-015**: The stage sequence, the artifact evidence for each stage, the DOR condition set,
-  the posture kinds, the Epic kinds, the roles permitted to own a waiver, and the Epic-directory
-  exclusion rule MUST
+  the posture kinds, the Epic kinds, the roles permitted to own a waiver, the Epic-directory
+  exclusion rule, **and the task-identifier pattern (`FR-ESK-025`)** MUST
   be held as configuration, so extending the journey is an ordinary edit and not a specification
   change. What a gate *means* remains a constitution amendment.
 - **FR-ESK-016**: Repository MUST verify the register and the DOR with executable checks that read
@@ -477,6 +488,35 @@ run the checks, and confirm the disagreement is reported with the Epic and condi
   build, and so MUST a committed register that disagrees with the repository (FR-ESK-021); stalled
   Epics, missing postures, and out-of-order artifacts MUST be reported without failing it. Manual
   review MUST NOT satisfy this requirement.
+- **FR-ESK-025**: Repository MUST define the **task-identifier format** — the shapes a task
+  identifier may take — and every task identifier MUST be unique across the whole corpus, not
+  merely within its Epic. The format MUST admit **four or more digits** (`T1000` and beyond), and a
+  trailing letter MUST NOT be read as meaning *"an addition adjacent to the task it shares a prefix
+  with"*. An identifier whose shape the format does not admit MUST be **reported as unrecognised
+  and fail the build** — never skipped.
+
+  *Added 2026-08-25 by clarification. This Epic already owned the check (`G-26-15`) and owned no
+  requirement behind it, which is the shape `FR-ESK-011` and `FR-ESK-016` exist to refuse. Four
+  facts drove each clause:*
+
+  - ***999 of 999 three-digit prefixes are allocated.*** `EPIC-034` `T995y` measured 992 and handed
+    over a choice; `EPIC-036` `T441n` re-handed it at 999, calling it *"a blocker on `EPIC-037`, not
+    a warning"*. Neither Epic chose — both worked around it with sub-lettered blocks.
+  - **The identifier space was never exhausted — the *prefix-block convention* was.** The block
+    `T436`–`T442` alone held 182 unused identifiers. Widening the digits is what reopens allocation.
+  - **The adjacency meaning is retired because it has already stopped being true.** `EPIC-029`
+    records a letter as *"a later addition adjacent to what it pairs with"*, and six convergence
+    phases of `EPIC-014` allocated `T150a`–`T150z` and `T153a`–`T153h` as ordinary blocks. The
+    convention now describes something nothing does.
+  - **An unrecognised identifier must fail loudly.** `T441n` states the hazard exactly: a four-digit
+    id *"is currently invisible to all three [checks] — so until the widening lands, a four-digit id
+    is silently unchecked, which is worse than a collision."* Uniqueness, pairing and path checks
+    would all pass by not seeing it.
+
+  *The pattern is configuration (`FR-ESK-015`), not six hand-copied regexes: it appears literally as
+  `T\d{3}[a-z]?` in six places across `task-ids.spec.ts`, `dor.ts` and `task-paths.spec.ts`, so
+  widening it by hand means editing six sites correctly with nothing to notice a miss.*
+
 
 ### Key Entities
 
