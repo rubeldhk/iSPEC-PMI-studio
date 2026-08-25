@@ -28,6 +28,7 @@ Every third-party component the platform depends on, why it is here, and what it
 | D-11 | dockerode (or Docker CLI) | 4.x | Sandbox container lifecycle | Apache-2.0 | ☐ | Medium — sandbox control path |
 | D-11a | @opentelemetry/sdk-node + auto-instrumentations | 0.5x / 0.5x | Traces and metrics (PP-010, research R-011) | Apache-2.0 | ☐ | Low — vendor-neutral by design |
 | D-11b | pino | 9.x | Structured JSON logging with request/job context | MIT | ☐ | Low |
+| **D-30** | **@nestjs/serve-static** | **4.x** | Serves the built web client from the API on one origin, with the SPA history fallback (`EPIC-014` `R-014-1`) | MIT | ☐ | Low — a thin wrapper over the Express static handler the adapter already ships |
 
 ### D-08 in detail — the one that needs a decision
 
@@ -118,6 +119,26 @@ recorded would be false.
   Express (`D-03`). Calling controller methods directly — rejected outright; that is precisely the
   hand-assembled graph Constitution XI Tier 1 forbids.
 - **Licence**: MIT, both packages.
+
+### D-30 in detail — the first dependency `TS-001` caught before it was installed
+
+`@nestjs/serve-static` is registered **here first and installed second**, deliberately.
+
+`TS-001` — the register conformance check in `tests/governance/dependency-register.spec.ts` — was
+written by `EPIC-036` `T436c` and asserts that every third-party runtime dependency is named in this
+document. **`EPIC-014` is the first Epic other than its author to be bound by it**, and the binding
+worked in the intended direction: the row exists because the check would otherwise have gone red the
+moment `pnpm add` ran.
+
+`D-13` (React Router) records the same lesson from the other side — a dependency raised from 6.x to
+7.x with the register left saying 6.x, twice. The pattern both entries point at is that **a register
+nothing reads is a list, and a register something reads is a gate.**
+
+**Why 4.x.** It tracks the NestJS major line, and this repository is on `@nestjs/common` 10.x with
+`@nestjs/platform-express`. The Express adapter matters: `ServeStaticModule` relies on Express's
+fallthrough for the history fallback, and the Fastify adapter needs
+`serveStaticOptions.fallthrough: true` to behave the same way. Recorded because a future adapter
+change would silently remove deep-link support while every other check stayed green.
 
 ### D-13 in detail — recorded by EPIC-036 `T436b`, and the same lesson a second time
 

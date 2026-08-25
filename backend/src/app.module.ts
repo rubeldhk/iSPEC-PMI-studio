@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { PrismaUserDirectory, UnconfiguredUserDirectory } from './modules/auth/identity-provider.js';
@@ -27,6 +30,20 @@ import { RequirementRoomModule } from './modules/requirement-room/requirement-ro
  * at the WORKER's composition root, so the API never holds a reference to a
  * concrete engine (FR-017). Enforced by the architecture test.
  */
+/**
+ * Where the built web client lives, relative to this module.
+ *
+ * `CLIENT_DIST` overrides it — the image copies the build to a fixed path that
+ * has nothing to do with the source layout, and hardcoding `../../frontend/dist`
+ * would make the container depend on the developer's directory structure.
+ * `T150g` (EPIC-014 F-11.3).
+ */
+function clientBuildPath(): string {
+  const configured = process.env['CLIENT_DIST'];
+  if (configured !== undefined && configured !== '') return resolve(configured);
+  return join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'frontend', 'dist');
+}
+
 @Module({
   imports: [
     // T831 / DEF-005-001 — the composition root supplies the REAL directory,
@@ -66,6 +83,51 @@ import { RequirementRoomModule } from './modules/requirement-room/requirement-ro
     LoopModule,
     // T337y — EPIC-033. The wiring T337x exists to prove.
     RequirementRoomModule,
+    // T150g — EPIC-014 F-11.3. The API serves the built web client, so the
+    // containerised stack is ONE origin and the client's `/v1` assumption holds
+    // without the client changing (`R-014-1`).
+    //
+    // **`renderPath` is deliberately not set.** Its default is `*`, which sends
+    // `index.html` for anything unmatched — the SPA history fallback, and the
+    // whole of `R-036-3`: `EPIC-036` could not prove a deep link survives a
+    // refresh because nothing here served the built client, and `EPIC-029`'s
+    // UAT had to hand-roll a static server with its own `/v1` proxy.
+    //
+    // **`exclude` is what keeps the API reachable.** Without it every `/v1`
+    // request returns `index.html` with a `200`, and the client reports a JSON
+    // parse error three layers from the cause. `main.ts` sets the global prefix
+    // to `v1`, so this list and that prefix must agree — `T150c` asserts it.
+    //
+    // Registered LAST on purpose: the static handler is the fallback, and
+    // anything that should answer before it must be registered before it.
+    // **No `serveStaticOptions`.** `fallthrough: true` is the *Fastify*
+    // requirement — `R-014-1` says so — and this repository is on
+    // `@nestjs/platform-express`, where fallthrough is already the behaviour.
+    // Setting it anyway cost a `tsc` stack overflow: the Express
+    // `ServeStaticOptions` generic blew the type-relation recursion limit, and
+    // the failure was `RangeError: Maximum call stack size exceeded` with no
+    // error location — a diagnostic that names nothing.
+    // **`/v1(.*)` — and it had to be measured, not reasoned about.**
+    //
+    // `@nestjs/serve-static@4` matches `exclude` with **`path-to-regexp@0.2.5`**
+    // (see its `dist/utils/is-route-excluded.util.js`), not with Express's own
+    // router. Against that version, tested inside the running container:
+    //
+    //     /v1{*splat}  never matches   (Express 5 / path-to-regexp 8 syntax)
+    //     /v1*         never matches
+    //     /v1/*        never matches
+    //     /v1(.*)      matches         ← this one
+    //
+    // A pattern that never matches does not throw. It silently excludes
+    // nothing, so every unmatched `/v1` path returns `index.html` with a `200`
+    // and the client reports a JSON parse error three layers from the cause.
+    // **Two wrong patterns shipped before this one**, each of which looked
+    // right and passed a check that only asked whether `/v1` was mentioned.
+    // `T150c` now runs the pattern through the loader's own matcher.
+    ServeStaticModule.forRoot({
+      rootPath: clientBuildPath(),
+      exclude: ['/v1(.*)'],
+    }),
   ],
 })
 export class AppModule {}

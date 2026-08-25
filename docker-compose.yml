@@ -38,6 +38,39 @@ services:
       timeout: 5s
       retries: 10
 
+  # T150k (EPIC-014 F-11.3) — the application: the API and the built web client,
+  # on ONE origin. There is no web container and no reverse proxy; the client
+  # assumes `/v1` is same-origin and here it simply is (`R-014-1`).
+  #
+  # The two services above are NOT reshaped by this Epic — their images,
+  # volumes, healthchecks and port variables were already correct
+  # (contracts/container-stack.md §1).
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pmi-app
+    depends_on:
+      # `service_healthy`, not `service_started`. A container that starts before
+      # Postgres accepts connections fails its migration step, which is the
+      # loud failure of R-014-5 arriving for the wrong reason.
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    environment:
+      # Supplied, never baked. The image knows nothing about these hosts, and
+      # T150a refuses a literal secret in this file.
+      DATABASE_URL: postgresql://pmi:pmi_local_dev@postgres:5432/pmi_studio
+      VALKEY_URL: redis://valkey:6379
+      PORT: 3000
+      # Passed through from the developer's .env. An EMPTY value is not the
+      # same as an absent one to the shell, but it is to the engine: the
+      # sandbox refuses to start either way.
+      AI_PROVIDER_TOKEN: ${AI_PROVIDER_TOKEN:-}
+    ports:
+      - '${PMI_APP_PORT:-3000}:3000'
+
 volumes:
   pmi-postgres-data:
   pmi-valkey-data:

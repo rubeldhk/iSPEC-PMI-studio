@@ -1,4 +1,13 @@
 node_modules/
+# T150i (EPIC-014) — the ROOT pattern above matches only the root directory.
+# pnpm puts a node_modules in every workspace package, each full of symlinks
+# back to sibling packages, and Docker cannot put a symlink-to-outside in a
+# build context: `invalid file request agent-adapters/claude/node_modules/@pmi/agent-contract`.
+# The build proved what review did not — analysis U1 concluded no edit was
+# needed because every LISTED pattern was present, and it was; the gap was a
+# pattern nobody had listed.
+**/node_modules
+**/dist
 .git/
 dist/
 build/

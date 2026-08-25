@@ -28,6 +28,47 @@ CLI live inside the engine container image.
 
 ## Setup
 
+**There are two stacks, and they answer different questions.** Pick deliberately:
+
+| | **Containerised** | **Reference local** |
+|---|---|---|
+| What you need | Docker and a checkout | Node 22, pnpm, and Docker for the data stores |
+| Everything runs | in containers, on **one origin** | API and web on the host, data stores in Docker |
+| Hot reload | no — rebuild to see a change | yes |
+| Use it for | *"does the product work?"* — UAT, deep links, a clean-machine check | day-to-day development |
+| Defined by | `Dockerfile`, `docker-compose.yml` (`EPIC-014` F-11.3) | `specs/036-application-shell/quickstart.md` `T442l` |
+
+> **Any published measurement must say which stack it came from.** `SC-SHL-006`'s recorded p95 of
+> 20.5 ms is a measurement of the **reference local** stack, whose composition `T442l` pins exactly.
+> A number taken on the containerised stack answers a different question and must not be filed
+> against that criterion.
+
+### Containerised — one command
+
+```bash
+docker compose up -d --build          # everything, on http://localhost:3000
+```
+
+No `pnpm install`, no Node version to match. The API serves the built web client, so `/v1` and the
+client share one origin and a deep link like `/runs` survives a refresh.
+
+Seeding is still a command you run, and the image never carries a credential:
+
+```bash
+docker compose exec -e NODE_ENV=development \
+  -e SEED_USER_EMAIL=dev@pmi.local -e SEED_USER_PASSWORD='choose-something' \
+  app pnpm --filter @pmi/backend exec tsx prisma/seed.ts
+```
+
+`NODE_ENV=development` is **required for that one command**: the image runs as `production` and the
+seed refuses to run under it. That refusal is the point — a seed creates a known account with a
+known password, which is right for a developer machine and a backdoor anywhere else.
+
+**One stack per machine.** `docker-compose.yml` pins `container_name` on `postgres` and `valkey`, so
+a second project using those names conflicts. Stop one before starting the other.
+
+### Reference local — three terminals
+
 ```bash
 pnpm install
 docker compose up -d postgres valkey
