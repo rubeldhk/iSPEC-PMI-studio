@@ -84,9 +84,21 @@ address loads the application, which then shows **its own** not-found page (`EPI
 > for the same reason. When this scenario passes, that gap is closed and `R-036-3` can be marked
 > discharged — **by this Epic, in `EPIC-036`'s record**, not by `EPIC-036` retroactively.
 
-> **Mutation check, required at exit.** Remove the static fallback configuration. `/runs` on refresh
-> must 404 and this scenario must fail. A fallback nobody has seen fail is a fallback nobody knows
-> works (`T200c`'s standard).
+> **Mutation check, required at exit.** Remove the static fallback configuration and rebuild.
+> `/runs` on refresh must stop returning the application, and this scenario must fail. **Observed:
+> `500`, not `404`** — with the fallback gone the request reaches the API, and `DEF-001-006` makes
+> every unmatched API path answer `500` (see Scenario 4). `/v1/auth/me` stays `401` throughout,
+> which is how you know the API is unaffected and only the client route broke.
+>
+> A fallback nobody has seen fail is a fallback nobody knows works (`T200c`'s standard). Run
+> recorded in [the transcript](../../docs/deployment/EPIC-014-container-stack-transcript.md) §2.
+
+> **Corrected 2026-08-25 (`T150x`, convergence `G1`).** This block said the mutation "must 404".
+> **It does not, and never did** — the observed value is `500`, for a reason Scenario 4 explains
+> four paragraphs below. The mutation works exactly as intended; the expectation written beside it
+> was wrong, so anyone running it would see `500`, conclude the check had misbehaved, and go looking
+> for a fault that does not exist. **A mutation check whose expected value is wrong is worse than no
+> mutation check**: it teaches the reader to distrust a working guard.
 
 ---
 

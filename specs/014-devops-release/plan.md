@@ -142,6 +142,13 @@ the unreachable-database mutation belonged to no check named here. Four and four
 | The SPA history fallback | `T150c` + `T150l` | **Mutation** — remove the static fallback; Scenario 3 must fail on a refresh of `/runs` (`T150m`) |
 | Migration runs before the process | `T150d` | **Mutation** — point `DATABASE_URL` at an unreachable database; the stack must fail at migration and the API must **not** start (`T150m`, quickstart Scenario 1) |
 | Every `package.json` script entry resolves | `T150b` | **Fail-first ordering, not a mutation.** `T150b` is written before `T150f` and **must go red on the unfixed `dev` script**, which is the same guarantee reached by the same standard (`T200c`) — the check is observed failing against the real fault rather than an injected one. It is arguably the stronger evidence of the four |
+| Every documented container command is runnable | `T150s` | **Two real faults and one self-inflicted, all observed.** Added by convergence `C-1` after two commands in `quickstart.md` were found not to run. It went red on `C2`, **passed over `C1` — the fault it was written for** — because its filter required a line to start with `docker ` while the quickstart writes `SEED_USER_EMAIL=… \` first; corrected, red on both, then green. `C-2` then extended it to `specs/_shared/quickstart.md`, and **the mutation showed that adding the file changed nothing** until the `docker compose up` assertion was added with it — `DEF-014-001` reintroduced there stayed green. Now red, naming that file |
+
+> **Four became five (`T150y`, convergence `G3`).** This table said *"four checks, four pieces of
+> fail-first evidence"* while `C-1` had added a fifth. **Gate V is the gate this scope is meant to be
+> failed on**, so an inventory of its own checks that undercounts them is the same shape as a
+> specification undercounting its areas — which is what `EPIC-036` spent four convergence passes
+> removing. Counted here, derived nowhere; if a sixth check appears, this row is how it gets missed.
 
 **Post-design re-check**: **PASS**, with Gate II's debt (now owned — see [spec.md](./spec.md), answered
 at `T214`) and the `D-30` register row carried as named actions rather than as assumptions. No gate
