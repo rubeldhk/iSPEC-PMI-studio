@@ -424,3 +424,59 @@ Restored → `13 passed`.
 > because a mutation was skipped, but because **the inventory it was measured against was
 > incomplete**. The claim is made again here, and this time against a derived set rather than a
 > listed one, which is the only difference that matters.
+
+---
+
+## §9 Convergence C-6 — 2026-08-25
+
+### The fourth correction of one fault is where you stop correcting it
+
+Gate V's own status cell read *"**Four checks, four pieces of fail-first evidence** — see the table
+below"* while the table below listed **nine**, two lines apart. The Build order read *"the three
+checks"* — wrong since the plan was written.
+
+The count had already been corrected in the table (`T150y`, `C-2`) and in the Definition of done
+(`T153d`, `C-4`). Each fix touched the site that had just been found, and the next site drifted.
+`T153h` reads **all three regions** instead — the Gate V row, the Gate V table section, and the
+Build order — and the numbers are **deleted rather than updated**:
+
+> The table is the inventory. Prose beside it points at it and never counts it.
+
+First run, before the deletions:
+
+```
+× the Gate V row does not restate the check count      → Four checks
+× the Build order block does not restate the check count → three checks
+```
+
+### Both directions mutated
+
+**A — a live count must fail:**
+
+```
+$ sed -i 's|──► the Gate V checks|──► the nine checks|'
+× the Build order block restates the check count: nine checks
+```
+
+**B — quoted history must stay exempt:**
+
+```
+$ (change "This row previously said **"three checks…"**" to "eleven checks")
+Tests  48 passed
+```
+
+The `I2` and `T150y` correction notes quote what the document *used to* say. **Rewriting quoted
+history to keep a check green is the failure `flat()` guards against in `EPIC-036`'s
+`registry-documented.spec.ts`**, and the rule here is deliberately the same one: skip a blockquote,
+or a line carrying an explicit quotation marker — and assert both exemptions so neither can widen
+unnoticed.
+
+### Where six passes leave it
+
+Seven findings, then four, three, two, two, one. The system was correct from the first pass. Every
+finding since was a record, a count, or a check that had never failed — and three of them were
+inside the check written to close the previous pass. The sentence they all reduce to is now enforced
+in six places across two Epics:
+
+> **A claim about a set drifts unless something derives it** — and prose beside a derived set drifts
+> too, unless something reads that as well.
