@@ -452,3 +452,115 @@ const FLAGS_WITH_VALUES = new Set([
   '-u',
   '--user',
 ]);
+
+/**
+ * T153c (EPIC-014 F-11.3, convergence C-3) — the release gate must run every
+ * scenario the quickstart defines.
+ *
+ * **This is the enforcement `G-14.2` said did not exist.** That section of
+ * `plan.md` wrote the prediction out in full:
+ *
+ *   > This will need updating again whenever any epic adds a quickstart
+ *   > scenario. **Nothing enforces it** — the numbering lives in
+ *   > `_shared/quickstart.md` and the gate that runs it lives here.
+ *
+ * Then `F-11.3` added seven scenarios, no `V`-number was allocated, and the
+ * section stayed headed *"✅ current"*. **A warning that does not fire is a
+ * comment.** This is the same shape `T442v` closed in `EPIC-036`: a number
+ * restated in two documents drifts unless something compares them.
+ *
+ * The comparison is deliberately literal — it reads the committed markdown of
+ * both documents — because the failure mode is a person adding a heading in one
+ * file and nobody updating a sentence in the other.
+ */
+describe('T153c · the release gate runs every quickstart scenario', () => {
+  const QUICKSTART = 'specs/_shared/quickstart.md';
+  const TASKS = 'specs/014-devops-release/tasks.md';
+
+  /**
+   * Scenarios the gate deliberately does not run, each with the reason.
+   *
+   * An exemption with no reason is an omission with better manners — the same
+   * rule `EXEMPT` follows in `EPIC-036`'s `registry-documented.spec.ts`.
+   */
+  const NOT_AT_THE_GATE: Readonly<Record<string, string>> = Object.freeze({
+    V13: 'the real-engine smoke test, marked "nightly, not per-commit" in its own heading — it needs a live AI provider credential and metered spend, so a release gate that ran it would bill the programme per promotion',
+  });
+
+  /** Every `### V<n>` scenario the quickstart defines, in document order. */
+  function definedScenarios(): string[] {
+    return [...read(QUICKSTART).matchAll(/^###\s+(V\d+[a-z]?)\b/gm)].map((m) => m[1]!);
+  }
+
+  /**
+   * The scenarios `T153`'s line claims, expanding `V1–V12` style ranges.
+   *
+   * A range is expanded rather than pattern-matched because **that is where the
+   * ambiguity lives**: `V11a` sits between `V11` and `V12`, and whether
+   * "V1–V12" includes it is exactly the kind of question a sentence cannot
+   * answer and a list can.
+   */
+  function claimedScenarios(): string[] {
+    const line = read(TASKS)
+      .split(/\r?\n/)
+      .find((l) => /^- \[[ xX]\] T153\b/.test(l));
+    if (line === undefined) return [];
+    const text = line.replace(/[*`]/g, '');
+    const claimed = new Set<string>();
+
+    // Ranges: `V1–V12` (en dash) or `V1-V12` (hyphen).
+    for (const match of text.matchAll(/V(\d+)[a-z]?\s*[–-]\s*V(\d+)[a-z]?/g)) {
+      const from = Number(match[1]);
+      const to = Number(match[2]);
+      for (let n = from; n <= to; n++) claimed.add(`V${n}`);
+    }
+    // Individually named scenarios.
+    for (const match of text.matchAll(/\bV(\d+[a-z]?)\b/g)) claimed.add(`V${match[1]}`);
+    return [...claimed];
+  }
+
+  it('finds scenarios and a claim to compare, or this check proves nothing', () => {
+    // Anti-vacuity. A parser that found no `V` headings would report full
+    // coverage forever — which is indistinguishable from the state `G-14.2`
+    // predicted and this file exists to end.
+    expect(definedScenarios().length, 'no V-scenarios parsed from the quickstart').toBeGreaterThan(
+      10,
+    );
+    expect(claimedScenarios().length, 'no V-scenarios parsed from T153').toBeGreaterThan(10);
+  });
+
+  it('T153 runs every scenario the quickstart defines, or the exemption says why', () => {
+    const defined = definedScenarios();
+    const claimed = new Set(claimedScenarios());
+    const missed = defined.filter((v) => !claimed.has(v) && NOT_AT_THE_GATE[v] === undefined);
+
+    expect(
+      missed,
+      `specs/_shared/quickstart.md defines ${missed.join(', ')}, which T153 does not run.\n` +
+        'The gate that ships the platform would promote without exercising them. Either add the ' +
+        'scenario to T153, or add it to NOT_AT_THE_GATE with the reason it is deliberately skipped.',
+    ).toEqual([]);
+  });
+
+  it('every exemption names a scenario that exists, and gives a real reason', () => {
+    // A stale exemption is a hole with a comment over it.
+    const defined = definedScenarios();
+    for (const [scenario, reason] of Object.entries(NOT_AT_THE_GATE)) {
+      expect(
+        defined,
+        `NOT_AT_THE_GATE names ${scenario}, which the quickstart no longer defines`,
+      ).toContain(scenario);
+      expect(reason.length, `${scenario} is exempt with no real reason`).toBeGreaterThan(40);
+    }
+  });
+
+  it('T153 claims no scenario the quickstart does not define', () => {
+    // The other direction. A gate claiming to run `V15` when no `V15` exists
+    // reads as coverage and is a typo.
+    const defined = new Set(definedScenarios());
+    const phantom = claimedScenarios().filter((v) => !defined.has(v));
+    expect(phantom, `T153 claims ${phantom.join(', ')}, which the quickstart does not define`).toEqual(
+      [],
+    );
+  });
+});

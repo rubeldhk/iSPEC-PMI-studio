@@ -221,6 +221,25 @@ naming every missing field; the superseded record is **still readable** with its
 status, never deletion. Cross-workspace access returns 404.
 **Proves**: FR-034
 
+### V15 — The containerised stack, from a clean checkout (EPIC-014 F-11.3)
+
+*Added by EPIC-014 `T153a`. Detail lives in `specs/014-devops-release/quickstart.md` Scenarios 1–3;
+this scenario **confirms**, it does not re-derive.*
+
+**Why the gate runs it.** `F-11.3` delivers a stack the platform can be run from, and until this
+existed the only proof was one dated transcript. `T150l` ran it once; the gate runs it every time.
+
+1. From a checkout with **no `node_modules` and no host toolchain**: `docker compose up -d --build`.
+2. `curl http://localhost:3000/v1/auth/me` and `curl http://localhost:3000/`.
+3. Open `http://localhost:3000/runs` and refresh.
+
+**Expected**: three containers healthy, migrations applied **before** the API starts; `401` from
+`/v1/auth/me` and `200 text/html` from `/`, on **one origin**; `/runs` survives the refresh and
+returns the application. `/v1/no-such-endpoint` returns the API's own answer — **today `500`, which
+is `DEF-001-006` and deliberately left visible** rather than hidden behind the static fallback.
+**Proves**: the `EPIC-014` Exit Criterion *"the containerised local stack starts from a clean
+checkout"*, and `R-036-3` staying closed.
+
 ### V13 — Real engine smoke test (nightly, not per-commit)
 
 Requires AI provider credentials.

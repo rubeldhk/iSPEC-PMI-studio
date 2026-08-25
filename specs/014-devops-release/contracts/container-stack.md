@@ -152,3 +152,4 @@ Stated here so a green run is not over-read:
 | That `dev`, `stage` or `prod` work | Out of scope, explicitly. This Epic delivers one rung |
 | That `SC-SHL-006`'s p95 holds here | That number is a measurement of `EPIC-036`'s reference stack (`R-014-7`). This is a different stack and answers a different question |
 | That the API returns 404 for unknown API paths | `DEF-001-006`, `EPIC-001`'s, deliberately left visible (§2) |
+| ~~That the release gate exercises it~~ — **it does now** | Until 2026-08-25 it did not: `T153` ran `V1–V12` and `V14`, and the shared quickstart mentioned containers **zero times**. `T153a` added `V15`; `T153c` fails if a scenario is ever defined and not run |
