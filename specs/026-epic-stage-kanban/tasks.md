@@ -5,7 +5,7 @@ description: "Task list for EPIC-026 — Epic Stage Register & Definition of Rea
 
 # Tasks: Epic Stage Register & Definition of Ready
 
-**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 85 (T466–T536, T851–T854)
+**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 105 (T466–T536, T851–T854, T864a–T864l)
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -660,6 +660,58 @@ kind, so EPIC-002 at `Clarified` keeps `/speckit-checklist` — the defect judge
       `next-command-kind.spec.ts` as the verifying check (Constitution VI), and record the outcome
       in `specs/026-epic-stage-kanban/tasks.md`'s Notes if the register regen surfaces anything
       unexpected
+
+## Phase 5: F-26.9 — the task-identifier format *(appended 2026-08-25 by `/speckit-tasks`)*
+
+**Requirement**: `FR-ESK-025`, clarified 2026-08-25. **Design**: [plan.md](./plan.md) §F-26.9,
+[research.md](./research.md) `R-026-8`–`R-026-10`,
+[contracts/task-identifier-format.md](./contracts/task-identifier-format.md),
+[quickstart.md](./quickstart.md) `V26-9`.
+
+**Identifier block: `T864a`–`T864l`** — and the choice is worth stating, because this is the one
+block in the corpus that cannot be allocated neutrally.
+
+**`T864` is the last free three-digit prefix.** 998 of 999 are taken; `EPIC-034` `T995y` measured
+the shortage at 992 and `EPIC-036` `T441n` re-raised it at 999, calling it *"a blocker on `EPIC-037`,
+not a warning"*. Six convergence phases of `EPIC-014` were run without spending it.
+
+**It is spent here, deliberately.** The only use of the last prefix that cannot be second-guessed is
+the work that ends the scarcity. Every other Epic that takes it leaves the next one worse off; this
+one leaves `T1000`–`T9999` available to everybody.
+
+**This is also the last block allocated under the old convention, and the first whose own tasks
+retire it.** Under the rule in force today a letter means *"a later addition adjacent to what it
+pairs with"* — and there is no `T864` for `T864a` to be adjacent to. `EPIC-014` and `EPIC-036`
+allocated `T150a`–`T153h` and `T442a`–`T442v` the same way. The convention has described something
+nobody does for two Epics; `T864j` writes that down.
+
+**No `[US#]` labels.** `FR-ESK-025` maps to no user story — it is a format rule, and `spec.md`
+carries six stories none of which is about identifiers. This phase organises by **function**, as
+the convergence and defect phases above do.
+
+### Checks first — Gate V binds twice here, so each MUST be seen to fail
+
+- [ ] T864a [P] Conformance check asserting **no inline task-identifier pattern** exists in `tests/governance/epic-stage/task-ids.spec.ts`, `dor.ts` or `task-paths.spec.ts` — the pattern must come from configuration and nowhere else — in `tests/governance/epic-stage/task-id-format.spec.ts`. **Red on its first run**: `T\d{3}[a-z]?` appears literally **six times** across those three files (`dor.ts` 4, the others 1 each). `governance/epic-stage.config.json` is a **non-code output**, so Constitution V requires a check that can fail (`R-026-8`)
+- [ ] T864b [P] Unit test for the pattern and the recogniser, in `tests/governance/epic-stage/task-id-format.spec.ts` — the pattern MUST admit `T001`, `T864`, `T999`, `T150a`, `T442v`, **`T1000`**, `T1000a`; MUST reject `T99` (too few digits), `T150ab` (two letters), `T150A` (uppercase). **And the recogniser MUST be strictly broader**: every identifier the pattern admits must also match the recogniser. A recogniser that drifted narrower would restore the silent-skip hazard while every other assertion stayed green (`R-026-10`, contract §3)
+- [ ] T864c [P] Unit test asserting an **unrecognised identifier fails rather than being skipped** — a token matching `^T\d+[a-z]*$` but not `taskIdentifierPattern` must be reported, naming the token and the file, and must fail the run — in `tests/governance/epic-stage/task-id-format.spec.ts`. This is the assertion `T441n` asked for: *"a four-digit id is currently invisible to all three [checks] … silently unchecked, **which is worse than a collision**"*. Uniqueness, pairing and path checks all pass such an id **by never seeing it**
+
+### The single definition, and the three consumers
+
+- [ ] T864d Add `taskIdentifierPattern` (`^T\d{3,}[a-z]?$`), `taskIdentifierRecogniser` (`^T\d+[a-z]*$`) and `_taskIdentifierNote` to `governance/epic-stage.config.json`, beside the existing `epicDirectoryPattern` — **no upper digit bound**, because a cap is a second exhaustion date and this corpus consumed 999 identifiers in about a year (`R-026-8`) (conformance: T864a, T864b)
+- [ ] T864e Add a shared reader exposing both compiled patterns from the config to the three checks, in `tests/governance/epic-stage/task-id-format.ts` — one module, so the three consumers cannot drift from each other or from the file (conformance: T864a)
+- [ ] T864f Replace the inline pattern in `tests/governance/epic-stage/task-ids.spec.ts` with the shared reader — **1 occurrence** (conformance: T864a)
+- [ ] T864g Replace the inline patterns in `tests/governance/epic-stage/dor.ts` with the shared reader — **4 occurrences**, the largest concentration and the one most likely to be partly missed by hand (conformance: T864a)
+- [ ] T864h Replace the inline pattern in `tests/governance/epic-stage/task-paths.spec.ts` with the shared reader — **1 occurrence** (conformance: T864a)
+- [ ] T864i Implement the unrecognised-identifier failure in `tests/governance/epic-stage/task-id-format.ts` and wire it into the three checks, so a token matching the recogniser but not the pattern **fails the build** naming the token and its file (unit test: T864c)
+
+### Retiring the adjacency meaning, without rewriting another Epic's record
+
+- [ ] T864j Annotate `specs/029-design-system/tasks.md:24` — the line reading *"the `a`-suffix convention keeps a later addition adjacent to what it pairs with — the `T549a`/`T576a` precedent"* — with a one-line pointer naming `FR-ESK-025` as the current authority. **Annotate, do not rewrite.** That sentence was true when written; rewriting another Epic's record to agree with a later decision is the failure `flat()` guards against in `EPIC-036`'s `registry-documented.spec.ts` and that `EPIC-014` `T153h` asserted from both sides. State plainly what changed: the letter keeps its **shape** and loses its **claim**, because `EPIC-014` (`T150a`–`T153h`) and `EPIC-036` (`T442a`–`T442v`) already allocate sub-lettered ids as ordinary blocks adjacent to nothing (`R-026-9`)
+
+### Prove it, including what it surfaces
+
+- [ ] T864k Run the widened checks across the **whole corpus** and record every identifier they now report, in `specs/026-epic-stage-kanban/closure.md` — **this is the retroactive risk the plan recorded**: widening is additive and breaks nothing, but *unrecognised-fails* turns any malformed identifier **in any Epic** into a build failure the first time it runs, and may surface work belonging to Epics that are already closed. Record the count and each owner; do **not** fix another Epic's identifiers inside this Epic — file what is found
+- [ ] T864l Execute [quickstart.md](./quickstart.md) `V26-9` and **both** of its mutations, recording each observed failure in `specs/026-epic-stage-kanban/closure.md` — (1) add a `T1000` task line: it must be **accepted**, where before it matched none of the three checks; add a `T99` line: it must **fail as unrecognised**, never be skipped. (2) Narrow the recogniser to equal the pattern: `T99` must become invisible again, and if the suite stays green the two-pattern structure has collapsed into one and the guarantee is gone. **The guarantee here is an absence — that nothing is silently skipped — and an absence is only observable by breaking it**
 
 ## Dependencies & Execution Order
 
