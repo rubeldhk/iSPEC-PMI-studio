@@ -24,6 +24,13 @@ import { REPO_ROOT } from '../helpers';
 import { loadStageConfig } from './derive';
 import { RESOLVED_FINDING, findingRows, findingSeverity, validateAnalysisRecord } from './analysis-record';
 import type { DeclarationsFile, EpicKind } from './declarations';
+import { taskIdentifierFragment, taskIdentifierOf } from './task-id-format';
+
+/**
+ * The task-identifier shape, read once from `governance/epic-stage.config.json`
+ * (`FR-ESK-025`, `T864g`). This file previously wrote it out **four times**.
+ */
+const TASK_ID = taskIdentifierFragment();
 
 export interface DorContext {
   readonly epicPath: string;
@@ -181,8 +188,13 @@ function producesApplicationCode(line: string): boolean {
  * Not anchored to parentheses: this repository writes the pairing inside them,
  * after an em dash, and occasionally neither.
  */
-const PAIRING =
-  /(?:unit tests?|integration tests?|conformance(?:\s+checks?)?|checks?|tests?)\s*:\s*T\d{3}/i;
+// T864g — composed from the one identifier shape (`FR-ESK-025`). This file
+// held FOUR of the six hand-copied patterns, the concentration a manual
+// widening was most likely to leave partly done.
+const PAIRING = new RegExp(
+  `(?:unit tests?|integration tests?|conformance(?:\\s+checks?)?|checks?|tests?)\\s*:\\s*${TASK_ID}`,
+  'i',
+);
 
 /**
  * A test named by its path rather than by a task id (`DEF-026-004`).
@@ -216,7 +228,7 @@ function isTestArtifact(path: string): boolean {
 function tasksCoveredBySiblings(lines: readonly string[]): Set<string> {
   const covered = new Set<string>();
   for (const line of lines) {
-    for (const match of line.matchAll(/\bcovers?\s+(T\d{3}[a-z]?)/gi)) {
+    for (const match of line.matchAll(new RegExp(`\\bcovers?\\s+(${TASK_ID})`, 'gi'))) {
       if (match[1]) covered.add(match[1]);
     }
   }
@@ -334,7 +346,7 @@ const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
 
   'DOR-08': (ctx) => {
     const tasks = read(ctx.epicPath, 'tasks.md');
-    const lines = tasks.split(/\r?\n/).filter((line) => /^\s*-\s*\[[xX ]\]\s*T\d{3}/.test(line));
+    const lines = tasks.split(/\r?\n/).filter((line) => taskIdentifierOf(line) !== null);
     if (lines.length === 0) {
       return { id: 'DOR-08', passed: false, detail: 'tasks.md lists no tasks' };
     }
@@ -364,7 +376,7 @@ const CONDITIONS: Record<string, (ctx: DorContext) => ConditionResult> = {
       // precise: "check the output carefully" is prose, not a pairing.
       if (PAIRING.test(line) || PAIRING_BY_PATH.test(line)) return false;
 
-      const id = /\bT\d{3}[a-z]?\b/.exec(line)?.[0];
+      const id = new RegExp(`\\b${TASK_ID}\\b`).exec(line)?.[0];
       return !(id && coveredBySibling.has(id));
     });
     return {
