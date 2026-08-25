@@ -321,3 +321,57 @@ Restored → `40 passed`.
 while two scenarios sat outside the gate. **A warning that does not fire is a comment.** Three
 passes of this Epic have now ended at the same sentence, and it is worth stating once more plainly:
 *a number restated in two documents drifts unless something compares them.*
+
+---
+
+## §7 Convergence C-4 — 2026-08-25
+
+### Mutation 4 — `.dockerignore`, the one assertion taken on trust
+
+`T150i` was written **after** the exclusions were already present, so it went green on its first run
+and stayed green. Three mutations had been recorded and none touched it; the only thing that ever
+proved that gap real was a **build failure**. `T153e` closes that:
+
+```
+$ grep -v '^\*\*/node_modules$' .dockerignore > .dockerignore
+× T150i · .dockerignore excludes **/node_modules
+  → .dockerignore no longer excludes **/node_modules
+Tests  1 failed | 43 passed
+```
+
+Restored → `44 passed`. **Every check in this Epic has now been seen to fail.**
+
+### `T153d` — deriving the gate's own inventory
+
+Gate V demanded derived coverage of everything else while counting itself by hand, and had drifted
+twice: four when there were five (`T150y` fixed it by hand in `C-2`), then five when there were
+seven. The Definition of done still said *"the three conformance checks"*, never updated at all.
+
+First run:
+
+```
+× T153d → Gate V does not list T150i, T153c, T153d, which exist as checks.
+```
+
+**And it caught two faults of its own while being written**, both by running it rather than reading
+it:
+
+1. **The Definition-of-done assertion read one line of a wrapped bullet.** *"the three conformance
+   checks"* sits on the bullet's *second* line, so the first version passed over the exact sentence
+   it existed for. A markdown bullet is one statement however it is folded.
+2. **Reading the whole table row needed a hardcoded allowlist** of "ids that are evidence, not
+   checks" — and it grew by one the moment a row was added. Reading **the Task column the table
+   actually defines** removed the list instead of maintaining it. `T150l` moved to the evidence
+   column with it: the *check* is `T150c`; `T150l` is how it is exercised.
+
+The Definition of done now points at the table instead of counting beside it.
+
+### What four passes of this Epic amount to
+
+Seven findings, then four, then three, then two. The system was correct from the first pass; every
+finding since has been a **record, a count, or a check that had never failed**. The sentence they
+all reduce to, now enforced in five places across two Epics:
+
+> **A claim about a set drifts unless something derives it.**
+
+Areas, states, surfaces, documents, scenarios — and finally the gate that demanded it of all of them.

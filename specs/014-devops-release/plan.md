@@ -139,10 +139,13 @@ the unreachable-database mutation belonged to no check named here. Four and four
 | Check | Task | How it is seen to fail |
 |---|---|---|
 | No credential in a container artifact | `T150a` | **Mutation** — bake a dummy `SEED_USER_PASSWORD` into the `Dockerfile`; the check must go red (`T150m`, quickstart Scenario 5) |
-| The SPA history fallback | `T150c` + `T150l` | **Mutation** — remove the static fallback; Scenario 3 must fail on a refresh of `/runs` (`T150m`) |
+| The SPA history fallback | `T150c` | **Mutation** — remove the static fallback and rebuild; `/runs` goes from `200 text/html` to `500`, observed by `T150l` Scenario 3 and recorded by `T150m`. The *check* is `T150c`, which runs the pattern through the loader's own matcher; `T150l` is how it is exercised end to end |
 | Migration runs before the process | `T150d` | **Mutation** — point `DATABASE_URL` at an unreachable database; the stack must fail at migration and the API must **not** start (`T150m`, quickstart Scenario 1) |
 | Every `package.json` script entry resolves | `T150b` | **Fail-first ordering, not a mutation.** `T150b` is written before `T150f` and **must go red on the unfixed `dev` script**, which is the same guarantee reached by the same standard (`T200c`) — the check is observed failing against the real fault rather than an injected one. It is arguably the stronger evidence of the four |
 | Every documented container command is runnable | `T150s` | **Two real faults and one self-inflicted, all observed.** Added by convergence `C-1` after two commands in `quickstart.md` were found not to run. It went red on `C2`, **passed over `C1` — the fault it was written for** — because its filter required a line to start with `docker ` while the quickstart writes `SEED_USER_EMAIL=… \` first; corrected, red on both, then green. `C-2` then extended it to `specs/_shared/quickstart.md`, and **the mutation showed that adding the file changed nothing** until the `docker compose up` assertion was added with it — `DEF-014-001` reintroduced there stayed green. Now red, naming that file |
+| The build context excludes what must never be in an image | `T150i` | **Mutation** — remove `**/node_modules` from `.dockerignore`; the check must go red naming the pattern (`T153e`). Until convergence `C-4` this was **the one assertion in the Epic taken on trust**: it was written after the exclusions were already present, so it went green on its first run and stayed green, and the only thing that ever proved the gap real was a build failure |
+| The release gate runs every quickstart scenario | `T153c` | **Mutation** — add a `### V16` heading to `specs/_shared/quickstart.md`; the check must go red naming `V16`. Found `V11a` unrun at the gate **on its first run**, a gap two Epics old: a lettered scenario is not inside a numeric `V1–V12` range |
+| Gate V lists every check that exists | `T153d` | **Its own first run.** Written in `C-4` and immediately red on `T150i`, `T153c` and itself — and its Definition-of-done assertion was red on a count that had been wrong since `C-2`. **This table is now derived**, which is why it is the last row that will need adding by hand |
 
 > **Four became five (`T150y`, convergence `G3`).** This table said *"four checks, four pieces of
 > fail-first evidence"* while `C-1` had added a fifth. **Gate V is the gate this scope is meant to be
@@ -255,9 +258,10 @@ would be the artifact-pretending-to-be-work this plan already refuses once above
 - [ ] Every task complete (Constitution V, as amended by v1.2.0) — counted in [tasks.md](./tasks.md), not here
 - [X] **G-14.1 closed** — `T452` gave `T150` its executable conformance check
 - [ ] **F-11.3**: the stack starts from a clean checkout with no host toolchain; a deep link
-      survives a refresh (`R-036-3` discharged); the three conformance checks pass **and each has
-      been seen to fail**; `@nestjs/serve-static` is registered as `D-30`; the reference local
-      stack (`EPIC-036` `T442l`) still runs and `dev` is fixed
+      survives a refresh (`R-036-3` discharged); **every check in the Gate V table above passes
+      and each has been seen to fail** — the table is the inventory, counted nowhere else
+      (`T153d`); `@nestjs/serve-static` is registered as `D-30`; the reference local stack
+      (`EPIC-036` `T442l`) still runs and `dev` is fixed
 - [ ] All fifteen `closure.md` records present and clean
 - [ ] Architecture and security reviews held and recorded
 - [ ] Promotion follows `local → dev → stage → prod` with no environment skipped
