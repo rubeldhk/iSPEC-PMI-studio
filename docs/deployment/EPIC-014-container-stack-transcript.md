@@ -276,3 +276,48 @@ Three passes, and the faults got quieter each time: commands that did not run (`
 expectations that did not match (`C-2`), and in both, **a fix that looked complete and was not until
 it was mutated.** The consistent lesson is in `T150z`'s note: *a check that verifies a list is
 complete verifies only that the list matches itself.*
+
+---
+
+## §6 Convergence C-3 — 2026-08-25
+
+### `T153c` found a gap two Epics old on its first run
+
+The check compares the `### V<n>` scenarios `specs/_shared/quickstart.md` defines against the
+`V`-numbers `T153` claims to run. First run:
+
+```
+× T153c · the release gate runs every quickstart scenario
+  → specs/_shared/quickstart.md defines V11a, which T153 does not run.
+```
+
+**`V11a` had never been run at the gate.** `EPIC-011` added *Observability across the sandbox
+boundary* between `V11` and `V12`, and **a lettered scenario is not inside a numeric range** — so
+`V1–V12` silently excluded it from the day it was written, for every release since. Nobody read it
+wrong; the sentence was simply not the kind of thing reading catches.
+
+`T153`'s scope now reads `V1–V12`, **`V11a`**, `V14` and **`V15`**.
+
+### `V15` — the gate now starts the stack it ships
+
+Before this, `F-11.3` delivered a containerised platform that `T153` never started: the shared
+quickstart mentioned containers **zero times**. The Exit Criterion was proved once, by §1 above, and
+never again. `V15` confirms rather than re-derives — three commands, pointing at
+`specs/014-devops-release/quickstart.md` for the detail.
+
+### Mutation
+
+```
+$ printf '\n### V16 — a scenario nobody wired to the gate\n' >> specs/_shared/quickstart.md
+× T153c → specs/_shared/quickstart.md defines V16, which T153 does not run.
+Tests  1 failed | 39 passed
+```
+
+Restored → `40 passed`.
+
+### What C-3 says
+
+`G-14.2` predicted this in writing — *"nothing enforces it"* — and was still headed **"✅ current"**
+while two scenarios sat outside the gate. **A warning that does not fire is a comment.** Three
+passes of this Epic have now ended at the same sentence, and it is worth stating once more plainly:
+*a number restated in two documents drifts unless something compares them.*

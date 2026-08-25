@@ -176,13 +176,37 @@ by an **executable conformance check**, not a unit test.
 > The lesson generalises to F-11.3 and is why Gate V above names **three** checks with **three**
 > mutations rather than trusting that a task will produce them.
 
-### G-14.2 · `T153` covers V1–V12 and V14 — ✅ current
+### G-14.2 · `T153`'s scenario coverage — ✅ **enforced**, no longer remembered
 
 Updated on 2026-08-05 when EPIC-016's `T143c` added quickstart **V14** for ADRs. Without that update
 the release gate would have passed without ever exercising `FR-034`.
 
 ⚠️ **This will need updating again** whenever any epic adds a quickstart scenario. Nothing enforces
 it — the numbering lives in `_shared/quickstart.md` and the gate that runs it lives here.
+
+> **The warning above came true, and it took two Epics to notice** (`T153b`, convergence `H2`).
+>
+> This section was headed *"covers V1–V12 and V14 — **✅ current**"*. It was not current, twice
+> over:
+>
+> - **`V11a` was never run at all.** `EPIC-011` added *Observability across the sandbox boundary*
+>   between `V11` and `V12`, and **a lettered scenario is not inside a numeric range** — so
+>   `V1–V12` silently excluded it, from the day it was written, for every release since.
+> - **`F-11.3` added seven scenarios** and allocated no `V`-number, so the containerised stack the
+>   gate is meant to ship was never in the gate's scope.
+>
+> Neither was noticed by reading. Both were found by `T153c` on its **first run** — the check this
+> section said did not exist, written because *"nothing enforces it"* is a prediction that had
+> already come true when it was made.
+>
+> **A warning that does not fire is a comment.** `T153c` now parses the `### V<n>` headings the
+> quickstart defines and the `V`-numbers `T153` claims, and fails on any scenario the gate does not
+> run — with an `NOT_AT_THE_GATE` map for deliberate exclusions, each carrying its reason (`V13` is
+> the nightly real-engine test, which would bill the programme per promotion). Mutation-verified:
+> adding a `V16` heading turns it red naming `V16`.
+>
+> This is `EPIC-036` `T442v`'s lesson in a different document: **a number restated in two places
+> drifts unless something compares them.**
 
 ## Build order
 
