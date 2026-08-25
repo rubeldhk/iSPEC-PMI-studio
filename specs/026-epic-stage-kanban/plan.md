@@ -80,6 +80,7 @@ Task figures are **estimates** — `/speckit-tasks` has not run.
 | F-26.6 Journey-step evidence | ~5 | `/speckit-clarify` records every session; `/speckit-analyze` writes `analysis.md` |
 | F-26.7 Governance integration | ~5 | Register the epic directory (fixes `G-05d`); layout map row; governance index row; `specs/README.md` de-duplication |
 | F-26.8 Conformance checks and CI wiring | ~8 | Checks `G-26-01` to `G-26-10` under `tests/governance/epic-stage/` |
+| **F-26.9 Task-identifier format** *(new, clarification 2026-08-25)* | see [tasks.md](./tasks.md) | `taskIdentifierPattern` as configuration; the widening to four-or-more digits; the letter's adjacency meaning retired; and an unrecognised identifier that **fails** rather than being skipped (`FR-ESK-025`) |
 
 **Estimated total: ~42 tasks**, before the mandatory paired conformance checks and Phase Z closure.
 
@@ -118,8 +119,23 @@ rewrite every row of the register.
 **Scale/Scope**: 26 Epic directories · 7 stages · 3 posture kinds · 12 DOR conditions · 2 Spec Kit
 skill files · 1 existing document to de-duplicate.
 
-**NEEDS CLARIFICATION**: none. Five questions were answered on 2026-08-09; zero markers remain in
-the spec.
+### F-26.9 — what the task-identifier format adds *(clarification 2026-08-25)*
+
+| | Decision | Where |
+|---|---|---|
+| Home | one `taskIdentifierPattern` entry in `governance/epic-stage.config.json`, read by three checks; **`epicDirectoryPattern` is already held there**, so this is the established shape, not a new one | `R-026-8` |
+| Shape | **`^T\d{3,}[a-z]?$`** — four-or-more digits, no upper bound. A cap is a second exhaustion date, and the corpus consumed 999 in about a year | `R-026-8` |
+| The letter | keeps its **shape**, loses its **meaning**. Dropping `[a-z]?` would invalidate every existing sub-lettered id at once — 48 in `EPIC-029` alone | `R-026-9` |
+| Unrecognised ids | a **second, broader recogniser** `^T\d+[a-z]*$` runs beside the pattern; a token matching broad-but-not-narrow **fails**. A single narrow pattern cannot report what it does not match | `R-026-10` |
+| Another Epic's record | `specs/029-design-system/tasks.md` is **annotated, never rewritten** | `R-026-9` |
+
+**The count that motivated it**: `T\d{3}[a-z]?` appears **literally six times across three files** —
+`dor.ts` (4), `task-ids.spec.ts` (1), `task-paths.spec.ts` (1). Widening by hand means editing six
+sites correctly with nothing to notice a miss, and a missed site does not fail — it silently stops
+recognising identifiers.
+
+**NEEDS CLARIFICATION**: none. Five questions were answered on 2026-08-09 and four on 2026-08-25;
+zero markers remain in the spec.
 
 ## Constitution Check
 
@@ -149,6 +165,30 @@ design — twelve DOR conditions and seven stage rules became executable predica
 and the derivation logic is ordinary code with ordinary unit tests. Gate II is unchanged: the
 requirements remain constitution-derived with a recorded back-fill owner. Gate VIII is unchanged and
 remains the honest weak point of this session rather than of the design.
+
+### Re-evaluated for F-26.9 *(2026-08-25, clarification)*
+
+The table above was written before `FR-ESK-025` existed. The gates it touches are re-run rather than
+inherited:
+
+| # | Gate | Status for F-26.9 |
+|---|------|-------------------|
+| I | Code produced only via Spec Kit commands | PASS — clarified 2026-08-25, designed here, tasks to follow |
+| II | Requirements trace to cited SRS documents | PASS — unchanged. This Epic is process, not product; `FR-ESK-025` derives from Constitution III and V the way every other `FR-ESK-*` does, not from an SRS requirement |
+| III | Epic → Feature → Task decomposition | PASS — `F-26.9` is a function; tasks come from `/speckit-tasks`. **Note the recursion**: this function is *about* how tasks are identified, and the tasks implementing it must themselves carry valid identifiers |
+| IV | `/speckit-converge` scheduled as the exit gate | PASS — unchanged |
+| V | Every implementation task carries a unit test, or an executable conformance check | ⚠️ **The gate that binds hardest here, and it binds twice.** `governance/epic-stage.config.json` is a **non-code output**, so the pattern needs a check that can fail. And the *unrecognised-identifier* rule is a claim about **absence** — that nothing is silently skipped — which is only observable by breaking it. `V26-9` therefore carries **two** mutations, not one |
+| VI | `defects/` exists | PASS |
+| VII | Promotion follows local → dev → stage → prod | **Not touched.** This is repository process, not product surface; nothing here promotes |
+| VIII | Session labelled with the working Epic | ⚠️ Unchanged, and still the qualified gate recorded in Complexity Tracking |
+| IX | Run closes with a Work Completed + Recommended Next Task report | PASS |
+| — | PP-002 not weakened | **PASS, and improved.** `FR-ESK-025` *removes* six hand-copied regexes and replaces them with one definition. This function reduces duplication rather than adding any |
+
+**One risk this design creates and does not resolve**: `F-26.9` changes the rule that governs
+**every other Epic's** task identifiers. Widening is additive — no existing identifier stops being
+valid — but the *unrecognised-fails* rule is not: any malformed identifier anywhere in the corpus
+becomes a build failure the first time the check runs. That is the intended behaviour and it may
+surface work belonging to other Epics. Recorded in Risks rather than discovered at implementation.
 
 ## Build order
 
@@ -216,9 +256,19 @@ no counts that shift for unrelated reasons. **R-026-3** covers the format.
 | **D-13 rewrites every row** | low | The register derives from directories on disk, so a re-cut regenerates rather than breaks. **R-026-6** |
 | **DOR too strict to satisfy on day one** | low | Expected: several Epics will fail `DOR-09` until re-analysed. Honest, and the waiver path exists for the genuinely stuck |
 
+**Added 2026-08-25 (F-26.9).** **The unrecognised-identifier rule is retroactive across the whole
+corpus.** Widening to `^T\d{3,}[a-z]?$` is additive — no existing identifier stops being valid — but
+*unrecognised fails* is not: the first run of the widened check turns **any** malformed identifier,
+in **any** Epic, into a build failure. That is the intended behaviour, and it may surface work
+belonging to Epics that are closed. It is recorded here rather than discovered during
+implementation, and `V26-9`'s first mutation is what will reveal the true count.
+
 ## Phase 0 outputs
 
-- [research.md](./research.md) — 7 decisions, `R-026-1` to `R-026-7`
+- [research.md](./research.md) — **10** decisions, `R-026-1` to `R-026-10`. `R-026-8`–`R-026-10`
+  were added on 2026-08-25 for `FR-ESK-025`, and each records what was **measured** rather than
+  assumed: the six inline pattern sites, the 182 unused identifiers inside `T436`–`T442`, and the
+  exact sentence in `specs/029-design-system/tasks.md:24` that the retirement supersedes
 
 **Phase 0 changed the spec.** Two findings fed back rather than being noted and ignored:
 
@@ -237,7 +287,12 @@ no counts that shift for unrelated reasons. **R-026-3** covers the format.
   so it is diff-stable and machine-comparable
 - [contracts/declarations-format.md](./contracts/declarations-format.md) — the declared posture and
   waiver file, the only hand-authored input to the register
-- [quickstart.md](./quickstart.md) — 8 validation scenarios, `V26-1` to `V26-8`
+- [contracts/task-identifier-format.md](./contracts/task-identifier-format.md) — what an identifier
+  may look like, the two-pattern structure that makes an unrecognised one fail, and what the
+  format deliberately does **not** decide
+- [quickstart.md](./quickstart.md) — **9** validation scenarios, `V26-1` to `V26-9`. `V26-9`
+  carries two mutation checks, because the guarantee it protects is *absence* of a silent skip and
+  absence is only observable by breaking it
 
 ## Definition of done
 
@@ -251,6 +306,10 @@ no counts that shift for unrelated reasons. **R-026-3** covers the format.
 - [ ] Zero `specs/README.md` content restates stage or posture (`SC-ESK-008`, PP-002)
 - [ ] Every journey step leaves evidence that it ran (`SC-ESK-012`)
 - [ ] Zero unowned, unexpiring, or multi-condition waivers (`SC-ESK-014`)
+- [ ] **`FR-ESK-025`**: the pattern is configuration read by all three checks with **zero inline
+      copies**; `T1000` is accepted; a malformed id **fails as unrecognised** rather than being
+      skipped; both `V26-9` mutations observed failing; `specs/029-design-system/tasks.md` is
+      annotated and not rewritten
 - [ ] `/speckit-converge` reports no unbuilt work
 - [ ] `defects/` has no open records
 

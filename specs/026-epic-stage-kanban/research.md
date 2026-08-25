@@ -256,3 +256,133 @@ knows, declare only what it cannot.*
 - *A fourth posture kind* — rejected as above; it would overload a vocabulary just fixed at three.
 - *Let them read as stalled and explain it in the register's preamble* — rejected. A permanent
   footnote explaining why two rows are wrong is how a register loses its readers.
+
+---
+
+## R-026-8 · Where does the task-identifier pattern live, and what shape does it take?
+
+*Added 2026-08-25 by the clarification session, for `FR-ESK-025`.*
+
+**Decision**: one entry — `taskIdentifierPattern` — in `governance/epic-stage.config.json`, holding
+**`^T\d{3,}[a-z]?$`**. The three check files import it; none writes a pattern of its own.
+
+**Rationale**: the config file already holds `epicDirectoryPattern` (`^\d{3}-`), so a pattern as
+configuration is the established shape here, not a new idea. Its own `_comment` states the reason in
+general terms — *"a stage sequence hard-coded in a check is a process rule nobody can find"* — and a
+task-identifier rule hard-coded in three checks is the same fault with a different noun.
+
+**The count matters.** `T\d{3}[a-z]?` appears **literally six times across three files**:
+
+| File | Occurrences |
+|---|---|
+| `tests/governance/epic-stage/dor.ts` | 4 |
+| `tests/governance/epic-stage/task-ids.spec.ts` | 1 |
+| `tests/governance/epic-stage/task-paths.spec.ts` | 1 |
+
+Widening by hand means editing six sites correctly, with **nothing that notices a miss** — and a
+missed site does not fail, it silently stops recognising ids. That is the same class of fault
+`EPIC-014` met six times in one Epic, and the reason `FR-ESK-015` now names this pattern.
+
+**`{3,}` rather than `{3,4}`**: an upper bound is a second exhaustion date. `T1000`–`T9999` buys
+9,000 identifiers, and the corpus consumed 999 in roughly a year — so a four-digit cap is a decision
+this repository would have to take again. An open bound costs nothing and never needs revisiting.
+
+**The letter stays in the shape, and loses its meaning** — see `R-026-9`.
+
+**Alternatives considered**:
+
+- *Extend `governance.config.json` instead* — rejected for the reason already recorded in Complexity
+  Tracking: different Epics own the two files, and `EPIC-018` owns that one.
+- *Derive the pattern from the corpus* (accept whatever ids exist) — rejected outright. A checker
+  that learns its rule from the data it checks cannot fail; it is a description wearing a gate's
+  clothes.
+- *Keep it inline and widen six sites* — rejected. It is the option that produced the finding.
+
+**Docs consulted**: none needed. `node:fs` and Vitest 2.1 are already present (see Technical
+Context); this decision introduces no external dependency and no external API.
+
+---
+
+## R-026-9 · How is the letter suffix retired without editing another Epic's task list?
+
+*Added 2026-08-25 by the clarification session, for `FR-ESK-025`.*
+
+**Decision**: the suffix keeps its **shape** and loses its **meaning**. `taskIdentifierPattern`
+admits `[a-z]?`, and the authoritative statement of what a suffix means moves into this Epic's
+configuration — `_taskIdentifierNote` beside the pattern — saying that a letter carries **no
+adjacency claim**. `specs/029-design-system/tasks.md` is **annotated, not rewritten**.
+
+**Rationale**: the convention is currently stated inside another Epic's task list, at
+`specs/029-design-system/tasks.md:24`:
+
+> *"the `a`-suffix convention keeps a later addition adjacent to what it pairs with — the
+> `T549a`/`T576a` precedent"*
+
+Two facts make it retirable rather than merely inconvenient:
+
+1. **It has already stopped being true.** `EPIC-014` allocated `T150a`–`T150z` and `T153a`–`T153h`
+   across six convergence phases as **ordinary blocks**, adjacent to nothing. `EPIC-036` did the
+   same with `T442a`–`T442v`. The convention describes something that two Epics no longer do.
+2. **It is what made the prefix block feel exhausted.** `EPIC-036` `T441n` states the distinction
+   exactly: *"The identifier space is not exhausted… the block `T436`–`T442` alone held 182 unused
+   ones. **The prefix-block convention is.**"* The letters were always available; the meaning
+   attached to them is what made using them feel wrong.
+
+**Why annotate rather than rewrite.** `specs/029-design-system/tasks.md` is `EPIC-029`'s record of
+what it allocated and why, and rewriting another Epic's history to match a later decision is the
+failure this repository has now guarded against twice — `flat()` in `registry-documented.spec.ts`,
+and the quoted-history exemption in `EPIC-014`'s `T153h`. The sentence was true when written. A
+one-line annotation naming `FR-ESK-025` as the current authority preserves both.
+
+**Alternatives considered**:
+
+- *Drop `[a-z]?` from the pattern entirely* — rejected. It would invalidate **every existing
+  sub-lettered id** in the corpus at once, including 48 in `EPIC-029` itself and 34 in `EPIC-014`.
+- *Rewrite the `EPIC-029` sentence* — rejected as above.
+- *Leave the meaning in place and rely on four digits* — rejected: this is the half-fix `T995y` and
+  `T441n` each declined to choose between, and it leaves a written convention contradicted by what
+  two Epics actually do.
+
+**Docs consulted**: none needed — internal convention, no external API.
+
+---
+
+## R-026-10 · How can a check fail on an identifier it does not recognise?
+
+*Added 2026-08-25 by the clarification session, for `FR-ESK-025`.*
+
+**Decision**: a **second, deliberately broader recogniser** — `^T\d+[a-z]*$` — runs beside the
+narrow `taskIdentifierPattern`. A token matching the broad shape but **not** the narrow one is
+reported as an **unrecognised identifier and fails the build**.
+
+**Rationale**: this is the only structure that can catch the hazard, and the hazard is precise.
+`EPIC-036` `T441n`:
+
+> *"a four-digit id is currently **invisible** to all three [checks] — `T1000` matches none of them
+> — so until the widening lands, a four-digit id is silently unchecked, **which is worse than a
+> collision**."*
+
+A single narrow pattern cannot report what it does not match, because **not matching is how it says
+"this is not a task id"**. Uniqueness, pairing and path checks all pass an unrecognised id by never
+seeing it. Two patterns separate the two questions a checker is actually asking:
+
+| Question | Pattern | On failure |
+|---|---|---|
+| *Is this token meant to be a task identifier?* | broad — `^T\d+[a-z]*$` | not a task id; ignore |
+| *Is it a **valid** one?* | narrow — `taskIdentifierPattern` | **unrecognised — fail** |
+
+**The broad pattern must stay broader than the narrow one**, and that relationship is itself
+asserted: every id the narrow pattern admits must also match the broad one. A broad pattern that
+drifted narrower would restore the silent-skip hazard while every other assertion stayed green.
+
+**Alternatives considered**:
+
+- *Rely on ordering — widen before any four-digit id is used* — rejected, and this was option B in
+  the clarification. It depends on nobody trying it first, and **two Epics have already needed
+  identifiers with none free**; `T441n` calls it *"a blocker on `EPIC-037`, not a warning"*.
+- *Accept the gap and record it as a risk* — rejected: an owned risk that costs one assertion to
+  remove is not a risk, it is a decision not to spend the assertion.
+- *Make the narrow pattern permissive enough that nothing is unrecognised* — rejected. That is not a
+  check; it is the absence of one.
+
+**Docs consulted**: none needed — no external API.

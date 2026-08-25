@@ -217,3 +217,39 @@ condition away from ready. It is three.
   `V26-7` above.
 - **No real waiver exists.** `V26-7` was run against a constructed one; `governance/epic-declarations.json`
   declares an empty `waivers` array.
+
+## V26-9 · A task identifier is recognised, or it fails — never skipped
+
+**Proves**: `FR-ESK-025`, `FR-ESK-015` · added 2026-08-25 by the clarification session
+
+```bash
+# 1. the pattern is configuration, in one place
+python -c "import json;d=json.load(open('governance/epic-stage.config.json'));print(d['taskIdentifierPattern'])"
+
+# 2. no check writes its own copy of it
+grep -rn 'T..d{3' tests/governance/epic-stage/*.ts        # expect: no matches
+
+# 3. the whole corpus is recognised today
+pnpm vitest run --project governance tests/governance/epic-stage/task-ids.spec.ts
+```
+
+**Expect**: `^T\d{3,}[a-z]?$` printed once; **zero** inline patterns across the three check files;
+the suite green against every existing identifier, including `T150a`–`T153h` and `T442a`–`T442v`.
+
+> **Mutation check, required at exit — this is the scenario that matters.** Add a task line with a
+> **four-digit** identifier (`T1000`) to any `tasks.md`, then a malformed one (`T99`).
+>
+> - `T1000` must be **accepted** — it is the widening, and before `FR-ESK-025` it matched none of
+>   the three checks.
+> - `T99` must **fail as unrecognised**, naming the token and the file.
+>
+> **Neither may be silently skipped.** `T441n` states the hazard exactly: an unrecognised identifier
+> is *"silently unchecked, which is worse than a collision"* — uniqueness, pairing and path checks
+> all pass it by never seeing it. A green run against `T99` means the recogniser is broken, not that
+> the corpus is clean.
+
+> **Second mutation.** Narrow the recogniser to match the pattern exactly. `T99` must go back to
+> being invisible — and if the suite stays green, the two-pattern structure of
+> [contracts/task-identifier-format.md](./contracts/task-identifier-format.md) §3 has collapsed into
+> one and the guarantee is gone.
+
