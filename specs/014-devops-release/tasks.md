@@ -5,7 +5,7 @@ description: "Task list for EPIC-014 — DevOps & Release"
 
 # Tasks: DevOps & Release
 
-**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 51
+**Epic**: `EPIC-014` | **Module**: M-11 | **Tasks**: 52
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -214,3 +214,18 @@ runs; four mutations and one fail-first ordering are recorded.
 
 - [X] T153f Derive `T153d`'s file set and recognise checks by the id they name, in `tests/governance/container-secrets.spec.ts`, per `plan: Constitution Check Gate V` (partial) — **`T153d` has two blind spots and a real check sits in both.** `T150p` — the README two-stack assertions from `C-1` — lives in `tests/governance/readme-conformance.spec.ts:76`, which is **not in `CHECK_FILES`**; and even were it added, `T150p` owns **no `describe` block** (it is `it('… (T150p)')` inside `describe('T452 · …')`), so the parser would still not see it. Gate V lists eight checks; **`T150p` is a ninth**. Two fixes, and neither is "add the file to the list": **(a)** glob `tests/governance/*.spec.ts` and `backend/tests/unit/core/*.spec.ts` instead of naming four files — `CHECK_FILES` is a hand-maintained list, which is the exact thing `T153d` was written to abolish; **(b)** recognise a check by **any `T15\d[a-z]` id a `describe` or `it` title names**, not by which block it happens to sit in, since where an assertion is nested is a formatting choice and the id is the claim. Keep the anti-vacuity guard, and expect the glob to surface ids belonging to other Epics — scope by the id range this Epic owns, not by the file (conformance: T153d, extended)
 - [X] T153g [P] Mutate `T150p` and record it in `docs/deployment/EPIC-014-container-stack-transcript.md` §Mutations, per `plan: Gate V standard` (partial) — **it has never been seen to fail**, the same class `T153e` closed for `T150i` one pass ago, **missed because it is not in the inventory** — which is `T153f`'s point stated as a consequence. It was added in `C-1` alongside the README it checks, so it went green on its first run and has been green since; the transcript records four mutations and none touches it. Remove the containerised section from `README.md`, observe `T150p` go red naming the missing stack, restore, and record both states. After this, **every check this Epic owns will have been seen to fail** — a claim that was made once already at `C-4` and was wrong, because the inventory it was measured against was incomplete
+
+## Phase C-6 · Convergence — 2026-08-25
+
+**Sixth convergence pass over `F-11.3`.** **One finding.** Nine checks exist, all pass, all have
+been seen to fail; every documented command runs; the release gate runs every scenario the quickstart
+defines. What remains is a sentence.
+
+Two things were checked and found **clean**, recorded here so the next pass need not re-derive them:
+**no `T15\d[a-z]` check exists outside `T153d`'s two globbed directories** — the theoretical blind
+spot has no instance — and the count quotes at `plan.md:135–136` and `:151` are **correctly marked
+as quoted history**, not live claims.
+
+**Identifier: `T153h`.** `T864` remains untouched after six convergence phases.
+
+- [ ] T153h Delete the two live check-counts from `specs/014-devops-release/plan.md` and extend `T153d`'s no-restated-count assertion past the Definition of done, per `plan: Constitution Check Gate V` (contradicts) — **the gate's own summary line contradicts the gate's own table, two lines above it.** Line 126, Gate V's status cell, reads *"**Four checks, four pieces of fail-first evidence** — see the table below"*; the table below lists **nine**. Line 220, the Build order, reads *"the three checks"* — wrong since the plan was written and never touched since. **This is the fourth correction of this exact fault in this exact document**: the table (`T150y`, `C-2`), the Definition of done (`T153d`, `C-4`), and now the row introducing the table and the diagram summarising it. Correcting two more strings would be the fourth correction and would invite a fifth. **`T153d`'s `it('the Definition of done does not restate the count')` reads only the DoD bullet** — so the derivation covers the table's *membership* while the prose that introduces it drifts freely. Widen it to the whole `#### Gate V in full` section **and** the Build order block, and delete the numbers rather than updating them: the table is the inventory, and prose beside an inventory should point at it, never count it. **Leave lines 135–136 and 151 alone** — those quote what the document *used to* say, inside dated correction notes, and rewriting quoted history to stay green is the failure `flat()` guards against in `EPIC-036`'s `registry-documented.spec.ts` (conformance: T153d, extended)
