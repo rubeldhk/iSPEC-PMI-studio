@@ -4,8 +4,10 @@
  * `FR-GEL-072`. This asserts the **attached trigger**, not the reusable
  * function. `reject_mutation()` existed long before this Epic and protects
  * fourteen other tables; it granted `adjudication_records` nothing until
- * `20260825000000_epic030_adjudication` bound a trigger to it — bringing the
- * repository total to fifteen.
+ * `20260825000000_epic030_adjudication` bound a trigger to it, which was the
+ * **fifteenth**. The C2A closure migration bound a sixteenth, to
+ * `application_intents`. Counts and their evidence: `analysis.md`, C2A closure
+ * session.
  *
  * Follows `T453`'s pattern (`audit-immutability.spec.ts`): a **fresh**
  * PostgreSQL with the migration SQL applied, so what is under test is the

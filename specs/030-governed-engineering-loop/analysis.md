@@ -217,3 +217,44 @@ proposal in it can reach `applied` would be making the claim `DOR-09` exists to 
 
 `X7` and `X8` are gaps in **other Epics**, surfaced by wiring against them for the first time —
 which is the same way `EPIC-037` surfaced the absence of adjudication itself.
+
+## Evidence — the immutability trigger count
+
+Recorded because the figure was **misreported as 17** during Step C2A and the wrong number reached
+a code comment and EPIC-037's `analysis.md`. The count is the number of `CREATE TRIGGER` statements
+bound to `reject_mutation()`; the function alone protects nothing.
+
+```bash
+for d in $(ls backend/prisma/migrations | grep -E '^[0-9]' | sort); do
+  n=$(grep -c "EXECUTE FUNCTION reject_mutation()" "backend/prisma/migrations/$d/migration.sql")
+  [ "$n" != "0" ] && printf "%-52s %s\n" "$d" "$n"
+done
+```
+
+| Migration | Triggers |
+|---|---|
+| `20260814000000_init` | 1 |
+| `20260820000200_epic007_requirements` | 1 |
+| `20260820130000_epic009_lifecycle_findings_adr_links` | 2 |
+| `20260820180000_epic019_steering` | 1 |
+| `20260821000000_epic023_runs_review` | 3 |
+| `20260821010000_epic024_access_control` | 2 |
+| `20260821020000_epic025_storage_publishing` | 2 |
+| `20260823000000_epic030_governed_engineering_loop` | 1 |
+| `20260823010000_epic033_requirement_room` | 1 |
+| **Subtotal — before C2A** | **14** |
+| `20260825000000_epic030_adjudication` (`adjudication_records`) | 1 → **15** |
+| `20260825120000_epic030_adjudication_refusal` (`application_intents`) | 1 → **16** |
+
+Confirmed independently against a live database built from those migrations, which is the check
+that would catch a migration file that declares a trigger the database never received:
+
+```bash
+docker exec pmi-postgres psql -U pmi -d pmi_studio -tAc "SELECT count(*) FROM pg_trigger t JOIN pg_proc p ON t.tgfoid = p.oid WHERE p.proname = 'reject_mutation' AND NOT t.tgisinternal;"
+```
+
+Observed: **16**. Authoritative: **14 before C2A · 15 after C2A · 16 after C2A closure.**
+
+**`EPIC-037` still carries the stale figure.** Its `analysis.md` says the function is *"bound by 17
+triggers elsewhere"*. That file is closed and owner-approved, and was deliberately **not** edited
+during this step — the correction is listed as a required targeted change before Band A resumes.
