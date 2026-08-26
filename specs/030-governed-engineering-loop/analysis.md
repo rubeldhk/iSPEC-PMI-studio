@@ -142,6 +142,7 @@ requirements."*
 | X2 | Constitution Alignment | MEDIUM | Constitution V; `tasks.md` T1082–T1095 | **Failing-first was not evidenced per test/implementation pair.** The paired tasks were authored in the required order, but no run was captured showing each test red before its implementation existed. Constitution V requires the failure to be *observed*, not merely intended | Capture failing-first evidence for the eight pairs, or record the omission as a defect under Principle VI. Do not backfill a claim that was not observed |
 | X3 | Underspecification | LOW | `packages/loop-contract/src/adjudication.ts` `SpecificationStatus` | `SpecificationStatus = string` is a bare alias, so the type system cannot stop a `LoopStage` value being passed. `FR-GEL-064` is enforced by the `T1082` contract test (no mapping function exists), not structurally | Acceptable while EPIC-009 exports no branded status type. Revisit if one appears |
 | X4 | Coverage Gap | LOW | `spec.md` FR-GEL-063 | `FR-GEL-063` says "accept as governed intake" and **no transport surface exists** — no route, no MCP binding | **Accepted, not a defect.** The C2A boundary authorised *"only the minimum backend/contract/database work"*; EPIC-037 consumes the service in-process. Recorded so the absence is not later mistaken for an omission |
+| X6 | Coverage Gap | HIGH | `backend/src/modules/loop/` (no adapters); `loop.module.ts` (no registration) | **All seven ports have zero production implementations**, and `ProposalAdjudicatorService` is not registered in the Nest DI graph — it is constructed only by tests. The decision logic, the contract, the table and its trigger are real and verified; nothing in a running application reaches them, and nothing writes to `adjudication_records` outside a test | EPIC-037 Band A cannot supply these itself without re-implementing EPIC-030's integrations with EPIC-009, EPIC-021 and EPIC-024 — which *"consume, never re-implement"* forbids. Propose adapter + DI tasks (`T1096`–`T1102`) for owner authorisation **before** Band A resumes. Not silently expanded into during C2A, per the implementation boundary |
 | X5 ✅ | Coverage Gap | MEDIUM | `tasks.md` T1092; `backend/tests/integration/loop/adjudication-evidence.spec.ts` | `T1092` promised *"redaction does not break the chain"* and the test file asserted no such thing, while the task was marked complete | **Fixed in this session** — the test now appends a redacting row and asserts the proposal → verdict → transition linkage survives while the prose does not, and that earlier evidence is not removed |
 
 ## Coverage summary
@@ -167,11 +168,11 @@ requirements."*
 
 - Requirements analysed: **11** · Success criteria added: **6**
 - Tasks in scope: **14** (`T1082`–`T1095`)
-- Findings: **5** — 0 CRITICAL · 1 HIGH · 2 MEDIUM · 2 LOW
+- Findings: **6** — 0 CRITICAL · **2 HIGH** · 2 MEDIUM · 2 LOW
 - One MEDIUM finding (X5) was remediated during the session; the rest are open.
 
 ## Notes
 
-`X1` is the only finding that blocks EPIC-037 Band A. It is a **contract** change, not an
+`X1` and `X6` are the two findings that block EPIC-037 Band A. It is a **contract** change, not an
 implementation defect, and it is cheaper to make now than after connectors bind to the verdict
 shape. `X2` is a process-evidence gap and is reported rather than papered over.
