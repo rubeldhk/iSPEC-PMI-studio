@@ -347,3 +347,37 @@ open task of this Epic. `T988` and `T992` stay untouched.
 - [X] T1093 Additive migration creating `adjudication_records` with the existing `reject_mutation()` trigger **attached** — the function is reused, the trigger is new and grants nothing until this statement runs (integration test: T1092)
 - [X] T1094 [P] Write the failing architecture test in `backend/tests/architecture/adjudication-boundary.spec.ts` per `FR-GEL-073` — no consumer of `@pmi/loop-contract`'s adjudication types imports `backend/src/modules/loop/**`, and **no connector path invokes `EPIC-009`'s lifecycle service directly** to bypass adjudication
 - [X] T1095 Reuse `EPIC-024` authorisation at intake — tenant and workspace isolation, actor authority checked at **adjudication time** (unit test: T1086). **Create no independent authorisation model** (`FR-GEL-066`)
+
+---
+
+## Phase C2A-Closure — resolving `X1` and `X6` (authorised 2026-08-25)
+
+**Why this phase exists.** The C2A analyze session recorded two HIGH findings, and the project
+owner ruled that neither needs a product-scope decision: `X1` is a typed-contract correction
+required for deterministic event mapping, and `X6` is completion of the already-authorised minimum
+production capability — *"a decision engine constructed only by tests is not an exposed
+capability."*
+
+Every task below is paired with the test that proves it. `T1102` is the one that could not have
+been written before: unit tests could not catch `X6` because they **were** the manual construction.
+
+- [X] T1096 [P] Correct the refusal contract in `packages/loop-contract/src/adjudication.ts` — `refusalStage` (`validation` \| `approval` \| `transition`) selects the `EPIC-037` event; `refusalReasonCode` (eight codes) says why and never selects an event; `REFUSAL_STAGE_OF` derives one from the other so they cannot disagree *(tests: `packages/loop-contract/tests/refusal-mapping.spec.ts` — totality, determinism, distinctness; `backend/tests/integration/loop/adjudication-persistence.spec.ts` — the same vocabulary enforced in PostgreSQL)*
+- [X] T1097 Make `AdjudicationVerdict` a **closed discriminated union** in which invalid combinations cannot be constructed — `applied` requires `appliedTransitionId`, `refused` requires stage and code, `approval_required` requires a role, `inconsistent` requires a structured mismatch, `reconciliation_required` requires a structured cause, and every non-applied variant carries `appliedTransitionId?: never`; serialise both ways in `backend/src/modules/loop/adjudication-evidence.ts`; enforce the same invariants as CHECK constraints in `20260825120000_epic030_adjudication_refusal` *(tests: `adjudication-persistence.spec.ts` — all six round-trip, nine constraint refusals, and one positive control proving the constraints are not blanket refusals)*
+- [X] T1098 Implement the `EPIC-009` validity adapter `EpicNineLifecycleValidation` in `backend/src/modules/loop/adjudication.adapters.ts`, taking `permittedFrom` as an injected function so no transition table is duplicated *(tests: `backend/tests/unit/loop/adjudication-adapters.spec.ts` — swapping the injected function changes the answer, and an empty table permits nothing)*
+- [X] T1099 Implement the `EPIC-009` application adapter `EpicNineTransitionAdapter`, reporting a **null transition identity** rather than passing off the specification id, and resolving that to `application_transition_unidentified` *(tests: `adjudication-adapters.spec.ts` — the specification id is never forwarded; the outcome is reconciliation, never applied)*
+- [X] T1100 Implement `UnconfiguredGateOutcomes` for `EPIC-021`, reporting `unavailable` — distinct from `passed: false` — because EPIC-021 supplies no gate-outcome service *(tests: `adjudication-adapters.spec.ts` — refused/`validation`/`gate_outcomes_unavailable` end to end, and application is never reached)*
+- [X] T1101 Implement `AccessIntakeAuthorization` over `EPIC-024`'s `AccessEnforcementService`, plus `ConfiguredAuthorityPolicy` defaulting `autoApply` to **false** for any transition no rule names *(tests: `adjudication-adapters.spec.ts` — the exact artifact ref handed to EPIC-024, refusal propagates unsoftened, and an unconfigured transition auto-applies nothing)*
+- [X] T1102 Register every adapter and `ProposalAdjudicatorService` in the Nest graph (`loop.module.ts`), exporting **only** `PROPOSAL_ADJUDICATOR` *(test: `backend/tests/integration/loop/adjudication-composition.spec.ts` — boots the real `AppModule` with no overrides, resolves the adjudicator from DI, asserts all seven ports resolve to their real adapter classes, asserts the bypass-capable tokens are **not** exported, and observes EPIC-024 refusing an ungranted proposal and EPIC-009 being reached once a grant exists)*
+
+**Not closed by this phase, and reported rather than worked around:**
+
+- **`EPIC-021` supplies no gate-outcome service.** `backend/src/modules/reviews/` has no Nest module,
+  is imported by nothing, ships only `InMemoryGateOutcomeStore`, exposes no per-specification query,
+  and nothing writes `gate_outcomes`. The adapter therefore refuses. Until EPIC-021 ships one, **no
+  proposal can reach `applied` in production** — it is refused at the gate step.
+- **`EPIC-009` does not surface the transition it records.** `transition()` returns the
+  specification, `TRANSITION_RECORDER` is bound to an in-memory recorder, and there is no read
+  surface — so `appliedTransitionId` cannot be bound to an authoritative row.
+
+Both are dependency gaps in other Epics. Reproducing either Epic's policy inside EPIC-030 is what
+the authorisation forbids, so neither was filled here.

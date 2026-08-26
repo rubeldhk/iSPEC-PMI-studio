@@ -43,3 +43,43 @@ export const LOOP_STORE = Symbol('LOOP_STORE');
 
 /** Where instance configurations are read. */
 export const LOOP_CONFIG_SOURCE = Symbol('LOOP_CONFIG_SOURCE');
+
+// ---------------------------------------------------------------------------
+// Adjudication (C2A closure, `T1096`–`T1102`).
+//
+// These differ from the seams above in one respect: they are **bound**, not
+// merely declared. `X6` was that the adjudicator existed only where a test
+// constructed it, so leaving these unprovided would reproduce the finding.
+// Where an owning Epic supplies nothing, the bound adapter refuses — which is
+// the same discipline, expressed as a provider rather than as an absence.
+// ---------------------------------------------------------------------------
+
+/** `EPIC-009` — lifecycle validity, asked and never duplicated (`FR-GEL-065`). */
+export const ADJUDICATION_LIFECYCLE_VALIDATION = Symbol('ADJUDICATION_LIFECYCLE_VALIDATION');
+
+/** `EPIC-009` — the only thing permitted to apply a transition (`FR-GEL-069`). */
+export const ADJUDICATION_LIFECYCLE_APPLICATION = Symbol('ADJUDICATION_LIFECYCLE_APPLICATION');
+
+/** `EPIC-021` — gate outcomes. Unavailable ⇒ refuse, never assume (`FR-GEL-066`). */
+export const ADJUDICATION_GATE_OUTCOMES = Symbol('ADJUDICATION_GATE_OUTCOMES');
+
+/** `EPIC-030` — transition authority and auto-apply policy, read as configuration. */
+export const ADJUDICATION_AUTHORITY_POLICY = Symbol('ADJUDICATION_AUTHORITY_POLICY');
+
+/** `EPIC-024` — authorisation at intake. No second model (`T1095`). */
+export const ADJUDICATION_INTAKE_AUTHORIZATION = Symbol('ADJUDICATION_INTAKE_AUTHORIZATION');
+
+/** `EPIC-030` — immutable adjudication evidence (`FR-GEL-072`). */
+export const ADJUDICATION_RECORDS = Symbol('ADJUDICATION_RECORDS');
+
+/** `EPIC-030` — durable application intent, written before EPIC-009 is asked. */
+export const ADJUDICATION_APPLICATION_INTENTS = Symbol('ADJUDICATION_APPLICATION_INTENTS');
+
+/**
+ * The **only** token `EPIC-037` consumes.
+ *
+ * Deliberately one: a consumer that could reach the ports could assemble its
+ * own adjudicator with its own gate provider, which is the bypass
+ * `FR-GEL-073` forbids.
+ */
+export const PROPOSAL_ADJUDICATOR = Symbol('PROPOSAL_ADJUDICATOR');

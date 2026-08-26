@@ -245,6 +245,49 @@ npm run test:arch
 **Expected**: the contract package imports no backend module, store or Prisma client, and only
 `backend/src/modules/specifications/` and the governed adapter reach `SpecificationLifecycleService`.
 
+## Scenario 17 — A refusal names its event, and never asks anyone to read prose
+
+*Added 2026-08-25 (C2A closure). `X1`, `SC-GEL-018`.*
+
+```bash
+npx vitest run --project loop-contract packages/loop-contract/tests/refusal-mapping.spec.ts
+```
+
+**Expected**: every reason code has a stage, every stage maps to exactly one of three **distinct**
+events, and the mapping is total. **Expected to fail the Epic** if any code is unmappable, if two
+stages share an event, or if `inconsistent`/`reconciliation_required` acquire a refusal code —
+which would let drift or an unobserved outcome be reported as a decision nobody made.
+
+## Scenario 18 — An impossible verdict cannot be written, by anything
+
+*`X1`, `SC-GEL-012`.*
+
+```bash
+npx vitest run --project backend-integration backend/tests/integration/loop/adjudication-persistence.spec.ts
+```
+
+All six verdicts round-trip through real PostgreSQL and come back identical. Then nine malformed
+inserts are attempted directly in SQL — `applied` with no transition id, a transition id on a
+verdict that is not `applied`, `refused` with no stage, a reason code outside the vocabulary, and
+so on. **Expected**: every one refused by a named CHECK constraint. A final positive control writes
+all six correctly formed, because a constraint that rejected everything would pass the other nine
+and look like airtight enforcement.
+
+## Scenario 19 — The adjudicator is reachable from the running application
+
+*`X6`. This is the scenario a unit test cannot stand in for: unit tests **were** the manual
+construction that hid the gap.*
+
+```bash
+npx vitest run --project backend-integration backend/tests/integration/loop/adjudication-composition.spec.ts
+```
+
+Boots the **real `AppModule`**, no overrides. **Expected**: `PROPOSAL_ADJUDICATOR` resolves from
+DI; all seven ports resolve to their real adapter classes; the bypass-capable tokens are **not**
+exported; an ungranted proposal is refused *by EPIC-024* and leaves no evidence; and once a grant
+exists the same proposal reaches *EPIC-009* instead. **Expected to fail the Epic** if the
+adjudicator can only be built by hand.
+
 ## Full gate before declaring the Epic done
 
 ```bash

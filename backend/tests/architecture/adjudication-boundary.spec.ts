@@ -78,10 +78,25 @@ describe('T1094 · nothing bypasses adjudication to reach EPIC-009', () => {
     'backend/src/modules/loop/lifecycle-application.adapter.ts',
   ];
 
+  /**
+   * Composition may **name** the lifecycle service without being a bypass.
+   *
+   * `loop.module.ts` has to import the class to inject it into the governed
+   * adapter — that is wiring, not a call. So it is exempted from the reference
+   * rule and held to a stricter one instead: it may not invoke `transition()`.
+   * Adding it to `PERMITTED` would have exempted it from both, which is how an
+   * allowlist quietly stops guarding anything.
+   */
+  const COMPOSITION_ONLY = ['backend/src/modules/loop/loop.module.ts'];
+
   const CANDIDATES = [
     ...sourcesUnder(join(ROOT, 'packages')),
     ...sourcesUnder(join(ROOT, 'backend', 'src')),
-  ].filter((rel) => !PERMITTED.some((p) => rel.startsWith(p)));
+  ].filter(
+    (rel) =>
+      !PERMITTED.some((p) => rel.startsWith(p)) &&
+      !COMPOSITION_ONLY.some((p) => rel === p),
+  );
 
   it('finds sources to check, or this proves nothing', () => {
     expect(CANDIDATES.length, 'no candidate sources were walked').toBeGreaterThan(50);
@@ -101,6 +116,26 @@ describe('T1094 · nothing bypasses adjudication to reach EPIC-009', () => {
         `${offenders.join('\n  ')}\n` +
         'A transition that skips adjudication is the hole Principle XII closes.',
     ).toEqual([]);
+  });
+
+  it('composition may wire the lifecycle service, but may not call transition()', () => {
+    // The exemption above is narrow by construction: naming the class to inject
+    // it is allowed; invoking it from the module is the bypass this Epic exists
+    // to prevent, so it is asserted separately rather than assumed.
+    for (const rel of COMPOSITION_ONLY) {
+      const live = liveCode(readFileSync(join(ROOT, rel), 'utf8'));
+      expect(
+        /\.transition\s*\(/.test(live),
+        `${rel} calls transition() directly; composition may wire it, not invoke it`,
+      ).toBe(false);
+    }
+  });
+
+  it('the composition-only exemption names files that exist', () => {
+    // A path typo would silently exempt nothing and, worse, read as a rule.
+    for (const rel of COMPOSITION_ONLY) {
+      expect(existsSync(join(ROOT, rel)), `${rel} does not exist`).toBe(true);
+    }
   });
 
   it('the permitted adapter really does call it — or the rule above guards nothing', () => {

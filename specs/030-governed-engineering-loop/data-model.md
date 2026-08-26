@@ -228,6 +228,12 @@ until a trigger was attached. A reusable function is not protection.
 | `approverId`, `approverSnapshotId` | text? | present only where an approval was attempted |
 | `appliedTransitionId` | text? | present **only** for `applied` — the `EPIC-009` transition |
 | `correlationId`, `causationId` | text | causal chain |
+| `refusalStage` | text? | **required iff** `verdict = refused`; selects the EPIC-037 event |
+| `refusalReasonCode` | text? | **required iff** `verdict = refused`; says why, never selects |
+| `requiredApproverRole` | text? | **required iff** `verdict = approval_required` |
+| `observedStatus` | text? | **required iff** `verdict = inconsistent` |
+| `reconciliationCause` | text? | **required iff** `verdict = reconciliation_required` |
+| `reconciliationDetail` | text? | supplementary detail for the above |
 | `decidedAt` | timestamp | the decision time, which **may be source-supplied** |
 | `createdAt` | timestamp | **server-assigned** row creation |
 
@@ -238,7 +244,35 @@ system observed. Collapsing them would let a connector's clock rewrite the audit
 **A correction is a new row.** There is no update path. A superseding decision is written with a
 new idempotency key and both rows survive — the history is the pair, not the latest value.
 
-## 9. What this Epic deliberately does not model
+**Invalid combinations are unwritable, not merely discouraged.** Nine CHECK constraints in
+`20260825120000_epic030_adjudication_refusal` state each verdict's requirement as an *equivalence*,
+so every column above is required by exactly one verdict and forbidden on the other five. The
+closed union does the same in TypeScript. Both layers on purpose: the type stops this codebase, the
+constraint stops a migration, a console, or a service written later.
+
+## 9. `ApplicationIntent` — the record that an attempt was made
+
+*Added 2026-08-25 (C2A closure). Table: `application_intents`. Append-only.*
+
+Written **before** EPIC-009 is asked to apply a transition, so an outcome nobody observed still
+leaves a trace. `settle` **appends** a second row rather than updating the first — an unknown
+outcome must not be able to erase the evidence that the attempt happened.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text | primary key |
+| `workspaceId` | text | tenant scope (`BR-0001`); FK to `workspaces` |
+| `intentId` | text | groups the `opened` row with its `settled` partner |
+| `phase` | text | `opened` \| `settled` |
+| `specificationId`, `expectedStatus`, `requestedStatus`, `actorId` | text | what was attempted |
+| `outcome` | text? | **required iff** `phase = settled`; `confirmed` \| `refused` \| `unknown` |
+| `createdAt` | timestamp | server-assigned |
+
+**An `opened` row with no `settled` partner is the reconciliation queue.** That is the whole point
+of writing it first: it is the only durable evidence that a transition may have been applied when
+nobody saw the answer.
+
+## 10. What this Epic deliberately does not model
 
 | Not here | Owner |
 |---|---|

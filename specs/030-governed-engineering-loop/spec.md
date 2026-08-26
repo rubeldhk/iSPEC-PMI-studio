@@ -452,6 +452,9 @@ adjudication (`FR-GEL-063`–`FR-GEL-073`).*
 - **SC-GEL-017**: **100%** of adjudications leave immutable evidence; **zero** adjudication records
   can be updated or deleted once written, enforced by the **database** rather than by application
   code, and verified against a database built from the committed migration.
+- **SC-GEL-018**: Every refusal maps to **exactly one** `EPIC-037` event, selected from a typed
+  stage rather than from prose; **zero** refusals are unmappable, and **zero** require a consumer
+  to read the human-readable reason to choose *(added 2026-08-25, C2A closure `X1`)*.
 
 ## Assumptions
 

@@ -52,10 +52,17 @@ sustained per workspace.
 (`BR-0001`); no Room vocabulary may appear in the contract package (`FR-GEL-061`, asserted by an
 architecture test); the Decide seam refuses when unfilled (`FR-GEL-062`).
 
-**Scale/Scope**: **41 functional requirements across eight groups**, 17 success criteria, **4 new
-tables**, 5 HTTP routes, 6 ports. Three downstream Epics (`EPIC-033`–`035`) and two sibling substrate
+**Scale/Scope**: **41 functional requirements across eight groups**, 18 success criteria, **5 new
+tables**, 5 HTTP routes, 5 loop ports + **7 adjudication ports, all with production
+adapters** (C2A closure). Three downstream Epics (`EPIC-033`–`035`) and two sibling substrate
 Epics (`EPIC-031`, `EPIC-032`) consume this contract.
 
+> **Updated 2026-08-25 (C2A closure).** `X1` and `X6` closed: refusal became two orthogonal
+> typed concepts, the verdict became a closed discriminated union, and all seven adjudication
+> ports gained production adapters registered in the Nest graph. Added `SC-GEL-018`, a fifth
+> table (`application_intents`) and seven tasks (`T1096`–`T1102`). Two dependency gaps in other
+> Epics were found and **not** filled here — see `analysis.md` `X7`, `X8`.
+>
 > **Updated 2026-08-25 (Step C2A).** The eighth requirement group — specification
 > status-transition adjudication (`FR-GEL-063`–`FR-GEL-073`) — added 11 requirements, 6 success
 > criteria (`SC-GEL-012`–`SC-GEL-017`), a fourth table (`adjudication_records`) and a sixth port
@@ -153,14 +160,18 @@ backend/src/modules/loop/         # NEW — the engine
 ├── loop-config.loader.ts         # refuses a bad configuration at load (FR-GEL-007)
 ├── loop.tokens.ts                # port injection tokens
 ├── adjudicator.service.ts        # NEW C2A — the six verdicts (FR-GEL-065..071)
+├── adjudication-evidence.ts      # NEW — row <-> verdict, one mapping for both
+│                                 #   the Prisma adapter and every test double
+├── adjudication.adapters.ts      # NEW — the seven production adapters
 ├── separation-of-duties.ts       # NEW C2A — self-approval refusal (FR-GEL-067)
 └── lifecycle-application.adapter.ts  # NEW C2A — asks EPIC-009; durable intent,
                                   #   and `unknown` never becomes `applied` (FR-GEL-069)
 
 backend/prisma/
 ├── schema.prisma                 # + LoopInstanceConfiguration, LoopObject,
-│                                 #   LoopTransition, AdjudicationRecord
-└── migrations/                   # + 2 migrations; the C2A one ATTACHES a
+│                                 #   LoopTransition, AdjudicationRecord,
+│                                 #   ApplicationIntent
+└── migrations/                   # + 3 migrations; both C2A ones ATTACH a
                                   #   reject_mutation() trigger (FR-GEL-072)
 
 backend/tests/

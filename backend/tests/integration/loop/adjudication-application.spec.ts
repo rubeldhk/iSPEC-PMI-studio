@@ -19,8 +19,10 @@ class RecordingIntents implements ApplicationIntentStore {
     this.opened.push(input);
     return `intent-${this.opened.length}`;
   }
-  async settle(_intentId: string, outcome: string): Promise<void> {
+  readonly settledIn: string[] = [];
+  async settle(_intentId: string, workspaceId: string, outcome: string): Promise<void> {
     this.settled.push(outcome);
+    this.settledIn.push(workspaceId);
   }
 }
 
@@ -44,6 +46,16 @@ function named(name: string, message: string): Error {
   e.name = name;
   return e;
 }
+
+describe('T1088 · the settlement is tenant-scoped', () => {
+  it('settles against the workspace the application was for (BR-0001)', async () => {
+    // `settle` receives only an intent id, so the tenant has to be passed. If it
+    // were looked up instead, a record would be deciding who may write it.
+    const { adapter: a, intents } = adapter(async () => ({ id: 't1', lifecycleState: 'review' }));
+    await a.apply(INPUT);
+    expect(intents.settledIn).toEqual(['w1']);
+  });
+});
 
 describe('T1088 · confirmation', () => {
   it('confirms when EPIC-009 reports the requested state', async () => {

@@ -43,7 +43,7 @@ make one of them meaningless.
 | `validated` | Valid, authorised, gates clear — and policy does **not** authorise automatic application | no |
 | `applied` | `EPIC-009` **confirmed** the transition | yes |
 | `approval_required` | Valid, but the actor lacks an authority; `requiredApproverRole` names it | no |
-| `refused` | Separation of duties, lifecycle, a gate, or `EPIC-009` said no | no |
+| `refused` | Separation of duties, lifecycle, a gate, or `EPIC-009` said no — carries `refusalStage` **and** `refusalReasonCode` | no |
 | `inconsistent` | Observed status contradicts `expectedCurrentStatus` | no |
 | `reconciliation_required` | The application outcome was **never observed** | unknown |
 
@@ -54,7 +54,30 @@ Two distinctions the set exists to preserve:
 - **`applied` is not claimed until `EPIC-009` confirms** (`FR-GEL-069`). `appliedTransitionId` is
   present *only* for `applied`.
 
-Every verdict carries a `reason` an auditor can read. *"Refused"* is not a reason.
+Every verdict carries a `reason` an auditor can read. *"Refused"* is not a reason — and the
+`reason` is **supplementary evidence only**, never parsed to select behaviour.
+
+The type is a **closed discriminated union**: each variant carries exactly what it needs, and every
+non-applied variant declares `appliedTransitionId?: never`, so a refusal that applied something
+cannot be constructed. Nine CHECK constraints enforce the same invariants in PostgreSQL.
+
+## 3a. Refusal, and the deterministic event mapping — `X1`
+
+Two **orthogonal** concepts. `refusalStage` answers *when* and selects the event;
+`refusalReasonCode` answers *why* and never selects one.
+
+| `refusalStage` | `EPIC-037` event | Reason codes filed here |
+|---|---|---|
+| `validation` | `validation-failed` | `invalid_lifecycle_transition`, `gate_failed`, `gate_outcomes_unavailable` |
+| `approval` | `approval-refused` | `self_approval_prohibited`, `distinct_approver_required`, `unauthorized_actor`, `approval_authority_missing` |
+| `transition` | `transition-refused` | `lifecycle_application_refused` |
+
+`REFUSAL_STAGE_OF` **derives** the stage from the code, so the two cannot disagree — which is what
+would put event selection back to guessing. Rehydration from a row recomputes it rather than
+trusting the stored column.
+
+Stale state remains `inconsistent`, and an unobserved outcome remains `reconciliation_required`.
+Neither is a refusal: no decision was taken against the proposal in either case.
 
 ## 4. Application — `LifecycleApplicationPort` (`FR-GEL-069`)
 
@@ -103,6 +126,6 @@ See [data-model.md §8](../data-model.md).
 ## 9. What this contract does not carry
 
 No table of permitted transitions (`EPIC-009`). No gate evaluation (`EPIC-021`). No authorisation
-model (`EPIC-024`). No event vocabulary — `EPIC-037` maps verdicts onto its own class-4 events, and
-**that mapping is not yet total**: see the open item in the C2A report, where a single `refused`
-must be resolved against three distinct `EPIC-037` events.
+model (`EPIC-024`). No event vocabulary of its own — but the refusal **stage → event** mapping above
+is exported (`REFUSAL_EVENT_OF`, `refusalEventFor`) so `EPIC-037` selects by lookup rather than by
+re-deriving a rule this Epic already owns.

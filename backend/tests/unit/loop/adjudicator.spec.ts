@@ -103,7 +103,13 @@ describe('T1086 · applied — only after EPIC-009 confirms', () => {
   it('returns reconciliation_required when the application outcome is UNKNOWN', async () => {
     // The load-bearing case. A timeout means the transition may or may not have
     // happened; claiming either is a lie about the authoritative record.
-    const svc = service({ application: { outcome: 'unknown', reason: 'timeout' } });
+    const svc = service({
+      application: {
+        outcome: 'unknown',
+        cause: 'application_outcome_unknown',
+        reason: 'timeout',
+      },
+    });
     const v = await svc.adjudicate(PROPOSAL);
     expect(v.verdict).toBe('reconciliation_required');
     expect(v.appliedTransitionId).toBeUndefined();
@@ -124,7 +130,10 @@ describe('T1086 · approval_required and refused — nothing is applied', () => 
   it('requires approval when the actor lacks the authority', async () => {
     const svc = service({ required: ['approve:review'], authorities: [] });
     const v = await svc.adjudicate(PROPOSAL);
+    // Narrowing, not casting: the union means `requiredApproverRole` is only
+    // reachable once the verdict is known, which is the point of the change.
     expect(v.verdict).toBe('approval_required');
+    if (v.verdict !== 'approval_required') throw new Error('not approval_required');
     expect(v.requiredApproverRole).toBe('approve:review');
     expect(appliedCalls(svc)).toEqual([]);
   });
@@ -186,7 +195,13 @@ describe('T1086 · every verdict carries a reason an auditor can read', () => {
       { gatesPassed: false },
       { observed: 'approved' },
       { required: ['x'], authorities: [] },
-      { application: { outcome: 'unknown' as const, reason: 'timeout' } },
+      {
+        application: {
+          outcome: 'unknown' as const,
+          cause: 'application_outcome_unknown' as const,
+          reason: 'timeout',
+        },
+      },
     ]) {
       const v = await service(o).adjudicate(PROPOSAL);
       expect(v.reason.length, `${v.verdict} has an empty reason`).toBeGreaterThan(0);

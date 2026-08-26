@@ -85,6 +85,7 @@ model Workspace {
   requirementDecisions  RequirementDecision[]
   baselines             Baseline[]
   adjudicationRecords AdjudicationRecord[]
+  applicationIntents  ApplicationIntent[]
 
 
   @@map("workspaces")
@@ -1593,6 +1594,15 @@ model AdjudicationRecord {
   approverId          String?
   approverSnapshotId  String?
   appliedTransitionId String?
+  // X1 -- verdict-specific columns. CHECK constraints in
+  // 20260825120000_epic030_adjudication_refusal make each one required by
+  // exactly one verdict and forbidden on the other five.
+  refusalStage         String?
+  refusalReasonCode    String?
+  requiredApproverRole String?
+  observedStatus       String?
+  reconciliationCause  String?
+  reconciliationDetail String?
   correlationId       String
   causationId         String
   decidedAt           DateTime @default(now())
@@ -1604,4 +1614,27 @@ model AdjudicationRecord {
   @@index([workspaceId, specificationId])
   @@index([executionId])
   @@map("adjudication_records")
+}
+
+/// T1097 -- the durable intent recorded BEFORE EPIC-009 is asked to apply a
+/// transition. Append-only: `settle` appends a 'settled' row rather than
+/// updating the 'opened' one, so an outcome nobody observed cannot erase the
+/// record that the attempt was made.
+model ApplicationIntent {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  intentId        String
+  phase           String
+  specificationId String
+  expectedStatus  String
+  requestedStatus String
+  actorId         String
+  outcome         String?
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, intentId])
+  @@index([workspaceId, specificationId])
+  @@map("application_intents")
 }

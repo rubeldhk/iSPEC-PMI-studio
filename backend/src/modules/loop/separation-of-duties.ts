@@ -18,7 +18,11 @@
  *
  * Unit tests: `backend/tests/unit/loop/separation-of-duties.spec.ts` (T1084).
  */
-import type { AdjudicationProposal, ApprovalAttempt } from '@pmi/loop-contract';
+import type {
+  AdjudicationProposal,
+  ApprovalAttempt,
+  RefusalReasonCode,
+} from '@pmi/loop-contract';
 
 /** Tenant or project policy. Only the human rule is configurable. */
 export interface SeparationPolicy {
@@ -33,7 +37,15 @@ export interface SeparationPolicy {
 
 export type SeparationVerdict =
   | { readonly permitted: true }
-  | { readonly permitted: false; readonly reason: string };
+  | {
+      readonly permitted: false;
+      readonly reason: string;
+      /**
+       * The typed cause (`X1`). Every separation refusal is stage `approval`;
+       * the code distinguishes an absolute agent refusal from a policy one.
+       */
+      readonly reasonCode: RefusalReasonCode;
+    };
 
 /** The policy applied when a tenant has expressed none. */
 export const DEFAULT_SEPARATION_POLICY: SeparationPolicy = Object.freeze({
@@ -65,6 +77,7 @@ export function evaluateSeparationOfDuties(
       reason:
         `A ${approval.approverType} may not approve its own proposal. This holds under every ` +
         'policy: an agent that can approve its own work is unsupervised.',
+      reasonCode: 'self_approval_prohibited',
     };
   }
 
@@ -78,11 +91,13 @@ export function evaluateSeparationOfDuties(
         'The approver holds the same identity as the proposer, under a different actor id. ' +
         'Separation of duties reads the frozen identity snapshot, so re-registering under a ' +
         'new id does not make a principal a distinct approver.',
+      reasonCode: 'distinct_approver_required',
     };
   }
 
   return {
     permitted: false,
     reason: 'Policy requires a distinct approver; the proposer may not approve their own proposal.',
+    reasonCode: 'distinct_approver_required',
   };
 }

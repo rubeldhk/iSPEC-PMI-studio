@@ -15,8 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   ProposalAdjudicatorService,
+  type AdjudicationEvidenceInput,
   type AdjudicationRecordPort,
 } from '../../../src/modules/loop/adjudicator.service';
+import {
+  rowFromEvidence,
+  verdictFromRow,
+} from '../../../src/modules/loop/adjudication-evidence';
 import type { AdjudicationProposal, AdjudicationVerdict } from '@pmi/loop-contract';
 
 const PROPOSAL: AdjudicationProposal = {
@@ -44,25 +49,14 @@ class KeyedRecords implements AdjudicationRecordPort {
   readonly written: { key: string; verdict: string }[] = [];
   private readonly byKey = new Map<string, AdjudicationVerdict>();
 
-  async record(input: {
-    proposal: AdjudicationProposal;
-    verdict: string;
-    reason: string;
-    appliedTransitionId?: string;
-  }): Promise<string> {
+  // Goes through the SAME serialisation the Prisma adapter uses, so a retry
+  // here exercises the real row -> verdict path rather than a shortcut that
+  // could agree with the test and disagree with the database.
+  async record(input: AdjudicationEvidenceInput): Promise<string> {
     const key = `${input.proposal.workspaceId}|${input.proposal.proposalId}|${input.proposal.idempotencyKey}`;
     this.written.push({ key, verdict: input.verdict });
     const id = `rec-${this.written.length}`;
-    this.byKey.set(key, {
-      verdict: input.verdict as AdjudicationVerdict['verdict'],
-      proposalId: input.proposal.proposalId,
-      reason: input.reason,
-      decidedAt: input.proposal.proposedAt,
-      adjudicationRecordId: id,
-      ...(input.appliedTransitionId !== undefined
-        ? { appliedTransitionId: input.appliedTransitionId }
-        : {}),
-    });
+    this.byKey.set(key, verdictFromRow(rowFromEvidence(input, id)));
     return id;
   }
 

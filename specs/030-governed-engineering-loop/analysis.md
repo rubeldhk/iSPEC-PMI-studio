@@ -176,3 +176,44 @@ requirements."*
 `X1` and `X6` are the two findings that block EPIC-037 Band A. It is a **contract** change, not an
 implementation defect, and it is cheaper to make now than after connectors bind to the verdict
 shape. `X2` is a process-evidence gap and is reported rather than papered over.
+
+---
+
+# Analysis: EPIC-030 — C2A closure (`X1`, `X6`)
+
+**Session**: 2026-08-25 (second) · **Scope**: the two HIGH findings from the C2A session, and
+anything the work to close them surfaced. Unrelated EPIC-030 requirements were not re-analysed.
+
+**Artifacts**: [spec.md](./spec.md), [plan.md](./plan.md), [tasks.md](./tasks.md),
+[data-model.md](./data-model.md),
+[contracts/adjudication-contract.md](./contracts/adjudication-contract.md),
+[quickstart.md](./quickstart.md)
+
+## Findings — Session 2026-08-25 (closure)
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| X1 ✅ | Inconsistency | HIGH | `packages/loop-contract/src/adjudication.ts` | **Closed.** Refusal is now two orthogonal typed concepts: `refusalStage` selects the `EPIC-037` event, `refusalReasonCode` says why. `REFUSAL_STAGE_OF` derives the stage from the code so the two cannot disagree, `REFUSAL_EVENT_OF` is total over the three stages and maps to three distinct events, and the same vocabulary is enforced by CHECK constraints in PostgreSQL. Prose is never parsed | Verified by `refusal-mapping.spec.ts` (totality, determinism, distinctness, correct stage per reason) and `adjudication-persistence.spec.ts` |
+| X6 ✅ | Coverage Gap | HIGH | `backend/src/modules/loop/`, `loop.module.ts` | **Closed.** All seven ports have production adapters, `ProposalAdjudicatorService` is registered in the Nest graph, and only `PROPOSAL_ADJUDICATOR` is exported so no consumer can assemble an adjudicator with its own gate provider | Verified by `adjudication-composition.spec.ts`, which boots the real `AppModule` with no overrides, resolves every port, and **observes** EPIC-024 refusing an ungranted proposal and EPIC-009 being reached once a grant exists |
+| X7 | Coverage Gap | HIGH | `backend/src/modules/reviews/` (EPIC-021) | **EPIC-021 supplies no gate-outcome service.** No Nest module, imported by nothing, only `InMemoryGateOutcomeStore`, no per-specification query, and nothing writes `gate_outcomes`. The adapter refuses (`gate_outcomes_unavailable`) rather than assuming gates pass — so **no proposal can reach `applied` in production** | EPIC-021 must ship a gate-outcome read service. **Not fillable here**: reproducing EPIC-021's policy inside EPIC-030 is what the authorisation forbids. Owner decision required |
+| X8 | Underspecification | MEDIUM | `backend/src/modules/specifications/lifecycle-api.service.ts` (EPIC-009) | **EPIC-009 does not surface the transition it records.** `transition()` returns the specification, `TRANSITION_RECORDER` is bound to `InMemoryTransitionRecorder`, and no read surface exists — so `appliedTransitionId` cannot be bound to an authoritative row. The adapter reports a null identity, which resolves to `application_transition_unidentified` rather than forwarding the specification id | EPIC-009 should return the `TransitionRecord` (or expose a read). Only reachable once `X7` is closed, hence MEDIUM |
+| X2 | Constitution Alignment | MEDIUM | Constitution V | **Still open.** Failing-first was not observed per pair in C2A, and the closure tasks were written the same way | Unchanged from the C2A session |
+| X3 | Underspecification | LOW | `SpecificationStatus` | **Still open.** Bare `string` alias | Unchanged |
+| X4 | Coverage Gap | LOW | `spec.md` FR-GEL-063 | **Still accepted.** No transport surface, by the C2A boundary; in-process module reachability is what EPIC-037 consumes | Unchanged |
+
+## Metrics
+
+- Findings this session: **7** — 0 CRITICAL · **1 HIGH open** (`X7`) · 2 HIGH **closed** · 2 MEDIUM · 2 LOW
+- Tasks added: **7** (`T1096`–`T1102`), each paired with the test that proves it
+- New production adapters: **7** · new Nest providers: **8** · new tables: **1**
+
+## Notes
+
+**Why EPIC-030 does not return to `Ready` on this session.** Both findings the owner named are
+demonstrably closed, and the register is regenerated from source rather than relabelled. But `X7`
+is a new HIGH: the capability is wired, reachable and governed, and it cannot complete an
+application because EPIC-021 supplies nothing to read. An Epic that reported `Ready` while no
+proposal in it can reach `applied` would be making the claim `DOR-09` exists to prevent.
+
+`X7` and `X8` are gaps in **other Epics**, surfaced by wiring against them for the first time —
+which is the same way `EPIC-037` surfaced the absence of adjudication itself.

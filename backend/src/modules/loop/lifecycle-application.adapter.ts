@@ -34,7 +34,13 @@ export interface SpecificationTransitionPort {
     ctx: { workspaceId: string; userId: string },
     specificationId: string,
     to: string,
-  ): Promise<{ id: string; lifecycleState: string }>;
+    /**
+     * `id` is the **authoritative transition** id. `null` where EPIC-009
+     * changed the state but surfaced no transition identity — see
+     * `application_transition_unidentified`. Not optional: a caller must decide
+     * what to do about it rather than read `undefined` and move on.
+     */
+  ): Promise<{ id: string | null; lifecycleState: string }>;
 }
 
 /** Durable record of intent, written before the call and resolved after. */
@@ -46,7 +52,16 @@ export interface ApplicationIntentStore {
     to: string;
     actorId: string;
   }): Promise<string>;
-  settle(intentId: string, outcome: 'confirmed' | 'refused' | 'unknown'): Promise<void>;
+  /**
+   * `workspaceId` is passed rather than looked up: every row is tenant-scoped
+   * (`BR-0001`), and reading the opened row to discover its tenant would mean
+   * consulting a record to decide who is allowed to write it.
+   */
+  settle(
+    intentId: string,
+    workspaceId: string,
+    outcome: 'confirmed' | 'refused' | 'unknown',
+  ): Promise<void>;
 }
 
 export class LifecycleApplicationAdapter implements LifecycleApplicationPort {
@@ -84,27 +99,52 @@ export class LifecycleApplicationAdapter implements LifecycleApplicationPort {
       // requested state. Anything else is not a confirmation, however the call
       // returned.
       if (record.lifecycleState !== input.requestedStatus) {
-        await this.intents.settle(intentId, 'unknown');
+        await this.intents.settle(intentId, input.workspaceId, 'unknown');
         return {
           outcome: 'unknown',
+          // EPIC-009 answered — so the outcome is not unobserved, it is
+          // *unconfirmed*. The two need different reconciliation, which is why
+          // the cause is structural rather than prose.
+          cause: 'application_state_unconfirmed',
           reason:
             `EPIC-009 returned without error but reports "${record.lifecycleState}" rather than ` +
             `"${input.requestedStatus}".`,
+          intentId,
         };
       }
 
-      await this.intents.settle(intentId, 'confirmed');
+      // The state is right and the transition is anonymous. `applied` requires
+      // an id (`FR-GEL-072` links proposal -> verdict -> transition), and
+      // inventing one would put a false link in an audit record.
+      if (record.id === null || record.id === '') {
+        await this.intents.settle(intentId, input.workspaceId, 'unknown');
+        return {
+          outcome: 'unknown',
+          cause: 'application_transition_unidentified',
+          reason:
+            'EPIC-009 confirmed the requested state but surfaced no transition identity, so the ' +
+            'adjudication chain cannot be completed.',
+          intentId,
+        };
+      }
+
+      await this.intents.settle(intentId, input.workspaceId, 'confirmed');
       return { outcome: 'confirmed', transitionId: record.id };
     } catch (error) {
       // A refusal EPIC-009 states is a refusal. Anything else — a timeout, a
       // dropped connection, an unexpected fault — leaves the outcome genuinely
       // unknown, and must not be reported as either.
       if (isStatedRefusal(error)) {
-        await this.intents.settle(intentId, 'refused');
+        await this.intents.settle(intentId, input.workspaceId, 'refused');
         return { outcome: 'refused', reason: reasonOf(error) };
       }
-      await this.intents.settle(intentId, 'unknown');
-      return { outcome: 'unknown', reason: reasonOf(error) };
+      await this.intents.settle(intentId, input.workspaceId, 'unknown');
+      return {
+        outcome: 'unknown',
+        cause: 'application_outcome_unknown',
+        reason: reasonOf(error),
+        intentId,
+      };
     }
   }
 }

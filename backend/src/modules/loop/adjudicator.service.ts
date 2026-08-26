@@ -24,17 +24,17 @@
  *
  * Unit tests: `backend/tests/unit/loop/adjudicator.spec.ts` (T1086).
  */
-import type {
-  AdjudicationProposal,
-  AdjudicationVerdict,
-  ApprovalAttempt,
-  LifecycleApplicationPort,
-  ProposalAdjudicator,
-} from '@pmi/loop-contract';
 import {
-  evaluateSeparationOfDuties,
-  type SeparationPolicy,
-} from './separation-of-duties.js';
+  REFUSAL_STAGE_OF,
+  type AdjudicationProposal,
+  type AdjudicationVerdict,
+  type ApprovalAttempt,
+  type LifecycleApplicationPort,
+  type ProposalAdjudicator,
+  type RefusalReasonCode,
+  type RefusalStage,
+} from '@pmi/loop-contract';
+import { evaluateSeparationOfDuties, type SeparationPolicy } from './separation-of-duties.js';
 
 /** EPIC-009 — the authoritative lifecycle. Asked, never duplicated. */
 export interface LifecycleValidationPort {
@@ -47,7 +47,16 @@ export interface GateOutcomePort {
   outcomesFor(
     workspaceId: string,
     specificationId: string,
-  ): Promise<{ passed: boolean; blocking: string | undefined }>;
+  ): Promise<{
+    passed: boolean;
+    blocking: string | undefined;
+    /**
+     * EPIC-021 cannot report outcomes at all. Distinct from `passed: false`: a
+     * failed gate is a decision, an unavailable one is the absence of any. Both
+     * refuse — conflating them would report a fact nobody established.
+     */
+    unavailable?: boolean;
+  }>;
 }
 
 /** Transition policy: who may, and whether application is automatic. */
@@ -74,6 +83,20 @@ export interface IntakeAuthorizationPort {
   requireEditable(workspaceId: string, actorId: string, specificationId: string): Promise<void>;
 }
 
+/** Everything a verdict contributes to its immutable evidence row. */
+export interface AdjudicationEvidenceInput {
+  proposal: AdjudicationProposal;
+  verdict: string;
+  reason: string;
+  appliedTransitionId?: string;
+  refusalStage?: RefusalStage;
+  refusalReasonCode?: RefusalReasonCode;
+  requiredApproverRole?: string;
+  observedStatus?: string;
+  reconciliationCause?: string;
+  reconciliationDetail?: string;
+}
+
 /**
  * Immutable adjudication evidence (`FR-GEL-072`) and the idempotency oracle
  * (`FR-GEL-071`).
@@ -83,12 +106,7 @@ export interface IntakeAuthorizationPort {
  * applied a transition, the second could apply another, or approve twice.
  */
 export interface AdjudicationRecordPort {
-  record(input: {
-    proposal: AdjudicationProposal;
-    verdict: string;
-    reason: string;
-    appliedTransitionId?: string;
-  }): Promise<string>;
+  record(input: AdjudicationEvidenceInput): Promise<string>;
   /** The verdict already decided for this proposal and key, if any. */
   findByIdempotency(
     workspaceId: string,
@@ -96,6 +114,16 @@ export interface AdjudicationRecordPort {
     idempotencyKey: string,
   ): Promise<AdjudicationVerdict | null>;
 }
+
+/**
+ * A verdict as the adjudicator builds it, before evidence is written.
+ *
+ * `Omit` over a union collapses to the shared keys, which would erase exactly
+ * the per-variant fields the union exists to enforce. Distributing preserves
+ * them.
+ */
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+type VerdictDraft = DistributiveOmit<AdjudicationVerdict, 'proposalId' | 'adjudicationRecordId'>;
 
 export class ProposalAdjudicatorService implements ProposalAdjudicator {
   constructor(
@@ -115,18 +143,15 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
     const decidedAt = proposal.proposedAt;
 
     // --- 0a. Authorisation, before anything is decided, read back or recorded.
-    // Placing this ahead of the idempotency lookup matters: otherwise an
-    // unauthorised caller could read a previous verdict back out of it
-    // (`FR-GEL-066`, EPIC-024).
+    // Ahead of the idempotency lookup on purpose: otherwise an unauthorised
+    // caller could read a prior verdict back out of it (`FR-GEL-066`, EPIC-024).
     await this.authorization.requireEditable(
       proposal.workspaceId,
       proposal.proposerId,
       proposal.specificationId,
     );
 
-    // --- 0b. Idempotency. A retry returns the ORIGINAL verdict and re-decides
-    // nothing (`FR-GEL-071`). Re-running would risk a second approval or a
-    // second transition, which is precisely what a retry must not cause.
+    // --- 0b. Idempotency. A retry returns the ORIGINAL verdict (`FR-GEL-071`).
     const already = await this.evidence.findByIdempotency(
       proposal.workspaceId,
       proposal.proposalId,
@@ -140,8 +165,15 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
       proposal.specificationId,
     );
     if (observed !== proposal.expectedCurrentStatus) {
+      // Stale state stays `inconsistent`, never `refused`: nothing was decided
+      // against the proposal, the ground moved under it.
       return this.finish(proposal, {
         verdict: 'inconsistent',
+        mismatch: {
+          expectedStatus: proposal.expectedCurrentStatus,
+          observedStatus: observed,
+          expectedVersion: proposal.targetVersion,
+        },
         reason:
           `Proposal expected status "${proposal.expectedCurrentStatus}" but the specification ` +
           `is "${observed}". Nothing was applied.`,
@@ -153,49 +185,68 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
     if (approval) {
       const sod = evaluateSeparationOfDuties(proposal, approval, this.separation);
       if (!sod.permitted) {
-        return this.finish(proposal, {
-          verdict: 'refused',
-          reason: sod.reason,
-          decidedAt,
-        });
+        return this.refuse(proposal, sod.reasonCode, sod.reason, decidedAt);
       }
     }
 
     // --- 3. Validity, answered by EPIC-009.
     const permitted = await this.lifecycle.isPermitted(observed, proposal.requestedStatus);
     if (!permitted) {
-      return this.finish(proposal, {
-        verdict: 'refused',
-        reason:
-          `The lifecycle does not permit "${observed}" -> "${proposal.requestedStatus}". ` +
+      return this.refuse(
+        proposal,
+        'invalid_lifecycle_transition',
+        `The lifecycle does not permit "${observed}" -> "${proposal.requestedStatus}". ` +
           'EPIC-009 owns this answer.',
         decidedAt,
-      });
+      );
     }
 
     // --- 4. Gates, answered by EPIC-021.
     const gate = await this.gates.outcomesFor(proposal.workspaceId, proposal.specificationId);
-    if (!gate.passed) {
-      return this.finish(proposal, {
-        verdict: 'refused',
-        reason: `Gate "${gate.blocking ?? 'unnamed'}" did not pass. Nothing was applied.`,
+    if (gate.unavailable === true) {
+      return this.refuse(
+        proposal,
+        'gate_outcomes_unavailable',
+        `Gate outcomes cannot be read (${gate.blocking ?? 'EPIC-021 unconfigured'}), so no ` +
+          'declared gate can be shown satisfied. Refusing rather than assuming.',
         decidedAt,
-      });
+      );
+    }
+    if (!gate.passed) {
+      return this.refuse(
+        proposal,
+        'gate_failed',
+        `Gate "${gate.blocking ?? 'unnamed'}" did not pass. Nothing was applied.`,
+        decidedAt,
+      );
     }
 
-    // --- 5. Authority. Missing authority is a routing decision, not a refusal.
+    // --- 5. Authority.
     const required = await this.policy.requiredAuthorities(observed, proposal.requestedStatus);
-    const held = await this.policy.actorAuthorities(
-      proposal.workspaceId,
-      approval?.approverId ?? proposal.proposerId,
-    );
+    const actorId = approval?.approverId ?? proposal.proposerId;
+    const held = await this.policy.actorAuthorities(proposal.workspaceId, actorId);
     const missing = required.find((r) => !held.includes(r));
     if (missing !== undefined) {
+      // An *attempted* approval that lacks authority is a refusal at the
+      // approval stage. Absent an attempt it is a routing decision instead —
+      // reporting `refused` would tell a proposer their proposal was rejected
+      // when it merely needs somebody else.
+      if (approval) {
+        const noAuthorityAtAll = held.length === 0;
+        return this.refuse(
+          proposal,
+          noAuthorityAtAll ? 'unauthorized_actor' : 'approval_authority_missing',
+          noAuthorityAtAll
+            ? 'The approver holds no authority in this workspace. Nothing was applied.'
+            : `The approver does not hold "${missing}". Nothing was applied.`,
+          decidedAt,
+        );
+      }
       return this.finish(proposal, {
         verdict: 'approval_required',
+        requiredApproverRole: missing,
         reason: `Requires "${missing}", which the actor does not hold. Nothing was applied.`,
         decidedAt,
-        requiredApproverRole: missing,
       });
     }
 
@@ -217,26 +268,32 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
       specificationId: proposal.specificationId,
       expectedCurrentStatus: observed,
       requestedStatus: proposal.requestedStatus,
-      actorId: approval?.approverId ?? proposal.proposerId,
+      actorId,
     });
 
     if (outcome.outcome === 'confirmed') {
       return this.finish(proposal, {
         verdict: 'applied',
+        appliedTransitionId: outcome.transitionId,
         reason: 'EPIC-009 confirmed the transition.',
         decidedAt,
-        appliedTransitionId: outcome.transitionId,
       });
     }
     if (outcome.outcome === 'refused') {
-      return this.finish(proposal, {
-        verdict: 'refused',
-        reason: `EPIC-009 refused the transition: ${outcome.reason}`,
+      return this.refuse(
+        proposal,
+        'lifecycle_application_refused',
+        `EPIC-009 refused the transition: ${outcome.reason}`,
         decidedAt,
-      });
+      );
     }
     return this.finish(proposal, {
       verdict: 'reconciliation_required',
+      reconciliation: {
+        cause: outcome.cause,
+        detail: outcome.reason,
+        ...(outcome.intentId !== undefined ? { intentId: outcome.intentId } : {}),
+      },
       reason:
         `The application outcome is unknown (${outcome.reason}). The transition may or may not ` +
         'have been applied, so neither "applied" nor "refused" would be true.',
@@ -245,24 +302,63 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
   }
 
   /**
+   * Build a refusal.
+   *
+   * The stage is **derived** from the code rather than passed alongside it, so
+   * the two can never disagree — which is precisely what would put `EPIC-037`
+   * back to guessing which event to emit.
+   */
+  private refuse(
+    proposal: AdjudicationProposal,
+    reasonCode: RefusalReasonCode,
+    reason: string,
+    decidedAt: string,
+  ): Promise<AdjudicationVerdict> {
+    return this.finish(proposal, {
+      verdict: 'refused',
+      refusalStage: REFUSAL_STAGE_OF[reasonCode],
+      refusalReasonCode: reasonCode,
+      reason,
+      decidedAt,
+    });
+  }
+
+  /**
    * Record immutable evidence, then return the verdict carrying its id.
    *
-   * The parameter deliberately omits `proposalId` and `adjudicationRecordId`:
-   * both are supplied *here*. Accepting a full verdict would let a caller pass
-   * an id for a record that does not exist yet.
+   * The draft omits `proposalId` and `adjudicationRecordId`: both are supplied
+   * here. Accepting a full verdict would let a caller pass an id for a record
+   * that does not exist yet.
    */
   private async finish(
     proposal: AdjudicationProposal,
-    verdict: Omit<AdjudicationVerdict, 'proposalId' | 'adjudicationRecordId'>,
+    draft: VerdictDraft,
   ): Promise<AdjudicationVerdict> {
     const adjudicationRecordId = await this.evidence.record({
       proposal,
-      verdict: verdict.verdict,
-      reason: verdict.reason,
-      ...(verdict.appliedTransitionId !== undefined
-        ? { appliedTransitionId: verdict.appliedTransitionId }
+      verdict: draft.verdict,
+      reason: draft.reason,
+      ...(draft.verdict === 'applied' ? { appliedTransitionId: draft.appliedTransitionId } : {}),
+      ...(draft.verdict === 'refused'
+        ? { refusalStage: draft.refusalStage, refusalReasonCode: draft.refusalReasonCode }
+        : {}),
+      ...(draft.verdict === 'approval_required'
+        ? { requiredApproverRole: draft.requiredApproverRole }
+        : {}),
+      ...(draft.verdict === 'inconsistent'
+        ? { observedStatus: draft.mismatch.observedStatus }
+        : {}),
+      ...(draft.verdict === 'reconciliation_required'
+        ? {
+            reconciliationCause: draft.reconciliation.cause,
+            reconciliationDetail: draft.reconciliation.detail,
+          }
         : {}),
     });
-    return { ...verdict, proposalId: proposal.proposalId, adjudicationRecordId };
+    return {
+      ...draft,
+      proposalId: proposal.proposalId,
+      adjudicationRecordId,
+    } as AdjudicationVerdict;
   }
 }

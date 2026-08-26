@@ -18,6 +18,19 @@
  * register the handlers for the stages their Rooms use. An empty registry means
  * the configuration loader refuses every file naming a stage nothing can run —
  * at composition, loudly, rather than at the first transition.
+ *
+ * ## Adjudication (C2A closure, `T1096`–`T1102`)
+ *
+ * The adjudication providers below **are** bound, unlike the seams above, and
+ * the difference is deliberate. Closure finding `X6` was that
+ * `ProposalAdjudicatorService` existed only where a test constructed it — so
+ * leaving these unbound would restate the finding rather than close it. Where
+ * an owning Epic supplies nothing, the *adapter* refuses; the discipline is the
+ * same, expressed as a provider rather than as an absence.
+ *
+ * Only {@link PROPOSAL_ADJUDICATOR} is exported. A consumer that could reach the
+ * individual ports could assemble its own adjudicator with its own gate
+ * provider, which is the bypass `FR-GEL-073` forbids.
  */
 import { Module } from '@nestjs/common';
 import { LoopController } from './loop.controller.js';
@@ -26,9 +39,53 @@ import { LoopConfigRegistry } from './config-registry.js';
 import { StageRegistry } from './stage-registry.js';
 import { InMemoryLoopStore, type LoopStore } from './loop.store.js';
 import { buildConfigRegistry } from './workflow-files.js';
-import { LOOP_CONFIG_SOURCE, LOOP_STAGE_HANDLERS, LOOP_STORE } from './loop.tokens.js';
+import {
+  ADJUDICATION_APPLICATION_INTENTS,
+  ADJUDICATION_AUTHORITY_POLICY,
+  ADJUDICATION_GATE_OUTCOMES,
+  ADJUDICATION_INTAKE_AUTHORIZATION,
+  ADJUDICATION_LIFECYCLE_APPLICATION,
+  ADJUDICATION_LIFECYCLE_VALIDATION,
+  ADJUDICATION_RECORDS,
+  LOOP_CONFIG_SOURCE,
+  LOOP_STAGE_HANDLERS,
+  LOOP_STORE,
+  PROPOSAL_ADJUDICATOR,
+} from './loop.tokens.js';
+import {
+  ProposalAdjudicatorService,
+  type AdjudicationRecordPort,
+  type AuthorityPolicyPort,
+  type GateOutcomePort,
+  type IntakeAuthorizationPort,
+  type LifecycleValidationPort,
+} from './adjudicator.service.js';
+import {
+  LifecycleApplicationAdapter,
+  type ApplicationIntentStore,
+} from './lifecycle-application.adapter.js';
+import {
+  AccessIntakeAuthorization,
+  ConfiguredAuthorityPolicy,
+  EpicNineLifecycleValidation,
+  EpicNineTransitionAdapter,
+  GrantBackedAuthorities,
+  PrismaAdjudicationRecords,
+  PrismaApplicationIntents,
+  UnconfiguredGateOutcomes,
+} from './adjudication.adapters.js';
+import type { AdjudicationEvidenceRow } from './adjudication-evidence.js';
+import { DEFAULT_SEPARATION_POLICY } from './separation-of-duties.js';
+import { SpecificationsModule } from '../specifications/specifications.module.js';
+import { SpecificationsReadService } from '../specifications/specifications-read.service.js';
+import { SpecificationLifecycleService } from '../specifications/lifecycle-api.service.js';
+import { permittedFrom } from '../specifications/lifecycle.machine.js';
+import { AccessModule } from '../access/access.module.js';
+import { AccessEnforcementService } from '../access/access-enforcement.service.js';
+import { prismaClient } from '../../persistence/prisma.js';
 
 @Module({
+  imports: [SpecificationsModule, AccessModule],
   controllers: [LoopController],
   providers: [
     {
@@ -56,8 +113,104 @@ import { LOOP_CONFIG_SOURCE, LOOP_STAGE_HANDLERS, LOOP_STORE } from './loop.toke
       useFactory: (store: LoopStore, configs: LoopConfigRegistry): LoopService =>
         new LoopService(store, configs),
     },
+
+    // --- Adjudication ports -------------------------------------------------
+
+    {
+      provide: ADJUDICATION_LIFECYCLE_VALIDATION,
+      inject: [SpecificationsReadService],
+      useFactory: (reads: SpecificationsReadService): LifecycleValidationPort =>
+        // `permittedFrom` is EPIC-009's function, passed in. A table copied here
+        // would be a second lifecycle engine (`FR-GEL-065`).
+        new EpicNineLifecycleValidation(reads, (state) => permittedFrom(state as never)),
+    },
+    {
+      provide: ADJUDICATION_APPLICATION_INTENTS,
+      useFactory: (): ApplicationIntentStore =>
+        // Lazily reached: `prismaClient()` reads DATABASE_URL when constructed,
+        // so it must not be called while modules are merely being assembled.
+        new PrismaApplicationIntents({
+          create: (args) =>
+            prismaClient().applicationIntent.create(args as never) as Promise<{ id: string }>,
+        }),
+    },
+    {
+      provide: ADJUDICATION_LIFECYCLE_APPLICATION,
+      inject: [SpecificationLifecycleService, ADJUDICATION_APPLICATION_INTENTS],
+      useFactory: (
+        lifecycle: SpecificationLifecycleService,
+        intents: ApplicationIntentStore,
+      ): LifecycleApplicationAdapter =>
+        new LifecycleApplicationAdapter(new EpicNineTransitionAdapter(lifecycle), intents),
+    },
+    {
+      provide: ADJUDICATION_GATE_OUTCOMES,
+      // EPIC-021 supplies no gate-outcome service. This refuses rather than
+      // assuming every declared gate is satisfied.
+      useFactory: (): GateOutcomePort => new UnconfiguredGateOutcomes(),
+    },
+    {
+      provide: ADJUDICATION_AUTHORITY_POLICY,
+      useFactory: (): AuthorityPolicyPort =>
+        // No rules declared yet, so nothing auto-applies: an unconfigured
+        // transition resolves to `validated`, never `applied`.
+        new ConfiguredAuthorityPolicy([], new GrantBackedAuthorities({})),
+    },
+    {
+      provide: ADJUDICATION_INTAKE_AUTHORIZATION,
+      inject: [AccessEnforcementService],
+      useFactory: (access: AccessEnforcementService): IntakeAuthorizationPort =>
+        new AccessIntakeAuthorization(access),
+    },
+    {
+      provide: ADJUDICATION_RECORDS,
+      useFactory: (): AdjudicationRecordPort =>
+        new PrismaAdjudicationRecords({
+          create: (args) =>
+            prismaClient().adjudicationRecord.create(args as never) as Promise<{ id: string }>,
+          findUnique: (args) =>
+            prismaClient().adjudicationRecord.findUnique(
+              args as never,
+            ) as Promise<AdjudicationEvidenceRow | null>,
+        }),
+    },
+    {
+      provide: PROPOSAL_ADJUDICATOR,
+      inject: [
+        ADJUDICATION_LIFECYCLE_VALIDATION,
+        ADJUDICATION_GATE_OUTCOMES,
+        ADJUDICATION_AUTHORITY_POLICY,
+        ADJUDICATION_LIFECYCLE_APPLICATION,
+        ADJUDICATION_RECORDS,
+        ADJUDICATION_INTAKE_AUTHORIZATION,
+      ],
+      useFactory: (
+        lifecycle: LifecycleValidationPort,
+        gates: GateOutcomePort,
+        policy: AuthorityPolicyPort,
+        application: LifecycleApplicationAdapter,
+        records: AdjudicationRecordPort,
+        authorization: IntakeAuthorizationPort,
+      ): ProposalAdjudicatorService =>
+        new ProposalAdjudicatorService(
+          lifecycle,
+          gates,
+          policy,
+          application,
+          DEFAULT_SEPARATION_POLICY,
+          records,
+          authorization,
+        ),
+    },
   ],
-  exports: [LoopService, LOOP_STORE, LOOP_CONFIG_SOURCE, LOOP_STAGE_HANDLERS],
+  exports: [
+    LoopService,
+    LOOP_STORE,
+    LOOP_CONFIG_SOURCE,
+    LOOP_STAGE_HANDLERS,
+    // The one consumer-facing token. See the note at the head of this file.
+    PROPOSAL_ADJUDICATOR,
+  ],
 })
 export class LoopModule {}
 
