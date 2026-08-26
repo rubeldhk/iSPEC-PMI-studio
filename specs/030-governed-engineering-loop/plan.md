@@ -52,10 +52,16 @@ sustained per workspace.
 (`BR-0001`); no Room vocabulary may appear in the contract package (`FR-GEL-061`, asserted by an
 architecture test); the Decide seam refuses when unfilled (`FR-GEL-062`).
 
-**Scale/Scope**: **30 functional requirements across seven groups**, 11 success criteria, **3 new
-tables**, 5 HTTP routes, 5 ports. Three downstream Epics (`EPIC-033`–`035`) and two sibling substrate
+**Scale/Scope**: **41 functional requirements across eight groups**, 17 success criteria, **4 new
+tables**, 5 HTTP routes, 6 ports. Three downstream Epics (`EPIC-033`–`035`) and two sibling substrate
 Epics (`EPIC-031`, `EPIC-032`) consume this contract.
 
+> **Updated 2026-08-25 (Step C2A).** The eighth requirement group — specification
+> status-transition adjudication (`FR-GEL-063`–`FR-GEL-073`) — added 11 requirements, 6 success
+> criteria (`SC-GEL-012`–`SC-GEL-017`), a fourth table (`adjudication_records`) and a sixth port
+> (`IntakeAuthorizationPort`, onto `EPIC-024`). No HTTP route was added: this phase delivers the
+> capability and its contract, not a transport surface.
+>
 > **Corrected 2026-08-22** (analysis finding `I1`). This read *"16 functional requirements across
 > five groups"* and *"4 new tables"*. The first counted only the opening requirement group — the
 > Epic is roughly twice the size that figure implied, which is the difference between a medium Epic
@@ -131,6 +137,8 @@ packages/loop-contract/           # NEW — the vendor-neutral surface (R-030-3)
 │   ├── ports.ts                  # StageHandler, PolicyProvider, EvidenceProvider,
 │   │                             #   GateProvider, AuditSink
 │   ├── types.ts                  # TransitionResult, LoopProgress, GateOutcome
+│   ├── adjudication.ts           # NEW C2A — the proposal/verdict surface EPIC-037
+│   │                             #   consumes (FR-GEL-063, FR-GEL-068, FR-GEL-073)
 │   └── index.ts
 ├── workflows/                    # Programme-defined workflow types (FR-GEL-009)
 │   └── *.json
@@ -143,20 +151,30 @@ backend/src/modules/loop/         # NEW — the engine
 ├── loop.controller.ts            # the 5 real entry points
 ├── loop.service.ts               # transition, history, progress, exceptions
 ├── loop-config.loader.ts         # refuses a bad configuration at load (FR-GEL-007)
-└── loop.tokens.ts                # port injection tokens
+├── loop.tokens.ts                # port injection tokens
+├── adjudicator.service.ts        # NEW C2A — the six verdicts (FR-GEL-065..071)
+├── separation-of-duties.ts       # NEW C2A — self-approval refusal (FR-GEL-067)
+└── lifecycle-application.adapter.ts  # NEW C2A — asks EPIC-009; durable intent,
+                                  #   and `unknown` never becomes `applied` (FR-GEL-069)
 
 backend/prisma/
 ├── schema.prisma                 # + LoopInstanceConfiguration, LoopObject,
-│                                 #   LoopTransition
-└── migrations/                   # + 1 migration (17th)
+│                                 #   LoopTransition, AdjudicationRecord
+└── migrations/                   # + 2 migrations; the C2A one ATTACHES a
+                                  #   reject_mutation() trigger (FR-GEL-072)
 
 backend/tests/
 ├── integration/
 │   ├── loop-reachability.spec.ts # XI Tier 1 — imports AppModule (R-030-8)
 │   ├── loop-fail-closed.spec.ts  # FR-GEL-041
 │   └── loop-concurrency.spec.ts  # FR-GEL-015
+├── unit/loop/                    # NEW C2A — verdicts, separation of duties,
+│                                 #   EPIC-024 authorisation at intake
+├── integration/loop/             # NEW C2A — EPIC-009 application, concurrency,
+│                                 #   idempotency, database-enforced immutability
 └── architecture/
     ├── loop-independence.spec.ts # FR-GEL-061 — no Room vocabulary
+    ├── adjudication-boundary.spec.ts  # NEW C2A — FR-GEL-073
     └── loop-config-conformance.spec.ts  # Constitution V, non-code output
 ```
 

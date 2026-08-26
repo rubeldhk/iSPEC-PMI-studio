@@ -434,6 +434,25 @@ specification-lifecycle proposal intake at all.*
 - **SC-GEL-010**: **Zero** loop configuration changes take effect without authorized human approval, under any tenant policy — verified by enumerating the tenant configuration surface rather than by inspecting defaults *(clarified 2026-08-22)*.
 - **SC-GEL-011**: In a concurrent transition race, **zero** pairs both succeed; the loser is refused with a recorded conflict in **100%** of cases *(clarified 2026-08-22)*.
 
+*Added 2026-08-25 (Step C2A) — measurable outcomes for specification status-transition
+adjudication (`FR-GEL-063`–`FR-GEL-073`).*
+
+- **SC-GEL-012**: Every proposal resolves to **exactly one** verdict from the closed set; **zero**
+  resolve to an ambiguous boolean, to no verdict, or to a value outside the set — verified by
+  exhausting the set in tests rather than by review.
+- **SC-GEL-013**: **100%** of `applied` verdicts are matched by a confirmed authoritative
+  transition recorded by `EPIC-009`; **zero** `applied` verdicts exist without one.
+- **SC-GEL-014**: An application outcome that was never observed resolves to reconciliation in
+  **100%** of cases; **zero** resolve to `applied` or `refused`, since both would assert something
+  nobody witnessed.
+- **SC-GEL-015**: A retried proposal returns the **original** verdict in **100%** of attempts, and
+  produces **zero** duplicate approvals and **zero** duplicate transitions.
+- **SC-GEL-016**: **Zero** AI agents or connectors approve their own proposal, under any tenant
+  policy — the refusal is absolute and is not reachable by configuration.
+- **SC-GEL-017**: **100%** of adjudications leave immutable evidence; **zero** adjudication records
+  can be updated or deleted once written, enforced by the **database** rather than by application
+  code, and verified against a database built from the committed migration.
+
 ## Assumptions
 
 - **PMI-DOC-006 v1.0 was `PROPOSED` when this was written and is **APPROVED** as of 2026-08-24 (`D-44`); the exposure below is discharged.** `FR-GEL-050` and `FR-GEL-051` cite `UX-0030` and `UX-0035` from it. Both restate `BR-0064`, which *is* approved, so neither requirement depends on the proposed document for its authority — but the projection's exact shape does. **Back-fill owner: project owner**, through the PMI-DOC-006 approval that decision 6 of `brs-v2-reconciliation.md` §7 leaves outstanding. This is the same SRS-debt shape `EPIC-029` discharged and `EPIC-023`/`EPIC-025` carried.

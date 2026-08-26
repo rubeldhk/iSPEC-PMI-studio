@@ -173,6 +173,78 @@ inversion is the whole point: a test importing `LoopModule` directly would still
 
 ---
 
+## Scenario 11 — A valid proposal is not thereby an applied one
+
+*Added 2026-08-25 (Step C2A). `FR-GEL-068`, `SC-GEL-012`.*
+
+```bash
+npx vitest run --project backend-unit backend/tests/unit/loop/adjudicator.spec.ts
+```
+
+Submit a proposal that is valid, authorised and gate-clear, with policy withholding automatic
+application. **Expected**: verdict `validated`, no `appliedTransitionId`, and `EPIC-009` is never
+called. If `validated` implied application, this scenario would be indistinguishable from
+`applied` — which is exactly the collapse Rev 2 made and the project owner rejected.
+
+## Scenario 12 — An unobserved outcome is reported as unobserved
+
+*`FR-GEL-069`, `SC-GEL-013`, `SC-GEL-014`.*
+
+```bash
+npx vitest run --project backend-integration backend/tests/integration/loop/adjudication-application.spec.ts
+```
+
+Make `EPIC-009` time out. **Expected**: `reconciliation_required`, a durable intent recorded
+*before* the call, and no `appliedTransitionId`. **Expected to fail the Epic** if any failure mode
+— timeout, database fault, or a returned state other than the one requested — yields `confirmed`.
+
+## Scenario 13 — A retry does not decide twice
+
+*`FR-GEL-071`, `SC-GEL-015`.*
+
+```bash
+npx vitest run --project backend-integration backend/tests/integration/loop/adjudication-concurrency.spec.ts
+```
+
+Adjudicate the same proposal and key three times. **Expected**: the original verdict each time,
+**one** adjudication record, and **one** transition. A stale proposal returns `inconsistent` and
+applies nothing.
+
+## Scenario 14 — An agent cannot approve itself, whatever the policy says
+
+*`FR-GEL-067`, `SC-GEL-016`.*
+
+```bash
+npx vitest run --project backend-unit backend/tests/unit/loop/separation-of-duties.spec.ts
+```
+
+Have an agent approve its own proposal with `humanSelfApprovalPermitted: true`. **Expected**:
+refused. The agent rule is evaluated before policy is read, so no configuration reaches it.
+
+## Scenario 15 — The evidence cannot be edited, and the database is what says so
+
+*`FR-GEL-072`, `SC-GEL-017`.*
+
+```bash
+npx vitest run --project backend-integration backend/tests/integration/loop/adjudication-evidence.spec.ts
+```
+
+Against a **fresh** PostgreSQL built from the committed migration: assert
+`adjudication_records_immutable` exists in `pg_trigger` **by name**, then UPDATE and DELETE and
+expect both refused. **Expected to fail the Epic** if the trigger is absent — `reject_mutation()`
+existing is not protection until something binds it.
+
+## Scenario 16 — A connector cannot reach the lifecycle service
+
+*`FR-GEL-073`.*
+
+```bash
+npm run test:arch
+```
+
+**Expected**: the contract package imports no backend module, store or Prisma client, and only
+`backend/src/modules/specifications/` and the governed adapter reach `SpecificationLifecycleService`.
+
 ## Full gate before declaring the Epic done
 
 ```bash

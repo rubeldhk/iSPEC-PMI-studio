@@ -120,6 +120,48 @@ suite('T1092 · adjudication_records is append-only, enforced by PostgreSQL', ()
     expect(rows.map((r) => r.verdict)).toEqual(['validated', 'refused']);
   });
 
+  it('redaction does not break the chain — the link survives, only the prose goes', async () => {
+    // `FR-GEL-072`: "Redaction MUST NOT destroy the adjudication chain." Since
+    // the table refuses UPDATE, a redaction cannot blank a field in place — it
+    // is a new row. What must survive is the *linkage*: proposal -> verdict ->
+    // applied transition. Only the free-text reason, which is where a secret
+    // would leak, is withheld.
+    await client.query(
+      `INSERT INTO "adjudication_records"
+         ("id","workspaceId","proposalId","executionId","specificationId","idempotencyKey",
+          "expectedStatus","requestedStatus","verdict","reason","proposerId","proposerType",
+          "proposerSnapshotId","correlationId","causationId","appliedTransitionId")
+       VALUES (gen_random_uuid()::text,'w-ev','p-ev','e-ev','s-ev','k-ev-redacted',
+               'draft','review','validated','[redacted]','u1','agent','snap-1','c1','e-ev','t-ev')`,
+    );
+
+    const { rows } = await client.query<{
+      verdict: string;
+      reason: string;
+      proposalId: string;
+      appliedTransitionId: string | null;
+      correlationId: string;
+    }>(
+      `SELECT "verdict","reason","proposalId","appliedTransitionId","correlationId"
+       FROM "adjudication_records" WHERE "idempotencyKey"='k-ev-redacted'`,
+    );
+    expect(rows).toHaveLength(1);
+    const redacted = rows[0]!;
+
+    // The prose is gone...
+    expect(redacted.reason).toBe('[redacted]');
+    // ...and every link an auditor needs is still there.
+    expect(redacted.proposalId, 'redaction severed proposal -> record').toBe('p-ev');
+    expect(redacted.appliedTransitionId, 'redaction severed record -> transition').toBe('t-ev');
+    expect(redacted.correlationId, 'redaction severed the causal chain').toBe('c1');
+
+    // And the pre-redaction rows are untouched — redaction appends, never erases.
+    const { rows: all } = await client.query<{ n: string }>(
+      `SELECT count(*) AS n FROM "adjudication_records" WHERE "proposalId"='p-ev'`,
+    );
+    expect(Number(all[0]!.n), 'redaction removed earlier evidence').toBe(3);
+  });
+
   it('refuses a duplicate (workspace, proposal, key) — this is what makes retry safe', async () => {
     await expect(
       client.query(

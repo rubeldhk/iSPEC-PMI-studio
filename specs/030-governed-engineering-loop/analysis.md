@@ -118,3 +118,60 @@ edited only by the approved remediation.
 - **`I1` understates this Epic's scope by roughly half.** Sixteen requirements versus thirty is the
   difference between a medium Epic and a large one, and the count feeds estimation before anyone
   opens the requirement list.
+
+---
+
+# Analysis: EPIC-030 — Step C2A adjudication addition
+
+**Session**: 2026-08-25 · **Scope**: the eighth requirement group only (`FR-GEL-063`–`FR-GEL-073`,
+`SC-GEL-012`–`SC-GEL-017`, `T1082`–`T1095`). Unrelated EPIC-030 requirements were **not**
+re-analysed, per the Step C2A instruction *"Do not repeat or rewrite unrelated EPIC-030
+requirements."*
+
+**Artifacts**: [spec.md](./spec.md), [plan.md](./plan.md), [tasks.md](./tasks.md) · **Also read**:
+[data-model.md](./data-model.md), [contracts/adjudication-contract.md](./contracts/adjudication-contract.md),
+[quickstart.md](./quickstart.md), and EPIC-037's
+[spec.md](../037-governed-execution-registry/spec.md) and
+[contracts/event-vocabulary.md](../037-governed-execution-registry/contracts/event-vocabulary.md).
+
+## Findings — Session 2026-08-25 (Step C2A)
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| X1 | Inconsistency | HIGH | `packages/loop-contract/src/adjudication.ts` `AdjudicationVerdict`; EPIC-037 `contracts/event-vocabulary.md` class 4 | **`refused` is not injective onto EPIC-037's event vocabulary.** Five of six verdicts map to exactly one class-4 event. `refused` must become one of `validation-failed`, `approval-refused` or `transition-refused` — and the verdict carries only a prose `reason` to distinguish them. Prose is not a discriminator, so EPIC-037 cannot emit the correct event deterministically | Add a machine-readable `refusalCategory` (`'separation-of-duties' \| 'lifecycle' \| 'gate' \| 'application'`) to `AdjudicationVerdict` **before** EPIC-037 `T1058`. Do not have EPIC-037 parse `reason` |
+| X2 | Constitution Alignment | MEDIUM | Constitution V; `tasks.md` T1082–T1095 | **Failing-first was not evidenced per test/implementation pair.** The paired tasks were authored in the required order, but no run was captured showing each test red before its implementation existed. Constitution V requires the failure to be *observed*, not merely intended | Capture failing-first evidence for the eight pairs, or record the omission as a defect under Principle VI. Do not backfill a claim that was not observed |
+| X3 | Underspecification | LOW | `packages/loop-contract/src/adjudication.ts` `SpecificationStatus` | `SpecificationStatus = string` is a bare alias, so the type system cannot stop a `LoopStage` value being passed. `FR-GEL-064` is enforced by the `T1082` contract test (no mapping function exists), not structurally | Acceptable while EPIC-009 exports no branded status type. Revisit if one appears |
+| X4 | Coverage Gap | LOW | `spec.md` FR-GEL-063 | `FR-GEL-063` says "accept as governed intake" and **no transport surface exists** — no route, no MCP binding | **Accepted, not a defect.** The C2A boundary authorised *"only the minimum backend/contract/database work"*; EPIC-037 consumes the service in-process. Recorded so the absence is not later mistaken for an omission |
+| X5 ✅ | Coverage Gap | MEDIUM | `tasks.md` T1092; `backend/tests/integration/loop/adjudication-evidence.spec.ts` | `T1092` promised *"redaction does not break the chain"* and the test file asserted no such thing, while the task was marked complete | **Fixed in this session** — the test now appends a redacting row and asserts the proposal → verdict → transition linkage survives while the prose does not, and that earlier evidence is not removed |
+
+## Coverage summary
+
+| Requirement | Has task? | Task IDs | Notes |
+|---|---|---|---|
+| FR-GEL-063 | yes | T1082, T1083, T1087 | Proposal shape in the contract package |
+| FR-GEL-064 | yes | T1082 | Asserted as *absence of a mapping function*; see X3 |
+| FR-GEL-065 | yes | T1086, T1087 | Validity delegated to EPIC-009; no local transition table |
+| FR-GEL-066 | yes | T1086, T1087, T1094, T1095 | Gates from EPIC-021; authorisation from EPIC-024 |
+| FR-GEL-067 | yes | T1084, T1085 | Agent/service self-approval refused before policy is read |
+| FR-GEL-068 | yes | T1082, T1086, T1087 | Closed set of six, exhausted in tests |
+| FR-GEL-069 | yes | T1088, T1089 | `unknown` never becomes `applied` or `refused` |
+| FR-GEL-070 | yes | T1090, T1091 | Checked before authority, so stale ≠ unauthorised |
+| FR-GEL-071 | yes | T1090, T1091, T1093 | Unique index — not a read-then-write race |
+| FR-GEL-072 | yes | T1092, T1093 | Trigger **attached**; redaction chain asserted (X5) |
+| FR-GEL-073 | yes | T1083, T1094 | Architecture test asserts the boundary both ways |
+
+**Coverage**: 11 / 11 (100%). `SC-GEL-012`–`SC-GEL-017` each map to a quickstart scenario
+(11–16) and at least one task.
+
+## Metrics
+
+- Requirements analysed: **11** · Success criteria added: **6**
+- Tasks in scope: **14** (`T1082`–`T1095`)
+- Findings: **5** — 0 CRITICAL · 1 HIGH · 2 MEDIUM · 2 LOW
+- One MEDIUM finding (X5) was remediated during the session; the rest are open.
+
+## Notes
+
+`X1` is the only finding that blocks EPIC-037 Band A. It is a **contract** change, not an
+implementation defect, and it is cheaper to make now than after connectors bind to the verdict
+shape. `X2` is a process-evidence gap and is reported rather than papered over.

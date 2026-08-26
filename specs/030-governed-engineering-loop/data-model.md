@@ -203,7 +203,42 @@ from *not reached*, and a missing row would conflate them.
 
 ---
 
-## 8. What this Epic deliberately does not model
+## 8. `AdjudicationRecord` — immutable evidence of a decision
+
+*Added 2026-08-25 (Step C2A). `FR-GEL-072`. Table: `adjudication_records`.*
+
+One row per adjudicated proposal. **Append-only, enforced by the database** — the migration binds
+`reject_mutation()` to the table with a `CREATE TRIGGER`. The distinction this Epic had to correct:
+the function already existed and protected fourteen other tables, and protected this one not at all
+until a trigger was attached. A reusable function is not protection.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | text | primary key |
+| `workspaceId` | text | tenant scope (`BR-0001`); FK to `workspaces` |
+| `proposalId` | text | the proposal adjudicated |
+| `executionId` | text | the execution that raised it — the `EPIC-037` link |
+| `specificationId` | text | the object whose status was proposed |
+| `idempotencyKey` | text | with `workspaceId` + `proposalId`, **unique** (`FR-GEL-071`) |
+| `expectedStatus` | text | what the proposer believed (`FR-GEL-070`) |
+| `requestedStatus` | text | what was asked for |
+| `verdict` | text | one of the six (`FR-GEL-068`) |
+| `reason` | text | why, in terms an auditor reads |
+| `proposerId`, `proposerType`, `proposerSnapshotId` | text | **frozen** identity (`FR-GEL-067`) |
+| `approverId`, `approverSnapshotId` | text? | present only where an approval was attempted |
+| `appliedTransitionId` | text? | present **only** for `applied` — the `EPIC-009` transition |
+| `correlationId`, `causationId` | text | causal chain |
+| `decidedAt` | timestamp | the decision time, which **may be source-supplied** |
+| `createdAt` | timestamp | **server-assigned** row creation |
+
+**Why two timestamps.** Constitution XII holds that a source timestamp is evidence, never
+sequencing authority. `decidedAt` can carry what the proposer asserted; `createdAt` is what this
+system observed. Collapsing them would let a connector's clock rewrite the audit order.
+
+**A correction is a new row.** There is no update path. A superseding decision is written with a
+new idempotency key and both rows survive — the history is the pair, not the latest value.
+
+## 9. What this Epic deliberately does not model
 
 | Not here | Owner |
 |---|---|
