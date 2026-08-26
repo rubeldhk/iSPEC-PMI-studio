@@ -321,3 +321,29 @@ told you nothing, and this Epic's whole value to five other Epics is that its gu
   because an implementer should make the edit.
 - `T993a` comes first for a reason. The plan records the concurrent-session gate as **FAIL**, and
   every task after it writes application code into a checkout that cannot be asserted exclusive.
+
+## Phase C2A: Specification status-transition adjudication *(appended 2026-08-25)*
+
+**Why this phase exists.** `EPIC-037` Band A stopped before writing a line of code: `T1058` required
+consuming this Epic's adjudication and **there was nothing to consume**. This Epic evaluated loop
+stages (`Event`…`Outcome`) and exposed no specification-lifecycle proposal intake — 0 matches for
+`proposal` or `adjudicat` across the module. The two amendments Rev 3 §04 assigned here were never
+scheduled. This phase is the minimum that unblocks Band A, and nothing more.
+
+**Boundary**: no UI, no Decision Inbox, no Requirement Room, no `EPIC-037` work, and no unrelated
+open task of this Epic. `T988` and `T992` stay untouched.
+
+- [X] T1082 [P] Write failing contract tests in `packages/loop-contract/tests/adjudication.spec.ts` for the proposal-adjudication contract, per `FR-GEL-063`, `FR-GEL-064`, `FR-GEL-068` — the full intake field set, the **closed six-verdict** union, and that `SpecLifecycleState` and `LoopStage` are **distinct types with no conversion between them** (covers T1083)
+- [X] T1083 Define the adjudication contract in `packages/loop-contract/src/adjudication.ts` — `AdjudicationProposal`, `AdjudicationVerdict` (six variants), and the `LifecycleApplicationPort` this Epic calls (contract test: T1082). **No transport, no data access, no `backend/src` import**: `EPIC-037` must consume it without reaching this Epic's internals (`FR-GEL-073`)
+- [X] T1084 [P] Write failing unit tests in `backend/tests/unit/loop/separation-of-duties.spec.ts` per `FR-GEL-067` — an AI agent cannot approve its own proposal **under any policy**; a human proposer cannot when policy requires a distinct approver; identity is read from the **frozen** snapshot, not mutable display metadata (covers T1085)
+- [X] T1085 Implement separation-of-duties evaluation in `backend/src/modules/loop/separation-of-duties.ts`, defaulting to **distinct approver required** (unit test: T1084)
+- [X] T1086 [P] Write failing unit tests in `backend/tests/unit/loop/adjudicator.spec.ts` covering all six verdicts and their semantics per `FR-GEL-068`–`FR-GEL-070` — `validated` means valid **and not applied**; `approval_required` and `refused` both mean **no transition applied**; `inconsistent` means observed state contradicts the expectation; `reconciliation_required` means automated application is prohibited pending governed resolution (covers T1087)
+- [X] T1087 Implement `backend/src/modules/loop/adjudicator.service.ts` — intake, lifecycle validation delegated to `EPIC-009`, authority and gate evaluation reusing this Epic's existing `evaluateAuthority` and `evaluateGates`, separation of duties, approval routing, and verdict construction (unit test: T1086). **Hold no table of permitted transitions** (`FR-GEL-065`)
+- [X] T1088 [P] Write failing integration tests in `backend/tests/integration/loop/adjudication-application.spec.ts` per `FR-GEL-069` — a valid no-approval proposal is applied through `EPIC-009`; **an `EPIC-009` failure cannot yield `applied`**; an unknown outcome yields `reconciliation_required` (covers T1089)
+- [X] T1089 Implement the `EPIC-009` application step in `backend/src/modules/loop/lifecycle-application.adapter.ts` — a durable intent recorded **before** the call, `applied` returned **only** on confirmation, and `reconciliation_required` on timeout or unknown outcome (integration test: T1088). **`EPIC-009` exposes no shared transaction boundary**, so this is the explicit orchestration model the authorisation permits rather than a claimed atomicity that does not exist
+- [X] T1090 [P] Write failing integration tests in `backend/tests/integration/loop/adjudication-concurrency.spec.ts` per `FR-GEL-070`, `FR-GEL-071` — stale expected state yields `inconsistent` with nothing applied; an idempotent retry returns the **original** verdict without duplicating an approval or a transition; concurrent proposals cannot silently overwrite one another (covers T1091)
+- [X] T1091 Implement optimistic concurrency and idempotent adjudication keyed on proposal and idempotency key (integration test: T1090)
+- [X] T1092 [P] Write failing tests in `backend/tests/integration/loop/adjudication-evidence.spec.ts` per `FR-GEL-072` — intake, evaluation, approval, refusal and application each produce immutable evidence linking proposal, verdict and applied transition, and redaction does not break the chain (covers T1093)
+- [X] T1093 Additive migration creating `adjudication_records` with the existing `reject_mutation()` trigger **attached** — the function is reused, the trigger is new and grants nothing until this statement runs (integration test: T1092)
+- [X] T1094 [P] Write the failing architecture test in `backend/tests/architecture/adjudication-boundary.spec.ts` per `FR-GEL-073` — no consumer of `@pmi/loop-contract`'s adjudication types imports `backend/src/modules/loop/**`, and **no connector path invokes `EPIC-009`'s lifecycle service directly** to bypass adjudication
+- [X] T1095 Reuse `EPIC-024` authorisation at intake — tenant and workspace isolation, actor authority checked at **adjudication time** (unit test: T1086). **Create no independent authorisation model** (`FR-GEL-066`)

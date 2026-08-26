@@ -96,9 +96,12 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // approval overrides, and the review sessions with their answers.
     // access_grants + access_attempt_records arrived with EPIC-024 T376 —
     // layer 2 of the two-layer authorisation rule and its refusal record.
+    // adjudication_records arrived with EPIC-030 T1093 — the immutable
+    // evidence of every specification status-transition adjudication.
     expect([...tables.keys()].sort()).toEqual([
       'access_attempt_records',
       'access_grants',
+      'adjudication_records',
       'adr_specification_links',
       'answers',
       'architecture_decision_records',

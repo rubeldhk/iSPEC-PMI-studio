@@ -84,6 +84,8 @@ model Workspace {
   requirementCandidates RequirementCandidate[]
   requirementDecisions  RequirementDecision[]
   baselines             Baseline[]
+  adjudicationRecords AdjudicationRecord[]
+
 
   @@map("workspaces")
 }
@@ -1563,4 +1565,43 @@ model Handoff {
   @@index([workspaceId])
   @@index([baselineId])
   @@map("handoffs")
+}
+
+/// T1093 (EPIC-030 Phase C2A) — immutable adjudication evidence (FR-GEL-072).
+///
+/// Append-only, enforced by a trigger this Epic's migration ATTACHES. The
+/// reject_mutation() function already existed; a function protects nothing
+/// until a trigger binds it to a table.
+///
+/// `(workspaceId, proposalId, idempotencyKey)` is unique: it is what makes a
+/// retry return the original verdict instead of adjudicating twice
+/// (FR-GEL-071).
+model AdjudicationRecord {
+  id                  String   @id @default(uuid())
+  workspaceId         String
+  proposalId          String
+  executionId         String
+  specificationId     String
+  idempotencyKey      String
+  expectedStatus      String
+  requestedStatus     String
+  verdict             String
+  reason              String
+  proposerId          String
+  proposerType        String
+  proposerSnapshotId  String
+  approverId          String?
+  approverSnapshotId  String?
+  appliedTransitionId String?
+  correlationId       String
+  causationId         String
+  decidedAt           DateTime @default(now())
+  createdAt           DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, proposalId, idempotencyKey])
+  @@index([workspaceId, specificationId])
+  @@index([executionId])
+  @@map("adjudication_records")
 }

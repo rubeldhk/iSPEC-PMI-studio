@@ -370,6 +370,54 @@ type and assert it returns done/current/pending across the same stage vocabulary
 - **Gate Outcome**: the result of a required gate on a transition — satisfied, refused, exception, or violation. Never "passed by omission".
 - **Trigger Rule**: the visible, versioned rule an automated transition cites. A transition with no rule does not exist.
 
+### Specification status-transition adjudication *(added 2026-08-25 — Step C2A)*
+
+*Authorised by the project owner's Step C2A instruction, discharging the two amendments Rev 3 §04
+assigned to this Epic and never scheduled. **`EPIC-037` found the gap by trying to consume the
+capability and stopping**: this Epic evaluates Governed Engineering Loop stages and exposed no
+specification-lifecycle proposal intake at all.*
+
+> **This is not a second lifecycle engine.** `EPIC-009` remains the authoritative validator and
+> executor of specification lifecycle transitions. This Epic **adjudicates** a proposal — authority,
+> gates, separation of duties, approval routing — and, only where application is authorised,
+> **invokes `EPIC-009`** through an explicit port. Gate *outcomes* on specifications remain
+> `EPIC-021`'s; authorisation remains `EPIC-024`'s.
+
+- **FR-GEL-063**: The loop MUST accept a **specification status-transition proposal** as governed
+  intake, carrying proposal and execution identity, target and target version or baseline, the
+  **expected current** lifecycle status, the requested status, proposer and frozen agent identity,
+  originating connector identity, evidence and reason references, correlation and causation
+  identifiers, an idempotency key and a proposal timestamp.
+- **FR-GEL-064**: Adjudication MUST use **specification lifecycle** types. A specification status
+  MUST NOT be passed into an API typed as `LoopStage`, and no implicit mapping between the two
+  vocabularies may exist. *The eight loop stages and the specification lifecycle are different
+  vocabularies for different objects; conflating them would make one meaningless.*
+- **FR-GEL-065**: Adjudication MUST validate the requested transition against **`EPIC-009`'s**
+  authoritative lifecycle. This Epic MUST NOT hold its own table of permitted transitions.
+- **FR-GEL-066**: Adjudication MUST evaluate **actor authority** and **declared gates**, consuming
+  gate outcomes from the `GateProvider` port that `EPIC-021` supplies. This Epic MUST NOT re-run
+  review roles or re-decide a gate a human has already decided.
+- **FR-GEL-067**: Adjudication MUST enforce **separation of duties**. An AI agent or connector MUST
+  NEVER approve its own proposal. Whether a **human** proposer may approve their own is tenant or
+  project policy, defaulting to **a distinct approver required**. Identity MUST be evaluated from
+  **frozen authoritative identity**, never from mutable display metadata.
+- **FR-GEL-068**: Adjudication MUST return exactly one verdict from a **closed** set —
+  `validated`, `applied`, `approval_required`, `refused`, `inconsistent`, `reconciliation_required`
+  — and MUST NOT express an outcome as an ambiguous boolean.
+- **FR-GEL-069**: A verdict of `applied` MUST NOT be returned until **`EPIC-009` has confirmed** the
+  authoritative transition. Where the application outcome is unknown — timeout, crash, lost
+  response — the verdict MUST be `reconciliation_required`, never `applied` and never `refused`.
+- **FR-GEL-070**: Adjudication MUST use **optimistic concurrency** against the expected lifecycle
+  state. Where observed state differs from the proposal's expectation, the verdict MUST be
+  `inconsistent`, and no transition may be applied.
+- **FR-GEL-071**: Adjudication MUST be **idempotent** per proposal and idempotency key. A retry MUST
+  return the original verdict and MUST NOT produce a duplicate approval or a duplicate transition.
+- **FR-GEL-072**: Every intake, evaluation, approval, refusal and application MUST produce
+  **immutable adjudication evidence** linking proposal, verdict and — where applied — the resulting
+  authoritative transition. Redaction MUST NOT destroy the adjudication chain.
+- **FR-GEL-073**: The adjudication contract MUST be consumable **without importing this Epic's
+  internals**, and no connector may invoke `EPIC-009` directly to bypass adjudication.
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
