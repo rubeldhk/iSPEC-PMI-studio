@@ -103,10 +103,10 @@ CREATE TABLE "application_intents" (
 );
 
 CREATE INDEX "application_intents_workspace_intent_idx"
-    ON "application_intents" ("workspaceId", "intentId");
+    ON "application_intents"("workspaceId", "intentId");
 
 CREATE INDEX "application_intents_workspace_specification_idx"
-    ON "application_intents" ("workspaceId", "specificationId");
+    ON "application_intents"("workspaceId", "specificationId");
 
 ALTER TABLE "application_intents"
     ADD CONSTRAINT "application_intents_workspaceId_fkey"
