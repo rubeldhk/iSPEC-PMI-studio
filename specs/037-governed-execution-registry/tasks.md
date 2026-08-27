@@ -97,7 +97,7 @@ redaction preserve the chain.
 - [ ] T1055 [P] [US3] Write failing contract tests for proposal immutability in `backend/tests/contract/executions/proposals.spec.ts` — the proposal row carries **no adjudication field**, and every verdict arrives as a governance event (`R-037-5`) (covers T1056)
 - [ ] T1056 [US3] Implement `status-proposal.service.ts` recording immutable proposals and projecting `status_transition_state` from governance events (contract test: T1055)
 - [ ] T1057 [P] [US3] Write failing integration tests for status authority in `backend/tests/integration/executions/status-authority.spec.ts` per `V37-5` — connector applying a transition **refused** (`AC-EXR-16`); a passed validation routed to approval **not applied** (`AC-EXR-20`); AI self-approval **refused with a recorded reason** (`AC-EXR-08`) (covers T1058, T1059)
-- [ ] T1058 [US3] Wire proposal intake to EPIC-030's adjudication through an explicit dependency — **consume, never re-implement**. Policy classes, approval routing and separation-of-duties rules stay in EPIC-030 (integration test: T1057)
+- [ ] T1058 [US3] Wire proposal intake to EPIC-030 through the **single** exported token `PROPOSAL_ADJUDICATOR` — **consume, never re-implement**. This Epic must NOT import or resolve EPIC-030's individual ports (`ADJUDICATION_GATE_OUTCOMES`, `ADJUDICATION_AUTHORITY_POLICY`, `ADJUDICATION_LIFECYCLE_VALIDATION`, `ADJUDICATION_LIFECYCLE_APPLICATION`, `ADJUDICATION_INTAKE_AUTHORIZATION`, `ADJUDICATION_RECORDS`), which are deliberately unexported: a consumer that could reach them could assemble its own adjudicator over its own gate provider, which is the bypass `FR-GEL-073` forbids. Record the proposal and the returned verdict as events; **validation is never application**. *(tests: `backend/tests/integration/executions/status-authority.spec.ts`, plus `backend/tests/architecture/` asserting this Epic imports no EPIC-030 internals)*
 - [ ] T1059 [US3] Implement the refusal path for a connector attempting to apply a transition directly, recorded as a contract violation (integration test: T1057)
 
 **Checkpoint**: `V37-5` passes. The thin foundation is complete — **step C's exit condition**.
@@ -266,3 +266,24 @@ single execution round-tripping through the fixture connector with append-only h
 platform-adjudicated status. **Requirement Room S1 and S4 follow before Phases 6–8**, per the
 approved A–G delivery order; building every connector first would repeat the mistake this whole
 remediation corrected — internal completeness ahead of user-reachable product.
+
+
+## Dependency corrections *(applied 2026-08-27, Step C3A §1)*
+
+*Applied before implementation, per the C3A instruction. Band A did not begin — see the identity
+preflight in the C3A report.*
+
+**Adjudication (§1D).** `PROPOSAL_ADJUDICATOR` is the only EPIC-030 token this Epic may resolve.
+
+**Application policy (§1E).** `applied` requires an **effective explicit** application policy.
+With no policy the verdict is `validated`, not `applied` — and `validated` is not application.
+Authorisation (EPIC-024), gates and the mandatory human decision (EPIC-021), authority and
+separation of duties all run **before** any policy is consulted; the policy decides only whether an
+already-permissible transition applies automatically.
+
+**Governed artifact ownership (§1F).** Every specification this Epic references or creates must
+already hold, or atomically receive, a durable human owner/editor grant. Since C2E an artifact with
+**zero grants is inaccessible, not unrestricted** — so an execution targeting an ungranted
+specification is refused by EPIC-024 before adjudication is reached. `T1081`'s end-to-end proof must
+use a specification created through the production service **with** its owner grant, never a row
+inserted directly into PostgreSQL.

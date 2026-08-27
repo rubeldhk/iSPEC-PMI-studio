@@ -93,3 +93,53 @@ later is the normal case, not the exception.
    registry additionally refuses recognisable credential material (`FR-EXR-022`).
 6. **Adjudication is never a field.** Every verdict is an event in class 4. There is no
    `adjudication` column anywhere in this model (`R-037-5`).
+
+---
+
+## Refusal mapping *(added 2026-08-27, Step C3A §1B)*
+
+EPIC-030's `refused` verdict was not injective onto this vocabulary: it could mean any of three
+class-4 events, and the verdict carried only prose to tell them apart. That was finding `X1`, closed
+in the C2A closure by splitting refusal into two orthogonal typed concepts.
+
+**Event selection reads the stage. Never the prose.**
+
+| `refusalStage` | event |
+|---|---|
+| `validation` | `validation-failed` |
+| `approval` | `approval-refused` |
+| `transition` | `transition-refused` |
+
+Total over the stage, so selection is a lookup:
+
+```ts
+import { refusalEventFor, REFUSAL_EVENT_OF } from '@pmi/loop-contract';
+const event = refusalEventFor(verdict.refusalStage);
+```
+
+`refusalReasonCode` says **why** and never selects an event. `reason` is human-readable
+supplementary evidence and **must not be parsed** — a consumer that reads it to decide behaviour has
+reintroduced `X1` with extra steps.
+
+The stage is **derived** from the reason code inside EPIC-030 (`REFUSAL_STAGE_OF`) rather than
+carried alongside it, so the two cannot disagree.
+
+## Reconciliation causes *(Step C3A §1C)*
+
+`reconciliation_required` carries a structured `cause`. **All six must be handled**, and none of them
+is a refusal:
+
+| Cause | Means |
+|---|---|
+| `gate_outcomes_unavailable` | EPIC-021 cannot report outcomes at all |
+| `gate_outcomes_stale` | An outcome exists, bound to a version or gate-set that has since moved |
+| `gate_evaluation_incomplete` | Gates ran; the mandatory human decision is not yet recorded |
+| `application_outcome_unknown` | Timeout, crash or lost response — nobody observed the outcome |
+| `application_state_unconfirmed` | EPIC-009 answered, with a state other than the one requested |
+| `application_transition_unidentified` | The state changed but no durable transition identity came back |
+
+**Unavailable, stale, pending and unknown are not refusals.** Emitting `validation-failed` for an
+unreadable gate outcome would assert that a gate examined this proposal and turned it down — a
+decision nobody made. This is the correction the project owner directed in C2B, and it is why
+`gate_outcomes_unavailable` was removed from the refusal vocabulary in both the contract and the
+database.
