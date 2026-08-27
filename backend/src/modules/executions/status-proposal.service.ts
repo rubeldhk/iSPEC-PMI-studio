@@ -103,7 +103,7 @@ export class StatusProposalService {
       );
     }
 
-    await this.delegations
+    const delegation = await this.delegations
       .requireDelegated({
         workspaceId: request.workspaceId,
         principalId: request.identity.authenticatedPrincipalId,
@@ -149,7 +149,16 @@ export class StatusProposalService {
         workspaceId: request.workspaceId,
         executionId: request.executionId,
         type: 'status-transition-proposed',
-        payload: { proposalId: id, targetRef: request.targetRef, proposedState: request.proposedState },
+        payload: {
+          proposalId: id,
+          targetRef: request.targetRef,
+          proposedState: request.proposedState,
+          // The authorisation basis, recorded exactly as `registered` records
+          // it. Without it, a revoked grant leaves no trace of what was relied
+          // upon at the time the proposal was accepted.
+          delegationId: delegation.id,
+          delegationIdentityVersion: delegation.identityVersion,
+        },
         occurredAt: new Date().toISOString(),
         emittedBy: request.identity.authenticatedPrincipalId,
         idempotencyKey: `${request.idempotencyKey}:proposed`,

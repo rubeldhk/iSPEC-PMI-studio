@@ -31,6 +31,7 @@ import {
 import { ExecutionCommentService, type CommentDb } from './execution-comment.service.js';
 import { StatusProposalService, type ProposalDb } from './status-proposal.service.js';
 import { ExecutionRegistryFacade } from './execution-registry.facade.js';
+import { ExecutionsController } from './executions.controller.js';
 import { AgentsModule } from '../agents/agents.module.js';
 import {
   IdentitySnapshotService,
@@ -49,6 +50,7 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
 
 @Module({
   imports: [AgentsModule, AccessModule, LoopModule],
+  controllers: [ExecutionsController],
   providers: [
     {
       provide: EXECUTION_DB,
