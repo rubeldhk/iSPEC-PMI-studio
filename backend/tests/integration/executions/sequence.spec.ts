@@ -37,7 +37,6 @@ suite('T1046 · the sequence is gapless per execution, and nobody shares one', (
   let container: StartedPostgreSqlContainer;
   let prisma: PrismaClient;
   let events: ExecutionEventService;
-  let projections: ExecutionProjectionService;
   let n = 0;
 
   const nextExecution = async (): Promise<string> => {
@@ -71,7 +70,6 @@ suite('T1046 · the sequence is gapless per execution, and nobody shares one', (
 
     prisma = new PrismaClient({ datasources: { db: { url } } });
     events = new ExecutionEventService(prisma as unknown as EventDb);
-    projections = new ExecutionProjectionService(prisma as unknown as ProjectionDb);
   }, 300_000);
 
   afterAll(async () => {
