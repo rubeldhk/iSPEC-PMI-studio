@@ -101,6 +101,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // application_intents arrived with EPIC-030 T1097 — the durable record,
     // written before EPIC-009 is asked, that an application was attempted.
     // The five principal tables arrived with EPIC-028 T1134 / EPIC-024 T1139 —
+    // The ten execution tables arrived with EPIC-037 T1026 — the governed
+    // execution registry: six authoritative append-only tables, two rebuildable
+    // projections, the root record and the connector outbox.
     // authoritative identity for agents and services, the evidence of their
     // state changes, their frozen snapshots, and scoped delegation.
     // gate_final_outcomes arrived with EPIC-021 T1107 — the append-only
@@ -112,6 +115,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'access_grants',
       'adjudication_records',
       'adr_specification_links',
+      'agent_identity_snapshots',
       'answers',
       'application_intents',
       'application_policies',
@@ -123,6 +127,13 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'connector_registrations',
       'dependency_edges',
       'engine_registrations',
+      'execution_artifacts',
+      'execution_comments',
+      'execution_events',
+      'execution_outbox',
+      'execution_state',
+      'execution_target_bindings',
+      'executions',
       'gate_final_outcomes',
       'gate_outcomes',
       'generation_jobs',
@@ -153,6 +164,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'runs',
       'specification_versions',
       'specifications',
+      'status_transition_proposals',
+      'status_transition_state',
       'steering_applications',
       'steering_documents',
       'steering_scopes',

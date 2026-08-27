@@ -91,6 +91,8 @@ model Workspace {
   principalStateEvents   PrincipalStateEvent[]
   principalSnapshots     PrincipalIdentitySnapshot[]
   principalDelegations   PrincipalDelegation[]
+  executions             Execution[]
+  executionEvents        ExecutionEvent[]
   gateFinalOutcomes   GateFinalOutcome[]
   applicationPolicies ApplicationPolicy[]
 
@@ -1699,6 +1701,249 @@ model AdjudicationRecord {
 /// T1131 (C2E) -- evidence of the owner-grant backfill, including the artifacts
 /// whose creator could NOT be resolved. Those stay inaccessible on purpose:
 /// inventing an owner is the defect this migration exists to close.
+/// T1026 (EPIC-037 Band A) -- stable root identity for a governed execution.
+/// `governanceState` is PROJECTED from the event stream, never written by a
+/// connector.
+model Execution {
+  id                String   @id @default(uuid())
+  correlationId     String
+  causationId       String?
+  idempotencyKey    String
+  workspaceId       String
+  projectId         String?
+  command           String
+  argsSanitized     Json
+  initiatorType     String
+  initiatorId       String
+  surface           String
+  environment       String?
+  governanceState   String   @default("provisional")
+  parentExecutionId String?
+  contractVersion   String
+  registeredAt      DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id])
+  parent    Execution?  @relation("ExecutionRerun", fields: [parentExecutionId], references: [id])
+  reruns    Execution[] @relation("ExecutionRerun")
+
+  events          ExecutionEvent[]
+  state           ExecutionState?
+  agentIdentities AgentIdentitySnapshot[]
+  bindings        ExecutionTargetBinding[]
+  artifacts       ExecutionArtifact[]
+  comments        ExecutionComment[]
+  proposals       StatusTransitionProposal[]
+  outbox          ExecutionOutbox[]
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, correlationId])
+  @@index([parentExecutionId])
+  @@map("executions")
+}
+
+/// THE authority. Append-only; `sequence` is server-assigned and gapless per
+/// execution -- deliberately not a database sequence, which is global and gaps
+/// on rollback.
+model ExecutionEvent {
+  id             String   @id @default(uuid())
+  workspaceId    String
+  executionId    String
+  sequence       Int
+  localSequence  Int?
+  class          String
+  type           String
+  payload        Json
+  occurredAt     DateTime
+  recordedAt     DateTime @default(now())
+  emittedBy      String
+  idempotencyKey String
+  integrityHash  String
+  createdAt      DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@unique([executionId, sequence])
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, executionId])
+  @@map("execution_events")
+}
+
+/// PROJECTION. Rebuildable, therefore mutable -- attaching immutability here
+/// would make the rebuild impossible.
+model ExecutionState {
+  executionId              String   @id
+  workspaceId              String
+  lifecycleState           String
+  governanceState          String
+  projectedThroughSequence Int      @default(0)
+  updatedAt                DateTime @updatedAt
+  createdAt                DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId])
+  @@map("execution_state")
+}
+
+/// Frozen agent identity. Renaming a descriptor later must not rewrite history.
+model AgentIdentitySnapshot {
+  id                  String   @id @default(uuid())
+  workspaceId         String
+  executionId         String
+  descriptorRef       String
+  principalSnapshotId String
+  provider            String
+  model               String
+  adapter             String
+  agentVersion        String?
+  capabilities        String[]
+  createdAt           DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("agent_identity_snapshots")
+}
+
+/// Phase-aware traceability: input at registration, output at successful
+/// completion. A failed execution legitimately has no output row.
+model ExecutionTargetBinding {
+  id             String   @id @default(uuid())
+  workspaceId    String
+  executionId    String
+  phase          String
+  targetType     String
+  targetId       String
+  targetVersion  Int?
+  baselineId     String?
+  repositoryId   String?
+  branch         String?
+  worktree       String?
+  commitSha      String?
+  artifactDigest String?
+  createdAt      DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@unique([executionId, phase])
+  @@index([workspaceId])
+  @@map("execution_target_bindings")
+}
+
+model ExecutionArtifact {
+  id          String   @id @default(uuid())
+  workspaceId String
+  executionId String
+  role        String
+  reference   String
+  digest      String?
+  evidenceId  String?
+  createdAt   DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("execution_artifacts")
+}
+
+/// Append-only thread. A correction is a NEW comment; a redaction is an event
+/// plus a flag on a new row -- the body is never overwritten in place.
+model ExecutionComment {
+  id                      String    @id @default(uuid())
+  workspaceId             String
+  executionId             String
+  authorId                String
+  authorType              String
+  agentIdentitySnapshotId String?
+  commentType             String
+  body                    String
+  parentCommentId         String?
+  visibilityScope         String    @default("workspace")
+  mentions                String[]
+  attachments             String[]
+  evidenceRefs            String[]
+  actionRequired          Boolean   @default(false)
+  decisionRequired        Boolean   @default(false)
+  supersedesCommentId     String?
+  integrityHash           String
+  redactionState          String    @default("visible")
+  redactedBy              String?
+  redactedAt              DateTime?
+  redactionReason         String?
+  createdAt               DateTime  @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("execution_comments")
+}
+
+/// The REQUEST. There is deliberately no adjudication column anywhere in this
+/// model -- a mutable verdict field would become the audit authority by
+/// accident, and the verdict belongs to EPIC-030's stream.
+model StatusTransitionProposal {
+  id                    String   @id @default(uuid())
+  workspaceId           String
+  executionId           String
+  targetRef             String
+  targetVersion         Int
+  expectedCurrentStatus String
+  proposedState         String
+  rationale             String
+  proposedBy            String
+  proposerSnapshotId    String
+  correlationId         String
+  idempotencyKey        String
+  proposedAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
+
+  execution Execution              @relation(fields: [executionId], references: [id])
+  state     StatusTransitionState?
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, executionId])
+  @@map("status_transition_proposals")
+}
+
+/// PROJECTION of EPIC-030's verdict stream. Rebuildable, therefore mutable.
+model StatusTransitionState {
+  proposalId               String   @id
+  workspaceId              String
+  state                    String
+  projectedThroughSequence Int      @default(0)
+  updatedAt                DateTime @updatedAt
+  createdAt                DateTime @default(now())
+
+  proposal StatusTransitionProposal @relation(fields: [proposalId], references: [id])
+
+  @@index([workspaceId])
+  @@map("status_transition_state")
+}
+
+/// Connector-side, mirrored server-side for reconciliation reporting. Mutable
+/// by design: attempts and lastError change as a retry proceeds.
+model ExecutionOutbox {
+  id            String    @id @default(uuid())
+  workspaceId   String
+  executionId   String
+  payload       Json
+  localSequence Int
+  occurredAt    DateTime
+  attempts      Int       @default(0)
+  lastError     String?
+  syncedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("execution_outbox")
+}
+
 model OwnershipBackfillRecord {
   id              String   @id @default(uuid())
   workspaceId     String

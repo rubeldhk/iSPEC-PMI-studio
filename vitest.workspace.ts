@@ -142,6 +142,17 @@ export default defineWorkspace([
   },
   {
     test: {
+      // EPIC-037's governed execution registry. Separate from
+      // `execution-contract` above, which is EPIC-028's *execution environment*
+      // — where code runs, not how governed executions are recorded.
+      name: 'execution-registry-contract',
+      root: './packages/execution-registry-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'agent-contract',
       root: './packages/agent-contract',
       include: ['tests/**/*.spec.ts'],
