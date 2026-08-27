@@ -226,3 +226,70 @@ C3B §8. **Band A was not implemented.**
 had never existed — after `X7` (EPIC-021's gate outcomes), `X8` (EPIC-009's transition identity) and
 `X19` (governed artifact ownership). Each was found by stopping rather than by inventing a
 substitute, and each turned out to belong to an epic that had closed without it.
+
+---
+
+# Analysis: EPIC-037 — post-implementation (C3C closure)
+
+**Session**: 2026-08-27
+
+The first analysis of this Epic run **after** code exists. Earlier sessions compared documents to
+documents; this one compares them to a built, tested Band A — which is why its two most serious
+findings are ones no document review could have produced.
+
+Scope: `spec.md`, `plan.md`, `tasks.md`, `quickstart.md`, `contracts/*`, the two contract packages,
+`backend/src/modules/executions/`, the EPIC-037 migration read from a **live** PostgreSQL, and the
+composed `AppModule` driven over **real HTTP**.
+
+## Findings — Session 2026-08-27 (C3C closure)
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| P1 | Constitution / security | **CRITICAL** | `executions.module.ts`, `executions.controller.ts` | `ExecutionsController` was mounted in the production `AppModule` with nothing to authenticate callers. `GET /v1/executions/:workspaceId/:id/history` returned **200 with a real workspace's event stream** to a request carrying no session; write routes took `identity.authenticatedPrincipalId` from the body | **Applied**: unmounted, `DEF-037-001` raised, `T1038` marked **BLOCKED**, architecture test added that boots the app and proves all six routes 404 |
+| P2 | Correctness | **HIGH** | `execution-event.service.ts` (replay branch) | Idempotency compared only `executionId` and `type`. A key reused with a **different payload** or by a **different principal** silently returned the original as a replay — reporting an event as recorded that was never written | **Applied**: comparison widened to payload (order-insensitive) and `emittedBy`; 5 tests in `transaction-integrity.spec.ts` |
+| P3 | Test vacuity | **HIGH** | `sequence.spec.ts`, `round-trip.spec.ts` | Every `verify()` assertion expected `{gapless: true, chained: true}`. Nothing ever produced a damaged stream, so a `verify()` that returned success unconditionally would have passed the whole suite | **Applied**: gap and tamper cases added — a deleted event must report `gapless:false`, an edited payload `chained:false` |
+| P4 | Coverage | **HIGH** | `sequence.spec.ts` | Rollback was described in the suite header but never fault-injected. A sequence allocated and then rolled back was untested, which is the case a DB-sequence implementation would fail | **Applied**: two fault-injection tests — no burned sequence number, no partial projection |
+| P5 | Traceability | MEDIUM | `spec.md` success criteria, `tasks.md` | `SC-EXR-002`…`SC-EXR-009` (8 of 10) are never cited by identifier in `tasks.md`. Coverage exists transitively via `AC-EXR-*` to `V37-*`, but the `SC` to task chain cannot be walked mechanically | Add the `SC-` identifier to the checkpoint lines that already cite `V37-*`. Not blocking: no `SC` is uncovered in substance |
+| P6 | Accounting | MEDIUM | prior C3C report | The trigger count was reported from `CREATE TRIGGER` statement text (31 across all migrations). Live catalog shows **6** triggers for this Epic's tables | **Applied**: inventory now read from `pg_trigger` after applying migrations; the suite asserts per-table membership, never a total |
+| P7 | Accounting | LOW | prior C3C report | `RECONCILIATION_CAUSES` was reported as 3. It is **6** — `D-45` added three gate-related causes after that figure was written | **Corrected** here; all six verified distinct |
+| P8 | Scope | LOW | `tasks.md` Band A checkpoint | The Band A checkpoint claims `V37-1`…`V37-5`, `V37-8`, `V37-9` pass, which now holds; `V37-6`, `V37-7`, `V37-10` remain deferred to unauthorized tasks | No action — deferral is explicit and correctly recorded |
+
+## Gate conditions — post-implementation
+
+| # | Condition | Result |
+|---|---|---|
+| 1 | Requirements to tasks to implementation to tests, traceable | **PASS** for all 22 `FR-EXR-*`; `SC` chain indirect (**P5**) |
+| 2 | No duplicate identifiers | **PASS** — 64 task IDs unique; no duplicate test names; no exported-symbol collision between `execution-contract` and `execution-registry-contract` |
+| 3 | Three state machines consistent | **PASS** — lifecycle (`execution_state`), status-transition governance (`status_transition_state`), registration/governance (`executions.governanceState`); separate tables, separate vocabularies, no shared column |
+| 4 | Lifecycle terminality is class-aware | **PASS** — `TERMINAL_LIFECYCLE_EVENTS` = 5 (excludes `blocked`, includes `partially-completed`); `permittedAfterTerminal()` allows content, registration and governance classes |
+| 5 | Six reconciliation causes semantically distinct | **PASS** — 6 distinct values; DB `CHECK` and contract asserted equal sets (`T1146`) |
+| 6 | Event vocabulary unambiguous | **PASS** — 29 events; the four classes **partition** the vocabulary with zero overlap; 3 withdrawn names excluded |
+| 7 | REST and fixture semantics agree where both available | **N/A — REST is not available.** The controller is unmounted (**P1**). Nothing to compare; recorded as deferred, not as agreement |
+| 8 | No connector or controller applies lifecycle policy | **PASS** — no `applyTransition`/`approve`/`setStatus` exists to call; `LoopModule` exports only `PROPOSAL_ADJUDICATOR` of the adjudication tokens |
+| 9 | No mutable proposal/status field is authoritative | **PASS** — `status_transition_proposals` has no verdict column and carries an immutability trigger; the verdict lives in the event stream, projected to a separate rebuildable table |
+| 10 | Input/output phase binding correct | **PASS** — `InputBinding` cannot express `commitAfter`; output required on success, forbidden on failure |
+| 11 | Frozen identities and delegation references distinct | **PASS** — six identity fields kept separate; no `actorId` anywhere |
+| 12 | Every claimed-complete task has behavioural evidence | **PASS after correction** — `T1038` reclassified from complete to **blocked** precisely because its evidence was source-text only |
+| 13 | `V37-6`, `V37-7`, `V37-10` explicitly deferred | **PASS** — deferred in `tasks.md`, `quickstart.md` and both closure reports; never reported as passing |
+| 14 | Constitutional and DOR gates | **Principle XI PASS** (Tier 1 round-trip exists and drives the composed app). **Principle V PASS**. `DOR-09` reads this record: the CRITICAL and HIGH implementation findings are **remediated in this session**, not left open |
+
+## Metrics
+
+- Functional requirements: **22** · Success criteria: **10** · Acceptance criteria: **25**
+- Tasks: **64** total — Band A **44** (43 complete, 1 blocked), Band B–D **20** unauthorized
+- `FR` coverage: **100%** (22/22 cited in `tasks.md`) · `SC` direct citation: **20%** (2/10, see **P5**)
+- EPIC-037 tests: **212** across **18** files, all passing
+- Database objects: **10** tables — 6 authoritative (triggered), 2 projections (deliberately not), 2 mutable
+- Findings: **1 CRITICAL, 3 HIGH, 2 MEDIUM, 2 LOW** — 6 remediated in session, 2 accepted
+
+## Notes
+
+The value of running analyze *after* implementation is concentrated in **P1** and **P3**. Both were
+invisible to every prior pass, and for the same reason: the artifact asserted the property that was
+missing. The controller's header stated identity was not taken from the body while binding
+`ExecutionIdentityRefs` straight out of it, and the sequence suite asserted `gapless: true` without
+any test that could have produced `false`. Reading either one confirmed the wrong answer.
+
+`P1` is also the clearest case yet for the rule that a mounted route is a security surface rather
+than a task deliverable. The task said "expose the REST binding"; doing exactly that, and stopping
+there, published a tenant's audit history to anyone who could reach the port.

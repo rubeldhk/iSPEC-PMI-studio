@@ -1,29 +1,43 @@
 /**
- * T1038 (EPIC-037 Band A) — the REST binding.
+ * T1038 (EPIC-037 Band A) — the REST binding. **NOT MOUNTED. Do not mount it.**
  *
- * A **transport over** {@link ExecutionRegistryFacade}, not a second
- * implementation. Every route does exactly one thing: translate HTTP into the
- * semantic contract and back. Anything decided here would be a rule the REST
- * surface had and the MCP surface did not, which is precisely what "semantic
- * equivalence across surfaces" forbids.
+ * ## Read this before adding it to `controllers`
  *
- * ## Constitution XI, Tier 1
+ * This file was mounted in `ExecutionsModule` during C3C and taken back out at
+ * C3C closure, because HTTP evidence contradicted the claim its own header used
+ * to make. Booting the composed `AppModule` and issuing real requests showed:
  *
- * This is the real entry point. Without it the registry would be reachable only
- * from a test, and `T1039` asserts the composed application actually serves it.
+ * - `GET /v1/executions/:workspaceId/:id/history` → **200, with a real
+ *   workspace's event stream**, to a caller holding no session. `workspaceId`
+ *   came from the URL and was passed straight through; nothing checked that the
+ *   caller belonged to it.
+ * - `POST /v1/executions` → the body supplied `identity.authenticatedPrincipalId`.
+ *   The services resolve the *snapshot* authoritatively and check the two agree,
+ *   but both arrive from the same request. That is a consistency check between
+ *   body fields, not authentication of a caller.
  *
- * ## Identity is not taken from the body
+ * The old header claimed "identity is not taken from the body". That was wrong:
+ * `ExecutionIdentityRefs` **is** the body, and every field in it was a caller
+ * assertion. The claim is recorded here because the mistake is instructive —
+ * resolving a reference authoritatively feels like authentication and is not.
  *
- * The request carries **snapshot references**, and the services resolve them
- * against EPIC-028 before anything is written. There is deliberately no route
- * that accepts a principal as a claim — a connector that could assert who it is
- * would make the whole registry decorative.
+ * ## What would make it safe
  *
- * ## What has no route
+ * A transport that authenticates a **non-human** principal and mints the trusted
+ * context server-side, so `authenticatedPrincipalId` is derived from the
+ * credential rather than read from JSON. The only boundary this application has
+ * is `SessionContextMiddleware`, which resolves a *human* session cookie; using
+ * it here would mean representing an agent as a User, which EPIC-028 forbids.
+ * Connector authentication is EPIC-039 transport work.
+ *
+ * Until then the registry is reached through {@link ExecutionRegistryFacade}
+ * in-process, which is what the fixture connector and `T1039` drive.
+ *
+ * ## What has no route, and never should
  *
  * There is no endpoint to apply a transition, approve one, or patch an
  * execution. `FR-EXR-020` forbids a PATCH acting as the audit mechanism, and
- * the absence here is the enforcement: nothing to call.
+ * the absence is the enforcement: nothing to call.
  */
 import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
 import type {

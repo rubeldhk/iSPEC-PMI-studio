@@ -15,6 +15,27 @@
  *
  * There is no path to EPIC-009 from here at all. A connector cannot apply a
  * lifecycle transition because nothing in this module can.
+ *
+ * ## Why no controller is mounted (C3C closure)
+ *
+ * `ExecutionsController` was written under `T1038` and briefly mounted here.
+ * Booting the composed application and issuing real HTTP proved the mistake:
+ * `GET /v1/executions/:workspaceId/:id/history` answered **200 with a real
+ * workspace's event stream to a caller holding no session**, and `POST
+ * /v1/executions` accepted `identity.authenticatedPrincipalId` from the request
+ * body — the caller asserting who it was.
+ *
+ * The application's only authentication boundary is `SessionContextMiddleware`,
+ * which resolves a **human** session cookie. These routes are for connectors,
+ * and nothing in this repository authenticates a connector yet — that is
+ * EPIC-039 transport work, explicitly outside this band. There is no safe way
+ * to mint a trusted principal context for them today, and a mounted route that
+ * cannot authenticate its caller is worse than an absent one: it looks
+ * delivered.
+ *
+ * So the module composes the registry and exports the **facade**, which the
+ * fixture connector and the round-trip test drive in-process. External REST
+ * activation belongs with the transport work that can authenticate it.
  */
 import { Module } from '@nestjs/common';
 import { ExecutionEventService, type EventDb } from './execution-event.service.js';
@@ -31,7 +52,6 @@ import {
 import { ExecutionCommentService, type CommentDb } from './execution-comment.service.js';
 import { StatusProposalService, type ProposalDb } from './status-proposal.service.js';
 import { ExecutionRegistryFacade } from './execution-registry.facade.js';
-import { ExecutionsController } from './executions.controller.js';
 import { AgentsModule } from '../agents/agents.module.js';
 import {
   IdentitySnapshotService,
@@ -50,7 +70,10 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
 
 @Module({
   imports: [AgentsModule, AccessModule, LoopModule],
-  controllers: [ExecutionsController],
+  // `controllers` is deliberately EMPTY. See the header: `ExecutionsController`
+  // exists but is NOT mounted, because nothing can authenticate its callers.
+  // `tests/architecture/executions-unmounted.spec.ts` fails if it returns.
+  controllers: [],
   providers: [
     {
       provide: EXECUTION_DB,

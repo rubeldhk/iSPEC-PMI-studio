@@ -58,7 +58,23 @@ back complete.
 - [X] T1035 [US1] Implement the agent identity snapshot, referencing EPIC-028's descriptor and freezing provider, model, adapter, version and capabilities (unit test: T1034)
 - [X] T1036 [US1] Implement completion in `backend/src/modules/executions/execution-registration.service.ts` — terminal event with outcome, artifacts, evidence references, validation results and a **mandatory** completion comment; an empty completion is a failed completion (contract test: T1037)
 - [X] T1037 [P] [US1] Write failing contract tests for completion in `backend/tests/contract/executions/completion.spec.ts` — each of the six terminal outcomes, and refusal of a success with no output binding
-- [X] T1038 [US1] Expose the REST binding in `backend/src/modules/executions/executions.controller.ts` per `contracts/execution-contract.md` §2 — **no `PATCH` route may exist** (integration test: T1039)
+- [ ] T1038 [US1] Expose the REST binding in `backend/src/modules/executions/executions.controller.ts` per `contracts/execution-contract.md` §2 — **no `PATCH` route may exist** (integration test: T1039)
+
+  > ⏸ **BLOCKED — no authentication boundary for non-human callers.** The controller is written and
+  > correct as a translation of the semantic contract, but it was mounted with nothing to
+  > authenticate its callers: `GET /v1/executions/:workspaceId/:id/history` answered **200 with a
+  > real workspace's event stream** to a request carrying no session, and the write routes took
+  > `identity.authenticatedPrincipalId` from the request body. See
+  > [`DEF-037-001`](./defects/DEF-037-001-execution-history-readable-without-authentication.md).
+  >
+  > Failed closed at C3C closure: `ExecutionsModule` declares `controllers: []`, and
+  > `backend/tests/architecture/executions-unmounted.spec.ts` boots the application and proves all
+  > six routes and `PATCH` return `404`. The registry is reached in-process through
+  > `ExecutionRegistryFacade`, which is what `T1039` and the fixture connector drive.
+  >
+  > Unblocked by a transport that authenticates a **non-human** principal and mints the trusted
+  > context server-side. That is EPIC-039 / the later parity slice, not this band. Re-mounting
+  > without it would restore the disclosure.
 - [X] T1039 [US1] Write the failing Constitution XI Tier 1 test in `backend/tests/integration/executions/round-trip.spec.ts` driving `V37-1` through the **real HTTP route against the composed module graph**, with the real composition root — a mocked collaborator does not satisfy this tier
 - [X] T1040 [P] [US1] Write failing integration tests for idempotency in `backend/tests/integration/executions/sequence.spec.ts` per `V37-3` — replay returns the original, concurrent replays yield exactly one (covers T1041)
 - [X] T1041 [US1] Implement idempotency and correlation — `UNIQUE (workspaceId, idempotencyKey)` per `R-037-8`, replay returning the original record (integration test: T1040)

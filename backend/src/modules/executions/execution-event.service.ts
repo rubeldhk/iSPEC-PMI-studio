@@ -115,6 +115,26 @@ export function hashEvent(input: {
     .digest('hex');
 }
 
+/**
+ * Structural equality for an event payload, order-insensitive on object keys.
+ *
+ * `JSON.stringify` alone would report `{a:1,b:2}` and `{b:2,a:1}` as different
+ * events and refuse a legitimate retry, because neither JSON nor most HTTP
+ * stacks preserve key order.
+ */
+function sameContent(a: unknown, b: unknown): boolean {
+  return canonical(a) === canonical(b);
+}
+
+function canonical(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0));
+  return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(',')}}`;
+}
+
 export class ExecutionEventService {
   constructor(private readonly db: EventDb) {}
 
@@ -136,9 +156,25 @@ export class ExecutionEventService {
       );
       if (existing.length > 0) {
         const original = existing[0]!;
-        // Same key, different content is a client bug, not a replay. Returning
-        // the original would silently discard the new event.
-        if (original.executionId !== input.executionId || original.type !== input.type) {
+        // Same key, different event is a client bug, not a replay. Returning
+        // the original would silently discard the new one, and the caller would
+        // believe it had been recorded.
+        //
+        // The comparison covers the payload and the emitting principal, not
+        // just the type. A key reused with a different body, or replayed by a
+        // different principal, is the case where a quiet "success" does the most
+        // damage: the registry would report an event it never wrote, attributed
+        // to whoever wrote the first one.
+        //
+        // `occurredAt` is deliberately NOT compared. A connector retrying after
+        // a lost response may read its clock again, and that is the same logical
+        // event; the stored timestamp remains the evidence of the first attempt.
+        if (
+          original.executionId !== input.executionId ||
+          original.type !== input.type ||
+          original.emittedBy !== input.emittedBy ||
+          !sameContent(original.payload, input.payload)
+        ) {
           throw new RegistryRefusedError(
             'idempotency_conflict',
             'This idempotency key was already used for a different event.',
