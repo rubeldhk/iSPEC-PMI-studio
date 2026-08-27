@@ -30,6 +30,7 @@ import {
 } from './execution-projection.service.js';
 import { ExecutionCommentService, type CommentDb } from './execution-comment.service.js';
 import { StatusProposalService, type ProposalDb } from './status-proposal.service.js';
+import { ExecutionRegistryFacade } from './execution-registry.facade.js';
 import { AgentsModule } from '../agents/agents.module.js';
 import {
   IdentitySnapshotService,
@@ -142,8 +143,18 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
       ): StatusProposalService =>
         new StatusProposalService(db, events, projections, adjudicator, identity, delegations),
     },
+    {
+      provide: ExecutionRegistryFacade,
+      inject: [ExecutionRegistrationService, ExecutionEventService, StatusProposalService],
+      useFactory: (
+        registration: ExecutionRegistrationService,
+        events: ExecutionEventService,
+        proposals: StatusProposalService,
+      ): ExecutionRegistryFacade => new ExecutionRegistryFacade(registration, events, proposals),
+    },
   ],
   exports: [
+    ExecutionRegistryFacade,
     ExecutionRegistrationService,
     ExecutionEventService,
     ExecutionProjectionService,
