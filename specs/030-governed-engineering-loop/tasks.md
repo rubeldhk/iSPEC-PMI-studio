@@ -381,3 +381,23 @@ been written before: unit tests could not catch `X6` because they **were** the m
 
 Both are dependency gaps in other Epics. Reproducing either Epic's policy inside EPIC-030 is what
 the authorisation forbids, so neither was filled here.
+
+
+---
+
+## Phase C2B — EPIC-021 / EPIC-009 dependency remediation (authorised 2026-08-26)
+
+**Only the self-contained correction was executed.** The definition-and-ownership check found that
+the remaining C2B work is owned elsewhere — see `analysis.md`, C2B session, findings `X9`–`X11`.
+
+- [X] T1103 Correct gate-unavailability semantics per `FR-GEL-074` — `GateOutcomePort` returns a typed `GateDisposition` (`passed` \| `failed` \| `pending` \| `unavailable` \| `stale`) bound to the requested transition; only `failed` refuses; the other three route to `reconciliation_required` with a structured cause; `gate_outcomes_unavailable` is removed from the refusal vocabulary in the contract **and** in the database (`20260826000000_epic030_gate_unavailability`) *(tests: `packages/loop-contract/tests/refusal-mapping.spec.ts` — unavailability is not a refusal code; `backend/tests/unit/loop/adjudication-adapters.spec.ts` — the full disposition matrix, failed vs unreadable; `backend/tests/integration/loop/adjudication-persistence.spec.ts` — the database refuses each gate cause as a refusal reason and accepts it as a reconciliation cause)*
+
+**Not executed — blocked on an epic-ownership decision:**
+
+- **X7 / EPIC-021 production gate-outcome capability** — the producer and the Prisma-backed stores
+  are deferred by `specs/021-review-gates-roles/closure.md` to **EPIC-014 F-11.2**.
+- **X8 / EPIC-009 durable transition identity** — the Prisma-backed recorder is deferred by
+  `specs/009-spec-lifecycle-versioning/closure.md` to **EPIC-014 F-11.2**, *"the same deferral every
+  closed epic carries"*.
+- **EPIC-014 F-11.2 contains no task for either.** Its tasks (`T151`–`T156`) confirm closure
+  records and run reviews, quickstarts and promotion. The work has a named owner and no schedule.

@@ -28,6 +28,7 @@ import type {
   AdjudicationEvidenceInput,
   AdjudicationRecordPort,
   AuthorityPolicyPort,
+  GateDisposition,
   GateOutcomePort,
   IntakeAuthorizationPort,
   LifecycleValidationPort,
@@ -122,17 +123,18 @@ export class EpicNineTransitionAdapter implements SpecificationTransitionPort {
  * has no Nest module, is imported by nothing, ships only an in-memory store,
  * exposes no per-specification query, and nothing writes `gate_outcomes`.
  *
- * So this reports **unavailable**, which refuses. It is not a fixture and not a
- * default-allow: it asserts the absence of an answer rather than inventing one.
- * `passed: true` here would mean "every declared gate is satisfied" — a claim
- * nobody established, on the exact axis `ADR-0025` warns about.
+ * So this reports **`unavailable`**, which routes to reconciliation — not to a
+ * refusal. It is not a fixture and not a default-allow: it asserts the absence
+ * of an answer rather than inventing one. `passed` here would mean "every
+ * declared gate is satisfied", a claim nobody established, on the exact axis
+ * `ADR-0025` warns about; `failed` would mean a gate examined this proposal and
+ * turned it down, which is equally untrue.
  */
 export class UnconfiguredGateOutcomes implements GateOutcomePort {
-  async outcomesFor(): Promise<{ passed: boolean; blocking: string; unavailable: true }> {
+  async outcomesFor(): Promise<{ disposition: GateDisposition; blocking: string }> {
     return {
-      passed: false,
+      disposition: 'unavailable',
       blocking: 'EPIC-021 supplies no gate-outcome service in this deployment',
-      unavailable: true,
     };
   }
 }

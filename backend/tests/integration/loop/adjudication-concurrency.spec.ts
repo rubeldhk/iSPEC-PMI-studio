@@ -76,7 +76,7 @@ function build(observed: string, records: KeyedRecords): {
   const applications: string[] = [];
   const svc = new ProposalAdjudicatorService(
     { currentStatus: async () => observed, isPermitted: async () => true },
-    { outcomesFor: async () => ({ passed: true, blocking: undefined }) },
+    { outcomesFor: async () => ({ disposition: 'passed' as const, blocking: undefined }) },
     {
       requiredAuthorities: async () => [],
       actorAuthorities: async () => [],
@@ -157,7 +157,7 @@ describe('T1090 · idempotent retry', () => {
     const records = new KeyedRecords();
     const svc = new ProposalAdjudicatorService(
       { currentStatus: async () => 'draft', isPermitted: async () => false },
-      { outcomesFor: async () => ({ passed: true, blocking: undefined }) },
+      { outcomesFor: async () => ({ disposition: 'passed' as const, blocking: undefined }) },
       {
         requiredAuthorities: async () => [],
         actorAuthorities: async () => [],

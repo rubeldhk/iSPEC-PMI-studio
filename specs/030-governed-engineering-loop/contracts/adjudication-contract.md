@@ -68,7 +68,7 @@ Two **orthogonal** concepts. `refusalStage` answers *when* and selects the event
 
 | `refusalStage` | `EPIC-037` event | Reason codes filed here |
 |---|---|---|
-| `validation` | `validation-failed` | `invalid_lifecycle_transition`, `gate_failed`, `gate_outcomes_unavailable` |
+| `validation` | `validation-failed` | `invalid_lifecycle_transition`, `gate_failed` |
 | `approval` | `approval-refused` | `self_approval_prohibited`, `distinct_approver_required`, `unauthorized_actor`, `approval_authority_missing` |
 | `transition` | `transition-refused` | `lifecycle_application_refused` |
 
@@ -78,6 +78,23 @@ trusting the stored column.
 
 Stale state remains `inconsistent`, and an unobserved outcome remains `reconciliation_required`.
 Neither is a refusal: no decision was taken against the proposal in either case.
+
+## 3b. Gate disposition — a decision, or the absence of one (`FR-GEL-074`)
+
+`GateOutcomePort` returns a **disposition**, not a boolean, because a boolean cannot tell "the gate
+turned this down" from "nobody could tell us".
+
+| Disposition | Verdict | Cause / code |
+|---|---|---|
+| `passed` | continues to authority | — |
+| `failed` | `refused` · stage `validation` | `gate_failed` |
+| `unavailable` | `reconciliation_required` | `gate_outcomes_unavailable` |
+| `stale` | `reconciliation_required` | `gate_outcomes_stale` |
+| `pending` | `reconciliation_required` | `gate_evaluation_incomplete` |
+
+**`FR-ENH-016` is not an exception to this.** *"An unavailable or malformed role fails the gate"*
+describes an evaluation that **ran** and could not complete a role — an authoritative negative
+outcome, so `failed`. What routes to reconciliation is the outcome itself being unobtainable.
 
 ## 4. Application — `LifecycleApplicationPort` (`FR-GEL-069`)
 

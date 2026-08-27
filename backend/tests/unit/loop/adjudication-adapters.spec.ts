@@ -118,16 +118,35 @@ describe('T1099 · EPIC-009 applies; the id it returns is not a transition id', 
   });
 });
 
-describe('T1100 · EPIC-021 supplies nothing, so gates REFUSE rather than pass', () => {
-  it('reports unavailable, which is not the same as failed', async () => {
+/** An adjudicator whose only variable is what EPIC-021 reports. */
+function build(gate: {
+  disposition: 'passed' | 'failed' | 'pending' | 'unavailable' | 'stale';
+  blocking: string | undefined;
+}): ProposalAdjudicatorService {
+  return new ProposalAdjudicatorService(
+    { currentStatus: async () => 'draft', isPermitted: async () => true },
+    { outcomesFor: async () => gate },
+    {
+      requiredAuthorities: async () => [],
+      actorAuthorities: async () => [],
+      autoApplyPermitted: async () => true,
+    },
+    { apply: async () => ({ outcome: 'confirmed', transitionId: 't1' }) },
+    { humanSelfApprovalPermitted: false },
+    { record: async () => 'rec-1', findByIdempotency: async () => null },
+    { requireEditable: async () => undefined },
+  );
+}
+
+describe('T1100 · EPIC-021 supplies nothing, so gates RECONCILE rather than refuse', () => {
+  it('reports unavailable, which is neither passed nor failed', async () => {
     const gates = new UnconfiguredGateOutcomes();
     const out = await gates.outcomesFor();
-    expect(out.unavailable).toBe(true);
-    expect(out.passed, 'an unavailable gate reported itself satisfied').toBe(false);
+    expect(out.disposition).toBe('unavailable');
     expect(out.blocking).toMatch(/EPIC-021/);
   });
 
-  it('produces refused/validation/gate_outcomes_unavailable end to end', async () => {
+  it('produces reconciliation_required/gate_outcomes_unavailable end to end', async () => {
     const svc = new ProposalAdjudicatorService(
       { currentStatus: async () => 'draft', isPermitted: async () => true },
       new UnconfiguredGateOutcomes(),
@@ -142,11 +161,34 @@ describe('T1100 · EPIC-021 supplies nothing, so gates REFUSE rather than pass',
       { requireEditable: async () => undefined },
     );
     const v = await svc.adjudicate(PROPOSAL);
-    expect(v.verdict).toBe('refused');
-    if (v.verdict !== 'refused') throw new Error('not refused');
-    // The stage is what EPIC-037 maps to an event; the code is why.
-    expect(v.refusalStage).toBe('validation');
-    expect(v.refusalReasonCode).toBe('gate_outcomes_unavailable');
+    // NOT `refused`: a refusal would say a gate examined this proposal and
+    // turned it down. Nothing examined it — EPIC-021 supplies no service.
+    expect(v.verdict).toBe('reconciliation_required');
+    if (v.verdict !== 'reconciliation_required') throw new Error('not reconciliation');
+    expect(v.reconciliation.cause).toBe('gate_outcomes_unavailable');
+  });
+
+  it('distinguishes a gate that FAILED from one that could not be read', async () => {
+    // The distinction the correction exists for. A failed gate is an
+    // authoritative decision (`FR-ENH-016`'s case included); an unreadable one
+    // is the absence of any decision.
+    const failed = await build({ disposition: 'failed', blocking: 'security-review' })
+      .adjudicate(PROPOSAL);
+    expect(failed.verdict).toBe('refused');
+    if (failed.verdict !== 'refused') throw new Error('not refused');
+    expect(failed.refusalStage).toBe('validation');
+    expect(failed.refusalReasonCode).toBe('gate_failed');
+
+    for (const [disposition, cause] of [
+      ['unavailable', 'gate_outcomes_unavailable'],
+      ['stale', 'gate_outcomes_stale'],
+      ['pending', 'gate_evaluation_incomplete'],
+    ] as const) {
+      const v = await build({ disposition, blocking: 'g1' }).adjudicate(PROPOSAL);
+      expect(v.verdict, disposition + ' did not reconcile').toBe('reconciliation_required');
+      if (v.verdict !== 'reconciliation_required') throw new Error('not reconciliation');
+      expect(v.reconciliation.cause).toBe(cause);
+    }
   });
 
   it('never lets an unavailable gate reach application', async () => {

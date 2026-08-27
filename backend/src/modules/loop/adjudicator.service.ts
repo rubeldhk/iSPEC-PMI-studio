@@ -31,6 +31,7 @@ import {
   type ApprovalAttempt,
   type LifecycleApplicationPort,
   type ProposalAdjudicator,
+  type ReconciliationCause,
   type RefusalReasonCode,
   type RefusalStage,
 } from '@pmi/loop-contract';
@@ -42,20 +43,26 @@ export interface LifecycleValidationPort {
   isPermitted(from: string, to: string): Promise<boolean>;
 }
 
+/**
+ * What EPIC-021 says about the gates declared on a transition.
+ *
+ * A boolean cannot carry this. `failed` is a **decision** — the gate ran and
+ * turned the proposal down. `unavailable`, `stale` and `pending` are the
+ * **absence** of a decision, and reporting any of them as a refusal would claim
+ * a gate examined this proposal when nothing did.
+ */
+export type GateDisposition = 'passed' | 'failed' | 'pending' | 'unavailable' | 'stale';
+
 /** EPIC-021 — gate outcomes on a specification. Consumed, never re-decided. */
 export interface GateOutcomePort {
   outcomesFor(
     workspaceId: string,
     specificationId: string,
+    requestedTransition: string,
   ): Promise<{
-    passed: boolean;
+    disposition: GateDisposition;
+    /** The gate that decided, or the reason no outcome could be obtained. */
     blocking: string | undefined;
-    /**
-     * EPIC-021 cannot report outcomes at all. Distinct from `passed: false`: a
-     * failed gate is a decision, an unavailable one is the absence of any. Both
-     * refuse — conflating them would report a fact nobody established.
-     */
-    unavailable?: boolean;
   }>;
 }
 
@@ -124,6 +131,20 @@ export interface AdjudicationRecordPort {
  */
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 type VerdictDraft = DistributiveOmit<AdjudicationVerdict, 'proposalId' | 'adjudicationRecordId'>;
+
+/**
+ * Non-decision dispositions and the reconciliation each one needs.
+ *
+ * Total over everything except `passed` and `failed`, which are handled before
+ * this is consulted — so a new disposition cannot silently fall through.
+ */
+const GATE_RECONCILIATION_CAUSE: Readonly<
+  Record<Exclude<GateDisposition, 'passed' | 'failed'>, ReconciliationCause>
+> = Object.freeze({
+  unavailable: 'gate_outcomes_unavailable',
+  stale: 'gate_outcomes_stale',
+  pending: 'gate_evaluation_incomplete',
+});
 
 export class ProposalAdjudicatorService implements ProposalAdjudicator {
   constructor(
@@ -202,21 +223,31 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
     }
 
     // --- 4. Gates, answered by EPIC-021.
-    const gate = await this.gates.outcomesFor(proposal.workspaceId, proposal.specificationId);
-    if (gate.unavailable === true) {
-      return this.refuse(
-        proposal,
-        'gate_outcomes_unavailable',
-        `Gate outcomes cannot be read (${gate.blocking ?? 'EPIC-021 unconfigured'}), so no ` +
-          'declared gate can be shown satisfied. Refusing rather than assuming.',
-        decidedAt,
-      );
-    }
-    if (!gate.passed) {
+    //
+    // Only `failed` is a refusal. A gate that could not be read, is stale, or
+    // has not finished has decided nothing — routing those to reconciliation
+    // keeps infrastructure trouble from masquerading as a governance decision.
+    const gate = await this.gates.outcomesFor(
+      proposal.workspaceId,
+      proposal.specificationId,
+      observed + '->' + proposal.requestedStatus,
+    );
+    if (gate.disposition === 'failed') {
       return this.refuse(
         proposal,
         'gate_failed',
-        `Gate "${gate.blocking ?? 'unnamed'}" did not pass. Nothing was applied.`,
+        'Gate "' + (gate.blocking ?? 'unnamed') + '" did not pass. Nothing was applied.',
+        decidedAt,
+      );
+    }
+    if (gate.disposition !== 'passed') {
+      const cause = GATE_RECONCILIATION_CAUSE[gate.disposition];
+      return this.reconcile(
+        proposal,
+        cause,
+        'No gate outcome could be established (' +
+          (gate.blocking ?? 'no detail supplied') +
+          '). Nothing was applied, and nothing was refused: no gate decided anything.',
         decidedAt,
       );
     }
@@ -318,6 +349,21 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
       verdict: 'refused',
       refusalStage: REFUSAL_STAGE_OF[reasonCode],
       refusalReasonCode: reasonCode,
+      reason,
+      decidedAt,
+    });
+  }
+
+  /** Route to reconciliation with a structured cause, never a parsed string. */
+  private reconcile(
+    proposal: AdjudicationProposal,
+    cause: ReconciliationCause,
+    reason: string,
+    decidedAt: string,
+  ): Promise<AdjudicationVerdict> {
+    return this.finish(proposal, {
+      verdict: 'reconciliation_required',
+      reconciliation: { cause, detail: reason },
       reason,
       decidedAt,
     });

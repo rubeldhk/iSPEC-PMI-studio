@@ -283,6 +283,34 @@ suite('T1096 · the database refuses what the type refuses', () => {
     ).rejects.toThrow(/refusal_reason_vocabulary/);
   });
 
+  it('refuses gate UNAVAILABILITY as a refusal reason — it is a reconciliation cause', async () => {
+    // T1103. The database now enforces the correction, not just the type: a
+    // refusal citing unavailability would claim a gate decided something.
+    for (const code of ['gate_outcomes_unavailable', 'gate_outcomes_stale',
+      'gate_evaluation_incomplete']) {
+      await expect(
+        insert({
+          idempotencyKey: 'gu-' + code,
+          verdict: 'refused',
+          refusalStage: 'validation',
+          refusalReasonCode: code,
+        }),
+        code + ' was accepted as a refusal reason',
+      ).rejects.toThrow(/refusal_reason_vocabulary/);
+    }
+  });
+
+  it('accepts each gate cause as a RECONCILIATION cause', async () => {
+    for (const cause of ['gate_outcomes_unavailable', 'gate_outcomes_stale',
+      'gate_evaluation_incomplete']) {
+      await insert({
+        idempotencyKey: 'gc-' + cause,
+        verdict: 'reconciliation_required',
+        reconciliationCause: cause,
+      });
+    }
+  });
+
   it('refuses `approval_required` with no role, and `inconsistent` with no observed status', async () => {
     await expect(insert({ idempotencyKey: 'c6', verdict: 'approval_required' })).rejects.toThrow(
       /approval_required_has_role/,
@@ -329,7 +357,8 @@ suite('T1096 · the database refuses what the type refuses', () => {
     const { rows } = await db.query<{ n: string }>(
       `SELECT count(*) AS n FROM "adjudication_records"`,
     );
-    expect(Number(rows[0]!.n)).toBe(6);
+    // Six here, plus the three gate causes accepted above.
+    expect(Number(rows[0]!.n)).toBe(9);
   });
 });
 

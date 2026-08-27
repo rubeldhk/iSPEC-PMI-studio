@@ -77,7 +77,6 @@ describe('T1096 · the reason vocabulary', () => {
     // stage rather than a true one.
     expect(REFUSAL_STAGE_OF.invalid_lifecycle_transition).toBe('validation');
     expect(REFUSAL_STAGE_OF.gate_failed).toBe('validation');
-    expect(REFUSAL_STAGE_OF.gate_outcomes_unavailable).toBe('validation');
     expect(REFUSAL_STAGE_OF.self_approval_prohibited).toBe('approval');
     expect(REFUSAL_STAGE_OF.distinct_approver_required).toBe('approval');
     expect(REFUSAL_STAGE_OF.unauthorized_actor).toBe('approval');
@@ -109,6 +108,22 @@ describe('T1096 · what refusal must NOT absorb', () => {
       'application_outcome_unknown',
       'application_state_unconfirmed',
       'application_transition_unidentified',
+      'gate_outcomes_unavailable',
+      'gate_outcomes_stale',
+      'gate_evaluation_incomplete',
     ]);
+  });
+
+  it('keeps gate UNAVAILABILITY out of the refusal vocabulary entirely', () => {
+    // The C2A closure reported unavailability as refused/validation-failed. That
+    // said a gate examined the proposal and turned it down, when nothing
+    // examined it. `gate_failed` remains — FR-ENH-016's case, where the gate ran
+    // and a role could not answer — but unavailability is now reconciliation.
+    expect(REFUSAL_REASON_CODES).toContain('gate_failed');
+    for (const absent of ['gate_outcomes_unavailable', 'gate_outcomes_stale',
+      'gate_evaluation_incomplete']) {
+      expect(REFUSAL_REASON_CODES, absent + ' is still a refusal code').not.toContain(absent);
+      expect(RECONCILIATION_CAUSES, absent + ' is not a reconciliation cause').toContain(absent);
+    }
   });
 });

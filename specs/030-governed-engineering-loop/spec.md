@@ -418,6 +418,16 @@ specification-lifecycle proposal intake at all.*
 - **FR-GEL-073**: The adjudication contract MUST be consumable **without importing this Epic's
   internals**, and no connector may invoke `EPIC-009` directly to bypass adjudication.
 
+- **FR-GEL-074**: Adjudication MUST distinguish a **gate decision** from the **absence of one**.
+  Only an authoritative evaluation that failed may produce `refused` /
+  `gate_failed`. A required gate outcome that is unavailable, stale, or not yet complete MUST
+  produce `reconciliation_required` carrying a structured cause — `gate_outcomes_unavailable`,
+  `gate_outcomes_stale` or `gate_evaluation_incomplete` — and MUST NOT be reported as a refusal.
+  *Infrastructure or evidence unavailability must never be represented as though a gate made a
+  negative decision. `FR-ENH-016` (EPIC-021) is the distinct case where the gate **ran** and a role
+  could not answer: that failure is authoritative and remains `gate_failed`.* *(added 2026-08-26,
+  Step C2B)*
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
@@ -455,6 +465,9 @@ adjudication (`FR-GEL-063`–`FR-GEL-073`).*
 - **SC-GEL-018**: Every refusal maps to **exactly one** `EPIC-037` event, selected from a typed
   stage rather than from prose; **zero** refusals are unmappable, and **zero** require a consumer
   to read the human-readable reason to choose *(added 2026-08-25, C2A closure `X1`)*.
+- **SC-GEL-019**: **Zero** adjudications report an unobtainable, stale or incomplete gate outcome
+  as a refusal; **100%** route to reconciliation with a structured cause. Enforced by the database,
+  not only by the type *(added 2026-08-26, Step C2B)*.
 
 ## Assumptions
 

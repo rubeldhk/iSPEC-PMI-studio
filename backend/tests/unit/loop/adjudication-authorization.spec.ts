@@ -67,7 +67,7 @@ function build(auth: IntakeAuthorizationPort, records: SpyRecords) {
   const applied: string[] = [];
   const svc = new ProposalAdjudicatorService(
     { currentStatus: async () => 'draft', isPermitted: async () => true },
-    { outcomesFor: async () => ({ passed: true, blocking: undefined }) },
+    { outcomesFor: async () => ({ disposition: 'passed' as const, blocking: undefined }) },
     {
       requiredAuthorities: async () => [],
       actorAuthorities: async () => [],

@@ -258,3 +258,50 @@ Observed: **16**. Authoritative: **14 before C2A · 15 after C2A · 16 after C2A
 **`EPIC-037` still carries the stale figure.** Its `analysis.md` says the function is *"bound by 17
 triggers elsewhere"*. That file is closed and owner-approved, and was deliberately **not** edited
 during this step — the correction is listed as a required targeted change before Band A resumes.
+
+---
+
+# Analysis: EPIC-030 — C2B definition and ownership check (`X7`, `X8`)
+
+**Session**: 2026-08-26 · **Scope**: the ownership of gate evaluation and lifecycle-transition
+identity, per the Step C2B definition check. Read: EPIC-009 and EPIC-021 `spec.md`, `tasks.md`,
+`closure.md`; EPIC-014 `spec.md`, `tasks.md`; `specs/_shared/platform-spec.md`; and the
+implementations under `backend/src/modules/{specifications,reviews}`.
+
+## The eight questions
+
+| # | Question | Answer | Approved source |
+|---|---|---|---|
+| 1 | Who defines which gates apply? | **EPIC-021.** `GateConfigService.configure()` writes a `ReviewGate {workspaceId, transition:"from->to", requiredRoles, blocking}`. `GateStore.findForTransition(workspaceId, transition)` is the lookup EPIC-030 needs | `FR-ENH-012`; gate transitions **derived** from EPIC-009's `PERMITTED_TRANSITIONS`, never copied |
+| 2 | Who evaluates them? | **EPIC-021.** `GateExecutionService.execute()` runs each required role through EPIC-003's engine contract; `gate-arbitration.ts` + `GateDecisionService.decide()` record the mandatory human decision | `FR-ENH-013`, `FR-ENH-014`, `FR-ENH-016` |
+| 3 | When? | At a gated lifecycle transition — a gate binds to one `from->to` pair | `FR-ENH-012` |
+| 4 | Where is the outcome persisted? | `GateOutcome` → `gate_outcomes`. **Not append-only**: `humanDecision`, `decidedById`, `decidedAt` are filled later by `fillDecision`, so the table is deliberately two-phase mutable | `FR-ENH-015` |
+| 5 | How is it bound? | To `workspaceId`, `specificationId` and `gateId` (hence the transition). **Not** to a version or baseline | — |
+| 6 | Who owns transition history? | **EPIC-009.** `TransitionRecord`, the `TransitionRecorder` port, and `lifecycle_transitions` — which *is* append-only, trigger attached | `FR-014` |
+| 7 | Durable transition record that can be exposed? | **Structurally yes, operationally no.** `LifecycleMachine.transition()` creates and returns a `TransitionRecord` with an id; `SpecificationLifecycleService.transition()` **discards it** and returns the specification. `TRANSITION_RECORDER` is bound to `InMemoryTransitionRecorder` | — |
+| 8 | Do state and evidence share one transaction? | **No.** State lives in `InMemorySpecificationStore`; evidence in `InMemoryTransitionRecorder`. Neither is Prisma-backed, so no shared transaction exists to join | — |
+
+## Findings — Session 2026-08-26 (C2B)
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| X9 ✅ | Inconsistency | HIGH | `packages/loop-contract/src/adjudication.ts`; `adjudicator.service.ts` | **Closed by `T1103`.** C2A closure reported gate unavailability as `refused` / `validation-failed`, which asserts that a gate examined the proposal and turned it down. `GateOutcomePort` now returns a typed `GateDisposition`; only `failed` refuses; `unavailable`, `stale` and `pending` route to `reconciliation_required` with structured causes. `FR-ENH-016` — the gate **ran** and a role could not answer — correctly remains `gate_failed` | Verified by the disposition matrix in `adjudication-adapters.spec.ts` and by database constraints in `adjudication-persistence.spec.ts` |
+| X10 | Ownership | HIGH | `specs/021-review-gates-roles/closure.md`; `specs/009-spec-lifecycle-versioning/closure.md`; `specs/014-devops-release/tasks.md` | **Blocked — the remediation for `X7` and `X8` is deferred to an owner with no task for it.** EPIC-021's closure defers *"gate endpoints + wiring gates into the lifecycle transition path"* to **EPIC-014 F-11.2**; EPIC-009's closure defers *"the platform-wide composition root (Prisma-backed stores + recorder), the same deferral every closed epic carries"* to the same place. **EPIC-014 F-11.2 (`T151`–`T156`) contains no such task** — it *confirms* closure records and runs reviews, quickstarts and promotion. `specs/_shared/platform-spec.md`'s platform-wide criteria list contains no persistence-composition item either | An owner must be assigned. Building it inside EPIC-030, EPIC-009 or EPIC-021 during C2B would reassign ownership away from a recorded, approved deferral — Step C2B stop condition 5 |
+| X11 | Underspecification | MEDIUM | EPIC-021 `GateOutcome` model | Two things Step C2B requires of a gate outcome are **absent from EPIC-021's approved model**: binding to a **target version or baseline**, and any notion of **staleness**. Adding either is new product policy for EPIC-021, not an EPIC-030 adapter concern | Requires an EPIC-021 specification change — Step C2B stop condition 2 |
+
+## Why this stops
+
+`X9` was self-contained in EPIC-030 and is closed. The rest is not blocked on effort; it is blocked
+on **who owns the work**:
+
+- Atomic transition recording (question 8) requires both the specification store *and* the
+  transition recorder to be Prisma-backed and joined in one transaction. That is the
+  composition-root swap — Step C2B stop condition 4, *"architectural reassignment"*.
+- A durable `transitionId` cannot come from `InMemoryTransitionRecorder`, which the authorisation
+  explicitly forbids as a source.
+- EPIC-021 has **services but no producer**: nothing composes them, nothing writes `ReviewGate` or
+  `GateOutcome`, and they are exercised only by unit tests. The authorisation is explicit that *"a
+  database table and read service that nobody writes to do not close X7."*
+
+What *can* be done without that decision was done. What cannot has been reported rather than
+half-built.

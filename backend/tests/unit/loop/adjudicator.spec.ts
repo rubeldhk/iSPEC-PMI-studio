@@ -62,7 +62,12 @@ function service(o: Options = {}): ProposalAdjudicatorService {
       currentStatus: async () => o.observed ?? 'draft',
       isPermitted: async () => o.permitted ?? true,
     },
-    { outcomesFor: async () => ({ passed: o.gatesPassed ?? true, blocking: undefined }) },
+    {
+      outcomesFor: async () => ({
+        disposition: o.gatesPassed === false ? ('failed' as const) : ('passed' as const),
+        blocking: undefined,
+      }),
+    },
     {
       requiredAuthorities: async () => o.required ?? [],
       actorAuthorities: async () => o.authorities ?? [],

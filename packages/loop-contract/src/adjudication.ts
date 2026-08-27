@@ -122,8 +122,6 @@ export type RefusalStage = 'validation' | 'approval' | 'transition';
 export const REFUSAL_REASON_CODES = Object.freeze([
   'invalid_lifecycle_transition',
   'gate_failed',
-  /** EPIC-021 cannot report outcomes, so no gate can be shown satisfied. */
-  'gate_outcomes_unavailable',
   'unauthorized_actor',
   'self_approval_prohibited',
   'distinct_approver_required',
@@ -147,7 +145,6 @@ export function isRefusalReasonCode(value: string): value is RefusalReasonCode {
 export const REFUSAL_STAGE_OF: Readonly<Record<RefusalReasonCode, RefusalStage>> = Object.freeze({
   invalid_lifecycle_transition: 'validation',
   gate_failed: 'validation',
-  gate_outcomes_unavailable: 'validation',
   unauthorized_actor: 'approval',
   self_approval_prohibited: 'approval',
   distinct_approver_required: 'approval',
@@ -186,6 +183,18 @@ export const RECONCILIATION_CAUSES = Object.freeze([
    * record — which is worse than saying the link is missing.
    */
   'application_transition_unidentified',
+  /**
+   * Gate causes. **Infrastructure or evidence unavailability is not a gate
+   * decision**, and reporting it as `refused` would say a gate examined this
+   * proposal and turned it down. Nothing examined it.
+   *
+   * `FR-ENH-016` — *"an unavailable or malformed role fails the gate"* — is a
+   * different case and stays `gate_failed`: there, the gate **ran**, a role
+   * could not answer, and failing is the authoritative outcome.
+   */
+  'gate_outcomes_unavailable',
+  'gate_outcomes_stale',
+  'gate_evaluation_incomplete',
 ] as const);
 
 export type ReconciliationCause = (typeof RECONCILIATION_CAUSES)[number];
