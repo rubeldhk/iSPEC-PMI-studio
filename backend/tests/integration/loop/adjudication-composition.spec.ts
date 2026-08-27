@@ -127,7 +127,7 @@ suite('T1102 · the adjudicator is reachable from the composed application', () 
       [tokens.ADJUDICATION_LIFECYCLE_VALIDATION, 'EpicNinePersistentValidation', 'EPIC-009'],
       [tokens.ADJUDICATION_LIFECYCLE_APPLICATION, 'EpicNineTransactionalApplication', 'EPIC-009'],
       [tokens.ADJUDICATION_GATE_OUTCOMES, 'EpicTwentyOneGateOutcomes', 'EPIC-021'],
-      [tokens.ADJUDICATION_AUTHORITY_POLICY, 'ConfiguredAuthorityPolicy', 'EPIC-030'],
+      [tokens.ADJUDICATION_AUTHORITY_POLICY, 'DurableApplicationPolicy', 'EPIC-030'],
       [tokens.ADJUDICATION_INTAKE_AUTHORIZATION, 'AccessIntakeAuthorization', 'EPIC-024'],
       [tokens.ADJUDICATION_RECORDS, 'PrismaAdjudicationRecords', 'EPIC-030'],
     ];
@@ -147,6 +147,19 @@ suite('T1102 · the adjudicator is reachable from the composed application', () 
     // real graph exists. `X7` and `X8` both looked closed while the bindings
     // were placeholders, so the placeholder NAMES are what this rules out.
     const forbidden = /^(InMemory|Unconfigured|Null|Fake|Stub)/;
+    // C2D adds the two stores whose in-memory bindings were X13 and X16.
+    const { SPECIFICATION_STORE } = await import(
+      '../../../src/modules/specifications/specifications.module.js'
+    );
+    const access = await import('../../../src/modules/access/access.module.js');
+    for (const [token, label] of [
+      [SPECIFICATION_STORE, 'SPECIFICATION_STORE (X16)'],
+      [access.ACCESS_GRANT_STORE, 'ACCESS_GRANT_STORE (X13)'],
+      [access.ACCESS_ATTEMPT_STORE, 'ACCESS_ATTEMPT_STORE (X13)'],
+    ] as [symbol, string][]) {
+      const name = (app.get(token, { strict: false }) as object).constructor.name;
+      expect(forbidden.test(name), `${label} resolves to ${name}`).toBe(false);
+    }
     for (const token of [
       tokens.ADJUDICATION_LIFECYCLE_VALIDATION,
       tokens.ADJUDICATION_LIFECYCLE_APPLICATION,

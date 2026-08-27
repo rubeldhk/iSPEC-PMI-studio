@@ -71,3 +71,30 @@ wiring choice, not unbuilt scope.
 
 `/speckit-implement EPIC-025` — External Storage Publishing, the last of the three D-19
 children.
+
+---
+
+# Reopening record — C2D grant durability (2026-08-27)
+
+**The closure above stands.** No task recorded there is reopened.
+
+This Epic was reopened for one gap: `PrismaAccessStore` — which this Epic **wrote** — was never
+composed, so `ACCESS_GRANT_STORE` and `ACCESS_ATTEMPT_STORE` resolved to in-memory implementations.
+
+The harm was not "grants are lost". It is that this Epic's rule is **"unrestricted until granted"**:
+an artifact with no grants is editable by anyone in the workspace. Combined with a volatile store,
+**a restart turned a governed artifact back into an ungoverned one** — access widened silently, and
+the refusal record that would have shown it was volatile too.
+
+`T1119` binds the store. Grants, revocations and refusal records are now durable, an unreadable
+store fails closed rather than reading as "no grants", and a restart cannot broaden access.
+
+**One sub-item was reported rather than built.** Step C2D asked that the no-grant fallback be
+preserved *"only through EPIC-024's authoritative workspace-role check"*. This Epic has no role or
+membership model — `User.workspaceId` is the only workspace binding — so there is no such check to
+route through, and building one is a **new authorization model**, which C2D names as a stop
+condition. Recorded as `X19`.
+
+## Readiness
+
+Returns to **reopened-remediation** state until `T1119` is confirmed with the rest of C2D.

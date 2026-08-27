@@ -102,6 +102,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // written before EPIC-009 is asked, that an application was attempted.
     // gate_final_outcomes arrived with EPIC-021 T1107 — the append-only
     // authoritative gate decision, separate from the mutable working record.
+    // application_policies arrived with EPIC-030 T1117 — explicit, versioned,
+    // append-only authorisation for automatic application (X15).
     expect([...tables.keys()].sort()).toEqual([
       'access_attempt_records',
       'access_grants',
@@ -109,6 +111,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'adr_specification_links',
       'answers',
       'application_intents',
+      'application_policies',
       'architecture_decision_records',
       'audit_entries',
       'baseline_exceptions',

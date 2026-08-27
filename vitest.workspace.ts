@@ -44,6 +44,15 @@ export default defineWorkspace([
       // test at all. That is exactly how "two Vitest projects passed with no test
       // files" happened in EPIC-003, recorded in `epic-stage/harness.spec.ts`.
       // Vitest exits non-zero on an empty run, which is the anti-vacuity guard.
+      //
+      // **Capped parallelism (C2D).** Every file here starts its own PostgreSQL
+      // container, and several now boot the whole `AppModule` on top of it.
+      // Vitest's default is one worker per core, so on a 12-core machine that
+      // is up to eleven databases at once — and the suites began failing in
+      // `beforeAll` while passing individually, which reads as broken code and
+      // is actually an exhausted host. Four is enough to keep wall-clock
+      // reasonable and few enough to be deterministic.
+      poolOptions: { threads: { maxThreads: 4 } },
     },
   },
   {

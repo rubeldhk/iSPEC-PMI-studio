@@ -142,3 +142,7 @@ Reopening record.*
 **X11 — target binding and staleness** are delivered by `T1107`/`T1108`: an outcome carries the
 target version and the gate-set version it was decided against, and any mismatch yields the typed
 `stale` disposition rather than authorising anything.
+
+## Phase C2D — G2 normative requirements (2026-08-27)
+
+- [X] T1125 Record target binding and staleness as **normative requirements** — `FR-ENH-025`–`FR-ENH-030` and `SC-ENH-006`/`SC-ENH-007` in [spec.md](./spec.md), with their SRS-unsourced provenance and back-fill obligation stated rather than implied *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — staleness proven by changing the **gate set** and, separately, the **specification version**; both yield `reconciliation_required` / `gate_outcomes_stale` and authorise nothing)*

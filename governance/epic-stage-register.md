@@ -34,13 +34,13 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-021](../specs/021-review-gates-roles/) | Review Gates & Roles | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-022](../specs/022-product-traceability/) | Product Structure & Traceability | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-023](../specs/023-unattended-runs-review/) | Unattended Runs & Team Review | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-024](../specs/024-artifact-access-control/) | Artifact Access Control | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-024](../specs/024-artifact-access-control/) | Artifact Access Control | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-025](../specs/025-external-storage-publishing/) | External Storage Publishing | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-026](../specs/026-epic-stage-kanban/) | Epic Stage Register & Definition of Ready | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-027](../specs/027-ai-native-amendment/) | AI-Native Amendment Reconciliation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-028](../specs/028-agent-execution-seam/) | Agent & Execution Seam | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-029](../specs/029-design-system/) | Design System | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
-| [EPIC-030](../specs/030-governed-engineering-loop/) | Governed Engineering Loop | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-030](../specs/030-governed-engineering-loop/) | Governed Engineering Loop | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-031](../specs/031-decision-policy-engine/) | Decision & Policy Engine | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-032](../specs/032-evidence-store-contracts/) | Evidence Store & Evidence Contracts | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-033](../specs/033-requirement-room/) | Requirement Room | delivery | Ready | — | Ready | `/speckit-implement` |

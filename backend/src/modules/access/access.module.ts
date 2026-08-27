@@ -9,21 +9,42 @@
  */
 import { Module } from '@nestjs/common';
 import { AccessController } from './access.controller.js';
-import { AccessEnforcementService, InMemoryAttemptStore, type AttemptStore } from './access-enforcement.service.js';
+import { AccessEnforcementService, type AttemptStore } from './access-enforcement.service.js';
 import { AccessEvaluationService } from './access-evaluation.service.js';
-import { AccessGrantService, InMemoryGrantStore } from './access-grant.service.js';
+import {
+  AccessGrantService,
+  InMemoryGrantStore,
+  type GrantStore,
+} from './access-grant.service.js';
 import { AccessInheritanceService, InMemoryDerivationGraph, type DerivationGraph } from './access-inheritance.service.js';
 import { AccessSnapshotService } from './access-snapshot.service.js';
+import { PrismaAccessStore, type AccessDb } from './access.store.js';
+import { prismaClient } from '../../persistence/prisma.js';
 
 export const ACCESS_GRANT_STORE = Symbol('ACCESS_GRANT_STORE');
 export const ACCESS_ATTEMPT_STORE = Symbol('ACCESS_ATTEMPT_STORE');
 export const DERIVATION_GRAPH = Symbol('DERIVATION_GRAPH');
 
+/**
+ * One store instance, reached lazily.
+ *
+ * `prismaClient()` reads `DATABASE_URL` when constructed, so it must not run
+ * while modules are merely being assembled.
+ */
+let store: PrismaAccessStore | undefined;
+function prismaAccessStore(): PrismaAccessStore {
+  return (store ??= new PrismaAccessStore(prismaClient() as unknown as AccessDb));
+}
+
 @Module({
   controllers: [AccessController],
   providers: [
-    { provide: ACCESS_GRANT_STORE, useFactory: (): InMemoryGrantStore => new InMemoryGrantStore() },
-    { provide: ACCESS_ATTEMPT_STORE, useFactory: (): AttemptStore => new InMemoryAttemptStore() },
+    // X13 (C2D) — grants and refusal records are DURABLE. Bound to the
+    // PrismaAccessStore this Epic already shipped and never composed: with the
+    // in-memory store, a restart turned a governed artifact back into an
+    // ungoverned one, because "no grants" means "unrestricted".
+    { provide: ACCESS_GRANT_STORE, useFactory: (): GrantStore => prismaAccessStore() },
+    { provide: ACCESS_ATTEMPT_STORE, useFactory: (): AttemptStore => prismaAccessStore() },
     { provide: DERIVATION_GRAPH, useFactory: (): DerivationGraph => new InMemoryDerivationGraph() },
     {
       provide: AccessGrantService,

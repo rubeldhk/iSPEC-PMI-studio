@@ -42,6 +42,45 @@ specifications PMI Studio *produces*; `PMI-DOC-000` governs this repository's ow
 | FR-ENH-023 the twelve reviewing and authoring roles |
 | FR-ENH-024 record which role produced or reviewed every artifact |
 
+## Requirements owned — target binding and staleness *(added 2026-08-27, Step C2D)*
+
+*`G2`. The C2C authorization established target binding and staleness as **required governance
+behavior**, and C2D directs that the decision be recorded normatively rather than left implemented
+only because a prompt asked for it.*
+
+> **SRS provenance.** `FR-ENH-012`–`016` are cited to
+> `SRS/enhancement_module/PMI_Studio_Enhancement_Model_for_SpecKit.docx` through
+> [EPIC-017's table](../017-enhancement-model/spec.md). **The six below have no such citation
+> yet.** They proceed as **SRS-unsourced governance**, the standing posture `EPIC-014` F-11.3
+> already uses in this repository, and carry a back-fill obligation: `PMI-DOC-004` or the
+> enhancement model must cite them before the platform release gate. Recording them unsourced is
+> deliberate — the alternative is behaviour with no requirement at all, which is what `G2` was.
+
+- **FR-ENH-025**: A gate outcome MUST bind to the **exact specification version or baseline** it
+  was evaluated against. An outcome carrying no target identity MUST NOT authorise application.
+- **FR-ENH-026**: A gate outcome MUST bind to the **expected current** and **requested** lifecycle
+  statuses. A decision made for one transition MUST NOT authorise a different one.
+- **FR-ENH-027**: A gate outcome MUST bind to the **applicable gate-set version** in force when it
+  was decided, so that adding, removing or reconfiguring a gate is detectable after the fact.
+- **FR-ENH-028**: A gate outcome MUST record **evidence references** and the **frozen identities**
+  of the evaluator and the human decider. Mutable display metadata MUST NOT be used.
+- **FR-ENH-029**: An outcome MUST be treated as **stale** when any authoritative input that
+  governed it no longer matches — specification version or baseline, current lifecycle status,
+  requested target status, gate-set version, or superseded evidence.
+- **FR-ENH-030**: A stale outcome MUST NEVER authorise application. It MUST surface as the typed
+  `stale` disposition so the consuming Epic produces `reconciliation_required` with cause
+  `gate_outcomes_stale` — never a refusal, because a stale outcome is the absence of a current
+  decision rather than a negative one.
+
+### Acceptance criteria
+
+- **SC-ENH-006**: **100%** of authoritative gate outcomes carry target version, gate-set version and
+  both frozen identities; **zero** are written without them, enforced by the database rather than
+  by review.
+- **SC-ENH-007**: **Zero** stale outcomes authorise application; **100%** resolve to
+  `reconciliation_required` / `gate_outcomes_stale`, verified by changing each governing input in
+  turn rather than by inspection.
+
 ## User stories owned
 
 - US4 — gate a specification behind review

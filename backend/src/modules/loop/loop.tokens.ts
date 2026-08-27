@@ -83,3 +83,6 @@ export const ADJUDICATION_APPLICATION_INTENTS = Symbol('ADJUDICATION_APPLICATION
  * `FR-GEL-073` forbids.
  */
 export const PROPOSAL_ADJUDICATOR = Symbol('PROPOSAL_ADJUDICATOR');
+
+/** `EPIC-030` — durable, versioned auto-application policy (`X15`, C2D). */
+export const APPLICATION_POLICY_STORE = Symbol('APPLICATION_POLICY_STORE');

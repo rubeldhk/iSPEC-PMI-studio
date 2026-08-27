@@ -38,6 +38,10 @@ import type {
   SpecificationTransitionPort,
 } from './lifecycle-application.adapter.js';
 import type { LifecycleApplicationOutcome, LifecycleApplicationPort } from '@pmi/loop-contract';
+import type {
+  ApplicationPolicyRecord,
+  ApplicationPolicyStore,
+} from './application-policy.service.js';
 import {
   rowFromEvidence,
   verdictFromRow,
@@ -191,7 +195,11 @@ export class ConfiguredAuthorityPolicy implements AuthorityPolicyPort {
     return this.rules.find((r) => r.from === from && r.to === to);
   }
 
-  async requiredAuthorities(from: string, to: string): Promise<readonly string[]> {
+  async requiredAuthorities(
+    _workspaceId: string,
+    from: string,
+    to: string,
+  ): Promise<readonly string[]> {
     return this.ruleFor(from, to)?.requires ?? [];
   }
 
@@ -199,8 +207,11 @@ export class ConfiguredAuthorityPolicy implements AuthorityPolicyPort {
     return this.authorities.authoritiesFor(workspaceId, actorId);
   }
 
-  async autoApplyPermitted(from: string, to: string): Promise<boolean> {
-    return this.ruleFor(from, to)?.autoApply ?? true;
+  async autoApplyPermitted(_workspaceId: string, from: string, to: string): Promise<boolean> {
+    // Restored to FALSE in C2D (`X15`). C2C flipped it to `true` so an
+    // end-to-end proof could reach `applied`; that made "nobody configured
+    // this" indistinguishable from "somebody authorised this".
+    return this.ruleFor(from, to)?.autoApply ?? false;
   }
 }
 
@@ -513,4 +524,117 @@ export class EpicNineTransactionalApplication implements LifecycleApplicationPor
 
 function reasonOf(error: unknown): string {
   return error instanceof Error ? `${error.name}: ${error.message}` : 'unknown failure';
+}
+
+// ---------------------------------------------------------------------------
+// C2D — explicit application policy (`X15`).
+// ---------------------------------------------------------------------------
+
+/** Narrow view of `PrismaClient.applicationPolicy`. */
+export interface ApplicationPolicyDelegate {
+  create(args: { data: Record<string, unknown> }): Promise<Record<string, unknown>>;
+  findFirst(args: {
+    where: Record<string, unknown>;
+    orderBy?: { policyVersion: 'desc' };
+  }): Promise<Record<string, unknown> | null>;
+}
+
+function policyFromRow(row: Record<string, unknown>): ApplicationPolicyRecord {
+  return {
+    id: String(row['id']),
+    workspaceId: String(row['workspaceId']),
+    targetArtifactType: String(row['targetArtifactType']),
+    fromStatus: String(row['fromStatus']),
+    toStatus: String(row['toStatus']),
+    requiredAuthorities: (row['requiredAuthorities'] as string[]) ?? [],
+    autoApplyPermitted: Boolean(row['autoApplyPermitted']),
+    policyVersion: Number(row['policyVersion']),
+    state: row['state'] === 'disabled' ? 'disabled' : 'effective',
+    createdById: String(row['createdById']),
+    approvedById: (row['approvedById'] as string | null) ?? null,
+    effectiveFrom: row['effectiveFrom'] as Date,
+  };
+}
+
+export class PrismaApplicationPolicyStore implements ApplicationPolicyStore {
+  constructor(private readonly delegate: ApplicationPolicyDelegate) {}
+
+  async findLatest(
+    workspaceId: string,
+    targetArtifactType: string,
+    fromStatus: string,
+    toStatus: string,
+  ): Promise<ApplicationPolicyRecord | null> {
+    const row = await this.delegate.findFirst({
+      where: { workspaceId, targetArtifactType, fromStatus, toStatus },
+      orderBy: { policyVersion: 'desc' },
+    });
+    return row ? policyFromRow(row) : null;
+  }
+
+  async highestVersion(
+    workspaceId: string,
+    targetArtifactType: string,
+    fromStatus: string,
+    toStatus: string,
+  ): Promise<number> {
+    const row = await this.delegate.findFirst({
+      where: { workspaceId, targetArtifactType, fromStatus, toStatus },
+      orderBy: { policyVersion: 'desc' },
+    });
+    return row ? Number(row['policyVersion']) : 0;
+  }
+
+  async append(row: Record<string, unknown>): Promise<ApplicationPolicyRecord> {
+    return policyFromRow(await this.delegate.create({ data: row }));
+  }
+}
+
+/**
+ * Authority and auto-application, read from durable policy (`X15`).
+ *
+ * Replaces `ConfiguredAuthorityPolicy`'s in-code rule array. Three states, and
+ * they are deliberately not collapsed:
+ *
+ * - **no effective policy** → `autoApplyPermitted` is `false`. The proposal is
+ *   `validated`, not `applied`. Nobody has authorised automatic application, and
+ *   the absence of a decision is not a decision.
+ * - **effective policy permitting** → application may proceed, and the row names
+ *   who approved it.
+ * - **unreadable policy** → {@link PolicyUnavailableError} propagates. Refusing
+ *   is right; reporting it as "not configured" would be a lie about why.
+ */
+export class DurableApplicationPolicy implements AuthorityPolicyPort {
+  constructor(
+    private readonly policies: {
+      effectiveFor(
+        workspaceId: string,
+        targetArtifactType: string,
+        fromStatus: string,
+        toStatus: string,
+      ): Promise<ApplicationPolicyRecord | null>;
+    },
+    private readonly authorities: AuthorityLookup,
+    private readonly artifactType = 'specification',
+  ) {}
+
+  async requiredAuthorities(
+    workspaceId: string,
+    from: string,
+    to: string,
+  ): Promise<readonly string[]> {
+    const policy = await this.policies.effectiveFor(workspaceId, this.artifactType, from, to);
+    return policy?.requiredAuthorities ?? [];
+  }
+
+  async actorAuthorities(workspaceId: string, actorId: string): Promise<readonly string[]> {
+    return this.authorities.authoritiesFor(workspaceId, actorId);
+  }
+
+  async autoApplyPermitted(workspaceId: string, from: string, to: string): Promise<boolean> {
+    const policy = await this.policies.effectiveFor(workspaceId, this.artifactType, from, to);
+    // Default FALSE, restored in C2D (`X15`). No policy means nobody decided,
+    // and the absence of a decision is not a decision.
+    return policy?.autoApplyPermitted ?? false;
+  }
 }

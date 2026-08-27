@@ -96,3 +96,22 @@ correct for the 21-task state that preceded the 2026-08-19 clarification and tas
 ---
 
 **Resolution markers applied 2026-08-21** (session: EPIC-029 readiness pass). The findings the 2026-08-19 remediation pass closed — C1–C5, C8 — now carry the `✅` resolved marker the gate reads (DEF-026-008), applied only after implementation verified every closure: T374's most-restrictive-wins assertion, T826's grant-audit test, T811–T816 and the spec/plan edits all landed and pass (see `closure.md`, suites green 2026-08-21). Severities are as found. C6 and C7 remain open and unmarked — neither blocks `DOR-09`.
+
+---
+
+# Analysis: EPIC-024 — C2D reopening
+
+**Session**: 2026-08-27 · **Scope**: grant durability (`X13`) and what closing it exposed.
+
+## Findings
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| A1 ✅ | Coverage Gap | HIGH | `access.module.ts` | **Closed.** `PrismaAccessStore` was written by this Epic and never composed, so grants, revocations and refusal records lived in memory. Combined with "unrestricted until granted", a restart turned a governed artifact back into an ungoverned one | Verified: grants and revocations survive a restart, refusals are durably audited, an unreadable store fails closed |
+| A2 | Underspecification | HIGH | `access-inheritance.service.ts` | **Open.** `directlyEditable` returns `true` for **any** caller when an artifact has no grants — "unrestricted until granted". There is no role or membership model to fall back to: `User.workspaceId` is the only workspace binding, and it is never consulted. `commitGeneration` creates a specification with no grants, so every newly created specification is open to anyone who can name the workspace | Two candidate resolutions, both needing an ownership decision: (a) extend this Epic with workspace roles and route the fallback through them — a **new authorization model**, which Step C2D names as a stop condition; or (b) require every governed artifact to carry an owner grant at creation, making "no grants" unreachable rather than permissive. Recorded as `X19` in EPIC-030's analysis |
+
+## Notes
+
+`A2` is not a regression — it is the behaviour this Epic always had, and `A1` is what made it
+visible: once grants stopped vanishing, the question of what happens when there are *none* stopped
+being masked by the question of what happens when they *disappear*.

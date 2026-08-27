@@ -48,7 +48,8 @@ import {
   SpecificationsController,
 } from './specifications.controller.js';
 import {
-  InMemorySpecificationStore,
+  PrismaSpecificationStore,
+  type SpecificationDelegates,
   SpecificationsReadService,
   type SpecificationRecord,
   type SpecificationStore,
@@ -134,7 +135,17 @@ import { prismaClient } from '../../persistence/prisma.js';
   providers: [
     {
       provide: SPECIFICATION_STORE,
-      useFactory: (): SpecificationStore => new InMemorySpecificationStore(),
+      // X16 (C2D) — one source of truth. `commitGeneration` wrote to memory
+      // while lifecycle validation and application read PostgreSQL, so a
+      // specification the product had created was invisible to the services
+      // that govern it. Bound to the PrismaSpecificationStore this Epic already
+      // shipped and never composed.
+      useFactory: (): SpecificationStore => {
+        const db = prismaClient() as unknown as SpecificationDelegates;
+        return new PrismaSpecificationStore(db, (fn) =>
+          prismaClient().$transaction((tx) => fn(tx as unknown as SpecificationDelegates)),
+        );
+      },
     },
     {
       provide: LIFECYCLE_TRANSITION_REPOSITORY,

@@ -664,13 +664,22 @@ export class PrismaSpecificationStore implements SpecificationStore {
     return this.transaction(async (tx) => {
       if (!tx.traceabilityLink) throw new TraceabilityUnavailableError();
 
-      // The version FIRST: `specifications.currentVersionId` references it. The
-      // FK is DEFERRABLE either way, so the order is for readability, not for
-      // the database's benefit.
-      const version = await tx.specificationVersion.create({ data: { ...commit.version } });
+      // The SPECIFICATION first, corrected in C2D.
+      //
+      // This read "the version FIRST ... the FK is DEFERRABLE either way", and
+      // it is not: only `specifications_currentVersionId_fkey` is deferrable.
+      // `specification_versions_specificationId_fkey` is immediate, so creating
+      // the version first violates it every time. The claim went unchallenged
+      // because this store was never bound in production (`X16`) — binding it
+      // is what ran this code for the first time.
+      //
+      // Specification-first works with the constraints as they actually are:
+      // `currentVersionId` may name a row that does not exist yet, because that
+      // FK really is deferred to COMMIT, by which point the version does exist.
       const specification = await tx.specification.create({
-        data: { ...commit.specification, currentVersionId: version.id },
+        data: { ...commit.specification, currentVersionId: commit.version.id },
       });
+      await tx.specificationVersion.create({ data: { ...commit.version } });
       await tx.traceabilityLink.createMany({
         data: dedupeLinks(commit.links).map((l) => ({ ...l, sourceId: specification.id })),
       });

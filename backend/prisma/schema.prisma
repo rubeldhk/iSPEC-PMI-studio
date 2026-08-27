@@ -87,6 +87,7 @@ model Workspace {
   adjudicationRecords AdjudicationRecord[]
   applicationIntents  ApplicationIntent[]
   gateFinalOutcomes   GateFinalOutcome[]
+  applicationPolicies ApplicationPolicy[]
 
 
   @@map("workspaces")
@@ -1055,6 +1056,34 @@ model GateFinalOutcome {
   @@index([workspaceId, specificationId, fromStatus, toStatus])
   @@index([workspaceId, gateId])
   @@map("gate_final_outcomes")
+}
+
+/// T1117 -- explicit auto-application policy (EPIC-030). Append-only and
+/// versioned: a change appends a new version rather than rewriting the row an
+/// earlier adjudication was decided under.
+model ApplicationPolicy {
+  id                   String   @id @default(uuid())
+  workspaceId          String
+  targetArtifactType   String
+  fromStatus           String
+  toStatus             String
+  requiredAuthorities  String[] @default([])
+  autoApplyPermitted   Boolean
+  policyVersion        Int
+  state                String
+  createdById          String
+  createdBySnapshotId  String?
+  approvedById         String?
+  approvedBySnapshotId String?
+  effectiveFrom        DateTime @default(now())
+  correlationId        String
+  supersedesId         String?
+  createdAt            DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, targetArtifactType, fromStatus, toStatus])
+  @@map("application_policies")
 }
 
 model ReviewSession {

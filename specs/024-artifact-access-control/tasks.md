@@ -85,3 +85,21 @@ Feature → requirement link mandatory, carried in this framing note.*
 ## User stories owned
 
 - US4 — control who can see and change each artifact
+
+---
+
+## Phase C2D — durable grants (reopened 2026-08-27)
+
+*Authorised by the project owner's Step C2D instruction. `X13`: this Epic already shipped
+`PrismaAccessStore` and never composed it, so grants lived in memory. Combined with this Epic's
+"unrestricted until granted" rule, a restart turned a governed artifact back into an ungoverned
+one — access widened silently.*
+
+- [X] T1119 Bind `PrismaAccessStore` to `ACCESS_GRANT_STORE` and `ACCESS_ATTEMPT_STORE` in `access.module.ts` *(test: `backend/tests/integration/access/grant-durability.spec.ts` — a grant reaches PostgreSQL; the artifact **stays governed** across a restart; a revocation survives a restart; refusals are audited durably; an unreadable grant store **fails closed** rather than reading as "no grants", which would open the artifact)*
+
+**Reported, not implemented.** Routing the "no artifact-specific grants" fallback through *"EPIC-024's
+authoritative workspace-role check"* is not possible: this Epic has **no role or membership model**
+— `User.workspaceId` is the only workspace binding, and `directlyEditable` returns `true` for any
+caller when an artifact has no grants. Building one is a **new authorization model**, which Step
+C2D names as a stop condition. See `specs/030-governed-engineering-loop/analysis.md`, finding
+`X19`.

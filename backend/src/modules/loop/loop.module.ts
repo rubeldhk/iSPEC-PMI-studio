@@ -49,6 +49,7 @@ import {
   LOOP_CONFIG_SOURCE,
   LOOP_STAGE_HANDLERS,
   LOOP_STORE,
+  APPLICATION_POLICY_STORE,
   PROPOSAL_ADJUDICATOR,
 } from './loop.tokens.js';
 import {
@@ -61,7 +62,8 @@ import {
 } from './adjudicator.service.js';
 import {
   AccessIntakeAuthorization,
-  ConfiguredAuthorityPolicy,
+  DurableApplicationPolicy,
+  PrismaApplicationPolicyStore,
   EpicNinePersistentValidation,
   EpicNineTransactionalApplication,
   EpicTwentyOneGateOutcomes,
@@ -71,6 +73,10 @@ import {
 } from './adjudication.adapters.js';
 import type { AdjudicationEvidenceRow } from './adjudication-evidence.js';
 import { DEFAULT_SEPARATION_POLICY } from './separation-of-duties.js';
+import {
+  ApplicationPolicyService,
+  type ApplicationPolicyStore,
+} from './application-policy.service.js';
 import { SpecificationsModule } from '../specifications/specifications.module.js';
 import { permittedFrom } from '../specifications/lifecycle.machine.js';
 import { AccessModule } from '../access/access.module.js';
@@ -145,11 +151,27 @@ import { prismaClient } from '../../persistence/prisma.js';
         new EpicTwentyOneGateOutcomes(gates, repo as LifecycleRepositoryShape),
     },
     {
+      provide: APPLICATION_POLICY_STORE,
+      useFactory: (): ApplicationPolicyStore =>
+        new PrismaApplicationPolicyStore({
+          create: (args) => prismaClient().applicationPolicy.create(args as never) as never,
+          findFirst: (args) => prismaClient().applicationPolicy.findFirst(args as never) as never,
+        }),
+    },
+    {
+      provide: ApplicationPolicyService,
+      inject: [APPLICATION_POLICY_STORE],
+      useFactory: (store: ApplicationPolicyStore): ApplicationPolicyService =>
+        new ApplicationPolicyService(store),
+    },
+    {
       provide: ADJUDICATION_AUTHORITY_POLICY,
-      useFactory: (): AuthorityPolicyPort =>
-        // No rules declared yet, so nothing auto-applies: an unconfigured
-        // transition resolves to `validated`, never `applied`.
-        new ConfiguredAuthorityPolicy([], new GrantBackedAuthorities({})),
+      inject: [ApplicationPolicyService],
+      useFactory: (policies: ApplicationPolicyService): AuthorityPolicyPort =>
+        // X15 (C2D) — auto-application requires an EXPLICIT effective policy.
+        // With no policy the answer is `false`, so an unconfigured transition
+        // resolves to `validated`, never `applied`.
+        new DurableApplicationPolicy(policies, new GrantBackedAuthorities({})),
     },
     {
       provide: ADJUDICATION_INTAKE_AUTHORIZATION,
@@ -205,6 +227,10 @@ import { prismaClient } from '../../persistence/prisma.js';
     LOOP_STAGE_HANDLERS,
     // The one consumer-facing token. See the note at the head of this file.
     PROPOSAL_ADJUDICATOR,
+    // Configuration, not adjudication: an operator (or a future UI) declares
+    // whether a transition may apply automatically. Exporting it does not let
+    // a consumer decide any particular proposal.
+    ApplicationPolicyService,
   ],
 })
 export class LoopModule {}

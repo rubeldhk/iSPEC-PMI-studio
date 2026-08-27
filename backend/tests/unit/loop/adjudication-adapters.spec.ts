@@ -248,15 +248,14 @@ describe('T1101 · EPIC-024 is consulted, with the artifact it owns', () => {
 });
 
 describe('T1101 · authority policy is configuration, and defaults safely', () => {
-  it('auto-applies a transition no rule names, and requires no authority for it', async () => {
-    // Reversed in C2C. `false` made the governed path unreachable in
-    // production — an off switch wearing a safe default's clothes. The brakes
-    // are EPIC-024, the gates' mandatory human decision, authority and
-    // separation of duties, all of which run before this is consulted.
+  it('auto-applies NOTHING for a transition no rule names', async () => {
+    // Restored in C2D (`X15`). C2C had flipped this to `true` so an end-to-end
+    // proof could reach `applied` — which made "nobody configured this" and
+    // "somebody authorised this" the same state. The absence of a decision is
+    // not a decision, whatever else stands in front of it.
     const policy = new ConfiguredAuthorityPolicy([], new GrantBackedAuthorities({}));
-    expect(await policy.autoApplyPermitted('draft', 'review')).toBe(true);
-    // Unchanged: authority still defaults to none required.
-    expect(await policy.requiredAuthorities('draft', 'review')).toEqual([]);
+    expect(await policy.autoApplyPermitted('w1', 'draft', 'review')).toBe(false);
+    expect(await policy.requiredAuthorities('w1', 'draft', 'review')).toEqual([]);
   });
 
   it('lets a rule withhold auto-apply, which is now the configured exception', async () => {
@@ -264,7 +263,7 @@ describe('T1101 · authority policy is configuration, and defaults safely', () =
       [{ from: 'draft', to: 'review', requires: [], autoApply: false }],
       new GrantBackedAuthorities({}),
     );
-    expect(await policy.autoApplyPermitted('draft', 'review')).toBe(false);
+    expect(await policy.autoApplyPermitted('w1', 'draft', 'review')).toBe(false);
   });
 
   it('reads required authorities and auto-apply from the declared rule', async () => {
@@ -272,11 +271,11 @@ describe('T1101 · authority policy is configuration, and defaults safely', () =
       [{ from: 'draft', to: 'review', requires: ['approve:review'], autoApply: true }],
       new GrantBackedAuthorities({}),
     );
-    expect(await policy.requiredAuthorities('draft', 'review')).toEqual(['approve:review']);
-    expect(await policy.autoApplyPermitted('draft', 'review')).toBe(true);
-    // A transition no rule names now inherits the default (true, since C2C);
-    // authority for it is still none, which the rule above does not change.
-    expect(await policy.requiredAuthorities('review', 'approved')).toEqual([]);
+    expect(await policy.requiredAuthorities('w1', 'draft', 'review')).toEqual(['approve:review']);
+    expect(await policy.autoApplyPermitted('w1', 'draft', 'review')).toBe(true);
+    // A transition no rule names inherits the default (false, restored in C2D).
+    expect(await policy.requiredAuthorities('w1', 'review', 'approved')).toEqual([]);
+    expect(await policy.autoApplyPermitted('w1', 'review', 'approved')).toBe(false);
   });
 
   it('holds no authority for an actor until a grant source says so', async () => {

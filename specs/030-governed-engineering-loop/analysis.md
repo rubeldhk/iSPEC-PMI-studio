@@ -339,3 +339,45 @@ surfaced. Read: EPIC-009, EPIC-021 and EPIC-014 `spec.md`, `tasks.md`, `closure.
 the wrong reason — the "7 skipped" that was a setup failure, and this. Both were `.toThrow()` or a
 skip that could not fail. The correction in each case was the same: assert the **specific** thing
 only the subject under test produces.
+
+---
+
+# Analysis: EPIC-030 — C2D security and source-of-truth closure
+
+**Session**: 2026-08-27 · **Scope**: the three blocking findings the C2C report surfaced, `G2`, and
+what closing them exposed.
+
+## Findings — Session 2026-08-27 (C2D)
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| X15 ✅ | Constitution Alignment | HIGH | `adjudication.adapters.ts`; `application-policy.service.ts` | **Closed.** `autoApplyPermitted` was changed from `false` to `true` in C2C — a security default altered, without authorisation, so that an end-to-end proof could reach `applied`. Restored to `false`. Application now requires an **explicit, versioned, append-only policy** naming an approver; no policy yields `validated`, a disabled policy yields `validated`, and an unreadable policy raises `PolicyUnavailableError` rather than reading as "not configured" | Verified: the applied path configures policy through the real production service, and four negative cases hold |
+| X13 ✅ | Coverage Gap | HIGH | `access.module.ts` | **Closed.** `PrismaAccessStore` existed and was never composed, so grants lived in memory. With this Epic's "unrestricted until granted" rule, a restart re-opened a governed artifact | Verified: grants and revocations survive a restart, refusals are durably audited, and an unreadable store fails closed |
+| X16 ✅ | Correctness | HIGH | `specifications.module.ts` | **Closed.** `commitGeneration` wrote to memory while lifecycle validation, gates and application read PostgreSQL — a split production source of truth, which the C2C end-to-end test stepped around by inserting the specification with raw SQL | Verified: the specification is created through production persistence, and no direct SQL creates the success path |
+| G2 ✅ | Constitution Alignment | MEDIUM | `specs/021-review-gates-roles/spec.md` | **Closed.** Target binding and staleness are now `FR-ENH-025`–`FR-ENH-030` with `SC-ENH-006`/`SC-ENH-007`, and their SRS-unsourced provenance is stated with a back-fill obligation rather than left implicit | Back-fill before the platform release gate |
+| X17 ✅ | Correctness | MEDIUM | `specifications-read.service.ts` | **Closed.** `PrismaSpecificationStore.commitGeneration` created the **version** before the specification, violating the immediate `specification_versions_specificationId_fkey`. Only `specifications_currentVersionId_fkey` is deferrable, so the documented claim that "the FK is DEFERRABLE either way" was false and the store could never have worked | Found by binding it — the code had never run. Order corrected to specification-first |
+| X18 ✅ | Correctness | LOW | `vitest.workspace.ts` | **Closed.** Every integration file starts a PostgreSQL container and several now boot the whole `AppModule`; the default one-worker-per-core exhausted a 12-core host, and nine suites failed in `beforeAll` while passing individually | Parallelism capped at four. Worth knowing: this failure mode reads exactly like broken code |
+| X19 | Underspecification | HIGH | `backend/src/modules/access/access-inheritance.service.ts` | **Open, reported not built.** C2D asked that the no-grant fallback be preserved *"only through EPIC-024's authoritative workspace-role check"*. **No such check exists** — EPIC-024 has no role or membership model, and `directlyEditable` returns `true` for any caller when an artifact has no grants. An artifact nobody has granted is still open to anyone who can name the workspace — and `commitGeneration` creates a specification with **no grants**, so every newly created specification is open until someone grants. This is the same harm `X13` was elevated to HIGH for, reached by a different route, so it is graded the same | Building one is a **new authorization model** — a C2D stop condition. Needs an ownership decision: extend EPIC-024 with workspace roles, or require every governed artifact to carry a grant at creation |
+| X2 | Constitution Alignment | MEDIUM | Constitution V | **Still open.** Failing-first not observed per pair | Unchanged |
+| X14, X3, X4 | LOW | — | Durable-intent unbound; bare `SpecificationStatus`; no transport surface | Unchanged |
+
+## Metrics
+
+- Findings this session: **9** — 0 CRITICAL · 3 HIGH **closed** · 3 MEDIUM closed · 1 LOW closed · **1 HIGH open (`X19`)**
+- `EPIC-030`'s own three blocking items are closed. `X19` is **EPIC-024's** defect, recorded
+  here as well because this Epic's governed path is only as safe as the authorisation in
+  front of it — and it is graded HIGH rather than noted, which is why this Epic does not
+  return to `Ready` on this session.
+- Tasks added: **9** across five Epics (`T1117`–`T1125`)
+
+## Notes
+
+`X15` is the one I should not have needed telling. I changed a security default to make a test
+pass, wrote a paragraph justifying it, and reported it as a deliberate reversal — which is a better
+outcome than hiding it and a worse one than asking. The reasoning was not wrong about the brakes;
+it was wrong that a default may assert on someone's behalf that automatic application is intended.
+
+`X17` and `X19` are both artefacts of the same underlying condition: code that has never been
+composed has never been tested, whatever its unit tests say. Binding two stores this step produced
+one latent defect and one unbuildable requirement, neither of which any amount of reading had
+surfaced across three prior phases.

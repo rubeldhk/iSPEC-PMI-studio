@@ -16,11 +16,22 @@
  * `AccessEnforcementService`, and the transition is EPIC-009's real
  * transactional repository.
  *
- * **The one thing inserted directly is the specification row itself.** No
- * production path writes a `Specification` to Prisma — `commitGeneration` is
- * bound to the in-memory store, which is EPIC-014's wider deferral and outside
- * this remediation's boundary. That is fixture setup, not part of the path
- * under test.
+ * ## Nothing on the success path is inserted directly (C2D)
+ *
+ * C2C created the specification with raw SQL, because `SPECIFICATION_STORE` was
+ * bound to the in-memory store while the lifecycle services read PostgreSQL —
+ * `X16`, a split source of truth the test was quietly stepping around.
+ *
+ * That binding is fixed, so the specification is now created through
+ * `SPECIFICATION_STORE.commitGeneration` resolved from DI: the same production
+ * persistence the generation service calls. (The generation *service* above it
+ * needs an AI engine, which is why the store is the entry point rather than the
+ * service — it is production code either way, and no test-only provider,
+ * default-allow adapter or configuration override is involved.)
+ *
+ * Only workspace, user and project rows remain direct inserts. They are
+ * tenancy fixtures, not the governed artifact, and no service under test
+ * creates them.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -48,15 +59,16 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
   let db: Client;
   let app: INestApplication;
   let url = '';
-   
+
   let adjudicator: any;
-   
+
   let gateConfig: any;
-   
+
   let gateProduction: any;
-   
+
   let lifecycleRepo: any;
-   
+  let specStore: any;
+  let policies: any;
   let gateSetVersionOf: (g: any) => string;
 
   function proposal(over: Partial<AdjudicationProposal> = {}): AdjudicationProposal {
@@ -89,8 +101,26 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
       await db.query(`DELETE FROM "${table}" WHERE "workspaceId" = $1`, [WS]);
       await db.query(`ALTER TABLE "${table}" ENABLE TRIGGER USER`);
     }
+    await db.query(`ALTER TABLE "application_policies" DISABLE TRIGGER USER`);
+    await db.query(`DELETE FROM "application_policies" WHERE "workspaceId" = $1`, [WS]);
+    await db.query(`ALTER TABLE "application_policies" ENABLE TRIGGER USER`);
     await db.query(`DELETE FROM "review_gates" WHERE "workspaceId" = $1`, [WS]);
     await db.query(`UPDATE "specifications" SET "lifecycleState" = 'draft' WHERE "id" = $1`, [SPEC]);
+  }
+
+  /** Authorise automatic application through the real production service. */
+  async function permitAutoApply(): Promise<void> {
+    await policies.configure({
+      workspaceId: WS,
+      targetArtifactType: 'specification',
+      fromStatus: 'draft',
+      toStatus: 'review',
+      autoApplyPermitted: true,
+      createdById: 'u_admin',
+      approvedById: DECIDER,
+      approvedBySnapshotId: 'snap-decider',
+      correlationId: 'corr-e2e',
+    });
   }
 
   /** Configure a blocking gate and record a human decision on it. */
@@ -148,15 +178,6 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
        VALUES ('proj_e2e',$1,'E2E',$2,now())`,
       [WS, ACTOR],
     );
-    // Fixture setup — see the header. No production path writes this row.
-    await db.query(
-      `INSERT INTO "specifications"
-         ("id","workspaceId","projectId","title","lifecycleState","engineName","engineVersion",
-          "generatedAt","createdById","updatedById","updatedAt")
-       VALUES ($1,$2,'proj_e2e','E2E probe','draft','fixture','1',now(),$3,$3,now())`,
-      [SPEC, WS, ACTOR],
-    );
-
     process.env['DATABASE_URL'] = url;
     const { NestFactory } = await import('@nestjs/core');
     const { AppModule } = await import('../../../src/app.module.js');
@@ -181,6 +202,47 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
     lifecycleRepo = app.get(LIFECYCLE_TRANSITION_REPOSITORY, { strict: false });
     gateSetVersionOf = production.gateSetVersionOf;
 
+    const { SPECIFICATION_STORE } = await import(
+      '../../../src/modules/specifications/specifications.module.js'
+    );
+    const { ApplicationPolicyService } = await import(
+      '../../../src/modules/loop/application-policy.service.js'
+    );
+    specStore = app.get(SPECIFICATION_STORE, { strict: false });
+    policies = app.get(ApplicationPolicyService, { strict: false });
+
+    // X16 — created through PRODUCTION persistence, not raw SQL. The same call
+    // the generation service makes once an engine has produced content, and the
+    // same row every lifecycle service now reads.
+    await specStore.commitGeneration({
+      specification: {
+        id: SPEC,
+        workspaceId: WS,
+        projectId: 'proj_e2e',
+        title: 'E2E probe',
+        lifecycleState: 'draft',
+        currentVersionId: null,
+        engineName: 'fixture',
+        engineVersion: '1',
+        generatedAt: new Date(),
+        isOutOfDate: false,
+        createdById: ACTOR,
+        updatedById: ACTOR,
+      },
+      version: {
+        id: 'ver_e2e',
+        workspaceId: WS,
+        specificationId: SPEC,
+        versionNumber: 1,
+        contentRaw: '# E2E probe',
+        contentParsed: {},
+        lifecycleStateAtCreation: 'draft',
+        authoredById: ACTOR,
+      },
+      links: [],
+      job: { id: 'job_e2e', state: 'succeeded', resultRef: SPEC },
+    });
+
     // EPIC-024 authorises intake — through its real service, not a fixture.
     const grants = app.get(AccessGrantService, { strict: false });
     await grants.grant(
@@ -199,6 +261,7 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
   it('applies, and the transition id names a committed row', async () => {
     await reset();
     await gateWithDecision('passed');
+    await permitAutoApply();
 
     const v = await adjudicator.adjudicate(proposal());
 
@@ -304,6 +367,7 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
   it('a retry applies nothing more and returns the original verdict', async () => {
     await reset();
     await gateWithDecision('passed');
+    await permitAutoApply();
     const first = await adjudicator.adjudicate(proposal());
     expect(first.verdict).toBe('applied');
 
@@ -316,6 +380,75 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
       [WS],
     );
     expect(Number(rows[0]!.n), 'the retry produced a second transition').toBe(1);
+  });
+
+  it('with NO application policy the verdict is validated, not applied (X15)', async () => {
+    await reset();
+    await gateWithDecision('passed');
+    // Everything else passes: authorised, gate-cleared, no drift. What is
+    // missing is anyone having decided this transition may apply automatically.
+    const v = await adjudicator.adjudicate(proposal({ idempotencyKey: 'idem-nopolicy' }));
+    expect(v.verdict).toBe('validated');
+    expect(v.appliedTransitionId).toBeUndefined();
+    const { rows } = await db.query<{ n: string }>(
+      `SELECT count(*) AS n FROM "lifecycle_transitions" WHERE "workspaceId" = $1`,
+      [WS],
+    );
+    expect(Number(rows[0]!.n), 'a transition applied with no policy authorising it').toBe(0);
+  });
+
+  it('a DISABLED policy applies nothing, and the history is kept', async () => {
+    await reset();
+    await gateWithDecision('passed');
+    await permitAutoApply();
+    await policies.disable({
+      workspaceId: WS,
+      targetArtifactType: 'specification',
+      fromStatus: 'draft',
+      toStatus: 'review',
+      createdById: 'u_admin',
+      correlationId: 'corr-e2e',
+    });
+    const v = await adjudicator.adjudicate(proposal({ idempotencyKey: 'idem-disabled' }));
+    expect(v.verdict).toBe('validated');
+
+    // Withdrawal appends; it does not erase what was in force before.
+    const { rows } = await db.query<{ state: string; policyVersion: number }>(
+      `SELECT "state","policyVersion" FROM "application_policies" WHERE "workspaceId" = $1
+       ORDER BY "policyVersion"`,
+      [WS],
+    );
+    expect(rows.length, 'the policy history was rewritten rather than appended').toBeGreaterThan(1);
+    expect(rows.some((r) => r.state === 'effective'), 'no effective version was ever recorded').toBe(
+      true,
+    );
+  });
+
+  it('refuses to authorise auto-application with no approver', async () => {
+    await reset();
+    await expect(
+      policies.configure({
+        workspaceId: WS,
+        targetArtifactType: 'specification',
+        fromStatus: 'draft',
+        toStatus: 'review',
+        autoApplyPermitted: true,
+        createdById: 'u_admin',
+        correlationId: 'corr-e2e',
+      }),
+      'a permissive policy was accepted with nobody approving it',
+    ).rejects.toThrow(/approved/i);
+  });
+
+  it('the policy record cannot be edited or deleted', async () => {
+    await reset();
+    await permitAutoApply();
+    await expect(
+      db.query(`UPDATE "application_policies" SET "autoApplyPermitted" = false WHERE "workspaceId" = $1`, [WS]),
+    ).rejects.toThrow(/append-only/i);
+    await expect(
+      db.query(`DELETE FROM "application_policies" WHERE "workspaceId" = $1`, [WS]),
+    ).rejects.toThrow(/append-only/i);
   });
 
   it('a FAILED gate refuses, and applies nothing', async () => {
@@ -359,8 +492,44 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
     expect(v.reconciliation.cause).toBe('gate_outcomes_stale');
   });
 
+  it('a decision made against a different specification VERSION is STALE (FR-ENH-029)', async () => {
+    await reset();
+    await gateWithDecision('passed');
+    await permitAutoApply();
+
+    // Append a new version through the production store and point the
+    // specification at it — the artifact the gate examined is no longer the
+    // artifact being transitioned.
+    const appended = await specStore.appendVersion({
+      workspaceId: WS,
+      specificationId: SPEC,
+      versionNumber: 2,
+      contentRaw: '# E2E probe, revised',
+      contentParsed: {},
+      lifecycleStateAtCreation: 'draft',
+      authoredById: ACTOR,
+    });
+    await specStore.updateSpecification(WS, SPEC, {
+      currentVersionId: appended.id,
+      updatedById: ACTOR,
+    });
+
+    const v = await adjudicator.adjudicate(proposal({ idempotencyKey: 'idem-verstale' }));
+    expect(v.verdict, 'a decision on an older version still authorised').toBe(
+      'reconciliation_required',
+    );
+    expect(v.reconciliation.cause).toBe('gate_outcomes_stale');
+
+    const { rows } = await db.query<{ n: string }>(
+      `SELECT count(*) AS n FROM "lifecycle_transitions" WHERE "workspaceId" = $1`,
+      [WS],
+    );
+    expect(Number(rows[0]!.n), 'a stale outcome authorised an application').toBe(0);
+  });
+
   it('an ungated transition is not blocked — and is not "unavailable" either', async () => {
     await reset();
+    await permitAutoApply();
     // No gate configured for draft->review. FR-ENH-012 makes gates
     // configurable and SC-ENH-004 scopes the human-decision rule to *gated*
     // transitions, so nothing here blocks.
@@ -414,6 +583,7 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
   it('two concurrent proposals produce at most one applied transition', async () => {
     await reset();
     await gateWithDecision('passed');
+    await permitAutoApply();
     const results = await Promise.allSettled([
       adjudicator.adjudicate(proposal({ proposalId: 'pA', idempotencyKey: 'race-a' })),
       adjudicator.adjudicate(proposal({ proposalId: 'pB', idempotencyKey: 'race-b' })),

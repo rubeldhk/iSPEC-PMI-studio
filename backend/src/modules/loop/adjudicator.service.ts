@@ -68,9 +68,14 @@ export interface GateOutcomePort {
 
 /** Transition policy: who may, and whether application is automatic. */
 export interface AuthorityPolicyPort {
-  requiredAuthorities(from: string, to: string): Promise<readonly string[]>;
+  /**
+   * `workspaceId` is a parameter, not instance state (`C2D`). Policy is
+   * tenant-scoped and the adjudicator is a singleton: a workspace stashed on
+   * the object between calls would be read by whichever request arrived next.
+   */
+  requiredAuthorities(workspaceId: string, from: string, to: string): Promise<readonly string[]>;
   actorAuthorities(workspaceId: string, actorId: string): Promise<readonly string[]>;
-  autoApplyPermitted(from: string, to: string): Promise<boolean>;
+  autoApplyPermitted(workspaceId: string, from: string, to: string): Promise<boolean>;
 }
 
 /**
@@ -253,7 +258,11 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
     }
 
     // --- 5. Authority.
-    const required = await this.policy.requiredAuthorities(observed, proposal.requestedStatus);
+    const required = await this.policy.requiredAuthorities(
+      proposal.workspaceId,
+      observed,
+      proposal.requestedStatus,
+    );
     const actorId = approval?.approverId ?? proposal.proposerId;
     const held = await this.policy.actorAuthorities(proposal.workspaceId, actorId);
     const missing = required.find((r) => !held.includes(r));
@@ -282,7 +291,11 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
     }
 
     // --- 6. Validation passed. Application is a SEPARATE decision.
-    const autoApply = await this.policy.autoApplyPermitted(observed, proposal.requestedStatus);
+    const autoApply = await this.policy.autoApplyPermitted(
+      proposal.workspaceId,
+      observed,
+      proposal.requestedStatus,
+    );
     if (!autoApply) {
       return this.finish(proposal, {
         verdict: 'validated',

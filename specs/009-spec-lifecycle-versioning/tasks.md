@@ -99,3 +99,7 @@ persistence, atomic state-and-transition recording and durable transition identi
 **Deliberately not taken**: `SPECIFICATION_STORE` is still bound to `InMemorySpecificationStore`.
 The wider store swap remains EPIC-014 F-11.2's, and only the lifecycle path was moved — because
 only the lifecycle path was what `X8` required.
+
+## Phase C2D — one specification source of truth (2026-08-27)
+
+- [X] T1121 Bind `PrismaSpecificationStore` as `SPECIFICATION_STORE`, closing `X16` — `commitGeneration` wrote to memory while lifecycle validation, gates and application read PostgreSQL, so a specification the product created was invisible to the services governing it. Also corrects `commitGeneration`'s write order: it created the **version** first, which violates the immediate `specification_versions_specificationId_fkey`; only `specifications_currentVersionId_fkey` is deferrable. The claim that "the FK is DEFERRABLE either way" went unchallenged because this store had never been bound *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — the specification is created through production persistence, with no direct SQL on the success path)*
