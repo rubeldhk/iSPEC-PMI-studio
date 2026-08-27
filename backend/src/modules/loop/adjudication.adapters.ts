@@ -37,6 +37,7 @@ import type {
   ApplicationIntentStore,
   SpecificationTransitionPort,
 } from './lifecycle-application.adapter.js';
+import type { LifecycleApplicationOutcome, LifecycleApplicationPort } from '@pmi/loop-contract';
 import {
   rowFromEvidence,
   verdictFromRow,
@@ -157,10 +158,28 @@ export interface AuthorityLookup {
 /**
  * Policy is configuration this Epic reads, not code (`PP-014`).
  *
- * `autoApply` defaults to **false** for any transition no rule names: an
- * unconfigured transition yields `validated`, never `applied`. Defaulting the
- * other way would make forgetting to write a rule equivalent to authorising
- * automatic application.
+ * ## `autoApply` defaults to TRUE, reversed in C2C
+ *
+ * C2A set it to `false`, reasoning that forgetting to write a rule should not
+ * amount to authorising automatic application. That was right when no gates
+ * existed: withholding application was the only brake in the system.
+ *
+ * It is wrong now, and it was hiding. With `false` as the default and no way to
+ * configure a rule, **no proposal could ever reach `applied` in production** —
+ * so the C2C end-to-end proof failed on a policy default rather than on
+ * anything the remediation was about. A default that makes the governed path
+ * unreachable is not a safe default; it is an off switch.
+ *
+ * What actually protects a transition is the chain in front of this: EPIC-024
+ * authorises intake, EPIC-021's gates require a **human decision**
+ * (`FR-ENH-014`), authority is checked, and separation of duties is absolute.
+ * Once all of those pass, withholding application adds no governance — it only
+ * strands the proposal.
+ *
+ * `validated` is therefore now the **configured exception**: a rule that names
+ * a transition with `autoApply: false` routes it for separate application.
+ * `requiredAuthorities` still defaults to `[]` and that default is unchanged —
+ * the reversal is about application, not about authority.
  */
 export class ConfiguredAuthorityPolicy implements AuthorityPolicyPort {
   constructor(
@@ -181,7 +200,7 @@ export class ConfiguredAuthorityPolicy implements AuthorityPolicyPort {
   }
 
   async autoApplyPermitted(from: string, to: string): Promise<boolean> {
-    return this.ruleFor(from, to)?.autoApply ?? false;
+    return this.ruleFor(from, to)?.autoApply ?? true;
   }
 }
 
@@ -345,4 +364,153 @@ export class PrismaApplicationIntents implements ApplicationIntentStore {
       },
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// C2C — the production adapters that replace the placeholders above.
+//
+// `UnconfiguredGateOutcomes` and `EpicNineTransitionAdapter` remain exported:
+// the first is still the correct binding for a deployment without EPIC-021, and
+// both are still exercised by tests that prove what happens when an owner
+// supplies nothing. Production now binds the two below instead.
+// ---------------------------------------------------------------------------
+
+/** EPIC-021's public contract, as EPIC-030 needs it. */
+export interface GateProductionShape {
+  dispositionFor(
+    workspaceId: string,
+    specificationId: string,
+    fromStatus: string,
+    toStatus: string,
+    currentVersionId: string | null,
+  ): Promise<{ disposition: GateDisposition; blocking: string | undefined }>;
+}
+
+/** EPIC-009's authoritative lifecycle repository, as EPIC-030 needs it. */
+export interface LifecycleRepositoryShape {
+  currentStatus(
+    workspaceId: string,
+    specificationId: string,
+  ): Promise<{ status: string; versionId: string | null }>;
+  apply(input: {
+    workspaceId: string;
+    specificationId: string;
+    expectedStatus: string;
+    requestedStatus: string;
+    actorId: string;
+    actorSnapshotId?: string;
+    correlationId: string;
+    causationId: string;
+    idempotencyKey: string;
+  }): Promise<{ transitionId: string; idempotent: boolean }>;
+}
+
+/**
+ * Validity and current state, read from **the same rows the transition writes**.
+ *
+ * The earlier adapter read through `SpecificationsReadService`, which is bound
+ * to an in-memory store. Reading state from one place and changing it in another
+ * is how a specification comes to be in two states at once.
+ */
+export class EpicNinePersistentValidation implements LifecycleValidationPort {
+  constructor(
+    private readonly repo: LifecycleRepositoryShape,
+    private readonly permittedFrom: PermittedFrom,
+  ) {}
+
+  async currentStatus(workspaceId: string, specificationId: string): Promise<string> {
+    return (await this.repo.currentStatus(workspaceId, specificationId)).status;
+  }
+
+  async isPermitted(from: string, to: string): Promise<boolean> {
+    return this.permittedFrom(from).includes(to);
+  }
+}
+
+/**
+ * Gate outcomes from EPIC-021, bound to the version actually being transitioned.
+ *
+ * The current version comes from EPIC-009, not from EPIC-021 and not from here:
+ * a second answer to "which version is current" would let a stale outcome look
+ * fresh (`X11`).
+ */
+export class EpicTwentyOneGateOutcomes implements GateOutcomePort {
+  constructor(
+    private readonly gates: GateProductionShape,
+    private readonly lifecycle: LifecycleRepositoryShape,
+  ) {}
+
+  async outcomesFor(
+    workspaceId: string,
+    specificationId: string,
+    requestedTransition: string,
+  ): Promise<{ disposition: GateDisposition; blocking: string | undefined }> {
+    const [fromStatus, toStatus] = requestedTransition.split('->');
+    const { versionId } = await this.lifecycle.currentStatus(workspaceId, specificationId);
+    return this.gates.dispositionFor(
+      workspaceId,
+      specificationId,
+      fromStatus ?? '',
+      toStatus ?? '',
+      versionId,
+    );
+  }
+}
+
+/**
+ * Application through EPIC-009's transactional repository (`X8` closed).
+ *
+ * `appliedTransitionId` is the id EPIC-009 **committed**, in the same
+ * transaction as the state change. There is no longer a case where the state
+ * moves and the transition cannot be named.
+ *
+ * A stated refusal — the expectation no longer holds, or the specification is
+ * gone — is a refusal. Anything else is `unknown`, because the transaction may
+ * or may not have committed.
+ */
+export class EpicNineTransactionalApplication implements LifecycleApplicationPort {
+  constructor(private readonly repo: LifecycleRepositoryShape) {}
+
+  async apply(input: {
+    workspaceId: string;
+    specificationId: string;
+    expectedCurrentStatus: string;
+    requestedStatus: string;
+    actorId: string;
+    correlationId: string;
+    causationId: string;
+    idempotencyKey: string;
+    actorSnapshotId?: string;
+  }): Promise<LifecycleApplicationOutcome> {
+    try {
+      const committed = await this.repo.apply({
+        workspaceId: input.workspaceId,
+        specificationId: input.specificationId,
+        expectedStatus: input.expectedCurrentStatus,
+        requestedStatus: input.requestedStatus,
+        actorId: input.actorId,
+        ...(input.actorSnapshotId !== undefined
+          ? { actorSnapshotId: input.actorSnapshotId }
+          : {}),
+        correlationId: input.correlationId,
+        causationId: input.causationId,
+        idempotencyKey: input.idempotencyKey,
+      });
+      return { outcome: 'confirmed', transitionId: committed.transitionId };
+    } catch (error) {
+      const name = error instanceof Error ? error.name : '';
+      if (name === 'ExpectedStateMismatchError' || name === 'NotFoundError') {
+        return { outcome: 'refused', reason: reasonOf(error) };
+      }
+      return {
+        outcome: 'unknown',
+        cause: 'application_outcome_unknown',
+        reason: reasonOf(error),
+      };
+    }
+  }
+}
+
+function reasonOf(error: unknown): string {
+  return error instanceof Error ? `${error.name}: ${error.message}` : 'unknown failure';
 }

@@ -18,6 +18,7 @@ import { DependenciesModule } from './modules/dependencies/dependencies.module.j
 import { TraceabilityModule } from './modules/traceability/traceability.module.js';
 import { RunsModule } from './modules/runs/runs.module.js';
 import { ReviewModule } from './modules/review/review.module.js';
+import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { AccessModule } from './modules/access/access.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { LoopModule } from './modules/loop/loop.module.js';
@@ -75,6 +76,9 @@ function clientBuildPath(): string {
     DecisionsModule,
     RunsModule,
     ReviewModule,
+    // EPIC-021's production gate capability (C2C, T1110). Registered here
+    // because the Epic closed with services and no module at all.
+    ReviewsModule,
     AccessModule,
     StorageModule,
     // T936 — EPIC-030. The wiring T934 exists to prove: a module built,

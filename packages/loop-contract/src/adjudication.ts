@@ -281,6 +281,15 @@ export interface LifecycleApplicationPort {
     readonly expectedCurrentStatus: SpecificationStatus;
     readonly requestedStatus: SpecificationStatus;
     readonly actorId: string;
+    /**
+     * Carried through so EPIC-009 can bind them into the committed transition.
+     * Without them the transition exists but cannot be traced back to the
+     * proposal that caused it, which is the chain `FR-GEL-072` requires.
+     */
+    readonly correlationId: string;
+    readonly causationId: string;
+    readonly idempotencyKey: string;
+    readonly actorSnapshotId?: string;
   }): Promise<LifecycleApplicationOutcome>;
 }
 

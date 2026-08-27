@@ -86,6 +86,7 @@ model Workspace {
   baselines             Baseline[]
   adjudicationRecords AdjudicationRecord[]
   applicationIntents  ApplicationIntent[]
+  gateFinalOutcomes   GateFinalOutcome[]
 
 
   @@map("workspaces")
@@ -351,12 +352,21 @@ model LifecycleTransition {
   toState         SpecLifecycleState
   actorId         String
   occurredAt      DateTime           @default(now())
+  // C2C (T1104) -- the causal and version identity that lets this row close the
+  // proposal -> verdict -> transition chain. Nullable: history predates them.
+  correlationId      String?
+  causationId        String?
+  idempotencyKey     String?
+  actorSnapshotId    String?
+  previousVersionId  String?
+  resultingVersionId String?
 
   workspace     Workspace     @relation(fields: [workspaceId], references: [id])
   specification Specification @relation(fields: [specificationId], references: [id])
 
   @@index([workspaceId])
   @@index([specificationId, occurredAt(sort: Desc)])
+  @@index([workspaceId, correlationId])
   @@map("lifecycle_transitions")
 }
 
@@ -1013,6 +1023,38 @@ enum ReviewSessionState {
 enum AnswerState {
   draft
   committed
+}
+
+/// T1107 -- the authoritative, append-only gate decision (EPIC-021).
+/// `GateOutcome` remains the mutable two-phase working record; this is the
+/// immutable answer EPIC-030 consumes. A correction links via `supersedesId`.
+model GateFinalOutcome {
+  id                  String    @id @default(uuid())
+  workspaceId         String
+  specificationId     String
+  fromStatus          String
+  toStatus            String
+  targetVersionId     String?
+  gateSetVersion      String
+  gateId              String
+  disposition         String
+  reason              String
+  evaluatorId         String
+  evaluatorSnapshotId String?
+  decidedById         String?
+  decidedBySnapshotId String?
+  decidedAt           DateTime?
+  evidenceRefs        String[]  @default([])
+  correlationId       String
+  causationId         String
+  supersedesId        String?
+  createdAt           DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, specificationId, fromStatus, toStatus])
+  @@index([workspaceId, gateId])
+  @@map("gate_final_outcomes")
 }
 
 model ReviewSession {

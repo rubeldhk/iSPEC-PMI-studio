@@ -100,6 +100,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // evidence of every specification status-transition adjudication.
     // application_intents arrived with EPIC-030 T1097 — the durable record,
     // written before EPIC-009 is asked, that an application was attempted.
+    // gate_final_outcomes arrived with EPIC-021 T1107 — the append-only
+    // authoritative gate decision, separate from the mutable working record.
     expect([...tables.keys()].sort()).toEqual([
       'access_attempt_records',
       'access_grants',
@@ -114,6 +116,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'clarifications',
       'dependency_edges',
       'engine_registrations',
+      'gate_final_outcomes',
       'gate_outcomes',
       'generation_jobs',
       'handoffs',

@@ -40,7 +40,6 @@ import { StageRegistry } from './stage-registry.js';
 import { InMemoryLoopStore, type LoopStore } from './loop.store.js';
 import { buildConfigRegistry } from './workflow-files.js';
 import {
-  ADJUDICATION_APPLICATION_INTENTS,
   ADJUDICATION_AUTHORITY_POLICY,
   ADJUDICATION_GATE_OUTCOMES,
   ADJUDICATION_INTAKE_AUTHORIZATION,
@@ -61,31 +60,29 @@ import {
   type LifecycleValidationPort,
 } from './adjudicator.service.js';
 import {
-  LifecycleApplicationAdapter,
-  type ApplicationIntentStore,
-} from './lifecycle-application.adapter.js';
-import {
   AccessIntakeAuthorization,
   ConfiguredAuthorityPolicy,
-  EpicNineLifecycleValidation,
-  EpicNineTransitionAdapter,
+  EpicNinePersistentValidation,
+  EpicNineTransactionalApplication,
+  EpicTwentyOneGateOutcomes,
   GrantBackedAuthorities,
   PrismaAdjudicationRecords,
-  PrismaApplicationIntents,
-  UnconfiguredGateOutcomes,
+  type LifecycleRepositoryShape,
 } from './adjudication.adapters.js';
 import type { AdjudicationEvidenceRow } from './adjudication-evidence.js';
 import { DEFAULT_SEPARATION_POLICY } from './separation-of-duties.js';
 import { SpecificationsModule } from '../specifications/specifications.module.js';
-import { SpecificationsReadService } from '../specifications/specifications-read.service.js';
-import { SpecificationLifecycleService } from '../specifications/lifecycle-api.service.js';
 import { permittedFrom } from '../specifications/lifecycle.machine.js';
 import { AccessModule } from '../access/access.module.js';
+import { ReviewsModule } from '../reviews/reviews.module.js';
+import { GateProductionService } from '../reviews/gate-production.service.js';
+import { LIFECYCLE_TRANSITION_REPOSITORY } from '../specifications/specifications.module.js';
+import type { PrismaLifecycleTransitionRepository } from '../specifications/lifecycle-transition.repository.js';
 import { AccessEnforcementService } from '../access/access-enforcement.service.js';
 import { prismaClient } from '../../persistence/prisma.js';
 
 @Module({
-  imports: [SpecificationsModule, AccessModule],
+  imports: [SpecificationsModule, AccessModule, ReviewsModule],
   controllers: [LoopController],
   providers: [
     {
@@ -118,36 +115,34 @@ import { prismaClient } from '../../persistence/prisma.js';
 
     {
       provide: ADJUDICATION_LIFECYCLE_VALIDATION,
-      inject: [SpecificationsReadService],
-      useFactory: (reads: SpecificationsReadService): LifecycleValidationPort =>
-        // `permittedFrom` is EPIC-009's function, passed in. A table copied here
-        // would be a second lifecycle engine (`FR-GEL-065`).
-        new EpicNineLifecycleValidation(reads, (state) => permittedFrom(state as never)),
-    },
-    {
-      provide: ADJUDICATION_APPLICATION_INTENTS,
-      useFactory: (): ApplicationIntentStore =>
-        // Lazily reached: `prismaClient()` reads DATABASE_URL when constructed,
-        // so it must not be called while modules are merely being assembled.
-        new PrismaApplicationIntents({
-          create: (args) =>
-            prismaClient().applicationIntent.create(args as never) as Promise<{ id: string }>,
-        }),
+      inject: [LIFECYCLE_TRANSITION_REPOSITORY],
+      useFactory: (repo: PrismaLifecycleTransitionRepository): LifecycleValidationPort =>
+        // Reads the SAME rows the transition writes. `permittedFrom` is
+        // EPIC-009's function, passed in — a table copied here would be a
+        // second lifecycle engine (`FR-GEL-065`).
+        new EpicNinePersistentValidation(repo as LifecycleRepositoryShape, (state) =>
+          permittedFrom(state as never),
+        ),
     },
     {
       provide: ADJUDICATION_LIFECYCLE_APPLICATION,
-      inject: [SpecificationLifecycleService, ADJUDICATION_APPLICATION_INTENTS],
-      useFactory: (
-        lifecycle: SpecificationLifecycleService,
-        intents: ApplicationIntentStore,
-      ): LifecycleApplicationAdapter =>
-        new LifecycleApplicationAdapter(new EpicNineTransitionAdapter(lifecycle), intents),
+      inject: [LIFECYCLE_TRANSITION_REPOSITORY],
+      useFactory: (repo: PrismaLifecycleTransitionRepository): EpicNineTransactionalApplication =>
+        // `appliedTransitionId` is now the id EPIC-009 COMMITTED, in the same
+        // transaction as the state change (`X8`). The durable-intent store is
+        // no longer on this path: the transaction is the durability.
+        new EpicNineTransactionalApplication(repo as LifecycleRepositoryShape),
     },
     {
       provide: ADJUDICATION_GATE_OUTCOMES,
-      // EPIC-021 supplies no gate-outcome service. This refuses rather than
-      // assuming every declared gate is satisfied.
-      useFactory: (): GateOutcomePort => new UnconfiguredGateOutcomes(),
+      inject: [GateProductionService, LIFECYCLE_TRANSITION_REPOSITORY],
+      useFactory: (
+        gates: GateProductionService,
+        repo: PrismaLifecycleTransitionRepository,
+      ): GateOutcomePort =>
+        // EPIC-021 now supplies a production service (`X7`). The current
+        // version comes from EPIC-009, so a stale outcome cannot look fresh.
+        new EpicTwentyOneGateOutcomes(gates, repo as LifecycleRepositoryShape),
     },
     {
       provide: ADJUDICATION_AUTHORITY_POLICY,
@@ -188,7 +183,7 @@ import { prismaClient } from '../../persistence/prisma.js';
         lifecycle: LifecycleValidationPort,
         gates: GateOutcomePort,
         policy: AuthorityPolicyPort,
-        application: LifecycleApplicationAdapter,
+        application: EpicNineTransactionalApplication,
         records: AdjudicationRecordPort,
         authorization: IntakeAuthorizationPort,
       ): ProposalAdjudicatorService =>

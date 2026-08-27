@@ -300,6 +300,10 @@ export class ProposalAdjudicatorService implements ProposalAdjudicator {
       expectedCurrentStatus: observed,
       requestedStatus: proposal.requestedStatus,
       actorId,
+      correlationId: proposal.correlationId,
+      causationId: proposal.causationId,
+      idempotencyKey: proposal.idempotencyKey,
+      actorSnapshotId: approval?.approverIdentitySnapshotId ?? proposal.proposerIdentitySnapshotId,
     });
 
     if (outcome.outcome === 'confirmed') {

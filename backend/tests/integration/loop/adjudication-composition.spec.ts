@@ -116,31 +116,64 @@ suite('T1102 · the adjudicator is reachable from the composed application', () 
   });
 
   it('every required production port resolves, and to the real adapter', async () => {
-    const a = await import('../../../src/modules/loop/adjudication.adapters.js');
-    const { LifecycleApplicationAdapter } = await import(
-      '../../../src/modules/loop/lifecycle-application.adapter.js'
-    );
-
     // Named one by one rather than counted: a count passes when a port is
     // swapped for the wrong implementation, which is the failure that matters.
-    const expected: [symbol, unknown, string][] = [
-      [tokens.ADJUDICATION_LIFECYCLE_VALIDATION, a.EpicNineLifecycleValidation, 'EPIC-009'],
-      [tokens.ADJUDICATION_LIFECYCLE_APPLICATION, LifecycleApplicationAdapter, 'EPIC-009'],
-      [tokens.ADJUDICATION_GATE_OUTCOMES, a.UnconfiguredGateOutcomes, 'EPIC-021'],
-      [tokens.ADJUDICATION_AUTHORITY_POLICY, a.ConfiguredAuthorityPolicy, 'EPIC-030'],
-      [tokens.ADJUDICATION_INTAKE_AUTHORIZATION, a.AccessIntakeAuthorization, 'EPIC-024'],
-      [tokens.ADJUDICATION_RECORDS, a.PrismaAdjudicationRecords, 'EPIC-030'],
-      [tokens.ADJUDICATION_APPLICATION_INTENTS, a.PrismaApplicationIntents, 'EPIC-030'],
+    //
+    // Compared by constructor NAME rather than `toBeInstanceOf`: several of
+    // these hold a Prisma client, and vitest's failure serialiser recurses
+    // through its proxies until the stack gives out — so a wrong binding would
+    // report a stack overflow instead of the mismatch.
+    const expected: [symbol, string, string][] = [
+      [tokens.ADJUDICATION_LIFECYCLE_VALIDATION, 'EpicNinePersistentValidation', 'EPIC-009'],
+      [tokens.ADJUDICATION_LIFECYCLE_APPLICATION, 'EpicNineTransactionalApplication', 'EPIC-009'],
+      [tokens.ADJUDICATION_GATE_OUTCOMES, 'EpicTwentyOneGateOutcomes', 'EPIC-021'],
+      [tokens.ADJUDICATION_AUTHORITY_POLICY, 'ConfiguredAuthorityPolicy', 'EPIC-030'],
+      [tokens.ADJUDICATION_INTAKE_AUTHORIZATION, 'AccessIntakeAuthorization', 'EPIC-024'],
+      [tokens.ADJUDICATION_RECORDS, 'PrismaAdjudicationRecords', 'EPIC-030'],
     ];
 
-    for (const [token, cls, owner] of expected) {
+    for (const [token, className, owner] of expected) {
       const resolved = app.get(token, { strict: false });
-      expect(resolved, `${String(token)} (${owner}) resolved to nothing`).toBeDefined();
+      expect(Boolean(resolved), `${String(token)} (${owner}) resolved to nothing`).toBe(true);
       expect(
-        resolved,
+        (resolved as object).constructor.name,
         `${String(token)} is not the production adapter for ${owner}`,
-      ).toBeInstanceOf(cls as never);
+      ).toBe(className);
     }
+  });
+
+  it('binds NO production port to an in-memory or unconfigured double', async () => {
+    // EPIC-014's composition check, asserted here because this is where the
+    // real graph exists. `X7` and `X8` both looked closed while the bindings
+    // were placeholders, so the placeholder NAMES are what this rules out.
+    const forbidden = /^(InMemory|Unconfigured|Null|Fake|Stub)/;
+    for (const token of [
+      tokens.ADJUDICATION_LIFECYCLE_VALIDATION,
+      tokens.ADJUDICATION_LIFECYCLE_APPLICATION,
+      tokens.ADJUDICATION_GATE_OUTCOMES,
+      tokens.ADJUDICATION_INTAKE_AUTHORIZATION,
+      tokens.ADJUDICATION_RECORDS,
+    ]) {
+      const name = (app.get(token, { strict: false }) as object).constructor.name;
+      expect(forbidden.test(name), `${String(token)} resolves to ${name}`).toBe(false);
+    }
+  });
+
+  it('resolves EPIC-021 and EPIC-009 production services from the graph', async () => {
+    const { GateProductionService } = await import(
+      '../../../src/modules/reviews/gate-production.service.js'
+    );
+    const { LIFECYCLE_TRANSITION_REPOSITORY } = await import(
+      '../../../src/modules/specifications/specifications.module.js'
+    );
+    expect(
+      app.get(GateProductionService, { strict: false }).constructor.name,
+      'EPIC-021 supplies no production gate service',
+    ).toBe('GateProductionService');
+    expect(
+      (app.get(LIFECYCLE_TRANSITION_REPOSITORY, { strict: false }) as object).constructor.name,
+      'EPIC-009 supplies no transactional lifecycle repository',
+    ).toBe('PrismaLifecycleTransitionRepository');
   });
 
   it('exposes ONLY the consumer-facing token, not the ports EPIC-037 could bypass with', async () => {
@@ -162,13 +195,42 @@ suite('T1102 · the adjudicator is reachable from the composed application', () 
     }
   });
 
-  it('reaches the REAL EPIC-024: an ungranted proposal is refused by authorisation', async () => {
-    // Nothing else in this graph refuses here, so observing this refusal proves
-    // AccessIntakeAuthorization ran against the real AccessEnforcementService.
-    await expect(
-      adjudicator.adjudicate(proposal()),
-      'the ungranted proposal was not refused by EPIC-024',
-    ).rejects.toThrow();
+  it('reaches the REAL EPIC-024: a proposer outside the grants is refused', async () => {
+    // CORRECTED (C2C). This previously adjudicated with no grants at all and
+    // asserted only "rejects" — which passed because EPIC-009 could not find
+    // the specification, not because authorisation refused. The assertion was
+    // true and proved nothing.
+    //
+    // EPIC-024's rule is "unrestricted until granted": an artifact with no
+    // grants is open to the workspace. So the artifact must first be GOVERNED
+    // by granting someone else, and the refusal is then matched by message.
+    const { AccessGrantService } = await import(
+      '../../../src/modules/access/access-grant.service.js'
+    );
+    const { AccessEnforcementService } = await import(
+      '../../../src/modules/access/access-enforcement.service.js'
+    );
+    await app.get(AccessGrantService, { strict: false }).grant(
+      WORKSPACE,
+      { artifactType: 'specification', artifactId: SPEC },
+      { userId: 'u_someone_else', level: 'edit', grantedById: 'u_admin' },
+    );
+
+    await expect(adjudicator.adjudicate(proposal())).rejects.toThrow();
+
+    // EPIC-024 refuses with an OPAQUE not-found, deliberately, so the message
+    // cannot distinguish it from EPIC-009's. What only EPIC-024 does is record
+    // the attempt — so that, not the message, is the evidence it ran.
+    const attempts = await app
+      .get(AccessEnforcementService, { strict: false })
+      .attemptsFor(WORKSPACE, { artifactType: 'specification', artifactId: SPEC });
+    expect(
+      attempts.some(
+        (a: { userId: string; action: string }) =>
+          a.userId === ACTOR && a.action === 'propose-transition',
+      ),
+      'EPIC-024 recorded no refused attempt, so it did not refuse this',
+    ).toBe(true);
   });
 
   it('writes NO evidence for a proposal EPIC-024 refused', async () => {

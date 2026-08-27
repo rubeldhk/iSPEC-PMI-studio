@@ -401,3 +401,20 @@ the remaining C2B work is owned elsewhere — see `analysis.md`, C2B session, fi
   closed epic carries"*.
 - **EPIC-014 F-11.2 contains no task for either.** Its tasks (`T151`–`T156`) confirm closure
   records and run reviews, quickstarts and promotion. The work has a named owner and no schedule.
+
+---
+
+## Phase C2C — EPIC-030 integration (2026-08-26)
+
+*The consumption side of the owners' remediation. EPIC-030 changed no policy: it now reads answers
+that previously did not exist.*
+
+- [X] T1111 Consume the production capabilities — `EpicNinePersistentValidation` (state read from the rows the transition writes), `EpicTwentyOneGateOutcomes` (target-bound dispositions from EPIC-021), and `EpicNineTransactionalApplication` (`appliedTransitionId` taken **only** from EPIC-009's committed result). `LifecycleApplicationPort` now carries correlation, causation and idempotency so the transition can be traced to the proposal *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — the applied path plus failed, pending, stale, ungated, drift, unauthorised, retry, concurrency and immutability cases)*
+
+**One policy default was reversed, deliberately** — `ConfiguredAuthorityPolicy.autoApplyPermitted`
+now defaults to `true`. C2A set it to `false` on the reasoning that forgetting a rule should not
+authorise automatic application. With gates real and a human decision mandatory, that default made
+the governed path **unreachable**: no proposal could ever reach `applied`, and the C2C end-to-end
+proof failed on a policy default rather than on anything the remediation concerned. A default that
+makes the governed path unreachable is an off switch, not a safe default. `validated` is now the
+**configured exception**. `requiredAuthorities` still defaults to `[]`, unchanged.

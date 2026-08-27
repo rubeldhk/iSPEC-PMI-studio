@@ -59,6 +59,26 @@ epic's `closure.md` record — it does not repeat the per-epic checks.
 - [ ] T155a Confirm SRS back-fill completed for FR-024 and FR-025 (job cancellation and timeout), which have no SRS source (Constitution II); record in `specs/_shared/release-readiness-report.md`
 - [ ] T156 Promote `local → dev` (then dev → stage → prod; no environment skipped)
 
+### F-11.2 · Composition-root wiring *(added 2026-08-26, Step C2C)*
+
+**Why these did not exist.** EPIC-009's and EPIC-021's closure records both deferred production
+composition to *"EPIC-014 F-11.2"*, and F-11.2 contained no task for it — its tasks **confirm**
+closure records and run reviews, quickstarts and promotion. The deferral had a named owner and no
+schedule, which is how work with an owner quietly becomes work nobody does.
+
+The project owner's C2C decision scoped this precisely: **EPIC-014 owns composition-root wiring,
+activation and integrated release verification only.** Domain persistence belongs to EPIC-009 and
+EPIC-021, and none of it is implemented here.
+
+**Bounded to the dependencies EPIC-037 requires.** These tasks do not replace every in-memory
+adapter in every closed epic; that remains the wider deferral.
+
+- [X] T1112 Register EPIC-009's production lifecycle persistence — `LIFECYCLE_TRANSITION_REPOSITORY`, provided and exported by `SpecificationsModule` *(test: `backend/tests/integration/loop/adjudication-composition.spec.ts`)*
+- [X] T1113 Register EPIC-021's production gate services and persistence — `ReviewsModule` in `app.module.ts` *(test: `adjudication-composition.spec.ts`)*
+- [X] T1114 Replace the relevant unconfigured production bindings in `loop.module.ts` — validation and application to EPIC-009's repository, gates to EPIC-021's service *(test: `adjudication-composition.spec.ts` — each port asserted against its named adapter class)*
+- [X] T1115 Verify boot-time dependency resolution and that **no** production provider resolves to an in-memory, unconfigured, null, fake or stub implementation *(test: `adjudication-composition.spec.ts` — "binds NO production port to an in-memory or unconfigured double")*
+- [X] T1116 Run the end-to-end adjudication/application scenario against the real `AppModule` and real PostgreSQL, including persistence across an application restart *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts`)*
+
 ## F-11.3 · Containerised local deployment
 
 *Added 2026-08-24 by [`D-45`](./decisions/D-45-containerised-local-deployment-lands-in-epic-014.md).

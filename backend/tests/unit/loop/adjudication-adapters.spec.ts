@@ -248,12 +248,23 @@ describe('T1101 · EPIC-024 is consulted, with the artifact it owns', () => {
 });
 
 describe('T1101 · authority policy is configuration, and defaults safely', () => {
-  it('auto-applies nothing for a transition no rule names', async () => {
-    // The dangerous default would be the other way: forgetting to write a rule
-    // would then mean authorising automatic application.
+  it('auto-applies a transition no rule names, and requires no authority for it', async () => {
+    // Reversed in C2C. `false` made the governed path unreachable in
+    // production — an off switch wearing a safe default's clothes. The brakes
+    // are EPIC-024, the gates' mandatory human decision, authority and
+    // separation of duties, all of which run before this is consulted.
     const policy = new ConfiguredAuthorityPolicy([], new GrantBackedAuthorities({}));
-    expect(await policy.autoApplyPermitted('draft', 'review')).toBe(false);
+    expect(await policy.autoApplyPermitted('draft', 'review')).toBe(true);
+    // Unchanged: authority still defaults to none required.
     expect(await policy.requiredAuthorities('draft', 'review')).toEqual([]);
+  });
+
+  it('lets a rule withhold auto-apply, which is now the configured exception', async () => {
+    const policy = new ConfiguredAuthorityPolicy(
+      [{ from: 'draft', to: 'review', requires: [], autoApply: false }],
+      new GrantBackedAuthorities({}),
+    );
+    expect(await policy.autoApplyPermitted('draft', 'review')).toBe(false);
   });
 
   it('reads required authorities and auto-apply from the declared rule', async () => {
@@ -263,7 +274,9 @@ describe('T1101 · authority policy is configuration, and defaults safely', () =
     );
     expect(await policy.requiredAuthorities('draft', 'review')).toEqual(['approve:review']);
     expect(await policy.autoApplyPermitted('draft', 'review')).toBe(true);
-    expect(await policy.autoApplyPermitted('review', 'approved')).toBe(false);
+    // A transition no rule names now inherits the default (true, since C2C);
+    // authority for it is still none, which the rule above does not change.
+    expect(await policy.requiredAuthorities('review', 'approved')).toEqual([]);
   });
 
   it('holds no authority for an actor until a grant source says so', async () => {

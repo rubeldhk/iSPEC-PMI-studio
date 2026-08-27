@@ -55,7 +55,18 @@ import {
 } from './specifications-read.service.js';
 
 export const SPECIFICATION_STORE = Symbol('SPECIFICATION_STORE');
-export const GENERATION_JOB_LEDGER = Symbol('GENERATION_JOB_LEDGER');
+
+
+/**
+ * EPIC-009's transactional lifecycle repository (`T1105`, C2C).
+ *
+ * Bound to **real Prisma**, unlike `SPECIFICATION_STORE` above, which remains
+ * in-memory pending EPIC-014's wider composition. The asymmetry is deliberate
+ * and narrow: `X8` required the lifecycle state and its transition evidence to
+ * share one committed transaction, and that is impossible against an in-memory
+ * store. Only the lifecycle path was moved, not the whole store.
+ */
+export const LIFECYCLE_TRANSITION_REPOSITORY = Symbol('LIFECYCLE_TRANSITION_REPOSITORY');export const GENERATION_JOB_LEDGER = Symbol('GENERATION_JOB_LEDGER');
 export const REQUIREMENT_SELECTION = Symbol('REQUIREMENT_SELECTION');
 
 /**
@@ -111,6 +122,12 @@ export class JobsValidationSubmission implements ValidationSubmissionPort {
   }
 }
 
+import {
+  PrismaLifecycleTransitionRepository,
+  type LifecycleTx,
+} from './lifecycle-transition.repository.js';
+import { prismaClient } from '../../persistence/prisma.js';
+
 @Module({
   imports: [EnginesModule, RequirementsModule],
   controllers: [SpecificationsController, SpecificationLifecycleController],
@@ -118,6 +135,15 @@ export class JobsValidationSubmission implements ValidationSubmissionPort {
     {
       provide: SPECIFICATION_STORE,
       useFactory: (): SpecificationStore => new InMemorySpecificationStore(),
+    },
+    {
+      provide: LIFECYCLE_TRANSITION_REPOSITORY,
+      // Lazily reached: prismaClient() reads DATABASE_URL at construction.
+      useFactory: (): PrismaLifecycleTransitionRepository =>
+        new PrismaLifecycleTransitionRepository(
+          (fn) => prismaClient().$transaction((tx) => fn(tx as unknown as LifecycleTx)),
+          prismaClient() as unknown as LifecycleTx,
+        ),
     },
     {
       provide: GENERATION_JOB_LEDGER,
@@ -227,6 +253,7 @@ export class JobsValidationSubmission implements ValidationSubmissionPort {
     GENERATION_JOBS_SERVICE,
     TRANSITION_RECORDER,
     SPEC_FINDING_STORE,
+    LIFECYCLE_TRANSITION_REPOSITORY,
   ],
 })
 export class SpecificationsModule {}
