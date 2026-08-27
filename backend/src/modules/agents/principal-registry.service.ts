@@ -37,8 +37,17 @@ export class PrincipalRegistrationRefused extends ValidationFailedError {
   }
 }
 
-/** Narrow views of the Prisma delegates this service needs. */
+/**
+ * Narrow views of the Prisma delegates this service needs.
+ *
+ * `$transaction` is **required**, not optional (`Z2`). The current-state row and
+ * its append-only evidence must commit together: a state change with no event
+ * is an unexplained suspension, and an event with no state change is a record of
+ * something that did not happen. Making the boundary optional would let a future
+ * double forget it and pass.
+ */
 export interface PrincipalDelegates {
+  $transaction<T>(fn: (tx: PrincipalDelegates) => Promise<T>): Promise<T>;
   principal: {
     create(args: { data: Record<string, unknown> }): Promise<PrincipalRow>;
     findFirst(args: { where: Record<string, unknown> }): Promise<PrincipalRow | null>;
@@ -179,7 +188,16 @@ export class PrincipalRegistryService implements PrincipalRegistryPort {
     }
 
     const id = randomUUID();
-    const row = await this.db.principal.create({
+    return this.db.$transaction(async (tx) => this.createWithEvidence(tx, id, input));
+  }
+
+  /** The principal and its `registered` evidence, in one commit. */
+  private async createWithEvidence(
+    tx: PrincipalDelegates,
+    id: string,
+    input: RegisterPrincipalInput,
+  ): Promise<NonHumanPrincipal> {
+    const row = await tx.principal.create({
       data: {
         id,
         workspaceId: input.workspaceId,
@@ -194,7 +212,7 @@ export class PrincipalRegistryService implements PrincipalRegistryPort {
         causationId: input.causationId,
       },
     });
-    await this.db.principalStateEvent.create({
+    await tx.principalStateEvent.create({
       data: {
         id: randomUUID(),
         workspaceId: input.workspaceId,
@@ -227,18 +245,22 @@ export class PrincipalRegistryService implements PrincipalRegistryPort {
     correlationId: string;
     causationId: string;
   }): Promise<NonHumanPrincipal> {
-    const current = await this.db.principal.findFirst({
+    // `Z2` — the read, the update and the evidence share one commit. Read
+    // included: the version is derived from what was read, so a concurrent
+    // change outside the boundary could hand two callers the same next version.
+    return this.db.$transaction(async (tx) => {
+    const current = await tx.principal.findFirst({
       where: { id: input.principalId, workspaceId: input.workspaceId },
     });
     if (current === null) {
       throw new PrincipalRegistrationRefused('No such principal in this workspace.');
     }
     const nextVersion = current.identityVersion + 1;
-    const row = await this.db.principal.update({
+    const row = await tx.principal.update({
       where: { id: input.principalId },
       data: { state: input.toState, identityVersion: nextVersion },
     });
-    await this.db.principalStateEvent.create({
+    await tx.principalStateEvent.create({
       data: {
         id: randomUUID(),
         workspaceId: input.workspaceId,
@@ -253,6 +275,7 @@ export class PrincipalRegistryService implements PrincipalRegistryPort {
       },
     });
     return toPrincipal(row);
+    });
   }
 
   async find(workspaceId: string, principalId: string): Promise<NonHumanPrincipal | null> {

@@ -121,6 +121,7 @@ function prismaAccessStore(): PrismaAccessStore {
                 kind: p.kind,
                 workspaceId: p.workspaceId,
                 state: p.state,
+                identityVersion: p.identityVersion,
               };
         },
       }),
@@ -131,9 +132,17 @@ function prismaAccessStore(): PrismaAccessStore {
     },
     {
       provide: PrincipalDelegationService,
-      inject: [DELEGATION_STORE],
-      useFactory: (store: DelegationStore): PrincipalDelegationService =>
-        new PrincipalDelegationService(store),
+      inject: [DELEGATION_STORE, NON_HUMAN_PRINCIPALS],
+      useFactory: (
+        store: DelegationStore,
+        principals: NonHumanPrincipalLookup,
+      ): PrincipalDelegationService =>
+        new PrincipalDelegationService(store, {
+          find: async (workspaceId, principalId) => {
+            const p = await principals.find(workspaceId, principalId);
+            return p === null ? null : { identityVersion: p.identityVersion, state: p.state };
+          },
+        }),
     },
     {
       provide: AccessEnforcementService,

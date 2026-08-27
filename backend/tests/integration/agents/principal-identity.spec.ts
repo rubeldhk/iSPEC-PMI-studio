@@ -223,7 +223,6 @@ suite('T1138 · a non-human principal is registered, resolved, frozen and scoped
       delegations.requireDelegated({
         workspaceId: WS,
         principalId: agentId,
-        identityVersion: 1,
         artifact: { artifactType: 'specification', artifactId: 'spec_a' },
         action: 'transition.propose',
       }),
@@ -234,7 +233,6 @@ suite('T1138 · a non-human principal is registered, resolved, frozen and scoped
       delegations.requireDelegated({
         workspaceId: WS,
         principalId: agentId,
-        identityVersion: 1,
         artifact: { artifactType: 'specification', artifactId: 'spec_b' },
         action: 'transition.propose',
       }),
@@ -254,7 +252,6 @@ suite('T1138 · a non-human principal is registered, resolved, frozen and scoped
       delegations.requireDelegated({
         workspaceId: WS,
         principalId: agentId,
-        identityVersion: 1,
         artifact: { artifactType: 'specification', artifactId: 'spec_a' },
         action: 'transition.propose',
       }),
@@ -281,7 +278,6 @@ suite('T1138 · a non-human principal is registered, resolved, frozen and scoped
       delegations.requireDelegated({
         workspaceId: WS,
         principalId: agentId,
-        identityVersion: 2,
         artifact: { artifactType: 'specification', artifactId: 'spec_a' },
         action: 'transition.propose',
       }),

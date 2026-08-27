@@ -102,8 +102,27 @@ export class DelegationStoreUnavailable extends ProviderUnavailableError {
 
 const asDate = (v: Date | string): Date => (v instanceof Date ? v : new Date(v));
 
+/**
+ * The authoritative current state of a principal.
+ *
+ * Injected rather than trusted from the caller. An earlier draft took
+ * `identityVersion` as a **parameter**, and a caller passing the pre-suspension
+ * value walked straight through a suspension — the pin compared the delegation
+ * against what the request claimed instead of against what is true. Found by
+ * the `Z2` reactivation test.
+ */
+export interface PrincipalStateLookup {
+  find(
+    workspaceId: string,
+    principalId: string,
+  ): Promise<{ identityVersion: number; state: 'active' | 'suspended' | 'revoked' } | null>;
+}
+
 export class PrincipalDelegationService {
-  constructor(private readonly store: DelegationStore) {}
+  constructor(
+    private readonly store: DelegationStore,
+    private readonly principals: PrincipalStateLookup,
+  ) {}
 
   /**
    * Refuse unless an active, unexpired, version-matched delegation carries this
@@ -116,7 +135,6 @@ export class PrincipalDelegationService {
   async requireDelegated(input: {
     workspaceId: string;
     principalId: string;
-    identityVersion: number;
     artifact: { artifactType: string; artifactId: string };
     action: string;
     at?: Date;
@@ -127,6 +145,17 @@ export class PrincipalDelegationService {
       throw new DelegationRefused(
         `"${input.action}" can never be delegated to a non-human principal`,
       );
+    }
+
+    // The authoritative version and state, resolved — never supplied.
+    const principal = await this.principals.find(input.workspaceId, input.principalId);
+    if (principal === null) {
+      throw new DelegationRefused('no authoritative principal with that identity');
+    }
+    if (principal.state !== 'active') {
+      // Belt and braces: the boundary refuses a non-active principal earlier,
+      // and a delegation check reached by any other route must refuse too.
+      throw new DelegationRefused(`principal is ${principal.state}`);
     }
 
     let rows: DelegationRow[];
@@ -144,14 +173,17 @@ export class PrincipalDelegationService {
         r.revokedAt === null &&
         asDate(r.effectiveFrom).getTime() <= now.getTime() &&
         (r.expiresAt === null || asDate(r.expiresAt).getTime() > now.getTime()) &&
-        // The version pin. A suspension bumped it, so this no longer matches.
-        r.identityVersion === input.identityVersion &&
+        // The version pin, against the AUTHORITATIVE version. A suspension
+        // bumped it, so a delegation granted before it no longer matches — and
+        // reactivation bumps it again rather than restoring the old value.
+        r.identityVersion === principal.identityVersion &&
         r.actions.includes(input.action),
     );
 
     if (usable === undefined) {
       throw new DelegationRefused(
-        `no active delegation carries "${input.action}" for this artifact at this identity version`,
+        `no active delegation carries "${input.action}" for this artifact at identity version ` +
+          `${principal.identityVersion}`,
       );
     }
     return usable;

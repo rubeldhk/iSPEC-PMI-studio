@@ -101,6 +101,12 @@ epic records only where it **differs** or is the place a principle is satisfied:
 *EPIC-024 authorises **both** kinds of principal. It does not define identity — EPIC-028 does — and
 it does not read EPIC-028's tables.*
 
+> **Provenance.** Sourced to
+> [`D-46`](../_shared/decisions/D-46-non-human-principal-identity-ownership.md) — the
+> Project Owner's C3B hybrid identity-ownership decision, recorded through the repository's
+> decision mechanism. **Not** `D-45`, which authorises EPIC-021's gate target-binding and is a
+> different subject. The `BR-` back-fill obligation stands and is tracked separately.
+
 - **FR-ACC-029**: Actor resolution MUST be generalised behind a principal directory: a **human**
   resolves against the authoritative user record, a **non-human** through EPIC-028's public
   registry. EPIC-024 MUST NOT access EPIC-028's persistence directly.

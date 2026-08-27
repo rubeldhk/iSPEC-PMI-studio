@@ -506,6 +506,12 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 *EPIC-030 consumes the public frozen-principal contract. Lifecycle, gate and application ownership
 are unchanged.*
 
+> **Provenance.** Sourced to
+> [`D-46`](../_shared/decisions/D-46-non-human-principal-identity-ownership.md) — the
+> Project Owner's C3B hybrid identity-ownership decision, recorded through the repository's
+> decision mechanism. **Not** `D-45`, which authorises EPIC-021's gate target-binding and is a
+> different subject. The `BR-` back-fill obligation stands and is tracked separately.
+
 - **FR-GEL-075**: Separation of duties MUST evaluate **resolved, frozen** principal identity, not
   identifiers supplied on the request.
 - **FR-GEL-076**: The sponsoring human of a non-human proposer MUST be treated as part of the

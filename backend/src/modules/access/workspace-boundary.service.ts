@@ -194,6 +194,7 @@ export interface NonHumanPrincipalLookup {
     kind: 'agent' | 'service';
     workspaceId: string;
     state: 'active' | 'suspended' | 'revoked';
+    identityVersion: number;
   } | null>;
 }
 

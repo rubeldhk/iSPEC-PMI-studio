@@ -351,9 +351,12 @@ load-bearing rather than tidy.
 authoritative identity of agents, service principals and connectors; EPIC-024 authorises them;
 EPIC-030 consumes frozen identities; EPIC-037 records references and defines nothing.*
 
-> **Provenance.** These have no `BR-` citation. They are sourced to the C3B ownership decision
-> through the same mechanism `D-45` used, and carry the same back-fill obligation: `PMI-DOC-004` or
-> the enhancement model must cite them before the platform release gate.
+
+> **Provenance.** Sourced to
+> [`D-46`](../_shared/decisions/D-46-non-human-principal-identity-ownership.md) — the
+> Project Owner's C3B hybrid identity-ownership decision, recorded through the repository's
+> decision mechanism. **Not** `D-45`, which authorises EPIC-021's gate target-binding and is a
+> different subject. The `BR-` back-fill obligation stands and is tracked separately.
 
 **The distinction the whole group turns on.** An `AgentDescriptor` says what a *kind* of agent can
 do — provider, model, capabilities. A principal says *who a particular one is* and *who answers for

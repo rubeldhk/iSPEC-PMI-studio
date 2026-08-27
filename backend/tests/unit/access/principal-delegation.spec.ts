@@ -50,8 +50,19 @@ function store(rows: DelegationRow[]): DelegationStore {
   };
 }
 
-const svc = (rows: DelegationRow[]): PrincipalDelegationService =>
-  new PrincipalDelegationService(store(rows));
+/** The authoritative state, at version 1 and active unless a case says otherwise. */
+function principals(
+  over: Partial<{ identityVersion: number; state: 'active' | 'suspended' | 'revoked' }> = {},
+) {
+  return {
+    find: async () => ({ identityVersion: 1, state: 'active' as const, ...over }),
+  };
+}
+
+const svc = (
+  rows: DelegationRow[],
+  state = principals(),
+): PrincipalDelegationService => new PrincipalDelegationService(store(rows), state);
 
 const NOW = new Date('2026-06-01T00:00:00Z');
 
@@ -60,7 +71,6 @@ describe('T1139 · a delegation permits exactly what it names', () => {
     const d = await svc([row()]).requireDelegated({
       workspaceId: WS,
       principalId: AGENT,
-      identityVersion: 1,
       artifact: SPEC,
       action: 'transition.propose',
       at: NOW,
@@ -73,7 +83,6 @@ describe('T1139 · a delegation permits exactly what it names', () => {
       svc([row({ actions: ['execution.register'] })]).requireDelegated({
         workspaceId: WS,
         principalId: AGENT,
-        identityVersion: 1,
         artifact: SPEC,
         action: 'transition.propose',
         at: NOW,
@@ -88,7 +97,6 @@ describe('T1139 · a delegation permits exactly what it names', () => {
       svc([row()]).requireDelegated({
         workspaceId: WS,
         principalId: AGENT,
-        identityVersion: 1,
         artifact: OTHER,
         action: 'transition.propose',
         at: NOW,
@@ -107,7 +115,6 @@ describe('T1139 · time and revocation fail closed', () => {
       svc([r]).requireDelegated({
         workspaceId: WS,
         principalId: AGENT,
-        identityVersion: 1,
         artifact: SPEC,
         action: 'transition.propose',
         at: NOW,
@@ -119,10 +126,9 @@ describe('T1139 · time and revocation fail closed', () => {
     // A suspension bumps the version, so yesterday's delegation stops matching
     // — and reactivating bumps it again rather than restoring the old value.
     await expect(
-      svc([row({ identityVersion: 1 })]).requireDelegated({
+      svc([row({ identityVersion: 1 })], principals({ identityVersion: 2 })).requireDelegated({
         workspaceId: WS,
         principalId: AGENT,
-        identityVersion: 2,
         artifact: SPEC,
         action: 'transition.propose',
         at: NOW,
@@ -153,7 +159,6 @@ describe('T1139 · approval and application can never be delegated', () => {
       svc([row({ actions: [action] })]).requireDelegated({
         workspaceId: WS,
         principalId: AGENT,
-        identityVersion: 1,
         artifact: SPEC,
         action,
         at: NOW,
@@ -191,10 +196,9 @@ describe('T1139 · an unreadable store is not a decision', () => {
       revoke: async () => row(),
     };
     await expect(
-      new PrincipalDelegationService(broken).requireDelegated({
+      new PrincipalDelegationService(broken, principals()).requireDelegated({
         workspaceId: WS,
         principalId: AGENT,
-        identityVersion: 1,
         artifact: SPEC,
         action: 'transition.propose',
         at: NOW,
