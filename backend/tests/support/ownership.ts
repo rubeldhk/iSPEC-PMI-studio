@@ -48,7 +48,7 @@ export class FixtureActorDirectory implements ActorDirectory {
     return this;
   }
 
-  async find(actorId: string): Promise<ActorRecord | null> {
+  async find(_workspaceId: string, actorId: string): Promise<ActorRecord | null> {
     return this.actors.get(actorId) ?? null;
   }
 }

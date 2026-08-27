@@ -498,3 +498,26 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
 - [ ] `specs/030-governed-engineering-loop/defects/` contains no open defect records
 - [ ] A closing report was published: work completed, work deferred, and the recommended next task named as a concrete Spec Kit command (Constitution IX)
+
+---
+
+## Frozen principal identity in adjudication *(added 2026-08-27, Step C3B)*
+
+*EPIC-030 consumes the public frozen-principal contract. Lifecycle, gate and application ownership
+are unchanged.*
+
+- **FR-GEL-075**: Separation of duties MUST evaluate **resolved, frozen** principal identity, not
+  identifiers supplied on the request.
+- **FR-GEL-076**: The sponsoring human of a non-human proposer MUST be treated as part of the
+  **proposer side** where policy requires a distinct approver. Otherwise "an agent may not approve
+  its own proposal" is satisfied by the agent handing the approval to the one person accountable for
+  it.
+- **FR-GEL-077**: An agent, service or connector principal MUST NEVER approve a transition.
+  Reporting and proposing are permitted; approval is a human act.
+- **FR-GEL-078**: Historical adjudication MUST retain the identity frozen at the time. Suspension or
+  revocation MUST NOT alter a past decision, and a retry MUST use the same governed identity rather
+  than substituting another snapshot.
+
+- **SC-GEL-020**: **Zero** proposals are approved by their proposer's sponsoring human where a
+  distinct approver is required.
+- **SC-GEL-021**: **Zero** non-human principals record an approval, under any tenant policy.

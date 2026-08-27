@@ -139,3 +139,27 @@ not chosen. C2E built it after that decision was made, not before.
 `FR-ACC-027` was not weakened. A revocation that would leave an artifact with no human editor is
 still refused, and one C2E test had to grant a second holder before it could revoke — which is the
 requirement working, not an obstacle to route around.
+
+---
+
+# Reopening record — C3B principal authorization (2026-08-27)
+
+**All three closure records above stand.**
+
+Reopened a third time, narrowly: to authorise a **second kind of principal**. Actor resolution now
+runs through a directory that answers for humans and non-humans alike, and scoped delegation lets a
+sponsoring human grant an agent exactly what it needs on exactly which artifact.
+
+**No parallel authorization system was created.** The directory answers one question — *does this
+identity exist here, and may it act?* — and everything after it is the same grant evaluation that
+already existed. The workspace boundary, deny-by-default, durable grants, fail-closed behaviour and
+audited attempts are unchanged.
+
+**Delegation is deliberately not the grant model.** `AccessGrant.level` is `read` or `edit`, which
+cannot express `transition.propose` without overloading it into ambiguity. The C3B instruction
+permits a narrow extension where the existing model cannot represent this unambiguously, and that is
+what `principal_delegations` is.
+
+`Y1` is also resolved here: `ownership_backfill_records` was reviewed and found to be **authoritative
+security evidence**, not a rebuildable projection, and is now append-only. It was raised LOW; it was
+promoted on the review rather than left alone because of where it started.

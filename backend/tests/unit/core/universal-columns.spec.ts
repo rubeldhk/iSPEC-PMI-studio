@@ -100,6 +100,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // evidence of every specification status-transition adjudication.
     // application_intents arrived with EPIC-030 T1097 — the durable record,
     // written before EPIC-009 is asked, that an application was attempted.
+    // The five principal tables arrived with EPIC-028 T1134 / EPIC-024 T1139 —
+    // authoritative identity for agents and services, the evidence of their
+    // state changes, their frozen snapshots, and scoped delegation.
     // gate_final_outcomes arrived with EPIC-021 T1107 — the append-only
     // authoritative gate decision, separate from the mutable working record.
     // application_policies arrived with EPIC-030 T1117 — explicit, versioned,
@@ -117,6 +120,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'baseline_exceptions',
       'baselines',
       'clarifications',
+      'connector_registrations',
       'dependency_edges',
       'engine_registrations',
       'gate_final_outcomes',
@@ -128,6 +132,10 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'loop_objects',
       'loop_transitions',
       'organizations',
+      'principal_delegations',
+      'principal_identity_snapshots',
+      'principal_state_events',
+      'principals',
       'projects',
       'provisional_approval_overrides',
       'provisional_markings',

@@ -362,3 +362,37 @@ its five findings were these records lagging the code, corrected by Phase 9 and 
 
 **The epic is release-eligible.** Constitution IV's gate: convergence clean on code ✓, unit tests
 green ✓, defect folder carries no open records ✓. Next: promotion `local → dev` (Constitution VII).
+
+---
+
+# Reopening record — C3B non-human principal identity (2026-08-27)
+
+**The closure above stands.** No task recorded there is reopened, and nothing previously delivered
+is re-described as undelivered.
+
+This Epic was reopened for `Y2`: **no production agent or service identity existed anywhere in the
+platform.** EPIC-037's Band A preflight found it by trying to use it — the fixture connector could
+not cross EPIC-024's workspace boundary, because that boundary resolves actors against `users` and
+an agent is not a person.
+
+## Why it was this Epic
+
+The Project Owner's C3B decision placed registration and authoritative identity of agents, service
+principals and connectors here, and forbade a new epic. The fit is the one the decision names:
+EPIC-028 already owns `AgentDescriptor` and the agent's registration, so the capability and the
+accountable human belong together.
+
+## What was and was not true before
+
+`AgentDescriptor` existed and was **not** identity — no workspace, no tenant, no sponsoring human,
+no frozen snapshot. That was not a defect: it is capability metadata and was correct as such. The
+gap was that nothing else filled the identity role, and the closure above never claimed otherwise.
+
+The decision explicitly ruled out the cheap fix: *"AgentDescriptor remains capability metadata and
+must not become identity merely by adding a workspaceId."* It has not.
+
+## What this record does not claim
+
+Band A did **not** begin. EPIC-037 remains unimplemented, and this Epic now supplies an identity its
+own execution seam does not yet consume — deliberately, because the consumer needs separate
+authorisation.

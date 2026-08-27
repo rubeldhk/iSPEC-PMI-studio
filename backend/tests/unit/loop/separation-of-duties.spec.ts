@@ -165,3 +165,100 @@ describe('T1084 · identity is read from the frozen snapshot', () => {
     ).toBe(true);
   });
 });
+
+describe('T1143 (C3B) · the sponsor stands on the proposer side', () => {
+  const SPONSOR = 'u_sponsor';
+
+  const agentProposal: AdjudicationProposal = {
+    ...BASE,
+    proposerId: 'p_agent',
+    proposerType: 'agent',
+    proposerIdentitySnapshotId: 'snap-agent-1',
+  };
+
+  const sponsorApproval: ApprovalAttempt = {
+    proposalId: agentProposal.proposalId,
+    approverId: SPONSOR,
+    approverType: 'human',
+    approverIdentitySnapshotId: 'snap-sponsor-1',
+    basis: 'reviewed',
+    attemptedAt: '2026-08-27T01:00:00.000Z',
+  };
+
+  const identities = {
+    proposer: { principalId: 'p_agent', kind: 'agent' as const, sponsorUserId: SPONSOR },
+    approver: { principalId: SPONSOR, kind: 'human' as const, sponsorUserId: null },
+  };
+
+  it('refuses the sponsoring human approving their own agent proposal', () => {
+    // The loophole. Every id-based comparison passes here: different actor,
+    // different snapshot, human approver. And the proposal would be approved by
+    // the one person accountable for the thing that proposed it.
+    const v = evaluateSeparationOfDuties(
+      agentProposal,
+      sponsorApproval,
+      { humanSelfApprovalPermitted: false },
+      identities,
+    );
+    expect(v.permitted).toBe(false);
+    expect(v.permitted === false && v.reasonCode).toBe('sponsor_cannot_approve_sponsored_proposal');
+  });
+
+  it('refuses it EVEN WHEN human self-approval is permitted', () => {
+    // That policy is about a human approving their OWN work. It is a different
+    // question from a human approving the work of a machine they answer for,
+    // and must not be readable as permission for this.
+    const v = evaluateSeparationOfDuties(
+      agentProposal,
+      sponsorApproval,
+      { humanSelfApprovalPermitted: true },
+      identities,
+    );
+    expect(v.permitted).toBe(false);
+  });
+
+  it('PERMITS a different human approving the agent proposal', () => {
+    // The control. Without it, refusing every approval would satisfy the two
+    // assertions above.
+    const v = evaluateSeparationOfDuties(
+      agentProposal,
+      { ...sponsorApproval, approverId: 'u_other', approverIdentitySnapshotId: 'snap-other' },
+      { humanSelfApprovalPermitted: false },
+      {
+        proposer: identities.proposer,
+        approver: { principalId: 'u_other', kind: 'human', sponsorUserId: null },
+      },
+    );
+    expect(v.permitted).toBe(true);
+  });
+
+  it('is not reachable without resolved identities — ids alone cannot express it', () => {
+    // Stated so the dependency is explicit: the sponsor link is resolved from
+    // EPIC-028's registry, never read off the request. A caller that could
+    // assert its own sponsor could assert this rule away.
+    const v = evaluateSeparationOfDuties(agentProposal, sponsorApproval, {
+      humanSelfApprovalPermitted: false,
+    });
+    expect(v.permitted, 'without resolved identities this cannot be detected').toBe(true);
+  });
+});
+
+describe('T1143 (C3B) · only a human may approve', () => {
+  it.each(['agent', 'service'] as const)('refuses a %s principal as approver', (kind) => {
+    const v = evaluateSeparationOfDuties(
+      BASE,
+      {
+        proposalId: BASE.proposalId,
+        approverId: 'p_other',
+        approverType: kind,
+        approverIdentitySnapshotId: 'snap-other',
+        basis: 'automated',
+        attemptedAt: '2026-08-27T01:00:00.000Z',
+      },
+      { humanSelfApprovalPermitted: true },
+      { approver: { principalId: 'p_other', kind, sponsorUserId: 'u_s' } },
+    );
+    expect(v.permitted).toBe(false);
+    expect(v.permitted === false && v.reasonCode).toBe('self_approval_prohibited');
+  });
+});

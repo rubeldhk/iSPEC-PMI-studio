@@ -287,3 +287,33 @@ already hold, or atomically receive, a durable human owner/editor grant. Since C
 specification is refused by EPIC-024 before adjudication is reached. `T1081`'s end-to-end proof must
 use a specification created through the production service **with** its owner grant, never a row
 inserted directly into PostgreSQL.
+
+## Identity dependency corrections *(applied 2026-08-27, Step C3B §8)*
+
+*EPIC-037 was **not** implemented. These record what its future registration must bind, now that the
+identity model exists.*
+
+**Eight concepts, never collapsed into `actorId`.** A future execution registration binds each
+separately, because collapsing any two is how a connector ends up able to approve its own work:
+
+| Bound field | What it is |
+|---|---|
+| authenticated principal id | who is acting, resolved server-side |
+| proposer snapshot id | the frozen identity that proposed |
+| originating agent/service snapshot id | the frozen identity that executed |
+| connector registration / snapshot id | the **surface** it arrived through — not an actor |
+| sponsoring human reference | the person accountable for the agent |
+| delegation reference | the scoped authority relied on |
+
+**A connector is not an agent.** The same agent may act through several, and a connector proposes
+nothing on its own. `originatingConnector` in the proposal contract is a surface identifier and MUST
+NOT be substituted for the proposer.
+
+**Identity is referenced, never defined.** EPIC-037 records immutable references to identities
+EPIC-028 minted and EPIC-024 authorised. It defines no principal, mints no snapshot, and reads
+neither epic's tables.
+
+**A non-human principal needs a delegation, not just a grant.** Since C3B a sponsoring human's
+ownership does not reach the agents they sponsor. An execution registered against a specification
+requires an explicit, unexpired, version-matched delegation carrying `execution.register`; a
+proposal requires `transition.propose`. Neither can ever carry approval.

@@ -29,10 +29,19 @@
  */
 import { ForbiddenError, ProviderUnavailableError } from '../../core/errors.js';
 
-/** The authoritative actor record. Identity only — no roles, by design. */
+/**
+ * The authoritative actor record. Identity only — no roles, by design.
+ *
+ * `kind` and `state` are optional and default to `'human'` / `'active'`. A
+ * `users` row has neither column and needs neither: a person in the workspace
+ * is a person in the workspace. They exist for **non-human** principals, whose
+ * right to act can be withdrawn without deleting them (`T1140`).
+ */
 export interface ActorRecord {
   readonly id: string;
   readonly workspaceId: string;
+  readonly kind?: 'human' | 'agent' | 'service';
+  readonly state?: 'active' | 'suspended' | 'revoked';
 }
 
 /**
@@ -43,7 +52,13 @@ export interface ActorRecord {
  * absent actor is a decision, an unreadable directory is not.
  */
 export interface ActorDirectory {
-  find(actorId: string): Promise<ActorRecord | null>;
+  /**
+   * `workspaceId` is passed rather than bound at construction: the directory is
+   * a singleton and the workspace is per-request. An earlier draft captured it
+   * in the constructor, which would have served whichever tenant happened to
+   * compose first.
+   */
+  find(workspaceId: string, actorId: string): Promise<ActorRecord | null>;
 }
 
 /** Refusal at the boundary. Carries no detail — see the note above. */
@@ -81,7 +96,7 @@ export class WorkspaceBoundaryService {
 
     let actor: ActorRecord | null;
     try {
-      actor = await this.directory.find(actorId);
+      actor = await this.directory.find(workspaceId, actorId);
     } catch (error) {
       throw new ActorDirectoryUnavailable(
         error instanceof Error ? `${error.name}: ${error.message}` : 'unknown fault',
@@ -97,6 +112,14 @@ export class WorkspaceBoundaryService {
     // control. Naming another workspace now buys nothing.
     if (actor.workspaceId !== workspaceId) {
       throw new WorkspaceBoundaryViolation('actor belongs to a different workspace');
+    }
+
+    // A suspended or revoked principal is still a real, correctly-scoped
+    // identity — which is exactly why the boundary has to say no. Deleting the
+    // record instead would take its history with it (`T1140`).
+    const state = actor.state ?? 'active';
+    if (state !== 'active') {
+      throw new WorkspaceBoundaryViolation(`principal is ${state}`);
     }
 
     return actor;
@@ -118,7 +141,11 @@ export interface UserDelegate {
 export class PrismaActorDirectory implements ActorDirectory {
   constructor(private readonly users: UserDelegate) {}
 
-  async find(actorId: string): Promise<ActorRecord | null> {
+  // `workspaceId` is unused here on purpose: a user is looked up by id and the
+  // boundary compares the tenancy on the record that comes back. Filtering the
+  // query by the caller's workspace would make a foreign actor indistinguishable
+  // from one that does not exist, and the boundary could not name the reason.
+  async find(_workspaceId: string, actorId: string): Promise<ActorRecord | null> {
     // `select` is narrow on purpose: this path needs identity and tenancy and
     // has no business loading a credential hash to answer the question.
     return this.users.findUnique({
@@ -138,5 +165,55 @@ export class PrismaActorDirectory implements ActorDirectory {
 export class UnconfiguredActorDirectory implements ActorDirectory {
   async find(): Promise<null> {
     return null;
+  }
+}
+
+
+/**
+ * T1140 (EPIC-024, C3B) — one directory over both kinds of principal.
+ *
+ * Humans resolve against `users`; agents and services resolve through
+ * **EPIC-028's public registry port**. EPIC-024 does not read EPIC-028's tables
+ * — the authorisation for this step forbids it, and a second reader of another
+ * epic's schema is how two epics end up disagreeing about who exists.
+ *
+ * Humans are tried first. Both namespaces are separate and an id cannot appear
+ * in both, so the order is about cost rather than precedence: most callers are
+ * people, and a person should not require a registry round-trip.
+ *
+ * This is **not** a parallel authorisation system. It answers one question —
+ * *does this identity exist here, and may it act?* — for two kinds of actor.
+ * Everything after it is the same grant evaluation it always was.
+ */
+export interface NonHumanPrincipalLookup {
+  find(
+    workspaceId: string,
+    principalId: string,
+  ): Promise<{
+    principalId: string;
+    kind: 'agent' | 'service';
+    workspaceId: string;
+    state: 'active' | 'suspended' | 'revoked';
+  } | null>;
+}
+
+export class CompositePrincipalDirectory implements ActorDirectory {
+  constructor(
+    private readonly humans: ActorDirectory,
+    private readonly principals: NonHumanPrincipalLookup,
+  ) {}
+
+  async find(workspaceId: string, actorId: string): Promise<ActorRecord | null> {
+    const human = await this.humans.find(workspaceId, actorId);
+    if (human !== null) return human;
+
+    const principal = await this.principals.find(workspaceId, actorId);
+    if (principal === null) return null;
+    return {
+      id: principal.principalId,
+      workspaceId: principal.workspaceId,
+      kind: principal.kind,
+      state: principal.state,
+    };
   }
 }

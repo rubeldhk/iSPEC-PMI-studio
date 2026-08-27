@@ -164,9 +164,9 @@ preflight in §2. **Band A was not implemented** — the preflight hit the stop 
 
 | ID | Category | Severity | Location(s) | Summary | Recommendation |
 |----|----------|----------|-------------|---------|----------------|
-| Y2 | Coverage Gap | CRITICAL | `packages/agent-contract/src/`; `backend/src/modules/access/workspace-boundary.service.ts`; `backend/prisma/schema.prisma` | **No production agent/service identity resolution exists.** `WorkspaceBoundaryService` resolves actors only against the `users` table. `AgentDescriptor` is a capability descriptor — name, provider, model, capabilities — with no workspace, no tenant, no sponsoring human and no frozen snapshot. EPIC-028's specification states no identity requirement. No agent, connector or service-account model exists in the schema, and nothing mints the `proposerIdentitySnapshotId` EPIC-030's proposal contract requires. The Band A fixture connector therefore cannot cross EPIC-024's boundary as an agent | **Stop, per C3A §2.** Every route through is forbidden by name: registering the connector as a `User` (§2), an ad hoc identity model inside EPIC-037 (§12), or weakening EPIC-024 (§12). Needs an owner decision on where agent identity lives |
+| Y2 ✅ | Coverage Gap | CRITICAL | `packages/agent-contract/src/principal.ts`; `backend/src/modules/agents/`; `backend/src/modules/access/workspace-boundary.service.ts` | **CLOSED in C3B**, by its owners: EPIC-028 registers agents, services and connectors with a mandatory human sponsor and mints frozen snapshots server-side (`T1133`–`T1138`); EPIC-024 resolves both kinds of principal through one directory and adds scoped delegation (`T1139`–`T1141`); EPIC-030 treats a sponsor as proposer-side (`T1143`). An agent now crosses the workspace boundary **without** a `users` row, proven through the real `AppModule`. | Done — no ad hoc identity model, no weakening of EPIC-024, no transport authentication |
 | Y3 | Inconsistency | MEDIUM | `specs/037-.../analysis.md` finding 3; three prior reports | The immutability trigger total was quoted as 4, then 17, then 19. **The authoritative figure is 18**, confirmed by `pg_trigger` and by the committed migrations independently. Each earlier figure was quoted from memory and checked against neither | **Fixed.** The row no longer quotes a total; it cites the query. A count is false the moment the next migration lands |
-| Y1 | Coverage Gap | LOW | `backend/prisma/migrations/20260827000000_epic024_owner_grant_backfill/` | `ownership_backfill_records` (C2E) carries no immutability trigger. It records which artifacts could not be given an owner, which is governance evidence an operator will act on | Recorded, not changed — outside Band A's authorised scope. Attach a trigger when EPIC-024 is next opened |
+| Y1 ✅ | Coverage Gap | **HIGH** | `backend/prisma/migrations/20260827140000_epic024_backfill_evidence_immutable/` | **Reviewed and PROMOTED in C3B, then closed.** `ownership_backfill_records` is authoritative security evidence, not a rebuildable projection: "which artifacts the backfill could not resolve, and why" is not re-derivable once grants are added later. A mutable list of outstanding remediations can be quietly shortened. Now append-only, proven under a non-superuser, non-owner role that also cannot disable the trigger | Done — raised LOW, promoted on the review rather than left alone because of where it started |
 
 ## Corrections applied (C3A §1)
 
@@ -190,3 +190,31 @@ preflight in §2. **Band A was not implemented** — the preflight hit the stop 
 `Y2` is not a defect in EPIC-037. It is a dependency that has never existed, surfaced the same way
 `X7` and `X8` were — by a consumer trying to use it and stopping. The specification corrections in
 §1 are complete and independent of it, which is why they were applied rather than held.
+
+
+---
+
+# Analysis: EPIC-037 — Step C3B identity dependency
+
+**Session**: 2026-08-27 · **Scope**: `Y2` and `Y1`, and the EPIC-037 dependency corrections in
+C3B §8. **Band A was not implemented.**
+
+## Findings — Session 2026-08-27 (Step C3B)
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| Z1 | Underspecification | MEDIUM | `specs/028-.../spec.md` `FR-AGT-014`–`025`; `specs/024-.../spec.md` `FR-ACC-029`–`034`; `specs/030-.../spec.md` `FR-GEL-075`–`078` | The seventeen new requirements have **no `BR-` citation**. They are sourced to the C3B ownership decision through the mechanism `D-45` established | Back-fill obligation recorded next to each group. Not blocking — a recorded owner decision is a source — but `PMI-DOC-004` must cite them before the platform release gate |
+| Z2 | Coverage Gap | LOW | `backend/src/modules/agents/` | Suspension and revocation are implemented and tested; **reactivation** is reachable through `changeState` but has no dedicated test, and its version-bump semantics (a reactivated principal does not recover prior delegations) rest on the suspension test alone | Add a reactivation case when EPIC-028 is next opened |
+
+## Metrics
+
+- `Y2` **CRITICAL closed** · `Y1` promoted LOW → HIGH and **closed** · `Y3` closed in C3A
+- New findings: **2** — 0 CRITICAL · 0 HIGH · 1 MEDIUM · 1 LOW
+- EPIC-037 Band A tasks implemented: **0 of 44**
+
+## Notes
+
+`Y2` was the fourth dependency in this programme surfaced by a consumer trying to use something that
+had never existed — after `X7` (EPIC-021's gate outcomes), `X8` (EPIC-009's transition identity) and
+`X19` (governed artifact ownership). Each was found by stopping rather than by inventing a
+substitute, and each turned out to belong to an epic that had closed without it.

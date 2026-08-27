@@ -20,10 +20,19 @@ import { AccessInheritanceService, InMemoryDerivationGraph, type DerivationGraph
 import { AccessSnapshotService } from './access-snapshot.service.js';
 import { PrismaAccessStore, type AccessDb } from './access.store.js';
 import {
+  CompositePrincipalDirectory,
   PrismaActorDirectory,
   WorkspaceBoundaryService,
   type ActorDirectory,
+  type NonHumanPrincipalLookup,
 } from './workspace-boundary.service.js';
+import {
+  PrincipalDelegationService,
+  type DelegationStore,
+} from './principal-delegation.service.js';
+import { PrismaDelegationStore } from './delegation.store.js';
+import { AgentsModule } from '../agents/agents.module.js';
+import { PrincipalRegistryService } from '../agents/principal-registry.service.js';
 import { prismaClient } from '../../persistence/prisma.js';
 
 export const ACCESS_GRANT_STORE = Symbol('ACCESS_GRANT_STORE');
@@ -31,6 +40,14 @@ export const ACCESS_ATTEMPT_STORE = Symbol('ACCESS_ATTEMPT_STORE');
 export const DERIVATION_GRAPH = Symbol('DERIVATION_GRAPH');
 /** `X19` — the authoritative actor source the boundary reads. */
 export const ACTOR_DIRECTORY = Symbol('ACTOR_DIRECTORY');
+/** `T1139` — where scoped non-human delegations are read and written. */
+export const DELEGATION_STORE = Symbol('DELEGATION_STORE');
+/**
+ * `T1140` — EPIC-028's public registry, injected. EPIC-024 never reads
+ * EPIC-028's tables: a second reader of another epic's schema is how two
+ * epics end up disagreeing about who exists.
+ */
+export const NON_HUMAN_PRINCIPALS = Symbol('NON_HUMAN_PRINCIPALS');
 
 /**
  * One store instance, reached lazily.
@@ -44,6 +61,7 @@ function prismaAccessStore(): PrismaAccessStore {
 }
 
 @Module({
+  imports: [AgentsModule],
   controllers: [AccessController],
   providers: [
     // X13 (C2D) — grants and refusal records are DURABLE. Bound to the
@@ -66,19 +84,56 @@ function prismaAccessStore(): PrismaAccessStore {
     },
     {
       provide: ACTOR_DIRECTORY,
-      useFactory: (): ActorDirectory =>
+      inject: [NON_HUMAN_PRINCIPALS],
+      useFactory: (principals: NonHumanPrincipalLookup): ActorDirectory =>
         // Reached lazily, like the grant store: `prismaClient()` reads
         // DATABASE_URL when constructed, so it must not run while modules are
         // merely being assembled.
-        new PrismaActorDirectory({
-          findUnique: (args) => prismaClient().user.findUnique(args as never) as never,
-        }),
+        // Humans from `users`, agents and services from EPIC-028's registry —
+        // one boundary over both, not a second authorisation system.
+        new CompositePrincipalDirectory(
+          new PrismaActorDirectory({
+            findUnique: (args) => prismaClient().user.findUnique(args as never) as never,
+          }),
+          principals,
+        ),
     },
     {
       provide: WorkspaceBoundaryService,
       inject: [ACTOR_DIRECTORY],
       useFactory: (directory: ActorDirectory): WorkspaceBoundaryService =>
         new WorkspaceBoundaryService(directory),
+    },
+    {
+      provide: NON_HUMAN_PRINCIPALS,
+      inject: [PrincipalRegistryService],
+      // EPIC-028's PUBLIC service, narrowed to the one question the boundary
+      // asks. EPIC-024 never touches EPIC-028's tables — a second reader of
+      // another epic's schema is how two epics end up disagreeing about who
+      // exists, and the C3B authorisation forbids it by name.
+      useFactory: (registry: PrincipalRegistryService): NonHumanPrincipalLookup => ({
+        find: async (workspaceId, principalId) => {
+          const p = await registry.find(workspaceId, principalId);
+          return p === null
+            ? null
+            : {
+                principalId: p.principalId,
+                kind: p.kind,
+                workspaceId: p.workspaceId,
+                state: p.state,
+              };
+        },
+      }),
+    },
+    {
+      provide: DELEGATION_STORE,
+      useFactory: (): DelegationStore => new PrismaDelegationStore(() => prismaClient() as never),
+    },
+    {
+      provide: PrincipalDelegationService,
+      inject: [DELEGATION_STORE],
+      useFactory: (store: DelegationStore): PrincipalDelegationService =>
+        new PrincipalDelegationService(store),
     },
     {
       provide: AccessEnforcementService,
@@ -110,6 +165,7 @@ function prismaAccessStore(): PrismaAccessStore {
     AccessSnapshotService,
     AccessEvaluationService,
     WorkspaceBoundaryService,
+    PrincipalDelegationService,
     ACCESS_GRANT_STORE,
     ACCESS_ATTEMPT_STORE,
     DERIVATION_GRAPH,

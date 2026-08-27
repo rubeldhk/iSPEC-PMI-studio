@@ -86,6 +86,11 @@ model Workspace {
   baselines             Baseline[]
   adjudicationRecords AdjudicationRecord[]
   applicationIntents  ApplicationIntent[]
+  connectorRegistrations ConnectorRegistration[]
+  principals             Principal[]
+  principalStateEvents   PrincipalStateEvent[]
+  principalSnapshots     PrincipalIdentitySnapshot[]
+  principalDelegations   PrincipalDelegation[]
   gateFinalOutcomes   GateFinalOutcome[]
   applicationPolicies ApplicationPolicy[]
 
@@ -1706,6 +1711,120 @@ model OwnershipBackfillRecord {
 
   @@unique([workspaceId, artifactType, artifactId])
   @@map("ownership_backfill_records")
+}
+
+/// T1134 (EPIC-028, C3B) -- a registered execution surface. NOT an actor: the
+/// same agent can act through several connectors, and a connector proposes
+/// nothing on its own.
+model ConnectorRegistration {
+  id                 String   @id @default(uuid())
+  workspaceId        String
+  kind               String
+  registeredByUserId String
+  state              String   @default("active")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id])
+  principals Principal[]
+
+  @@index([workspaceId])
+  @@map("connector_registrations")
+}
+
+/// T1134 -- an agent or service principal. Humans are NOT here: a human
+/// principal is a `User`, and a second answer to "who is this person" is
+/// exactly the ambiguity this registry exists to remove.
+model Principal {
+  id                      String   @id @default(uuid())
+  workspaceId             String
+  kind                    String
+  descriptorRef           String
+  sponsorUserId           String
+  registeredByUserId      String
+  state                   String   @default("active")
+  identityVersion         Int      @default(1)
+  connectorRegistrationId String?
+  correlationId           String
+  causationId             String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  workspace   Workspace              @relation(fields: [workspaceId], references: [id])
+  connector   ConnectorRegistration? @relation(fields: [connectorRegistrationId], references: [id])
+  stateEvents PrincipalStateEvent[]
+  delegations PrincipalDelegation[]
+
+  @@index([workspaceId])
+  @@index([sponsorUserId])
+  @@map("principals")
+}
+
+/// T1134 -- why a principal's state changed. Append-only.
+model PrincipalStateEvent {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  principalId     String
+  fromState       String?
+  toState         String
+  identityVersion Int
+  actorUserId     String
+  reason          String
+  correlationId   String
+  causationId     String
+  occurredAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  principal Principal @relation(fields: [principalId], references: [id])
+
+  @@index([workspaceId, principalId])
+  @@map("principal_state_events")
+}
+
+/// T1135 -- frozen identity. What separation of duties compares, and why a
+/// revocation cannot rewrite who acted last week. Append-only.
+model PrincipalIdentitySnapshot {
+  id                      String   @id @default(uuid())
+  workspaceId             String
+  principalId             String
+  kind                    String
+  sponsorUserId           String?
+  identityVersion         Int
+  connectorRegistrationId String?
+  capturedAt              DateTime @default(now())
+  createdAt               DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, principalId])
+  @@map("principal_identity_snapshots")
+}
+
+/// T1139 (EPIC-024, C3B) -- scoped, expiring delegation from a sponsoring human
+/// to one non-human principal. A sponsor's ownership does NOT flow to every
+/// agent they sponsor; approval and application can never be delegated.
+model PrincipalDelegation {
+  id              String    @id @default(uuid())
+  workspaceId     String
+  principalId     String
+  sponsorUserId   String
+  artifactType    String
+  artifactId      String
+  actions         String[]
+  identityVersion Int
+  effectiveFrom   DateTime  @default(now())
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  revokedById     String?
+  correlationId   String
+  createdAt       DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  principal Principal @relation(fields: [principalId], references: [id])
+
+  @@index([workspaceId, principalId, artifactType, artifactId])
+  @@map("principal_delegations")
 }
 
 model ApplicationIntent {

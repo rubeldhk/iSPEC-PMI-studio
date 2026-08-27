@@ -125,6 +125,14 @@ export const REFUSAL_REASON_CODES = Object.freeze([
   'unauthorized_actor',
   'self_approval_prohibited',
   'distinct_approver_required',
+  /**
+   * The approver is the sponsoring human of the agent that proposed.
+   * A sponsor is accountable for what their agent does, so they stand on
+   * the proposer's side of a separation-of-duties check — otherwise
+   * "an agent may not approve its own proposal" is satisfied by the agent
+   * handing the approval to the one person who answers for it.
+   */
+  'sponsor_cannot_approve_sponsored_proposal',
   'approval_authority_missing',
   'lifecycle_application_refused',
 ] as const);
@@ -148,6 +156,7 @@ export const REFUSAL_STAGE_OF: Readonly<Record<RefusalReasonCode, RefusalStage>>
   unauthorized_actor: 'approval',
   self_approval_prohibited: 'approval',
   distinct_approver_required: 'approval',
+  sponsor_cannot_approve_sponsored_proposal: 'approval',
   approval_authority_missing: 'approval',
   lifecycle_application_refused: 'transition',
 });

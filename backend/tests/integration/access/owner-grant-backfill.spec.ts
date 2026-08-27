@@ -21,6 +21,9 @@ import { Client } from 'pg';
 const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = resolve(here, '../../../prisma/migrations');
 const BACKFILL = '20260827000000_epic024_owner_grant_backfill';
+/** Attaches the Y1 trigger TO the backfill table, so it must follow it. */
+const BACKFILL_IMMUTABILITY = '20260827140000_epic024_backfill_evidence_immutable';
+const APP_ROLE = 'pmi_app_probe';
 
 /** Set DOCKER_UNAVAILABLE=1 where no runtime exists (RAID R-04). */
 const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
@@ -34,6 +37,8 @@ const FOREIGN = 'u_bf_foreign';
 suite('T1131 · the owner-grant backfill resolves what it can and invents nothing', () => {
   let container: StartedPostgreSqlContainer;
   let db: Client;
+  /** The same database, as a role with no special privilege. */
+  let appRole: Client;
 
   beforeAll(async () => {
     container = await new PostgreSqlContainer('postgres:16-alpine').start();
@@ -45,7 +50,10 @@ suite('T1131 · the owner-grant backfill resolves what it can and invents nothin
       .sort();
     expect(dirs, 'the backfill migration is missing').toContain(BACKFILL);
 
-    for (const dir of dirs.filter((d) => d !== BACKFILL)) {
+    // Both are held back: the backfill needs data to find, and the Y1 trigger
+    // attaches to the table the backfill creates, so it cannot run before it.
+    const held = new Set([BACKFILL, BACKFILL_IMMUTABILITY]);
+    for (const dir of dirs.filter((d) => !held.has(d))) {
       await db.query(readFileSync(join(MIGRATIONS, dir, 'migration.sql'), 'utf8'));
     }
 
@@ -97,11 +105,27 @@ suite('T1131 · the owner-grant backfill resolves what it can and invents nothin
       [WS, OWNER],
     );
 
-    // NOW the backfill.
+    // NOW the backfill, then the trigger that protects what it wrote.
     await db.query(readFileSync(join(MIGRATIONS, BACKFILL, 'migration.sql'), 'utf8'));
+    await db.query(readFileSync(join(MIGRATIONS, BACKFILL_IMMUTABILITY, 'migration.sql'), 'utf8'));
+
+    // A NON-superuser role, because the container's default user is one and a
+    // superuser proves nothing about what the running application can do.
+    await db.query(`CREATE ROLE "${APP_ROLE}" LOGIN PASSWORD 'probe'`);
+    await db.query(`GRANT USAGE ON SCHEMA public TO "${APP_ROLE}"`);
+    await db.query(
+      `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "${APP_ROLE}"`,
+    );
+
+    const uri = new URL(container.getConnectionUri());
+    uri.username = APP_ROLE;
+    uri.password = 'probe';
+    appRole = new Client({ connectionString: uri.toString() });
+    await appRole.connect();
   }, 300_000);
 
   afterAll(async () => {
+    await appRole?.end();
     await db?.end();
     await container?.stop();
   }, 120_000);
@@ -153,6 +177,40 @@ suite('T1131 · the owner-grant backfill resolves what it can and invents nothin
       `SELECT count(*) AS n FROM "ownership_backfill_records"`,
     );
     expect(Number(rows[0]!.n), 'a second run duplicated its evidence').toBe(3);
+  });
+
+  it('is APPEND-ONLY — the list of unresolved artifacts cannot be shortened (Y1)', async () => {
+    // Promoted from LOW in C3B. This table names every artifact still without
+    // an owner. A mutable list of outstanding security remediations can be
+    // quietly shortened, and nothing else records what the migration could not
+    // resolve or why — that is not re-derivable once grants are added later.
+    //
+    // Asserted as the APPLICATION role, not a superuser: a trigger the runtime
+    // could bypass would protect nothing where it matters.
+    const { rows: role } = await appRole.query<{ su: boolean; owner: boolean }>(
+      `SELECT (SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS su,
+              pg_catalog.pg_get_userbyid(c.relowner) = current_user AS owner
+         FROM pg_class c WHERE c.relname = 'ownership_backfill_records'`,
+    );
+    expect(role[0]?.su, 'this proof would be vacuous as a superuser').toBe(false);
+    expect(role[0]?.owner, 'a table owner can disable its own triggers').toBe(false);
+
+    await expect(
+      appRole.query(`UPDATE "ownership_backfill_records" SET "outcome"='granted'`),
+    ).rejects.toThrow(/append-only/i);
+    await expect(appRole.query(`DELETE FROM "ownership_backfill_records"`)).rejects.toThrow(
+      /append-only/i,
+    );
+    // And it cannot simply turn the trigger off.
+    await expect(
+      appRole.query(`ALTER TABLE "ownership_backfill_records" DISABLE TRIGGER ALL`),
+    ).rejects.toThrow();
+
+    // And the evidence is intact afterwards.
+    const { rows } = await db.query<{ n: string }>(
+      `SELECT count(*) AS n FROM "ownership_backfill_records" WHERE "outcome"='unresolved'`,
+    );
+    expect(Number(rows[0]!.n)).toBe(2);
   });
 
   it('records counts an operator can act on', async () => {

@@ -20,6 +20,7 @@ import { RunsModule } from './modules/runs/runs.module.js';
 import { ReviewModule } from './modules/review/review.module.js';
 import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { AccessModule } from './modules/access/access.module.js';
+import { AgentsModule } from './modules/agents/agents.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { LoopModule } from './modules/loop/loop.module.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
@@ -80,6 +81,7 @@ function clientBuildPath(): string {
     // because the Epic closed with services and no module at all.
     ReviewsModule,
     AccessModule,
+    AgentsModule,
     StorageModule,
     // T936 — EPIC-030. The wiring T934 exists to prove: a module built,
     // tested and never registered is the defect class DEF-005-001 shipped
