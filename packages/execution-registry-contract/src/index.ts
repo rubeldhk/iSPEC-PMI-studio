@@ -56,3 +56,9 @@ export {
   type RegisterExecutionRequest,
   type RegistryRefusal,
 } from './contract.js';
+
+export {
+  FixtureConnector,
+  type FixtureConnectorOptions,
+  type FixtureRunResult,
+} from './fixture-connector.js';
