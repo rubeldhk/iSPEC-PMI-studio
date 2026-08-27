@@ -58,9 +58,16 @@ export default defineWorkspace([
       // evidence rather than another guess.
       hookTimeout: 180_000,
       testTimeout: 120_000,
-      // Still capped, but for the honest reason: eleven concurrent databases on
-      // a 12-core host is wasteful even when it works.
-      poolOptions: { threads: { maxThreads: 4 } },
+      // **Serialised.** Capping workers was not enough: with four in flight —
+      // plus the other projects running alongside — Docker itself starved, and
+      // a hook that should take seconds exceeded even a 180s timeout. Each file
+      // here owns a database and several own a whole application; running them
+      // one at a time is the correct configuration for that, not a workaround
+      // for flakiness.
+      //
+      // It costs wall-clock. The alternative is a suite whose result depends on
+      // what else the host happens to be doing, which is not a result.
+      fileParallelism: false,
     },
   },
   {
