@@ -94,8 +94,16 @@ this analysis and the C1 checkpoint.
 
 ## Trigger accounting *(corrected 2026-08-27, Step C3A §1A)*
 
-**Baseline: 18 immutability triggers on 18 distinct tables**, as of commit `a29f166`, immediately
-**before** EPIC-037's Band A migration exists.
+**There is no standing total here, on purpose.** Counts are recorded as *dated observations*
+against a commit, never as a fact about the system:
+
+| Observed at | Triggers | What changed |
+|---|---|---|
+| `a29f166` (C2E) | **18** | the baseline before any C3B work |
+| `332043d` (C3B) | **21** | `principal_state_events`, `principal_identity_snapshots`, `ownership_backfill_records` (`Y1`) |
+
+EPIC-037's Band A migration will make both lines stale the day it lands, which is exactly why
+the **query** below is the artifact and the table above is history.
 
 ### The authoritative evidence
 
