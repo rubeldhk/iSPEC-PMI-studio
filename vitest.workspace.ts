@@ -52,7 +52,11 @@ export default defineWorkspace([
       // `beforeAll` while passing individually, which reads as broken code and
       // is actually an exhausted host. Four is enough to keep wall-clock
       // reasonable and few enough to be deterministic.
-      poolOptions: { threads: { maxThreads: 4 } },
+      //
+      // Two, not four: the cap is per-project, and a full-repository run
+      // executes the other projects alongside this one. Four was stable when
+      // this project ran alone and still lost suites in the combined run.
+      poolOptions: { threads: { maxThreads: 2 } },
     },
   },
   {
