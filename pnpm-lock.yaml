@@ -77,6 +77,9 @@ importers:
       '@pmi/execution-contract':
         specifier: workspace:*
         version: link:../packages/execution-contract
+      '@pmi/execution-registry-contract':
+        specifier: workspace:*
+        version: link:../packages/execution-registry-contract
       '@pmi/loop-contract':
         specifier: workspace:*
         version: link:../packages/loop-contract
@@ -231,6 +234,8 @@ importers:
   packages/engine-contract: {}
 
   packages/execution-contract: {}
+
+  packages/execution-registry-contract: {}
 
   packages/loop-contract: {}
 
