@@ -18,6 +18,7 @@ import {
 import { InMemoryTransitionRecorder } from '../../src/modules/specifications/lifecycle.machine.js';
 import { InMemorySpecificationStore } from '../../src/modules/specifications/specifications-read.service.js';
 import { toErrorBody, toHttpStatus } from '../../src/core/errors.js';
+import { ownershipFor } from '../support/ownership.js';
 
 const PATH = 'path';
 const METHOD = 'method';
@@ -67,6 +68,7 @@ async function build(): Promise<{
     },
     links: [],
     job: { id: 'job_probe', state: 'succeeded', resultRef: 'spec:s_probe' },
+    ownership: ownershipFor('u1'),
   });
   const recorder = new InMemoryTransitionRecorder();
   const service = new SpecificationLifecycleService(store, recorder, new InMemoryFindingStore());

@@ -98,6 +98,34 @@ export interface ActingContext {
 }
 
 /** A generated specification, its first version, its links, and the job — as ONE unit. */
+/**
+ * T1128 (EPIC-009, C2E) — who owns a specification the moment it exists.
+ *
+ * `X19`: a specification was created with **no grants**, and zero grants used
+ * to mean unrestricted. Deny-by-default alone would have made every new
+ * specification unreachable instead, so the two halves have to land together —
+ * the artifact and its owner, in one transaction.
+ *
+ * The owner is always a **human**. An agent or service may initiate creation,
+ * but something a human is accountable for cannot have only a machine
+ * answering for it.
+ */
+export interface OwnershipBootstrap {
+  /** Who asked for this — human, agent or service. */
+  readonly initiatingActorId: string;
+  readonly initiatingActorType: 'human' | 'agent' | 'service';
+  /**
+   * The human owner. For a human actor this may be themselves; for an agent or
+   * service it is the **mandatory sponsor**, and must be someone else.
+   */
+  readonly ownerUserId: string;
+  /** Frozen identity, so a later rename cannot rewrite who owned this. */
+  readonly ownerSnapshotId: string;
+  readonly correlationId: string;
+  readonly causationId: string;
+  readonly idempotencyKey: string;
+}
+
 export interface GenerationCommit {
   specification: Omit<SpecificationRecord, 'createdAt' | 'updatedAt'>;
   version: Omit<SpecificationVersionRecord, 'authoredAt'>;
@@ -109,6 +137,11 @@ export interface GenerationCommit {
    * artifact, so a job can never claim a result that was rolled back.
    */
   job: { id: string; state: 'succeeded'; resultRef: string };
+  /**
+   * Required. Optional would mean a specification can still be created with no
+   * owner, which is the defect (`X19`) rather than a fix for it.
+   */
+  ownership: OwnershipBootstrap;
 }
 
 export interface JobOutcomeRecord {
@@ -638,6 +671,18 @@ export interface SpecificationDelegates {
    * specification SC-002 forbids.
    */
   traceabilityLink?: TraceabilityLinkDelegate;
+  /** `T1128` — the sponsor's workspace is verified inside the transaction. */
+  user?: {
+    findUnique(args: {
+      where: { id: string };
+      select: { id: true; workspaceId: true };
+    }): Promise<{ id: string; workspaceId: string } | null>;
+  };
+  /** `T1128` — the owner grant shares the creation transaction. */
+  accessGrant?: {
+    create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
+    findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null>;
+  };
 }
 
 export class TraceabilityUnavailableError extends Error {
@@ -651,6 +696,54 @@ export class TraceabilityUnavailableError extends Error {
   }
 }
 
+export class OwnershipRefusedError extends Error {
+  readonly code = 'ownership_refused' as const;
+  constructor(reason: string) {
+    super(reason);
+    this.name = 'OwnershipRefusedError';
+  }
+}
+
+/**
+ * `T1128` — the ownership rules, as a pure function so they can be read and
+ * tested without a database.
+ *
+ * The agent rule is the one that matters: a machine may *initiate* creation,
+ * but it may not be the only party accountable for the result. Requiring the
+ * sponsor to be someone else is what stops "the agent sponsors itself" from
+ * satisfying the letter of the rule.
+ */
+export function assertOwnershipBootstrap(ownership: OwnershipBootstrap): void {
+  if (!ownership.ownerUserId?.trim()) {
+    throw new OwnershipRefusedError('A governed specification requires a human owner.');
+  }
+  if (!ownership.ownerSnapshotId?.trim()) {
+    throw new OwnershipRefusedError(
+      'The owner identity must be frozen at creation, so a later rename cannot rewrite who owned this.',
+    );
+  }
+  if (ownership.initiatingActorType === 'human') return;
+
+  if (ownership.ownerUserId === ownership.initiatingActorId) {
+    throw new OwnershipRefusedError(
+      `A ${ownership.initiatingActorType} may not be the sole owner of a governed specification. ` +
+        'A sponsoring human is mandatory, and must be a different party.',
+    );
+  }
+}
+
+export class OwnerGrantUnavailableError extends Error {
+  readonly code = 'owner_grant_unavailable' as const;
+  constructor() {
+    super(
+      'Refusing to create a specification without a grant writer. Under deny-by-default ' +
+        '(X19) an artifact with no owner grant is unreachable by everyone, including the ' +
+        'person who asked for it — so creating one would be a silent failure.',
+    );
+    this.name = 'OwnerGrantUnavailableError';
+  }
+}
+
 export class PrismaSpecificationStore implements SpecificationStore {
   constructor(
     private readonly db: SpecificationDelegates,
@@ -661,8 +754,24 @@ export class PrismaSpecificationStore implements SpecificationStore {
   async commitGeneration(commit: GenerationCommit): Promise<SpecificationRecord> {
     if (!this.db.traceabilityLink) throw new TraceabilityUnavailableError();
 
+    assertOwnershipBootstrap(commit.ownership);
+
     return this.transaction(async (tx) => {
       if (!tx.traceabilityLink) throw new TraceabilityUnavailableError();
+
+      // The owner must be authoritatively inside this workspace. Checked in
+      // the transaction so a refusal rolls back everything, rather than
+      // leaving a specification owned by somebody from another tenant.
+      if (!tx.user) throw new OwnerGrantUnavailableError();
+      const owner = await tx.user.findUnique({
+        where: { id: commit.ownership.ownerUserId },
+        select: { id: true, workspaceId: true },
+      });
+      if (owner === null || owner.workspaceId !== commit.specification.workspaceId) {
+        throw new OwnershipRefusedError(
+          'The named owner is not an authoritative member of this workspace.',
+        );
+      }
 
       // The SPECIFICATION first, corrected in C2D.
       //
@@ -689,6 +798,22 @@ export class PrismaSpecificationStore implements SpecificationStore {
           state: commit.job.state,
           resultRef: commit.job.resultRef,
           endedAt: new Date(),
+        },
+      });
+
+      // `T1128` — the owner grant, in THIS transaction. A grant written
+      // afterwards would leave a window in which the artifact exists and
+      // nobody can reach it; a rollback after it would leave a grant naming a
+      // specification that does not exist.
+      if (!tx.accessGrant) throw new OwnerGrantUnavailableError();
+      await tx.accessGrant.create({
+        data: {
+          workspaceId: commit.specification.workspaceId,
+          artifactType: 'specification',
+          artifactId: specification.id,
+          userId: commit.ownership.ownerUserId,
+          level: 'edit',
+          grantedById: commit.ownership.initiatingActorId,
         },
       });
       return specification;

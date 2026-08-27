@@ -516,6 +516,19 @@ export class GenerateSpecificationService implements GenerationJobApi {
       },
       links: linksFor(order.workspaceId, specificationId, order.requirements),
       job: { id: order.jobId, state: 'succeeded', resultRef: specificationId },
+      // `T1128` — the requester owns what they asked for. `requestedById` is an
+      // authenticated user from `ActingContext`, so the actor is a human and
+      // may be its own owner; an agent-initiated order would have to name a
+      // separate sponsor, which `assertOwnershipBootstrap` enforces.
+      ownership: {
+        initiatingActorId: order.requestedById,
+        initiatingActorType: 'human',
+        ownerUserId: order.requestedById,
+        ownerSnapshotId: order.requestedById,
+        correlationId: order.correlationId,
+        causationId: order.jobId,
+        idempotencyKey: order.jobId,
+      },
     };
 
     try {

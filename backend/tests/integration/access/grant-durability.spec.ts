@@ -20,6 +20,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
 import type { INestApplication } from '@nestjs/common';
+import { boundaryFor } from '../../support/ownership.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = resolve(here, '../../../prisma/migrations');
@@ -74,6 +75,19 @@ suite('T1119 · grants survive a restart, and access never widens', () => {
     await db.query(`INSERT INTO "workspaces" ("id","name","updatedAt") VALUES ($1,'grants',now())`, [
       WS,
     ]);
+    // `X19` — the boundary reads authoritative identity, so these actors have
+    // to exist. Inserting them is not a convenience: an actor with no user row
+    // is now refused before grants are ever consulted, which is the point.
+    for (const [id, email] of [
+      [OWNER, 'owner@grants.test'],
+      ['u_second', 'second@grants.test'],
+    ]) {
+      await db.query(
+        `INSERT INTO "users" ("id","workspaceId","email","displayName","passwordHash","updatedAt")
+         VALUES ($1,$2,$3,$3,'x',now())`,
+        [id, WS, email],
+      );
+    }
     process.env['DATABASE_URL'] = url;
     app = await boot();
   }, 300_000);
@@ -202,6 +216,9 @@ suite('T1119 · grants survive a restart, and access never widens', () => {
     const enforcementWithBrokenStore = new AccessEnforcementService(
       new AccessInheritanceService(broken, new InMemoryDerivationGraph()),
       new InMemoryAttemptStore(),
+      // The actor is fine here; it is the GRANT store that is broken, and
+      // the test would prove nothing if the boundary refused first.
+      boundaryFor([{ id: OWNER, workspaceId: WS }]),
     );
 
     await expect(

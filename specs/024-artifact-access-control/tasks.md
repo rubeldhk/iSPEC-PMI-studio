@@ -103,3 +103,13 @@ authoritative workspace-role check"* is not possible: this Epic has **no role or
 caller when an artifact has no grants. Building one is a **new authorization model**, which Step
 C2D names as a stop condition. See `specs/030-governed-engineering-loop/analysis.md`, finding
 `X19`.
+
+## Phase C2E · governed artifact ownership bootstrap *(added 2026-08-27)*
+
+*Closes `X19`. Authorised by the Project Owner's Step C2E instruction, under the hybrid ownership
+model: EPIC-024 owns the workspace boundary and grant semantics. **No workspace-role model** — the
+boundary reads `User.workspaceId`, which is identity, not a role.*
+
+- [X] T1126 Implement the workspace boundary in `backend/src/modules/access/workspace-boundary.service.ts` — authoritative actor identity, tenant match, fail-closed on malformed or unreadable state, and a distinct operational error for an unreadable directory *(tests: `backend/tests/unit/access/workspace-boundary.spec.ts`, 11 cases including the caller-supplied-workspace case that `X19` turned on)*
+- [X] T1127 Invert the zero-grant rule in `backend/src/modules/access/access-inheritance.service.ts` and enforce the boundary ahead of grants in `backend/src/modules/access/access-enforcement.service.ts` — zero active grants now refuse *(tests: `backend/tests/unit/access/refusal.spec.ts` and `backend/tests/unit/access/inheritance.spec.ts`, both rewritten so the old assertion is kept and pointed the other way)*
+- [X] T1131 Additive owner-grant backfill in `backend/prisma/migrations/20260827000000_epic024_owner_grant_backfill/migration.sql` — resolves the creator only where they are a real user in the same workspace, invents nothing, records both outcomes and is idempotent *(tests: `backend/tests/integration/access/owner-grant-backfill.spec.ts`, exercised against pre-C2E rows because the development database holds none)*

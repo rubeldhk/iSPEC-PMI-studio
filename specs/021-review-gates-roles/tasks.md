@@ -146,3 +146,7 @@ target version and the gate-set version it was decided against, and any mismatch
 ## Phase C2D — G2 normative requirements (2026-08-27)
 
 - [X] T1125 Record target binding and staleness as **normative requirements** — `FR-ENH-025`–`FR-ENH-030` and `SC-ENH-006`/`SC-ENH-007` in [spec.md](./spec.md), with their SRS-unsourced provenance and back-fill obligation stated rather than implied *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — staleness proven by changing the **gate set** and, separately, the **specification version**; both yield `reconciliation_required` / `gate_outcomes_stale` and authorise nothing)*
+
+## Phase C2E · G2 provenance *(added 2026-08-27)*
+
+- [X] T1132 Record `D-45` in `specs/_shared/decisions/D-45-gate-outcome-target-binding-and-staleness.md` and cite it from `FR-ENH-025`–`FR-ENH-030`, replacing the "SRS-unsourced" note — a recorded owner decision is a source; the `BR-` back-fill obligation stands and is stated next to the requirements *(test: `tests/governance/epic-stage/register.spec.ts` reads the register these requirements feed; the decision itself is a governance artifact, not code)*

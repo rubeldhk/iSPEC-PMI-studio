@@ -19,11 +19,18 @@ import {
 import { AccessInheritanceService, InMemoryDerivationGraph, type DerivationGraph } from './access-inheritance.service.js';
 import { AccessSnapshotService } from './access-snapshot.service.js';
 import { PrismaAccessStore, type AccessDb } from './access.store.js';
+import {
+  PrismaActorDirectory,
+  WorkspaceBoundaryService,
+  type ActorDirectory,
+} from './workspace-boundary.service.js';
 import { prismaClient } from '../../persistence/prisma.js';
 
 export const ACCESS_GRANT_STORE = Symbol('ACCESS_GRANT_STORE');
 export const ACCESS_ATTEMPT_STORE = Symbol('ACCESS_ATTEMPT_STORE');
 export const DERIVATION_GRAPH = Symbol('DERIVATION_GRAPH');
+/** `X19` — the authoritative actor source the boundary reads. */
+export const ACTOR_DIRECTORY = Symbol('ACTOR_DIRECTORY');
 
 /**
  * One store instance, reached lazily.
@@ -58,12 +65,30 @@ function prismaAccessStore(): PrismaAccessStore {
         new AccessInheritanceService(grants, derivations),
     },
     {
+      provide: ACTOR_DIRECTORY,
+      useFactory: (): ActorDirectory =>
+        // Reached lazily, like the grant store: `prismaClient()` reads
+        // DATABASE_URL when constructed, so it must not run while modules are
+        // merely being assembled.
+        new PrismaActorDirectory({
+          findUnique: (args) => prismaClient().user.findUnique(args as never) as never,
+        }),
+    },
+    {
+      provide: WorkspaceBoundaryService,
+      inject: [ACTOR_DIRECTORY],
+      useFactory: (directory: ActorDirectory): WorkspaceBoundaryService =>
+        new WorkspaceBoundaryService(directory),
+    },
+    {
       provide: AccessEnforcementService,
-      inject: [AccessInheritanceService, ACCESS_ATTEMPT_STORE],
+      inject: [AccessInheritanceService, ACCESS_ATTEMPT_STORE, WorkspaceBoundaryService],
       useFactory: (
         inheritance: AccessInheritanceService,
         attempts: AttemptStore,
-      ): AccessEnforcementService => new AccessEnforcementService(inheritance, attempts),
+        boundary: WorkspaceBoundaryService,
+      ): AccessEnforcementService =>
+        new AccessEnforcementService(inheritance, attempts, boundary),
     },
     {
       provide: AccessSnapshotService,
@@ -84,6 +109,7 @@ function prismaAccessStore(): PrismaAccessStore {
     AccessInheritanceService,
     AccessSnapshotService,
     AccessEvaluationService,
+    WorkspaceBoundaryService,
     ACCESS_GRANT_STORE,
     ACCESS_ATTEMPT_STORE,
     DERIVATION_GRAPH,

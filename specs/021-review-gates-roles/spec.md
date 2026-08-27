@@ -48,13 +48,22 @@ specifications PMI Studio *produces*; `PMI-DOC-000` governs this repository's ow
 behavior**, and C2D directs that the decision be recorded normatively rather than left implemented
 only because a prompt asked for it.*
 
-> **SRS provenance.** `FR-ENH-012`–`016` are cited to
+> **Provenance.** `FR-ENH-012`–`016` are cited to
 > `SRS/enhancement_module/PMI_Studio_Enhancement_Model_for_SpecKit.docx` through
-> [EPIC-017's table](../017-enhancement-model/spec.md). **The six below have no such citation
-> yet.** They proceed as **SRS-unsourced governance**, the standing posture `EPIC-014` F-11.3
-> already uses in this repository, and carry a back-fill obligation: `PMI-DOC-004` or the
-> enhancement model must cite them before the platform release gate. Recording them unsourced is
-> deliberate — the alternative is behaviour with no requirement at all, which is what `G2` was.
+> [EPIC-017's table](../017-enhancement-model/spec.md).
+>
+> **The six below are sourced to
+> [`D-45`](../_shared/decisions/D-45-gate-outcome-target-binding-and-staleness.md)** — the
+> Project Owner's C2C/C2D remediation authorisation, recorded through the repository's own decision
+> mechanism. They are no longer "unsourced": a recorded owner decision is a source, and `G2` closed
+> when one was written.
+>
+> **The back-fill obligation stands.** `PMI-DOC-004` or the enhancement model must cite them with a
+> `BR-` before the platform release gate — a decision authorises a requirement, it does not invent a
+> business requirement. This is the standing posture `EPIC-014` F-11.3 already uses.
+>
+> **They were implemented before they were normative.** C2C built the behaviour, C2D found it
+> unsourced, `D-45` sourced it afterwards. That order is recorded rather than tidied away.
 
 - **FR-ENH-025**: A gate outcome MUST bind to the **exact specification version or baseline** it
   was evaluated against. An outcome carrying no target identity MUST NOT authorise application.

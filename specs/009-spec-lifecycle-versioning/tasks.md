@@ -103,3 +103,11 @@ only the lifecycle path was what `X8` required.
 ## Phase C2D — one specification source of truth (2026-08-27)
 
 - [X] T1121 Bind `PrismaSpecificationStore` as `SPECIFICATION_STORE`, closing `X16` — `commitGeneration` wrote to memory while lifecycle validation, gates and application read PostgreSQL, so a specification the product created was invisible to the services governing it. Also corrects `commitGeneration`'s write order: it created the **version** first, which violates the immediate `specification_versions_specificationId_fkey`; only `specifications_currentVersionId_fkey` is deferrable. The claim that "the FK is DEFERRABLE either way" went unchallenged because this store had never been bound *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — the specification is created through production persistence, with no direct SQL on the success path)*
+
+## Phase C2E · the owner is created with the artifact *(added 2026-08-27)*
+
+*Closes the EPIC-009 half of `X19`. Deny-by-default alone would make every new specification
+unreachable; this is what stops "no grants" being reachable at all for anything created through
+production persistence.*
+
+- [X] T1128 Require `OwnershipBootstrap` on `GenerationCommit` and write the owner grant inside the creation transaction in `backend/src/modules/specifications/specifications-read.service.ts` — a human owner always, a mandatory and distinct human sponsor when an agent or service initiates, and the sponsor's workspace verified inside the transaction so a refusal rolls everything back *(tests: `backend/tests/integration/specifications/ownership-bootstrap.spec.ts`, 8 cases including a genuine partial-write rollback)*

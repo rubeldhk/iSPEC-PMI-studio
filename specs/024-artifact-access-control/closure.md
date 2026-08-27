@@ -98,3 +98,44 @@ condition. Recorded as `X19`.
 ## Readiness
 
 Returns to **reopened-remediation** state until `T1119` is confirmed with the rest of C2D.
+
+---
+
+# Reopening record — C2E ownership bootstrap (2026-08-27)
+
+**Both closure records above stand.** No task recorded in either is reopened, and nothing previously
+delivered is re-described as undelivered.
+
+This Epic was reopened a second time for `X19`, the finding the C2D record above reported rather
+than built. The Project Owner's Step C2E instruction settled the ownership question and forbade the
+option that would have been easiest:
+
+> *"Do not build a workspace-role model during this dependency remediation."*
+
+## What changed
+
+**The zero-grant rule is inverted.** `directlyReadable` and `directlyEditable` returned `true` when
+an artifact had no active grants. The header comment said so plainly — *"an artifact with NO active
+grant rows is OPEN — restriction begins the moment the first grant is created"* — so this was a
+documented, deliberate model rather than an oversight. It was also wrong: a governed artifact
+nobody had restricted was readable and editable by anyone able to name the workspace, and a newly
+created specification had no grants at all.
+
+**A workspace boundary now runs ahead of grants.** `workspaceId` arrived from the caller and nothing
+checked it, so a grant lookup was scoped by whatever the request said. `WorkspaceBoundaryService`
+resolves the actor against `User.workspaceId` — authoritative identity, not a role — and refuses
+before any grant is consulted.
+
+**Existing artifacts are backfilled where an owner resolves, and only there.** `T1131` grants the
+creator when they are a real user in the same workspace, records the ones it cannot resolve, and
+invents nothing. Artifacts with no resolvable human owner stay inaccessible by design.
+
+## What this record does not claim
+
+The C2D record's statement stands unaltered: `X19` was **reported and not built** at that time,
+correctly, because building it then would have meant inventing an authorisation model the owner had
+not chosen. C2E built it after that decision was made, not before.
+
+`FR-ACC-027` was not weakened. A revocation that would leave an artifact with no human editor is
+still refused, and one C2E test had to grant a second holder before it could revoke — which is the
+requirement working, not an obstacle to route around.

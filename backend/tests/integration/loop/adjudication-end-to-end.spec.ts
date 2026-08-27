@@ -241,15 +241,20 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
       },
       links: [],
       job: { id: 'job_e2e', state: 'succeeded', resultRef: SPEC },
+      // `X19`, C2E — ownership is part of creation. The owner grant is written
+      // in the SAME transaction as the specification, so there is deliberately
+      // no `grants.grant(...)` after this block: the success path must not
+      // depend on somebody remembering to authorise the artifact afterwards.
+      ownership: {
+        initiatingActorId: ACTOR,
+        initiatingActorType: 'human',
+        ownerUserId: ACTOR,
+        ownerSnapshotId: `snap-${ACTOR}`,
+        correlationId: 'corr-e2e',
+        causationId: 'job_e2e',
+        idempotencyKey: 'job_e2e',
+      },
     });
-
-    // EPIC-024 authorises intake — through its real service, not a fixture.
-    const grants = app.get(AccessGrantService, { strict: false });
-    await grants.grant(
-      WS,
-      { artifactType: 'specification', artifactId: SPEC },
-      { userId: ACTOR, level: 'edit', grantedById: 'u_admin' },
-    );
   }, 300_000);
 
   afterAll(async () => {
@@ -348,20 +353,24 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
     gateProduction = app.get(production.GateProductionService, { strict: false });
     lifecycleRepo = repo;
 
-    // The grant must be re-issued: EPIC-024's store is still in-memory, so
-    // grants do NOT survive a restart while the transition and its gate
-    // decision do. That asymmetry is EPIC-014's wider deferral, not this
-    // remediation's — but leaving it implicit would let the next test pass
-    // because the artifact had become ungoverned rather than because it was
-    // authorised.
+    // **No re-grant.** This block used to re-issue the grant, because EPIC-024's
+    // store was in-memory and grants did not survive a restart. C2D made them
+    // durable and C2E made creation issue them, so re-issuing here would hide
+    // both: the next test would pass because the artifact had just been
+    // authorised rather than because the authorisation persisted.
+    //
+    // Asserted rather than assumed — if durability regresses, this fails here
+    // with a clear reason instead of somewhere downstream.
     const { AccessGrantService } = await import(
       '../../../src/modules/access/access-grant.service.js'
     );
-    await app.get(AccessGrantService, { strict: false }).grant(
-      WS,
-      { artifactType: 'specification', artifactId: SPEC },
-      { userId: ACTOR, level: 'edit', grantedById: 'u_admin' },
-    );
+    const survivingGrants = await app
+      .get(AccessGrantService, { strict: false })
+      .activeGrants(WS, { artifactType: 'specification', artifactId: SPEC });
+    expect(
+      survivingGrants.map((g: { userId: string }) => g.userId),
+      'the owner grant did not survive the restart',
+    ).toContain(ACTOR);
   });
 
   it('a retry applies nothing more and returns the original verdict', async () => {

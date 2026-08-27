@@ -1691,6 +1691,23 @@ model AdjudicationRecord {
 /// transition. Append-only: `settle` appends a 'settled' row rather than
 /// updating the 'opened' one, so an outcome nobody observed cannot erase the
 /// record that the attempt was made.
+/// T1131 (C2E) -- evidence of the owner-grant backfill, including the artifacts
+/// whose creator could NOT be resolved. Those stay inaccessible on purpose:
+/// inventing an owner is the defect this migration exists to close.
+model OwnershipBackfillRecord {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  artifactType    String
+  artifactId      String
+  outcome         String
+  reason          String
+  resolvedOwnerId String?
+  createdAt       DateTime @default(now())
+
+  @@unique([workspaceId, artifactType, artifactId])
+  @@map("ownership_backfill_records")
+}
+
 model ApplicationIntent {
   id              String   @id @default(uuid())
   workspaceId     String
