@@ -45,18 +45,22 @@ export default defineWorkspace([
       // files" happened in EPIC-003, recorded in `epic-stage/harness.spec.ts`.
       // Vitest exits non-zero on an empty run, which is the anti-vacuity guard.
       //
-      // **Capped parallelism (C2D).** Every file here starts its own PostgreSQL
-      // container, and several now boot the whole `AppModule` on top of it.
-      // Vitest's default is one worker per core, so on a 12-core machine that
-      // is up to eleven databases at once — and the suites began failing in
-      // `beforeAll` while passing individually, which reads as broken code and
-      // is actually an exhausted host. Four is enough to keep wall-clock
-      // reasonable and few enough to be deterministic.
+      // **Container-suite timeouts (C2D).** Every file here starts its own
+      // PostgreSQL container and several boot the whole `AppModule`. Setup
+      // hooks already carry explicit timeouts; **teardown hooks do not**, so
+      // `afterAll`'s `container.stop()` inherits vitest's 10s default and dies
+      // under load — reported as a failed suite, which reads exactly like
+      // broken code.
       //
-      // Two, not four: the cap is per-project, and a full-repository run
-      // executes the other projects alongside this one. Four was stable when
-      // this project ran alone and still lost suites in the combined run.
-      poolOptions: { threads: { maxThreads: 2 } },
+      // That is what was actually happening. Two earlier attempts capped
+      // parallelism instead, on the assumption that the host was exhausted;
+      // the second made it worse, which is what finally produced the timeout
+      // evidence rather than another guess.
+      hookTimeout: 180_000,
+      testTimeout: 120_000,
+      // Still capped, but for the honest reason: eleven concurrent databases on
+      // a 12-core host is wasteful even when it works.
+      poolOptions: { threads: { maxThreads: 4 } },
     },
   },
   {
