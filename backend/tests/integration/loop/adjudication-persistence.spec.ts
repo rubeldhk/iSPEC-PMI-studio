@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
+import { REFUSAL_REASON_CODES } from '@pmi/loop-contract';
 import type { AdjudicationProposal } from '@pmi/loop-contract';
 import {
   PrismaAdjudicationRecords,
@@ -329,6 +330,22 @@ suite('T1096 · the database refuses what the type refuses', () => {
   it('refuses a verdict outside the six', async () => {
     await expect(insert({ idempotencyKey: 'c9', verdict: 'probably_fine' })).rejects.toThrow(
       /verdict_vocabulary/,
+    );
+  });
+
+  it('the DATABASE vocabulary matches the CONTRACT vocabulary exactly (T1146)', async () => {
+    // The guard that was missing. C3B widened this constraint by one code and
+    // rebuilt the list from an outdated copy, silently reinstating
+    // `gate_outcomes_unavailable` — so the database accepted a refusal reason
+    // the type refuses. Comparing the two sets makes that drift impossible to
+    // reintroduce by drop-and-recreate.
+    const { rows } = await db.query<{ def: string }>(
+      `SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint
+        WHERE conname = 'adjudication_records_refusal_reason_vocabulary'`,
+    );
+    const inDatabase = [...(rows[0]?.def ?? '').matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+    expect(inDatabase, 'the database and the contract disagree about what a refusal can cite').toEqual(
+      [...REFUSAL_REASON_CODES].sort(),
     );
   });
 
