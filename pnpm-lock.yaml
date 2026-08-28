@@ -187,6 +187,9 @@ importers:
 
   frontend:
     dependencies:
+      '@pmi/loop-contract':
+        specifier: workspace:*
+        version: link:../packages/loop-contract
       '@pmi/room-contract':
         specifier: workspace:*
         version: link:../packages/room-contract

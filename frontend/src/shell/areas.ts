@@ -141,7 +141,15 @@ export const AREAS: readonly Area[] = Object.freeze([
     path: '/requirement-room',
     epic: 'EPIC-033',
     status: 'declared-not-delivered',
-    note: 'The Requirement Room is specified and partly built; its screen is not built yet.',
+    // `T403n` built the Room screen and routed it at
+    // `/requirement-room/:roomObjectId`. The AREA is still not delivered
+    // because its landing path renders nothing — there is no index listing a
+    // workspace's Room objects, and no task in Phase 8 names one.
+    //
+    // Left `declared-not-delivered` rather than promoted: `isReachable` requires
+    // a reachable area to carry an `element`, and inventing an area landing to
+    // justify a status change would be the status driving the product.
+    note: 'The Requirement Room screen is built and reachable per object at /requirement-room/:roomObjectId; the area landing that would list them is not built.',
   },
   {
     id: 'specifications',

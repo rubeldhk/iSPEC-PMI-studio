@@ -20,6 +20,7 @@ import { EmptyState } from '../design/components/EmptyState';
 import { EngineSelector } from '../components/EngineSelector';
 import { RequirementEditor } from '../components/RequirementEditor';
 import { ProjectDetail, ProjectsPage } from '../pages/Projects';
+import { RequirementRoomPage } from '../pages/RequirementRoom';
 import { RequirementsPage } from '../pages/Requirements';
 import { ReviewSessionPage } from '../pages/ReviewSession';
 import { RunsPage } from '../pages/Runs';
@@ -232,6 +233,32 @@ export function ProjectDetailView(): ReactElement {
         />
       </>
     </ProjectDetail>
+  );
+}
+
+/**
+ * `T403n` — the Requirement Room, addressed by its Room object.
+ *
+ * A **sub-view beside** the Requirements list rather than instead of it: the
+ * register list and the governed Room are two surfaces onto the same data, and
+ * `T200a` would be equally satisfied by replacing one with the other while a
+ * user lost a working screen.
+ *
+ * `ApiClient` structurally satisfies the page's narrow `RequirementRoomApi`
+ * port, so it is passed straight through. The shell builds no adapter and calls
+ * no endpoint itself — `T436m`'s first prohibition.
+ */
+export function RequirementRoomView(): ReactElement {
+  const { api } = useShell();
+  const { roomObjectId = '' } = useParams();
+  return (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
+          <RequirementRoomPage api={api} roomObjectId={roomObjectId} projectId={projectId} />
+        </MainLandmark>
+      )}
+    </RequireProject>
   );
 }
 

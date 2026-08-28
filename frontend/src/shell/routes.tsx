@@ -22,6 +22,7 @@ import { NotFound } from './NotFound';
 import { reachableAreas } from './areas';
 import {
   ProjectDetailView,
+  RequirementRoomView,
   ReviewSessionView,
   SpecificationDetailView,
   TasksView,
@@ -39,6 +40,7 @@ export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[]
   { path: '/specifications/:specificationId', element: SpecificationDetailView },
   { path: '/specifications/:specificationId/tasks', element: TasksView },
   { path: '/runs/:runId', element: ReviewSessionView },
+  { path: '/requirement-room/:roomObjectId', element: RequirementRoomView },
 ]);
 
 /**

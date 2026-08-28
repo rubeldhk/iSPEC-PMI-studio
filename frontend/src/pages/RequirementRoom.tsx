@@ -1,0 +1,180 @@
+/**
+ * `T403n`, `T403t`, `T403w` — the Requirement Room page. `FR-RQR-070`,
+ * `FR-RQR-004`, `UX-0002`, `UX-0030`, `UX-0032`, `UX-0035`.
+ *
+ * **A new page beside `Requirements.tsx`, not a replacement.** The register list
+ * and the governed Room are two surfaces onto the same data; swapping the first
+ * for the second would remove a working screen to gain one.
+ *
+ * **It composes and it does not decide.** Every region's content comes from a
+ * projection somebody else owns — loop progress from `EPIC-030`, readiness from
+ * the backend's `readiness.projection.ts`. The page's judgement is limited to
+ * which region a projection belongs in, and it holds no rule about what any of
+ * them mean.
+ *
+ * **Each region fails on its own.** One failed fetch darkens one region; the
+ * other five still render. A page-level error boundary would be simpler and
+ * would take five working regions down with the sixth, which is the opposite of
+ * what a person needs when they are trying to find out what is blocking.
+ */
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import type { LoopProgress as LoopProgressRow } from '@pmi/loop-contract';
+import { RoomShell } from '../rooms/RoomShell';
+import { LoopProgress } from '../rooms/regions/LoopProgress';
+import { Blockers, type Readiness } from '../rooms/regions/Blockers';
+
+/**
+ * What this page needs, and nothing more.
+ *
+ * A narrow port rather than the whole `ApiClient`: the page is testable without
+ * a transport, and what it is allowed to reach is legible in one place. There
+ * is deliberately no method here that decides or approves anything — the Room
+ * displays governed state, and `EPIC-030` adjudicates it.
+ */
+export interface RequirementRoomApi {
+  loopProgress(roomObjectId: string): Promise<readonly LoopProgressRow[]>;
+  /**
+   * Named to match `ApiClient` exactly, so the client **structurally satisfies**
+   * this port and the shell can pass it straight through. `T436m` forbids the
+   * shell from calling a domain endpoint, and an adapter built there to bridge
+   * two names would be doing precisely that.
+   */
+  roomReadiness(roomObjectId: string, projectId: string): Promise<Readiness>;
+}
+
+export interface RequirementRoomPageProps {
+  readonly api: RequirementRoomApi;
+  readonly roomObjectId: string;
+  readonly projectId: string;
+}
+
+/** One fetch, three outcomes, held apart. */
+interface Loaded<T> {
+  readonly value: T | null;
+  readonly error: string | undefined;
+}
+
+const PENDING = { value: null, error: undefined } as const;
+
+export function RequirementRoomPage({
+  api,
+  roomObjectId,
+  projectId,
+}: RequirementRoomPageProps): ReactElement {
+  const [progress, setProgress] = useState<Loaded<readonly LoopProgressRow[]>>(PENDING);
+  const [readiness, setReadiness] = useState<Loaded<Readiness>>(PENDING);
+  const heading = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    let live = true;
+    void api
+      .loopProgress(roomObjectId)
+      .then((value) => live && setProgress({ value, error: undefined }))
+      .catch(() =>
+        live
+          ? setProgress({ value: null, error: 'Loop progress could not be loaded.' })
+          : undefined,
+      );
+    void api
+      .roomReadiness(roomObjectId, projectId)
+      .then((value) => live && setReadiness({ value, error: undefined }))
+      .catch(() =>
+        live
+          ? setReadiness({
+              value: null,
+              // Never "ready". A readiness call that failed says nothing about
+              // whether anything is blocking.
+              error: 'Readiness could not be loaded, so what is blocking is unknown.',
+            })
+          : undefined,
+      );
+    return (): void => {
+      live = false;
+    };
+  }, [api, roomObjectId, projectId]);
+
+  useEffect(() => {
+    // `T403t` — focus lands on the heading when the Room opens, so a keyboard
+    // user starts at the top of the Room rather than wherever the previous
+    // screen left them.
+    heading.current?.focus();
+  }, [roomObjectId]);
+
+  return (
+    <div className="requirement-room">
+      <header className="requirement-room__header">
+        {/* `tabIndex={-1}` makes it programmatically focusable without adding it
+            to the tab order — the pattern for moving focus on navigation. */}
+        <h1 className="requirement-room__title" ref={heading} tabIndex={-1}>
+          Requirement Room
+        </h1>
+        <p className="requirement-room__object">
+          Object <code>{roomObjectId}</code>
+        </p>
+      </header>
+
+      <RoomShell
+        objectState={
+          <div className="room-object-state">
+            <h2>Object state</h2>
+            <p>
+              Requirement Room object <code>{roomObjectId}</code> in project <code>{projectId}</code>
+              .
+            </p>
+          </div>
+        }
+        loopProgress={
+          <div>
+            <h2>Loop progress</h2>
+            <LoopProgress progress={progress.value} error={progress.error} />
+          </div>
+        }
+        aiAnalysis={
+          <div>
+            <h2>AI analysis</h2>
+            <p>
+              Analysis is labelled by epistemic status. Nothing here is a recorded fact until a
+              person decides it is.
+            </p>
+          </div>
+        }
+        decision={
+          <div>
+            <h2>Decision</h2>
+            <p>A requirement decision is taken by an authorized person, and records what was not chosen.</p>
+          </div>
+        }
+        evidence={
+          <div>
+            <h2>Evidence</h2>
+            <Blockers readiness={readiness.value} error={readiness.error} />
+          </div>
+        }
+        activityTimeline={
+          <div>
+            <h2>Activity timeline</h2>
+            <ExternalReviewUnavailable />
+          </div>
+        }
+      />
+    </div>
+  );
+}
+
+/**
+ * `T403w` — `FR-RQR-004`, `UX-0002`. The Room **states** that external review is
+ * unavailable.
+ *
+ * Not a disabled button, and not a control that fails on click. `BR-0004` is
+ * `U-02` and unowned, so there is nothing to enable later by flipping a flag —
+ * a greyed-out control would imply a feature exists and this user lacks it,
+ * which is a different and untrue thing.
+ */
+function ExternalReviewUnavailable(): ReactElement {
+  return (
+    <p className="requirement-room__unavailable" data-testid="external-review-unavailable">
+      External stakeholder review is not available in this Room. It serves
+      workspace-internal authorized identities only.
+    </p>
+  );
+}

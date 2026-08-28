@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@pmi/loop-contract": "workspace:*",
     "@pmi/room-contract": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -16,6 +16,9 @@
  * carries it; nothing here can read it, which is the point.
  */
 
+import type { LoopProgress } from '@pmi/loop-contract';
+import type { Readiness } from '../rooms/regions/Blockers';
+
 export interface WhoAmI {
   user: { id: string; email: string; displayName: string };
   workspace: { id: string };
@@ -613,6 +616,32 @@ export class ApiClient {
 
   async getPublishPreview(projectId: string): Promise<RepublishPreview> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/publishes/preview`);
+  }
+
+  // ---- requirement room (EPIC-033 US6) ----
+
+  /**
+   * `T403n` — the two projections the Room renders.
+   *
+   * Both are **reads of somebody else's derivation**: loop progress is
+   * `EPIC-030`'s, readiness is the Requirement Room backend's. The client adds
+   * no shaping, so a Room cannot end up displaying a fourth status or a
+   * differently-computed `ready` (`FR-RQR-074`).
+   *
+   * `workspaceId` is deliberately not a parameter — since `T1148` the server
+   * takes it from the session, and passing one would be a caller naming its own
+   * tenant.
+   */
+  async loopProgress(roomObjectId: string): Promise<LoopProgress[]> {
+    return this.request('GET', `/loop/objects/${encodeURIComponent(roomObjectId)}/progress`);
+  }
+
+  async roomReadiness(roomObjectId: string, projectId: string): Promise<Readiness> {
+    const query = new URLSearchParams({ projectId }).toString();
+    return this.request(
+      'GET',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/readiness?${query}`,
+    );
   }
 
   // ---- engines (US8) ----
