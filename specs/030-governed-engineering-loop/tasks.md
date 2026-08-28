@@ -212,6 +212,28 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 ---
 
+## Phase R: Authority binding (`DEF-030-003` remediation)
+
+*Authorised by the Project Owner 2026-08-28, after the `R4` assessment found the transition path
+reading the actor's authorities from the request body while the adjudication path in the same module
+resolved them through `AuthorityPolicyPort`. Latent rather than live — the `AuthorityMap` is `{}` and
+refuses every transition — but it becomes live the moment the loop is configured.*
+
+- [X] T1156 [US1] Resolve the actor and their authorities in `backend/src/modules/loop/loop.service.ts` — an `ActingPrincipal` on all five entry points, `actor`/`actorAuthorities` removed from `TransitionInput` as `?: never`, `workspaceId` from the session, and `assertSameWorkspace` on every read (integration tests: T1160–T1162)
+- [X] T1157 [US1] Read `@Req()` and refuse without a session in `backend/src/modules/loop/loop.controller.ts`; drop `actor` and `actorAuthorities` from `TransitionBody` and strip identity fields from every body (integration test: T1163)
+- [X] T1158 Wire `WorkspaceBoundaryService` and `ADJUDICATION_AUTHORITY_POLICY` into `LoopService` in `backend/src/modules/loop/loop.module.ts` — **consumed, not re-implemented** — and add `backend/tests/helpers/loop-principals.ts` so a test describes a directory rather than a request (integration tests: T1160, T1162 — neither can pass unless both resolvers are wired)
+- [X] T1159 Update `backend/tests/integration/loop-reachability.spec.ts`, `loop-history-rebuild.spec.ts`, `loop-new-workflow-type.spec.ts` and `loop-performance.spec.ts` — a session and a directory where they used to send authorities per call
+- [X] T1160 [P] Write the failing integration test that the authority gate reads the policy in `backend/tests/integration/loop-authority-binding.spec.ts` — a configured workflow so the gate is actually reached, a refusal, a permitted control, a smuggled `actorAuthorities` that gains nothing, and the recorded actor and kind taken from the directory
+- [X] T1161 [P] Write the failing integration test that an unresolvable caller is refused — no principal, no directory wired, and an actor the directory does not know (same file)
+- [X] T1162 [P] Write the failing integration test that an object belongs to a workspace — cross-workspace read and transition refused with the opaque 404, the owner unaffected, and a declaration landing in the session's workspace (same file)
+- [X] T1163 [P] Write the failing integration test over HTTP — all five routes answer `401` unauthenticated, a session reaches the handler, and `TransitionBody` names neither `actor` nor `actorAuthorities` (same file)
+
+**Checkpoint**: both halves of this module resolve authorities from the same place. `DEF-030-003`
+closed. The `AuthorityMap` is still `{}` and still refuses every transition — this removed the
+escalation path, it did not configure the loop.
+
+---
+
 ## Phase N: Polish & Cross-Cutting Concerns
 
 **Purpose**: the measurements and mutation proofs the Epic is judged on

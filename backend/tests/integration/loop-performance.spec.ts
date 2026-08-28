@@ -25,6 +25,7 @@ import { loadLoopConfig } from '../../src/modules/loop/loop-config.loader.js';
 import { StageRegistry } from '../../src/modules/loop/stage-registry.js';
 import { LoopConfigRegistry } from '../../src/modules/loop/config-registry.js';
 import { InMemoryLoopStore } from '../../src/modules/loop/loop.store.js';
+import { authoritiesOf, directoryOf } from '../helpers/loop-principals.js';
 import { LoopService } from '../../src/modules/loop/loop.service.js';
 
 const stages = new StageRegistry(
@@ -59,18 +60,31 @@ function p95(samples: readonly number[]): number {
 }
 
 function service() {
-  return new LoopService(new InMemoryLoopStore(), new LoopConfigRegistry([CONFIG]), AUTHORITIES);
+  return new LoopService(
+    new InMemoryLoopStore(),
+    new LoopConfigRegistry([CONFIG]),
+    AUTHORITIES,
+    undefined,
+    directoryOf(ACTORS),
+    authoritiesOf(ACTORS),
+  );
 }
 
 async function declare(loop: LoopService) {
-  return loop.declareObject({
-    workspaceId: 'ws_perf', projectId: 'p', workflowType: 'perf-type',
-    subjectType: 'o', subjectId: 's', actorId: 'u',
+  return loop.declareObject(ACTING, {
+    projectId: 'p', workflowType: 'perf-type', subjectType: 'o', subjectId: 's',
   });
 }
 
-const actor = { kind: 'human' as const, id: 'u_mover' };
 const auth = ['mover'];
+
+/**
+ * The directory. `auth` used to be sent on every transition; it is now what the
+ * resolver says this actor holds, so the measured path includes the resolution
+ * the production path performs (`T1158`).
+ */
+const ACTORS = { u: { workspaceId: 'ws_perf', authorities: auth } } as const;
+const ACTING = { workspaceId: 'ws_perf', userId: 'u' };
 
 describe('T982 · R-030-6 performance targets, measured', () => {
   it('transition overhead p95 < 50 ms', async () => {
@@ -79,9 +93,9 @@ describe('T982 · R-030-6 performance targets, measured', () => {
     for (let i = 0; i < 60; i += 1) {
       const ref = await declare(loop);
       const start = performance.now();
-      await loop.transition({
+      await loop.transition(ACTING, {
         objectId: ref.objectId, toStage: 'Context', expectedVersion: 0,
-        actor, actorAuthorities: auth, gates: SATISFIED,
+        gates: SATISFIED,
       } as never);
       samples.push(performance.now() - start);
     }
@@ -97,9 +111,9 @@ describe('T982 · R-030-6 performance targets, measured', () => {
       const start = performance.now();
       const ref = await declare(loop);
       for (let i = 1; i < LOOP_STAGES.length; i += 1) {
-        await loop.transition({
+        await loop.transition(ACTING, {
           objectId: ref.objectId, toStage: LOOP_STAGES[i], expectedVersion: i - 1,
-          actor, actorAuthorities: auth, gates: SATISFIED,
+          gates: SATISFIED,
         } as never);
       }
       samples.push(performance.now() - start);
@@ -113,15 +127,15 @@ describe('T982 · R-030-6 performance targets, measured', () => {
     const loop = service();
     const ref = await declare(loop);
     for (let i = 1; i < LOOP_STAGES.length; i += 1) {
-      await loop.transition({
+      await loop.transition(ACTING, {
         objectId: ref.objectId, toStage: LOOP_STAGES[i], expectedVersion: i - 1,
-        actor, actorAuthorities: auth, gates: SATISFIED,
+        gates: SATISFIED,
       } as never);
     }
     const samples: number[] = [];
     for (let i = 0; i < 60; i += 1) {
       const start = performance.now();
-      await loop.progressOf(ref.objectId);
+      await loop.progressOf(ACTING, ref.objectId);
       samples.push(performance.now() - start);
     }
     const measured = p95(samples);
@@ -135,9 +149,9 @@ describe('T982 · R-030-6 performance targets, measured', () => {
     const start = performance.now();
     await Promise.all(
       refs.map((ref) =>
-        loop.transition({
+        loop.transition(ACTING, {
           objectId: ref.objectId, toStage: 'Context', expectedVersion: 0,
-          actor, actorAuthorities: auth, gates: SATISFIED,
+          gates: SATISFIED,
         } as never),
       ),
     );

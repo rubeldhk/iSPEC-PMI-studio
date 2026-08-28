@@ -20,6 +20,7 @@ import { loadLoopConfig } from '../../src/modules/loop/loop-config.loader.js';
 import { StageRegistry } from '../../src/modules/loop/stage-registry.js';
 import { LoopConfigRegistry } from '../../src/modules/loop/config-registry.js';
 import { InMemoryLoopStore, type LoopTransitionRow } from '../../src/modules/loop/loop.store.js';
+import { authoritiesOf, directoryOf } from '../helpers/loop-principals.js';
 import { LoopService } from '../../src/modules/loop/loop.service.js';
 
 const stages = new StageRegistry(
@@ -67,39 +68,53 @@ function replay(rows: readonly LoopTransitionRow[]): { stage: LoopStage; version
   return { stage, version };
 }
 
+/**
+ * The directory this scenario runs against (`T1158`).
+ *
+ * The analyst-may-not-decide distinction is unchanged; it is now a fact about
+ * who these people are rather than a claim each request makes.
+ */
+const ACTORS = {
+  u_1: { workspaceId: 'ws_1', authorities: ['analyst'] },
+  u_analyst: { workspaceId: 'ws_1', authorities: ['analyst'] },
+  u_lead: { workspaceId: 'ws_1', authorities: ['lead'] },
+} as const;
+
+const ANALYST = { workspaceId: 'ws_1', userId: 'u_analyst' };
+const LEAD = { workspaceId: 'ws_1', userId: 'u_lead' };
+
 async function build() {
   const store = new InMemoryLoopStore();
-  const service = new LoopService(store, new LoopConfigRegistry([CONFIG]), AUTHORITIES);
-  const ref = await service.declareObject({
-    workspaceId: 'ws_1', projectId: 'p_1', workflowType: 'rebuild-type',
-    subjectType: 'opaque', subjectId: 's_1', actorId: 'u_1',
-  });
-
-  const analyst = { kind: 'human' as const, id: 'u_analyst' };
-  const lead = { kind: 'human' as const, id: 'u_lead' };
+  const service = new LoopService(
+    store,
+    new LoopConfigRegistry([CONFIG]),
+    AUTHORITIES,
+    undefined,
+    directoryOf(ACTORS),
+    authoritiesOf(ACTORS),
+  );
+  const ref = await service.declareObject(
+    { workspaceId: 'ws_1', userId: 'u_1' },
+    { projectId: 'p_1', workflowType: 'rebuild-type', subjectType: 'opaque', subjectId: 's_1' },
+  );
 
   // A realistic loop: two advances, a refusal, an advance, a stale attempt.
-  await service.transition({
+  await service.transition(ANALYST, {
     objectId: ref.objectId, toStage: 'Context', expectedVersion: 0,
-    actor: analyst, actorAuthorities: ['analyst'],
   });
-  await service.transition({
+  await service.transition(ANALYST, {
     objectId: ref.objectId, toStage: 'Analyze', expectedVersion: 1,
-    actor: analyst, actorAuthorities: ['analyst'],
   });
   // Refused: the analyst may not decide.
-  await service.transition({
+  await service.transition(ANALYST, {
     objectId: ref.objectId, toStage: 'Decide', expectedVersion: 2,
-    actor: analyst, actorAuthorities: ['analyst'],
   });
-  await service.transition({
+  await service.transition(LEAD, {
     objectId: ref.objectId, toStage: 'Decide', expectedVersion: 2,
-    actor: lead, actorAuthorities: ['lead'],
   });
   // Conflict: stale version.
-  await service.transition({
+  await service.transition(LEAD, {
     objectId: ref.objectId, toStage: 'Outcome', expectedVersion: 2,
-    actor: lead, actorAuthorities: ['lead'],
   });
 
   return { store, service, objectId: ref.objectId };
@@ -108,7 +123,7 @@ async function build() {
 describe('T960 · the loop rebuilds from its history alone', () => {
   it('records every attempt, including the ones that did not move it', async () => {
     const { service, objectId } = await build();
-    const rows = await service.history(objectId);
+    const rows = await service.history(ANALYST, objectId);
     expect(rows).toHaveLength(5);
     expect(rows.map((r) => r.outcome)).toEqual([
       'accepted', 'accepted', 'refused', 'accepted', 'conflict',
@@ -117,14 +132,14 @@ describe('T960 · the loop rebuilds from its history alone', () => {
 
   it('returns them in order', async () => {
     const { service, objectId } = await build();
-    const rows = await service.history(objectId);
+    const rows = await service.history(ANALYST, objectId);
     const times = rows.map((r) => r.occurredAt.getTime());
     expect([...times].sort((a, b) => a - b)).toEqual(times);
   });
 
   it('reconstructs the current stage WITHOUT reading it', async () => {
     const { store, service, objectId } = await build();
-    const rebuilt = replay(await service.history(objectId));
+    const rebuilt = replay(await service.history(ANALYST, objectId));
     const stored = await store.findObject(objectId);
     expect(rebuilt.stage).toBe(stored?.currentStage);
     expect(rebuilt.stage).toBe('Decide');
@@ -132,7 +147,7 @@ describe('T960 · the loop rebuilds from its history alone', () => {
 
   it('reconstructs the version, which is what makes the next OCC token derivable', async () => {
     const { store, service, objectId } = await build();
-    const rebuilt = replay(await service.history(objectId));
+    const rebuilt = replay(await service.history(ANALYST, objectId));
     expect(rebuilt.version).toBe((await store.findObject(objectId))?.version);
   });
 
@@ -140,7 +155,7 @@ describe('T960 · the loop rebuilds from its history alone', () => {
     // The question a current-state read can never answer, and the reason
     // FR-GEL-014 makes refusals rows rather than responses.
     const { service, objectId } = await build();
-    const rows = await service.history(objectId);
+    const rows = await service.history(ANALYST, objectId);
     const stopped = rows.filter((r) => r.outcome !== 'accepted');
     expect(stopped.map((r) => r.actorId)).toEqual(['u_analyst', 'u_lead']);
     expect(stopped.map((r) => r.refusalReason).every(Boolean)).toBe(true);
@@ -152,7 +167,7 @@ describe('T960 · the loop rebuilds from its history alone', () => {
     // A history quietly discarding them would pass every reconstruction
     // assertion above.
     const { service, objectId } = await build();
-    const rows = await service.history(objectId);
+    const rows = await service.history(ANALYST, objectId);
     expect(rows.filter((r) => r.outcome === 'accepted')).toHaveLength(3);
     expect(rows.length).toBeGreaterThan(3);
   });

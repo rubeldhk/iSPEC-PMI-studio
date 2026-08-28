@@ -39,35 +39,46 @@
  */
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { NestFactory } from '@nestjs/core';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../../src/app.module.js';
-import { ErrorFilter } from '../../src/core/error.filter.js';
+import { startAuthenticatedApp, type AuthenticatedApp } from '../helpers/authenticated-app.js';
 import { LoopModule } from '../../src/modules/loop/loop.module.js';
 import { LoopService } from '../../src/modules/loop/loop.service.js';
 
 /** Mirrors `main.ts`. See the note above on why this is duplicated. */
 const PREFIX = 'v1';
 
-describe('T934 · the loop is reachable through the composed application (Constitution XI Tier 1)', () => {
+/**
+ * `T1159` — this suite needs a database and a session.
+ *
+ * Both follow from `DEF-030-003`. The loop resolves its caller against
+ * `EPIC-024`'s directory, which reads `users`; and "reachable" now means
+ * *reachable by someone*. The reachability property itself is unchanged.
+ */
+const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
+const suite = noRuntime ? describe.skip : describe;
+
+suite('T934 · the loop is reachable through the composed application (Constitution XI Tier 1)', () => {
+  let harness: AuthenticatedApp;
   let app: INestApplication;
+  let cookie = '';
 
   beforeAll(async () => {
-    app = await NestFactory.create(AppModule, { logger: false });
-    app.useGlobalFilters(new ErrorFilter());
-    app.setGlobalPrefix(PREFIX);
-    await app.init();
-  }, 60_000);
+    harness = await startAuthenticatedApp({ prefix: PREFIX, workspaceId: 'ws_t934' });
+    app = harness.app;
+    cookie = harness.cookie;
+  }, 300_000);
 
   afterAll(async () => {
-    await app?.close();
-  });
+    await harness?.close();
+  }, 120_000);
 
   it('composes the whole application, not a hand-assembled subgraph', () => {
-    // If AppModule itself failed to compile, every assertion below would fail
-    // for a reason that has nothing to do with the loop. Asserted first so the
-    // report says which.
+    // `startAuthenticatedApp` calls `NestFactory.create(AppModule)` — the same
+    // thing `main.ts` does, moved into the helper when this suite gained a
+    // session (`T1159`). If AppModule itself failed to compile, every assertion
+    // below would fail for a reason that has nothing to do with the loop.
+    // Asserted first so the report says which.
     expect(app).toBeDefined();
   });
 
@@ -90,7 +101,7 @@ describe('T934 · the loop is reachable through the composed application (Consti
     ['get', `/${PREFIX}/loop/objects/probe/progress`],
     ['get', `/${PREFIX}/loop/objects/probe/exceptions`],
   ] as const)('routes %s %s — the real entry point answers', async (method, route) => {
-    const response = await request(app.getHttpServer())[method](route).send({});
+    const response = await request(app.getHttpServer())[method](route).set('Cookie', cookie).send({});
     const code = (response.body as { error?: { code?: string } })?.error?.code;
 
     // Deliberately NOT asserting success. This is a reachability test, and what
@@ -122,14 +133,17 @@ describe('T934 · the loop is reachable through the composed application (Consti
     // `DEF-001-006` fixed that in `EPIC-001` — the filter now recognises
     // `HttpException` and keeps its status — so the weaker property is retired
     // and the real guarantee is asserted: **an unmatched route is 404**.
-    const unowned = await request(app.getHttpServer()).get(
-      `/${PREFIX}/loop/objects/probe/not-a-real-sub-resource`,
-    );
+    const unowned = await request(app.getHttpServer())
+      .get(`/${PREFIX}/loop/objects/probe/not-a-real-sub-resource`)
+      .set('Cookie', cookie);
     // An OWNED route with a bad body: real validation, a documented platform
     // code, a 400. That is the distinction, and it is behaviour rather than a
     // stub — `declareObject` genuinely refuses a request missing workspaceId.
     const owned = await request(app.getHttpServer())
       .post(`/${PREFIX}/loop/objects`)
+      .set('Cookie', cookie)
+      // `projectId` is the omission now: `workspaceId` is no longer a field a
+      // caller supplies, so it can no longer be the one left out (`T1157`).
       .send({ workflowType: 'example-workflow' });
 
     expect(owned.status).toBe(400);

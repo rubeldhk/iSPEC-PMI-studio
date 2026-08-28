@@ -1,7 +1,7 @@
 # DEF-030-003 — the transition caller supplies its own authorities
 
 **Epic**: `EPIC-030` (owns `backend/src/modules/loop/`)
-**Raised**: 2026-08-28 | **Status**: **OPEN — latent**
+**Raised**: 2026-08-28 | **Status**: **CLOSED — FIXED 2026-08-28** (`T1156`–`T1163`)
 **Found by**: the `R4` assessment, authorised after `DEF-033-001` found the same controller shape
 **Severity**: **MEDIUM** — a privilege-escalation path that is **not reachable in the current
 wiring**, and becomes reachable the moment either half of the loop's configuration is completed
@@ -94,9 +94,50 @@ authority comes from, and the wrong half is the one on the public route.
 The fix is to make the transition path do what the adjudication path already does, and to take
 `workspaceId` and the actor from the session as `EPIC-033` now does (`T1148`–`T1155`).
 
-## Recommendation — sequence, not urgency
+## Fix — applied 2026-08-28 (`T1156`–`T1163`)
 
-No containment is proposed. Unmounting the controller, as `DEF-037-001` required, would be
+Authorised the same day the assessment landed, ahead of the sequencing risk below rather than
+after it.
+
+**Where the rule lives.** In `LoopService`, for the reason `DEF-033-001` established: PC-1 keeps the
+capability callable without HTTP, and a transport-level check would leave an MCP surface to repeat
+this.
+
+- `actorAuthorities` and `actor` are **gone from `TransitionInput` and `TransitionBody`**, typed
+  `?: never` rather than deleted. A documented absence; a field that reappears "for convenience"
+  restores this defect exactly.
+- Authorities are resolved through `ADJUDICATION_AUTHORITY_POLICY` — **the same port the adjudicator
+  already consumed**. The two halves of the module now read authorities from one place.
+- `actor.kind` comes from `WorkspaceBoundaryService`, so an agent is recorded as `automation`
+  whatever the body claims (`FR-GEL-032`).
+- `declareObject` takes its workspace from the session, not the body.
+- All three read routes call `assertSameWorkspace` — the opaque 404, so a caller cannot learn that
+  an object it may not see exists.
+- Both resolvers are constructor-optional but **refuse when absent**: no directory means every entry
+  point throws, rather than falling through to the old behaviour.
+
+**Proof** — `backend/tests/integration/loop-authority-binding.spec.ts`, 20 tests.
+
+The suite had to do something the assessment could not: build a service **configured to the point
+where the authority gate is actually reached**. Against the production wiring every transition
+refuses for lack of an `AuthorityMap`, so a test there would have passed on the strength of the
+inertness and proven nothing.
+
+It was mutation-tested. Restoring `authorities: input.actorAuthorities ?? []` fails **four** tests,
+including the smuggling case specifically. That matters because the first draft of the smuggling
+test did **not** fail under the same mutation — it attempted the smuggle late in a transition chain,
+so the earlier transitions failed first and it reported `conflict` for the wrong reason. It now
+attempts the **first** transition, by an actor the directory says holds nothing, with a paired
+control granting that actor the authority through the directory instead.
+
+**What did not change**: the `AuthorityMap` is still `{}` and still refuses every transition. This
+removed the escalation path; it did not configure the loop.
+
+## Recommendation — sequence, not urgency *(superseded by the fix above)*
+
+*Recorded as written on the day, because the fix arrived before the risk it describes.*
+
+No containment was proposed. Unmounting the controller, as `DEF-037-001` required, would have been
 disproportionate: nothing is reachable, nothing is stored, and the routes refuse.
 
 What matters is **ordering**. This must be fixed *before* either of these lands:

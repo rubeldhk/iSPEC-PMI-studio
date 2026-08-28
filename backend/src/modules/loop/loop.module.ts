@@ -80,6 +80,7 @@ import {
 import { SpecificationsModule } from '../specifications/specifications.module.js';
 import { permittedFrom } from '../specifications/lifecycle.machine.js';
 import { AccessModule } from '../access/access.module.js';
+import { WorkspaceBoundaryService } from '../access/workspace-boundary.service.js';
 import { ReviewsModule } from '../reviews/reviews.module.js';
 import { GateProductionService } from '../reviews/gate-production.service.js';
 import { LIFECYCLE_TRANSITION_REPOSITORY } from '../specifications/specifications.module.js';
@@ -112,9 +113,27 @@ import { prismaClient } from '../../persistence/prisma.js';
     },
     {
       provide: LoopService,
-      inject: [LOOP_STORE, LOOP_CONFIG_SOURCE],
-      useFactory: (store: LoopStore, configs: LoopConfigRegistry): LoopService =>
-        new LoopService(store, configs),
+      inject: [
+        LOOP_STORE,
+        LOOP_CONFIG_SOURCE,
+        WorkspaceBoundaryService,
+        ADJUDICATION_AUTHORITY_POLICY,
+      ],
+      // `DEF-030-003` — the two resolvers. `WorkspaceBoundaryService` says who
+      // the caller is; `ADJUDICATION_AUTHORITY_POLICY` says what they hold. The
+      // second is the port the adjudicator already consumes, so both halves of
+      // this module now read authorities from the same place.
+      //
+      // The AuthorityMap is still `{}` and still refuses every transition. That
+      // is unchanged and deliberate: this fix removes the escalation path, it
+      // does not configure the loop.
+      useFactory: (
+        store: LoopStore,
+        configs: LoopConfigRegistry,
+        principals: WorkspaceBoundaryService,
+        policy: AuthorityPolicyPort,
+      ): LoopService =>
+        new LoopService(store, configs, {}, undefined, principals, policy),
     },
 
     // --- Adjudication ports -------------------------------------------------
