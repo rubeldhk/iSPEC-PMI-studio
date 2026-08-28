@@ -260,7 +260,7 @@ standing constraint.
 | R1 ✅ | Security / correctness | **HIGH** | `requirement-room.controller.ts`, `baseline.service.ts`, `decision.service.ts` | Baseline approver, decision maker and `actor.kind` are caller-supplied strings on mounted, unauthenticated routes; an unauthenticated intake write returned `201` | `DEF-033-001` raised. Bind to session context and `CompositePrincipalDirectory` — the recommended next slice |
 | R2 ✅ | Planning | MEDIUM | A–G delivery order, `specs/037-…/tasks.md` | The order schedules S1 and S4 as work to be built; both are already implemented (21 tasks complete). The remaining EPIC-033 work is US6, polish and closure | Restate the slice as *bind*, not *build*; it is smaller than anticipated and is a precondition for the rest |
 | R3 ✅ | Test design | MEDIUM | `requirement-room-no-ai-decision.spec.ts` | A careful suite that proves the constraint refuses an `agent` row, but every test supplies the kind directly. It cannot detect an agent that declares itself human | Add an HTTP-level test that attacks the provenance of `actor.kind`, not its handling |
-| R4 | Scope | LOW | `loop.controller.ts` | Same unguarded shape on EPIC-030's transition endpoint; probe reached the handler unauthenticated but produced no write | Assess separately. Not folded into this slice |
+| R4 ✅ | Scope | LOW | `loop.controller.ts` | Same unguarded shape on EPIC-030's transition endpoint; probe reached the handler unauthenticated but produced no write | **Assessed 2026-08-28** and routed to its owning Epic as [`DEF-030-003`](../030-governed-engineering-loop/defects/DEF-030-003-the-caller-supplies-its-own-authorities.md) — latent, not live. Closed here; tracked there |
 
 ## Metrics
 
@@ -284,8 +284,16 @@ Owner authorised the binding slice; it is recorded as **Phase R**, `T1148`–`T1
   handling, and its own first draft was refused by the options rule instead of the actor rule, which
   is why it now sends a fully valid decision.
 
-**`R4` remains open by decision**, not by oversight. `loop.controller.ts` shows the same unguarded
-shape, including `POST /v1/loop/objects/:id/transitions`; its severity is unestablished and folding
-an unassessed endpoint into a scoped remediation is the mistake the C2B stop exists to prevent. It
-is LOW here only because this record scores it for *this* Epic — it needs its own assessment against
-EPIC-030.
+**`R4` is closed here and tracked in its owning Epic.** The assessment ran on 2026-08-28 under
+separate authorisation and produced
+[`DEF-030-003`](../030-governed-engineering-loop/defects/DEF-030-003-the-caller-supplies-its-own-authorities.md).
+
+The answer differs from this Epic's in the way that matters. `loop.controller.ts` accepts
+`actorAuthorities` **from the request body** — a caller asserting an authorisation rather than an
+identity, which is a category beyond `DEF-033-001` — but the loop module is inert as wired: no
+workflow type can be declared, the store is in-memory by documented design, and the `AuthorityMap`
+defaults to `{}`, which refuses every transition before the caller's list is read. So it is **latent
+at MEDIUM**, not live at HIGH, and no containment was proposed.
+
+Declining to fold it into the binding slice was right for the reason given at the time — its severity
+was unestablished — and the assessment confirms the severities genuinely differ.
