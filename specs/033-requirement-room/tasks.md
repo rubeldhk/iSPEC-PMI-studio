@@ -268,6 +268,66 @@ approver, the decider and `actor.kind` stop being strings the caller chose.*
 
 ---
 
+## Phase 9: The journey is reachable (US1, US6) — *drafted 2026-08-28, NOT AUTHORISED*
+
+**Goal**: close the gap `T405j` found. Scenario 13 — *unstructured intent → approved baseline* — is
+not merely unrun; it **cannot be attempted**, because the running application offers no way to start
+a Room and no way to reach one.
+
+**Why this is a phase rather than a Phase Z fix**: `SC-RQR-008` and Constitution XI Tier 2 both
+depend on a journey a person can walk. Neither is dischargeable until this exists, so Phase Z cannot
+close without it.
+
+**Independent test**: [quickstart.md](./quickstart.md) Scenario 13, by keyboard, against the running
+application.
+
+### What is missing, found by trying to use it
+
+| Gap | Evidence |
+|---|---|
+| No Room can be created in the running application | `declareObject` returns `500` for **every** workflow type — `LOOP_STAGE_HANDLERS` is `new StageRegistry([])` and no Room has ever registered handlers. Measured in the `R4` assessment |
+| Intake cannot create one either | `IntakeCommand` **requires** `roomObjectId`; intake joins an existing Room, it does not open one |
+| No screen submits intent | Nothing in `frontend/src/` references the intake route. `POST /rooms/requirement/intake` has no caller |
+| No way to reach a Room | The only route is `/requirement-room/:roomObjectId`. The nav entry points at `/requirement-room`, which renders nothing (`areas.ts`, `declared-not-delivered`) |
+| Nothing can list a workspace's Rooms | `LoopStore` has `createObject` and `findObject` and no list. Room objects are `EPIC-030` loop objects, not rows this Epic owns |
+
+### Blocking dependency — `EPIC-030`, not this Epic's to write
+
+`D-33` and `FR-RQR-002` keep Room objects in `EPIC-030`. Listing them is therefore `EPIC-030`'s
+capability, and it does not exist.
+
+> **`X20` — `LoopStore` cannot list.** The Rooms index needs *"the `requirement-room` objects in this
+> workspace, with their stage"*. `LoopStore` exposes `createObject` and `findObject` only. This is the
+> fourth dependency of this class after `X7`, `X8` and `Y2`, and it is recorded here rather than
+> worked around: a list built from `requirement_candidates.roomObjectId` would miss a Room that has
+> no candidates yet, and would take its stage from somewhere other than the loop — which is
+> `FR-RQR-074`'s Room-local translation, forbidden.
+>
+> **Requires separate authorisation against `EPIC-030`.** `T1170`–`T1171` below are written against
+> the capability and are blocked until it exists.
+
+### Stage handlers are this Epic's, and use the seam that already exists
+
+`loop.module.ts` says the registry stays empty *"until a Room registers its handlers"*, and names the
+platform pattern: the governance seams are supplied by **overriding the token at the composition
+root**, as `EPIC-031`, `EPIC-032`, `EPIC-021` and `EPIC-004` already do. So `T1164`–`T1165` supply
+handlers through that seam rather than changing `EPIC-030`.
+
+- [ ] T1164 [P] [US1] Write the failing integration test for **opening a Room** in `backend/tests/integration/requirement-room-open.spec.ts` — declaring a `requirement-room` object through the composed application succeeds, lands in `Event`, and is scoped to the caller's workspace. Assert the **current** failure first: every workflow type is refused while the stage registry is empty, so this test must fail for that reason before `T1165` and for no other
+- [ ] T1165 [US1] Supply the Requirement Room's six stage handlers and register them by overriding `LOOP_STAGE_HANDLERS` at the composition root in `backend/src/modules/requirement-room/requirement-room.module.ts` (integration test: T1164) — the seam `loop.module.ts` documents, not a change to `EPIC-030`. Handlers cover `Event`, `Context`, `Analyze`, `Decide`, `Evidence`, `Outcome` and no others, so `T403v`'s type isolation still holds
+- [ ] T1166 [P] [US1] Write the failing integration test for `POST /rooms/requirement` in `backend/tests/integration/requirement-room-open.spec.ts` — one governed call that declares the loop object **and** takes first intent, refusing wholly if either half refuses. Assert no orphan object survives a refused intake, because a Room that exists with nothing in it is the state a user cannot act on or delete
+- [ ] T1167 [US1] Implement `POST /rooms/requirement` in `requirement-room.controller.ts` and `intake.service.ts` (integration test: T1166) — workspace and actor from the session per `T1148`, never the body
+- [ ] T1168 [P] [US1] Write failing component tests for the intake screen in `frontend/tests/unit/pages/RequirementIntake.spec.tsx` — a textarea for unstructured intent, a source label, submit disabled while empty, the refusal rendered in place rather than as a toast that vanishes, and the whole form reachable and submittable **by keyboard alone** (`SC-RQR-008`)
+- [ ] T1169 [US1] Implement `frontend/src/pages/RequirementIntake.tsx` and its `api.openRequirementRoom` client method in `frontend/src/services/api.ts` (component test: T1168) — on success, navigate to the new Room
+- [ ] T1170 [P] [US6] Write failing component tests for the **shared** Rooms index in `frontend/tests/unit/rooms/RoomIndex.spec.tsx` — lists a workspace's Room objects with stage and last activity, an empty state that offers the way in rather than saying "no results", and a keyboard-navigable list. Parameterised by Room kind, because `EPIC-034` and `EPIC-035` inherit it exactly as they inherit `RoomShell` (`T405d`). **Blocked by `X20`**
+- [ ] T1171 [US6] Implement `frontend/src/rooms/RoomIndex.tsx` beside `RoomShell.tsx` (component test: T1170), consuming `EPIC-030`'s list through a new `GET /rooms/requirement` — stage read from the loop projection, never re-derived here (`FR-RQR-074`). **Blocked by `X20`**
+- [ ] T1172 [US6] Register the area: give the `requirement-room` entry in `frontend/src/shell/areas.ts` an `element`, add the adapter to `frontend/src/shell/area-views.tsx`, and route `/requirement-room/intake`. Promote `status` from `declared-not-delivered` **only because the landing now renders** — the note in that file forbids the reverse order
+- [ ] T1173 [US6] Extend `frontend/tests/unit/shell/areas.spec.ts` and `backend/tests/integration/requirement-room-reachability.spec.ts` to cover the two new routes (integration test rebuilt at `T405e` — its message discriminator must catch an unregistered index, so add the mutation observation)
+- [ ] T1174 [US1] Run [quickstart.md](./quickstart.md) **Scenario 13** end to end by keyboard against the running application and record the transcript at `specs/033-requirement-room/tier2-transcript.md` — the artifact `R-033-8` requires. Records what was typed, what was focused, and what was seen, or it does not discharge the criterion
+- [ ] T1175 Record in `quickstart-results.md` whether `SC-RQR-008`'s **accessibility** half is discharged by `T1174` or still needs a human pass — focus visibility, focus order and screen-reader behaviour are judgements a transcript can evidence but not settle, and the `EPIC-029` record is the precedent for not quietly promoting one into the other
+
+---
+
 ## Phase N: Polish & Cross-Cutting Concerns
 
 - [X] T405a **Mutation proof — `FR-RQR-051`**: add an in-place edit path for a baselined requirement to `backend/src/modules/requirement-room/baseline.service.ts`, revert (integration test: T338g — it must fail while the mutation stands). Record the observation (`SC-RQR-001`). `RULE-02` is the rule `EPIC-034`'s existence depends on
