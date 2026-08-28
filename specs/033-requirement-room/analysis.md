@@ -257,9 +257,9 @@ standing constraint.
 
 | ID | Category | Severity | Location(s) | Summary | Recommendation |
 |----|----------|----------|-------------|---------|----------------|
-| R1 | Security / correctness | **HIGH** | `requirement-room.controller.ts`, `baseline.service.ts`, `decision.service.ts` | Baseline approver, decision maker and `actor.kind` are caller-supplied strings on mounted, unauthenticated routes; an unauthenticated intake write returned `201` | `DEF-033-001` raised. Bind to session context and `CompositePrincipalDirectory` — the recommended next slice |
-| R2 | Planning | MEDIUM | A–G delivery order, `specs/037-…/tasks.md` | The order schedules S1 and S4 as work to be built; both are already implemented (21 tasks complete). The remaining EPIC-033 work is US6, polish and closure | Restate the slice as *bind*, not *build*; it is smaller than anticipated and is a precondition for the rest |
-| R3 | Test design | MEDIUM | `requirement-room-no-ai-decision.spec.ts` | A careful suite that proves the constraint refuses an `agent` row, but every test supplies the kind directly. It cannot detect an agent that declares itself human | Add an HTTP-level test that attacks the provenance of `actor.kind`, not its handling |
+| R1 ✅ | Security / correctness | **HIGH** | `requirement-room.controller.ts`, `baseline.service.ts`, `decision.service.ts` | Baseline approver, decision maker and `actor.kind` are caller-supplied strings on mounted, unauthenticated routes; an unauthenticated intake write returned `201` | `DEF-033-001` raised. Bind to session context and `CompositePrincipalDirectory` — the recommended next slice |
+| R2 ✅ | Planning | MEDIUM | A–G delivery order, `specs/037-…/tasks.md` | The order schedules S1 and S4 as work to be built; both are already implemented (21 tasks complete). The remaining EPIC-033 work is US6, polish and closure | Restate the slice as *bind*, not *build*; it is smaller than anticipated and is a precondition for the rest |
+| R3 ✅ | Test design | MEDIUM | `requirement-room-no-ai-decision.spec.ts` | A careful suite that proves the constraint refuses an `agent` row, but every test supplies the kind directly. It cannot detect an agent that declares itself human | Add an HTTP-level test that attacks the provenance of `actor.kind`, not its handling |
 | R4 | Scope | LOW | `loop.controller.ts` | Same unguarded shape on EPIC-030's transition endpoint; probe reached the handler unauthenticated but produced no write | Assess separately. Not folded into this slice |
 
 ## Metrics
@@ -269,3 +269,23 @@ standing constraint.
 - Controllers resolving the caller authoritatively: **14 of 19**
 - Findings: **1 HIGH, 2 MEDIUM, 1 LOW**
 - Production code changed by this reconsideration: **none**
+
+## Resolution — the binding slice, 2026-08-28
+
+`R1`, `R2` and `R3` are marked resolved above (`✅`, the convention `DOR-09` reads). The Project
+Owner authorised the binding slice; it is recorded as **Phase R**, `T1148`–`T1155`, and closed
+[`DEF-033-001`](./defects/DEF-033-001-the-approver-and-the-actor-kind-are-caller-supplied.md).
+
+- `R1` — identity is resolved in `RequirementRoomService` against `EPIC-024`'s
+  `WorkspaceBoundaryService`, before any body validation. Proven over real HTTP by
+  `backend/tests/integration/requirement-room-identity-binding.spec.ts` (19 tests).
+- `R2` — the slice was *bind*, not *build*, as recommended. No new Room capability was added.
+- `R3` — the missing test exists: it attacks the provenance of `actor.kind` rather than its
+  handling, and its own first draft was refused by the options rule instead of the actor rule, which
+  is why it now sends a fully valid decision.
+
+**`R4` remains open by decision**, not by oversight. `loop.controller.ts` shows the same unguarded
+shape, including `POST /v1/loop/objects/:id/transitions`; its severity is unestablished and folding
+an unassessed endpoint into a scoped remediation is the mistake the C2B stop exists to prevent. It
+is LOW here only because this record scores it for *this* Epic — it needs its own assessment against
+EPIC-030.

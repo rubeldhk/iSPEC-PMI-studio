@@ -18,7 +18,7 @@
  * answered.
  */
 import { randomUUID } from 'node:crypto';
-import { ValidationFailedError } from '../../core/errors.js';
+import { UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { AnalysisResult, AnalysisService } from './analysis.service.js';
 import type {
   ApproveBaselineInput,
@@ -46,6 +46,59 @@ import type {
 } from './requirement-room.store.js';
 import type { ActorRef } from '@pmi/loop-contract';
 import type { Labelled } from '@pmi/room-contract';
+
+/**
+ * Who is acting, as established by the **session** — never by a request body.
+ *
+ * `DEF-033-001`: every route used to take its workspace, its approver and its
+ * actor kind from the caller. The service checked them and the database
+ * constrained them, and both were checking a value the caller had chosen. The
+ * fix is not a stronger check; it is a different source.
+ */
+export interface ActingPrincipal {
+  readonly workspaceId: string;
+  readonly userId: string;
+}
+
+/**
+ * The authoritative directory this Room resolves callers against.
+ *
+ * Structurally satisfied by `EPIC-024`'s `WorkspaceBoundaryService`, which is
+ * consumed rather than re-implemented — it already refuses an actor that is
+ * unknown, in another workspace, suspended or revoked, and it returns the
+ * record rather than echoing what it was handed.
+ */
+export interface PrincipalResolver {
+  requireWithinWorkspace(
+    workspaceId: string,
+    actorId: string,
+  ): Promise<{
+    readonly id: string;
+    readonly workspaceId: string;
+    readonly kind?: 'human' | 'agent' | 'service';
+    readonly state?: 'active' | 'suspended' | 'revoked';
+  }>;
+}
+
+/** What the Room uses after resolution. Nothing here came from a body. */
+export interface ResolvedActor {
+  readonly workspaceId: string;
+  readonly id: string;
+  readonly kind: 'human' | 'agent' | 'service';
+}
+
+/**
+ * `ActorRecord.kind` → `ActorRef.kind`.
+ *
+ * The two vocabularies differ by one member: the directory says `service`
+ * where the loop contract says `automation`. Mapping it to `automation` rather
+ * than dropping it keeps a service account **non-human**, which is the only
+ * property the decision refusal depends on.
+ */
+function asActorRef(actor: ResolvedActor): ActorRef {
+  const kind = actor.kind === 'service' ? 'automation' : actor.kind;
+  return { kind, id: actor.id };
+}
 
 /** `POST /rooms/requirement/:id/clarifications` — ask a set, or answer one. */
 export interface ClarificationRequest {
@@ -119,13 +172,42 @@ export class RequirementRoomService {
     private readonly decisionService: DecisionService,
     private readonly handoffService: HandoffService,
     private readonly store: RequirementRoomStore,
+    /**
+     * **Required, not optional** (`T1148`). An absent resolver would mean every
+     * route silently falling back to caller-supplied identity — the default-open
+     * that `DEF-033-001` is. If it cannot be wired, the Room must not start.
+     */
+    private readonly principals: PrincipalResolver,
     /** Absent ⇒ readiness reports the Contract as unevaluated, which blocks. */
     private readonly evidence?: EvidenceContractSource | undefined,
   ) {}
 
+  /**
+   * `T1148` — establish who is acting, authoritatively.
+   *
+   * Every entry point begins here, before any validation of the body. The order
+   * matters: validating first would tell an unauthenticated caller which fields
+   * a route wants, and `DEF-037-001` showed how readily a route that merely
+   * *reaches* its handler is mistaken for one that authenticated its caller.
+   *
+   * The returned `workspaceId` is the directory's, not the session's copy and
+   * not the body's, so nothing downstream can widen scope by naming another.
+   */
+  private async acting(principal: ActingPrincipal | undefined): Promise<ResolvedActor> {
+    if (!principal?.workspaceId || !principal.userId) {
+      throw new UnauthenticatedError('No valid session.');
+    }
+    const actor = await this.principals.requireWithinWorkspace(
+      principal.workspaceId,
+      principal.userId,
+    );
+    return { workspaceId: actor.workspaceId, id: actor.id, kind: actor.kind ?? 'human' };
+  }
+
   /** T338b — `FR-RQR-010`. Multi-source intake becomes labelled candidates. */
-  intake(input: IntakeCommand): Promise<CandidateRow[]> {
-    return this.intakeService.intake(input);
+  async intake(principal: ActingPrincipal, input: IntakeCommand): Promise<CandidateRow[]> {
+    const actor = await this.acting(principal);
+    return this.intakeService.intake({ ...input, workspaceId: actor.workspaceId });
   }
 
   /**
@@ -134,8 +216,12 @@ export class RequirementRoomService {
    * The inbound half of the Defect Room's third classification outcome, and the
    * task `EPIC-035`'s Exit Criterion 5 waits on.
    */
-  gapIntake(input: GapIntakeCommand): Promise<CandidateRow[]> {
-    return this.intakeService.gapIntake(input);
+  async gapIntake(
+    principal: ActingPrincipal,
+    input: GapIntakeCommand,
+  ): Promise<CandidateRow[]> {
+    const actor = await this.acting(principal);
+    return this.intakeService.gapIntake({ ...input, workspaceId: actor.workspaceId });
   }
 
   /**
@@ -152,32 +238,35 @@ export class RequirementRoomService {
    * defect this Epic cites `EPIC-031`'s `C2` for.*
    */
   async clarifications(
+    principal: ActingPrincipal,
     roomObjectId: string,
     input: ClarificationRequest,
   ): Promise<ClarificationRow[]> {
+    const actor = await this.acting(principal);
     if (!roomObjectId) {
       throw new ValidationFailedError('clarifications require a Room object id in the path');
     }
     if (input?.questions) {
       await this.clarificationService.ask({
-        workspaceId: input.workspaceId,
+        workspaceId: actor.workspaceId,
         roomObjectId,
-        askedBy: input.askedBy ?? '',
+        // Who asked is the session, not a name the request chose.
+        askedBy: actor.id,
         questions: input.questions,
       });
     } else if (input?.answer) {
       await this.clarificationService.answer({
-        workspaceId: input.workspaceId,
+        workspaceId: actor.workspaceId,
         id: input.answer.id,
         answer: input.answer.answer,
-        answeredBy: input.answer.answeredBy,
+        answeredBy: actor.id,
       });
     } else {
       throw new ValidationFailedError(
         'a clarification request carries either `questions` to ask or an `answer` to record',
       );
     }
-    return this.clarificationService.list(input.workspaceId, roomObjectId);
+    return this.clarificationService.list(actor.workspaceId, roomObjectId);
   }
 
   /**
@@ -188,15 +277,20 @@ export class RequirementRoomService {
    * half always runs, and `aiAvailable` says whether the other half did. See
    * `analysis.service.ts` for why that is this Room's one degrading seam.
    */
-  analysis(roomObjectId: string, query: AnalysisQuery): Promise<AnalysisResult> {
+  async analysis(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+    query: AnalysisQuery,
+  ): Promise<AnalysisResult> {
+    const actor = await this.acting(principal);
     if (!roomObjectId) {
       throw new ValidationFailedError('analysis requires a Room object id in the path');
     }
-    if (!query?.workspaceId || !query.projectId) {
-      throw new ValidationFailedError('analysis requires: workspaceId, projectId');
+    if (!query?.projectId) {
+      throw new ValidationFailedError('analysis requires: projectId');
     }
     return this.analysisService.analyze({
-      workspaceId: query.workspaceId,
+      workspaceId: actor.workspaceId,
       projectId: query.projectId,
       roomObjectId,
       correlationId: query.correlationId ?? randomUUID(),
@@ -212,9 +306,13 @@ export class RequirementRoomService {
    * asks to retain (data-model §4).
    */
   async options(
+    principal: ActingPrincipal,
     roomObjectId: string,
     input: OptionsRequest,
   ): Promise<Labelled<PresentedOption>[]> {
+    // Presenting options reveals what a Room object is deliberating over, so it
+    // is authenticated like the rest even though it persists nothing.
+    await this.acting(principal);
     if (!roomObjectId) {
       throw new ValidationFailedError('options require a Room object id in the path');
     }
@@ -231,18 +329,24 @@ export class RequirementRoomService {
    * A policy refusal surfaces as `403` carrying `EPIC-031`'s decision id and
    * explanation, which is what `UX-0033` renders (`FR-RQR-043`).
    */
-  async decide(roomObjectId: string, input: DecideRequest): Promise<DecisionRow> {
+  async decide(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+    input: DecideRequest,
+  ): Promise<DecisionRow> {
+    const actor = await this.acting(principal);
     if (!roomObjectId) {
       throw new ValidationFailedError('a decision requires a Room object id in the path');
     }
-    if (!input?.workspaceId) {
-      throw new ValidationFailedError('a decision requires: workspaceId');
-    }
     return this.decisionService.decide({
-      workspaceId: input.workspaceId,
+      workspaceId: actor.workspaceId,
       roomObjectId,
       objectVersion: input.objectVersion ?? 0,
-      actor: input.actor,
+      // `S4`'s load-bearing line. `actor.kind` is now what the directory says
+      // the caller IS, so `decision.service`'s human-only refusal and the
+      // `requirement_decisions_decided_by_a_human` constraint are checking a
+      // resolved fact rather than a self-declaration.
+      actor: asActorRef(actor),
       options: this.optionsService.present(input.options ?? []),
       chosenOptionId: input.chosenOptionId,
       rationale: input.rationale,
@@ -263,11 +367,28 @@ export class RequirementRoomService {
    * `BaselineApproval`. The caller gets `{ outcome: 'refused', reason, detail }`
    * and can record it, which is what a governed refusal is for.
    */
-  baseline(roomObjectId: string, input: ApproveBaselineInput): Promise<BaselineApproval> {
+  async baseline(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+    input: ApproveBaselineInput,
+  ): Promise<BaselineApproval> {
+    const actor = await this.acting(principal);
     if (!roomObjectId) {
       throw new ValidationFailedError('a baseline requires a Room object id in the path');
     }
-    return this.baselines.approve(input);
+    // `S1` acceptance scenario 2 — the baseline carries its approver. A
+    // baseline is immutable, so an unverified approver cannot be corrected
+    // later, only superseded. It is taken from the session.
+    return this.baselines.approve({
+      ...input,
+      workspaceId: actor.workspaceId,
+      approvedBy: actor.id,
+      exceptions: input.exceptions?.map((exception) => ({
+        ...exception,
+        // `FR-RQR-032` — a waiver's authorizer is the caller who waived it.
+        authorizedBy: actor.id,
+      })),
+    });
   }
 
   /**
@@ -279,22 +400,27 @@ export class RequirementRoomService {
    * `(projectId, version)` is the baseline's key and a version alone would
    * resolve to another project's set.
    */
-  async handoff(version: string, input: HandoffRequest): Promise<HandoffRow> {
+  async handoff(
+    principal: ActingPrincipal,
+    version: string,
+    input: HandoffRequest,
+  ): Promise<HandoffRow> {
+    const actor = await this.acting(principal);
     const baselineVersion = Number.parseInt(version, 10);
     if (!Number.isInteger(baselineVersion) || baselineVersion < 1) {
       throw new ValidationFailedError(
         `"${version}" is not a baseline version — versions are whole numbers from 1`,
       );
     }
-    if (!input?.workspaceId || !input.projectId) {
-      throw new ValidationFailedError('a handoff requires: workspaceId, projectId');
+    if (!input?.projectId) {
+      throw new ValidationFailedError('a handoff requires: projectId');
     }
     return this.handoffService.select({
-      workspaceId: input.workspaceId,
+      workspaceId: actor.workspaceId,
       projectId: input.projectId,
       baselineVersion,
       specificationWorkflowRef: input.specificationWorkflowRef,
-      selectedBy: input.selectedBy,
+      selectedBy: actor.id,
     });
   }
 
@@ -307,31 +433,36 @@ export class RequirementRoomService {
    * none has been taken. Reporting `ready` here would be the plausible-success
    * stub this Room's own reachability test exists to catch.
    */
-  async readiness(roomObjectId: string, query: ReadinessQuery): Promise<BaselineReadiness> {
+  async readiness(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+    query: ReadinessQuery,
+  ): Promise<BaselineReadiness> {
+    const actor = await this.acting(principal);
     if (!roomObjectId) {
       throw new ValidationFailedError('readiness requires a Room object id in the path');
     }
-    if (!query?.workspaceId) {
-      throw new ValidationFailedError('readiness requires: workspaceId');
-    }
     const [candidates, clarifications] = await Promise.all([
-      this.store.listCandidates(query.workspaceId, roomObjectId),
-      this.store.listClarifications(query.workspaceId, roomObjectId),
+      this.store.listCandidates(actor.workspaceId, roomObjectId),
+      this.store.listClarifications(actor.workspaceId, roomObjectId),
     ]);
     return projectReadiness({
       candidates,
       clarifications,
       // Null when EPIC-032 is unbound or no Contract was named — which BLOCKS.
       // "Cannot tell" is never "ready".
-      evidence: await this.evidenceStatus(query),
+      evidence: await this.evidenceStatus(actor.workspaceId, query),
       decision: null,
     });
   }
 
-  private async evidenceStatus(query: ReadinessQuery): Promise<EvidenceStatus | null> {
+  private async evidenceStatus(
+    workspaceId: string,
+    query: ReadinessQuery,
+  ): Promise<EvidenceStatus | null> {
     if (!this.evidence || !query.evidenceContractRef || !query.projectId) return null;
     return this.evidence.isSatisfied(query.evidenceContractRef, {
-      workspaceId: query.workspaceId,
+      workspaceId,
       projectId: query.projectId,
     });
   }

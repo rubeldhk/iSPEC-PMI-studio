@@ -249,6 +249,25 @@ as a warning; one Epic later it decides how the next two are written.**
 
 ---
 
+## Phase R: Identity binding (`DEF-033-001` remediation)
+
+*Authorised by the Project Owner 2026-08-27 as the binding slice, after the S1/S4 reconsideration
+found both slices implemented but their identity guarantees unenforced. Not new capability: the
+approver, the decider and `actor.kind` stop being strings the caller chose.*
+
+- [X] T1148 [US1] [US4] Take identity from the session in `backend/src/modules/requirement-room/requirement-room.service.ts` — a **required** `PrincipalResolver`, an `ActingPrincipal` on every entry point, and `workspaceId`, `approvedBy`, `askedBy`, `selectedBy` and `actor.kind` derived from the resolved record (integration tests: T1151–T1154)
+- [X] T1149 [US1] [US4] Read `@Req()` and refuse without a session in `backend/src/modules/requirement-room/requirement-room.controller.ts`, matching the `requireAuth` pattern the other thirteen product controllers carry, and strip identity fields from every body (integration test: T1151)
+- [X] T1150 Wire `AccessModule`'s `WorkspaceBoundaryService` into `backend/src/modules/requirement-room/requirement-room.module.ts` — **consumed, not re-implemented** — and add `backend/tests/helpers/authenticated-app.ts` so an integration test can drive an authenticated Room (integration tests: T1151, T1154 — neither can pass unless the boundary is wired and resolving)
+- [X] T1151 [P] Write the failing integration test for unauthenticated refusal in `backend/tests/integration/requirement-room-identity-binding.spec.ts` — all nine routes answer `401`, nothing is written, and the same request with a session succeeds
+- [X] T1152 [P] Write the failing integration test that a body cannot choose the workspace — a `workspaceId` in the body is ignored and nothing reaches the workspace it named (same file)
+- [X] T1153 [P] Write the failing integration test that a caller cannot declare itself human — an agent's session is refused for being non-human even though its body claims `kind: 'human'`, with a human control that is **not** refused for that reason (same file)
+- [X] T1154 [P] Write the failing integration test that a suspended principal and a cross-workspace session are refused, so `EPIC-024`'s state and boundary rules are shown to be inherited rather than assumed (same file)
+- [X] T1155 Update `backend/tests/integration/requirement-room-reachability.spec.ts` and `requirement-room-gap-intake.spec.ts` to authenticate — both now need a database and a session, and `workspaceId` is no longer a field a caller can omit
+
+**Checkpoint**: the Room's approver, decider and actor kind are resolved facts. `DEF-033-001` closed.
+
+---
+
 ## Phase N: Polish & Cross-Cutting Concerns
 
 - [ ] T405a **Mutation proof — `FR-RQR-051`**: add an in-place edit path for a baselined requirement to `backend/src/modules/requirement-room/baseline.service.ts`, revert (integration test: T338g — it must fail while the mutation stands). Record the observation (`SC-RQR-001`). `RULE-02` is the rule `EPIC-034`'s existence depends on

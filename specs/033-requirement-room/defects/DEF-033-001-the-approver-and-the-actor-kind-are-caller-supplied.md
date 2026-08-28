@@ -1,7 +1,7 @@
 # DEF-033-001 — the Room's approver, decider and actor kind are whatever the caller says they are
 
 **Epic**: `EPIC-033` (owns `backend/src/modules/requirement-room/`) · affects **S1** and **S4**
-**Raised**: 2026-08-27 | **Status**: **OPEN** — raised during the S1/S4 reconsideration
+**Raised**: 2026-08-27 | **Status**: **CLOSED — FIXED 2026-08-28** (`T1148`–`T1155`, the binding slice)
 **Found by**: the S1/S4 reconsideration, applying `DEF-037-001`'s method — probe the mounted routes
 rather than read them
 **Severity**: **HIGH** — a baseline's approver, a decision's decider, and the human-versus-AI
@@ -93,9 +93,52 @@ dedicated AI-refusal file. The tests exercise the services and the schema, and b
 their own boundary. The missing test is the one that could only be written after asking a different
 question — not *"does the service refuse an agent?"* but *"what makes `actor.kind` true?"*
 
-## Fix — not applied, and why
+## Fix — applied 2026-08-28 (`T1148`–`T1155`)
 
-The remedy now exists and did not when S1/S4 were built. C3B delivered:
+Authorised by the Project Owner as the binding slice.
+
+**Where the rule lives.** In `RequirementRoomService`, not only the controller. The Room's own PC-1
+principle says every capability stays callable without HTTP, and an MCP surface is planned — a
+transport-level check would have left the next surface to repeat this. `DEF-037-001` is the same
+lesson: a route that merely *reaches* its handler is readily mistaken for one that authenticated its
+caller.
+
+- `RequirementRoomService` takes a **required** `PrincipalResolver`. Required, not optional: an
+  absent resolver would mean silently falling back to caller-supplied identity, which is the
+  default-open this defect is.
+- Every entry point begins with `acting()`, **before** any validation of the body. Validating first
+  would tell an unauthenticated caller which fields a route wants.
+- `workspaceId`, `approvedBy`, `askedBy`, `answeredBy`, `selectedBy` and `actor.kind` are taken from
+  the resolved record. The returned `workspaceId` is the directory's, so nothing downstream can
+  widen scope by naming another.
+- `WorkspaceBoundaryService` (EPIC-024) is **consumed, not re-implemented**. It already refuses an
+  actor that is unknown, in another workspace, suspended or revoked, and returns the record rather
+  than echoing what it was handed.
+- The controller reads `@Req()`, refuses with `401` via the same local `requireAuth` its thirteen
+  siblings carry, and strips identity fields from every body. The strip changes no outcome — the
+  service overwrites them anyway — but it states the rule where a reader looks first.
+- The service check and the `requirement_decisions_decided_by_a_human` constraint are **unchanged**.
+  They are now the second line they were always meant to be, checking a resolved fact.
+
+**Proof** — `backend/tests/integration/requirement-room-identity-binding.spec.ts`, driven over real
+HTTP against the composed application (19 tests):
+
+- all nine routes answer `401` without a session, and nothing is written;
+- a `workspaceId` in the body is ignored, and nothing reaches the workspace it named;
+- an agent's session is refused **for being non-human** while its body claims `kind: 'human'` — with
+  a human control that is not refused for that reason;
+- a suspended principal and a cross-workspace session are both refused.
+
+The `T1153` case is worth one note. Its first draft sent no options, and the refusal that came back
+was the options rule rather than the actor rule — a passing test that proved nothing about identity.
+It now sends two fully-stated options so the actor is the only thing left to refuse.
+
+`ActorRecord.kind` maps to `ActorRef.kind` with `service` → `automation`. Dropping the member would
+have quietly made a service account human.
+
+## Why the remedy exists now and did not before
+
+C3B delivered:
 
 - `TrustedPrincipalFactory` (EPIC-028) — mints an unforgeable principal context, refusing unknown,
   foreign, suspended and revoked principals;
@@ -104,12 +147,9 @@ The remedy now exists and did not when S1/S4 were built. C3B delivered:
 - `PrincipalDelegationService` — with `NEVER_DELEGABLE` actions, which is where "approve a baseline"
   belongs.
 
-The shape of the fix: derive `workspaceId`, the approver, the decider and `actor.kind` from the
-authenticated session context rather than the body; refuse the request when no context is present;
-keep the existing service checks and the `CHECK` constraint as the second line they were meant to be.
-
-Applying it is a production change across `EPIC-033`, `EPIC-024` and `EPIC-028` wiring and is not in
-scope for a reconsideration. It is the recommended next slice.
+When S1 and S4 were written none of this existed — that was `Y2`, which stopped EPIC-037 Band A at
+C3A. A body-supplied `actor.kind` was, at the time, the only thing available. The defect is better
+read as work that outran its dependency than as a check somebody forgot.
 
 ## How wide is this
 

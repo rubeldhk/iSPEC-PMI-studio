@@ -42,6 +42,8 @@ import { IntakeService } from './intake.service.js';
 import { EpicSevenRequirementRegister } from './register.adapter.js';
 import { RequirementRoomController } from './requirement-room.controller.js';
 import { RequirementRoomService } from './requirement-room.service.js';
+import { AccessModule } from '../access/access.module.js';
+import { WorkspaceBoundaryService } from '../access/workspace-boundary.service.js';
 import {
   InMemoryRequirementRoomStore,
   type RequirementRoomStore,
@@ -52,7 +54,10 @@ import { REQUIREMENT_ROOM_STORE, ROOM_REQUIREMENT_REGISTER } from './requirement
 const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
 
 @Module({
-  imports: [RequirementsModule],
+  // `AccessModule` for `WorkspaceBoundaryService` — EPIC-024's authoritative
+  // actor directory, consumed rather than re-implemented (`T1148`). It is what
+  // turns `actor.kind` from a claim into a resolved fact.
+  imports: [RequirementsModule, AccessModule],
   controllers: [RequirementRoomController],
   providers: [
     {
@@ -149,6 +154,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         HandoffService,
         EDIT_VETO_REGISTERED,
         REQUIREMENT_ROOM_STORE,
+        WorkspaceBoundaryService,
       ],
       useFactory: (
         intake: IntakeService,
@@ -160,6 +166,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         handoffs: HandoffService,
         _veto: true,
         store: RequirementRoomStore,
+        principals: WorkspaceBoundaryService,
       ): RequirementRoomService =>
         // No EvidenceContractSource: EPIC-032 binds it at the composition root.
         // Until it does, `readiness` reports the Contract as UNEVALUATED, which
@@ -173,6 +180,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
           decisions,
           handoffs,
           store,
+          principals,
           undefined,
         ),
     },

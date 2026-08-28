@@ -8,11 +8,14 @@
  * These exist at `T337y` so Constitution XI Tier 1 has something real to reach;
  * their handlers refuse until the tasks named in the service implement them.
  */
-import { Body, Controller, Get, Inject, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Query, Req } from '@nestjs/common';
+import { UnauthenticatedError } from '../../core/errors.js';
+import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import type { ApproveBaselineInput } from './baseline.service.js';
 import type { GapIntakeCommand, IntakeCommand } from './intake.service.js';
 import { RequirementRoomService } from './requirement-room.service.js';
 import type {
+  ActingPrincipal,
   AnalysisQuery,
   ClarificationRequest,
   DecideRequest,
@@ -20,6 +23,37 @@ import type {
   OptionsRequest,
   ReadinessQuery,
 } from './requirement-room.service.js';
+
+/**
+ * A product endpoint with no session is 401 — the same local helper the other
+ * thirteen product controllers carry. Distinct from the opaque 404 that hides
+ * cross-workspace existence: that rule is about resources, this is about the
+ * caller.
+ */
+function requireAuth(ctx: WorkspaceContext | undefined | null): ActingPrincipal {
+  if (!ctx?.workspaceId || !ctx.userId) throw new UnauthenticatedError('No valid session.');
+  return { workspaceId: ctx.workspaceId, userId: ctx.userId };
+}
+
+/**
+ * Identity fields a body may not smuggle in (`T1149`).
+ *
+ * The service overwrites each of these from the resolved session, so stripping
+ * them here changes no outcome — it is a second statement of the same rule, at
+ * the boundary where a reader looks first. `DEF-033-001` began as a body that
+ * looked authoritative because nothing visibly took it away.
+ */
+function strip<T>(body: unknown): T {
+  const {
+    workspaceId: _ws,
+    approvedBy: _approved,
+    actor: _actor,
+    askedBy: _asked,
+    selectedBy: _selected,
+    ...safe
+  } = (body ?? {}) as Record<string, unknown>;
+  return safe as T;
+}
 
 @Controller()
 export class RequirementRoomController {
@@ -29,8 +63,11 @@ export class RequirementRoomController {
   ) {}
 
   @Post('rooms/requirement/intake')
-  intake(@Body() body: IntakeCommand): Promise<unknown> {
-    return this.room.intake(body);
+  intake(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Body() body: IntakeCommand,
+  ): Promise<unknown> {
+    return this.room.intake(requireAuth(ctx), strip<IntakeCommand>(body));
   }
 
   /**
@@ -42,24 +79,39 @@ export class RequirementRoomController {
    * does not.
    */
   @Post('rooms/requirement/gap-intake')
-  gapIntake(@Body() body: GapIntakeCommand): Promise<unknown> {
-    return this.room.gapIntake(body);
+  gapIntake(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Body() body: GapIntakeCommand,
+  ): Promise<unknown> {
+    return this.room.gapIntake(requireAuth(ctx), strip<GapIntakeCommand>(body));
   }
 
   @Post('rooms/requirement/:id/clarifications')
-  clarifications(@Param('id') id: string, @Body() body: ClarificationRequest): Promise<unknown> {
-    return this.room.clarifications(id, body);
+  clarifications(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: ClarificationRequest,
+  ): Promise<unknown> {
+    return this.room.clarifications(requireAuth(ctx), id, strip<ClarificationRequest>(body));
   }
 
   /** Scope from the query — a GET has no body to carry it. */
   @Get('rooms/requirement/:id/analysis')
-  analysis(@Param('id') id: string, @Query() query: AnalysisQuery): Promise<unknown> {
-    return this.room.analysis(id, query);
+  analysis(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Query() query: AnalysisQuery,
+  ): Promise<unknown> {
+    return this.room.analysis(requireAuth(ctx), id, strip<AnalysisQuery>(query));
   }
 
   @Post('rooms/requirement/:id/options')
-  options(@Param('id') id: string, @Body() body: OptionsRequest): Promise<unknown> {
-    return this.room.options(id, body);
+  options(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: OptionsRequest,
+  ): Promise<unknown> {
+    return this.room.options(requireAuth(ctx), id, strip<OptionsRequest>(body));
   }
 
   /**
@@ -69,23 +121,39 @@ export class RequirementRoomController {
    * the status and `toErrorBody` carries the details — no mapping here.
    */
   @Post('rooms/requirement/:id/decide')
-  decide(@Param('id') id: string, @Body() body: DecideRequest): Promise<unknown> {
-    return this.room.decide(id, body);
+  decide(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: DecideRequest,
+  ): Promise<unknown> {
+    return this.room.decide(requireAuth(ctx), id, strip<DecideRequest>(body));
   }
 
   @Post('rooms/requirement/:id/baseline')
-  baseline(@Param('id') id: string, @Body() body: ApproveBaselineInput): Promise<unknown> {
-    return this.room.baseline(id, body);
+  baseline(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: ApproveBaselineInput,
+  ): Promise<unknown> {
+    return this.room.baseline(requireAuth(ctx), id, strip<ApproveBaselineInput>(body));
   }
 
   /** Addressed by VERSION — the thing `FR-RQR-061` requires be recorded. */
   @Post('baselines/:version/handoff')
-  handoff(@Param('version') version: string, @Body() body: HandoffRequest): Promise<unknown> {
-    return this.room.handoff(version, body);
+  handoff(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('version') version: string,
+    @Body() body: HandoffRequest,
+  ): Promise<unknown> {
+    return this.room.handoff(requireAuth(ctx), version, strip<HandoffRequest>(body));
   }
 
   @Get('rooms/requirement/:id/readiness')
-  readiness(@Param('id') id: string, @Query() query: ReadinessQuery): Promise<unknown> {
-    return this.room.readiness(id, query);
+  readiness(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Query() query: ReadinessQuery,
+  ): Promise<unknown> {
+    return this.room.readiness(requireAuth(ctx), id, strip<ReadinessQuery>(query));
   }
 }
