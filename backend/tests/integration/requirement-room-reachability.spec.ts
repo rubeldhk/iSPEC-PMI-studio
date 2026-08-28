@@ -131,20 +131,31 @@ suite('T337x · the Requirement Room is reachable through the composed applicati
     ['get', `/${PREFIX}/rooms/requirement/probe/readiness`],
   ] as const)('routes %s %s — the real entry point answers', async (method, route) => {
     const response = await request(app.getHttpServer())[method](route).set('Cookie', cookie).send({});
-    const code = (response.body as { error?: { code?: string } })?.error?.code;
-    // A handler RAN. Two shapes prove it: a platform error code, or a success.
+    const body = response.body as { error?: { code?: string; message?: string } };
+
+    // A handler RAN — and the discriminator had to be rebuilt twice.
     //
-    // Before `T1148` every route refused for a missing `workspaceId`, so a code
-    // was always present and the assertion could require one. Now that the
-    // workspace comes from the session, `GET readiness` has everything it needs
-    // and answers `200` — a stronger outcome than the refusal this line used to
-    // demand, and it must not be read as a regression.
+    // Originally: "an unmatched path is `internal_error`, so any platform code
+    // means a handler matched". `DEF-001-006` fixed the filter, and an unmatched
+    // path became `404 not_found` — a platform code. The assertion kept passing
+    // and stopped meaning anything.
     //
-    // What is still ruled out is the failure this test exists for: an unmatched
-    // path, which returns no platform code and no success. The neighbouring
-    // anti-vacuity test pins that down by contrast.
-    const reached = code !== undefined || response.status < 300;
-    expect(reached, `${method.toUpperCase()} ${route} answered ${response.status}`).toBe(true);
+    // `T405e` caught it: with `RequirementRoomModule` unregistered, every route
+    // in this loop still passed. Only the neighbouring anti-vacuity test failed.
+    //
+    // The discriminator that survives is the MESSAGE. `toErrorBody` keeps a
+    // `PlatformError`'s own text and the filter authors a generic sentence for a
+    // framework status — so an unmatched path says exactly
+    // "The requested resource does not exist.", and a handler that ran says
+    // something of its own, or succeeds.
+    const unmatched =
+      response.status === 404 && body.error?.message === 'The requested resource does not exist.';
+    expect(
+      unmatched,
+      `${method.toUpperCase()} ${route} answered ${response.status} with the framework's own ` +
+        'not-found message — no handler matched',
+    ).toBe(false);
+    expect(body.error?.code !== undefined || response.status < 300).toBe(true);
   });
 
   it('answers an unowned route differently from an owned one, or the check above is vacuous', async () => {

@@ -154,16 +154,24 @@ describe('T403v · FR-RQR-001 — a Room object runs its own type’s stages, an
     expect(moved.outcome).toBe('accepted');
   });
 
-  it('a Requirement Room object reports the other Room’s stages as OMITTED, not absent', async () => {
-    // `FR-GEL-008`. A reader comparing two Rooms must see that this workflow has
-    // no Execute stage — not wonder where the row went.
-    const loop = engine();
-    const ref = await declare(loop, 'requirement-room');
-    const progress = await loop.progressOf(ACTING, ref.objectId);
-    const execute = progress.find((row) => row.stage === 'Execute');
-    expect(execute, 'Execute vanished instead of being marked omitted').toBeDefined();
-    expect(execute?.omitted).toBe(true);
-  });
+  it.each(['Execute', 'Verify'] as const)(
+    '`%s` renders as OMITTED, not absent (T405i)',
+    async (stage) => {
+      // `FR-GEL-008`, `R-033-6`. Both stages, because the Requirement Room omits
+      // both and a test naming only one would pass a projection that dropped the
+      // other. A reader comparing two Rooms must see that this workflow has no
+      // Execute stage — not wonder where the row went.
+      const loop = engine();
+      const ref = await declare(loop, 'requirement-room');
+      const progress = await loop.progressOf(ACTING, ref.objectId);
+      const row = progress.find((r) => r.stage === stage);
+      expect(row, `${stage} vanished instead of being marked omitted`).toBeDefined();
+      expect(row?.omitted).toBe(true);
+      // An omitted stage is `pending` forever — `FR-GEL-008` keeps *omitted* and
+      // *how far has this got* as two facts rather than one.
+      expect(row?.status).toBe('pending');
+    },
+  );
 
   it('the object’s own stages are NOT omitted — or the flag means nothing', async () => {
     const loop = engine();
