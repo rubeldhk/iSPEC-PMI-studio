@@ -636,6 +636,21 @@ export class ApiClient {
     return this.request('GET', `/loop/objects/${encodeURIComponent(roomObjectId)}/progress`);
   }
 
+  /**
+   * `T1169` — open a Requirement Room and take its first intent in one call.
+   *
+   * `workspaceId` is deliberately not a parameter, for the reason `loopProgress`
+   * gives: since `T1148` the server takes it from the session, and passing one
+   * would be a caller naming its own tenant.
+   */
+  async openRequirementRoom(input: {
+    projectId: string;
+    text: string;
+    sourceRef?: string;
+  }): Promise<{ roomObjectId: string }> {
+    return this.request('POST', '/rooms/requirement', input);
+  }
+
   async roomReadiness(roomObjectId: string, projectId: string): Promise<Readiness> {
     const query = new URLSearchParams({ projectId }).toString();
     return this.request(
