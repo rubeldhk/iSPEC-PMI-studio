@@ -79,6 +79,25 @@ adapter in every closed epic; that remains the wider deferral.
 - [X] T1115 Verify boot-time dependency resolution and that **no** production provider resolves to an in-memory, unconfigured, null, fake or stub implementation *(test: `adjudication-composition.spec.ts` — "binds NO production port to an in-memory or unconfigured double")*
 - [X] T1116 Run the end-to-end adjudication/application scenario against the real `AppModule` and real PostgreSQL, including persistence across an application restart *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts`)*
 
+
+**`T1178` added 2026-08-29, and the wider deferral is now measured.** The note above says these
+tasks *"do not replace every in-memory adapter in every closed epic; that remains the wider
+deferral."* A human walking the Requirement Room found what that deferral costs: `GET /v1/projects`
+returned rows while `SELECT count(*) FROM projects` returned **0**. Nothing a user created survived
+a restart.
+
+Measured across the application: **thirteen** modules default to an in-memory store — `decisions`,
+`dependencies`, `loop`, `projects`, `requirement-room`, `requirements`, `review`, `runs`,
+`specifications`, `steering`, `storage`, `tasks`, `traceability` — and **none** was overridden at the
+composition root. Only **three** of those thirteen have a `Prisma*Store` written for the interface
+they default: `PrismaProjectStore`, `PrismaRequirementStore`, `PrismaRequirementVersionStore`. Every
+table exists in the schema; the adapters do not.
+
+`T1178` wires the three that exist, which is composition-root work and therefore this Epic's. **The
+other ten are domain persistence and remain their own Epics' work** under the C2C decision recorded
+above — this task does not widen that boundary, it measures it.
+
+- [X] T1178 Wire the three existing Prisma stores at the composition seam — `PROJECT_STORE`, `REQUIREMENT_STORE`, `REQUIREMENT_VERSION_STORE`, each deciding on `DATABASE_URL` exactly as `AuthModule.register` decides its directory, so the in-memory store remains the unit-test default *(verified: a project created through the API is present in `pmi_studio.projects` and survives `docker compose restart app`)*
 ## F-11.3 · Containerised local deployment
 
 *Added 2026-08-24 by [`D-45`](./decisions/D-45-containerised-local-deployment-lands-in-epic-014.md).
