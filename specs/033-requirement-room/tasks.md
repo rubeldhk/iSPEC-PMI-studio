@@ -303,8 +303,9 @@ capability, and it does not exist.
 > no candidates yet, and would take its stage from somewhere other than the loop — which is
 > `FR-RQR-074`'s Room-local translation, forbidden.
 >
-> **Requires separate authorisation against `EPIC-030`.** `T1170`–`T1171` below are written against
-> the capability and are blocked until it exists.
+> **CLOSED 2026-08-28.** Authorised and built as `EPIC-030` `T1176`–`T1177`:
+> `LoopStore.listObjects` and `LoopService.listObjects`, workspace resolved from the principal rather
+> than passed. `T1170`–`T1171` are **unblocked**.
 
 ### Stage handlers are this Epic's, and use the seam that already exists
 
@@ -319,8 +320,8 @@ handlers through that seam rather than changing `EPIC-030`.
 - [X] T1167 [US1] Implement `POST /rooms/requirement` in `requirement-room.controller.ts` and `intake.service.ts` (integration test: T1166) — workspace and actor from the session per `T1148`, never the body
 - [X] T1168 [P] [US1] Write failing component tests for the intake screen in `frontend/tests/unit/pages/RequirementIntake.spec.tsx` — a textarea for unstructured intent, a source label, submit disabled while empty, the refusal rendered in place rather than as a toast that vanishes, and the whole form reachable and submittable **by keyboard alone** (`SC-RQR-008`)
 - [X] T1169 [US1] Implement `frontend/src/pages/RequirementIntake.tsx` and its `api.openRequirementRoom` client method in `frontend/src/services/api.ts` (component test: T1168) — on success, navigate to the new Room
-- [ ] T1170 [P] [US6] Write failing component tests for the **shared** Rooms index in `frontend/tests/unit/rooms/RoomIndex.spec.tsx` — lists a workspace's Room objects with stage and last activity, an empty state that offers the way in rather than saying "no results", and a keyboard-navigable list. Parameterised by Room kind, because `EPIC-034` and `EPIC-035` inherit it exactly as they inherit `RoomShell` (`T405d`). **Blocked by `X20`**
-- [ ] T1171 [US6] Implement `frontend/src/rooms/RoomIndex.tsx` beside `RoomShell.tsx` (component test: T1170), consuming `EPIC-030`'s list through a new `GET /rooms/requirement` — stage read from the loop projection, never re-derived here (`FR-RQR-074`). **Blocked by `X20`**
+- [ ] T1170 [P] [US6] Write failing component tests for the **shared** Rooms index in `frontend/tests/unit/rooms/RoomIndex.spec.tsx` — lists a workspace's Room objects with stage and last activity, an empty state that offers the way in rather than saying "no results", and a keyboard-navigable list. Parameterised by Room kind, because `EPIC-034` and `EPIC-035` inherit it exactly as they inherit `RoomShell` (`T405d`)
+- [ ] T1171 [US6] Implement `frontend/src/rooms/RoomIndex.tsx` beside `RoomShell.tsx` (component test: T1170), consuming `EPIC-030`'s list through a new `GET /rooms/requirement` — stage read from the loop projection, never re-derived here (`FR-RQR-074`), via `EPIC-030`'s `listObjects` (`T1177`)
 - [ ] T1172 [US6] *(partly done — `/requirement-room/intake` was routed with `T1169`, because `T200a` refuses an unrouted page; the area `element` and the status promotion remain)* Register the area: give the `requirement-room` entry in `frontend/src/shell/areas.ts` an `element`, add the adapter to `frontend/src/shell/area-views.tsx`, and route `/requirement-room/intake` (unit + integration tests: T1173). Promote `status` from `declared-not-delivered` **only because the landing now renders** — the note in that file forbids the reverse order
 - [ ] T1173 [US6] Extend `frontend/tests/unit/shell/areas.spec.ts` and `backend/tests/integration/requirement-room-reachability.spec.ts` to cover the two new routes (integration test rebuilt at `T405e` — its message discriminator must catch an unregistered index, so add the mutation observation)
 - [ ] T1174 [US1] Run [quickstart.md](./quickstart.md) **Scenario 13** end to end by keyboard against the running application and record the transcript at `specs/033-requirement-room/tier2-transcript.md` — the artifact `R-033-8` requires. Records what was typed, what was focused, and what was seen, or it does not discharge the criterion

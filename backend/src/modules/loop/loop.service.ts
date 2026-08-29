@@ -28,7 +28,7 @@ import { NotFoundError, UnauthenticatedError, ValidationFailedError } from '../.
 import { assertSameWorkspace } from '../../core/workspace.guard.js';
 import type { ResolvedLoopConfig } from './loop-config.loader.js';
 import type { LoopConfigRegistry } from './config-registry.js';
-import type { LoopStore, LoopTransitionRow } from './loop.store.js';
+import type { LoopObjectRow, LoopStore, LoopTransitionRow } from './loop.store.js';
 import { TransitionWriter } from './transition-writer.js';
 import type { AuthorityMap } from './authority.js';
 import { projectFor } from './progress.projection.js';
@@ -316,6 +316,31 @@ export class LoopService {
    * object from these with `currentStage` withheld, which is the property this
    * ordering exists to support.
    */
+  /**
+   * `X20` (`T1177`) — the objects of one workflow type in the caller's workspace.
+   *
+   * **There is no workspace parameter, and that is the design.** `EPIC-033`'s
+   * Rooms index is a list, and a list is the one read where a forgotten scope
+   * filter returns *more rows* instead of failing — it looks like it works.
+   * `DEF-030-003` found three read routes that took an object id and nothing
+   * else; this one cannot be called wrongly because the workspace is resolved,
+   * never passed.
+   *
+   * The workflow type is **validated against the registry** before anything is
+   * read. Without that, a caller could enumerate which types exist by watching
+   * which names return an empty list rather than an error.
+   */
+  async listObjects(
+    principal: LoopPrincipal,
+    workflowType: string,
+  ): Promise<readonly LoopObjectRow[]> {
+    const actor = await this.#acting(principal);
+    // Throws for a type the registry does not declare — `require` has no
+    // nullable variant, which is what `FR-GEL-004` relies on elsewhere too.
+    this.configs.require(workflowType);
+    return this.store.listObjects({ workspaceId: actor.workspaceId, workflowType });
+  }
+
   async history(
     principal: LoopPrincipal,
     objectId: string,

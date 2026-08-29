@@ -234,6 +234,29 @@ escalation path, it did not configure the loop.
 
 ---
 
+## Phase X20: `LoopStore` can list (consumer-driven, 2026-08-28)
+
+**Why**: `EPIC-033`'s Rooms index needs *"the `requirement-room` objects in this workspace, with
+their stage"*. `LoopStore` had `createObject` and `findObject` and nothing else, so the only way to
+reach an object was to already know its id. Recorded as `X20` when `EPIC-033` Phase 9 was drafted,
+authorised separately, and built here because the capability is this Epic's.
+
+The fourth dependency found this way, after `X7`, `X8` and `Y2` — each surfaced by a consumer trying
+to use something that had never existed, and each belonging to an Epic that closed without it.
+
+- [X] T1176 [P] Write the failing tests for workspace-scoped listing in `backend/tests/integration/loop-list-objects.spec.ts` — filters by type, **never returns another workspace's objects**, refuses an unknown type and an unresolvable principal, newest first
+- [X] T1177 Implement `LoopStore.listObjects` and `LoopService.listObjects` (integration test: T1176) — the workspace filter lives in the store's `where`, and the service takes **no workspace parameter**: it is resolved from the principal, so the call cannot be made wrongly
+
+**Mutation-proved**: dropping the workspace filter — the shape a *"filter it in the caller"* refactor
+would leave — fails the cross-workspace test with
+`expected [ 'sub_mine', 'sub_theirs' ] to deeply equal [ 'sub_mine' ]`.
+
+A list is the one read where a forgotten scope filter returns **more rows instead of failing**, so
+it looks like it works. `DEF-030-003` found three read routes that took an object id and no
+workspace; this one was written so the mistake is not available.
+
+---
+
 ## Phase N: Polish & Cross-Cutting Concerns
 
 **Purpose**: the measurements and mutation proofs the Epic is judged on

@@ -68,9 +68,38 @@ export interface AdvanceInput {
   readonly toStage: LoopStage;
 }
 
+/** `X20` — what a caller may narrow a listing by. */
+export interface ListObjectsQuery {
+  /**
+   * **Required, and first.** A list is the one read where a forgotten filter
+   * returns more rather than failing, so the workspace is not optional and not
+   * applied by the caller afterwards (`DEF-030-003`).
+   */
+  readonly workspaceId: string;
+  readonly workflowType: string;
+  /** Bounded by default — an index must not depend on a workspace staying small. */
+  readonly limit?: number;
+}
+
+/** `X20`. Generous, and a cap rather than a page — paging is `T1066`'s. */
+export const DEFAULT_LIST_LIMIT = 200;
+
 export interface LoopStore {
   createObject(input: CreateObjectInput): Promise<LoopObjectRow>;
   findObject(id: string): Promise<LoopObjectRow | null>;
+  /**
+   * `X20` — the objects of one workflow type in one workspace, newest first.
+   *
+   * Added for `EPIC-033`'s Rooms index, which had no way to reach a Room without
+   * already knowing its id. The alternative — listing from the Room's own
+   * `roomObjectId` column — would miss a Room with no candidates yet and would
+   * source the stage from outside the loop, which `FR-RQR-074` forbids.
+   *
+   * The Prisma implementation is a `findMany` with both fields in the `where`,
+   * never a `findMany` filtered in application code: the filter belongs where it
+   * cannot be forgotten by the next caller.
+   */
+  listObjects(query: ListObjectsQuery): Promise<readonly LoopObjectRow[]>;
   /**
    * `R-030-1` — conditional advance. Returns the updated row, or **null** when
    * the version moved.
@@ -116,6 +145,17 @@ export class InMemoryLoopStore implements LoopStore {
     };
     this.#objects.set(row.id, row);
     return row;
+  }
+
+  async listObjects(query: ListObjectsQuery): Promise<readonly LoopObjectRow[]> {
+    const limit = query.limit ?? DEFAULT_LIST_LIMIT;
+    return [...this.#objects.values()]
+      .filter(
+        (row) =>
+          row.workspaceId === query.workspaceId && row.workflowType === query.workflowType,
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
   }
 
   async findObject(id: string): Promise<LoopObjectRow | null> {
