@@ -428,3 +428,20 @@ in-memory since `T338b` and nothing ever replaced it.*
 
 - [X] T1181 [P] Write the failing integration tests for the persistent Room store in `backend/tests/integration/requirement-room-prisma-store.spec.ts` — candidates, clarifications, decisions, baselines, exceptions and handoffs, including version allocation from the highest version and a superseded baseline that remains readable (`FR-RQR-052`)
 - [X] T1182 Implement `PrismaRequirementRoomStore` in `backend/src/modules/requirement-room/requirement-room.store.prisma.ts` and wire it at the seam on `DATABASE_URL` (integration test: T1181) — its own file, following `reviews/gate.store.prisma.ts`, so unit tests do not load the generated client
+
+## Phase 10: The Room is operable *(added 2026-08-29)*
+
+**Why this phase exists.** The owner opened the Room and found nothing to do in it. Phases 3–7 built
+every capability and named only `backend/` paths; Phase 8 built the shell. Between them, no task
+ever put a control on the screen — so `RequirementRoom.tsx` fetched progress and readiness and
+rendered prose over data a person could not act on.
+
+Four capabilities were also unreachable at the transport: the store has listed candidates and
+clarifications, set criteria and recorded answers since Phase 3, and none had a route.
+
+- [X] T1183 [P] [US1] Write failing integration tests for the four missing routes in `backend/tests/integration/requirement-room-journey-routes.spec.ts` — candidates, criteria, clarifications, answers; each scoped by the session and refusing another Room's candidate by the opaque 404
+- [X] T1184 [US1] Implement `GET :id/candidates`, `POST :id/candidates/:candidateId/criteria`, `GET :id/clarifications` and `POST :id/clarifications/:clarificationId/answer` in the controller and service (integration test: T1183) — the answerer is the session, never the body
+- [X] T1185 [P] [US1] Write failing component tests for the candidates region in `frontend/tests/unit/rooms/regions/Candidates.spec.tsx` — epistemic labels, the "candidate not requirement" wording, the criteria form, and the blocking state
+- [X] T1186 [US1] Implement `frontend/src/rooms/regions/Candidates.tsx` (component test: T1185) — native `<form>`/`<input>`/`<button>`, so Enter submits without a key handler (`SC-RQR-008`)
+- [X] T1187 [P] [US2] Write failing component tests for the clarifications region in `frontend/tests/unit/rooms/regions/Clarifications.spec.tsx` — the whole set at once (`FR-RQR-012`), answerable in place, and an answered question retained with its answer (`FR-RQR-013`)
+- [X] T1188 [US2] Implement `frontend/src/rooms/regions/Clarifications.tsx` and wire both regions into `RequirementRoom.tsx`, extending `RequirementRoomApi` with the four methods (component test: T1187) — a write re-reads readiness rather than patching local state, so a cleared blocker really clears

@@ -334,6 +334,33 @@ export interface RoomSummary {
   readonly createdAt: string;
 }
 
+
+import type { Epistemic } from '@pmi/room-contract';
+
+/** `T1185` — a Room candidate as the wire carries it. */
+export interface RoomCandidate {
+  readonly id: string;
+  readonly roomObjectId: string;
+  readonly sourceRef: string;
+  readonly normalizedText: string;
+  /** The contract's union, not a restatement — `EPISTEMIC_KINDS` is authoritative. */
+  readonly epistemic: Epistemic;
+  readonly promotedTo: string | null;
+  readonly acceptanceCriteria: readonly string[] | null;
+  readonly intendedForImplementation: boolean;
+}
+
+/** `T1187` — a clarification, answered or not. */
+export interface RoomClarification {
+  readonly id: string;
+  readonly roomObjectId: string;
+  readonly candidateId: string | null;
+  readonly question: string;
+  readonly answer: string | null;
+  readonly answeredBy: string | null;
+  readonly blocksBaseline: boolean;
+}
+
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -652,6 +679,51 @@ export class ApiClient {
    * gives: since `T1148` the server takes it from the session, and passing one
    * would be a caller naming its own tenant.
    */
+  /**
+   * `T1185` — the candidates a Room holds, with their epistemic labels.
+   *
+   * `RoomCandidate` deliberately has no `description`, `type` or `priority`:
+   * `FR-RQR-002` and `D-33` keep requirement text in `EPIC-007`'s register, and
+   * a client type carrying those fields is how a local cache starts.
+   */
+  async roomCandidates(roomObjectId: string): Promise<RoomCandidate[]> {
+    return this.request('GET', `/rooms/requirement/${encodeURIComponent(roomObjectId)}/candidates`);
+  }
+
+  /** `T1185` — `FR-RQR-030`. `null` clears, and clearing blocks baseline again. */
+  async setCandidateCriteria(
+    roomObjectId: string,
+    candidateId: string,
+    input: { acceptanceCriteria: readonly string[] | null; intendedForImplementation: boolean },
+  ): Promise<RoomCandidate> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/candidates/${encodeURIComponent(candidateId)}/criteria`,
+      input,
+    );
+  }
+
+  /** `T1187` — the questions raised for a Room, answered or not. */
+  async roomClarifications(roomObjectId: string): Promise<RoomClarification[]> {
+    return this.request(
+      'GET',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/clarifications`,
+    );
+  }
+
+  /** `T1187` — answered in place. Who answered comes from the session. */
+  async answerClarification(
+    roomObjectId: string,
+    clarificationId: string,
+    answer: string,
+  ): Promise<RoomClarification> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/clarifications/${encodeURIComponent(clarificationId)}/answer`,
+      { answer },
+    );
+  }
+
   async openRequirementRoom(input: {
     projectId: string;
     text: string;

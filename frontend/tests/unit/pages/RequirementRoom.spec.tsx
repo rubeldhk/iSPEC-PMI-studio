@@ -36,6 +36,12 @@ function api(over: Partial<RequirementRoomApi> = {}): RequirementRoomApi {
   return {
     loopProgress: vi.fn().mockResolvedValue(PROGRESS),
     roomReadiness: vi.fn().mockResolvedValue(READINESS),
+  // `T1188` — the journey's four. Resolved empty here: these suites are about
+  // the Room's shell, access posture and accessibility, not its content.
+  roomCandidates: vi.fn().mockResolvedValue([]),
+  setCandidateCriteria: vi.fn().mockResolvedValue({}),
+  roomClarifications: vi.fn().mockResolvedValue([]),
+  answerClarification: vi.fn().mockResolvedValue({}),
     ...over,
   };
 }

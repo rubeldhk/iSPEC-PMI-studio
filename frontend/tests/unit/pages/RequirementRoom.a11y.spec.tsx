@@ -28,6 +28,12 @@ const api: RequirementRoomApi = {
     ready: false,
     blockers: [{ kind: 'pending-decision', subject: 'REQ-004', detail: 'Nobody has decided.' }],
   }),
+  // `T1188` — the journey's four. Resolved empty here: this suite is about the
+  // Room's accessibility, not its content.
+  roomCandidates: vi.fn().mockResolvedValue([]),
+  setCandidateCriteria: vi.fn().mockResolvedValue({}),
+  roomClarifications: vi.fn().mockResolvedValue([]),
+  answerClarification: vi.fn().mockResolvedValue({}),
 };
 
 const open = () =>
@@ -44,7 +50,15 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
     // The state a person meets first, and the one most often left untested.
     const { container } = render(
       <RequirementRoomPage
-        api={{ loopProgress: vi.fn().mockReturnValue(new Promise(() => {})), roomReadiness: vi.fn().mockReturnValue(new Promise(() => {})) }}
+        api={{
+          // Never resolves: the loading state is the one a person meets first.
+          loopProgress: vi.fn().mockReturnValue(new Promise(() => {})),
+          roomReadiness: vi.fn().mockReturnValue(new Promise(() => {})),
+          roomCandidates: vi.fn().mockReturnValue(new Promise(() => {})),
+          setCandidateCriteria: vi.fn().mockReturnValue(new Promise(() => {})),
+          roomClarifications: vi.fn().mockReturnValue(new Promise(() => {})),
+          answerClarification: vi.fn().mockReturnValue(new Promise(() => {})),
+        }}
         roomObjectId="ro_1"
         projectId="pr_1"
       />,
@@ -58,6 +72,12 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
         api={{
           loopProgress: vi.fn().mockRejectedValue(new Error('no')),
           roomReadiness: vi.fn().mockRejectedValue(new Error('no')),
+  // `T1188` — the journey's four. Resolved empty here: these suites are about
+  // the Room's shell, access posture and accessibility, not its content.
+  roomCandidates: vi.fn().mockResolvedValue([]),
+  setCandidateCriteria: vi.fn().mockResolvedValue({}),
+  roomClarifications: vi.fn().mockResolvedValue([]),
+  answerClarification: vi.fn().mockResolvedValue({}),
         }}
         roomObjectId="ro_1"
         projectId="pr_1"

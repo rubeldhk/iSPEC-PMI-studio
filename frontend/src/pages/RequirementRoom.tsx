@@ -22,6 +22,9 @@ import type { LoopProgress as LoopProgressRow } from '@pmi/loop-contract';
 import { RoomShell } from '../rooms/RoomShell';
 import { LoopProgress } from '../rooms/regions/LoopProgress';
 import { Blockers, type Readiness } from '../rooms/regions/Blockers';
+import { Candidates } from '../rooms/regions/Candidates';
+import { Clarifications } from '../rooms/regions/Clarifications';
+import type { RoomCandidate, RoomClarification } from '../services/api';
 
 /**
  * What this page needs, and nothing more.
@@ -40,6 +43,26 @@ export interface RequirementRoomApi {
    * two names would be doing precisely that.
    */
   roomReadiness(roomObjectId: string, projectId: string): Promise<Readiness>;
+  /**
+   * `T1188` — the four the journey needs, named to match `ApiClient` for the
+   * same reason as above.
+   *
+   * Still nothing that decides or approves: setting a criterion and answering a
+   * question are a person recording what they mean, and `EPIC-030` remains the
+   * only thing that adjudicates a transition.
+   */
+  roomCandidates(roomObjectId: string): Promise<readonly RoomCandidate[]>;
+  setCandidateCriteria(
+    roomObjectId: string,
+    candidateId: string,
+    input: { acceptanceCriteria: readonly string[] | null; intendedForImplementation: boolean },
+  ): Promise<RoomCandidate>;
+  roomClarifications(roomObjectId: string): Promise<readonly RoomClarification[]>;
+  answerClarification(
+    roomObjectId: string,
+    clarificationId: string,
+    answer: string,
+  ): Promise<RoomClarification>;
 }
 
 export interface RequirementRoomPageProps {
@@ -63,6 +86,10 @@ export function RequirementRoomPage({
 }: RequirementRoomPageProps): ReactElement {
   const [progress, setProgress] = useState<Loaded<readonly LoopProgressRow[]>>(PENDING);
   const [readiness, setReadiness] = useState<Loaded<Readiness>>(PENDING);
+  // `T1188` — the two the journey runs through. Held here rather than inside
+  // each region so an edit in one refreshes what the other blocks on.
+  const [candidates, setCandidates] = useState<readonly RoomCandidate[]>([]);
+  const [clarifications, setClarifications] = useState<readonly RoomClarification[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -88,10 +115,39 @@ export function RequirementRoomPage({
             })
           : undefined,
       );
+    void api
+      .roomCandidates(roomObjectId)
+      .then((rows) => live && setCandidates(rows))
+      .catch(() => undefined);
+    void api
+      .roomClarifications(roomObjectId)
+      .then((rows) => live && setClarifications(rows))
+      .catch(() => undefined);
     return (): void => {
       live = false;
     };
   }, [api, roomObjectId, projectId]);
+
+  /**
+   * `T1188` — after a write, re-read rather than patching local state.
+   *
+   * Answering a clarification or adding a criterion changes what is **blocking**,
+   * and that is computed server-side by the readiness projection. Editing the
+   * local array would leave the Evidence region showing a blocker that no longer
+   * exists, which is the one thing `UX-0032` asks this screen not to do.
+   */
+  const refresh = async (): Promise<void> => {
+    const [nextCandidates, nextClarifications] = await Promise.all([
+      api.roomCandidates(roomObjectId),
+      api.roomClarifications(roomObjectId),
+    ]);
+    setCandidates(nextCandidates);
+    setClarifications(nextClarifications);
+    await api
+      .roomReadiness(roomObjectId, projectId)
+      .then((value) => setReadiness({ value, error: undefined }))
+      .catch(() => undefined);
+  };
 
   useEffect(() => {
     // `T403t` — focus lands on the heading when the Room opens, so a keyboard
@@ -136,11 +192,28 @@ export function RequirementRoomPage({
               Analysis is labelled by epistemic status. Nothing here is a recorded fact until a
               person decides it is.
             </p>
+            <Candidates
+              candidates={candidates}
+              onSetCriteria={async (candidateId, criteria, intended): Promise<void> => {
+                await api.setCandidateCriteria(roomObjectId, candidateId, {
+                  acceptanceCriteria: criteria,
+                  intendedForImplementation: intended,
+                });
+                await refresh();
+              }}
+            />
           </div>
         }
         decision={
           <div>
             <h2>Decision</h2>
+            <Clarifications
+              clarifications={clarifications}
+              onAnswer={async (clarificationId, answer): Promise<void> => {
+                await api.answerClarification(roomObjectId, clarificationId, answer);
+                await refresh();
+              }}
+            />
             <p>A requirement decision is taken by an authorized person, and records what was not chosen.</p>
           </div>
         }

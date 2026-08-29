@@ -113,6 +113,48 @@ export class RequirementRoomController {
     return this.room.gapIntake(requireAuth(ctx), strip<GapIntakeCommand>(body));
   }
 
+  /** `T1184` — what intake made of a person's intent. */
+  @Get('rooms/requirement/:id/candidates')
+  candidates(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string): Promise<unknown> {
+    return this.room.candidates(requireAuth(ctx), id);
+  }
+
+  /**
+   * `T1184` — `FR-RQR-030`.
+   *
+   * `POST` rather than `PATCH`, matching every other write on this controller.
+   * The Room's history is its decisions and baselines, not a diff of a row.
+   */
+  @Post('rooms/requirement/:id/candidates/:candidateId/criteria')
+  setCriteria(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Param('candidateId') candidateId: string,
+    @Body() body: { acceptanceCriteria?: readonly string[] | null; intendedForImplementation?: boolean },
+  ): Promise<unknown> {
+    return this.room.setCriteria(requireAuth(ctx), id, candidateId, body ?? {});
+  }
+
+  /** `T1184` — the questions raised, answered or not. */
+  @Get('rooms/requirement/:id/clarifications')
+  listClarifications(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    return this.room.listClarifications(requireAuth(ctx), id);
+  }
+
+  /** `T1184` — `FR-RQR-012`, `FR-RQR-013`. Answered in place; retained. */
+  @Post('rooms/requirement/:id/clarifications/:clarificationId/answer')
+  answerClarification(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Param('clarificationId') clarificationId: string,
+    @Body() body: { answer?: string },
+  ): Promise<unknown> {
+    return this.room.answerClarification(requireAuth(ctx), id, clarificationId, body ?? {});
+  }
+
   @Post('rooms/requirement/:id/clarifications')
   clarifications(
     @Req() ctx: WorkspaceContext | undefined,

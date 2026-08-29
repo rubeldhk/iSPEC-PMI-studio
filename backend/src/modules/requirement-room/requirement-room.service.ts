@@ -18,7 +18,7 @@
  * answered.
  */
 import { randomUUID } from 'node:crypto';
-import { UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
+import { NotFoundError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { AnalysisResult, AnalysisService } from './analysis.service.js';
 import type {
   ApproveBaselineInput,
@@ -367,6 +367,99 @@ export class RequirementRoomService {
    * `ClarificationService` nothing can reach would be the unwired-capability
    * defect this Epic cites `EPIC-031`'s `C2` for.*
    */
+  /**
+   * `T1184` — the candidates a Room holds.
+   *
+   * The store has listed these since `T338b`; nothing exposed them, so no screen
+   * could show a person what their intent became. Scoped by the session's
+   * workspace **in the query**, not filtered afterwards.
+   */
+  async candidates(principal: ActingPrincipal, roomObjectId: string): Promise<CandidateRow[]> {
+    const actor = await this.acting(principal);
+    if (!roomObjectId) {
+      throw new ValidationFailedError('candidates require a Room object id in the path');
+    }
+    return this.store.listCandidates(actor.workspaceId, roomObjectId);
+  }
+
+  /**
+   * `T1184` — `FR-RQR-030`. Measurable criteria, or the baseline gate refuses.
+   *
+   * `null` and `[]` are the same state and both block, so both are accepted
+   * here: clearing criteria is a legitimate act, not a malformed request.
+   */
+  async setCriteria(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+    candidateId: string,
+    input: {
+      acceptanceCriteria?: readonly string[] | null;
+      intendedForImplementation?: boolean;
+    },
+  ): Promise<CandidateRow> {
+    const actor = await this.acting(principal);
+    const candidate = await this.store.findCandidateById(candidateId);
+    // The Room in the path must own the candidate, and both must be the
+    // caller's. Absent rather than forbidden — a caller learns nothing about a
+    // candidate it may not see (`FR-ACC-024`).
+    if (
+      !candidate ||
+      candidate.workspaceId !== actor.workspaceId ||
+      candidate.roomObjectId !== roomObjectId
+    ) {
+      throw new NotFoundError('Not found.');
+    }
+    return this.store.setCandidateCriteria(candidateId, {
+      acceptanceCriteria: input.acceptanceCriteria ?? null,
+      intendedForImplementation: input.intendedForImplementation ?? true,
+    });
+  }
+
+  /** `T1184` — the questions raised for a Room, answered or not. */
+  async listClarifications(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+  ): Promise<ClarificationRow[]> {
+    const actor = await this.acting(principal);
+    if (!roomObjectId) {
+      throw new ValidationFailedError('clarifications require a Room object id in the path');
+    }
+    return this.store.listClarifications(actor.workspaceId, roomObjectId);
+  }
+
+  /**
+   * `T1184` — `FR-RQR-012`, `FR-RQR-013`.
+   *
+   * Answerable in place, and the answer is **retained** as part of the record.
+   * Who answered is the session, never a name the body chose — the same rule
+   * `DEF-033-001` was raised over.
+   */
+  async answerClarification(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+    clarificationId: string,
+    input: { answer?: string },
+  ): Promise<ClarificationRow> {
+    const actor = await this.acting(principal);
+    const answer = (input?.answer ?? '').trim();
+    if (answer === '') {
+      throw new ValidationFailedError('an answer requires: answer');
+    }
+    const existing = await this.store.findClarificationById(clarificationId);
+    if (
+      !existing ||
+      existing.workspaceId !== actor.workspaceId ||
+      existing.roomObjectId !== roomObjectId
+    ) {
+      throw new NotFoundError('Not found.');
+    }
+    return this.store.answerClarification(clarificationId, {
+      answer,
+      answeredBy: actor.id,
+      answeredAt: new Date(),
+    });
+  }
+
   async clarifications(
     principal: ActingPrincipal,
     roomObjectId: string,

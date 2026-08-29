@@ -24,6 +24,12 @@ afterEach(cleanup);
 const api: RequirementRoomApi = {
   loopProgress: vi.fn().mockResolvedValue([]),
   roomReadiness: vi.fn().mockResolvedValue({ ready: true, blockers: [] }),
+  // `T1188` — the journey's four. Resolved empty here: these suites are about
+  // the Room's shell, access posture and accessibility, not its content.
+  roomCandidates: vi.fn().mockResolvedValue([]),
+  setCandidateCriteria: vi.fn().mockResolvedValue({}),
+  roomClarifications: vi.fn().mockResolvedValue([]),
+  answerClarification: vi.fn().mockResolvedValue({}),
 };
 
 const open = () => render(<RequirementRoomPage api={api} roomObjectId="ro_1" projectId="pr_1" />);
