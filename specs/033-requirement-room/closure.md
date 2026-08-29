@@ -3,8 +3,9 @@
 **Task**: `T405x` · **Written**: 2026-08-29 · **Head**: `5747a49` (plus this commit)
 **Branch**: `checkpoint/constitution-xii-steps-a-b`, unmerged, not pushed
 
-**Status**: **NOT CLOSED.** One task remains open and one success criterion is half-met. Both are
-named below rather than rounded away.
+**Status**: **NOT CLOSED.** One task remains open and one success criterion is **unmet**. See the
+Correction below, which supersedes the two sections it contradicts — they are kept as written so the
+record shows what was claimed and what a human found.
 
 ---
 
@@ -43,6 +44,42 @@ Four dependencies were found by trying to use capabilities that had never existe
 - **`DEF-033-001`** — the Room's approver, decider and actor kind were caller-supplied strings.
 - **`DEF-030-003`** — `EPIC-030`'s transition caller supplied its own *authorities*.
 
+## Correction — 2026-08-29, after a human walked the journey
+
+**This report previously said `SC-RQR-008` was half-met and awaiting only a keyboard confirmation.
+That was wrong, and the owner found it by using the application.**
+
+Three things are true that this report did not say:
+
+**1. The journey cannot be completed at all.** `RequirementRoom.tsx` is 180 lines with no `<form>`,
+`<button>`, `<textarea>` or `<input>`. It fetches loop progress and readiness and renders prose. A
+person can open a Room and look at six regions; they cannot enter a requirement, answer a
+clarification, add acceptance criteria, take a decision, or approve a baseline. The Tier 2 run I
+recorded reached the Room screen and stopped, and I described the remainder as a keyboard-activation
+question. It is not: there is nothing to activate.
+
+**2. The interactive UI was never tasked.** Every frontend path named across this Epic's 102 tasks
+is one of twelve files — the shell, the Room page, the intake screen, the index, three regions, and
+the API client. There is no task for a candidate list, a criteria editor, a clarification form, a
+decision surface, or a baseline control. The backend for all of it exists and is tested; nothing
+exposes it. Phases 3–7 name only `backend/` paths.
+
+**3. Nothing persists.** Thirteen modules default to in-memory stores — `projects`, `requirements`,
+`specifications`, `tasks`, `decisions`, `runs`, `loop`, `requirement-room` among them — and **none
+is overridden at the composition root**, though eleven `Prisma*Store` classes exist for the purpose.
+Measured: `SELECT count(*) FROM projects` in `pmi_studio` returns **0** while `GET /v1/projects`
+returns rows. Every module's comment says the composition root overrides it. None does.
+
+So the Tier 2 evidence in this report describes a journey over state that disappears when the
+container restarts.
+
+**What still stands**: everything measured about structure — Tab order, focus visibility, native
+controls, the six regions, the mutation proofs, the performance figures, and every backend test.
+What does not stand is the claim that the journey is nearly complete.
+
+`SC-RQR-008` is **unmet**, not half-met. `T405o` is blocked on work that was never scheduled, not on
+a human pressing Enter.
+
 ## Work deferred — never reported as complete
 
 ### `T405o` — Constitution XI Tier 2 — **OPEN**
@@ -59,13 +96,14 @@ and a browser will not synthesise a click from those. A pointer click on the sam
 immediately, which is what separates *the tool cannot press Enter* from *the application cannot be
 operated by keyboard*. Only the first is true.
 
-**Remaining**: a person walks the five screens and confirms Enter and Space activate what Tab
-reaches. Everything structural that pass depends on is measured and committed.
+**Remaining** *(superseded by the Correction)*: this said a person need only confirm Enter and Space
+activate what Tab reaches. In fact the Room screen offers nothing to activate — the interactive UI
+for candidates, clarifications, criteria, decisions and baseline was never built or tasked.
 
-### `SC-RQR-008` — half-met
+### `SC-RQR-008` — **unmet** *(this heading said "half-met"; see the Correction)*
 
-Recorded in [quickstart-results.md](./quickstart-results.md) `T1175`. Same substance as above; it is
-the criterion `T405o` serves.
+Recorded in [quickstart-results.md](./quickstart-results.md) `T1175`. The keyboard-activation gap
+described there is real but secondary: the journey has no interactive UI to operate at all.
 
 ### Promotion beyond `local` — not performed
 
