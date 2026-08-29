@@ -68,6 +68,16 @@ export class RequirementRoomController {
    * Deliberately **not** under `/rooms/requirement/:id/`: there is no id yet,
    * which is the whole point. `intake` joins an existing Room; this one opens.
    */
+  /**
+   * `T1171` — the workspace's Rooms, for the index at `/requirement-room`.
+   *
+   * `GET` on the same path `POST` opens one at: a collection and its creation.
+   */
+  @Get('rooms/requirement')
+  listRooms(@Req() ctx: WorkspaceContext | undefined): Promise<unknown> {
+    return this.room.listRooms(requireAuth(ctx));
+  }
+
   @Post('rooms/requirement')
   openRoom(
     @Req() ctx: WorkspaceContext | undefined,

@@ -71,7 +71,7 @@ What changed underneath the unchanged boxes:
 
 ### On scope — the boundary that took the most care
 
-Eighteen areas are specified; **three are delivered**, two are **partly delivered**, and all five are in scope.
+Eighteen areas are specified; **four are delivered**, two are **partly delivered**, and all five are in scope. *(Updated 2026-08-28, `T1172`: the Requirement Room area was delivered — `/requirement-room` renders the shared `RoomIndex`. The registry moved first; these follow it.)*
 
 > **Corrected 2026-08-25 (Constitution XII Step B, `T1015`).** This said *five delivered*. The registry now reads **3 delivered · 2 partly-delivered · 13 declared-not-delivered · 0 undeclared** across eighteen areas; across the **seventeen V2 prototype screens** it is **2 / 2 / 13 / 0**. Both denominators are stated wherever a count appears — a figure that does not say what it counts is how two published counts came to disagree.
  `FR-SHL-003` forbids the shell

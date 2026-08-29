@@ -325,6 +325,15 @@ export interface ApiClientOptions {
   onSessionExpired?: () => void;
 }
 
+/** One Room as the index renders it. Mirrors `EPIC-030`'s row. */
+export interface RoomSummary {
+  readonly id: string;
+  readonly subjectId: string;
+  readonly projectId: string;
+  readonly currentStage: string;
+  readonly createdAt: string;
+}
+
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -649,6 +658,17 @@ export class ApiClient {
     sourceRef?: string;
   }): Promise<{ roomObjectId: string }> {
     return this.request('POST', '/rooms/requirement', input);
+  }
+
+  /**
+   * `T1171` — the workspace's Requirement Rooms, for the index.
+   *
+   * No `workspaceId` parameter, for the same reason as `openRequirementRoom`
+   * above: `EPIC-030` resolves it from the principal (`T1177`), so a caller
+   * cannot ask for another workspace's Rooms even by mistake.
+   */
+  async listRequirementRooms(): Promise<readonly RoomSummary[]> {
+    return this.request('GET', '/rooms/requirement');
   }
 
   async roomReadiness(roomObjectId: string, projectId: string): Promise<Readiness> {

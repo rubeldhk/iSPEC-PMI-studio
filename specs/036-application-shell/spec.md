@@ -232,7 +232,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
   Workspace & Administration — so it is a live case, not a hypothetical.
 - **A deep link into an area that is not delivered.** Must answer as not-found, not as an empty area
   — the distinction `DEF-001-006` currently gets wrong platform-wide, and this Epic must not add to
-  it. This holds for the zero undeclared areas **and** the thirteen awaiting their owners: from an
+  it. This holds for the zero undeclared areas **and** the twelve awaiting their owners: from an
   address's point of view *"forbidden to build"* and *"not built yet"* are the same answer.
 - **An address that named an area before its Epic was undeclared, or after.** Same rule: not found,
   and never a blank area with a working chrome around it.
@@ -376,7 +376,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 - **SC-SHL-001**: **100%** of `delivered` areas are reachable from primary navigation —
   mutation-verified by removing one route and observing the check fail. **Six today.**
 - **SC-SHL-002**: **Zero** areas that are not `delivered` appear in navigation, as a placeholder or
-  otherwise — the zero undeclared and the thirteen awaiting their owners alike. **Thirteen today.**
+  otherwise — the zero undeclared and the twelve awaiting their owners alike. **Twelve today**, since the Requirement Room area was delivered by `T1172`.
 - **SC-SHL-003**: A user can reach any `delivered` area from any other in **at most two actions**.
 - **SC-SHL-004**: **Zero** shell code changes are required to move an area to `delivered` and into
   navigation.
@@ -395,7 +395,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 
 ## Assumptions
 
-- **The eighteen areas of PMI-DOC-006 §4.1 are the target set**, of which **three are delivered**, two are **partly delivered**, and
+- **The eighteen areas of PMI-DOC-006 §4.1 are the target set**, of which **four are delivered**, two are **partly delivered**, and
   in scope for navigation today: Home (built here), Projects, Specifications, Runs and
   Workspace & Administration. Each has a component in `frontend/src/pages/`, or in Home's case is
   built by this Epic. **Plan & Tasks is not among them** — see the next bullet.
@@ -452,7 +452,7 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
       have caught `DEF-010-001`
 - [ ] **`FR-SHL-002` is proven by adding an area**: an area moved to `delivered` reaches navigation
       with no shell code change (`SC-SHL-004`)
-- [ ] **The thirteen `declared-not-delivered` areas are absent from navigation and answer not-found**,
+- [ ] **The twelve `declared-not-delivered` areas are absent from navigation and answer not-found**,
       and each names its owning Epic in the registry (Assumptions; [analysis.md](./analysis.md) `C1`,
       `N1`)
 - [ ] **`FR-SHL-062` is mutation-tested**: a failing section is made to render as empty and the suite

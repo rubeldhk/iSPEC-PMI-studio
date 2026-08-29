@@ -180,6 +180,24 @@ export interface LoopDeclarer {
       subjectId: string;
     },
   ): Promise<{ objectId: string; workflowType: string }>;
+  /**
+   * `T1171` — `X20`. Note there is **no workspace parameter**: `EPIC-030`
+   * resolves it from the principal, so this Room cannot ask for another
+   * workspace's Rooms even by mistake.
+   */
+  listObjects(
+    principal: ActingPrincipal,
+    workflowType: string,
+  ): Promise<readonly RoomObjectRow[]>;
+}
+
+/** The subset of `EPIC-030`'s row the index renders. */
+export interface RoomObjectRow {
+  readonly id: string;
+  readonly projectId: string;
+  readonly subjectId: string;
+  readonly currentStage: string;
+  readonly createdAt: Date;
 }
 
 export class RequirementRoomService {
@@ -295,6 +313,26 @@ export class RequirementRoomService {
     });
 
     return { roomObjectId: ref.objectId, candidates };
+  }
+
+  /**
+   * `T1171` — the Rooms in this workspace, for the index.
+   *
+   * Reads `EPIC-030`, not this Room's tables. A list built from
+   * `requirement_candidates.roomObjectId` would omit a Room opened a moment ago
+   * and would have to source the stage from somewhere other than the loop —
+   * a Room-local translation of loop progress, which `FR-RQR-074` forbids.
+   *
+   * Filtered to the caller's projects is **not** done here: `EPIC-030` already
+   * scopes to the workspace, and a second filter on top would be a second
+   * answer to a question `EPIC-024` owns.
+   */
+  async listRooms(principal: ActingPrincipal): Promise<readonly RoomObjectRow[]> {
+    await this.acting(principal);
+    if (!this.loop) {
+      throw new ValidationFailedError('listRooms requires the governed loop');
+    }
+    return this.loop.listObjects(principal, 'requirement-room');
   }
 
   async intake(principal: ActingPrincipal, input: IntakeCommand): Promise<CandidateRow[]> {

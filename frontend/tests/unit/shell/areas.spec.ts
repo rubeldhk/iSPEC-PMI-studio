@@ -78,8 +78,15 @@ describe('T436f · the area registry is well-formed', () => {
     // the third state exists to prevent.
     const owed = AREAS.filter((area) => area.status === 'declared-not-delivered');
     // Four before Step B; thirteen after `T1013` assigned owners to the five
-    // Rooms, Engineering Experts, Context, Integrations and Reports.
-    expect(owed.length, 'no areas are awaiting their owners').toBe(13);
+    // Rooms, Engineering Experts, Context, Integrations and Reports; **twelve**
+    // since `T1172`, when the Requirement Room's landing began rendering and
+    // the area was promoted to `delivered`.
+    //
+    // The debt shrinks only when something is actually delivered. This number
+    // moving is the signal it is for — a count edited to match a promoted
+    // status, rather than a status promoted because a screen renders, would
+    // make the whole matrix decorative.
+    expect(owed.length, 'no areas are awaiting their owners').toBe(12);
     for (const area of owed) {
       expect(area.epic, `${area.id} is owed by nobody`).toMatch(/^EPIC-\d{3}(\s*·\s*EPIC-\d{3})*$/);
     }
@@ -142,16 +149,30 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
    */
   const PROTOTYPE_17 = AREAS.filter((area) => area.id !== 'workspace-administration');
 
-  it('counts 3 delivered, 2 partly delivered, 13 owed, 0 undeclared across all eighteen', () => {
+  /**
+   * **Updated 2026-08-28 (`T1172`)**: 3 / 2 / 13 → **4 / 2 / 12** over eighteen,
+   * and 2 / 2 / 13 → **3 / 2 / 12** over the prototype seventeen.
+   *
+   * The Requirement Room area was delivered — `/requirement-room` renders the
+   * shared `RoomIndex`, which lists the workspace's Rooms and offers the way
+   * into a new one. It had stood `declared-not-delivered` since `T403n` because
+   * the Room screen existed per object while nothing listed the objects.
+   *
+   * The order matters and is the reason this number is allowed to move: the
+   * index was built (`T1170`/`T1171`), `areas.ts` gained an `element`, and the
+   * count followed. `areas.ts` carries the note forbidding the reverse — a
+   * landing invented to justify a status is the status driving the product.
+   */
+  it('counts 4 delivered, 2 partly delivered, 12 owed, 0 undeclared across all eighteen', () => {
     expect({
       delivered: by('delivered').length,
       partly: by('partly-delivered').length,
       owed: by('declared-not-delivered').length,
       undeclared: by('undeclared').length,
-    }).toEqual({ delivered: 3, partly: 2, owed: 13, undeclared: 0 });
+    }).toEqual({ delivered: 4, partly: 2, owed: 12, undeclared: 0 });
   });
 
-  it('counts 2 / 2 / 13 / 0 across the seventeen prototype screens — the approved matrix', () => {
+  it('counts 3 / 2 / 12 / 0 across the seventeen prototype screens — the approved matrix', () => {
     const n = (status: Area['status']): number =>
       PROTOTYPE_17.filter((area) => area.status === status).length;
     expect(PROTOTYPE_17).toHaveLength(17);
@@ -160,7 +181,20 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
       partly: n('partly-delivered'),
       owed: n('declared-not-delivered'),
       undeclared: n('undeclared'),
-    }).toEqual({ delivered: 2, partly: 2, owed: 13, undeclared: 0 });
+    }).toEqual({ delivered: 3, partly: 2, owed: 12, undeclared: 0 });
+  });
+
+  it('T1173 · the Requirement Room area is delivered AND renders', () => {
+    // Two facts, asserted together because the pair is the rule `areas.ts`
+    // records: a status without an element is a claim, and an element added to
+    // justify a status is the status driving the product. Phase 9 did them in
+    // the order that makes the claim true — index first (`T1170`/`T1171`),
+    // `element` second, status third.
+    const room = AREAS.find((area) => area.id === 'requirement-room');
+    expect(room, 'the Requirement Room area left the registry').toBeDefined();
+    expect(room?.status).toBe('delivered');
+    expect(room?.element, 'delivered with nothing to render').toBeTypeOf('function');
+    expect(room?.path).toBe('/requirement-room');
   });
 
   it('names an owning Epic for every area, because none is unowned any more', () => {
@@ -200,15 +234,21 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
   });
 
   it('keeps deliveredAreas() meaning STRICTLY delivered, so the report stays honest', () => {
-    // Reachability and completeness are different questions. Collapsing them
-    // would make the delivery count read 4 again — the overstatement this
-    // whole phase is correcting.
+    // Reachability and completeness are different questions, and collapsing
+    // them is what made the count read 4 before this phase corrected it.
+    //
+    // **It reads 4 again since `T1172`, and for the opposite reason.** The old 4
+    // was three delivered areas plus one counted because it was reachable. This
+    // 4 is four areas whose landings render — the Requirement Room's index
+    // arrived (`T1170`/`T1171`). The assertion below is what keeps the two
+    // apart: every member must actually hold `delivered`, so a reachable-but-
+    // incomplete area cannot rejoin the count by being routed.
     expect(deliveredAreas().every((area) => area.status === 'delivered')).toBe(true);
-    // Three in the registry; two of them are prototype screens.
-    expect(deliveredAreas().length).toBe(3);
+    // Four in the registry; three of them are prototype screens.
+    expect(deliveredAreas().length).toBe(4);
     expect(
       deliveredAreas().filter((a) => a.id !== 'workspace-administration').length,
-    ).toBe(2);
+    ).toBe(3);
   });
 
   it('maps the seventeen V2 prototype pages plus Workspace & Administration', () => {

@@ -22,6 +22,7 @@ import { RequirementEditor } from '../components/RequirementEditor';
 import { ProjectDetail, ProjectsPage } from '../pages/Projects';
 import { RequirementRoomPage } from '../pages/RequirementRoom';
 import { RequirementIntake } from '../pages/RequirementIntake';
+import { RequirementRooms } from '../pages/RequirementRooms';
 import { RequirementsPage } from '../pages/Requirements';
 import { ReviewSessionPage } from '../pages/ReviewSession';
 import { RunsPage } from '../pages/Runs';
@@ -249,6 +250,37 @@ export function ProjectDetailView(): ReactElement {
  * port, so it is passed straight through. The shell builds no adapter and calls
  * no endpoint itself — `T436m`'s first prohibition.
  */
+/**
+ * `T1172` — the Requirement Room AREA landing.
+ *
+ * What `/requirement-room` renders. Until this existed the nav offered a Room
+ * whose path showed nothing, and a person could only reach a Room by typing a
+ * URL containing an id they had no way to obtain — which is why `areas.ts` kept
+ * the area `declared-not-delivered` rather than claiming otherwise.
+ *
+ * The index itself is `rooms/RoomIndex`, shared: `EPIC-034` and `EPIC-035` add
+ * their own `RoomKind` and reuse this whole shape.
+ */
+export function RequirementRoomIndexView(): ReactElement {
+  const { api } = useShell();
+  const navigate = useNavigate();
+  // The shell passes `api` down and calls nothing itself — `T436m` forbids an
+  // `api.*` call in this directory, and the fetch lives in the page.
+  return (
+    <MainLandmark>
+      <RequirementRooms
+        api={api}
+        onOpen={(roomObjectId): void => {
+          void navigate(`/requirement-room/${encodeURIComponent(roomObjectId)}`);
+        }}
+        onStart={(): void => {
+          void navigate('/requirement-room/intake');
+        }}
+      />
+    </MainLandmark>
+  );
+}
+
 /**
  * `T1169` — the intake screen, routed.
  *

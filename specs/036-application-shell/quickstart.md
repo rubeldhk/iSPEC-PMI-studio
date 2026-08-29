@@ -63,11 +63,11 @@ different stack answers a different question.
 
 **Proves**: `SC-SHL-001`, `SC-SHL-003`, `FR-SHL-010`–`FR-SHL-013`.
 
-Sign in. Without using browser history or typing a URL, reach each of the **three delivered** and **two partly-delivered** areas
+Sign in. Without using browser history or typing a URL, reach each of the **four delivered** and **two partly-delivered** areas
 from primary navigation: Home, Projects, Specifications, Runs, Workspace & Administration.
 
-**Expected**: all five reachable — three delivered, two partly delivered; presented in the four groups of PMI-DOC-006 §4.1; no area in two
-groups; the current area marked. **None of the other thirteen appears at all** — not disabled, not
+**Expected**: all six reachable — four delivered, two partly delivered; presented in the four groups of PMI-DOC-006 §4.1; no area in two
+groups; the current area marked. **None of the other twelve appears at all** — not disabled, not
 greyed, not a placeholder. That is zero undeclared areas (`UX-0060`) **and** four that are
 declared with no screen built: `Plan & Tasks`, `QA & Releases`, `Architecture & Decisions` and
 `Governance` ([analysis.md](./analysis.md) `C1`, `N1`).
@@ -82,7 +82,7 @@ declared with no screen built: `Plan & Tasks`, `QA & Releases`, `Architecture & 
 **Proves**: `SC-SHL-004`, `FR-SHL-002`.
 
 Add an area to `frontend/src/shell/areas.ts` with `status: 'delivered'` and an element — or move
-one of the thirteen `declared-not-delivered` areas to `delivered`, which is what their owning Epics will
+one of the twelve `declared-not-delivered` areas to `delivered`, which is what their owning Epics will
 do. Add the binding that `element` points at in `frontend/src/shell/area-views.tsx`. Change nothing
 else.
 
@@ -167,7 +167,7 @@ announced as groups and the current area as current; zero axe violations in both
 
 **Proves**: Constitution XI Tier 2, and it is **closure evidence**, not a test.
 
-Against the running stack, drive: sign in → Home → each of the three delivered and two partly-delivered areas → back → switch
+Against the running stack, drive: sign in → Home → each of the four delivered and two partly-delivered areas → back → switch
 project → one address naming a declared-but-unbuilt area, observing not-found. Record the verbatim
 transcript to `docs/accessibility/EPIC-036-shell-transcript.md`.
 

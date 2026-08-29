@@ -53,9 +53,9 @@ This model carried a boolean `declared` until the cross-artifact analysis of 202
 
 | `status` | Means | Count | In navigation? | Address answers |
 |---|---|---|---|---|
-| `delivered` | the owning Epic has shipped the screen, conforming to the prototype | **3** | yes | the area |
+| `delivered` | the owning Epic has shipped the screen, conforming to the prototype | **4** | yes | the area |
 | `partly-delivered` | the screen is **reachable** but a prototype element is absent | **2** | yes | the area |
-| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **13** | **no** | not found |
+| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **12** | **no** | not found |
 | `undeclared` | no Epic owns the area — `UX-0060` forbids building it | **0** | no | not found |
 
 **The middle state is the finding.** `QA & Releases`, `Architecture & Decisions`, `Governance` and
@@ -79,16 +79,18 @@ are recorded, and how `FR-SHL-017` answers *not found* for an address naming one
 would make a specified area indistinguishable from a typo. `FR-SHL-003` keeps them out of
 navigation; it does not keep them out of the list.
 
-### The eighteen: three delivered, two partly, thirteen owed
+### The eighteen: four delivered, two partly, twelve owed
 
 | Group | Areas | `delivered` / `partly-delivered` | `declared-not-delivered` |
 |---|---|---|---|
 | **Overview** | Home · Projects · Decision Inbox | Home *(partly)*, Projects *(partly)* | Decision Inbox |
-| **Intent & Control** | Requirement Room · Specifications · Change Room · Defect Room · Architecture & Decisions | Specifications | Architecture & Decisions |
+| **Intent & Control** | Requirement Room · Specifications · Change Room · Defect Room · Architecture & Decisions | Requirement Room, Specifications | Architecture & Decisions |
 | **Delivery** | Plan & Tasks · Engineering Experts · Runs · Evidence & Compliance · QA & Releases | Runs | Plan & Tasks, QA & Releases |
 | **Platform** | Context · Integrations · Reports · Governance · Workspace & Administration | Workspace & Administration | Governance |
 
-**Three delivered, two partly delivered, thirteen awaiting their owners, zero undeclared.**
+**Four delivered, two partly delivered, twelve awaiting their owners, zero undeclared.**
+
+> **Updated 2026-08-28 (`T1172`).** The Requirement Room area was **delivered**: `/requirement-room` renders the shared `RoomIndex`, which lists the workspace's Rooms and offers the way into a new one. It had stood `declared-not-delivered` since `T403n` because the Room screen existed per object while nothing listed the objects. The registry moved first and these figures follow it — **4 delivered · 2 partly-delivered · 12 owed · 0 undeclared**.
 
 > **Corrected 2026-08-25 (Constitution XII Step B, `T1015`).** This said *five delivered*. The registry now reads **3 delivered · 2 partly-delivered · 13 declared-not-delivered · 0 undeclared** across eighteen areas; across the **seventeen V2 prototype screens** it is **2 / 2 / 13 / 0**. Both denominators are stated wherever a count appears — a figure that does not say what it counts is how two published counts came to disagree.
  The rule is now applied **once**:

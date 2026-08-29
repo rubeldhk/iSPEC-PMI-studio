@@ -13,6 +13,7 @@
 import type { ComponentType } from 'react';
 import {
   HomeArea,
+  RequirementRoomIndexView,
   ProjectsArea,
   RunsArea,
   SpecificationsArea,
@@ -140,16 +141,17 @@ export const AREAS: readonly Area[] = Object.freeze([
     label: 'Requirement Room',
     path: '/requirement-room',
     epic: 'EPIC-033',
-    status: 'declared-not-delivered',
-    // `T403n` built the Room screen and routed it at
-    // `/requirement-room/:roomObjectId`. The AREA is still not delivered
-    // because its landing path renders nothing — there is no index listing a
-    // workspace's Room objects, and no task in Phase 8 names one.
+    status: 'delivered',
+    element: RequirementRoomIndexView,
+    // `T1172`. Promoted **because the landing now renders**, in that order.
     //
-    // Left `declared-not-delivered` rather than promoted: `isReachable` requires
-    // a reachable area to carry an `element`, and inventing an area landing to
-    // justify a status change would be the status driving the product.
-    note: 'The Requirement Room screen is built and reachable per object at /requirement-room/:roomObjectId; the area landing that would list them is not built.',
+    // It stood at `declared-not-delivered` from `T403n` until 2026-08-28: the
+    // Room screen existed at `/requirement-room/:roomObjectId`, but nothing
+    // listed a workspace's Rooms, so a person could only arrive by typing a URL
+    // containing an id they had no way to obtain. The note that stood here said
+    // inventing an area landing to justify a status change would be the status
+    // driving the product — so the index was built first (`T1170`/`T1171`,
+    // unblocked by `EPIC-030`'s `X20`), and the status followed it.
   },
   {
     id: 'specifications',

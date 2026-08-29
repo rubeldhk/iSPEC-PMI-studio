@@ -149,3 +149,23 @@ test naming only `Execute` would pass a projection that dropped `Verify`.
 - **AI round latency** — `EPIC-028`'s, by `R-033-7`.
 - **Production latency** — not measurable while the store is in-memory; stated above rather than
   estimated.
+
+
+## Phase 9 mutation observations (`T1173`, 2026-08-28)
+
+Two more, run the same way: applied, observed failing, reverted.
+
+| Mutation | Observed failing | On revert |
+|---|---|---|
+| `areas.ts` — the `element` removed while `status` still reads `delivered` | **4 of 20** across `areas` + `page-reachability`, including *"delivered with nothing to render"* | 20/20 |
+| `requirement-room.controller.ts` — `GET /rooms/requirement` unregistered | **1 of 15**, naming it exactly: *"GET /v1/rooms/requirement answered 404 with the framework's own not-found message — no handler matched"* | 15/15 |
+
+The second is `T405e`'s repair earning its keep. Before that mutation proof, the
+reachability loop asserted only *"any platform error code means a handler ran"* — which stopped
+discriminating when `DEF-001-006` made an unmatched path return `404 not_found`. Rebuilt on the
+message, it now names the unregistered route rather than passing quietly. A check repaired in Phase N
+caught a Phase 9 regression it would previously have missed.
+
+The first is the pair `areas.ts` records as a rule: a status without an element is a claim, and an
+element added to justify a status is the status driving the product. Phase 9 did them in the order
+that makes the claim true — index first, `element` second, status third.

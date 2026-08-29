@@ -121,6 +121,11 @@ suite('T337x · the Requirement Room is reachable through the composed applicati
   });
 
   it.each([
+    // `T1173` — Phase 9's two new routes. The collection and its creation, on
+    // one path: `GET` lists the workspace's Rooms for the index, `POST` opens
+    // one. Both were absent when `T405j` found the journey unattemptable.
+    ['get', `/${PREFIX}/rooms/requirement`],
+    ['post', `/${PREFIX}/rooms/requirement`],
     ['post', `/${PREFIX}/rooms/requirement/intake`],
     ['post', `/${PREFIX}/rooms/requirement/probe/clarifications`],
     ['get', `/${PREFIX}/rooms/requirement/probe/analysis`],
