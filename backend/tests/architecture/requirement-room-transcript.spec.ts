@@ -1,5 +1,6 @@
 /**
- * `T1174` (EPIC-033) — the Tier 2 transcript is machine evidence, not a tick.
+ * `T405p`, `T1174` (EPIC-033) — the Tier 2 transcript is machine evidence, not a
+ * tick.
  *
  * The standard `T884` holds the manual accessibility record to and `T900b` holds
  * EPIC-029's reachability transcript to, applied to
@@ -28,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(here, '../..');
+const ROOT = resolve(here, '../../..');
 const TRANSCRIPT = join(ROOT, 'specs/033-requirement-room/tier2-transcript.md');
 
 const text = existsSync(TRANSCRIPT) ? readFileSync(TRANSCRIPT, 'utf8') : '';
