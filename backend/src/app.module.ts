@@ -23,7 +23,7 @@ import { AccessModule } from './modules/access/access.module.js';
 import { AgentsModule } from './modules/agents/agents.module.js';
 import { ExecutionsModule } from './modules/executions/executions.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
-import { LoopModule } from './modules/loop/loop.module.js';
+import { GOVERNED_LOOP } from './composition/governed-loop.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
 
 /**
@@ -88,7 +88,10 @@ function clientBuildPath(): string {
     // T936 — EPIC-030. The wiring T934 exists to prove: a module built,
     // tested and never registered is the defect class DEF-005-001 shipped
     // with 15/15 tasks green.
-    LoopModule,
+    //
+    // `T1165` — the CONFIGURED loop. `ExecutionsModule` imports the same
+    // constant, so there is one instance and one store.
+    GOVERNED_LOOP,
     // T337y — EPIC-033. The wiring T337x exists to prove.
     RequirementRoomModule,
     // T150g — EPIC-014 F-11.3. The API serves the built web client, so the

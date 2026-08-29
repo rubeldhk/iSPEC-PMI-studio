@@ -43,7 +43,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-030](../specs/030-governed-engineering-loop/) | Governed Engineering Loop | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-031](../specs/031-decision-policy-engine/) | Decision & Policy Engine | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-032](../specs/032-evidence-store-contracts/) | Evidence Store & Evidence Contracts | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-033](../specs/033-requirement-room/) | Requirement Room | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-033](../specs/033-requirement-room/) | Requirement Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-034](../specs/034-change-room/) | Change Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-035](../specs/035-defect-room/) | Defect Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-036](../specs/036-application-shell/) | Application Shell & Dashboard | delivery | Ready | — | Ready | `/speckit-implement` |

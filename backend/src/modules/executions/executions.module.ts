@@ -59,7 +59,7 @@ import {
 } from '../agents/principal-registry.service.js';
 import { AccessModule } from '../access/access.module.js';
 import { PrincipalDelegationService } from '../access/principal-delegation.service.js';
-import { LoopModule } from '../loop/loop.module.js';
+import { GOVERNED_LOOP } from '../../composition/governed-loop.js';
 import { PROPOSAL_ADJUDICATOR } from '../loop/loop.tokens.js';
 import type { ProposalAdjudicator } from '@pmi/loop-contract';
 import { prismaClient } from '../../persistence/prisma.js';
@@ -69,7 +69,7 @@ export const EXECUTION_IDENTITY = Symbol('EXECUTION_IDENTITY');
 export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
 
 @Module({
-  imports: [AgentsModule, AccessModule, LoopModule],
+  imports: [AgentsModule, AccessModule, GOVERNED_LOOP],
   // `controllers` is deliberately EMPTY. See the header: `ExecutionsController`
   // exists but is NOT mounted, because nothing can authenticate its callers.
   // `tests/architecture/executions-unmounted.spec.ts` fails if it returns.

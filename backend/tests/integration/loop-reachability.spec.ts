@@ -82,11 +82,18 @@ suite('T934 · the loop is reachable through the composed application (Constitut
     expect(app).toBeDefined();
   });
 
-  it('registers LoopModule in the composition root', () => {
+  it('registers the configured LoopModule in the composition root', async () => {
     // The mutation proof's target. `select` throws if the module is not part of
     // the compiled graph — an import never added to app.module.ts cannot
     // satisfy this.
-    expect(() => app.select(LoopModule)).not.toThrow();
+    //
+    // Selected by the CONSTANT, not by the class. Since `T1165` the loop is a
+    // dynamic module, and Nest keys those by their metadata: `select(LoopModule)`
+    // asks for a module token the graph does not contain, and throws whether or
+    // not the loop is registered — which would make this assertion fail for a
+    // reason unrelated to what it tests.
+    const { GOVERNED_LOOP } = await import('../../src/composition/governed-loop.js');
+    expect(() => app.select(GOVERNED_LOOP)).not.toThrow();
   });
 
   it('resolves LoopService from the graph the application actually builds', () => {

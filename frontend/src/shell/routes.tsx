@@ -22,6 +22,7 @@ import { NotFound } from './NotFound';
 import { reachableAreas } from './areas';
 import {
   ProjectDetailView,
+  RequirementIntakeView,
   RequirementRoomView,
   ReviewSessionView,
   SpecificationDetailView,
@@ -40,6 +41,9 @@ export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[]
   { path: '/specifications/:specificationId', element: SpecificationDetailView },
   { path: '/specifications/:specificationId/tasks', element: TasksView },
   { path: '/runs/:runId', element: ReviewSessionView },
+  // `T1169` — before the `:roomObjectId` route, so the literal segment is not
+  // read as a room id.
+  { path: '/requirement-room/intake', element: RequirementIntakeView },
   { path: '/requirement-room/:roomObjectId', element: RequirementRoomView },
 ]);
 

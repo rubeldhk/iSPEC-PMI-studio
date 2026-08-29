@@ -32,7 +32,8 @@
  * individual ports could assemble its own adjudicator with its own gate
  * provider, which is the bypass `FR-GEL-073` forbids.
  */
-import { Module } from '@nestjs/common';
+import { Module, type DynamicModule, type ModuleMetadata } from '@nestjs/common';
+import type { StageHandler } from '@pmi/loop-contract';
 import { LoopController } from './loop.controller.js';
 import { LoopService } from './loop.service.js';
 import { LoopConfigRegistry } from './config-registry.js';
@@ -88,13 +89,22 @@ import type { PrismaLifecycleTransitionRepository } from '../specifications/life
 import { AccessEnforcementService } from '../access/access-enforcement.service.js';
 import { prismaClient } from '../../persistence/prisma.js';
 
-@Module({
+/**
+ * `T1165` — the module's metadata, as a function of the handlers a Room supplies.
+ *
+ * Extracted so `register` and the default cannot drift: one description of this
+ * module, parameterised at exactly the point `FR-GEL-007` requires a decision.
+ */
+function loopModuleMetadata(stageHandlers: readonly StageHandler[]): ModuleMetadata {
+  return {
   imports: [SpecificationsModule, AccessModule, ReviewsModule],
   controllers: [LoopController],
   providers: [
     {
       provide: LOOP_STAGE_HANDLERS,
-      useFactory: (): StageRegistry => new StageRegistry([]),
+      // `T1165` — supplied by the Rooms, through `register`. Still `[]` by
+      // default, and `[]` still refuses every workflow type by name.
+      useFactory: (): StageRegistry => new StageRegistry(stageHandlers),
     },
     {
       provide: LOOP_STORE,
@@ -251,8 +261,37 @@ import { prismaClient } from '../../persistence/prisma.js';
     // a consumer decide any particular proposal.
     ApplicationPolicyService,
   ],
-})
-export class LoopModule {}
+};
+}
+
+/**
+ * **The decorator carries the full default, and `register` configures it.**
+ *
+ * The default is `[]` handlers — which still refuses every workflow type by
+ * name, the honest state `T1164` pins. An empty decorator was tried instead, to
+ * make a static import fail loudly; it broke two governance proofs that read
+ * this module's metadata directly (`T934`'s reachability, `T1102`'s
+ * `FR-GEL-073` export check), because both introspect the decorator rather than
+ * the graph. A wiring nicety is not worth blinding those.
+ *
+ * Nest merges the dynamic metadata over the static, so `register`'s
+ * `LOOP_STAGE_HANDLERS` provider is the one that binds. `T1164` proves that
+ * empirically rather than by trusting the merge order.
+ *
+ * **Call it once and share the result.** Nest keys a dynamic module by its
+ * metadata, so two `register` calls are two module instances with two
+ * `InMemoryLoopStore`s — objects written through one invisible to the other.
+ * `backend/src/composition/governed-loop.ts` holds the single call; both
+ * importers take that constant.
+ */
+@Module(loopModuleMetadata([]))
+export class LoopModule {
+  static register(
+    options: { readonly stageHandlers?: readonly StageHandler[] } = {},
+  ): DynamicModule {
+    return { module: LoopModule, ...loopModuleMetadata(options.stageHandlers ?? []) };
+  }
+}
 
 /**
  * A registry of what loads, and nothing where nothing does.

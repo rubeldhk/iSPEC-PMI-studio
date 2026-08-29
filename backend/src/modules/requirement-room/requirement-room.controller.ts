@@ -62,6 +62,23 @@ export class RequirementRoomController {
     @Inject(RequirementRoomService) private readonly room: RequirementRoomService,
   ) {}
 
+  /**
+   * `T1167` — where a Room begins.
+   *
+   * Deliberately **not** under `/rooms/requirement/:id/`: there is no id yet,
+   * which is the whole point. `intake` joins an existing Room; this one opens.
+   */
+  @Post('rooms/requirement')
+  openRoom(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Body() body: { projectId: string; text: string; sourceRef?: string },
+  ): Promise<unknown> {
+    return this.room.openRoom(
+      requireAuth(ctx),
+      strip<{ projectId: string; text: string; sourceRef?: string }>(body),
+    );
+  }
+
   @Post('rooms/requirement/intake')
   intake(
     @Req() ctx: WorkspaceContext | undefined,

@@ -53,11 +53,14 @@ import { REQUIREMENT_ROOM_STORE, ROOM_REQUIREMENT_REGISTER } from './requirement
 /** Eagerly constructed so the veto is registered, not merely available. */
 const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
 
+import { GOVERNED_LOOP } from '../../composition/governed-loop.js';
+import { LoopService } from '../loop/loop.service.js';
+
 @Module({
   // `AccessModule` for `WorkspaceBoundaryService` — EPIC-024's authoritative
   // actor directory, consumed rather than re-implemented (`T1148`). It is what
   // turns `actor.kind` from a claim into a resolved fact.
-  imports: [RequirementsModule, AccessModule],
+  imports: [RequirementsModule, AccessModule, GOVERNED_LOOP],
   controllers: [RequirementRoomController],
   providers: [
     {
@@ -155,6 +158,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         EDIT_VETO_REGISTERED,
         REQUIREMENT_ROOM_STORE,
         WorkspaceBoundaryService,
+        LoopService,
       ],
       useFactory: (
         intake: IntakeService,
@@ -167,6 +171,7 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         _veto: true,
         store: RequirementRoomStore,
         principals: WorkspaceBoundaryService,
+        loop: LoopService,
       ): RequirementRoomService =>
         // No EvidenceContractSource: EPIC-032 binds it at the composition root.
         // Until it does, `readiness` reports the Contract as UNEVALUATED, which
@@ -182,6 +187,9 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
           store,
           principals,
           undefined,
+          // `T1167` — the governed loop, so `openRoom` can declare the Room's
+          // object. `GOVERNED_LOOP` is the one configured instance.
+          loop,
         ),
     },
   ],

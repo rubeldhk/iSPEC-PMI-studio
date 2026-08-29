@@ -162,6 +162,26 @@ export class NotYetImplementedError extends Error {
 /** Retained as the transport's body type; `IntakeCommand` is the real one. */
 export type IntakeInput = IntakeCommand;
 
+
+/**
+ * `T1167` — the one verb this Room needs from `EPIC-030`.
+ *
+ * A narrow port rather than `LoopService` itself: the Room declares objects and
+ * must not acquire the ability to transition them, which is the authority
+ * `DEF-030-003` spent a fix keeping away from callers.
+ */
+export interface LoopDeclarer {
+  declareObject(
+    principal: ActingPrincipal,
+    input: {
+      projectId: string;
+      workflowType: string;
+      subjectType: string;
+      subjectId: string;
+    },
+  ): Promise<{ objectId: string; workflowType: string }>;
+}
+
 export class RequirementRoomService {
   constructor(
     private readonly intakeService: IntakeService,
@@ -180,6 +200,15 @@ export class RequirementRoomService {
     private readonly principals: PrincipalResolver,
     /** Absent ⇒ readiness reports the Contract as unevaluated, which blocks. */
     private readonly evidence?: EvidenceContractSource | undefined,
+    /**
+     * `T1167` — `EPIC-030`'s loop, for `openRoom` only.
+     *
+     * Optional so every existing construction site keeps working, and **refused
+     * when absent** rather than skipped: a Room opened without a loop object
+     * would be a Room outside the governed loop, which `FR-RQR-001` forbids
+     * outright.
+     */
+    private readonly loop?: LoopDeclarer | undefined,
   ) {}
 
   /**
@@ -205,6 +234,69 @@ export class RequirementRoomService {
   }
 
   /** T338b — `FR-RQR-010`. Multi-source intake becomes labelled candidates. */
+  /**
+   * `T1167` — open a Room and take its first intent, in one call.
+   *
+   * The endpoint `T1164` found missing. `IntakeCommand` **requires** a
+   * `roomObjectId`, so intake has only ever been able to join a Room that
+   * already existed; nothing created one, and no screen could start the journey
+   * `SC-RQR-008` measures.
+   *
+   * **The order is the rule.** The intent is validated *before* anything is
+   * declared, because `LoopStore` has no delete: a Room declared for intent that
+   * then fails to land would exist, contain nothing, and be impossible for the
+   * user to act on or clear. There is no compensating transaction available
+   * here, so the only safe design is to refuse first.
+   *
+   * The workflow type is fixed. A caller naming it would be choosing its own
+   * rules, which is the thing `FR-GEL-004` and `DEF-030-003` both refuse.
+   */
+  async openRoom(
+    principal: ActingPrincipal,
+    input: { projectId: string; text: string; sourceRef?: string },
+  ): Promise<{ roomObjectId: string; candidates: CandidateRow[] }> {
+    const actor = await this.acting(principal);
+
+    // Before the declaration, deliberately — see above.
+    const text = (input.text ?? '').trim();
+    if (text.length === 0) {
+      throw new ValidationFailedError('openRoom requires: text');
+    }
+    if (!input.projectId) {
+      throw new ValidationFailedError('openRoom requires: projectId');
+    }
+
+    if (!this.loop) {
+      // `FR-RQR-001` — this Room is an instance of the governed loop. Opening
+      // one without declaring its loop object would create a Room the loop does
+      // not know about, which is worse than refusing.
+      throw new ValidationFailedError('openRoom requires the governed loop');
+    }
+
+    const ref = await this.loop.declareObject(principal, {
+      projectId: input.projectId,
+      workflowType: 'requirement-room',
+      // The Room's subject is the requirement set it is forming. It has no
+      // specification yet — that is what `EPIC-033` produces — so the object is
+      // its own subject until a baseline hands one over (`FR-RQR-054`).
+      subjectType: 'requirement-set',
+      // A fresh identity for the set this Room will form. Minted here rather
+      // than derived from the project, so two Rooms opened in one project are
+      // two subjects rather than one contested one.
+      subjectId: randomUUID(),
+    });
+
+    const candidates = await this.intakeService.intake({
+      workspaceId: actor.workspaceId,
+      projectId: input.projectId,
+      roomObjectId: ref.objectId,
+      sourceRef: input.sourceRef?.trim() || 'direct-input',
+      text,
+    });
+
+    return { roomObjectId: ref.objectId, candidates };
+  }
+
   async intake(principal: ActingPrincipal, input: IntakeCommand): Promise<CandidateRow[]> {
     const actor = await this.acting(principal);
     return this.intakeService.intake({ ...input, workspaceId: actor.workspaceId });

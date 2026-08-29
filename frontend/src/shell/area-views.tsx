@@ -21,6 +21,7 @@ import { EngineSelector } from '../components/EngineSelector';
 import { RequirementEditor } from '../components/RequirementEditor';
 import { ProjectDetail, ProjectsPage } from '../pages/Projects';
 import { RequirementRoomPage } from '../pages/RequirementRoom';
+import { RequirementIntake } from '../pages/RequirementIntake';
 import { RequirementsPage } from '../pages/Requirements';
 import { ReviewSessionPage } from '../pages/ReviewSession';
 import { RunsPage } from '../pages/Runs';
@@ -248,6 +249,39 @@ export function ProjectDetailView(): ReactElement {
  * port, so it is passed straight through. The shell builds no adapter and calls
  * no endpoint itself — `T436m`'s first prohibition.
  */
+/**
+ * `T1169` — the intake screen, routed.
+ *
+ * Part of `T1172`'s line item, done here because a page nothing routes is not
+ * delivered: `page-reachability` (`T200a`) enforces exactly that, and it is the
+ * `DEF-010-001` rule — nine pages existed, four were imported, every check
+ * stayed green for five months.
+ *
+ * **The area's status is NOT promoted by this.** `/requirement-room` still
+ * renders nothing; `areas.ts` stays `declared-not-delivered` until the index
+ * exists (`T1170`/`T1171`, blocked on `X20`), because the note in that file
+ * forbids inventing a landing to justify a status change.
+ */
+export function RequirementIntakeView(): ReactElement {
+  const { api } = useShell();
+  const navigate = useNavigate();
+  return (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
+          <RequirementIntake
+            api={api}
+            projectId={projectId}
+            onOpened={(roomObjectId): void => {
+              void navigate(`/requirement-room/${encodeURIComponent(roomObjectId)}`);
+            }}
+          />
+        </MainLandmark>
+      )}
+    </RequireProject>
+  );
+}
+
 export function RequirementRoomView(): ReactElement {
   const { api } = useShell();
   const { roomObjectId = '' } = useParams();
