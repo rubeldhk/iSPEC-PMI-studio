@@ -419,3 +419,12 @@ that being true rather than intended.
   document is treated as approved.
 - **Constitution V over the skill default**: `/speckit-tasks` calls tests optional; the constitution
   overrides every template, skill and tool default.
+
+## Persistent store *(added 2026-08-29)*
+
+*Found by the owner walking the journey: a baseline — the artifact `RULE-02` exists to make
+immutable — lived only in the process that created it. `REQUIREMENT_ROOM_STORE` has defaulted to
+in-memory since `T338b` and nothing ever replaced it.*
+
+- [X] T1181 [P] Write the failing integration tests for the persistent Room store in `backend/tests/integration/requirement-room-prisma-store.spec.ts` — candidates, clarifications, decisions, baselines, exceptions and handoffs, including version allocation from the highest version and a superseded baseline that remains readable (`FR-RQR-052`)
+- [X] T1182 Implement `PrismaRequirementRoomStore` in `backend/src/modules/requirement-room/requirement-room.store.prisma.ts` and wire it at the seam on `DATABASE_URL` (integration test: T1181) — its own file, following `reviews/gate.store.prisma.ts`, so unit tests do not load the generated client

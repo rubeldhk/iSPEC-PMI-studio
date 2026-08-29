@@ -38,7 +38,10 @@ import { LoopController } from './loop.controller.js';
 import { LoopService } from './loop.service.js';
 import { LoopConfigRegistry } from './config-registry.js';
 import { StageRegistry } from './stage-registry.js';
-import { InMemoryLoopStore, type LoopStore } from './loop.store.js';
+import { InMemoryLoopStore, type LoopStore,
+  PrismaLoopStore,
+  type LoopPrismaClient,
+} from './loop.store.js';
 import { buildConfigRegistry } from './workflow-files.js';
 import {
   ADJUDICATION_AUTHORITY_POLICY,
@@ -108,7 +111,14 @@ function loopModuleMetadata(stageHandlers: readonly StageHandler[]): ModuleMetad
     },
     {
       provide: LOOP_STORE,
-      useFactory: (): LoopStore => new InMemoryLoopStore(),
+      // `T1180` — the composition seam, decided on `DATABASE_URL` exactly as
+      // `AuthModule.register` decides its directory. Unset in unit tests, so
+      // the in-memory store stays their default and the asymmetry this module's
+      // header describes still holds: a store that loses data does so visibly.
+      useFactory: (): LoopStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaLoopStore(prismaClient() as unknown as LoopPrismaClient)
+          : new InMemoryLoopStore(),
     },
     {
       provide: LOOP_CONFIG_SOURCE,

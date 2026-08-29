@@ -54,6 +54,11 @@ import { REQUIREMENT_ROOM_STORE, ROOM_REQUIREMENT_REGISTER } from './requirement
 const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
 
 import { GOVERNED_LOOP } from '../../composition/governed-loop.js';
+import { prismaClient } from '../../persistence/prisma.js';
+import {
+  PrismaRequirementRoomStore,
+  type RoomPrismaClient,
+} from './requirement-room.store.prisma.js';
 import { LoopService } from '../loop/loop.service.js';
 
 @Module({
@@ -65,7 +70,16 @@ import { LoopService } from '../loop/loop.service.js';
   providers: [
     {
       provide: REQUIREMENT_ROOM_STORE,
-      useFactory: (): RequirementRoomStore => new InMemoryRequirementRoomStore(),
+      // `T1182` — the composition seam. `DATABASE_URL` decides, as it does for
+      // `PROJECT_STORE` and `LOOP_STORE`: unset in unit tests, so the in-memory
+      // store stays their default.
+      //
+      // Until this, a baseline — the artifact `RULE-02` exists to make
+      // immutable — lived only in the process that created it.
+      useFactory: (): RequirementRoomStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaRequirementRoomStore(prismaClient() as unknown as RoomPrismaClient)
+          : new InMemoryRequirementRoomStore(),
     },
     {
       provide: ROOM_REQUIREMENT_REGISTER,

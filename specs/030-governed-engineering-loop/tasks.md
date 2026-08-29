@@ -475,3 +475,13 @@ makes the governed path unreachable is an off switch, not a safe default. `valid
 ## Phase C3B · frozen principal identity *(added 2026-08-27)*
 
 - [X] T1143 Consume resolved frozen identities in `backend/src/modules/loop/separation-of-duties.ts` — the sponsoring human counts on the proposer side, and no non-human principal may approve; adds `sponsor_cannot_approve_sponsored_proposal` to the refusal vocabulary in the contract and the database *(tests: `backend/tests/unit/loop/separation-of-duties.spec.ts`, including the case that passes every id comparison and must still refuse)*
+
+## Persistent store *(added 2026-08-29)*
+
+*`T1178` measured the cost of the in-memory default across the application: thirteen modules, none
+overridden at the composition root. `LOOP_STORE` was one, so a Room opened through the running
+application vanished on restart. `loop.module.ts` always said the composition root overrides this;
+no composition root ever did.*
+
+- [X] T1179 [P] Write the failing integration tests for the persistent loop store in `backend/tests/integration/loop-prisma-store.spec.ts` — creation, listing, conditional advance under twenty concurrent writers, real rollback, and survival across a new client
+- [X] T1180 Implement `PrismaLoopStore` in `backend/src/modules/loop/loop.store.ts` and wire it at the seam in `loop.module.ts` on `DATABASE_URL` (integration test: T1179) — `advanceObject` is one `updateMany`, never read-then-write; mutation-proved both ways
