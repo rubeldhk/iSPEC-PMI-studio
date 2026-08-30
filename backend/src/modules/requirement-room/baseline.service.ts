@@ -27,7 +27,9 @@
  * Framework-free (PC-1).
  */
 import { randomUUID } from 'node:crypto';
-import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
+import { ConflictError, NotFoundError, ValidationFailedError,
+  GovernanceSeamUnboundError,
+} from '../../core/errors.js';
 import { requirementSetHash, type BaselineMember } from '../requirements/requirement-hash.js';
 import type { EditableRequirement } from '../requirements/edit-authority.js';
 import type {
@@ -69,11 +71,12 @@ export interface EvidenceContractSource {
 /**
  * `ROOM_PORTS` declares `refuse` for `EvidenceContractSource`, and this is that
  * refusal. Not a `PlatformError`, for the reason `RegisterUnavailableError`
- * records: the platform's status table documents no code meaning *"a governance
- * seam is unbound"*, and `DEF-008-001` is what happens when an Epic that does
+ * records: the platform's status table documents `governance_seam_unbound`
+ * (503) since `T1195`, so this carries it. It previously did not, because
+ * `DEF-008-001` is what happens when an Epic that does
  * not own `platform-api.md` invents one.
  */
-export class EvidenceSourceUnavailableError extends Error {
+export class EvidenceSourceUnavailableError extends GovernanceSeamUnboundError {
   constructor() {
     super(
       'the EvidenceContractSource seam is unbound — EPIC-032 supplies it, and FR-RQR-053 will ' +

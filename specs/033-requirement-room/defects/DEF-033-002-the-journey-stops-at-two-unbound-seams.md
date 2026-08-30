@@ -1,7 +1,7 @@
 # DEF-033-002 — the journey stops at two unbound governance seams, and says "An unexpected error occurred"
 
 **Epic**: `EPIC-033` (found here) · **owned by** `EPIC-031` and `EPIC-032`
-**Raised**: 2026-08-29 | **Status**: **OPEN**
+**Raised**: 2026-08-29 | **Status**: **OPEN** — item 3 closed by `EPIC-001` `T1195`; items 1 and 2 remain
 **Found by**: driving the Room in a browser after Phase 11 built the decision and baseline controls
 **Severity**: **HIGH** — the Epic's headline journey cannot be completed by anyone, and the reason
 is invisible to the person it stops
@@ -35,7 +35,8 @@ What is wrong is that nothing anywhere **says** this is the state.
 
 ## The message is the defect, and EPIC-033 was right not to fix it locally
 
-`PolicyUnavailableError` is deliberately **not** a `PlatformError`. Its own comment records why:
+`PolicyUnavailableError` **was** deliberately not a `PlatformError` — since `T1195` it is one. Its
+comment recorded why it could not be:
 
 > *"no documented status code means 'a governance seam is unbound', and `DEF-008-001` is what
 > happens when an Epic that does not own `platform-api.md` invents one."*
@@ -63,16 +64,24 @@ That is the honest local behaviour for a refusal this component cannot resolve.
 
 ## What is needed, and by whom
 
-1. **`EPIC-031`** — bind a `PolicyProvider` at the composition root. Same shape as `T1178`'s store
-   wiring: the seam exists, the consumer exists, nothing connects them.
-2. **`EPIC-032`** — bind an `EvidenceContractSource`.
-3. **Whoever owns `platform-api.md`** — a documented status and code for an unbound governance seam,
-   so `PolicyUnavailableError` and `EvidenceSourceUnavailableError` can carry it without any Epic
-   inventing one.
+1. **`EPIC-031`** — **implement and then bind** a `PolicyProvider`. This was first written here as
+   "bind a seam, same shape as `T1178`". That was wrong, and measuring it is what corrected it.
+2. **`EPIC-032`** — the same for `EvidenceContractSource`.
+3. ~~**Whoever owns `platform-api.md`** — a documented status and code for an unbound governance
+   seam.~~ **Done 2026-08-29** — `EPIC-001` `T1195` added `governance_seam_unbound` (503). Both
+   errors now carry it, and `decide` answers with *"the PolicyProvider seam is unbound — EPIC-031
+   supplies it"* rather than *"An unexpected error occurred."*
 
-(1) and (2) are each a handful of lines against work that already exists. (3) is a contract decision
-and is the smallest of the three, but it is the one that stops a user meeting
-*"An unexpected error occurred"* the next time a seam is unbound.
+**Items 1 and 2 are larger than this defect first implied.** Neither is a binding exercise: on
+2026-08-29 `EPIC-031` had **92 open tasks and no backend module**, and `EPIC-032` had **83 open
+tasks**. There is no implementation to register. A stub is not available either — `FR-GEL-062` and
+`ROOM_PORTS` exist precisely because *a default that permits is invisible*, so a permissive
+`PolicyProvider` would be the failure they were written to prevent, and a refusing one changes
+nothing. Completing the journey means implementing those Epics.
+
+**Why (3) was worth doing on its own.** It does not unblock the journey and was never going to. It
+stops the *next* unbound seam presenting itself as a crash, which is the failure mode that made this
+one take a browser session to find.
 
 ## Related
 

@@ -18,6 +18,7 @@ export type ErrorCode =
   | 'specification_not_approved'
   | 'engine_unavailable'
   | 'provider_unavailable'
+  | 'governance_seam_unbound'
   | 'internal_error';
 
 export interface ErrorBody {
@@ -138,6 +139,34 @@ export class ProviderUnavailableError extends PlatformError {
   readonly code = 'provider_unavailable' as const;
 }
 
+/**
+ * `T1195` (EPIC-001) — a **declared** governance seam has no implementation
+ * bound, so the request is refused rather than defaulted.
+ *
+ * Added because `DEF-033-002` found two of them reaching users as
+ * *"An unexpected error occurred."* — `EPIC-031`'s `PolicyProvider` and
+ * `EPIC-032`'s `EvidenceContractSource`, both declared `absent: 'refuse'` by
+ * `ROOM_PORTS`.
+ *
+ * **The consuming Epics were right not to invent this.** `PolicyUnavailableError`
+ * records the reasoning: no documented status meant *"a seam is unbound"*, and
+ * `DEF-008-001` is what happens when an Epic that does not own
+ * `platform-api.md` invents one. So it is added here, by the owning Epic, with
+ * the status table amended in the same change.
+ *
+ * **Why 503 and not 422 or 502.** Not 422: the request is well formed and the
+ * refusal is not about its content, so a caller correcting the body would learn
+ * nothing. Not 502: that is `provider_unavailable`, documented for an
+ * unreachable **storage** provider (`EPIC-025`), and a seam that was never
+ * configured is a different fact from one that cannot be reached.
+ *
+ * **The message must name the seam.** A 503 saying nothing is the same defect
+ * with a better number.
+ */
+export class GovernanceSeamUnboundError extends PlatformError {
+  readonly code = 'governance_seam_unbound' as const;
+}
+
 const STATUS: Record<ErrorCode, number> = {
   validation_failed: 400,
   unauthenticated: 401,
@@ -153,6 +182,7 @@ const STATUS: Record<ErrorCode, number> = {
   // that does not own `platform-api.md` is the mistake DEF-008-001 records.
   engine_unavailable: 422,
   provider_unavailable: 502,
+  governance_seam_unbound: 503,
   internal_error: 500,
 };
 
