@@ -145,6 +145,17 @@ describe('T405f · R-033-7 — the three targets at 200 requirements', () => {
   });
 });
 
+/**
+ * **Load-sensitive, observed 2026-08-30.** These pass alone (curve 0.26 → 2.79 ms,
+ * comfortably inside the 16× bound) and the degradation case fails under a full
+ * parallel suite run, where the measurement competes with a dozen worker
+ * processes and several PostgreSQL containers.
+ *
+ * The same class as `T147` and `DEF-030-002`: a wall-clock assertion in a
+ * parallel suite measures the machine as much as the code. Recorded rather than
+ * loosened — a bound wide enough to survive any load would stop detecting the
+ * super-linear growth `R-033-7` asks to be warned about.
+ */
 describe('T405g · R-033-7 — the 500 limit, and what happens above it', () => {
   it('holds at the designed size of 500', () => {
     const samples = Array.from({ length: 40 }, () =>

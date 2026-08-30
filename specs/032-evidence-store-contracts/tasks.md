@@ -308,3 +308,24 @@ revert. Three target guarantees this plan moved into the type system and the sch
   whether ports have bindings. Naming the adapter as its own task is the cheapest correction.
 - **Constitution V over the skill default**: `/speckit-tasks` calls tests optional; the constitution
   overrides every template, skill and tool default.
+
+## Scoped slice: the Evidence Contract gate the Room asks *(added 2026-08-30)*
+
+*Authorised as "start EPIC-032, scoped to what the Room needs". The last seam in `DEF-033-002`:
+`BaselineService.approve` threw before reading anything, so an approved baseline was unreachable.*
+
+**The concern I raised before starting turned out to be unfounded.** I flagged that a slice might
+need a product decision about *what counts as evidence*. It does not — `FR-EVS-025` and
+`FR-EVS-003` define it: an item declares the evidence **types** that satisfy it, evidence is typed
+by what it proves, and it attests an artifact **and its version**. The requirements were already
+specific enough to implement without inventing anything.
+
+**What this slice is NOT.** No evidence ingestion API, no external tool adapters (`FR-EVS-040`), no
+integrity *computation* (the column records a verdict; nothing computes it yet), no Contract
+authoring UI, no re-evaluation on arrival (`FR-EVS-031`), and no per-version Contract attachment
+(`FR-EVS-023` — the evaluator carries `version`, but nothing attaches Contracts to versioned work).
+
+- [X] T1201 [P] Write failing unit tests for Contract evaluation in `backend/tests/unit/evidence/contract-evaluation.spec.ts` — wrong type, superseded version, failed integrity and unresolvable reference each leave an item unmet, and an empty Contract satisfies only where policy declared it
+- [X] T1202 Implement `backend/src/modules/evidence/contract-evaluation.ts` (unit test: T1201) — a pure function, so the rules that decide whether a gate opens need no database to exercise
+- [X] T1203 Add `evidence_contracts`, `evidence_contract_items` and `evidence_items` in `backend/prisma/migrations/20260830000000_epic032_evidence_contracts/`, and implement `PrismaEvidenceContractSource` — `integrityValid` defaults to **false**, because a default of `true` would make the unchecked case indistinguishable from the checked one (`FR-EVS-034`)
+- [X] T1204 Bind the source to **both** consumers in `requirement-room.module.ts` (`readiness` and `BaselineService`) *(verified live — an unmet Contract reports "item-tests (Automated tests pass): no evidence attached"; attaching a valid `test-run` gives `ready: true` with zero blockers)*

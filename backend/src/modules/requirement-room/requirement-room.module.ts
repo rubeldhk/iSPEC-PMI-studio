@@ -55,6 +55,10 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
 
 import { GOVERNED_LOOP } from '../../composition/governed-loop.js';
 import { PolicyModule, POLICY_PROVIDER, type LoopPolicyAdapter } from '../policy/policy.module.js';
+import {
+  PrismaEvidenceContractSource,
+  type EvidencePrismaClient,
+} from '../evidence/evidence-contract.source.js';
 import { prismaClient } from '../../persistence/prisma.js';
 import {
   PrismaRequirementRoomStore,
@@ -99,7 +103,17 @@ import { LoopService } from '../loop/loop.service.js';
     {
       provide: BaselineService,
       inject: [REQUIREMENT_ROOM_STORE],
-      useFactory: (store: RequirementRoomStore): BaselineService => new BaselineService(store),
+      useFactory: (store: RequirementRoomStore): BaselineService =>
+        // `T1204` — the Evidence Contract seam. `readiness` and `approve` are
+        // separate consumers of it, and binding only the first is how a gate
+        // reports "ready" and then refuses: the Room said nothing was
+        // outstanding while `approve` still threw.
+        new BaselineService(
+          store,
+          process.env['DATABASE_URL']
+            ? new PrismaEvidenceContractSource(prismaClient() as unknown as EvidencePrismaClient)
+            : undefined,
+        ),
     },
     {
       provide: EDIT_VETO_REGISTERED,
@@ -206,7 +220,18 @@ import { LoopService } from '../loop/loop.service.js';
           handoffs,
           store,
           principals,
-          undefined,
+          // `T1204` — the Evidence Contract seam, bound. `ROOM_PORTS` declares
+          // it `absent: 'refuse'`, and until now nothing supplied it, so
+          // `approve` threw before reading the set (`DEF-033-002`).
+          //
+          // Still refuses by default, and that is `FR-EVS-026`: a Contract with
+          // no items satisfies nothing unless policy declared the work class
+          // needs none. Binding this made the gate *evaluable*, not permissive.
+          process.env['DATABASE_URL']
+            ? new PrismaEvidenceContractSource(
+                prismaClient() as unknown as EvidencePrismaClient,
+              )
+            : undefined,
           // `T1167` — the governed loop, so `openRoom` can declare the Room's
           // object. `GOVERNED_LOOP` is the one configured instance.
           loop,

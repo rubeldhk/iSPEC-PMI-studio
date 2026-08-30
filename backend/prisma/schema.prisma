@@ -2090,3 +2090,61 @@ model ApplicationIntent {
   @@index([workspaceId, specificationId])
   @@map("application_intents")
 }
+
+/// EPIC-032 (scoped) T1203 — Evidence Contracts and typed evidence.
+/// The seam DEF-033-002 found unbound between the Room and an approved baseline.
+model EvidenceContract {
+  id                    String                 @id @default(uuid())
+  workspaceId           String
+  projectId             String
+  /// FR-EVS-023 — work is judged against the version it began under.
+  version               Int                    @default(1)
+  /// FR-EVS-026 — only policy may declare a work class needs no evidence.
+  declaredEmptyByPolicy Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  items                 EvidenceContractItem[]
+
+  @@index([workspaceId])
+  @@map("evidence_contracts")
+}
+
+model EvidenceContractItem {
+  id            String           @id @default(uuid())
+  /// FR-002 — tenant-scoped tables carry their workspace; a join is not isolation.
+  workspaceId   String
+  contractId    String
+  description   String
+  /// FR-EVS-025 — an item states which evidence types satisfy it.
+  acceptedTypes String[]
+  createdAt     DateTime         @default(now())
+  contract      EvidenceContract @relation(fields: [contractId], references: [id])
+  evidence      EvidenceItem[]
+
+  @@index([contractId])
+  @@index([workspaceId])
+  @@map("evidence_contract_items")
+}
+
+model EvidenceItem {
+  id                     String               @id @default(uuid())
+  workspaceId            String
+  /// FR-EVS-003 — typed by what it proves, not by which tool produced it.
+  type                   String
+  satisfiesItemId        String
+  attestsArtifactId      String
+  /// FR-EVS-011 — the version, so FR-EVS-012 can refuse superseded evidence.
+  attestsArtifactVersion Int
+  source                 String
+  producedAt             DateTime
+  /// FR-EVS-034 — presence is not validity. Defaults to NOT valid.
+  integrityValid         Boolean              @default(false)
+  /// FR-EVS-014 — a referenced target that still resolves.
+  resolvable             Boolean              @default(true)
+  createdAt              DateTime             @default(now())
+  item                   EvidenceContractItem @relation(fields: [satisfiesItemId], references: [id])
+
+  @@index([satisfiesItemId])
+  @@index([workspaceId])
+  @@index([workspaceId, attestsArtifactId, attestsArtifactVersion])
+  @@map("evidence_items")
+}
