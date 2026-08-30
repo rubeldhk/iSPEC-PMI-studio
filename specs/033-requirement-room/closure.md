@@ -1,7 +1,8 @@
 # EPIC-033 — Requirement Room: closing report
 
 **Task**: `T405x` · **Written**: 2026-08-29 · **Head**: `5747a49` (plus this commit)
-**Branch**: `checkpoint/constitution-xii-steps-a-b`, unmerged, not pushed
+**Branch**: `epic/037-governed-execution-registry`, unmerged, not pushed *(corrected 2026-08-30 — this
+record named `checkpoint/constitution-xii-steps-a-b`, which is not where the work is)*
 
 **Status**: **NOT CLOSED.** One task remains open and one success criterion is **unmet**. See the
 Correction below, which supersedes the two sections it contradicts — they are kept as written so the

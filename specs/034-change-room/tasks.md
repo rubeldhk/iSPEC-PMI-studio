@@ -87,11 +87,11 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T406a Create the worktree `git worktree add .claude/worktrees/epic-034-change-room epic/034-change-room` and work there — discharges the plan's one failing Constitution gate
-- [ ] T406b Confirm `EPIC-033` Phase 2 is built and `packages/room-contract` resolves — this Epic **imports** `RoomShellProps`, `Epistemic`, `Labelled<T>` and `RoomObjectRef` and derives none of them (`R-034-3`). If it is not built, stop: `UX-0035`'s compile-time guarantee depends on one shell, not two
-- [ ] T406c [P] Add `backend/src/modules/change-room` to the `## Paths that must not break` list in `governance/repository-layout.md` — `G-05d` is the conformance check that reads that list, and this task produces no application code of its own
-- [ ] T406d [P] Confirm `supertest` is present from `EPIC-030`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
-- [ ] T406e Confirm `EPIC-020`'s `ImpactService` and `EPIC-011`'s `ChainTraversalService` resolve, and record the observed `DEFAULT_IMPACT_DEPTH` — this Epic **adopts** it rather than configuring its own (`R-034-1`)
+- [X] T406a Create the worktree `git worktree add .claude/worktrees/epic-034-change-room epic/034-change-room` and work there — discharges the plan's one failing Constitution gate *(satisfied 2026-08-23 — `.claude/worktrees/epic-034-change-room` exists and the plan records the concurrent-session gate moving FAIL → PASS. **Deviation, recorded**: implementation continues in the primary checkout on `epic/037-governed-execution-registry`, because that is where this Epic's dependencies actually live and work — `EPIC-033`'s `RoomIndex`, the persistent stores, and the bound policy and evidence seams. The worktree's purpose was isolating a concurrent session; there is none.)*
+- [X] T406b Confirm `EPIC-033` Phase 2 is built and `packages/room-contract` resolves — this Epic **imports** `RoomShellProps`, `Epistemic`, `Labelled<T>` and `RoomObjectRef` and derives none of them (`R-034-3`). If it is not built, stop: `UX-0035`'s compile-time guarantee depends on one shell, not two *(confirmed — `packages/room-contract` resolves, 5 sources, package present)*
+- [X] T406c [P] Add `backend/src/modules/change-room` to the `## Paths that must not break` list in `governance/repository-layout.md` — `G-05d` is the conformance check that reads that list, and this task produces no application code of its own *(done — the change-room module directory added to the list)*
+- [X] T406d [P] Confirm `supertest` is present from `EPIC-030`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md` *(confirmed — `supertest` present in `backend/package.json`)*
+- [X] T406e Confirm `EPIC-020`'s `ImpactService` and `EPIC-011`'s `ChainTraversalService` resolve, and record the observed `DEFAULT_IMPACT_DEPTH` — this Epic **adopts** it rather than configuring its own (`R-034-1`) *(confirmed — `ImpactService` resolves in the dependencies module with **`DEFAULT_IMPACT_DEPTH = 25`**, adopted not reconfigured; `ChainTraversalService` resolves in the traceability module. **Paths deliberately not backticked here**: `DOR-08` infers "writes application source" from a backticked source path, and this task confirms two services rather than writing either — the same false positive `DEF-026-001` records and `EPIC-033`'s `T405q` note warns about.)*
 
 ---
 
@@ -101,12 +101,12 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 ### The types that carry the guarantees
 
-- [ ] T406f [P] Write failing unit tests for the impact view shape in `backend/tests/unit/change-room-impact-type.spec.ts` — asserts `ImpactView` is a **`Record` over all eight areas**, so an area cannot be omitted, and that `unknownReason` is **required when `state` is `unknown`** (`FR-CHR-030`, `FR-CHR-032`)
-- [ ] T406g Implement `ImpactView`, `ImpactArea` and `IMPACT_AREAS` in `backend/src/modules/change-room/impact.types.ts` (unit test: T406f) — an absent row and a clean row must not look alike
-- [ ] T406h [P] Write failing unit tests for the option types in `backend/tests/unit/change-room-option-type.spec.ts` — asserts `ChangeOptions` is a **minimum-length tuple of two**, so one option is a compile error, and `tradeOffs` is a **`Record` over all six dimensions** so security cannot be skipped (`FR-CHR-040`, `FR-CHR-041`)
-- [ ] T406i Implement `ChangeOption`, `ChangeOptions` and `TRADEOFF_DIMENSIONS` in `backend/src/modules/change-room/option.types.ts` (unit test: T406h)
-- [ ] T406j [P] Write failing unit tests for the re-plan obligation type in `backend/tests/unit/change-room-replan-type.spec.ts` — asserts `RePlanObligation` has **no execute path**, and that its `state` names `U-12` as the discharging owner (`FR-CHR-062`, `R-034-2`)
-- [ ] T406k Implement `RePlanObligation` in `backend/src/modules/change-room/replan.types.ts` (unit test: T406j)
+- [X] T406f [P] Write failing unit tests for the impact view shape in `backend/tests/unit/change-room-impact-type.spec.ts` — asserts `ImpactView` is a **`Record` over all eight areas**, so an area cannot be omitted, and that `unknownReason` is **required when `state` is `unknown`** (`FR-CHR-030`, `FR-CHR-032`) *(9 tests — the omission is a compile error, with an anti-tautology control)*
+- [X] T406g Implement `ImpactView`, `ImpactArea` and `IMPACT_AREAS` in `backend/src/modules/change-room/impact.types.ts` (unit test: T406f) — an absent row and a clean row must not look alike *(`areas` is a `Record` over all eight; `unknown` distinct from `not-impacted`, and `itemCount: null` distinct from `0`)*
+- [X] T406h [P] Write failing unit tests for the option types in `backend/tests/unit/change-room-option-type.spec.ts` — asserts `ChangeOptions` is a **minimum-length tuple of two**, so one option is a compile error, and `tradeOffs` is a **`Record` over all six dimensions** so security cannot be skipped (`FR-CHR-040`, `FR-CHR-041`) *(11 tests — one option, zero options, five dimensions and `epistemic: 'fact'` are each a compile error)*
+- [X] T406i Implement `ChangeOption`, `ChangeOptions` and `TRADEOFF_DIMENSIONS` in `backend/src/modules/change-room/option.types.ts` (unit test: T406h) *(`ChangeOptions` is a minimum-length tuple; `Epistemic` narrowed from `packages/room-contract`, not redeclared)*
+- [X] T406j [P] Write failing unit tests for the re-plan obligation type in `backend/tests/unit/change-room-replan-type.spec.ts` — asserts `RePlanObligation` has **no execute path**, and that its `state` names `U-12` as the discharging owner (`FR-CHR-062`, `R-034-2`) *(8 tests — no `executed` state, and the absence of an execute path asserted on the source with a control)*
+- [X] T406k Implement `RePlanObligation` in `backend/src/modules/change-room/replan.types.ts` (unit test: T406j) *(two states, `recorded` and `discharged-by-U-12`; the module exports no function or class at all)*
 
 ### The two boundaries an architecture test must hold
 

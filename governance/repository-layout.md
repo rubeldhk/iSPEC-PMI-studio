@@ -188,6 +188,9 @@ path added or removed without updating this document fails the build.
   and the `UX-0040` 360px floor, so no Room sets its own
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T993f`)
+- `backend/src/modules/change-room/` — `EPIC-034`'s module (`T406c`). Registered in
+  `backend/src/app.module.ts` and asserted by `change-room-independence.spec.ts`, which reads this
+  directory to prove the Room imports the shared contract rather than forking it
 > **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
 > disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
 > rather than left implied: the four older contract packages — `engine-contract`,
