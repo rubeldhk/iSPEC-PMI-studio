@@ -35,6 +35,7 @@ const CANDIDATE: RoomCandidate = {
 const props = (over: Partial<React.ComponentProps<typeof Candidates>> = {}) => ({
   candidates: [CANDIDATE],
   onSetCriteria: vi.fn().mockResolvedValue(undefined),
+  onPromote: vi.fn().mockResolvedValue(undefined),
   ...over,
 });
 

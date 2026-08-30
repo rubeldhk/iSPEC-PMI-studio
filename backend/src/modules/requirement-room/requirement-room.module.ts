@@ -193,6 +193,7 @@ import { LoopService } from '../loop/loop.service.js';
         REQUIREMENT_ROOM_STORE,
         WorkspaceBoundaryService,
         LoopService,
+        ROOM_REQUIREMENT_REGISTER,
       ],
       useFactory: (
         intake: IntakeService,
@@ -206,6 +207,7 @@ import { LoopService } from '../loop/loop.service.js';
         store: RequirementRoomStore,
         principals: WorkspaceBoundaryService,
         loop: LoopService,
+        register: EpicSevenRequirementRegister,
       ): RequirementRoomService =>
         // No EvidenceContractSource: EPIC-032 binds it at the composition root.
         // Until it does, `readiness` reports the Contract as UNEVALUATED, which
@@ -235,6 +237,8 @@ import { LoopService } from '../loop/loop.service.js';
           // `T1167` — the governed loop, so `openRoom` can declare the Room's
           // object. `GOVERNED_LOOP` is the one configured instance.
           loop,
+          // `T1206` — `EPIC-007`'s register, for promotion.
+          register,
         ),
     },
   ],

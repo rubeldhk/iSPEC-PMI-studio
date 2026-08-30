@@ -38,6 +38,11 @@ const api: RequirementRoomApi = {
   roomDecisions: vi.fn().mockResolvedValue([]),
   decideRoom: vi.fn().mockResolvedValue({}),
   approveBaseline: vi.fn().mockResolvedValue({}),
+  promoteCandidate: vi.fn().mockResolvedValue({
+    requirementId: 'r_1',
+    requirementVersionId: 'rv_1',
+    contentHash: 'h',
+  }),
 };
 
 const open = () =>
@@ -65,6 +70,7 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
           roomDecisions: vi.fn().mockReturnValue(new Promise(() => {})),
           decideRoom: vi.fn().mockReturnValue(new Promise(() => {})),
           approveBaseline: vi.fn().mockReturnValue(new Promise(() => {})),
+          promoteCandidate: vi.fn().mockReturnValue(new Promise(() => {})),
         }}
         roomObjectId="ro_1"
         projectId="pr_1"
@@ -88,6 +94,7 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
           roomDecisions: vi.fn().mockRejectedValue(new Error('no')),
           decideRoom: vi.fn().mockRejectedValue(new Error('no')),
           approveBaseline: vi.fn().mockRejectedValue(new Error('no')),
+          promoteCandidate: vi.fn().mockRejectedValue(new Error('no')),
         }}
         roomObjectId="ro_1"
         projectId="pr_1"

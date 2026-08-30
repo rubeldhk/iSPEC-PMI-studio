@@ -135,6 +135,17 @@ export class RequirementRoomController {
     return this.room.setCriteria(requireAuth(ctx), id, candidateId, body ?? {});
   }
 
+  /** `T1206` — promote a candidate into the register and freeze it. */
+  @Post('rooms/requirement/:id/candidates/:candidateId/promote')
+  promote(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Param('candidateId') candidateId: string,
+    @Body() body: { type?: string; priority?: string },
+  ): Promise<unknown> {
+    return this.room.promote(requireAuth(ctx), id, candidateId, body ?? {});
+  }
+
   /** `T1193` — the decisions recorded for a Room. */
   @Get('rooms/requirement/:id/decisions')
   listDecisions(

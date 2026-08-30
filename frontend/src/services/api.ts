@@ -748,12 +748,35 @@ export class ApiClient {
    */
   async approveBaseline(
     roomObjectId: string,
-    input: { projectId: string; rationale: string; decisionId: string },
+    input: {
+      projectId: string;
+      rationale: string;
+      decisionId: string;
+      members: readonly { requirementVersionId: string; contentHash: string; candidateId: string }[];
+      evidenceContractRef: string;
+    },
   ): Promise<unknown> {
     return this.request(
       'POST',
       `/rooms/requirement/${encodeURIComponent(roomObjectId)}/baseline`,
       input,
+    );
+  }
+
+  /**
+   * `T1207` — promote a candidate into `EPIC-007`'s register and freeze it.
+   *
+   * Returns the frozen version and its hash, which is exactly what a baseline
+   * member is made of.
+   */
+  async promoteCandidate(
+    roomObjectId: string,
+    candidateId: string,
+  ): Promise<{ requirementId: string; requirementVersionId: string; contentHash: string }> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/candidates/${encodeURIComponent(candidateId)}/promote`,
+      {},
     );
   }
 
@@ -797,8 +820,19 @@ export class ApiClient {
     return this.request('GET', '/rooms/requirement');
   }
 
-  async roomReadiness(roomObjectId: string, projectId: string): Promise<Readiness> {
-    const query = new URLSearchParams({ projectId }).toString();
+  async roomReadiness(
+    roomObjectId: string,
+    projectId: string,
+    evidenceContractRef?: string,
+  ): Promise<Readiness> {
+    // `T1207` — the Contract ref travels with the question. Without it the
+    // server cannot evaluate the Contract and answers "unevaluated", so the Room
+    // showed a blocker the API did not have. The UI and the API must be asking
+    // the same question or one of them is lying.
+    const query = new URLSearchParams({
+      projectId,
+      ...(evidenceContractRef === undefined ? {} : { evidenceContractRef }),
+    }).toString();
     return this.request(
       'GET',
       `/rooms/requirement/${encodeURIComponent(roomObjectId)}/readiness?${query}`,

@@ -37,6 +37,13 @@ export interface CandidatesProps {
     acceptanceCriteria: readonly string[] | null,
     intendedForImplementation: boolean,
   ): Promise<void>;
+  /**
+   * `T1207` — promote into `EPIC-007`'s register.
+   *
+   * A candidate is not a requirement until a person says so, so this is a
+   * deliberate act with its own control rather than something criteria trigger.
+   */
+  onPromote(candidateId: string): Promise<void>;
 }
 
 /** `FR-RQR-030` — the rule is scoped to what is intended for implementation. */
@@ -50,9 +57,11 @@ function needsCriteria(candidate: RoomCandidate): boolean {
 function CandidateItem({
   candidate,
   onSetCriteria,
+  onPromote,
 }: {
   candidate: RoomCandidate;
   onSetCriteria: CandidatesProps['onSetCriteria'];
+  onPromote: CandidatesProps['onPromote'];
 }): ReactElement {
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -102,6 +111,27 @@ function CandidateItem({
         <p role="status">Needs acceptance criteria before it can be baselined.</p>
       )}
 
+      {candidate.promotedTo === null ? (
+        <button
+          type="button"
+          disabled={busy || needsCriteria(candidate)}
+          onClick={(): void => {
+            void (async (): Promise<void> => {
+              setBusy(true);
+              try {
+                await onPromote(candidate.id);
+              } finally {
+                setBusy(false);
+              }
+            })();
+          }}
+        >
+          Promote to requirement
+        </button>
+      ) : (
+        <p>Promoted — it can be frozen into a baseline.</p>
+      )}
+
       <form className="ds-row" onSubmit={(event): void => void add(event)}>
         <label htmlFor={fieldId}>Acceptance criterion</label>
         <input
@@ -119,7 +149,11 @@ function CandidateItem({
   );
 }
 
-export function Candidates({ candidates, onSetCriteria }: CandidatesProps): ReactElement {
+export function Candidates({
+  candidates,
+  onSetCriteria,
+  onPromote,
+}: CandidatesProps): ReactElement {
   return (
     <section className="ds-stack">
       <h3>Candidates</h3>
@@ -138,6 +172,7 @@ export function Candidates({ candidates, onSetCriteria }: CandidatesProps): Reac
               key={candidate.id}
               candidate={candidate}
               onSetCriteria={onSetCriteria}
+              onPromote={onPromote}
             />
           ))}
         </ul>

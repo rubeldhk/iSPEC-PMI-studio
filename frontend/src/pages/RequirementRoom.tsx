@@ -44,7 +44,11 @@ export interface RequirementRoomApi {
    * shell from calling a domain endpoint, and an adapter built there to bridge
    * two names would be doing precisely that.
    */
-  roomReadiness(roomObjectId: string, projectId: string): Promise<Readiness>;
+  roomReadiness(
+    roomObjectId: string,
+    projectId: string,
+    evidenceContractRef?: string,
+  ): Promise<Readiness>;
   /**
    * `T1188` — the four the journey needs, named to match `ApiClient` for the
    * same reason as above.
@@ -78,8 +82,18 @@ export interface RequirementRoomApi {
   ): Promise<RecordedRoomDecision>;
   approveBaseline(
     roomObjectId: string,
-    input: { projectId: string; rationale: string; decisionId: string },
+    input: {
+      projectId: string;
+      rationale: string;
+      decisionId: string;
+      members: readonly { requirementVersionId: string; contentHash: string; candidateId: string }[];
+      evidenceContractRef: string;
+    },
   ): Promise<unknown>;
+  promoteCandidate(
+    roomObjectId: string,
+    candidateId: string,
+  ): Promise<{ requirementId: string; requirementVersionId: string; contentHash: string }>;
 }
 
 export interface RequirementRoomPageProps {
@@ -96,6 +110,16 @@ interface Loaded<T> {
 
 const PENDING = { value: null, error: undefined } as const;
 
+/**
+ * `T1207` — the Evidence Contract this Room's baseline is judged against.
+ *
+ * A constant because nothing yet attaches a Contract to a Room: `FR-EVS-021`
+ * wants one attached at creation of the work it governs, and that is the rest of
+ * `EPIC-032`. Named here, visibly, rather than hidden in a call — when Contracts
+ * become per-Room this is the one place that changes.
+ */
+const EVIDENCE_CONTRACT_REF = 'ev_room';
+
 export function RequirementRoomPage({
   api,
   roomObjectId,
@@ -108,6 +132,9 @@ export function RequirementRoomPage({
   const [candidates, setCandidates] = useState<readonly RoomCandidate[]>([]);
   const [clarifications, setClarifications] = useState<readonly RoomClarification[]>([]);
   const [decisions, setDecisions] = useState<readonly RecordedRoomDecision[]>([]);
+  const [frozen, setFrozen] = useState<
+    readonly { candidateId: string; requirementVersionId: string; contentHash: string }[]
+  >([]);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -121,7 +148,7 @@ export function RequirementRoomPage({
           : undefined,
       );
     void api
-      .roomReadiness(roomObjectId, projectId)
+      .roomReadiness(roomObjectId, projectId, EVIDENCE_CONTRACT_REF)
       .then((value) => live && setReadiness({ value, error: undefined }))
       .catch(() =>
         live
@@ -168,7 +195,7 @@ export function RequirementRoomPage({
     setClarifications(nextClarifications);
     setDecisions(nextDecisions);
     await api
-      .roomReadiness(roomObjectId, projectId)
+      .roomReadiness(roomObjectId, projectId, EVIDENCE_CONTRACT_REF)
       .then((value) => setReadiness({ value, error: undefined }))
       .catch(() => undefined);
   };
@@ -225,6 +252,17 @@ export function RequirementRoomPage({
                 });
                 await refresh();
               }}
+              onPromote={async (candidateId): Promise<void> => {
+                // `T1207` — the frozen version is remembered here, because a
+                // baseline member is made of it and nothing else on the page
+                // carries it.
+                const frozen = await api.promoteCandidate(roomObjectId, candidateId);
+                setFrozen((current) => [
+                  ...current.filter((f) => f.candidateId !== candidateId),
+                  { candidateId, ...frozen },
+                ]);
+                await refresh();
+              }}
             />
           </div>
         }
@@ -260,6 +298,14 @@ export function RequirementRoomPage({
                   projectId,
                   rationale,
                   decisionId: decisions[decisions.length - 1]?.id ?? '',
+                  // `T1207` — the frozen versions, each carrying the candidate
+                  // it came from so the criteria gate can resolve it.
+                  members: frozen.map((f) => ({
+                    requirementVersionId: f.requirementVersionId,
+                    contentHash: f.contentHash,
+                    candidateId: f.candidateId,
+                  })),
+                  evidenceContractRef: EVIDENCE_CONTRACT_REF,
                 });
                 await refresh();
               }}

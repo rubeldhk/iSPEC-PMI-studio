@@ -18,6 +18,7 @@
  * answered.
  */
 import { randomUUID } from 'node:crypto';
+import type { RequirementRegister } from './register.adapter.js';
 import { NotFoundError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { AnalysisResult, AnalysisService } from './analysis.service.js';
 import type {
@@ -227,6 +228,14 @@ export class RequirementRoomService {
      * outright.
      */
     private readonly loop?: LoopDeclarer | undefined,
+    /**
+     * `T1206` — `EPIC-007`'s register, for promotion only.
+     *
+     * Optional so existing construction sites keep working, and refused when
+     * absent: a candidate promoted without the register would get a
+     * `promotedTo` pointing at nothing.
+     */
+    private readonly register?: RequirementRegister | undefined,
   ) {}
 
   /**
@@ -413,6 +422,61 @@ export class RequirementRoomService {
       acceptanceCriteria: input.acceptanceCriteria ?? null,
       intendedForImplementation: input.intendedForImplementation ?? true,
     });
+  }
+
+  /**
+   * `T1206` — promote a candidate into `EPIC-007`'s register and freeze it.
+   *
+   * The missing link the browser walk found. `RequirementRegister.promote` and
+   * `.freeze` have existed since `T338d` and **nothing called either**: a
+   * candidate could be labelled, given criteria and decided, and still had no
+   * requirement version for a baseline to freeze.
+   *
+   * Two steps, one call, deliberately. A promotion that created the requirement
+   * and stopped would leave a candidate pointing at something with no version,
+   * which is a state the baseline gate cannot use and nobody would notice until
+   * approval refused.
+   *
+   * `FR-RQR-002`, `D-33` — the register is `EPIC-007`'s. This writes **through**
+   * the adapter and keeps only the reference (`promotedTo`).
+   */
+  async promote(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+    candidateId: string,
+    input: { type?: string; priority?: string },
+  ): Promise<{ requirementId: string; requirementVersionId: string; contentHash: string }> {
+    const actor = await this.acting(principal);
+    const candidate = await this.store.findCandidateById(candidateId);
+    if (
+      !candidate ||
+      candidate.workspaceId !== actor.workspaceId ||
+      candidate.roomObjectId !== roomObjectId
+    ) {
+      throw new NotFoundError('Not found.');
+    }
+    if (!this.register) {
+      throw new ValidationFailedError('promotion requires the requirement register');
+    }
+
+    const ctx = { workspaceId: actor.workspaceId, userId: actor.id };
+    const promoted = await this.register.promote(ctx, candidate.projectId, {
+      text: candidate.normalizedText,
+      // `EPIC-007`'s vocabularies, not guesses: `business | functional |
+      // constraint` and `p1 | p2 | p3`. The first walk through this path sent
+      // `should` and was refused by the register, which is the validation doing
+      // its job — the Room does not get to invent the register's terms.
+      type: (input.type ?? 'functional') as never,
+      priority: (input.priority ?? 'p2') as never,
+    });
+    const frozen = await this.register.freeze(ctx, promoted.requirementId);
+    // The reference, never a copy.
+    await this.store.markPromoted(candidateId, promoted.requirementId);
+    return {
+      requirementId: promoted.requirementId,
+      requirementVersionId: frozen.requirementVersionId,
+      contentHash: promoted.contentHash,
+    };
   }
 
   /** `T1193` — the decisions recorded for a Room, so the screen can show them. */
