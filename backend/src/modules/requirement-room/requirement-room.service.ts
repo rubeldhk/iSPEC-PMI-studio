@@ -40,6 +40,7 @@ import type {
   IntakeService,
 } from './intake.service.js';
 import type {
+  BaselineRow,
   CandidateRow,
   ClarificationRow,
   DecisionRow,
@@ -477,6 +478,25 @@ export class RequirementRoomService {
       requirementVersionId: frozen.requirementVersionId,
       contentHash: promoted.contentHash,
     };
+  }
+
+  /**
+   * `T1211` — the baselines approved for this project.
+   *
+   * `T1208`: a person approved a baseline and the screen still said *"Nothing is
+   * outstanding"* with the approve control still offered, because readiness is
+   * unchanged by approval and nothing rendered the baseline that now existed.
+   *
+   * **Superseded ones are included.** `FR-RQR-052` keeps a superseded baseline
+   * readable and pointing at what replaced it; hiding them would make version 2
+   * look like the only thing that ever happened.
+   */
+  async listBaselines(principal: ActingPrincipal, projectId: string): Promise<BaselineRow[]> {
+    const actor = await this.acting(principal);
+    if (!projectId) {
+      throw new ValidationFailedError('baselines require a projectId');
+    }
+    return this.store.listBaselines(actor.workspaceId, projectId);
   }
 
   /** `T1193` — the decisions recorded for a Room, so the screen can show them. */

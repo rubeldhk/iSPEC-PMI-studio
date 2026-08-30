@@ -30,15 +30,80 @@ export interface BaselineBlocker {
   readonly detail: string;
 }
 
+/** `T1211` — an approved baseline, as the wire carries it. */
+export interface ApprovedBaseline {
+  readonly id: string;
+  readonly version: number;
+  readonly approvedBy: string;
+  readonly approvedAt: string;
+  readonly rationale: string;
+  readonly setHash: string;
+  readonly memberVersionIds: readonly string[];
+  /** `FR-RQR-052` — the version that replaced it, or `null` while current. */
+  readonly supersededBy: number | null;
+}
+
 export interface BaselineProps {
   /** Straight from the readiness projection. Never re-derived here. */
   readonly blockers: readonly BaselineBlocker[];
   /** `null` while readiness is unknown — which is never "ready". */
   readonly ready: boolean | null;
+  /**
+   * `T1211` — what has already been approved, superseded ones included.
+   *
+   * `T1208`: without this the screen said *"Nothing is outstanding"* after a
+   * successful approval and still offered the control, because readiness is
+   * unchanged by approving and nothing rendered the baseline that now existed.
+   */
+  readonly baselines: readonly ApprovedBaseline[];
   onApprove(rationale: string): Promise<void>;
 }
 
-export function Baseline({ blockers, ready, onApprove }: BaselineProps): ReactElement {
+/**
+ * What was approved, and when.
+ *
+ * `S1` acceptance scenario 2 asks a baseline to carry its approver, rationale,
+ * timestamp and version; this shows all four, plus the `setHash` so a reader can
+ * check the set did not move. It offers no way to change any of it —
+ * `FR-RQR-051` makes a baseline immutable, and a control here would imply
+ * otherwise.
+ */
+function Approved({ baselines }: { baselines: readonly ApprovedBaseline[] }): ReactElement {
+  return (
+    <div className="ds-stack">
+      <h4>Approved baselines</h4>
+      <ul className="ds-stack">
+        {baselines.map((baseline) => (
+          <li key={baseline.id} data-testid={`baseline-${baseline.version}`}>
+            <p>
+              <strong>Version {baseline.version}</strong>
+              {baseline.supersededBy === null ? (
+                ' — current'
+              ) : (
+                // `FR-RQR-052` — readable, and it names its successor.
+                <> — superseded by version {baseline.supersededBy}</>
+              )}
+            </p>
+            <p>{baseline.rationale}</p>
+            <p className="ds-text-muted">
+              Approved by {baseline.approvedBy} at {baseline.approvedAt}, freezing{' '}
+              {baseline.memberVersionIds.length} requirement version
+              {baseline.memberVersionIds.length === 1 ? '' : 's'}.
+            </p>
+            <p className="ds-text-muted">
+              Set hash <code>{baseline.setHash.slice(0, 16)}…</code>
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p className="ds-text-muted">
+        A baseline cannot be edited. A change is a new baseline that supersedes it.
+      </p>
+    </div>
+  );
+}
+
+export function Baseline({ blockers, ready, baselines, onApprove }: BaselineProps): ReactElement {
   const [rationale, setRationale] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -70,6 +135,7 @@ export function Baseline({ blockers, ready, onApprove }: BaselineProps): ReactEl
     return (
       <section className="ds-stack">
         <h3>Baseline</h3>
+        {baselines.length > 0 && <Approved baselines={baselines} />}
         <p>
           This set cannot be baselined yet. A baseline is immutable once approved, so what is
           outstanding is listed rather than waived.
@@ -95,6 +161,7 @@ export function Baseline({ blockers, ready, onApprove }: BaselineProps): ReactEl
   return (
     <section className="ds-stack">
       <h3>Baseline</h3>
+      {baselines.length > 0 && <Approved baselines={baselines} />}
       <p>
         Nothing is outstanding. Approving freezes this set: it carries your name, this rationale,
         the time, and a version, and it cannot be edited afterwards — only superseded.

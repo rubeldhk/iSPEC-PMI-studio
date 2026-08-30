@@ -32,6 +32,7 @@ const api: RequirementRoomApi = {
   answerClarification: vi.fn().mockResolvedValue({}),
   // `T1193` — the decision and baseline half.
   roomDecisions: vi.fn().mockResolvedValue([]),
+  roomBaselines: vi.fn().mockResolvedValue([]),
   decideRoom: vi.fn().mockResolvedValue({}),
   approveBaseline: vi.fn().mockResolvedValue({}),
   promoteCandidate: vi.fn().mockResolvedValue({

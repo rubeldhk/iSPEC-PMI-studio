@@ -337,6 +337,18 @@ export interface RoomSummary {
 
 import type { Epistemic } from '@pmi/room-contract';
 
+/** `T1211` — an approved baseline as the wire carries it. */
+export interface ApprovedBaseline {
+  readonly id: string;
+  readonly version: number;
+  readonly approvedBy: string;
+  readonly approvedAt: string;
+  readonly rationale: string;
+  readonly setHash: string;
+  readonly memberVersionIds: readonly string[];
+  readonly supersededBy: number | null;
+}
+
 /** `T1193` — a decision as the wire carries it. */
 export interface RecordedRoomDecision {
   readonly id: string;
@@ -732,6 +744,15 @@ export class ApiClient {
       'POST',
       `/rooms/requirement/${encodeURIComponent(roomObjectId)}/decide`,
       input,
+    );
+  }
+
+  /** `T1211` — the baselines approved for a project, superseded ones included. */
+  async roomBaselines(roomObjectId: string, projectId: string): Promise<ApprovedBaseline[]> {
+    const query = new URLSearchParams({ projectId }).toString();
+    return this.request(
+      'GET',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/baselines?${query}`,
     );
   }
 

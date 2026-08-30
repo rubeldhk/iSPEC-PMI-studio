@@ -26,7 +26,12 @@ import { Candidates } from '../rooms/regions/Candidates';
 import { Clarifications } from '../rooms/regions/Clarifications';
 import { Decision } from '../rooms/regions/Decision';
 import { Baseline } from '../rooms/regions/Baseline';
-import type { RecordedRoomDecision, RoomCandidate, RoomClarification } from '../services/api';
+import type {
+  ApprovedBaseline,
+  RecordedRoomDecision,
+  RoomCandidate,
+  RoomClarification,
+} from '../services/api';
 
 /**
  * What this page needs, and nothing more.
@@ -71,6 +76,7 @@ export interface RequirementRoomApi {
   ): Promise<RoomClarification>;
   /** `T1193` — the decision and baseline half of the journey. */
   roomDecisions(roomObjectId: string): Promise<readonly RecordedRoomDecision[]>;
+  roomBaselines(roomObjectId: string, projectId: string): Promise<readonly ApprovedBaseline[]>;
   decideRoom(
     roomObjectId: string,
     input: {
@@ -132,6 +138,7 @@ export function RequirementRoomPage({
   const [candidates, setCandidates] = useState<readonly RoomCandidate[]>([]);
   const [clarifications, setClarifications] = useState<readonly RoomClarification[]>([]);
   const [decisions, setDecisions] = useState<readonly RecordedRoomDecision[]>([]);
+  const [baselines, setBaselines] = useState<readonly ApprovedBaseline[]>([]);
   const [frozen, setFrozen] = useState<
     readonly { candidateId: string; requirementVersionId: string; contentHash: string }[]
   >([]);
@@ -172,6 +179,10 @@ export function RequirementRoomPage({
       .roomDecisions(roomObjectId)
       .then((rows) => live && setDecisions(rows))
       .catch(() => undefined);
+    void api
+      .roomBaselines(roomObjectId, projectId)
+      .then((rows) => live && setBaselines(rows))
+      .catch(() => undefined);
     return (): void => {
       live = false;
     };
@@ -186,14 +197,17 @@ export function RequirementRoomPage({
    * exists, which is the one thing `UX-0032` asks this screen not to do.
    */
   const refresh = async (): Promise<void> => {
-    const [nextCandidates, nextClarifications, nextDecisions] = await Promise.all([
+    const [nextCandidates, nextClarifications, nextDecisions, nextBaselines] = await Promise.all([
       api.roomCandidates(roomObjectId),
       api.roomClarifications(roomObjectId),
       api.roomDecisions(roomObjectId),
+      // `T1211` — re-read after every write, so an approval appears on screen.
+      api.roomBaselines(roomObjectId, projectId),
     ]);
     setCandidates(nextCandidates);
     setClarifications(nextClarifications);
     setDecisions(nextDecisions);
+    setBaselines(nextBaselines);
     await api
       .roomReadiness(roomObjectId, projectId, EVIDENCE_CONTRACT_REF)
       .then((value) => setReadiness({ value, error: undefined }))
@@ -291,6 +305,7 @@ export function RequirementRoomPage({
             <h2>Evidence</h2>
             <Blockers readiness={readiness.value} error={readiness.error} />
             <Baseline
+              baselines={baselines}
               blockers={readiness.value?.blockers ?? []}
               ready={readiness.value ? readiness.value.ready : null}
               onApprove={async (rationale): Promise<void> => {

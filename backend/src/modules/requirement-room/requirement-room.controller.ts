@@ -146,6 +146,16 @@ export class RequirementRoomController {
     return this.room.promote(requireAuth(ctx), id, candidateId, body ?? {});
   }
 
+  /** `T1211` — the baselines approved for a project, superseded ones included. */
+  @Get('rooms/requirement/:id/baselines')
+  listBaselines(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') _id: string,
+    @Query() query: { projectId?: string },
+  ): Promise<unknown> {
+    return this.room.listBaselines(requireAuth(ctx), query?.projectId ?? '');
+  }
+
   /** `T1193` — the decisions recorded for a Room. */
   @Get('rooms/requirement/:id/decisions')
   listDecisions(
