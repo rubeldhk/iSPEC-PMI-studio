@@ -775,6 +775,8 @@ export class ApiClient {
       decisionId: string;
       members: readonly { requirementVersionId: string; contentHash: string; candidateId: string }[];
       evidenceContractRef: string;
+      /** `T1212` — the version this baseline declares it replaces. */
+      supersedes?: number;
     },
   ): Promise<unknown> {
     return this.request(

@@ -56,7 +56,15 @@ export interface BaselineProps {
    * unchanged by approving and nothing rendered the baseline that now existed.
    */
   readonly baselines: readonly ApprovedBaseline[];
-  onApprove(rationale: string): Promise<void>;
+  /**
+   * `T1212` — `supersedes` is the version this baseline **declares** it
+   * replaces, or `undefined` for none.
+   *
+   * Optional and defaulting to nothing, because `T338i` makes supersession
+   * explicit: a form that pre-selected a version would infer it, which is the
+   * one thing the rule forbids.
+   */
+  onApprove(rationale: string, supersedes?: number): Promise<void>;
 }
 
 /**
@@ -104,7 +112,9 @@ function Approved({ baselines }: { baselines: readonly ApprovedBaseline[] }): Re
 }
 
 export function Baseline({ blockers, ready, baselines, onApprove }: BaselineProps): ReactElement {
+  const current = baselines.filter((baseline) => baseline.supersededBy === null);
   const [rationale, setRationale] = useState('');
+  const [supersedes, setSupersedes] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -119,8 +129,9 @@ export function Baseline({ blockers, ready, baselines, onApprove }: BaselineProp
     setProblem(null);
     setBusy(true);
     try {
-      await onApprove(rationale.trim());
+      await onApprove(rationale.trim(), supersedes === '' ? undefined : Number(supersedes));
       setRationale('');
+      setSupersedes('');
     } catch (error) {
       // The refusal is the product speaking, so it is shown rather than
       // swallowed — including `EvidenceSourceUnavailableError`, which is what a
@@ -162,6 +173,22 @@ export function Baseline({ blockers, ready, baselines, onApprove }: BaselineProp
     <section className="ds-stack">
       <h3>Baseline</h3>
       {baselines.length > 0 && <Approved baselines={baselines} />}
+      {current.length > 1 && (
+        /*
+         * `T1212`. Two baselines both reading "current" looked like a display
+         * bug; it is a real state, and the screen now says so.
+         *
+         * It does **not** guess which replaced which. `T338i` makes supersession
+         * explicit precisely because a guess would be recorded nowhere and
+         * believed everywhere — so the screen names the situation and offers the
+         * declaration below, rather than making it.
+         */
+        <p role="status">
+          <strong>{current.length} current baselines.</strong> Neither supersedes the other —
+          supersession is declared, not inferred. If this set replaces one of them, say which
+          below.
+        </p>
+      )}
       <p>
         Nothing is outstanding. Approving freezes this set: it carries your name, this rationale,
         the time, and a version, and it cannot be edited afterwards — only superseded.
@@ -173,6 +200,24 @@ export function Baseline({ blockers, ready, baselines, onApprove }: BaselineProp
           value={rationale}
           onChange={(event): void => setRationale(event.target.value)}
         />
+        {current.length > 1 && (
+          <>
+            <label htmlFor="baseline-supersedes">Supersedes version</label>
+            <select
+              id="baseline-supersedes"
+              value={supersedes}
+              onChange={(event): void => setSupersedes(event.target.value)}
+            >
+              {/* Default is "none". Declaring nothing must stay the easy path. */}
+              <option value="">None — this is a separate set</option>
+              {current.map((baseline) => (
+                <option key={baseline.id} value={String(baseline.version)}>
+                  Version {baseline.version}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
         {problem !== null && <p role="alert">{problem}</p>}
         <button type="submit" disabled={busy}>
           Approve baseline

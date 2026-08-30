@@ -98,7 +98,10 @@ describe('T1191 · once nothing is outstanding', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /approve baseline/i }));
     await waitFor(() => {
-      expect(onApprove).toHaveBeenCalledWith('The set is agreed and measurable.');
+      // `T1212` widened the signature: `(rationale, supersedes?)`. Nothing is
+      // declared here, and `undefined` is what "declare nothing" looks like on
+      // the wire.
+      expect(onApprove).toHaveBeenCalledWith('The set is agreed and measurable.', undefined);
     });
   });
 
@@ -178,5 +181,80 @@ describe('T1211 · once a baseline has been approved', () => {
     // pass every assertion above.
     render(<Baseline {...props({ ready: true, blockers: [], baselines: [] })} />);
     expect(screen.queryByText(/version 1/i)).toBeNull();
+  });
+});
+
+describe('T1212 · more than one current baseline', () => {
+  const TWO = [
+    APPROVED,
+    { ...APPROVED, id: 'b2', version: 2, rationale: 'A second set, agreed separately.' },
+  ];
+
+  it('says plainly that more than one set is governing', () => {
+    // The state a person met and could not read: two baselines both labelled
+    // "current", with nothing saying that was a real situation rather than a
+    // display bug.
+    render(<Baseline {...props({ ready: true, blockers: [], baselines: TWO })} />);
+    expect(screen.getByRole('status').textContent).toMatch(/2 current baselines/i);
+  });
+
+  it('does NOT imply one replaced the other', () => {
+    // `T338i` — supersession is declared, never inferred. A screen that guessed
+    // would contradict the rule the store enforces, and the guess would be
+    // recorded nowhere.
+    const { container } = render(
+      <Baseline {...props({ ready: true, blockers: [], baselines: TWO })} />,
+    );
+    expect(container.textContent).toMatch(/declared, not inferred|neither supersedes/i);
+    expect(screen.queryByText(/superseded by version/i)).toBeNull();
+  });
+
+  it('offers the way to declare it, so the message is not a dead end', () => {
+    render(<Baseline {...props({ ready: true, blockers: [], baselines: TWO })} />);
+    expect(screen.getByLabelText(/supersedes version/i)).toBeDefined();
+  });
+
+  it('sends the declared version with the approval', async () => {
+    const onApprove = vi.fn().mockResolvedValue(undefined);
+    render(<Baseline {...props({ ready: true, blockers: [], baselines: TWO, onApprove })} />);
+    fireEvent.change(screen.getByLabelText(/rationale/i), { target: { value: 'Consolidating.' } });
+    fireEvent.change(screen.getByLabelText(/supersedes version/i), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: /approve baseline/i }));
+    await waitFor(() => {
+      expect(onApprove).toHaveBeenCalledWith('Consolidating.', 2);
+    });
+  });
+
+  it('sends no version when none is chosen', async () => {
+    // The default must stay "declare nothing" — an accidental supersession is
+    // exactly what `T338i` refuses to infer.
+    const onApprove = vi.fn().mockResolvedValue(undefined);
+    render(<Baseline {...props({ ready: true, blockers: [], baselines: TWO, onApprove })} />);
+    fireEvent.change(screen.getByLabelText(/rationale/i), { target: { value: 'A third set.' } });
+    fireEvent.click(screen.getByRole('button', { name: /approve baseline/i }));
+    await waitFor(() => {
+      expect(onApprove).toHaveBeenCalledWith('A third set.', undefined);
+    });
+  });
+
+  it('says nothing of the kind when only ONE is current', () => {
+    // Anti-vacuity, and the ordinary case: one current baseline is not a
+    // situation anybody needs warning about.
+    render(<Baseline {...props({ ready: true, blockers: [], baselines: [APPROVED] })} />);
+    expect(screen.queryByText(/2 current baselines/i)).toBeNull();
+    expect(screen.queryByLabelText(/supersedes version/i)).toBeNull();
+  });
+
+  it('counts only the un-superseded ones', () => {
+    render(
+      <Baseline
+        {...props({
+          ready: true,
+          blockers: [],
+          baselines: [{ ...APPROVED, supersededBy: 2 }, { ...APPROVED, id: 'b2', version: 2 }],
+        })}
+      />,
+    );
+    expect(screen.queryByText(/2 current baselines/i)).toBeNull();
   });
 });

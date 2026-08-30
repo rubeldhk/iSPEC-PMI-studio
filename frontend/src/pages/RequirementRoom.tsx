@@ -94,6 +94,7 @@ export interface RequirementRoomApi {
       decisionId: string;
       members: readonly { requirementVersionId: string; contentHash: string; candidateId: string }[];
       evidenceContractRef: string;
+      supersedes?: number;
     },
   ): Promise<unknown>;
   promoteCandidate(
@@ -308,7 +309,7 @@ export function RequirementRoomPage({
               baselines={baselines}
               blockers={readiness.value?.blockers ?? []}
               ready={readiness.value ? readiness.value.ready : null}
-              onApprove={async (rationale): Promise<void> => {
+              onApprove={async (rationale, supersedes): Promise<void> => {
                 await api.approveBaseline(roomObjectId, {
                   projectId,
                   rationale,
@@ -321,6 +322,8 @@ export function RequirementRoomPage({
                     candidateId: f.candidateId,
                   })),
                   evidenceContractRef: EVIDENCE_CONTRACT_REF,
+                  // `T1212` — only present when a person declared it.
+                  ...(supersedes === undefined ? {} : { supersedes }),
                 });
                 await refresh();
               }}
