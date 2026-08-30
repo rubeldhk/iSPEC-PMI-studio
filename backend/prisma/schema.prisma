@@ -2148,3 +2148,148 @@ model EvidenceItem {
   @@index([workspaceId, attestsArtifactId, attestsArtifactVersion])
   @@map("evidence_items")
 }
+
+/// EPIC-034 T406r — the Change Room. RULE-02's gate: no approved baseline
+/// changes without passing through here.
+model ChangeRequest {
+  id                    String              @id @default(uuid())
+  workspaceId           String
+  projectId             String
+  roomObjectId          String
+  targetBaselineId      String
+  /// FR-CHR-010 — a change is always AGAINST a baseline.
+  targetBaselineVersion Int
+  requestedOutcome      String
+  reason                String
+  requester             String
+  /// FR-CHR-021 — recorded, never a gate bypass.
+  urgency               String              @default("normal")
+  openQuestions         Json                @default("[]")
+  origin                String              @default("direct")
+  originDefectRef       String?
+  state                 String              @default("open")
+  rebasedFrom           Int?
+  createdAt             DateTime            @default(now())
+  impactViews           ChangeImpactView[]
+  decisions             ChangeDecision[]
+  closures              ChangeClosure[]
+
+  @@index([workspaceId])
+  @@index([roomObjectId])
+  @@map("change_requests")
+}
+
+model ChangeImpactView {
+  id                  String              @id @default(uuid())
+  workspaceId         String
+  changeRequestId     String
+  computedAt          DateTime
+  /// Adopted from EPIC-020's DEFAULT_IMPACT_DEPTH; never chosen here.
+  traversalDepth      Int
+  retainedForDecision Boolean             @default(false)
+  createdAt           DateTime            @default(now())
+  request             ChangeRequest       @relation(fields: [changeRequestId], references: [id])
+  areas               ChangeImpactArea[]
+  decisions           ChangeDecision[]
+
+  @@index([workspaceId])
+  @@index([changeRequestId])
+  @@map("change_impact_views")
+}
+
+model ChangeImpactArea {
+  id            String           @id @default(uuid())
+  workspaceId   String
+  impactViewId  String
+  area          String
+  state         String
+  detail        String
+  /// NULL when nobody counted. Zero is a count; NULL is the absence of one.
+  itemCount     Int?
+  /// Required exactly when the state is `unknown`.
+  unknownReason String?
+  createdAt     DateTime         @default(now())
+  view          ChangeImpactView @relation(fields: [impactViewId], references: [id])
+
+  @@index([workspaceId])
+  @@index([impactViewId])
+  @@map("change_impact_areas")
+}
+
+model ChangeDecision {
+  id              String                   @id @default(uuid())
+  workspaceId     String
+  changeRequestId String
+  decidedBy       String
+  /// The belt beside EPIC-031's braces — baseline change is permanently high band.
+  decidedByKind   String
+  authorityBasis  String
+  objectVersion   Int
+  decidedAt       DateTime
+  decisionId      String
+  chosenOption    String
+  /// FR-CHR-043 — what was NOT chosen travels with the decision.
+  declinedOptions Json
+  rationale       String
+  /// FR-CHR-035 — the snapshot the decision was made against.
+  impactViewId    String
+  createdAt       DateTime                 @default(now())
+  request         ChangeRequest            @relation(fields: [changeRequestId], references: [id])
+  impactView      ChangeImpactView         @relation(fields: [impactViewId], references: [id])
+  deltas          ChangeBaselineDelta[]
+  obligations     ChangeReplanObligation[]
+
+  @@index([workspaceId])
+  @@index([changeRequestId])
+  @@map("change_decisions")
+}
+
+model ChangeBaselineDelta {
+  id                  String         @id @default(uuid())
+  workspaceId         String
+  changeDecisionId    String
+  fromBaselineVersion Int
+  toBaselineVersion   Int
+  /// R-034-4 — member requirement VERSION ids, never requirement text.
+  added               Json           @default("[]")
+  removed             Json           @default("[]")
+  versionChanged      Json           @default("[]")
+  createdAt           DateTime       @default(now())
+  decision            ChangeDecision @relation(fields: [changeDecisionId], references: [id])
+
+  @@index([workspaceId])
+  @@map("change_baseline_deltas")
+}
+
+model ChangeReplanObligation {
+  id                      String         @id @default(uuid())
+  workspaceId             String
+  changeDecisionId        String
+  affectedSpecificationId String
+  whatMustChange          String
+  why                     String
+  /// R-034-2 — recorded, never executed. U-12 discharges it.
+  state                   String         @default("recorded")
+  createdAt               DateTime       @default(now())
+  decision                ChangeDecision @relation(fields: [changeDecisionId], references: [id])
+
+  @@index([workspaceId])
+  @@map("change_replan_obligations")
+}
+
+model ChangeClosure {
+  id              String        @id @default(uuid())
+  workspaceId     String
+  changeRequestId String
+  /// BR-0048 — what changed, why, and what proves it.
+  whatChanged     String
+  why             String
+  evidenceRefs    Json          @default("[]")
+  closedBy        String
+  closedAt        DateTime
+  createdAt       DateTime      @default(now())
+  request         ChangeRequest @relation(fields: [changeRequestId], references: [id])
+
+  @@index([workspaceId])
+  @@map("change_closures")
+}

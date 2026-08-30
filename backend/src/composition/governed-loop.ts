@@ -40,6 +40,7 @@
 import type { DynamicModule } from '@nestjs/common';
 import { LoopModule } from '../modules/loop/loop.module.js';
 import { REQUIREMENT_ROOM_STAGE_HANDLERS } from '../modules/requirement-room/stage-handlers.js';
+import { CHANGE_ROOM_STAGE_HANDLERS } from '../modules/change-room/stage-handlers.js';
 
 /**
  * The governed loop, configured with every Room's stage handlers.
@@ -47,5 +48,13 @@ import { REQUIREMENT_ROOM_STAGE_HANDLERS } from '../modules/requirement-room/sta
  * A module-level constant, evaluated once when this file is first imported.
  */
 export const GOVERNED_LOOP: DynamicModule = LoopModule.register({
-  stageHandlers: [...REQUIREMENT_ROOM_STAGE_HANDLERS],
+  // Every Room's stages, unioned. `buildConfigRegistry` refuses EVERY workflow
+  // file when any one names an unregistered stage, so a Room added here without
+  // its handlers takes the others down with it — which is exactly what adding
+  // `change-room.json` did before `T406w`, and what `T1164` caught.
+  //
+  // The Change Room contributes only the stages the Requirement Room does not
+  // already register: `StageRegistry` throws on a duplicate, and that throw is
+  // the guard against two Rooms silently claiming one stage.
+  stageHandlers: [...REQUIREMENT_ROOM_STAGE_HANDLERS, ...CHANGE_ROOM_STAGE_HANDLERS],
 });

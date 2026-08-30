@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "workflowType": "change-room",
+  "stages": ["Event", "Context", "Analyze", "Decide", "Verify", "Evidence", "Outcome"],
+  "transitions": [
+    {
+      "from": "Event",
+      "to": "Context",
+      "requiredGates": [],
+      "trigger": {
+        "ruleId": "change-room.request-raised",
+        "description": "A change request names its target baseline. Automated, and it names the rule that fires it — FR-GEL-031."
+      }
+    },
+    {
+      "from": "Context",
+      "to": "Analyze",
+      "requiredGates": [],
+      "trigger": null
+    },
+    {
+      "from": "Analyze",
+      "to": "Decide",
+      "requiredGates": ["change-room.impact-snapshotted"],
+      "trigger": null
+    },
+    {
+      "from": "Decide",
+      "to": "Verify",
+      "requiredGates": ["change-room.human-decision"],
+      "trigger": null
+    },
+    {
+      "from": "Verify",
+      "to": "Evidence",
+      "requiredGates": ["change-room.baseline-rebased"],
+      "trigger": null
+    },
+    {
+      "from": "Evidence",
+      "to": "Outcome",
+      "requiredGates": ["change-room.evidence-complete"],
+      "trigger": null
+    }
+  ],
+  "approvedBy": "epic-034",
+  "approvalRef": "specs/034-change-room/tasks.md#T406v"
+}
