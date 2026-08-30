@@ -258,3 +258,51 @@ describe('T1212 · more than one current baseline', () => {
     expect(screen.queryByText(/2 current baselines/i)).toBeNull();
   });
 });
+
+describe('T1214 · a governed refusal is not a success', () => {
+  it('SHOWS a refusal that arrives as a resolved value, not a throw', async () => {
+    // `BaselineService.approve` returns `{ outcome: 'refused', reason, detail }`
+    // with HTTP `201` — a governed refusal is a RESULT (`FR-GEL-014`), not an
+    // error. A handler that treated "did not throw" as "approved" would clear
+    // the form and show nothing, which is what this component did until `T1214`
+    // and what a browser walk caught: two `201`s, no baseline, no message.
+    const onApprove = vi.fn().mockResolvedValue({
+      outcome: 'refused',
+      reason: 'criteria-unverifiable',
+      detail: 'this Room cannot check acceptance criteria for rv_1',
+    });
+    render(<Baseline {...props({ ready: true, blockers: [], onApprove })} />);
+    fireEvent.change(screen.getByLabelText(/rationale/i), { target: { value: 'Agreed.' } });
+    fireEvent.click(screen.getByRole('button', { name: /approve baseline/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/criteria-unverifiable/);
+    });
+    // The rationale survives, so the person does not retype it.
+    expect((screen.getByLabelText(/rationale/i) as HTMLTextAreaElement).value).toBe('Agreed.');
+  });
+
+  it('clears the form only when the outcome is approved', async () => {
+    const onApprove = vi.fn().mockResolvedValue({ outcome: 'approved', baseline: { version: 4 } });
+    render(<Baseline {...props({ ready: true, blockers: [], onApprove })} />);
+    fireEvent.change(screen.getByLabelText(/rationale/i), { target: { value: 'Agreed.' } });
+    fireEvent.click(screen.getByRole('button', { name: /approve baseline/i }));
+
+    await waitFor(() => {
+      expect((screen.getByLabelText(/rationale/i) as HTMLTextAreaElement).value).toBe('');
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('treats a handler that returns nothing as success', async () => {
+    // The existing contract: `onApprove` may resolve `void`. Only an explicit
+    // `outcome` other than `approved` is a refusal.
+    const onApprove = vi.fn().mockResolvedValue(undefined);
+    render(<Baseline {...props({ ready: true, blockers: [], onApprove })} />);
+    fireEvent.change(screen.getByLabelText(/rationale/i), { target: { value: 'Agreed.' } });
+    fireEvent.click(screen.getByRole('button', { name: /approve baseline/i }));
+    await waitFor(() => {
+      expect((screen.getByLabelText(/rationale/i) as HTMLTextAreaElement).value).toBe('');
+    });
+  });
+});

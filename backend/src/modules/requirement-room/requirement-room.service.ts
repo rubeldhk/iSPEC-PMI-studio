@@ -481,6 +481,48 @@ export class RequirementRoomService {
   }
 
   /**
+   * `T1213` — the baseline members this Room can currently freeze.
+   *
+   * `T1212`'s walk found the screen keeping promoted versions in component
+   * state: after a reload the approve form sent none and the baseline was
+   * refused for freezing nothing. The promotions survived in `promotedTo`; the
+   * version and hash did not, because the page never re-read them.
+   *
+   * **Resolved fresh, and that is a correction rather than a convenience.** A
+   * client remembering a version from promotion time would freeze a stale one if
+   * the requirement moved afterwards. Reading the current version at the moment
+   * of asking is the only answer that is true when it is used.
+   */
+  async baselineMembers(
+    principal: ActingPrincipal,
+    roomObjectId: string,
+  ): Promise<{ requirementVersionId: string; contentHash: string; candidateId: string }[]> {
+    const actor = await this.acting(principal);
+    if (!this.register) {
+      throw new ValidationFailedError('baseline members require the requirement register');
+    }
+    const candidates = await this.store.listCandidates(actor.workspaceId, roomObjectId);
+    const ctx = { workspaceId: actor.workspaceId, userId: actor.id };
+
+    const members: { requirementVersionId: string; contentHash: string; candidateId: string }[] =
+      [];
+    for (const candidate of candidates) {
+      if (candidate.promotedTo === null) continue;
+      const frozen = await this.register.currentVersion(ctx, candidate.promotedTo);
+      // A candidate whose requirement has no version yet is skipped rather than
+      // guessed at — an invented version id would be refused by the gate anyway,
+      // and less legibly.
+      if (frozen === null) continue;
+      members.push({
+        requirementVersionId: frozen.requirementVersionId,
+        contentHash: frozen.contentHash,
+        candidateId: candidate.id,
+      });
+    }
+    return members;
+  }
+
+  /**
    * `T1211` — the baselines approved for this project.
    *
    * `T1208`: a person approved a baseline and the screen still said *"Nothing is

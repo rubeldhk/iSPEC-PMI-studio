@@ -30,6 +30,20 @@ export interface BaselineBlocker {
   readonly detail: string;
 }
 
+/**
+ * `T1214` — what `approve` answers with.
+ *
+ * A governed refusal is a **result**, not an error (`FR-GEL-014`): the service
+ * returns `{ outcome: 'refused', reason, detail }` with HTTP `201`. Treating
+ * "did not throw" as "approved" is how a browser walk saw two `201`s, no
+ * baseline, and no message.
+ */
+export interface ApprovalOutcome {
+  readonly outcome?: string;
+  readonly reason?: string;
+  readonly detail?: string;
+}
+
 /** `T1211` — an approved baseline, as the wire carries it. */
 export interface ApprovedBaseline {
   readonly id: string;
@@ -64,7 +78,7 @@ export interface BaselineProps {
    * explicit: a form that pre-selected a version would infer it, which is the
    * one thing the rule forbids.
    */
-  onApprove(rationale: string, supersedes?: number): Promise<void>;
+  onApprove(rationale: string, supersedes?: number): Promise<ApprovalOutcome | void>;
 }
 
 /**
@@ -129,7 +143,19 @@ export function Baseline({ blockers, ready, baselines, onApprove }: BaselineProp
     setProblem(null);
     setBusy(true);
     try {
-      await onApprove(rationale.trim(), supersedes === '' ? undefined : Number(supersedes));
+      const result = await onApprove(
+        rationale.trim(),
+        supersedes === '' ? undefined : Number(supersedes),
+      );
+      // `undefined` is success — the handler may resolve void. Only an explicit
+      // outcome that is not `approved` is a refusal.
+      if (result && result.outcome !== undefined && result.outcome !== 'approved') {
+        setProblem(
+          `The baseline was refused (${result.reason ?? result.outcome})` +
+            (result.detail === undefined ? '.' : `: ${result.detail}`),
+        );
+        return;
+      }
       setRationale('');
       setSupersedes('');
     } catch (error) {

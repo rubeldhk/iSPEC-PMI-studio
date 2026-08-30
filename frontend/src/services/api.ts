@@ -337,6 +337,13 @@ export interface RoomSummary {
 
 import type { Epistemic } from '@pmi/room-contract';
 
+/** `T1213` — a baseline member, resolved by the server. */
+export interface BaselineMember {
+  readonly requirementVersionId: string;
+  readonly contentHash: string;
+  readonly candidateId: string;
+}
+
 /** `T1211` — an approved baseline as the wire carries it. */
 export interface ApprovedBaseline {
   readonly id: string;
@@ -745,6 +752,16 @@ export class ApiClient {
       `/rooms/requirement/${encodeURIComponent(roomObjectId)}/decide`,
       input,
     );
+  }
+
+  /**
+   * `T1213` — the members this Room can freeze right now.
+   *
+   * Asked of the server rather than remembered, so a reload does not lose them
+   * and a stale version cannot be frozen.
+   */
+  async roomMembers(roomObjectId: string): Promise<BaselineMember[]> {
+    return this.request('GET', `/rooms/requirement/${encodeURIComponent(roomObjectId)}/members`);
   }
 
   /** `T1211` — the baselines approved for a project, superseded ones included. */

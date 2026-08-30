@@ -28,6 +28,7 @@ import { Decision } from '../rooms/regions/Decision';
 import { Baseline } from '../rooms/regions/Baseline';
 import type {
   ApprovedBaseline,
+  BaselineMember,
   RecordedRoomDecision,
   RoomCandidate,
   RoomClarification,
@@ -77,6 +78,7 @@ export interface RequirementRoomApi {
   /** `T1193` — the decision and baseline half of the journey. */
   roomDecisions(roomObjectId: string): Promise<readonly RecordedRoomDecision[]>;
   roomBaselines(roomObjectId: string, projectId: string): Promise<readonly ApprovedBaseline[]>;
+  roomMembers(roomObjectId: string): Promise<readonly BaselineMember[]>;
   decideRoom(
     roomObjectId: string,
     input: {
@@ -140,9 +142,14 @@ export function RequirementRoomPage({
   const [clarifications, setClarifications] = useState<readonly RoomClarification[]>([]);
   const [decisions, setDecisions] = useState<readonly RecordedRoomDecision[]>([]);
   const [baselines, setBaselines] = useState<readonly ApprovedBaseline[]>([]);
-  const [frozen, setFrozen] = useState<
-    readonly { candidateId: string; requirementVersionId: string; contentHash: string }[]
-  >([]);
+  /**
+   * `T1213` — read from the server, not remembered.
+   *
+   * This was component state built as promotions happened, so a reload emptied
+   * it and the approve form sent no members. Worse than losing them: a
+   * remembered version could be stale by the time it was frozen.
+   */
+  const [members, setMembers] = useState<readonly BaselineMember[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -184,6 +191,10 @@ export function RequirementRoomPage({
       .roomBaselines(roomObjectId, projectId)
       .then((rows) => live && setBaselines(rows))
       .catch(() => undefined);
+    void api
+      .roomMembers(roomObjectId)
+      .then((rows) => live && setMembers(rows))
+      .catch(() => undefined);
     return (): void => {
       live = false;
     };
@@ -198,17 +209,21 @@ export function RequirementRoomPage({
    * exists, which is the one thing `UX-0032` asks this screen not to do.
    */
   const refresh = async (): Promise<void> => {
-    const [nextCandidates, nextClarifications, nextDecisions, nextBaselines] = await Promise.all([
-      api.roomCandidates(roomObjectId),
-      api.roomClarifications(roomObjectId),
-      api.roomDecisions(roomObjectId),
-      // `T1211` — re-read after every write, so an approval appears on screen.
-      api.roomBaselines(roomObjectId, projectId),
-    ]);
+    const [nextCandidates, nextClarifications, nextDecisions, nextBaselines, nextMembers] =
+      await Promise.all([
+        api.roomCandidates(roomObjectId),
+        api.roomClarifications(roomObjectId),
+        api.roomDecisions(roomObjectId),
+        // `T1211` — re-read after every write, so an approval appears on screen.
+        api.roomBaselines(roomObjectId, projectId),
+        // `T1213` — and so does a promotion, without the page remembering it.
+        api.roomMembers(roomObjectId),
+      ]);
     setCandidates(nextCandidates);
     setClarifications(nextClarifications);
     setDecisions(nextDecisions);
     setBaselines(nextBaselines);
+    setMembers(nextMembers);
     await api
       .roomReadiness(roomObjectId, projectId, EVIDENCE_CONTRACT_REF)
       .then((value) => setReadiness({ value, error: undefined }))
@@ -268,14 +283,9 @@ export function RequirementRoomPage({
                 await refresh();
               }}
               onPromote={async (candidateId): Promise<void> => {
-                // `T1207` — the frozen version is remembered here, because a
-                // baseline member is made of it and nothing else on the page
-                // carries it.
-                const frozen = await api.promoteCandidate(roomObjectId, candidateId);
-                setFrozen((current) => [
-                  ...current.filter((f) => f.candidateId !== candidateId),
-                  { candidateId, ...frozen },
-                ]);
+                await api.promoteCandidate(roomObjectId, candidateId);
+                // `T1213` — `refresh` re-reads the members, so nothing is
+                // remembered here and a reload loses nothing.
                 await refresh();
               }}
             />
@@ -309,23 +319,23 @@ export function RequirementRoomPage({
               baselines={baselines}
               blockers={readiness.value?.blockers ?? []}
               ready={readiness.value ? readiness.value.ready : null}
-              onApprove={async (rationale, supersedes): Promise<void> => {
-                await api.approveBaseline(roomObjectId, {
+              onApprove={async (rationale, supersedes) => {
+                // `T1214` — returned, not swallowed: a governed refusal arrives
+                // as a resolved value and the region shows it.
+                const result = await api.approveBaseline(roomObjectId, {
                   projectId,
                   rationale,
                   decisionId: decisions[decisions.length - 1]?.id ?? '',
-                  // `T1207` — the frozen versions, each carrying the candidate
-                  // it came from so the criteria gate can resolve it.
-                  members: frozen.map((f) => ({
-                    requirementVersionId: f.requirementVersionId,
-                    contentHash: f.contentHash,
-                    candidateId: f.candidateId,
-                  })),
+                  // `T1213` — resolved by the server at load and after every
+                  // write, each carrying the candidate it came from so the
+                  // criteria gate can resolve it.
+                  members,
                   evidenceContractRef: EVIDENCE_CONTRACT_REF,
                   // `T1212` — only present when a person declared it.
                   ...(supersedes === undefined ? {} : { supersedes }),
                 });
                 await refresh();
+                return result as { outcome?: string; reason?: string; detail?: string };
               }}
             />
           </div>

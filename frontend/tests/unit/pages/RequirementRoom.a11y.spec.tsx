@@ -37,6 +37,7 @@ const api: RequirementRoomApi = {
   // `T1193` — the decision and baseline half.
   roomDecisions: vi.fn().mockResolvedValue([]),
   roomBaselines: vi.fn().mockResolvedValue([]),
+  roomMembers: vi.fn().mockResolvedValue([]),
   decideRoom: vi.fn().mockResolvedValue({}),
   approveBaseline: vi.fn().mockResolvedValue({}),
   promoteCandidate: vi.fn().mockResolvedValue({
@@ -70,6 +71,7 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
           answerClarification: vi.fn().mockReturnValue(new Promise(() => {})),
           roomDecisions: vi.fn().mockReturnValue(new Promise(() => {})),
           roomBaselines: vi.fn().mockReturnValue(new Promise(() => {})),
+          roomMembers: vi.fn().mockReturnValue(new Promise(() => {})),
           decideRoom: vi.fn().mockReturnValue(new Promise(() => {})),
           approveBaseline: vi.fn().mockReturnValue(new Promise(() => {})),
           promoteCandidate: vi.fn().mockReturnValue(new Promise(() => {})),
@@ -95,6 +97,7 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
           answerClarification: vi.fn().mockRejectedValue(new Error('no')),
           roomDecisions: vi.fn().mockRejectedValue(new Error('no')),
           roomBaselines: vi.fn().mockRejectedValue(new Error('no')),
+          roomMembers: vi.fn().mockRejectedValue(new Error('no')),
           decideRoom: vi.fn().mockRejectedValue(new Error('no')),
           approveBaseline: vi.fn().mockRejectedValue(new Error('no')),
           promoteCandidate: vi.fn().mockRejectedValue(new Error('no')),

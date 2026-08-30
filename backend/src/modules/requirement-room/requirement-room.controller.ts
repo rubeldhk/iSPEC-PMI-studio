@@ -146,6 +146,15 @@ export class RequirementRoomController {
     return this.room.promote(requireAuth(ctx), id, candidateId, body ?? {});
   }
 
+  /** `T1213` — the members this Room can freeze right now, resolved fresh. */
+  @Get('rooms/requirement/:id/members')
+  baselineMembers(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    return this.room.baselineMembers(requireAuth(ctx), id);
+  }
+
   /** `T1211` — the baselines approved for a project, superseded ones included. */
   @Get('rooms/requirement/:id/baselines')
   listBaselines(
