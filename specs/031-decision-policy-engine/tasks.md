@@ -343,3 +343,27 @@ schema; the mutation is what proves the fence is load-bearing rather than decora
   found and does not need. Both exist so closure cannot be claimed while a record disagrees.
 - **Constitution V over the skill default**: `/speckit-tasks` calls tests optional; the constitution
   overrides every template, skill and tool default.
+
+## Scoped slice: the `PolicyProvider` the Rooms need *(added 2026-08-29)*
+
+*Authorised as "start EPIC-031, scoped to what the Room needs". `DEF-033-002` found this seam
+unbound: `DecisionService.decide` refused before recording anything, so `SC-RQR-008` was unreachable
+however much UI existed.*
+
+**What this slice is NOT.** No approval queue, no Decision Inbox (`FR-DPE-020`), no escalation, no
+auto-execution, no risk *proposal* from an Engineering Expert (`FR-DPE-003`'s second half), and no
+steering-backed rule source (`FR-DPE-005`) — rules are declared through an injected source and none
+are declared yet, which `FR-DPE-004` turns into the most restrictive band for everything.
+
+**A limitation stated rather than implied.** `FR-DPE-010` says the high band requires *authorized*
+human approval. There is no per-action authority model to consult — `EPIC-024`'s grants are
+`read | edit` on artifacts, and building a workspace-role model was excluded from this work. So
+*authorized* currently means **an authenticated human acting inside their own workspace**, which
+`WorkspaceBoundaryService` resolves and `DecisionService` has already required to be human
+(`RULE-03`). Narrowing it to a real authority is the rest of this Epic.
+
+- [X] T1196 [P] Write failing unit tests for risk classification in `backend/tests/unit/policy/classification.spec.ts` — three bands, an unmatched action taking the most restrictive (`FR-DPE-004`), narrower scope winning, and the irreducible floor (`FR-DPE-012`) applied after the match
+- [X] T1197 Implement `backend/src/modules/policy/classification.ts` (unit test: T1196) — `classify` takes an action and a scope and has nowhere to put a requester, so `FR-DPE-002` holds structurally
+- [X] T1198 [P] Write failing unit tests for the banded provider in `backend/tests/unit/policy/banded-policy.spec.ts` — automation refused in the high band, an **unevaluated** gate refused distinctly from a failed one (`FR-DPE-013`), and self-approval refused unless policy permits it *and says so* (`FR-DPE-015`)
+- [X] T1199 Implement `BandedPolicyProvider` and bind it into the Requirement Room via `PolicyModule` (unit test: T1198) *(verified live — `POST /rooms/requirement/:id/decide` records a decision whose `authorityBasis` reads "no classification rule matches … most restrictive band (FR-DPE-004). High band, approved by an authorized human (FR-DPE-010)")*
+- [X] T1200 Make `readiness` read the recorded decision instead of hardcoding `decision: null` *(verified live — the `pending-decision` blocker clears once a decision exists; it had been permanent because nothing could record one)*

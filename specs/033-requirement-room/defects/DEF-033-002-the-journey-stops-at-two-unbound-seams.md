@@ -1,7 +1,7 @@
 # DEF-033-002 — the journey stops at two unbound governance seams, and says "An unexpected error occurred"
 
 **Epic**: `EPIC-033` (found here) · **owned by** `EPIC-031` and `EPIC-032`
-**Raised**: 2026-08-29 | **Status**: **OPEN** — item 3 closed by `EPIC-001` `T1195`; items 1 and 2 remain
+**Raised**: 2026-08-29 | **Status**: **OPEN** — items 1 and 3 closed (`EPIC-031` `T1196`–`T1200`, `EPIC-001` `T1195`); **item 2 remains**
 **Found by**: driving the Room in a browser after Phase 11 built the decision and baseline controls
 **Severity**: **HIGH** — the Epic's headline journey cannot be completed by anyone, and the reason
 is invisible to the person it stops
@@ -64,8 +64,10 @@ That is the honest local behaviour for a refusal this component cannot resolve.
 
 ## What is needed, and by whom
 
-1. **`EPIC-031`** — **implement and then bind** a `PolicyProvider`. This was first written here as
-   "bind a seam, same shape as `T1178`". That was wrong, and measuring it is what corrected it.
+1. ~~**`EPIC-031`** — implement and then bind a `PolicyProvider`.~~ **Done 2026-08-29**, scoped:
+   `T1196`–`T1200` built the three-band classification engine and bound it. A decision is now
+   recorded, and the `pending-decision` blocker clears. The rest of `EPIC-031` — the approval queue,
+   steering-backed rules, and a real authority model — remains open.
 2. **`EPIC-032`** — the same for `EvidenceContractSource`.
 3. ~~**Whoever owns `platform-api.md`** — a documented status and code for an unbound governance
    seam.~~ **Done 2026-08-29** — `EPIC-001` `T1195` added `governance_seam_unbound` (503). Both

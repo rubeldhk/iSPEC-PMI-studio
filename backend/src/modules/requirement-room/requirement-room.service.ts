@@ -674,17 +674,23 @@ export class RequirementRoomService {
     if (!roomObjectId) {
       throw new ValidationFailedError('readiness requires a Room object id in the path');
     }
-    const [candidates, clarifications] = await Promise.all([
+    const [candidates, clarifications, decisions] = await Promise.all([
       this.store.listCandidates(actor.workspaceId, roomObjectId),
       this.store.listClarifications(actor.workspaceId, roomObjectId),
+      this.store.listDecisions(actor.workspaceId, roomObjectId),
     ]);
+    // `T1200` — the recorded decision, which this read `null`ed until `T1199`.
+    // That was right while `PolicyProvider` was unbound and nothing could record
+    // one; the moment a decision could exist, hardcoding its absence made the
+    // `pending-decision` blocker permanent and invisible.
+    const decided = decisions[decisions.length - 1];
     return projectReadiness({
       candidates,
       clarifications,
       // Null when EPIC-032 is unbound or no Contract was named — which BLOCKS.
       // "Cannot tell" is never "ready".
       evidence: await this.evidenceStatus(actor.workspaceId, query),
-      decision: null,
+      decision: decided ? { decisionId: decided.decisionId } : null,
     });
   }
 

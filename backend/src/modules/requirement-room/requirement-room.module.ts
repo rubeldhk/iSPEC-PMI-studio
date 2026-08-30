@@ -54,6 +54,7 @@ import { REQUIREMENT_ROOM_STORE, ROOM_REQUIREMENT_REGISTER } from './requirement
 const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
 
 import { GOVERNED_LOOP } from '../../composition/governed-loop.js';
+import { PolicyModule, POLICY_PROVIDER, type LoopPolicyAdapter } from '../policy/policy.module.js';
 import { prismaClient } from '../../persistence/prisma.js';
 import {
   PrismaRequirementRoomStore,
@@ -65,7 +66,7 @@ import { LoopService } from '../loop/loop.service.js';
   // `AccessModule` for `WorkspaceBoundaryService` — EPIC-024's authoritative
   // actor directory, consumed rather than re-implemented (`T1148`). It is what
   // turns `actor.kind` from a claim into a resolved fact.
-  imports: [RequirementsModule, AccessModule, GOVERNED_LOOP],
+  imports: [RequirementsModule, AccessModule, GOVERNED_LOOP, PolicyModule],
   controllers: [RequirementRoomController],
   providers: [
     {
@@ -146,13 +147,18 @@ import { LoopService } from '../loop/loop.service.js';
     },
     {
       provide: DecisionService,
-      inject: [REQUIREMENT_ROOM_STORE],
-      useFactory: (store: RequirementRoomStore): DecisionService =>
-        // No PolicyProvider. ROOM_PORTS declares `refuse` for that seam, and
-        // EPIC-031 binds it at the composition root. Until it does, `decide`
-        // refuses rather than recording a decision nobody authorised —
-        // FR-GEL-062: an undecided decision is not an approval.
-        new DecisionService(store, undefined),
+      inject: [REQUIREMENT_ROOM_STORE, POLICY_PROVIDER],
+      useFactory: (store: RequirementRoomStore, policy: LoopPolicyAdapter): DecisionService =>
+        // `T1199` — the seam is bound. `EPIC-031`'s banded provider, scoped to
+        // what this path needs: with no classification rules declared every
+        // action is high (`FR-DPE-004`), so automation is refused and an
+        // authenticated human in their own workspace may decide.
+        //
+        // Still not a permissive default: `FR-DPE-012`'s floor holds,
+        // `FR-DPE-013` refuses an unevaluated gate, and `FR-DPE-015` refuses
+        // self-approval. `FR-GEL-062` is satisfied by a policy that ANSWERS,
+        // not by one that says yes.
+        new DecisionService(store, policy as unknown as ConstructorParameters<typeof DecisionService>[1]),
     },
     {
       provide: HandoffService,

@@ -252,15 +252,50 @@ suite('T1153 · a caller cannot declare itself human', () => {
     );
   });
 
-  it('records no decision for the refused attempt', async () => {
+  /**
+   * **What this proves, and what it does not** — measured at `T1199`, not assumed.
+   *
+   * Removing `DecisionService`'s `RULE-03` human check leaves all 19 tests here
+   * passing. That is not a hole: since `T1199` the policy provider **also**
+   * refuses a non-human in the high band, so the agent is stopped either way and
+   * this test cannot tell which layer stopped it.
+   *
+   * It never could. Before `T1199` the same mutation was masked by
+   * `PolicyUnavailableError` refusing everything. So the coverage did not
+   * weaken — it changed which layer it was hiding behind, and this note is here
+   * so the next reader does not mistake a passing suite for proof of `RULE-03`
+   * specifically.
+   *
+   * Each layer IS proved, elsewhere and in isolation:
+   * `RULE-03` in the service by `requirement-room-decision.spec.ts`, the policy
+   * band by `banded-policy.spec.ts`, and the database CHECK by `T405c`'s
+   * mutation proof, which drops the constraint and observes 5 of 7 fail.
+   */
+  it('records no decision for the AGENT attempt', async () => {
+    // Rewritten at `T1199`. This counted **all** rows for the Room and expected
+    // zero, which held only because `PolicyUnavailableError` refused every
+    // attempt — the human control above included. The test comment three cases
+    // up said so: *"EPIC-031's policy provider is not bound at this stage."*
+    //
+    // It is bound now, so the human control succeeds and writes a row. Counting
+    // everything would make this assertion fail for the one reason that is not
+    // a defect. What it must actually prove is narrower and is the security
+    // property: **nothing the agent sent was recorded.**
     const db = new Client({ connectionString: harness.databaseUrl });
     await db.connect();
     const { rows } = await db.query<{ n: string }>(
-      `SELECT count(*) AS n FROM "requirement_decisions" WHERE "roomObjectId" = $1`,
+      `SELECT count(*) AS n FROM "requirement_decisions"
+        WHERE "roomObjectId" = $1 AND "decidedBy" = $2`,
+      [ROOM, AGENT],
+    );
+    const { rows: kinds } = await db.query<{ n: string }>(
+      `SELECT count(*) AS n FROM "requirement_decisions"
+        WHERE "roomObjectId" = $1 AND "decidedByKind" <> 'human'`,
       [ROOM],
     );
     await db.end();
-    expect(Number(rows[0]!.n), 'a refused decision was still written').toBe(0);
+    expect(Number(rows[0]!.n), 'the agent recorded a decision').toBe(0);
+    expect(Number(kinds[0]!.n), 'a non-human decision was written').toBe(0);
   });
 });
 
