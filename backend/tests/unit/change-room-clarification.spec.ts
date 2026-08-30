@@ -209,11 +209,23 @@ describe('T996g · retention is structural', () => {
     );
   });
 
-  it('and setState is the only mutation of state there is', async () => {
+  it('every mutation the store offers is additive or a state change', async () => {
+    // Enumerated rather than counted, so a new mutator has to be named here
+    // before it can exist — which is what happened when `T996q` added impact
+    // views, and is the point. Nothing in this list replaces or removes:
+    // `create` and `saveImpactView` append, `setState`, `setQuestions` and
+    // `retainForDecision` change a field on a row that stays.
     const store = new InMemoryChangeRoomStore();
     const mutators = Object.getOwnPropertyNames(Object.getPrototypeOf(store)).filter(
       (name) => name !== 'constructor' && !name.startsWith('find') && !name.startsWith('list'),
     );
-    expect(mutators.sort()).toEqual(['create', 'setQuestions', 'setState']);
+    expect(mutators.sort()).toEqual([
+      'create',
+      'latestImpactViewFor',
+      'retainForDecision',
+      'saveImpactView',
+      'setQuestions',
+      'setState',
+    ]);
   });
 });

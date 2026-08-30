@@ -159,14 +159,14 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 2 and 3
 
-- [ ] T996j [P] [US2] Write failing unit tests for the eight-area view in `backend/tests/unit/change-room-impact-areas.spec.ts` — requirements, specifications, architecture, tasks, code, tests, release scope and operational effects, **all eight always present** (`FR-CHR-030`)
-- [ ] T996k [US2] Implement eight-area assembly in `backend/src/modules/change-room/impact.composer.ts` (unit test: T996j)
-- [ ] T996l [P] [US2] Write failing unit tests for unknown areas in `backend/tests/unit/change-room-impact-unknown.spec.ts` — an undeterminable area is `unknown` with a **stated reason**, never omitted and never `not-impacted` (`FR-CHR-032`, `SC-CHR-002`)
-- [ ] T996m [US2] Implement unknown-area handling in `backend/src/modules/change-room/impact.composer.ts` (unit test: T996l)
-- [ ] T996n [P] [US2] Write failing unit tests for architecture-decision surfacing in `backend/tests/unit/change-room-architecture-impact.spec.ts` — touched governed decisions are surfaced, and the view **states that the violation check has not run** rather than showing a clean panel (`FR-CHR-033`, `FR-CHR-034`, `BR-0073` is `U-17`)
-- [ ] T996o [US2] Implement architecture-decision surfacing in `backend/src/modules/change-room/impact.composer.ts` (unit test: T996n) — Constitution IX's rule applied to a screen
-- [ ] T996p [P] [US2] Write failing unit tests for view retention in `backend/tests/unit/change-room-impact-retention.spec.ts` — the view is retained with the change so a decision can later be read against what was known (`FR-CHR-035`)
-- [ ] T996q [US2] Implement `GET /rooms/change/requests/:id/impact` and view retention in the controller and `backend/src/modules/change-room/impact.composer.ts` (unit test: T996p; integration test: T406u)
+- [X] T996j [P] [US2] Write failing unit tests for the eight-area view in `backend/tests/unit/change-room-impact-areas.spec.ts` — requirements, specifications, architecture, tasks, code, tests, release scope and operational effects, **all eight always present** (`FR-CHR-030`)
+- [X] T996k [US2] Implement eight-area assembly in `backend/src/modules/change-room/impact.composer.ts` (unit test: T996j)
+- [X] T996l [P] [US2] Write failing unit tests for unknown areas in `backend/tests/unit/change-room-impact-unknown.spec.ts` — an undeterminable area is `unknown` with a **stated reason**, never omitted and never `not-impacted` (`FR-CHR-032`, `SC-CHR-002`)
+- [X] T996m [US2] Implement unknown-area handling in `backend/src/modules/change-room/impact.composer.ts` (unit test: T996l)
+- [X] T996n [P] [US2] Write failing unit tests for architecture-decision surfacing in `backend/tests/unit/change-room-architecture-impact.spec.ts` — touched governed decisions are surfaced, and the view **states that the violation check has not run** rather than showing a clean panel (`FR-CHR-033`, `FR-CHR-034`, `BR-0073` is `U-17`)
+- [X] T996o [US2] Implement architecture-decision surfacing in `backend/src/modules/change-room/impact.composer.ts` (unit test: T996n) — Constitution IX's rule applied to a screen
+- [X] T996p [P] [US2] Write failing unit tests for view retention in `backend/tests/unit/change-room-impact-retention.spec.ts` — the view is retained with the change so a decision can later be read against what was known (`FR-CHR-035`)
+- [X] T996q [US2] Implement `GET /rooms/change/requests/:id/impact` and view retention in the controller and `backend/src/modules/change-room/impact.composer.ts` (unit test: T996p; integration test: T406u)
 
 **Checkpoint**: US2 demonstrable — nothing undeterminable renders as clean
 

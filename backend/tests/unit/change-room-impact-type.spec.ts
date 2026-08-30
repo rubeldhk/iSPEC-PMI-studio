@@ -25,6 +25,15 @@ describe('T406f · the eight areas of BR-0044', () => {
   });
 
   it('names them, and they are the ones BR-0044 lists', () => {
+    // `DEF-034-001` — this list read `security` as its eighth member, and so
+    // did `IMPACT_AREAS`. Restating a list from memory catches a typo and
+    // nothing else: both were written in one sitting from the same misreading,
+    // so the test agreed with the code and both were wrong.
+    //
+    // `change-room-impact-areas.spec.ts` (`T996j`) is the guard that works — it
+    // reads `FR-CHR-030`'s sentence out of `spec.md` and derives the eight from
+    // it, so the authority is the specification rather than anyone's
+    // recollection of it.
     expect([...IMPACT_AREAS]).toEqual([
       'requirements',
       'specifications',
@@ -33,7 +42,7 @@ describe('T406f · the eight areas of BR-0044', () => {
       'code',
       'tests',
       'release',
-      'security',
+      'operations',
     ]);
   });
 
@@ -55,7 +64,16 @@ describe('T406f · an area cannot be omitted', () => {
       changeRequestId: 'cr_1',
       computedAt: new Date(0),
       traversalDepth: 25,
+      workspaceId: 'ws_1',
       retainedForDecision: false,
+      // `T996o` — required, so this literal would not compile without it. That
+      // is `FR-CHR-034`: a view cannot exist that says nothing about whether
+      // the architecture-violation check ran.
+      architecture: {
+        decisions: [],
+        detail: 'none reached',
+        violationCheck: { status: 'not-run', because: 'BR-0073 is unowned (U-17)' },
+      },
       areas: {
         requirements: area('requirements'),
         specifications: area('specifications'),
@@ -64,7 +82,7 @@ describe('T406f · an area cannot be omitted', () => {
         code: area('code'),
         tests: area('tests'),
         release: area('release'),
-        security: area('security'),
+        operations: area('operations'),
       },
     };
     expect(Object.keys(view.areas)).toHaveLength(8);
@@ -107,7 +125,7 @@ describe('T406f · three states, and `unknown` is one of them', () => {
     // `unknown` when it cannot answer (`T406p`), and a degradation that
     // reported `not-impacted` would be a clean bill of health nobody gave.
     const cannotTell: ImpactArea = {
-      area: 'security',
+      area: 'operations',
       state: 'unknown',
       detail: 'the impact source could not be reached',
       itemCount: null,

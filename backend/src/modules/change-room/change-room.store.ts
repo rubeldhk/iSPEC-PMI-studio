@@ -13,6 +13,8 @@
  * in-place edit here.
  */
 
+import type { ImpactView } from './impact.types.js';
+
 export interface ChangeRequestRow {
   readonly id: string;
   readonly workspaceId: string;
@@ -63,6 +65,25 @@ export interface ChangeRoomStore {
     id: string,
     questions: readonly OpenQuestion[],
   ): Promise<ChangeRequestRow>;
+
+  /**
+   * `FR-CHR-035` — retain the impact view with the change.
+   *
+   * **Append-only, deliberately.** Storing *the* view against a change and
+   * overwriting it on each recomputation answers "what does the impact look
+   * like now", which nobody asked. The question a decision must survive is
+   * "what did the person deciding see", and an overwritten row cannot answer
+   * it. So there is no update and no delete here: a recomputation is a new
+   * view, and `saveImpactView` refuses an id it already holds rather than
+   * replacing it quietly.
+   */
+  saveImpactView(view: ImpactView): Promise<ImpactView>;
+  findImpactView(workspaceId: string, id: string): Promise<ImpactView | null>;
+  /** Every snapshot for a change, oldest first — `R-034-5` compares two. */
+  listImpactViewsFor(workspaceId: string, changeRequestId: string): Promise<ImpactView[]>;
+  latestImpactViewFor(workspaceId: string, changeRequestId: string): Promise<ImpactView | null>;
+  /** Marks a view as referenced by a decision. Marks it — never edits it. */
+  retainForDecision(workspaceId: string, id: string): Promise<ImpactView>;
 }
 
 /** For unit tests and database-less runs. Loses data, and does so visibly. */
@@ -113,4 +134,45 @@ export class InMemoryChangeRoomStore implements ChangeRoomStore {
     this.#rows.set(id, next);
     return next;
   }
+
+  readonly #views: ImpactView[] = [];
+
+  async saveImpactView(view: ImpactView): Promise<ImpactView> {
+    // Refused rather than replaced. A silent overwrite is the one way this
+    // store could lose what a decision was taken against.
+    if (this.#views.some((existing) => existing.id === view.id)) {
+      throw new Error(`impact view ${view.id} already exists; views are append-only (FR-CHR-035)`);
+    }
+    this.#views.push(view);
+    return view;
+  }
+
+  async findImpactView(workspaceId: string, id: string): Promise<ImpactView | null> {
+    return this.#views.find((view) => view.id === id && view.workspaceId === workspaceId) ?? null;
+  }
+
+  async listImpactViewsFor(workspaceId: string, changeRequestId: string): Promise<ImpactView[]> {
+    return this.#views.filter(
+      (view) => view.changeRequestId === changeRequestId && view.workspaceId === workspaceId,
+    );
+  }
+
+  async latestImpactViewFor(
+    workspaceId: string,
+    changeRequestId: string,
+  ): Promise<ImpactView | null> {
+    const all = await this.listImpactViewsFor(workspaceId, changeRequestId);
+    return all.length === 0 ? null : all[all.length - 1]!;
+  }
+
+  async retainForDecision(workspaceId: string, id: string): Promise<ImpactView> {
+    const index = this.#views.findIndex(
+      (view) => view.id === id && view.workspaceId === workspaceId,
+    );
+    if (index < 0) throw new Error(`no impact view ${id}`);
+    const next = { ...this.#views[index]!, retainedForDecision: true };
+    this.#views[index] = next;
+    return next;
+  }
+
 }

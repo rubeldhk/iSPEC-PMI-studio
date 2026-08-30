@@ -22,7 +22,12 @@
 import { Module } from '@nestjs/common';
 import { prismaClient } from '../../persistence/prisma.js';
 import { ChangeRoomController } from './change-room.controller.js';
-import { ImpactComposer } from './impact.composer.js';
+import {
+  ImpactComposer,
+  type ArchitectureDecisionPort,
+  type ImpactPort,
+  type TraversalPort,
+} from './impact.composer.js';
 import { ChangeIntakeService } from './intake.service.js';
 import { CHANGE_ROOM_PORTS, CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import { InMemoryChangeRoomStore, type ChangeRoomStore } from './change-room.store.js';
@@ -56,6 +61,38 @@ export class ChangeRoomService {
           : new InMemoryChangeRoomStore(),
     },
     {
+      provide: ImpactComposer,
+      /**
+       * `T996q` — bound with its three seams **unfilled**, on purpose.
+       *
+       * `ImpactSource` is the one port of the six that degrades rather than
+       * refuses (`FR-CHR-032`): an unreachable dependency graph means nobody
+       * could see the blast radius, which is a fact a decision-maker can weigh
+       * provided they are told. So each of these throws with a sentence naming
+       * the Epic that owes it, and the composer turns that into eight `unknown`
+       * areas carrying the sentence.
+       *
+       * They are not fixtures and not defaults. A fixture would answer; these
+       * decline to, in writing. The difference matters because the alternative
+       * — an adapter returning an empty map — reads on screen as eight areas
+       * checked and found clean, which is the one answer nobody is entitled to
+       * give here.
+       */
+      useFactory: (): ImpactComposer => {
+        const unbound = (port: string, epic: string) => (): never => {
+          throw new Error(`no ${port} is bound in this deployment (${epic} supplies it)`);
+        };
+        const impact: ImpactPort = { impactFor: unbound('ImpactSource', 'EPIC-020') };
+        const traversal: TraversalPort = {
+          reachableFrom: unbound('ChainTraversal', 'EPIC-011'),
+        };
+        const decisions: ArchitectureDecisionPort = {
+          decisionsTouchedBy: unbound('ArchitectureDecisionSource', 'EPIC-016'),
+        };
+        return new ImpactComposer(impact, traversal, decisions);
+      },
+    },
+    {
       provide: ChangeIntakeService,
       inject: [CHANGE_ROOM_STORE],
       useFactory: (store: ChangeRoomStore): ChangeIntakeService => new ChangeIntakeService(store),
@@ -63,7 +100,7 @@ export class ChangeRoomService {
     // `ImpactComposer` is constructed where its two ports are bound. Exported as
     // a type for now; `EPIC-020`'s adapter arrives with the user-story phases.
   ],
-  exports: [ChangeRoomService, ChangeIntakeService],
+  exports: [ChangeRoomService, ChangeIntakeService, ImpactComposer],
 })
 export class ChangeRoomModule {}
 

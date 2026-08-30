@@ -146,10 +146,20 @@ suite('T406t · the Change Room refuses at the database', () => {
   async function impactView(changeRequestId: string): Promise<string> {
     const id = `iv_${Math.random().toString(36).slice(2, 10)}`;
     await db.query(
+      // `20260830150000` added the architecture panel as NOT NULL with no
+      // default (`T996q`): a default would put a sentence nobody wrote on views
+      // nobody computed. This fixture supplies it, as a real write does.
       `INSERT INTO "change_impact_views"
-         ("id","workspaceId","changeRequestId","computedAt","traversalDepth")
-       VALUES ($1,$2,$3,now(),25)`,
-      [id, WS, changeRequestId],
+         ("id","workspaceId","changeRequestId","computedAt","traversalDepth",
+          "architectureDetail","violationCheckStatus","violationCheckBecause")
+       VALUES ($1,$2,$3,now(),25,$4,'not-run',$5)`,
+      [
+        id,
+        WS,
+        changeRequestId,
+        'no architecture decision source is bound in this deployment',
+        'the architecture-violation check (BR-0073) is unowned (U-17)',
+      ],
     );
     return id;
   }
@@ -173,9 +183,11 @@ suite('T406t · the Change Room refuses at the database', () => {
   async function area(impactViewId: string, over: Record<string, unknown>): Promise<string> {
     const id = `ia_${Math.random().toString(36).slice(2, 10)}`;
     await db.query(
+      // DEF-034-001: this said 'security', which BR-0044 never named. The
+      // repaired CHECK now rejects it, which is how this fixture was found.
       `INSERT INTO "change_impact_areas"
          ("id","workspaceId","impactViewId","area","state","detail","itemCount","unknownReason")
-       VALUES ($1,$2,$3,'security',$4,'detail',NULL,$5)`,
+       VALUES ($1,$2,$3,'operations',$4,'detail',NULL,$5)`,
       [id, WS, impactViewId, over['state'], over['unknownReason']],
     );
     return id;

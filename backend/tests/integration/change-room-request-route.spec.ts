@@ -165,3 +165,116 @@ suite('T996i · and it is visible afterwards', () => {
     expect(res.status).toBe(401);
   });
 });
+
+suite('T996q · the blast radius, before the decision', () => {
+  let requestId = '';
+
+  it('has nothing to show before anything is computed', async () => {
+    // 404 rather than an empty view. Eight areas with nothing in them would
+    // report a clean blast radius nobody computed — `FR-CHR-032`'s confusion,
+    // arriving one level up.
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_impact' }));
+    requestId = String(raised.body.id);
+
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(404);
+  });
+
+  it('computes a view spanning all eight areas', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.status).toBeLessThan(300);
+    expect(Object.keys(res.body.areas).sort()).toEqual(
+      ['architecture', 'code', 'operations', 'release', 'requirements', 'specifications', 'tasks', 'tests'],
+    );
+  });
+
+  it('and every area is unknown, because no impact source is bound here', async () => {
+    // `FR-CHR-032` in the running application. The three seams are deliberately
+    // unfilled (`EPIC-020`, `EPIC-011`, `EPIC-016` owe them), and the honest
+    // rendering of that is eight `unknown` rows with a reason — never eight
+    // clean ones.
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    const areas = Object.values(res.body.areas) as { state: string; detail: string; itemCount: number | null }[];
+    expect(areas).toHaveLength(8);
+    expect(areas.every((a) => a.state === 'unknown')).toBe(true);
+    expect(areas.every((a) => a.itemCount === null)).toBe(true);
+    expect(areas.every((a) => a.detail.includes('EPIC-020'))).toBe(true);
+  });
+
+  it('states that the architecture-violation check has not run', async () => {
+    // `FR-CHR-034`. The panel a reviewer would otherwise read as clean.
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.body.architecture.violationCheck.status).toBe('not-run');
+    expect(res.body.architecture.violationCheck.because).toContain('BR-0073');
+    expect(res.body.architecture.decisions).toBeNull();
+  });
+
+  it('recomputing retains the earlier snapshot rather than replacing it', async () => {
+    // `FR-CHR-035`. The row count is the assertion: an overwrite would keep it
+    // at one, and a decision could no longer be read against what was known.
+    const first = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    const again = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+    expect(again.status).toBeLessThan(300);
+    expect(again.body.id).not.toBe(first.body.id);
+
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const views = await db.query(
+        'SELECT "id" FROM "change_impact_views" WHERE "changeRequestId" = $1',
+        [requestId],
+      );
+      expect(views.rowCount).toBe(2);
+      // Eight area rows per view, written individually so the database CHECK
+      // can enforce FR-CHR-032 on each.
+      const areas = await db.query(
+        'SELECT "state", "unknownReason" FROM "change_impact_areas" WHERE "impactViewId" = $1',
+        [first.body.id],
+      );
+      expect(areas.rowCount).toBe(8);
+      // `change_impact_areas_unknown_states_say_why` would have rejected the
+      // insert otherwise — this asserts the constraint was satisfied, not
+      // bypassed.
+      expect(areas.rows.every((r: { unknownReason: string | null }) => r.unknownReason)).toBe(true);
+    } finally {
+      await db.end();
+    }
+  });
+
+  it('refuses a change request in another workspace as absent', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/cr_not_ours/impact`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(404);
+  });
+
+  it('refuses both routes without a session', async () => {
+    const read = await request(app.getHttpServer()).get(
+      `/${PREFIX}/rooms/change/requests/${requestId}/impact`,
+    );
+    const write = await request(app.getHttpServer()).post(
+      `/${PREFIX}/rooms/change/requests/${requestId}/impact`,
+    );
+    expect(read.status).toBe(401);
+    expect(write.status).toBe(401);
+  });
+});

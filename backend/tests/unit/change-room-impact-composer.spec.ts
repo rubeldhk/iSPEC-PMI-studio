@@ -78,8 +78,8 @@ describe('T406n · it composes, and owns no graph', () => {
     // looking, which is why the count is `0` and not `null`.
     const composer = new ImpactComposer(impactWith([]), traversal);
     const view = await composer.compose(input);
-    expect(view.areas.security.state).toBe('not-impacted');
-    expect(view.areas.security.itemCount).toBe(0);
+    expect(view.areas.operations.state).toBe('not-impacted');
+    expect(view.areas.operations.itemCount).toBe(0);
   });
 
   it('is not retained until a decision references it', async () => {

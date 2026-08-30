@@ -15,10 +15,23 @@
  * makes it visible, and a capability built and reachable from nowhere is the
  * defect this repository has now recorded six times (`DEF-005-001`, `T1178`).
  */
-import { Body, Controller, Get, Inject, Post, Query, Req } from '@nestjs/common';
-import { UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
+import { randomUUID } from 'node:crypto';
+import { Body, Controller, Get, Inject, Param, Post, Query, Req } from '@nestjs/common';
+import { NotFoundError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
+import { CHANGE_ROOM_STORE } from './change-room.tokens.js';
+import type { ChangeRoomStore } from './change-room.store.js';
+import { ImpactComposer } from './impact.composer.js';
 import { ChangeIntakeService, type RaiseChangeInput } from './intake.service.js';
+
+/**
+ * `DEFAULT_IMPACT_DEPTH`, adopted from `EPIC-020` (`R-034-1`).
+ *
+ * Named here so the number enters the Room at exactly one point. This module
+ * never chooses it: two traversals that disagree about depth is worse than
+ * either being wrong.
+ */
+const ADOPTED_IMPACT_DEPTH = 25;
 
 interface ActingPrincipal {
   readonly workspaceId: string;
@@ -57,6 +70,8 @@ export class ChangeRoomController {
   constructor(
     // @Inject by token: esbuild/tsx emits no `design:paramtypes` (DEF-001-005).
     @Inject(ChangeIntakeService) private readonly intake: ChangeIntakeService,
+    @Inject(CHANGE_ROOM_STORE) private readonly store: ChangeRoomStore,
+    @Inject(ImpactComposer) private readonly impact: ImpactComposer,
   ) {}
 
   /**
@@ -94,5 +109,63 @@ export class ChangeRoomController {
       throw new ValidationFailedError('baselineId is required (FR-CHR-011)');
     }
     return this.intake.openAgainst(principal.workspaceId, baselineId);
+  }
+
+  /**
+   * `FR-CHR-030`, `FR-CHR-035` — compute a view and retain it.
+   *
+   * **A POST, and deliberately not folded into the `GET` below.** Composing a
+   * view writes an append-only snapshot; a `GET` that quietly wrote one would
+   * make two people opening the same screen produce two records of what was
+   * known, and would put a write behind the one verb a reader assumes is safe.
+   */
+  @Post('rooms/change/requests/:id/impact')
+  async computeImpact(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    // Absent rather than forbidden — the caller learns nothing about a change
+    // it may not see.
+    if (!request) throw new NotFoundError('Not found.');
+
+    const view = await this.impact.compose({
+      workspaceId: principal.workspaceId,
+      changeRequestId: request.id,
+      // The change is against a baseline, so the baseline is what the blast
+      // radius is traced from (`FR-CHR-010`).
+      changedArtifactId: request.targetBaselineId,
+      traversalDepth: ADOPTED_IMPACT_DEPTH,
+      now: new Date(),
+      id: randomUUID(),
+    });
+    return this.store.saveImpactView(view);
+  }
+
+  /**
+   * `FR-CHR-030` — the blast radius, before the decision.
+   *
+   * Returns the most recent snapshot. Earlier ones are retained and reachable
+   * by id (`FR-CHR-035`); this route answers *what does it look like now*, and
+   * a decision reads the one it was taken against.
+   */
+  @Get('rooms/change/requests/:id/impact')
+  async impactFor(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const view = await this.store.latestImpactViewFor(principal.workspaceId, request.id);
+    if (!view) {
+      // Not an empty view. Eight areas with nothing in them would report a
+      // clean blast radius nobody computed — the exact confusion `FR-CHR-032`
+      // exists to prevent, arriving one level up.
+      throw new NotFoundError('No impact view has been computed for this change request yet.');
+    }
+    return view;
   }
 }

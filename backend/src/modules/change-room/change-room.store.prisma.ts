@@ -17,6 +17,7 @@
  * capability rather than by everyone remembering not to use it.
  */
 import type { ChangeRequestRow, ChangeRoomStore, OpenQuestion } from './change-room.store.js';
+import { IMPACT_AREAS, type ImpactArea, type ImpactAreaName, type ImpactView, type TouchedDecision } from './impact.types.js';
 
 /** The Prisma surface this store uses, named rather than imported (PC-1). */
 interface Delegate {
@@ -28,6 +29,8 @@ interface Delegate {
 
 export interface ChangeRoomPrismaClient {
   readonly changeRequest: Delegate;
+  readonly changeImpactView: Delegate;
+  readonly changeImpactArea: Delegate;
 }
 
 /**
@@ -114,5 +117,143 @@ export class PrismaChangeRoomStore implements ChangeRoomStore {
   private async require(workspaceId: string, id: string): Promise<void> {
     const row = await this.findById(workspaceId, id);
     if (!row) throw new Error(`no change request ${id}`);
+  }
+
+  /**
+   * `FR-CHR-035` — append-only.
+   *
+   * The eight areas are written as rows rather than a JSON blob, so
+   * `change_impact_areas_unknown_states_say_why` can enforce `FR-CHR-032` in
+   * the database: an `unknown` area with no reason cannot be stored at all.
+   * That is the one guarantee worth a join.
+   */
+  async saveImpactView(view: ImpactView): Promise<ImpactView> {
+    const clash = await this.prisma.changeImpactView.findFirst({ where: { id: view.id } });
+    if (clash) {
+      throw new Error(`impact view ${view.id} already exists; views are append-only (FR-CHR-035)`);
+    }
+    await this.prisma.changeImpactView.create({
+      data: {
+        id: view.id,
+        workspaceId: view.workspaceId,
+        changeRequestId: view.changeRequestId,
+        computedAt: view.computedAt,
+        traversalDepth: view.traversalDepth,
+        retainedForDecision: view.retainedForDecision,
+        architectureDecisions: view.architecture.decisions as unknown,
+        architectureDetail: view.architecture.detail,
+        violationCheckStatus: view.architecture.violationCheck.status,
+        violationCheckBecause: view.architecture.violationCheck.because,
+      },
+    });
+    for (const area of IMPACT_AREAS) {
+      const row = view.areas[area];
+      await this.prisma.changeImpactArea.create({
+        data: {
+          id: `${view.id}:${area}`,
+          workspaceId: view.workspaceId,
+          impactViewId: view.id,
+          area: row.area,
+          state: row.state,
+          detail: row.detail,
+          itemCount: row.itemCount,
+          // The CHECK requires this exactly when the state is `unknown`, and
+          // `detail` is where the composer already put the reason.
+          unknownReason: row.state === 'unknown' ? row.detail : null,
+        },
+      });
+    }
+    return view;
+  }
+
+  async findImpactView(workspaceId: string, id: string): Promise<ImpactView | null> {
+    const row = await this.prisma.changeImpactView.findFirst({ where: { id, workspaceId } });
+    return row ? this.hydrate(row) : null;
+  }
+
+  async listImpactViewsFor(workspaceId: string, changeRequestId: string): Promise<ImpactView[]> {
+    const rows = await this.prisma.changeImpactView.findMany({
+      where: { workspaceId, changeRequestId },
+      orderBy: { computedAt: 'asc' },
+    });
+    return Promise.all(rows.map((row) => this.hydrate(row)));
+  }
+
+  async latestImpactViewFor(
+    workspaceId: string,
+    changeRequestId: string,
+  ): Promise<ImpactView | null> {
+    const all = await this.listImpactViewsFor(workspaceId, changeRequestId);
+    return all.length === 0 ? null : all[all.length - 1]!;
+  }
+
+  /** Marks the view. There is no path here that edits one. */
+  async retainForDecision(workspaceId: string, id: string): Promise<ImpactView> {
+    const existing = await this.findImpactView(workspaceId, id);
+    if (!existing) throw new Error(`no impact view ${id}`);
+    await this.prisma.changeImpactView.update({
+      where: { id },
+      data: { retainedForDecision: true },
+    });
+    return { ...existing, retainedForDecision: true };
+  }
+
+  /**
+   * Rebuilds the eight-area `Record` from rows.
+   *
+   * An area missing from the database is `unknown` with a reason saying so —
+   * never dropped, and never `not-impacted`. `FR-CHR-032` applies to a view
+   * read back just as much as to one computed: a row lost in storage is an area
+   * nobody can vouch for.
+   */
+  private async hydrate(row: unknown): Promise<ImpactView> {
+    const view = row as {
+      id: string;
+      workspaceId: string;
+      changeRequestId: string;
+      computedAt: Date;
+      traversalDepth: number;
+      retainedForDecision: boolean;
+      architectureDecisions: unknown;
+      architectureDetail: string;
+      violationCheckStatus: string;
+      violationCheckBecause: string;
+    };
+    const rows = (await this.prisma.changeImpactArea.findMany({
+      where: { impactViewId: view.id },
+    })) as ImpactArea[];
+    const byName = new Map(rows.map((area) => [area.area, area]));
+
+    const areas = {} as Record<ImpactAreaName, ImpactArea>;
+    for (const name of IMPACT_AREAS) {
+      areas[name] = byName.get(name) ?? {
+        area: name,
+        state: 'unknown',
+        detail: `no stored row for ${name} in impact view ${view.id}`,
+        itemCount: null,
+      };
+    }
+
+    return {
+      id: view.id,
+      workspaceId: view.workspaceId,
+      changeRequestId: view.changeRequestId,
+      computedAt: view.computedAt,
+      traversalDepth: view.traversalDepth,
+      retainedForDecision: view.retainedForDecision,
+      areas,
+      architecture: {
+        decisions: Array.isArray(view.architectureDecisions)
+          ? (view.architectureDecisions as TouchedDecision[])
+          : null,
+        detail: view.architectureDetail,
+        // The stored status, not a re-derived one. `FR-CHR-034` is a fact about
+        // the moment the view was taken.
+        violationCheck: {
+          status: view.violationCheckStatus as 'not-run',
+          because: view.violationCheckBecause,
+        },
+      },
+    };
   }
 }

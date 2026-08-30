@@ -2187,6 +2187,12 @@ model ChangeImpactView {
   /// Adopted from EPIC-020's DEFAULT_IMPACT_DEPTH; never chosen here.
   traversalDepth      Int
   retainedForDecision Boolean             @default(false)
+  /// FR-CHR-033 — NULL is undeterminable; [] is read-and-none-reached.
+  architectureDecisions Json?
+  architectureDetail    String
+  /// FR-CHR-034 — one value, CHECKed. BR-0073 is U-17 and unowned.
+  violationCheckStatus  String
+  violationCheckBecause String
   createdAt           DateTime            @default(now())
   request             ChangeRequest       @relation(fields: [changeRequestId], references: [id])
   areas               ChangeImpactArea[]
