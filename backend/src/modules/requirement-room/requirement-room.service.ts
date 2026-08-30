@@ -415,6 +415,15 @@ export class RequirementRoomService {
     });
   }
 
+  /** `T1193` — the decisions recorded for a Room, so the screen can show them. */
+  async listDecisions(principal: ActingPrincipal, roomObjectId: string): Promise<DecisionRow[]> {
+    const actor = await this.acting(principal);
+    if (!roomObjectId) {
+      throw new ValidationFailedError('decisions require a Room object id in the path');
+    }
+    return this.store.listDecisions(actor.workspaceId, roomObjectId);
+  }
+
   /** `T1184` — the questions raised for a Room, answered or not. */
   async listClarifications(
     principal: ActingPrincipal,

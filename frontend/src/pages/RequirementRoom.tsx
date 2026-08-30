@@ -24,7 +24,9 @@ import { LoopProgress } from '../rooms/regions/LoopProgress';
 import { Blockers, type Readiness } from '../rooms/regions/Blockers';
 import { Candidates } from '../rooms/regions/Candidates';
 import { Clarifications } from '../rooms/regions/Clarifications';
-import type { RoomCandidate, RoomClarification } from '../services/api';
+import { Decision } from '../rooms/regions/Decision';
+import { Baseline } from '../rooms/regions/Baseline';
+import type { RecordedRoomDecision, RoomCandidate, RoomClarification } from '../services/api';
 
 /**
  * What this page needs, and nothing more.
@@ -63,6 +65,21 @@ export interface RequirementRoomApi {
     clarificationId: string,
     answer: string,
   ): Promise<RoomClarification>;
+  /** `T1193` — the decision and baseline half of the journey. */
+  roomDecisions(roomObjectId: string): Promise<readonly RecordedRoomDecision[]>;
+  decideRoom(
+    roomObjectId: string,
+    input: {
+      options: readonly unknown[];
+      chosenOptionId: string;
+      rationale: string;
+      objectVersion?: number;
+    },
+  ): Promise<RecordedRoomDecision>;
+  approveBaseline(
+    roomObjectId: string,
+    input: { projectId: string; rationale: string; decisionId: string },
+  ): Promise<unknown>;
 }
 
 export interface RequirementRoomPageProps {
@@ -90,6 +107,7 @@ export function RequirementRoomPage({
   // each region so an edit in one refreshes what the other blocks on.
   const [candidates, setCandidates] = useState<readonly RoomCandidate[]>([]);
   const [clarifications, setClarifications] = useState<readonly RoomClarification[]>([]);
+  const [decisions, setDecisions] = useState<readonly RecordedRoomDecision[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -123,6 +141,10 @@ export function RequirementRoomPage({
       .roomClarifications(roomObjectId)
       .then((rows) => live && setClarifications(rows))
       .catch(() => undefined);
+    void api
+      .roomDecisions(roomObjectId)
+      .then((rows) => live && setDecisions(rows))
+      .catch(() => undefined);
     return (): void => {
       live = false;
     };
@@ -137,12 +159,14 @@ export function RequirementRoomPage({
    * exists, which is the one thing `UX-0032` asks this screen not to do.
    */
   const refresh = async (): Promise<void> => {
-    const [nextCandidates, nextClarifications] = await Promise.all([
+    const [nextCandidates, nextClarifications, nextDecisions] = await Promise.all([
       api.roomCandidates(roomObjectId),
       api.roomClarifications(roomObjectId),
+      api.roomDecisions(roomObjectId),
     ]);
     setCandidates(nextCandidates);
     setClarifications(nextClarifications);
+    setDecisions(nextDecisions);
     await api
       .roomReadiness(roomObjectId, projectId)
       .then((value) => setReadiness({ value, error: undefined }))
@@ -214,6 +238,13 @@ export function RequirementRoomPage({
                 await refresh();
               }}
             />
+            <Decision
+              decisions={decisions}
+              onDecide={async (options, chosenOptionId, rationale): Promise<void> => {
+                await api.decideRoom(roomObjectId, { options, chosenOptionId, rationale });
+                await refresh();
+              }}
+            />
             <p>A requirement decision is taken by an authorized person, and records what was not chosen.</p>
           </div>
         }
@@ -221,6 +252,18 @@ export function RequirementRoomPage({
           <div>
             <h2>Evidence</h2>
             <Blockers readiness={readiness.value} error={readiness.error} />
+            <Baseline
+              blockers={readiness.value?.blockers ?? []}
+              ready={readiness.value ? readiness.value.ready : null}
+              onApprove={async (rationale): Promise<void> => {
+                await api.approveBaseline(roomObjectId, {
+                  projectId,
+                  rationale,
+                  decisionId: decisions[decisions.length - 1]?.id ?? '',
+                });
+                await refresh();
+              }}
+            />
           </div>
         }
         activityTimeline={

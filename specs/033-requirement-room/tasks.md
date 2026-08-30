@@ -445,3 +445,17 @@ clarifications, set criteria and recorded answers since Phase 3, and none had a 
 - [X] T1186 [US1] Implement `frontend/src/rooms/regions/Candidates.tsx` (component test: T1185) — native `<form>`/`<input>`/`<button>`, so Enter submits without a key handler (`SC-RQR-008`)
 - [X] T1187 [P] [US2] Write failing component tests for the clarifications region in `frontend/tests/unit/rooms/regions/Clarifications.spec.tsx` — the whole set at once (`FR-RQR-012`), answerable in place, and an answered question retained with its answer (`FR-RQR-013`)
 - [X] T1188 [US2] Implement `frontend/src/rooms/regions/Clarifications.tsx` and wire both regions into `RequirementRoom.tsx`, extending `RequirementRoomApi` with the four methods (component test: T1187) — a write re-reads readiness rather than patching local state, so a cleared blocker really clears
+
+## Phase 11: The decision and baseline controls *(added 2026-08-29)*
+
+**What it found.** Both controls are built and correct, and the journey still stops — at two ports
+`ROOM_PORTS` declares `absent: 'refuse'` and nobody bound. Recorded as
+[`DEF-033-002`](./defects/DEF-033-002-the-journey-stops-at-two-unbound-seams.md) and routed to
+`EPIC-031` and `EPIC-032`.
+
+- [X] T1189 [P] [US4] Write failing component tests for the decision surface in `frontend/tests/unit/rooms/regions/Decision.spec.tsx` — two options minimum, all four statements each, marked recommendations, **nothing pre-selected**, and the options not chosen travelling with the decision
+- [X] T1190 [US4] Implement `frontend/src/rooms/regions/Decision.tsx` (component test: T1189) — renders two option forms before anything is typed, surfaces a refusal without clearing the form
+- [X] T1191 [P] [US1] Write failing component tests for the baseline control in `frontend/tests/unit/rooms/regions/Baseline.spec.tsx` — no approve control while anything is outstanding, unknown readiness treated as not-ready, and a refusal shown rather than swallowed
+- [X] T1192 [US1] Implement `frontend/src/rooms/regions/Baseline.tsx` (component test: T1191) — states its preconditions from the readiness projection rather than offering a control that throws, following `T403w`'s precedent
+- [X] T1193 [US4] Add `GET :id/decisions` to the controller and service, the three client methods, and wire both regions into `RequirementRoom.tsx` (component tests: T1189, T1191)
+- [ ] T1194 [US1] Re-run quickstart Scenario 13 once `EPIC-031` and `EPIC-032` bind their seams — **blocked by [`DEF-033-002`](./defects/DEF-033-002-the-journey-stops-at-two-unbound-seams.md)**, and `SC-RQR-008` cannot be met before it

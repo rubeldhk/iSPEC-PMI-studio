@@ -135,6 +135,15 @@ export class RequirementRoomController {
     return this.room.setCriteria(requireAuth(ctx), id, candidateId, body ?? {});
   }
 
+  /** `T1193` — the decisions recorded for a Room. */
+  @Get('rooms/requirement/:id/decisions')
+  listDecisions(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    return this.room.listDecisions(requireAuth(ctx), id);
+  }
+
   /** `T1184` — the questions raised, answered or not. */
   @Get('rooms/requirement/:id/clarifications')
   listClarifications(

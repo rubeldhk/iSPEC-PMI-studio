@@ -34,6 +34,10 @@ const api: RequirementRoomApi = {
   setCandidateCriteria: vi.fn().mockResolvedValue({}),
   roomClarifications: vi.fn().mockResolvedValue([]),
   answerClarification: vi.fn().mockResolvedValue({}),
+  // `T1193` — the decision and baseline half.
+  roomDecisions: vi.fn().mockResolvedValue([]),
+  decideRoom: vi.fn().mockResolvedValue({}),
+  approveBaseline: vi.fn().mockResolvedValue({}),
 };
 
 const open = () =>
@@ -58,6 +62,9 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
           setCandidateCriteria: vi.fn().mockReturnValue(new Promise(() => {})),
           roomClarifications: vi.fn().mockReturnValue(new Promise(() => {})),
           answerClarification: vi.fn().mockReturnValue(new Promise(() => {})),
+          roomDecisions: vi.fn().mockReturnValue(new Promise(() => {})),
+          decideRoom: vi.fn().mockReturnValue(new Promise(() => {})),
+          approveBaseline: vi.fn().mockReturnValue(new Promise(() => {})),
         }}
         roomObjectId="ro_1"
         projectId="pr_1"
@@ -70,14 +77,17 @@ describe('T403s · SC-RQR-008 — zero axe violations', () => {
     const { container } = render(
       <RequirementRoomPage
         api={{
+          // Every call rejects: the state where a region failed to load, which
+          // must still be accessible rather than a wall of raw errors.
           loopProgress: vi.fn().mockRejectedValue(new Error('no')),
           roomReadiness: vi.fn().mockRejectedValue(new Error('no')),
-  // `T1188` — the journey's four. Resolved empty here: these suites are about
-  // the Room's shell, access posture and accessibility, not its content.
-  roomCandidates: vi.fn().mockResolvedValue([]),
-  setCandidateCriteria: vi.fn().mockResolvedValue({}),
-  roomClarifications: vi.fn().mockResolvedValue([]),
-  answerClarification: vi.fn().mockResolvedValue({}),
+          roomCandidates: vi.fn().mockRejectedValue(new Error('no')),
+          setCandidateCriteria: vi.fn().mockRejectedValue(new Error('no')),
+          roomClarifications: vi.fn().mockRejectedValue(new Error('no')),
+          answerClarification: vi.fn().mockRejectedValue(new Error('no')),
+          roomDecisions: vi.fn().mockRejectedValue(new Error('no')),
+          decideRoom: vi.fn().mockRejectedValue(new Error('no')),
+          approveBaseline: vi.fn().mockRejectedValue(new Error('no')),
         }}
         roomObjectId="ro_1"
         projectId="pr_1"

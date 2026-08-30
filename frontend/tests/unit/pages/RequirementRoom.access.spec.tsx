@@ -30,6 +30,10 @@ const api: RequirementRoomApi = {
   setCandidateCriteria: vi.fn().mockResolvedValue({}),
   roomClarifications: vi.fn().mockResolvedValue([]),
   answerClarification: vi.fn().mockResolvedValue({}),
+  // `T1193` — the decision and baseline half.
+  roomDecisions: vi.fn().mockResolvedValue([]),
+  decideRoom: vi.fn().mockResolvedValue({}),
+  approveBaseline: vi.fn().mockResolvedValue({}),
 };
 
 const open = () => render(<RequirementRoomPage api={api} roomObjectId="ro_1" projectId="pr_1" />);

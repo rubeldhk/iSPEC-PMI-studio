@@ -42,6 +42,10 @@ function api(over: Partial<RequirementRoomApi> = {}): RequirementRoomApi {
   setCandidateCriteria: vi.fn().mockResolvedValue({}),
   roomClarifications: vi.fn().mockResolvedValue([]),
   answerClarification: vi.fn().mockResolvedValue({}),
+  // `T1193` — the decision and baseline half.
+  roomDecisions: vi.fn().mockResolvedValue([]),
+  decideRoom: vi.fn().mockResolvedValue({}),
+  approveBaseline: vi.fn().mockResolvedValue({}),
     ...over,
   };
 }

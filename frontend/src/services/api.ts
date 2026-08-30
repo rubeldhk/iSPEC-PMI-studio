@@ -337,6 +337,16 @@ export interface RoomSummary {
 
 import type { Epistemic } from '@pmi/room-contract';
 
+/** `T1193` — a decision as the wire carries it. */
+export interface RecordedRoomDecision {
+  readonly id: string;
+  readonly roomObjectId: string;
+  readonly decidedBy: string;
+  readonly chosenOption: string;
+  readonly declinedOptions: readonly string[];
+  readonly rationale: string;
+}
+
 /** `T1185` — a Room candidate as the wire carries it. */
 export interface RoomCandidate {
   readonly id: string;
@@ -699,6 +709,50 @@ export class ApiClient {
     return this.request(
       'POST',
       `/rooms/requirement/${encodeURIComponent(roomObjectId)}/candidates/${encodeURIComponent(candidateId)}/criteria`,
+      input,
+    );
+  }
+
+  /**
+   * `T1193` — record a decision. Options and the choice travel together.
+   *
+   * `FR-RQR-023` keeps the options **not** chosen, and the service derives them
+   * from the difference — so all of them are sent, not just the winner.
+   */
+  async decideRoom(
+    roomObjectId: string,
+    input: {
+      options: readonly unknown[];
+      chosenOptionId: string;
+      rationale: string;
+      objectVersion?: number;
+    },
+  ): Promise<RecordedRoomDecision> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/decide`,
+      input,
+    );
+  }
+
+  /** `T1193` — the decisions recorded for a Room. */
+  async roomDecisions(roomObjectId: string): Promise<RecordedRoomDecision[]> {
+    return this.request('GET', `/rooms/requirement/${encodeURIComponent(roomObjectId)}/decisions`);
+  }
+
+  /**
+   * `T1193` — approve the set.
+   *
+   * Refuses until `EPIC-032` binds an `EvidenceContractSource` (`FR-RQR-053`),
+   * and the refusal is surfaced rather than swallowed.
+   */
+  async approveBaseline(
+    roomObjectId: string,
+    input: { projectId: string; rationale: string; decisionId: string },
+  ): Promise<unknown> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/baseline`,
       input,
     );
   }
