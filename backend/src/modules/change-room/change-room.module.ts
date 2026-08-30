@@ -29,6 +29,7 @@ import {
   type TraversalPort,
 } from './impact.composer.js';
 import { ChangeIntakeService } from './intake.service.js';
+import { OptionsService } from './options.service.js';
 import { CHANGE_ROOM_PORTS, CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import { InMemoryChangeRoomStore, type ChangeRoomStore } from './change-room.store.js';
 import {
@@ -93,6 +94,19 @@ export class ChangeRoomService {
       },
     },
     {
+      provide: OptionsService,
+      /**
+       * `T996x` — constructed with **no binding**, which is the honest state.
+       *
+       * `EPIC-028` supplies the `AgentGateway` and `EPIC-024` the session; until
+       * they do, `generate` returns no options and says why. It does not invent
+       * a second option to satisfy `FR-CHR-040`'s count, and it does not refuse
+       * either — an unavailable model would otherwise block every change,
+       * including the ones a model outage has nothing to do with.
+       */
+      useFactory: (): OptionsService => new OptionsService(undefined),
+    },
+    {
       provide: ChangeIntakeService,
       inject: [CHANGE_ROOM_STORE],
       useFactory: (store: ChangeRoomStore): ChangeIntakeService => new ChangeIntakeService(store),
@@ -100,7 +114,7 @@ export class ChangeRoomService {
     // `ImpactComposer` is constructed where its two ports are bound. Exported as
     // a type for now; `EPIC-020`'s adapter arrives with the user-story phases.
   ],
-  exports: [ChangeRoomService, ChangeIntakeService, ImpactComposer],
+  exports: [ChangeRoomService, ChangeIntakeService, ImpactComposer, OptionsService],
 })
 export class ChangeRoomModule {}
 

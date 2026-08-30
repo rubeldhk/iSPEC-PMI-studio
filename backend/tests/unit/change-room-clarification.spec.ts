@@ -222,6 +222,7 @@ describe('T996g · retention is structural', () => {
     expect(mutators.sort()).toEqual([
       'create',
       'latestImpactViewFor',
+      'recordDecision',
       'retainForDecision',
       'saveImpactView',
       'setQuestions',

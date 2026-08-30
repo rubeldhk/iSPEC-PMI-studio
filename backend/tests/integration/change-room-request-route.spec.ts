@@ -278,3 +278,53 @@ suite('T996q · the blast radius, before the decision', () => {
     expect(write.status).toBe(401);
   });
 });
+
+suite('T996x · two or more options, or a stated reason', () => {
+  let optionsRequestId = '';
+
+  beforeAll(async () => {
+    if (noRuntime) return;
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_options' }));
+    optionsRequestId = String(raised.body.id);
+  }, 120_000);
+
+  it('answers 200 with no options, because no provider is bound', async () => {
+    // The degraded response is a success, not an error. A 502 would say the
+    // request failed; what happened is that no options were produced, which is
+    // a fact the caller can act on.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${optionsRequestId}/options`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.available).toBe(false);
+    expect(res.body.degradedKind).toBe('gateway-unbound');
+    expect(res.body.degradedReason).toContain('EPIC-028');
+  });
+
+  it('and options are null, never a pair invented to fill the field', async () => {
+    // `FR-CHR-040` unmet is reported as unmet. A synthesised alternative would
+    // be a decision presenting itself as a choice (`BR-0023`).
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${optionsRequestId}/options`)
+      .set('Cookie', harness.cookie);
+    expect(res.body.options).toBeNull();
+  });
+
+  it('a change request in another workspace is absent', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/cr_not_ours/options`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(404);
+  });
+
+  it('and no session is refused', async () => {
+    const res = await request(app.getHttpServer()).post(
+      `/${PREFIX}/rooms/change/requests/${optionsRequestId}/options`,
+    );
+    expect(res.status).toBe(401);
+  });
+});

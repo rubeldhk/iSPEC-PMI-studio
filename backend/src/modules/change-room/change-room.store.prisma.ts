@@ -16,8 +16,20 @@
  * no delete of any kind — the retention promise is kept by the absence of the
  * capability rather than by everyone remembering not to use it.
  */
-import type { ChangeRequestRow, ChangeRoomStore, OpenQuestion } from './change-room.store.js';
-import { IMPACT_AREAS, type ImpactArea, type ImpactAreaName, type ImpactView, type TouchedDecision } from './impact.types.js';
+import type {
+  ChangeDecisionRow,
+  ChangeRequestRow,
+  ChangeRoomStore,
+  OpenQuestion,
+} from './change-room.store.js';
+import {
+  IMPACT_AREAS,
+  type ImpactArea,
+  type ImpactAreaName,
+  type ImpactView,
+  type TouchedDecision,
+} from './impact.types.js';
+import type { ChangeOption } from './option.types.js';
 
 /** The Prisma surface this store uses, named rather than imported (PC-1). */
 interface Delegate {
@@ -31,6 +43,7 @@ export interface ChangeRoomPrismaClient {
   readonly changeRequest: Delegate;
   readonly changeImpactView: Delegate;
   readonly changeImpactArea: Delegate;
+  readonly changeDecision: Delegate;
 }
 
 /**
@@ -164,6 +177,54 @@ export class PrismaChangeRoomStore implements ChangeRoomStore {
       });
     }
     return view;
+  }
+
+  /**
+   * `FR-CHR-043` — the decision, with what was declined.
+   *
+   * `chosenOption` and `declinedOptions` are stored as JSON rather than
+   * normalised into an options table, because the data model has none: options
+   * exist to be weighed, and what survives is the weighing (`EPIC-033`'s
+   * wording, and the same reasoning here). Normalising them would create a
+   * second home for an option whose only purpose is to be quoted back.
+   */
+  async recordDecision(row: ChangeDecisionRow): Promise<ChangeDecisionRow> {
+    await this.prisma.changeDecision.create({
+      data: {
+        ...row,
+        chosenOption: row.chosenOption as unknown,
+        declinedOptions: row.declinedOptions as unknown,
+      },
+    });
+    return row;
+  }
+
+  async listDecisionsFor(
+    workspaceId: string,
+    changeRequestId: string,
+  ): Promise<ChangeDecisionRow[]> {
+    const rows = await this.prisma.changeDecision.findMany({
+      where: { workspaceId, changeRequestId },
+      orderBy: { decidedAt: 'asc' },
+    });
+    return rows.map((row) => {
+      const record = row as ChangeDecisionRow & {
+        chosenOption: unknown;
+        declinedOptions: unknown;
+      };
+      return {
+        ...record,
+        chosenOption: record.chosenOption as ChangeOption,
+        // `[]` on a malformed row rather than a guess: a decision whose
+        // declined set cannot be read has lost it, and pretending otherwise
+        // would report a decision with no alternatives — the exact reading
+        // `FR-CHR-043` exists to prevent. The empty case is visible to a
+        // reader; a fabricated one would not be.
+        declinedOptions: Array.isArray(record.declinedOptions)
+          ? (record.declinedOptions as ChangeOption[])
+          : [],
+      };
+    });
   }
 
   async findImpactView(workspaceId: string, id: string): Promise<ImpactView | null> {

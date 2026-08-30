@@ -14,6 +14,7 @@
  */
 
 import type { ImpactView } from './impact.types.js';
+import type { ChangeOption } from './option.types.js';
 
 export interface ChangeRequestRow {
   readonly id: string;
@@ -84,6 +85,38 @@ export interface ChangeRoomStore {
   latestImpactViewFor(workspaceId: string, changeRequestId: string): Promise<ImpactView | null>;
   /** Marks a view as referenced by a decision. Marks it — never edits it. */
   retainForDecision(workspaceId: string, id: string): Promise<ImpactView>;
+
+  /**
+   * `FR-CHR-043` — the decision, with what was declined.
+   *
+   * Append-only for the same reason the views are: a decision that could be
+   * edited is not a record of what was decided.
+   */
+  recordDecision(row: ChangeDecisionRow): Promise<ChangeDecisionRow>;
+  listDecisionsFor(workspaceId: string, changeRequestId: string): Promise<ChangeDecisionRow[]>;
+}
+
+/** `FR-CHR-043`, `FR-CHR-052`. What survives a change decision. */
+export interface ChangeDecisionRow {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly changeRequestId: string;
+  readonly decidedBy: string;
+  /** `RULE-03` — `human`, and the database CHECKs it too. */
+  readonly decidedByKind: string;
+  /** From `EPIC-031`'s `BR-0005` record. Copied so it survives a policy change. */
+  readonly authorityBasis: string;
+  readonly objectVersion: number;
+  readonly decidedAt: Date;
+  /** `EPIC-031`'s Decision, which evaluated the band. Not redefined here. */
+  readonly decisionId: string;
+  /** The whole option, not its id: an id sends a reader looking for a set nothing kept. */
+  readonly chosenOption: ChangeOption;
+  /** Whole, with their trade-offs — the only question they exist to answer. */
+  readonly declinedOptions: readonly ChangeOption[];
+  readonly rationale: string;
+  /** `FR-CHR-035` — the snapshot this was decided against. */
+  readonly impactViewId: string;
 }
 
 /** For unit tests and database-less runs. Loses data, and does so visibly. */
@@ -163,6 +196,22 @@ export class InMemoryChangeRoomStore implements ChangeRoomStore {
   ): Promise<ImpactView | null> {
     const all = await this.listImpactViewsFor(workspaceId, changeRequestId);
     return all.length === 0 ? null : all[all.length - 1]!;
+  }
+
+  readonly #decisions: ChangeDecisionRow[] = [];
+
+  async recordDecision(row: ChangeDecisionRow): Promise<ChangeDecisionRow> {
+    this.#decisions.push(row);
+    return row;
+  }
+
+  async listDecisionsFor(
+    workspaceId: string,
+    changeRequestId: string,
+  ): Promise<ChangeDecisionRow[]> {
+    return this.#decisions.filter(
+      (row) => row.workspaceId === workspaceId && row.changeRequestId === changeRequestId,
+    );
   }
 
   async retainForDecision(workspaceId: string, id: string): Promise<ImpactView> {

@@ -23,6 +23,7 @@ import { CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import type { ChangeRoomStore } from './change-room.store.js';
 import { ImpactComposer } from './impact.composer.js';
 import { ChangeIntakeService, type RaiseChangeInput } from './intake.service.js';
+import { OptionsService } from './options.service.js';
 
 /**
  * `DEFAULT_IMPACT_DEPTH`, adopted from `EPIC-020` (`R-034-1`).
@@ -72,6 +73,7 @@ export class ChangeRoomController {
     @Inject(ChangeIntakeService) private readonly intake: ChangeIntakeService,
     @Inject(CHANGE_ROOM_STORE) private readonly store: ChangeRoomStore,
     @Inject(ImpactComposer) private readonly impact: ImpactComposer,
+    @Inject(OptionsService) private readonly options: OptionsService,
   ) {}
 
   /**
@@ -167,5 +169,34 @@ export class ChangeRoomController {
       throw new NotFoundError('No impact view has been computed for this change request yet.');
     }
     return view;
+  }
+
+  /**
+   * `FR-CHR-040`–`FR-CHR-042` — two or more ways to satisfy this change.
+   *
+   * A POST because it invokes a provider, which costs time and money and is not
+   * something a page refresh should do.
+   *
+   * **The degraded response is a 200, not an error.** `EPIC-028`'s gateway
+   * degrades rather than refusing, and a 502 here would tell a caller the
+   * request failed when what actually happened is that no options were
+   * produced — a fact they can act on, provided they are told. The body says
+   * `available: false` with a reason, and `options` is `null` rather than a
+   * pair somebody invented to fill the field.
+   */
+  @Post('rooms/change/requests/:id/options')
+  async generateOptions(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    return this.options.generate({
+      workspaceId: principal.workspaceId,
+      changeRequestId: request.id,
+      correlationId: randomUUID(),
+    });
   }
 }
