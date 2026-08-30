@@ -20,8 +20,16 @@
  * loop with its own store.
  */
 import { Module } from '@nestjs/common';
+import { prismaClient } from '../../persistence/prisma.js';
+import { ChangeRoomController } from './change-room.controller.js';
 import { ImpactComposer } from './impact.composer.js';
-import { CHANGE_ROOM_PORTS } from './change-room.tokens.js';
+import { ChangeIntakeService } from './intake.service.js';
+import { CHANGE_ROOM_PORTS, CHANGE_ROOM_STORE } from './change-room.tokens.js';
+import { InMemoryChangeRoomStore, type ChangeRoomStore } from './change-room.store.js';
+import {
+  PrismaChangeRoomStore,
+  type ChangeRoomPrismaClient,
+} from './change-room.store.prisma.js';
 
 /** Resolvable proof the module is in the graph — `T406u` asks for it by name. */
 export class ChangeRoomService {
@@ -33,12 +41,29 @@ export class ChangeRoomService {
 }
 
 @Module({
+  controllers: [ChangeRoomController],
   providers: [
     { provide: ChangeRoomService, useFactory: (): ChangeRoomService => new ChangeRoomService() },
+    {
+      provide: CHANGE_ROOM_STORE,
+      // `T1178`'s lesson, applied in the commit that first needs it rather than
+      // in a later remediation: `DATABASE_URL` decides, as it does for
+      // `REQUIREMENT_ROOM_STORE` and `LOOP_STORE`. Unset in unit tests, so the
+      // in-memory store stays their default and only theirs.
+      useFactory: (): ChangeRoomStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaChangeRoomStore(prismaClient() as unknown as ChangeRoomPrismaClient)
+          : new InMemoryChangeRoomStore(),
+    },
+    {
+      provide: ChangeIntakeService,
+      inject: [CHANGE_ROOM_STORE],
+      useFactory: (store: ChangeRoomStore): ChangeIntakeService => new ChangeIntakeService(store),
+    },
     // `ImpactComposer` is constructed where its two ports are bound. Exported as
     // a type for now; `EPIC-020`'s adapter arrives with the user-story phases.
   ],
-  exports: [ChangeRoomService],
+  exports: [ChangeRoomService, ChangeIntakeService],
 })
 export class ChangeRoomModule {}
 

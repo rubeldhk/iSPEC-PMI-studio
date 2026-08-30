@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
+import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -88,6 +89,31 @@ suite('T406u · the Change Room is reachable through the composed application', 
       strict: false,
     });
     expect(() => registry.require('change-room')).not.toThrow();
+  });
+
+  it('serves the route the Requirement Room refusal advertises', async () => {
+    // `T996i`. `InPlaceEditRefusedError` names `POST /rooms/change/requests` in
+    // its affordance (`BR-0042`). A route string in an error body pointing at
+    // nothing is the same defect as an unregistered module, wearing a remedy's
+    // clothes — so this asserts the running application actually mounts it.
+    const res = await request(app.getHttpServer()).post('/rooms/change/requests').send({});
+    expect(res.status).not.toBe(404);
+  });
+
+  it('and does not serve it without a session', async () => {
+    // `DEF-037-001` is what the alternative looks like: an unauthenticated
+    // request that returned 200 with real data. Never a success, whatever the
+    // failure code.
+    //
+    // Deliberately not asserting 401 *here*. This harness composes `AppModule`
+    // bare, and `ErrorFilter` — which maps `UnauthenticatedError` to 401 — is
+    // installed by `main.ts`, so every product controller reports 500 in this
+    // app. The exact status is asserted in `change-room-request-route.spec.ts`,
+    // against the harness that mirrors production wiring.
+    const res = await request(app.getHttpServer())
+      .post('/rooms/change/requests')
+      .send({ projectId: 'pr_1', targetBaselineId: 'b_1', targetBaselineVersion: 1 });
+    expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
   it('and the requirement-room type still loads beside it', async () => {

@@ -139,15 +139,15 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 1
 
-- [ ] T996a [P] [US1] Write failing unit tests for change intake in `backend/tests/unit/change-room-intake.spec.ts` — a proposed modification is recordable only as a Change Request **linked to a baseline**, carrying requested outcome, reason, urgency, requester and unresolved questions (`FR-CHR-010`, `FR-CHR-020`)
-- [ ] T996b [US1] Implement `backend/src/modules/change-room/intake.service.ts` (unit test: T996a)
-- [ ] T996c [P] [US1] Write failing unit tests for urgency handling in `backend/tests/unit/change-room-urgency.spec.ts` — urgency is a **recorded attribute and never a gate bypass**; a skipped gate resolves to a recorded exception or a violation, never a pass (`FR-CHR-021`, `ADR-0025` constraint 2)
-- [ ] T996d [US1] Implement urgency recording in `backend/src/modules/change-room/intake.service.ts` (unit test: T996c)
-- [ ] T996e [P] [US1] Write the failing integration test for the baseline gate in `backend/tests/integration/change-room-baseline-gate.spec.ts` — no implementation-changing request bypasses traceable change control once the baseline is approved (`FR-CHR-011`, `SC-CHR-001`, `RULE-02`)
-- [ ] T996f [US1] Implement the baseline gate and the `EPIC-033` in-place-edit handoff in `backend/src/modules/change-room/intake.service.ts` (integration test: T996e) — this Room is where `FR-RQR-051`'s refusal leads
-- [ ] T996g [P] [US1] Write failing unit tests for clarification and withdrawal in `backend/tests/unit/change-room-clarification.spec.ts` — questions presented as one set and answerable in place; a **withdrawn** request and its analysis are both retained (`FR-CHR-022`, `FR-CHR-023`)
-- [ ] T996h [US1] Implement clarification and withdrawal in `backend/src/modules/change-room/intake.service.ts` (unit test: T996g)
-- [ ] T996i [US1] Implement `POST /rooms/change/requests` in `backend/src/modules/change-room/change-room.controller.ts` (integration test: T406u)
+- [X] T996a [P] [US1] Write failing unit tests for change intake in `backend/tests/unit/change-room-intake.spec.ts` — a proposed modification is recordable only as a Change Request **linked to a baseline**, carrying requested outcome, reason, urgency, requester and unresolved questions (`FR-CHR-010`, `FR-CHR-020`)
+- [X] T996b [US1] Implement `backend/src/modules/change-room/intake.service.ts` (unit test: T996a)
+- [X] T996c [P] [US1] Write failing unit tests for urgency handling in `backend/tests/unit/change-room-urgency.spec.ts` — urgency is a **recorded attribute and never a gate bypass**; a skipped gate resolves to a recorded exception or a violation, never a pass (`FR-CHR-021`, `ADR-0025` constraint 2)
+- [X] T996d [US1] Implement urgency recording in `backend/src/modules/change-room/intake.service.ts` (unit test: T996c)
+- [X] T996e [P] [US1] Write the failing integration test for the baseline gate in `backend/tests/integration/change-room-baseline-gate.spec.ts` — no implementation-changing request bypasses traceable change control once the baseline is approved (`FR-CHR-011`, `SC-CHR-001`, `RULE-02`)
+- [X] T996f [US1] Implement the baseline gate and the `EPIC-033` in-place-edit handoff in `backend/src/modules/change-room/intake.service.ts` (integration test: T996e) — this Room is where `FR-RQR-051`'s refusal leads
+- [X] T996g [P] [US1] Write failing unit tests for clarification and withdrawal in `backend/tests/unit/change-room-clarification.spec.ts` — questions presented as one set and answerable in place; a **withdrawn** request and its analysis are both retained (`FR-CHR-022`, `FR-CHR-023`)
+- [X] T996h [US1] Implement clarification and withdrawal in `backend/src/modules/change-room/intake.service.ts` (unit test: T996g)
+- [X] T996i [US1] Implement `POST /rooms/change/requests` in `backend/src/modules/change-room/change-room.controller.ts` (integration test: T406u)
 
 **Checkpoint**: US1 demonstrable — `RULE-02` has a destination
 

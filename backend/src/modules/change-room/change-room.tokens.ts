@@ -99,6 +99,17 @@ export const BASELINE_READER = Symbol('CHANGE_ROOM_BASELINE_READER');
 export const IMPACT_SOURCE = Symbol('CHANGE_ROOM_IMPACT_SOURCE');
 export const TRANSFER_INTAKE = Symbol('CHANGE_ROOM_TRANSFER_INTAKE');
 
+/**
+ * `T996i` — the store seam. Not a port: the six above are governance seams
+ * other Epics fill, and this one is persistence, which `EPIC-034` owns.
+ *
+ * The asymmetry is deliberate and platform-wide (`loop.module.ts`): a store
+ * that loses data fails visibly and testably, while a governance seam that
+ * defaults to permitting is indistinguishable at every call site from a policy
+ * that said yes.
+ */
+export const CHANGE_ROOM_STORE = Symbol('CHANGE_ROOM_STORE');
+
 /** The behaviour a named port takes when unbound, or `null` if nobody declared it. */
 export function absentBehaviourOf(name: string): AbsentBehaviour | null {
   return CHANGE_ROOM_PORTS.find((port) => port.name === name)?.absent ?? null;
