@@ -2167,6 +2167,9 @@ model ChangeRequest {
   openQuestions         Json                @default("[]")
   origin                String              @default("direct")
   originDefectRef       String?
+  /// FR-CHR-012, R-034-6 — ids into EPIC-032 and EPIC-035, never copies.
+  transferredEvidenceRefs Json              @default("[]")
+  transferredContextRefs  Json              @default("[]")
   state                 String              @default("open")
   rebasedFrom           Int?
   createdAt             DateTime            @default(now())

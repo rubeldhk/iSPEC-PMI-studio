@@ -47,14 +47,63 @@ export interface RaiseChangeInput {
   readonly requestedOutcome: string;
   readonly reason: string;
   readonly requester: string;
-  readonly urgency?: string;
+  readonly urgency?: string | undefined;
   readonly questions?: readonly string[];
   readonly origin?: 'direct' | 'defect-transfer';
   readonly originDefectRef?: string;
+  /** `R-034-6` - by reference. Empty on a direct change, never absent. */
+  readonly evidenceRefs?: readonly string[];
+  readonly contextRefs?: readonly string[];
 }
 
 /** Urgency values a requester may claim. None of them changes what happens. */
 export const URGENCY_LEVELS = Object.freeze(['normal', 'high', 'critical'] as const);
+
+
+/**
+ * `BR-0057`, `R-034-6` - what the Defect Room hands over.
+ *
+ * Both reference lists are **required**, so "no evidence yet" is a stated `[]`
+ * rather than an unstated absence. A defect with nothing attached is a real
+ * case; a transfer that silently lost its attachments is not, and an optional
+ * field makes the two indistinguishable.
+ */
+export interface DefectTransferInput {
+  readonly workspaceId: string;
+  readonly projectId: string;
+  readonly roomObjectId: string;
+  readonly targetBaselineId: string;
+  readonly targetBaselineVersion: number;
+  readonly requestedOutcome: string;
+  readonly reason: string;
+  readonly requester: string;
+  readonly originDefectRef: string;
+  readonly evidenceRefs: readonly string[];
+  readonly contextRefs: readonly string[];
+  readonly urgency?: string;
+}
+
+/**
+ * `EPIC-035` `FR-DFR-074` - a refused transfer goes back where it came from.
+ *
+ * The refusal carries the defect and the Epic to return to, so the Defect Room
+ * can attach it. Without that, a refused transfer leaves the defect saying
+ * "transferred" with nothing at the other end: the Defect Room believes it is
+ * somebody else's problem and nobody else has it.
+ *
+ * `returnTo` is **absent** when the transfer named no defect - the one refusal
+ * that has nowhere to return to, and it must not claim otherwise.
+ */
+export class TransferRefusedError extends ValidationFailedError {
+  constructor(refusal: string, originDefectRef: string) {
+    super(
+      `the transfer was refused and returns to the Defect Room: ${refusal}`,
+      originDefectRef === ''
+        ? { refusal }
+        : { refusal, originDefectRef, returnTo: 'EPIC-035' },
+    );
+  }
+}
 
 export class ChangeIntakeService {
   constructor(private readonly store: ChangeRoomStore) {}
@@ -114,6 +163,8 @@ export class ChangeIntakeService {
       })),
       origin,
       originDefectRef: input.originDefectRef ?? null,
+      transferredEvidenceRefs: [...(input.evidenceRefs ?? [])],
+      transferredContextRefs: [...(input.contextRefs ?? [])],
       state: 'open',
       rebasedFrom: null,
       createdAt: new Date(),
@@ -148,6 +199,64 @@ export class ChangeIntakeService {
       targetBaselineId: affordance.baselineId,
       targetBaselineVersion: affordance.baselineVersion,
     });
+  }
+
+
+  /**
+   * `FR-CHR-012`, `BR-0057`, `R-034-6` - take a transfer from the Defect Room.
+   *
+   * Every refusal here throws a `TransferRefusedError`, which carries the
+   * defect to return to. A plain validation failure would stop the transfer
+   * without telling the Defect Room, and `EPIC-035` would have no way to
+   * un-transfer a defect it had already moved.
+   */
+  async fromDefectTransfer(input: DefectTransferInput): Promise<ChangeRequestRow> {
+    // Checked first, and separately: this is the one refusal that cannot carry
+    // a return address, so everything after it can.
+    if (input.originDefectRef.trim() === '') {
+      throw new TransferRefusedError(
+        'a defect-transfer names the defect it came from (FR-CHR-012)',
+        '',
+      );
+    }
+    for (const ref of [...input.evidenceRefs, ...input.contextRefs]) {
+      if (ref.trim() === '') {
+        throw new TransferRefusedError(
+          'a transferred reference is an id into EPIC-032 or EPIC-035, never blank (R-034-6)',
+          input.originDefectRef,
+        );
+      }
+    }
+
+    try {
+      return await this.raise({
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+        roomObjectId: input.roomObjectId,
+        targetBaselineId: input.targetBaselineId,
+        targetBaselineVersion: input.targetBaselineVersion,
+        requestedOutcome: input.requestedOutcome,
+        reason: input.reason,
+        requester: input.requester,
+        origin: 'defect-transfer',
+        originDefectRef: input.originDefectRef,
+        evidenceRefs: input.evidenceRefs,
+        contextRefs: input.contextRefs,
+        // Passed straight through, never compared. `T996c` forbids this file
+        // comparing urgency to anything, and a `=== undefined` spread guard
+        // would trip that check for a presence test — which is a different kind
+        // of thing, and not worth carving an exception into a rule whose whole
+        // value is having none.
+        urgency: input.urgency,
+      });
+    } catch (error) {
+      // Re-thrown as a transfer refusal so it returns. The message is kept: the
+      // Defect Room attaches it, and "invalid" would tell nobody anything.
+      throw new TransferRefusedError(
+        error instanceof Error ? error.message : 'unknown error',
+        input.originDefectRef,
+      );
+    }
   }
 
   /** `FR-CHR-022` — the whole set, answerable in place. */

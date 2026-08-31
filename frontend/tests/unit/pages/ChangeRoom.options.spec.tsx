@@ -33,6 +33,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import {
   ChangeOptionsRegion,
+  type ChangeOptionView,
   type ChangeOptionsView,
 } from '../../../src/rooms/regions/ChangeOptions';
 
@@ -60,11 +61,11 @@ const tradeOffs = (over: Record<string, { stated: boolean; detail: string }> = {
   return { ...out, ...over };
 };
 
-const option = (id: string, over: Record<string, unknown> = {}) => ({
+const option = (id: string, over: Record<string, unknown> = {}): ChangeOptionView => ({
   optionId: id,
   summary: `Option ${id} summary`,
   reasoning: `Reasoning for ${id}.`,
-  tradeOffs: tradeOffs(),
+  tradeOffs: tradeOffs() as ChangeOptionView['tradeOffs'],
   epistemic: 'recommendation' as const,
   ...over,
 });

@@ -920,4 +920,141 @@ export class ApiClient {
     if (error.isSessionExpiry()) this.onSessionExpired?.();
     return error;
   }
+
+  /**
+   * `T994s` (EPIC-034) - the Change Room's reads.
+   *
+   * Each returns `null` where the backend answers 404, because "not decided
+   * yet" and "not found" are the same HTTP status and different facts to a
+   * screen. The page renders the difference; a thrown error would darken the
+   * region instead, which would say the Room was broken rather than that the
+   * change is open.
+   *
+   * `changeRequest` does NOT swallow 404: a Room addressed by an id that does
+   * not resolve has nothing to render, and pretending otherwise would show an
+   * empty Room rather than saying the address is wrong.
+   */
+  async changeRequest(changeRequestId: string): Promise<ChangeRequestSummary> {
+    return this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}`);
+  }
+
+  /** `FR-CHR-040` - a POST, because it invokes a provider. */
+  async changeOptions(changeRequestId: string): Promise<ChangeOptionsShape> {
+    return this.request(
+      'POST',
+      `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/options`,
+    );
+  }
+
+  async changeImpact(changeRequestId: string): Promise<ChangeImpactSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/impact`),
+    );
+  }
+
+  async changeDecision(changeRequestId: string): Promise<ChangeDecisionSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/decision`),
+    );
+  }
+
+  async changeClosure(changeRequestId: string): Promise<ChangeClosureSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/closure`),
+    );
+  }
+
+  /**
+   * A 404 becomes `null`; every other failure still throws.
+   *
+   * Narrow on purpose. Swallowing all errors here would turn an unreachable
+   * backend into an empty Room, and the whole point of the Room's error
+   * handling is that a person can tell those apart.
+   */
+  private async absentAsNull<T>(pending: Promise<T>): Promise<T | null> {
+    try {
+      return await pending;
+    } catch (error) {
+      const status = (error as { status?: number })?.status;
+      if (status === 404) return null;
+      throw error;
+    }
+  }
+}
+
+/** `T994s` - what the Change Room page reads. Carries no requirement text. */
+export interface ChangeRequestSummary {
+  id: string;
+  projectId: string;
+  targetBaselineId: string;
+  targetBaselineVersion: number;
+  requestedOutcome: string;
+  reason: string;
+  requester: string;
+  urgency: string;
+  state: string;
+  openQuestions: { id: string; question: string; answer: string | null }[];
+  rebasedFrom: number | null;
+}
+
+/** `FR-CHR-041` - one dimension's answer. `stated: false` is not-applicable. */
+export interface TradeOffShape {
+  readonly stated: boolean;
+  readonly detail: string;
+}
+
+/** `FR-CHR-042` - always a recommendation, computed server-side. */
+export interface ChangeOptionShape {
+  readonly optionId: string;
+  readonly summary: string;
+  readonly reasoning: string;
+  readonly tradeOffs: Readonly<Record<string, TradeOffShape>>;
+  readonly epistemic: 'recommendation';
+}
+
+/**
+ * What `POST .../options` answers. Mirrors `OptionsResult` on the server.
+ *
+ * `options` is `null` rather than `[]` when none were produced: "no options
+ * exist" and "none could be produced" are different claims, and the tuple on
+ * the server makes one option unrepresentable.
+ */
+export interface ChangeOptionsShape {
+  readonly available: boolean;
+  readonly options: readonly ChangeOptionShape[] | null;
+  readonly degradedReason: string | null;
+  readonly degradedKind: string | null;
+  readonly rejected: readonly { index: number; reason: string }[];
+}
+
+/** `T994s` - the impact view as the Room reads it. Carries no requirement text. */
+export interface ChangeImpactSummary {
+  areas: Record<
+    string,
+    { area: string; state: string; detail: string; itemCount: number | null }
+  >;
+  architecture: {
+    decisions: { reference: string; title: string }[] | null;
+    detail: string;
+    /** `FR-CHR-034` - one value, and there is no `passed` to receive. */
+    violationCheck: { status: string; because: string };
+  };
+}
+
+/** `FR-CHR-043` - what a decision retained, including what it declined. */
+export interface ChangeDecisionSummary {
+  decidedBy: string;
+  authorityBasis: string;
+  rationale: string;
+  chosenOption: { optionId: string; summary: string };
+  declinedOptions: { optionId: string; summary: string }[];
+}
+
+/** `BR-0048`'s four questions, as stored. */
+export interface ChangeClosureSummary {
+  whatChanged: string;
+  why: string;
+  evidenceRefs: string[];
+  supersedingBaselineId: string;
+  supersedingBaselineVersion: number;
 }

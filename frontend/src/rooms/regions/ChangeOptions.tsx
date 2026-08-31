@@ -44,6 +44,21 @@
  */
 import type { ReactElement } from 'react';
 import { EpistemicMark } from './Epistemic';
+import type {
+  ChangeOptionShape,
+  ChangeOptionsShape,
+  TradeOffShape,
+} from '../../services/api';
+
+/**
+ * The shapes this region renders; `services/api.ts` declares them.
+ *
+ * Aliased rather than restated, so the region and the client cannot drift
+ * into two descriptions of one response.
+ */
+export type TradeOffView = TradeOffShape;
+export type ChangeOptionView = ChangeOptionShape;
+export type ChangeOptionsView = ChangeOptionsShape;
 
 /** `FR-CHR-041`'s six, in the requirement's order — how a reader compares two options. */
 const DIMENSIONS = [
@@ -57,35 +72,12 @@ const DIMENSIONS = [
 
 type DimensionName = (typeof DIMENSIONS)[number];
 
-export interface TradeOffView {
-  /** `false` means *explicitly not applicable*, which still carries a detail. */
-  readonly stated: boolean;
-  readonly detail: string;
-}
-
-export interface ChangeOptionView {
-  readonly optionId: string;
-  readonly summary: string;
-  readonly reasoning: string;
-  readonly tradeOffs: Readonly<Record<DimensionName, TradeOffView>>;
-  readonly epistemic: 'recommendation';
-}
-
 export interface RejectedOptionView {
   readonly index: number;
   readonly reason: string;
 }
 
 /** What `POST /rooms/change/requests/:id/options` returns, verbatim. */
-export interface ChangeOptionsView {
-  readonly available: boolean;
-  /** Two or more, or `null`. Never one, and never a pair invented to fill it. */
-  readonly options: readonly ChangeOptionView[] | null;
-  readonly degradedReason: string | null;
-  readonly degradedKind: string | null;
-  readonly rejected: readonly RejectedOptionView[];
-}
-
 function TradeOffRow({
   dimension,
   tradeOff,
@@ -115,7 +107,21 @@ function OptionCard({ option }: { option: ChangeOptionView }): ReactElement {
       <p className="change-option__reasoning">{option.reasoning}</p>
       <dl className="change-option__tradeoffs">
         {DIMENSIONS.map((dimension) => (
-          <TradeOffRow key={dimension} dimension={dimension} tradeOff={option.tradeOffs[dimension]} />
+          <TradeOffRow
+            key={dimension}
+            dimension={dimension}
+            // The server validates all six and rejects an option missing one
+            // (`FR-CHR-041`), so an absent dimension here means the payload is
+            // malformed. Rendered as a stated gap rather than silently skipped:
+            // a row that vanished would leave five dimensions looking complete,
+            // which is the failure the six-dimension rule exists to prevent.
+            tradeOff={
+              option.tradeOffs[dimension] ?? {
+                stated: false,
+                detail: 'the provider returned no answer for this dimension',
+              }
+            }
+          />
         ))}
       </dl>
     </article>

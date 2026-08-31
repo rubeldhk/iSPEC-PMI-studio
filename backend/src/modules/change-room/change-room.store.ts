@@ -34,6 +34,21 @@ export interface ChangeRequestRow {
   readonly openQuestions: readonly OpenQuestion[];
   readonly origin: 'direct' | 'defect-transfer';
   readonly originDefectRef: string | null;
+  /**
+   * `FR-CHR-012`, `R-034-6` - what a Defect Room transfer brought, **by
+   * reference**.
+   *
+   * Ids into `EPIC-032` and `EPIC-035`, never copies. A copied attestation
+   * would be a second artifact with the same digest and a different id, which
+   * is the provenance ambiguity `FR-EVS-013` exists to prevent: two rows
+   * attesting one fact and no way to tell which one an auditor was shown.
+   *
+   * `[]` on a direct change. Empty says nobody attached any; the field being
+   * absent would leave a reader unable to tell that from a transfer that lost
+   * them.
+   */
+  readonly transferredEvidenceRefs: readonly string[];
+  readonly transferredContextRefs: readonly string[];
   readonly state: 'open' | 'withdrawn' | 'decided' | 'applied' | 'closed';
   readonly rebasedFrom: number | null;
   readonly createdAt: Date;

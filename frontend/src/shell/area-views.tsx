@@ -21,6 +21,7 @@ import { EngineSelector } from '../components/EngineSelector';
 import { RequirementEditor } from '../components/RequirementEditor';
 import { ProjectDetail, ProjectsPage } from '../pages/Projects';
 import { RequirementRoomPage } from '../pages/RequirementRoom';
+import { ChangeRoomPage } from '../pages/ChangeRoom';
 import { RequirementIntake } from '../pages/RequirementIntake';
 import { RequirementRooms } from '../pages/RequirementRooms';
 import { RequirementsPage } from '../pages/Requirements';
@@ -372,4 +373,36 @@ export function ReviewSessionView(): ReactElement {
   const { api } = useShell();
   const { runId = '' } = useParams();
   return <ReviewSessionPage api={api} runId={runId} />;
+}
+
+/**
+ * `T994s` (EPIC-034) - the Change Room, at `/change-room/:changeRequestId`.
+ *
+ * Project-scoped like the Requirement Room, and for the same reason: a change
+ * is against a baseline, and a baseline belongs to a project.
+ *
+ * The client is passed straight through. `ChangeRoomApi`'s method names match
+ * `ApiClient`'s so no adapter is needed here - `FR-SHL-003` forbids the shell
+ * reaching a domain endpoint, and an adapter in this file would be exactly that
+ * with an extra step.
+ *
+ * **The area stays `declared-not-delivered`.** There is no Change Room index
+ * yet, so a person can only arrive here by following a link that carries an id
+ * - exactly the state `requirement-room` stood in until `T1172`, whose note
+ * says it plainly: inventing an area landing to justify a status change would
+ * be the status driving the product. The status follows the index, not this
+ * route.
+ */
+export function ChangeRoomView(): ReactElement {
+  const { api } = useShell();
+  const { changeRequestId = '' } = useParams();
+  return (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
+          <ChangeRoomPage api={api} changeRequestId={changeRequestId} projectId={projectId} />
+        </MainLandmark>
+      )}
+    </RequireProject>
+  );
 }

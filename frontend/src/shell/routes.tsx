@@ -21,6 +21,7 @@ import { AppShell } from './AppShell';
 import { NotFound } from './NotFound';
 import { reachableAreas } from './areas';
 import {
+  ChangeRoomView,
   ProjectDetailView,
   RequirementIntakeView,
   RequirementRoomView,
@@ -45,6 +46,10 @@ export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[]
   // read as a room id.
   { path: '/requirement-room/intake', element: RequirementIntakeView },
   { path: '/requirement-room/:roomObjectId', element: RequirementRoomView },
+  // `T994s` - the Change Room. Its area is still `declared-not-delivered`
+  // (no index yet), and `routes.spec.tsx` only forbids routing an
+  // undelivered area's OWN path - which this is not.
+  { path: '/change-room/:changeRequestId', element: ChangeRoomView },
 ]);
 
 /**

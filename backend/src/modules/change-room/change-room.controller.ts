@@ -22,7 +22,11 @@ import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import { CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import type { ChangeRoomStore } from './change-room.store.js';
 import { ImpactComposer } from './impact.composer.js';
-import { ChangeIntakeService, type RaiseChangeInput } from './intake.service.js';
+import {
+  ChangeIntakeService,
+  type DefectTransferInput,
+  type RaiseChangeInput,
+} from './intake.service.js';
 import { ClosureService, type CloseChangeInput } from './closure.service.js';
 import { DecisionService, type RecordDecisionInput } from './decision.service.js';
 import { RebaselineService } from './rebase.service.js';
@@ -379,6 +383,84 @@ export class ChangeRoomController {
       changeRequestId: request.id,
       closedBy: principal.userId,
       now: new Date(),
+    });
+  }
+
+  /**
+   * `T994s` - the change request itself.
+   *
+   * Added with the page that needs it. A Room that cannot read the object it is
+   * a Room for would be the seventh instance of built-and-reachable-from-nowhere
+   * this repository has recorded, arriving from the other direction: a screen
+   * with nothing to render.
+   */
+  @Get('rooms/change/requests/:id')
+  async findOne(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+    return request;
+  }
+
+  /** `FR-CHR-043` - the decision, or 404 while none has been taken. */
+  @Get('rooms/change/requests/:id/decision')
+  async decisionFor(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const decided = await this.decisions.decidedFor(principal.workspaceId, request.id);
+    // 404 rather than an empty object: a decision-shaped blank would render as
+    // a decision with no decider, which is worse than an absence.
+    if (!decided) throw new NotFoundError('No decision has been recorded for this change yet.');
+    return decided;
+  }
+
+  /** `FR-CHR-070`-`FR-CHR-073` - the closure, or 404 while the change is open. */
+  @Get('rooms/change/requests/:id/closure')
+  async closureFor(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const closure = await this.closures.closureFor(principal.workspaceId, request.id);
+    if (!closure) throw new NotFoundError('This change is not closed.');
+    return closure;
+  }
+
+  /**
+   * `FR-CHR-012`, `BR-0057`, `R-034-6` - intake from the Defect Room.
+   *
+   * A refusal answers with `TransferRefusedError`, whose body carries the
+   * defect and `returnTo: 'EPIC-035'`. That is the return path: without it a
+   * refused transfer leaves the defect saying "transferred" with nothing at the
+   * other end, so the Defect Room believes it is somebody else's problem and
+   * nobody else has it.
+   *
+   * The requester comes from the session like every other write here. A
+   * transfer arrives through an integration, and an integration naming its own
+   * actor is `DEF-033-001` with a different label on it.
+   */
+  @Post('rooms/change/transfer-intake')
+  async transferIntake(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Body() body: Record<string, unknown>,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const safe = strip(body) as Record<string, unknown>;
+    return this.intake.fromDefectTransfer({
+      ...(safe as unknown as Omit<DefectTransferInput, 'workspaceId' | 'requester'>),
+      workspaceId: principal.workspaceId,
+      requester: principal.userId,
     });
   }
 }
