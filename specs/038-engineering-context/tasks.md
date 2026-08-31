@@ -6,9 +6,9 @@
 [data-model.md](./data-model.md) · [contracts/context-api.md](./contracts/context-api.md) ·
 [quickstart.md](./quickstart.md)
 
-**Task ID range**: `T1220`–`T1307`, **88 tasks**.
+**Task ID range**: `T1220`–`T1308`, **89 tasks**.
 
-> `T1306` and `T1307` were appended on 2026-08-31 to close analysis finding `E1`. They sit at the end of Phase 3 rather than in numeric sequence, because identifiers are never renumbered once written.
+> `T1306`–`T1308` were appended on 2026-08-31 to close analysis findings `E1` and `E2`. They sit out of numeric sequence within their phases, because identifiers are never renumbered once written.
 
 > **On the identifiers.** `G-26-15` requires task identifiers to be unique **across the corpus**,
 > not per Epic (`DEF-028-014`). The corpus maximum before this Epic is `T1219` (`EPIC-034`), and
@@ -146,9 +146,10 @@ test written to fail first, so each implementation task names the test task that
 - [ ] T1276 [US5] Implement `backend/src/modules/context/retrieval/index.service.ts` (unit tests: T1273–T1275) — build, version and stale-mark entries; every entry records the source version it was built from (`FR-CTX-016`)
 - [ ] T1277 [P] [US5] Write failing unit tests for incremental re-indexing in `backend/tests/unit/context-reindex.spec.ts` — one changed source re-embeds one entry and **leaves every other entry's `indexedAt` untouched** (`FR-CTX-018`, `SC-CTX-010`, `R-038-6`)
 - [ ] T1278 [US5] Implement `POST /context/index/reindex` and `GET /context/index/health` (unit test: T1277) — health reports the stale count, because an index that is 40% stale is neither broken nor healthy and nobody finds out unless something says so. **No rebuild-all route exists**: `R-038-6` records that a corpus rebuild is an operation nobody runs
-- [ ] T1279 [US5] Implement `backend/src/modules/context/retrieval/search.service.ts` (unit tests: T1273, T1274) — semantic ranking, built here rather than integrated (`FR-CTX-010`, `FR-CTX-011`); ranks within one workspace partition with `hnsw.iterative_scan` enabled (`R-038-2`), and every candidate carries the score that ranked it (`FR-CTX-014`)
+- [ ] T1279 [US5] Implement `backend/src/modules/context/retrieval/search.service.ts` (unit tests: T1273, T1274, T1308) — semantic ranking, built here rather than integrated (`FR-CTX-010`, `FR-CTX-011`); ranks within one workspace partition with `hnsw.iterative_scan` enabled (`R-038-2`), and every candidate carries the score that ranked it (`FR-CTX-014`)
 - [ ] T1280 [P] [US5] **Write the failing integration test for the short-read finding** in `backend/tests/integration/context-retrieval-shortfall.spec.ts` — index enough material that a restrictive filter under `hnsw.ef_search` returns fewer candidates than requested, and assert the package carries a **retrieval shortfall** with `requested` and `returned` (`R-038-3`). *The most important test in the Epic: it is the failure that is silent in every other design, and a fixture of ten items will pass whatever the implementation does — the fixture must be large enough that the approximate scan actually bites*
 - [ ] T1281 [US5] Implement shortfall recording in `assembly.service.ts` (integration test: T1280) — a short read is written onto the package, never absorbed; an unknown set and an empty set must not behave alike
+- [ ] T1308 [P] [US5] Write failing unit tests for candidate scores in `backend/tests/unit/context-candidate-score.spec.ts` — every returned candidate carries the relevance score that ranked it (`FR-CTX-014`), and a candidate **with no score is refused rather than defaulted**: zero is a real distance meaning *maximally far*, so a default would rank an unscored item as the worst match instead of as an unknown one. *Added 2026-08-31 closing analysis finding `E2` — the same class as `E1`, a field in the data model that no task asserted*
 - [ ] T1282 [P] [US5] Write the failing integration test for ranking quality in `backend/tests/integration/context-relevance.spec.ts` — an objective whose wording matches no source verbatim still retrieves the semantically nearest material, which is the whole of `BR-0091` and the only test that would fail if embeddings were replaced by keyword matching
 
 **Checkpoint**: US5 demonstrable — and a retrieval that came back short says so.
