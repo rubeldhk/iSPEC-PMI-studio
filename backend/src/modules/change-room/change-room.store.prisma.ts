@@ -16,6 +16,7 @@
  * no delete of any kind — the retention promise is kept by the absence of the
  * capability rather than by everyone remembering not to use it.
  */
+import type { StoredBaselineDelta } from './change-room.store.js';
 import type {
   ChangeDecisionRow,
   ChangeRequestRow,
@@ -44,6 +45,7 @@ export interface ChangeRoomPrismaClient {
   readonly changeImpactView: Delegate;
   readonly changeImpactArea: Delegate;
   readonly changeDecision: Delegate;
+  readonly changeBaselineDelta: Delegate;
 }
 
 /**
@@ -117,6 +119,62 @@ export class PrismaChangeRoomStore implements ChangeRoomStore {
       await this.prisma.changeRequest.update({
         where: { id },
         data: { openQuestions: questions as unknown },
+      }),
+    );
+  }
+
+  /** `FR-CHR-063` — stored with the decision, never recomputed on read. */
+  async saveDelta(row: StoredBaselineDelta): Promise<StoredBaselineDelta> {
+    await this.prisma.changeBaselineDelta.create({
+      data: {
+        id: row.id,
+        workspaceId: row.workspaceId,
+        changeDecisionId: row.changeDecisionId,
+        fromBaselineVersion: row.fromBaselineVersion,
+        toBaselineVersion: row.toBaselineVersion,
+        added: row.added as unknown,
+        removed: row.removed as unknown,
+        versionChanged: row.versionChanged as unknown,
+      },
+    });
+    return row;
+  }
+
+  async findDeltaForDecision(
+    workspaceId: string,
+    changeDecisionId: string,
+  ): Promise<StoredBaselineDelta | null> {
+    const row = (await this.prisma.changeBaselineDelta.findFirst({
+      where: { workspaceId, changeDecisionId },
+    })) as (StoredBaselineDelta & { added: unknown; removed: unknown; versionChanged: unknown }) | null;
+    if (!row) return null;
+    // The three lists are JSON columns. An unreadable one becomes `[]` rather
+    // than a guess — an empty category is visible to a reader, a fabricated one
+    // is not.
+    const list = <T,>(value: unknown): readonly T[] => (Array.isArray(value) ? (value as T[]) : []);
+    return {
+      ...row,
+      added: list<string>(row.added),
+      removed: list<string>(row.removed),
+      versionChanged: list(row.versionChanged),
+    };
+  }
+
+  /** `FR-CHR-013` — the recorded move, never a new request. */
+  async setRebaseTarget(
+    workspaceId: string,
+    id: string,
+    target: { toBaselineId: string; toBaselineVersion: number; rebasedFrom: number },
+  ): Promise<ChangeRequestRow> {
+    await this.require(workspaceId, id);
+    return toRow(
+      await this.prisma.changeRequest.update({
+        where: { id },
+        data: {
+          targetBaselineId: target.toBaselineId,
+          targetBaselineVersion: target.toBaselineVersion,
+          rebasedFrom: target.rebasedFrom,
+        },
       }),
     );
   }

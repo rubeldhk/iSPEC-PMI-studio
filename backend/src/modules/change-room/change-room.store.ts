@@ -15,6 +15,7 @@
 
 import type { ImpactView } from './impact.types.js';
 import type { ChangeOption } from './option.types.js';
+import type { BaselineDelta } from './delta.service.js';
 
 export interface ChangeRequestRow {
   readonly id: string;
@@ -87,6 +88,19 @@ export interface ChangeRoomStore {
   retainForDecision(workspaceId: string, id: string): Promise<ImpactView>;
 
   /**
+   * `FR-CHR-013` — move a change onto the baseline that superseded its target.
+   *
+   * A state change on the request, recording where it came from. Never a new
+   * request: the change is the same change, and losing that would break the
+   * trail from an applied change back to the decision that authorised it.
+   */
+  setRebaseTarget(
+    workspaceId: string,
+    id: string,
+    target: { toBaselineId: string; toBaselineVersion: number; rebasedFrom: number },
+  ): Promise<ChangeRequestRow>;
+
+  /**
    * `FR-CHR-043` — the decision, with what was declined.
    *
    * Append-only for the same reason the views are: a decision that could be
@@ -94,6 +108,25 @@ export interface ChangeRoomStore {
    */
   recordDecision(row: ChangeDecisionRow): Promise<ChangeDecisionRow>;
   listDecisionsFor(workspaceId: string, changeRequestId: string): Promise<ChangeDecisionRow[]>;
+
+  /**
+   * `FR-CHR-063` — the delta, stored with the decision that produced it.
+   *
+   * Stored rather than recomputed on read: the baselines it spans may both be
+   * superseded by the time anyone asks, and a delta recomputed from whatever is
+   * current would describe a move that never happened.
+   */
+  saveDelta(row: StoredBaselineDelta): Promise<StoredBaselineDelta>;
+  findDeltaForDecision(
+    workspaceId: string,
+    changeDecisionId: string,
+  ): Promise<StoredBaselineDelta | null>;
+}
+
+export interface StoredBaselineDelta extends BaselineDelta {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly changeDecisionId: string;
 }
 
 /** `FR-CHR-043`, `FR-CHR-052`. What survives a change decision. */
@@ -198,6 +231,23 @@ export class InMemoryChangeRoomStore implements ChangeRoomStore {
     return all.length === 0 ? null : all[all.length - 1]!;
   }
 
+  async setRebaseTarget(
+    workspaceId: string,
+    id: string,
+    target: { toBaselineId: string; toBaselineVersion: number; rebasedFrom: number },
+  ): Promise<ChangeRequestRow> {
+    const row = await this.findById(workspaceId, id);
+    if (!row) throw new Error(`no change request ${id}`);
+    const next: ChangeRequestRow = {
+      ...row,
+      targetBaselineId: target.toBaselineId,
+      targetBaselineVersion: target.toBaselineVersion,
+      rebasedFrom: target.rebasedFrom,
+    };
+    this.#rows.set(id, next);
+    return next;
+  }
+
   readonly #decisions: ChangeDecisionRow[] = [];
 
   async recordDecision(row: ChangeDecisionRow): Promise<ChangeDecisionRow> {
@@ -211,6 +261,24 @@ export class InMemoryChangeRoomStore implements ChangeRoomStore {
   ): Promise<ChangeDecisionRow[]> {
     return this.#decisions.filter(
       (row) => row.workspaceId === workspaceId && row.changeRequestId === changeRequestId,
+    );
+  }
+
+  readonly #deltas: StoredBaselineDelta[] = [];
+
+  async saveDelta(row: StoredBaselineDelta): Promise<StoredBaselineDelta> {
+    this.#deltas.push(row);
+    return row;
+  }
+
+  async findDeltaForDecision(
+    workspaceId: string,
+    changeDecisionId: string,
+  ): Promise<StoredBaselineDelta | null> {
+    return (
+      this.#deltas.find(
+        (row) => row.workspaceId === workspaceId && row.changeDecisionId === changeDecisionId,
+      ) ?? null
     );
   }
 

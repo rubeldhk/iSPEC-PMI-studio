@@ -34,6 +34,17 @@ import type { ChangeDecisionRow, ChangeRoomStore } from './change-room.store.js'
 import type { ChangeOption, ChangeOptions } from './option.types.js';
 
 /**
+ * `FR-CHR-051`, `ADR-0025` constraint 1 — baseline change is high band, and no
+ * tenant policy lowers it.
+ *
+ * Stated here rather than asked for. This Room does not adjudicate policy
+ * (`FR-CHR-002`), but it does check that the answer it was given is one the
+ * requirement permits: a provider answering `low` is either misconfigured or
+ * has been persuaded, and both are refusals rather than a shrug.
+ */
+const REQUIRED_BAND = 'high';
+
+/**
  * What `EPIC-031` answers, and nothing more.
  *
  * Deliberately not a boolean: an authorised decision must carry the **basis**
@@ -51,6 +62,33 @@ export interface ChangeDecisionPolicyPort {
     decidedBy: string;
     decidedByKind: string;
   }): Promise<ChangeDecisionAuthority>;
+}
+
+/**
+ * `FR-CHR-053`, `BR-0068` — where a change waits for its decision.
+ *
+ * `EPIC-031` owns the Decision Inbox; this Room publishes into it and reads
+ * nothing back but an identifier. Absent ⇒ **refuse**: a change submitted for
+ * decision that surfaces nowhere waits forever with nobody aware it is waiting,
+ * which is worse than a refusal because a refusal is visible on the spot.
+ */
+export interface ChangeDecisionInboxPort {
+  present(item: {
+    workspaceId: string;
+    changeRequestId: string;
+    impactViewId: string;
+    options: ChangeOptions;
+    requestedBy: string;
+    band: string;
+  }): Promise<{ inboxItemId: string }>;
+}
+
+export interface SubmitForDecisionInput {
+  readonly workspaceId: string;
+  readonly changeRequestId: string;
+  readonly impactViewId: string;
+  readonly options: ChangeOptions;
+  readonly requestedBy: string;
 }
 
 export interface RecordDecisionInput {
@@ -71,7 +109,64 @@ export class DecisionService {
   constructor(
     private readonly store: ChangeRoomStore,
     private readonly policy?: ChangeDecisionPolicyPort | undefined,
+    private readonly inbox?: ChangeDecisionInboxPort | undefined,
   ) {}
+
+  /**
+   * `FR-CHR-053` — put the change in front of somebody who can decide it.
+   *
+   * The band is stated, not asked for. A question invites an answer, and the
+   * one answer `FR-CHR-051` does not permit is a lower band.
+   */
+  async submitForDecision(
+    input: SubmitForDecisionInput,
+  ): Promise<{ inboxItemId: string }> {
+    if (input.options.length < 2) {
+      // `FR-CHR-040` reaching the inbox. A single-option item is a
+      // confirmation request wearing a decision's clothes.
+      throw new ValidationFailedError(
+        'a change is submitted for decision with two or more options (FR-CHR-040)',
+      );
+    }
+    if (input.impactViewId.trim() === '') {
+      // `BR-0044` — a change decided without its impact view is decided on the
+      // part somebody happened to think of.
+      throw new ValidationFailedError(
+        'a change is submitted for decision with the impact view it must be decided against ' +
+          '(FR-CHR-035, BR-0044)',
+      );
+    }
+    if (!this.inbox) {
+      throw new ValidationFailedError(
+        'no Decision Inbox is bound (EPIC-031 supplies it), so this change would wait where ' +
+          'nobody can see it — it is refused rather than queued into a void (FR-CHR-053)',
+      );
+    }
+    return this.inbox.present({
+      workspaceId: input.workspaceId,
+      changeRequestId: input.changeRequestId,
+      impactViewId: input.impactViewId,
+      options: input.options,
+      requestedBy: input.requestedBy,
+      band: REQUIRED_BAND,
+    });
+  }
+
+  /**
+   * `FR-CHR-050` — the decision a baseline move must already have.
+   *
+   * `null` when none has been taken. `rebase.service.ts` reads this before
+   * anything is re-baselined, which is what turns "an authorized decision
+   * before implementation affects a baseline" from a sentence into an ordering
+   * nothing can take out of order.
+   */
+  async decidedFor(
+    workspaceId: string,
+    changeRequestId: string,
+  ): Promise<ChangeDecisionRow | null> {
+    const all = await this.store.listDecisionsFor(workspaceId, changeRequestId);
+    return all.length === 0 ? null : all[all.length - 1]!;
+  }
 
   /**
    * Every check runs before anything is written, so a refused decision cannot
@@ -118,6 +213,13 @@ export class DecisionService {
     });
     if (!verdict.authorized) {
       throw new ValidationFailedError(`the decision was not authorised: ${verdict.reason}`);
+    }
+    if (verdict.band !== REQUIRED_BAND) {
+      // `FR-CHR-051`, `ADR-0025` constraint 1.
+      throw new ValidationFailedError(
+        `baseline change stays in the high band and no tenant policy lowers it (FR-CHR-051); ` +
+          `the policy provider answered ${verdict.band}`,
+      );
     }
     if (verdict.authorityBasis.trim() === '') {
       // An authorised decision with no stated basis is an approval nobody can

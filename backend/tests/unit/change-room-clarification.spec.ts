@@ -224,8 +224,10 @@ describe('T996g · retention is structural', () => {
       'latestImpactViewFor',
       'recordDecision',
       'retainForDecision',
+      'saveDelta',
       'saveImpactView',
       'setQuestions',
+      'setRebaseTarget',
       'setState',
     ]);
   });

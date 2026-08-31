@@ -198,15 +198,15 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 6, 7 and 8
 
-- [ ] T994a [P] [US4] Write failing unit tests for the decision path in `backend/tests/unit/change-room-decision.spec.ts` — a material change receives an authorized **human** decision before implementation affects a baseline, evaluated through `EPIC-031` using the published `BR-0005` record (`FR-CHR-050`, `FR-CHR-052`)
-- [ ] T994b [US4] Implement `backend/src/modules/change-room/decision.service.ts` (unit test: T994a; integration test: T994c) — surfaces in the Decision Inbox (`FR-CHR-053`)
-- [ ] T994c [P] [US4] Write the failing integration test for the high-band fence in `backend/tests/integration/change-room-high-band.spec.ts` — baseline change stays human-approved under every tenant policy, **and** an agent-taken decision is refused by the database constraint (`FR-CHR-051`, `SC-CHR-003`)
-- [ ] T994d [P] [US4] Write failing unit tests for re-baselining in `backend/tests/unit/change-room-rebaseline.spec.ts` — new versions of every affected artifact; the prior baseline **byte-identical** and naming its successor (`FR-CHR-060`, `FR-CHR-061`, `SC-CHR-004`)
-- [ ] T994e [US4] Implement re-baselining in `backend/src/modules/change-room/rebase.service.ts` (unit test: T994d)
-- [ ] T994f [P] [US4] Write failing unit tests for the baseline delta in `backend/tests/unit/change-room-delta.spec.ts` — a **set diff over member version ids** (added, removed, version-changed), never a text diff (`FR-CHR-063`, `R-034-4`)
-- [ ] T994g [US4] Implement `backend/src/modules/change-room/delta.service.ts` and `GET …/delta` (unit test: T994f; integration test: T406u)
-- [ ] T994h [P] [US4] Write failing unit tests for explicit rebase and re-decision in `backend/tests/unit/change-room-rebase.spec.ts` — a change targeting a superseded baseline is rebased **as a recorded act** and **re-decided when the rebase changes its impact view**, compared against the retained snapshot (`FR-CHR-013`, `FR-CHR-054`, `SC-CHR-009`, `R-034-5`)
-- [ ] T994i [US4] Implement explicit rebase and the re-decision test in `backend/src/modules/change-room/rebase.service.ts` (unit test: T994h) — `EPIC-030`'s first-commit-wins is deliberately not inherited
+- [X] T994a [P] [US4] Write failing unit tests for the decision path in `backend/tests/unit/change-room-decision.spec.ts` — a material change receives an authorized **human** decision before implementation affects a baseline, evaluated through `EPIC-031` using the published `BR-0005` record (`FR-CHR-050`, `FR-CHR-052`)
+- [X] T994b [US4] Implement `backend/src/modules/change-room/decision.service.ts` (unit test: T994a; integration test: T994c) — surfaces in the Decision Inbox (`FR-CHR-053`)
+- [X] T994c [P] [US4] Write the failing integration test for the high-band fence in `backend/tests/integration/change-room-high-band.spec.ts` — baseline change stays human-approved under every tenant policy, **and** an agent-taken decision is refused by the database constraint (`FR-CHR-051`, `SC-CHR-003`)
+- [X] T994d [P] [US4] Write failing unit tests for re-baselining in `backend/tests/unit/change-room-rebaseline.spec.ts` — new versions of every affected artifact; the prior baseline **byte-identical** and naming its successor (`FR-CHR-060`, `FR-CHR-061`, `SC-CHR-004`)
+- [X] T994e [US4] Implement re-baselining in `backend/src/modules/change-room/rebase.service.ts` (unit test: T994d)
+- [X] T994f [P] [US4] Write failing unit tests for the baseline delta in `backend/tests/unit/change-room-delta.spec.ts` — a **set diff over member version ids** (added, removed, version-changed), never a text diff (`FR-CHR-063`, `R-034-4`)
+- [X] T994g [US4] Implement `backend/src/modules/change-room/delta.service.ts` and `GET …/delta` (unit test: T994f; integration test: T406u)
+- [X] T994h [P] [US4] Write failing unit tests for explicit rebase and re-decision in `backend/tests/unit/change-room-rebase.spec.ts` — a change targeting a superseded baseline is rebased **as a recorded act** and **re-decided when the rebase changes its impact view**, compared against the retained snapshot (`FR-CHR-013`, `FR-CHR-054`, `SC-CHR-009`, `R-034-5`)
+- [X] T994i [US4] Implement explicit rebase and the re-decision test in `backend/src/modules/change-room/rebase.service.ts` (unit test: T994h) — `EPIC-030`'s first-commit-wins is deliberately not inherited
 
 **Checkpoint**: US4 demonstrable — the baseline moves, and the old one is untouched
 

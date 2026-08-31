@@ -29,7 +29,9 @@ import {
   type TraversalPort,
 } from './impact.composer.js';
 import { ChangeIntakeService } from './intake.service.js';
+import { DecisionService } from './decision.service.js';
 import { OptionsService } from './options.service.js';
+import { RebaselineService } from './rebase.service.js';
 import { CHANGE_ROOM_PORTS, CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import { InMemoryChangeRoomStore, type ChangeRoomStore } from './change-room.store.js';
 import {
@@ -107,6 +109,34 @@ export class ChangeRoomService {
       useFactory: (): OptionsService => new OptionsService(undefined),
     },
     {
+      provide: DecisionService,
+      inject: [CHANGE_ROOM_STORE],
+      /**
+       * `T994b` — bound with **neither** seam filled, and both refuse.
+       *
+       * `PolicyProvider` and the Decision Inbox are `EPIC-031`'s. Until it
+       * exists, no change can be submitted for decision and none can be
+       * recorded — which is the true state of this deployment, said out loud.
+       * A permissive default here would be an unauthorised approval that looked
+       * exactly like an authorised one (`FR-GEL-062`).
+       */
+      useFactory: (store: ChangeRoomStore): DecisionService =>
+        new DecisionService(store, undefined, undefined),
+    },
+    {
+      provide: RebaselineService,
+      inject: [CHANGE_ROOM_STORE],
+      /**
+       * `T994e` — the baseline writer is `EPIC-033`'s, and unbound here.
+       *
+       * Re-baselining refuses without it. A Room that moved a baseline through
+       * a store of its own would be a second source of truth for the artifact
+       * `RULE-02` exists to make immutable.
+       */
+      useFactory: (store: ChangeRoomStore): RebaselineService =>
+        new RebaselineService(store, undefined),
+    },
+    {
       provide: ChangeIntakeService,
       inject: [CHANGE_ROOM_STORE],
       useFactory: (store: ChangeRoomStore): ChangeIntakeService => new ChangeIntakeService(store),
@@ -114,7 +144,14 @@ export class ChangeRoomService {
     // `ImpactComposer` is constructed where its two ports are bound. Exported as
     // a type for now; `EPIC-020`'s adapter arrives with the user-story phases.
   ],
-  exports: [ChangeRoomService, ChangeIntakeService, ImpactComposer, OptionsService],
+  exports: [
+    ChangeRoomService,
+    ChangeIntakeService,
+    ImpactComposer,
+    OptionsService,
+    DecisionService,
+    RebaselineService,
+  ],
 })
 export class ChangeRoomModule {}
 

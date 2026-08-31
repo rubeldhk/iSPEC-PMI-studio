@@ -23,6 +23,7 @@ import { CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import type { ChangeRoomStore } from './change-room.store.js';
 import { ImpactComposer } from './impact.composer.js';
 import { ChangeIntakeService, type RaiseChangeInput } from './intake.service.js';
+import { DecisionService } from './decision.service.js';
 import { OptionsService } from './options.service.js';
 
 /**
@@ -74,6 +75,7 @@ export class ChangeRoomController {
     @Inject(CHANGE_ROOM_STORE) private readonly store: ChangeRoomStore,
     @Inject(ImpactComposer) private readonly impact: ImpactComposer,
     @Inject(OptionsService) private readonly options: OptionsService,
+    @Inject(DecisionService) private readonly decisions: DecisionService,
   ) {}
 
   /**
@@ -198,5 +200,37 @@ export class ChangeRoomController {
       changeRequestId: request.id,
       correlationId: randomUUID(),
     });
+  }
+
+  /**
+   * `FR-CHR-063` — the approved baseline delta, readable as a delta.
+   *
+   * Three lines a reader can take in, rather than two full member lists to
+   * compare by eye. Read from storage rather than recomputed: by the time
+   * anyone asks, both baselines it spans may be superseded, and a delta derived
+   * from whatever is current would describe a move that never happened
+   * (`R-034-4`).
+   */
+  @Get('rooms/change/requests/:id/delta')
+  async deltaFor(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const decided = await this.decisions.decidedFor(principal.workspaceId, request.id);
+    if (!decided) {
+      // Not an empty delta. `{added: [], removed: []}` would report that the
+      // change altered nothing, which is a claim about a decision nobody has
+      // taken.
+      throw new NotFoundError('No decision has been recorded for this change request yet.');
+    }
+    const delta = await this.store.findDeltaForDecision(principal.workspaceId, decided.id);
+    if (!delta) {
+      throw new NotFoundError('This change has been decided but not yet re-baselined.');
+    }
+    return delta;
   }
 }
