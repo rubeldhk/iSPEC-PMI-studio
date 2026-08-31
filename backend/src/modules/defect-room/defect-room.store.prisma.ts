@@ -24,7 +24,13 @@
  * remembering not to use it.
  */
 import type { Classification } from './classification.types.js';
-import type { EscapePoint, EscapeRecordRow, EscapeStore } from './analytics.service.js';
+import type {
+  Bucket,
+  EscapeAggregate,
+  EscapePoint,
+  EscapeRecordRow,
+  EscapeStore,
+} from './analytics.service.js';
 import type {
   DefectRoomStore,
   DefectRow,
@@ -42,9 +48,22 @@ interface Delegate {
   update(args: unknown): Promise<unknown>;
 }
 
+/**
+ * The escape record alone is aggregated, so it alone needs these.
+ *
+ * A separate interface rather than optional members on `Delegate`: optional
+ * methods have to be checked before every call, and the check that is really
+ * being made — *is this table one we group over* — is answered at the type
+ * level here instead of at each call site.
+ */
+interface AggregateDelegate extends Delegate {
+  groupBy(args: unknown): Promise<unknown[]>;
+  count(args: unknown): Promise<number>;
+}
+
 export interface DefectRoomPrismaClient {
   readonly defectRecord: Delegate;
-  readonly escapeRecord: Delegate;
+  readonly escapeRecord: AggregateDelegate;
   readonly classification: Delegate;
   readonly defectTest: Delegate;
   readonly reproduction: Delegate;
@@ -344,6 +363,56 @@ export class PrismaEscapeStore implements EscapeStore {
     return (await this.prisma.escapeRecord.findFirst({
       where: { workspaceId, defectId },
     })) as EscapeRecordRow | null;
+  }
+
+  /**
+   * `FR-DFR-081` — grouped in the database, which is the point of the method.
+   *
+   * Five `groupBy`/`count` calls rather than one `findMany` and a loop. The
+   * loop is correct today and is the first thing to be quietly capped when a
+   * workspace has fifty thousand defects — at which point the distribution
+   * silently describes a sample and still calls itself a distribution.
+   */
+  async aggregate(workspaceId: string): Promise<EscapeAggregate> {
+    const buckets = async (field: 'origin' | 'escapePoint' | 'severity'): Promise<Bucket[]> => {
+      const rows = (await this.prisma.escapeRecord.groupBy({
+        by: [field],
+        where: { workspaceId, ...(field === 'escapePoint' ? { escapePoint: { not: null } } : {}) },
+        _count: { _all: true },
+      })) as { _count: { _all: number } }[];
+      return rows.map((row) => ({
+        key: String((row as unknown as Record<string, unknown>)[field]),
+        count: row._count._all,
+      }));
+    };
+
+    const [total, notDetermined, withResolutionEvidence, byOrigin, byEscapePoint, bySeverity] =
+      await Promise.all([
+        this.prisma.escapeRecord.count({ where: { workspaceId } }),
+        this.prisma.escapeRecord.count({ where: { workspaceId, escapePoint: null } }),
+        this.prisma.escapeRecord.count({
+          where: { workspaceId, resolutionEvidenceRef: { not: null } },
+        }),
+        buckets('origin'),
+        buckets('escapePoint'),
+        buckets('severity'),
+      ]);
+
+    return { total, notDetermined, withResolutionEvidence, byOrigin, byEscapePoint, bySeverity };
+  }
+
+  /** `FR-DFR-080` — the sixth retained field. */
+  async setResolutionEvidence(
+    workspaceId: string,
+    defectId: string,
+    evidenceRef: string,
+  ): Promise<EscapeRecordRow> {
+    const existing = await this.findForDefect(workspaceId, defectId);
+    if (!existing) throw new Error(`no escape record for defect ${defectId}`);
+    return (await this.prisma.escapeRecord.update({
+      where: { id: existing.id },
+      data: { resolutionEvidenceRef: evidenceRef },
+    })) as EscapeRecordRow;
   }
 
   async setEscapePoint(

@@ -44,6 +44,7 @@ import { DefectRoutingService, RoutingResolver } from './routing.service.js';
 import { DefectIntakeService } from './intake.service.js';
 import {
   DefectAnalyticsService,
+  DefectBlockersService,
   InMemoryEscapeStore,
   type EscapeStore,
 } from './analytics.service.js';
@@ -93,6 +94,19 @@ export class DefectRoomService {
           : new InMemoryEscapeStore();
         return new DefectAnalyticsService(store);
       },
+    },
+    {
+      provide: DefectBlockersService,
+      /**
+       * `FR-DFR-093` — takes the defect store, never the escape store.
+       *
+       * The two services share a file and nothing else. Escape aggregation
+       * cannot reach the defect table, which is what stops it growing a join
+       * the day somebody wants severity broken down by state.
+       */
+      useFactory: (store: DefectRoomStore): DefectBlockersService =>
+        new DefectBlockersService(store),
+      inject: [DEFECT_ROOM_STORE],
     },
     {
       provide: DefectIntakeService,
@@ -217,6 +231,7 @@ export class DefectRoomService {
   ],
   exports: [
     DefectIntakeService,
+    DefectBlockersService,
     DefectAnalyticsService,
     DefectRoomService,
     RoutingResolver,

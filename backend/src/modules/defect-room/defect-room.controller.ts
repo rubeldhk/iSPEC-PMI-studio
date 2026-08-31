@@ -18,6 +18,12 @@ import { DEFECT_ROOM_STORE } from './defect-room.tokens.js';
 import type { DefectRoomStore } from './defect-room.store.js';
 import { TriageService, type ReevaluateInput, type TriageInput } from './triage.service.js';
 import { DefectIntakeService, type IntakeInput } from './intake.service.js';
+import {
+  DefectAnalyticsService,
+  DefectBlockersService,
+  ESCAPE_POINTS,
+  type EscapePoint,
+} from './analytics.service.js';
 import { DefectTestService, type RecordTestInput } from './defect-test.service.js';
 import {
   ReproductionService,
@@ -103,6 +109,8 @@ export class DefectRoomController {
     @Inject(DefectRoutingService) private readonly routing: DefectRoutingService,
     @Inject(EvidenceCheckService) private readonly evidenceChecks: EvidenceCheckService,
     @Inject(DefectIntakeService) private readonly intake: DefectIntakeService,
+    @Inject(DefectAnalyticsService) private readonly analytics: DefectAnalyticsService,
+    @Inject(DefectBlockersService) private readonly blockers: DefectBlockersService,
     @Inject(DEFECT_ROOM_STORE) private readonly store: DefectRoomStore,
   ) {}
 
@@ -145,6 +153,69 @@ export class DefectRoomController {
    * every record is indistinguishable from one nobody held, and this is the
    * route that makes the difference real rather than asserted.
    */
+  /**
+   * `FR-DFR-081`, `FR-DFR-083`, `SC-DFR-008` — where defects come from, and
+   * where they got through.
+   *
+   * Declared above the `:id` routes, like `held` and `exceptions`: `analytics`
+   * would otherwise be read as a defect id.
+   *
+   * The completeness note travels with the response and is not the caller's to
+   * assemble. A renderer that had to remember it is a renderer that will not,
+   * and the chart it draws would be correct in every number and wrong in the
+   * only conclusion anybody takes from it.
+   */
+  @Get('rooms/defect/analytics')
+  analyticsFor(@Req() ctx: WorkspaceContext | undefined): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.analytics.distribution(principal.workspaceId);
+  }
+
+  /**
+   * `FR-DFR-080`, `FR-DFR-082` — the escape point, once somebody has determined
+   * it.
+   *
+   * Without this route the column is written null at intake and never again,
+   * every distribution reports one bucket, and `SC-DFR-008` measures a question
+   * nothing can answer. `recordEscapePoint` refuses a defect with no captured
+   * row rather than creating one, so a missing capture stays visible.
+   */
+  @Post('rooms/defect/:id/escape-point')
+  recordEscapePoint(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const { escapePoint } = strip(body) as { escapePoint?: string };
+    if (!(ESCAPE_POINTS as readonly string[]).includes(escapePoint ?? '')) {
+      throw new ValidationFailedError(
+        `escapePoint must be one of: ${ESCAPE_POINTS.join(', ')} (FR-DFR-080)`,
+      );
+    }
+    return this.analytics.recordEscapePoint(
+      principal.workspaceId,
+      id,
+      escapePoint as EscapePoint,
+      principal.userId,
+    );
+  }
+
+  /**
+   * `FR-DFR-093`, `UX-0032` — what is blocking, without opening another screen.
+   *
+   * A `GET`, and it writes nothing: asking what is blocking a defect should not
+   * change the defect.
+   */
+  @Get('rooms/defect/:id/blockers')
+  blockersFor(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.blockers.blockersFor(principal.workspaceId, id);
+  }
+
   @Get('rooms/defect/held')
   held(@Req() ctx: WorkspaceContext | undefined): Promise<unknown> {
     const principal = requireAuth(ctx);

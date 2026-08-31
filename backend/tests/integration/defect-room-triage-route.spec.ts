@@ -518,6 +518,130 @@ suite('T998r · decline, return and gap routing', () => {
  * works end to end rather than refusing. That makes it the only place a route
  * test can prove the whole journey — report, held, linked — against PostgreSQL.
  */
+/**
+ * `T999f` — analytics and blockers, through the real routes.
+ *
+ * Both read paths, and both work end to end: they depend on rows this Room
+ * writes itself. That makes them the place a route test can prove `FR-DFR-083`
+ * against the running application rather than against a service in isolation —
+ * the note has to survive serialisation, and a `Object.freeze`d nested array is
+ * exactly the kind of thing that quietly does not.
+ */
+suite('T999f · GET /rooms/defect/analytics', () => {
+  it('refuses with no session', async () => {
+    const res = await request(app.getHttpServer()).get(`/${PREFIX}/rooms/defect/analytics`);
+    expect(res.status).toBe(401);
+  });
+
+  it('counts what this Room captured at intake', async () => {
+    // Files its own defect rather than relying on another suite having run.
+    // The seeded row is written with raw SQL and therefore has no escape
+    // record — which is correct: capture belongs to intake, not to the table.
+    await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/reports`)
+      .set('Cookie', harness.cookie)
+      .send({
+        projectId: PROJECT,
+        epicId: 'EPIC-035',
+        origin: 'automated-test',
+        contestedArtifactRef: 'spec_route',
+        contestedArtifactVersion: 'v2',
+        severity: 'low',
+      });
+
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/defect/analytics`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBeGreaterThan(0);
+    expect(res.body.byOrigin.length).toBeGreaterThan(0);
+    // Every bucket accounts for a row, so the note is not standing in for data.
+    const summed = res.body.byOrigin.reduce(
+      (sum: number, bucket: { count: number }) => sum + bucket.count,
+      0,
+    );
+    expect(summed).toBe(res.body.total);
+  });
+
+  it('and carries the completeness note through the wire', async () => {
+    // `FR-DFR-083`. The chart that lies by arithmetic: every number correct,
+    // the population partial, and the conclusion a reader draws false.
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/defect/analytics`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.body.completeness.complete).toBe(false);
+    expect(JSON.stringify(res.body.completeness)).toMatch(/telemetry/i);
+    expect(JSON.stringify(res.body.completeness)).toMatch(/BR-0163/);
+    expect(JSON.stringify(res.body.completeness)).toMatch(/U-19/);
+  });
+
+  it('and the escape point becomes settable, so the distribution is not one bucket', async () => {
+    const filed = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/reports`)
+      .set('Cookie', harness.cookie)
+      .send({
+        projectId: PROJECT,
+        epicId: 'EPIC-035',
+        origin: 'review-tool',
+        contestedArtifactRef: 'spec_route',
+        contestedArtifactVersion: 'v2',
+        severity: 'low',
+      });
+    expect(filed.status).toBeLessThan(300);
+
+    const set = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${filed.body.defect.id}/escape-point`)
+      .set('Cookie', harness.cookie)
+      .send({ escapePoint: 'review' });
+    expect(set.status).toBeLessThan(300);
+
+    const after = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/defect/analytics`)
+      .set('Cookie', harness.cookie);
+    expect(after.body.byEscapePoint.map((b: { key: string }) => b.key)).toContain('review');
+  });
+
+  it('refusing an escape point nobody declared', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/escape-point`)
+      .set('Cookie', harness.cookie)
+      .send({ escapePoint: 'somewhere' });
+    expect(res.status).toBe(400);
+  });
+});
+
+suite('T999f · GET /rooms/defect/:id/blockers', () => {
+  it('refuses with no session', async () => {
+    const res = await request(app.getHttpServer()).get(
+      `/${PREFIX}/rooms/defect/${DEFECT}/blockers`,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('says what is blocking, and what would clear it', async () => {
+    // `FR-DFR-093`, `UX-0032` — visible without opening another screen.
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/defect/${DEFECT}/blockers`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    for (const blocker of res.body) {
+      expect(blocker.because).toMatch(/FR-DFR-|SC-DFR-|R-035-/);
+      expect(String(blocker.needs).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('and a defect nobody may see is absent rather than forbidden', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/defect/df_nothing/blockers`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(404);
+  });
+});
+
 suite('T999a · POST /rooms/defect/reports', () => {
   it('refuses with no session', async () => {
     const res = await request(app.getHttpServer())

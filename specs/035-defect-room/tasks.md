@@ -307,9 +307,17 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 15
 
-- [ ] T999d [P] [US6] Write failing unit tests for aggregation in `backend/tests/unit/defect-room-analytics.spec.ts` — origin, escape point, severity, affected requirement and specification and resolution evidence retained, and **aggregatable without opening each record** (`FR-DFR-080`, `FR-DFR-081`, `SC-DFR-008`)
-- [ ] T999e [P] [US6] Write failing unit tests for the completeness note in `backend/tests/unit/defect-room-origin-completeness.spec.ts` — the origin distribution **states that telemetry-originated linkage is unavailable** rather than presenting itself as complete (`FR-DFR-083`, `BR-0163`, `U-19`)
-- [ ] T999f [US6] Implement aggregation and the completeness note in `backend/src/modules/defect-room/analytics.service.ts`, plus `GET /rooms/defect/analytics` and `GET /rooms/defect/:id/blockers` (unit tests: T999d, T999e; integration test: T997v) — **a distribution that omits a source it cannot see is a chart that lies by arithmetic**
+- [X] T999d [P] [US6] Write failing unit tests for aggregation in `backend/tests/unit/defect-room-analytics.spec.ts` — origin, escape point, severity, affected requirement and specification and resolution evidence retained, and **aggregatable without opening each record** (`FR-DFR-080`, `FR-DFR-081`, `SC-DFR-008`)
+- [X] T999e [P] [US6] Write failing unit tests for the completeness note in `backend/tests/unit/defect-room-origin-completeness.spec.ts` — the origin distribution **states that telemetry-originated linkage is unavailable** rather than presenting itself as complete (`FR-DFR-083`, `BR-0163`, `U-19`)
+- [X] T999f [US6] Implement aggregation and the completeness note in `backend/src/modules/defect-room/analytics.service.ts`, plus `GET /rooms/defect/analytics` and `GET /rooms/defect/:id/blockers` (unit tests: T999d, T999e; integration test: T997v) — **a distribution that omits a source it cannot see is a chart that lies by arithmetic**
+
+*Three deviations recorded 2026-08-31, in `T999f`:*
+
+*(a) **`resolutionEvidenceRef` had no writer at all.** `FR-DFR-080` requires resolution evidence to be **retained**; the column existed from the first migration, the field existed on the row, and no code path filled either. Aggregated it would have read *"no defect was ever resolved with evidence"* — which is not what an unfilled column means, and nothing in the data would have said which it was. `recordResolutionEvidence` closes it. This is the "built and reachable from nowhere" class inverted: not a capability nothing calls, but a field nothing fills.*
+
+*(b) **A third route the task list does not name: `POST /rooms/defect/:id/escape-point`.** `recordEscapePoint` existed from `T997z` with no caller, so every escape point would have stayed null forever, every distribution would have reported a single `notDetermined` bucket, and `SC-DFR-008` would have measured a question nothing could answer.*
+
+*(c) **`DefectBlockersService` is a second class in `analytics.service.ts`.** The task names that file and both routes, and blockers are not escape data: they need the defect store, which `DefectAnalyticsService` deliberately cannot reach — that separation is what stops escape aggregation growing a join the first time somebody wants severity broken down by state. The two share a task, not a dependency.*
 
 **Checkpoint**: US6 demonstrable — including what it cannot answer
 
