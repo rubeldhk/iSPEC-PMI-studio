@@ -55,7 +55,9 @@ Epic uses one task naming several. That is a legibility cost, not a coverage one
 last such trade available.
 
 **`EPIC-034`'s `T995y` hands the ceiling to `EPIC-026` and names the two fixes it must choose
-between**: widen `T\d{3}[a-z]?` to four digits, or retire the adjacency meaning of the suffix. **No
+between**: widen `T\d{3}[a-z]?` to four digits, or retire the adjacency meaning of the suffix. *(Resolved
+2026-08-31: `EPIC-026` `T864d` had already widened it to `^T\d{3,}[a-z]?$` with no upper digit bound, so
+`T1000` is valid and nothing is blocked. See [closure.md](./closure.md).)* **No
 further Epic can be written under the current scheme.** `T999z` restates that, because it is now a
 fact about the next Epic rather than a warning about this one.
 

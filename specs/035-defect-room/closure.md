@@ -3,8 +3,15 @@
 **Task**: `T999z` · **Session**: 2026-08-31 · **Constitution IX**
 
 **Status**: `Implemented`, with **three ports unbound by design**, **two Tier 2 obligations
-outstanding that only a person can discharge**, **promotion not performed**, and **the
-task-identifier scheme exhausted**.
+outstanding that only a person can discharge**, and **promotion not performed**.
+
+> **Correction, 2026-08-31.** The first version of this report stated that the task-identifier
+> scheme was exhausted and that `EPIC-026` must widen it before `EPIC-038` could be tasked.
+> **That was wrong**, and the section is rewritten below. `EPIC-026` widened the pattern at
+> `T864d`–`T864i` under `FR-ESK-025`, with *no upper digit bound*, and every task of that Epic
+> is complete. Nothing is blocked. The error is recorded rather than quietly edited out,
+> because a closing report that revises its own facts without saying so is exactly the artifact
+> `FR-DFR-025` refuses one table over.
 
 ---
 
@@ -185,20 +192,39 @@ implementation. (`DEF-034-001` was raised against `EPIC-034` and is closed there
 
 ---
 
-## The task-identifier scheme is exhausted
+## The task-identifier scheme — **not** exhausted (corrected)
 
-**999 of 999 prefixes are in use after this Epic. No base remains.**
+**999 of 999 three-digit prefixes are in use after this Epic.** That part is true: `T999z` is the
+maximum identifier, `T999` carries every suffix `a`–`z`, and no three-digit base remains.
 
-This is no longer a prediction. `/speckit-converge` could not append a Convergence phase during
-`T999y` even had it wanted to: the append contract computes `T{M+1:03d}` from the maximum
-identifier, the maximum is **`T999z`** — `T999` with every suffix `a`–`z` consumed — and the next
-value is `T1000`, which does not match `T\d{3}[a-z]?`.
+**What does not follow — and what the first version of this report claimed — is that anything is
+blocked.** `EPIC-026` had already widened the pattern:
 
-**Before any further Epic can be tasked**, `EPIC-026` must either widen the pattern to four
-digits or retire the adjacency meaning of the suffix. `EPIC-034` raised this at `T995y`; this
-Epic consumed the remainder and hit the wall inside a command whose job is to close gaps.
+| Where | What |
+|---|---|
+| `governance/epic-stage.config.json` | `taskIdentifierPattern` is `^T\d{3,}[a-z]?$` — **three or more** digits |
+| `T864d` | added it with **no upper digit bound**, deliberately: *"because a cap is the same fault one order of magnitude later"* |
+| `T864e`, `T864i` | one shared reader, and an `unrecognisedIdentifiers` failure so a token that looks like an id but is not valid **fails the build** rather than being skipped |
 
----
+Verified by running it: `T1000`, `T1000a` and `T10000` are all valid; `T99` is recognised and
+rejected. `tests/governance/epic-stage/task-id-format.spec.ts` — 38 passed.
+
+**So `/speckit-converge` could have appended `T1000` during `T999y`.** It did not, because I
+checked the identifier against the pattern quoted in this Epic's own `tasks.md` narrative
+(`T\d{3}[a-z]?`) instead of against `governance/epic-stage.config.json`, which is where
+`FR-ESK-015` says the pattern lives and `FR-ESK-025` says it is defined. The prose was written
+before `T864d` landed; the configuration was current. **I read the recollection and not the
+source** — `DEF-034-001`'s lesson, committed by the person quoting it.
+
+The two convergence findings stand as reported: `SC-DFR-005` cited, `SC-DFR-009` carried by
+`T999t`. Neither needed a new task, so the `converged` outcome was correct for the right reason
+even though the reason given alongside it was wrong.
+
+**What remains true and worth carrying**: `EPIC-034`'s `T995y` raised the exhaustion of
+three-digit bases, and it is now complete. A future Epic tasked as `T1000`+ is valid and checked;
+what it loses is the *adjacency* meaning the suffix carried, since `T1000a` no longer sits
+visually beside `T999z`. That is a legibility change, not a blocker, and no requirement asks for
+it to be preserved.
 
 ## Recommended next command
 
@@ -206,9 +232,12 @@ Epic consumed the remainder and hit the wall inside a command whose job is to cl
 /speckit-specify 038
 ```
 
-**Blocked until `EPIC-026` widens the identifier pattern.** `/speckit-tasks` cannot allocate an
-identifier for `EPIC-038` under the current scheme, so the widening is the actual next action —
-it is not optional and not deferrable.
+**Not blocked.** The identifier pattern admits `T1000` and beyond, and `EPIC-026` is complete
+(114 tasks, none open).
+
+What is genuinely outstanding is unchanged and belongs to people rather than to a command:
+`T999t`'s keyboard journey, `T884`'s accessibility transcript, and the promotion `local → dev`
+that needs explicit authorisation naming the environment.
 
 **Delivery Board**: not refreshed. It is stale as of this session with respect to `EPIC-035`,
 which it will show as in progress.
