@@ -209,12 +209,24 @@ blocked.** `EPIC-026` had already widened the pattern:
 Verified by running it: `T1000`, `T1000a` and `T10000` are all valid; `T99` is recognised and
 rejected. `tests/governance/epic-stage/task-id-format.spec.ts` — 38 passed.
 
-**So `/speckit-converge` could have appended `T1000` during `T999y`.** It did not, because I
-checked the identifier against the pattern quoted in this Epic's own `tasks.md` narrative
-(`T\d{3}[a-z]?`) instead of against `governance/epic-stage.config.json`, which is where
-`FR-ESK-015` says the pattern lives and `FR-ESK-025` says it is defined. The prose was written
-before `T864d` landed; the configuration was current. **I read the recollection and not the
-source** — `DEF-034-001`'s lesson, committed by the person quoting it.
+**So `/speckit-converge` was not blocked by the pattern.** It did not append, because I checked the
+identifier against the pattern quoted in this Epic's own `tasks.md` narrative (`T\d{3}[a-z]?`)
+instead of against `governance/epic-stage.config.json`, which is where `FR-ESK-015` says the
+pattern lives and `FR-ESK-025` says it is defined. The prose was written before `T864d` landed;
+the configuration was current. **I read the recollection and not the source** — `DEF-034-001`'s
+lesson, committed by the person quoting it.
+
+**A second correction, 2026-08-31, found while tasking `EPIC-038`.** The paragraph above first
+said converge *"could have appended `T1000`"*. It could not: **`T1000` was already in use by
+`EPIC-036`**, and `G-26-15` requires task identifiers to be unique **across the corpus**
+(`DEF-028-014`), not per Epic. Fourteen Epics have used four-digit identifiers since `T1000`, and
+the corpus maximum at that moment was `T1219`.
+
+So converge's append contract — *"scan all existing task IDs; let `M` be the maximum"*, computed
+from **this file** — would have produced a **colliding** identifier and failed `G-26-15`. The
+contract's phrase is ambiguous between the file and the corpus, and only the corpus reading is
+correct. That is a genuine finding about the command rather than about this Epic, and it is
+recorded here because this is where it was found.
 
 The two convergence findings stand as reported: `SC-DFR-005` cited, `SC-DFR-009` carried by
 `T999t`. Neither needed a new task, so the `converged` outcome was correct for the right reason
