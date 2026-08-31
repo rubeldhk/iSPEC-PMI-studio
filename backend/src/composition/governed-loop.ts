@@ -41,6 +41,7 @@ import type { DynamicModule } from '@nestjs/common';
 import { LoopModule } from '../modules/loop/loop.module.js';
 import { REQUIREMENT_ROOM_STAGE_HANDLERS } from '../modules/requirement-room/stage-handlers.js';
 import { CHANGE_ROOM_STAGE_HANDLERS } from '../modules/change-room/stage-handlers.js';
+import { DEFECT_ROOM_STAGE_HANDLERS } from '../modules/defect-room/stage-handlers.js';
 
 /**
  * The governed loop, configured with every Room's stage handlers.
@@ -56,5 +57,13 @@ export const GOVERNED_LOOP: DynamicModule = LoopModule.register({
   // The Change Room contributes only the stages the Requirement Room does not
   // already register: `StageRegistry` throws on a duplicate, and that throw is
   // the guard against two Rooms silently claiming one stage.
-  stageHandlers: [...REQUIREMENT_ROOM_STAGE_HANDLERS, ...CHANGE_ROOM_STAGE_HANDLERS],
+  //
+  // The Defect Room contributes `Execute` — the eighth stage, which it is
+  // the only Room to use. A defect's repair is real work rather than a
+  // decision, so the stage belongs here and not in the other two.
+  stageHandlers: [
+    ...REQUIREMENT_ROOM_STAGE_HANDLERS,
+    ...CHANGE_ROOM_STAGE_HANDLERS,
+    ...DEFECT_ROOM_STAGE_HANDLERS,
+  ],
 });

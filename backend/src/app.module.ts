@@ -25,6 +25,7 @@ import { ExecutionsModule } from './modules/executions/executions.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { GOVERNED_LOOP } from './composition/governed-loop.js';
 import { ChangeRoomModule } from './modules/change-room/change-room.module.js';
+import { DefectRoomModule } from './modules/defect-room/defect-room.module.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
 
 /**
@@ -97,6 +98,7 @@ function clientBuildPath(): string {
     RequirementRoomModule,
     // T406w — EPIC-034. The wiring T406u exists to prove.
     ChangeRoomModule,
+    DefectRoomModule,
     // T150g — EPIC-014 F-11.3. The API serves the built web client, so the
     // containerised stack is ONE origin and the client's `/v1` assumption holds
     // without the client changing (`R-014-1`).

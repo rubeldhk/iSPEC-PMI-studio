@@ -2305,3 +2305,204 @@ model ChangeClosure {
   @@index([workspaceId])
   @@map("change_closures")
 }
+
+// ─────────────────────────────────────────────────────── EPIC-035 Defect Room
+// T997s. Eight tables per specs/035-defect-room/data-model.md §1–§8.
+//
+// Two CHECK constraints live in the hand-edited migration rather than here,
+// because Prisma's schema language cannot express CHECK: a fix cannot be
+// accepted for an automatable defect with no failing test (FR-DFR-041), and a
+// Classification cannot exist without the destination its outcome maps to
+// (FR-DFR-077).
+
+model DefectRecord {
+  id                       String           @id @default(uuid())
+  workspaceId              String
+  projectId                String
+  /// FR-DFR-012 — nullable, and that is not laxity: an unlinkable defect is
+  /// HELD FOR TRIAGE rather than filed against an Epic somebody guessed.
+  epicId                   String?
+  state                    String           @default("held-for-triage")
+  origin                   String
+  originDetail             String?
+  contestedArtifactRef     String
+  /// FR-DFR-024, PP-012 — a defect is against a VERSION. Without this the
+  /// report silently re-targets whatever is current.
+  contestedArtifactVersion String
+  severity                 String
+  reportedBy               String
+  reportedAt               DateTime         @default(now())
+  withdrawnAt              DateTime?
+  withdrawnReason          String?
+  createdAt                DateTime         @default(now())
+  classifications          Classification[]
+  reproductions            Reproduction[]
+  tests                    DefectTest[]
+  evidenceChecks           EvidenceCheck[]
+  repairLinks              RepairLink[]
+  routings                 Routing[]
+  escapeRecord             EscapeRecord?
+
+  @@index([workspaceId])
+  @@index([projectId])
+  @@map("defect_records")
+}
+
+model Classification {
+  id                           String       @id @default(uuid())
+  workspaceId                  String
+  defectId                     String
+  /// FR-DFR-022 — three outcomes, never two.
+  outcome                      String
+  /// FR-DFR-077 — NOT NULL, and CHECKed against the outcome's mapped value.
+  destination                  String
+  /// Nullable only when outcome = 'requirement-gap' — CHECKed.
+  approvedBehaviourRef         String?
+  /// FR-DFR-021 — the absence is recorded rather than left blank.
+  absenceRecorded              Boolean      @default(false)
+  classifiedBy                 String
+  classifiedByKind             String
+  /// FR-DFR-023 — an agent may propose; the confirming actor must be human.
+  proposedByAgent              Boolean      @default(false)
+  supersededByClassificationId String?
+  reclassifiedAt               DateTime?
+  rationale                    String
+  createdAt                    DateTime     @default(now())
+  defect                       DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_classifications")
+}
+
+model Reproduction {
+  id                   String       @id @default(uuid())
+  workspaceId          String
+  defectId             String
+  /// FR-DFR-031 — intermittent is a member, not a flag beside a boolean.
+  reproducible         String
+  environment          String
+  steps                String
+  /// FR-DFR-032 — references into EPIC-032. No payload is stored here.
+  evidenceRefs         Json         @default("[]")
+  /// FR-DFR-043 — required when reproducible = 'not-automatable', CHECKed, so
+  /// the exception is enumerable rather than invisible.
+  notAutomatableReason String?
+  affectedBehaviour    String
+  observedAt           DateTime     @default(now())
+  createdAt            DateTime     @default(now())
+  defect               DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_reproductions")
+}
+
+model DefectTest {
+  id                     String          @id @default(uuid())
+  workspaceId            String
+  defectId               String
+  testRef                String
+  /// FR-DFR-042 — linked to the behaviour, not only to the defect.
+  contestedBehaviourRef  String
+  /// FR-DFR-040 — NOT NULL. A test never seen to fail proves the code does
+  /// what it does.
+  firstObservedFailingAt DateTime
+  lastRunOutcome         String          @default("not-run")
+  lastRunEvidenceRef     String?
+  createdAt              DateTime        @default(now())
+  defect                 DefectRecord    @relation(fields: [defectId], references: [id])
+  evidenceChecks         EvidenceCheck[]
+  repairLinks            RepairLink[]
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_tests")
+}
+
+model EvidenceCheck {
+  id           String       @id @default(uuid())
+  workspaceId  String
+  defectId     String
+  defectTestId String
+  /// R-035-6 — required, no default. A path taken by omission is a decision
+  /// nobody made.
+  path         String
+  resolvedBy   String
+  resolvedAt   DateTime     @default(now())
+  rationale    String
+  createdAt    DateTime     @default(now())
+  defect       DefectRecord @relation(fields: [defectId], references: [id])
+  test         DefectTest   @relation(fields: [defectTestId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_evidence_checks")
+}
+
+model RepairLink {
+  id                         String       @id @default(uuid())
+  workspaceId                String
+  defectId                   String
+  defectTestId               String
+  /// R-035-3 — EPIC-012's TaskRecord is NOT modified. The link lives here.
+  taskId                     String
+  /// Set when the defect is reclassified after tasks exist, so the tasks and
+  /// the reclassification are both visible rather than one erasing the other.
+  orphanedByClassificationId String?
+  createdAt                  DateTime     @default(now())
+  defect                     DefectRecord @relation(fields: [defectId], references: [id])
+  test                       DefectTest   @relation(fields: [defectTestId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_repair_links")
+}
+
+model Routing {
+  id                  String       @id @default(uuid())
+  workspaceId         String
+  defectId            String
+  classificationId    String
+  /// 'repair' needs no routing row — it stays here.
+  destination         String
+  /// FR-DFR-072, UX-0034 — NOT NULL. "An unexplained transfer button is a
+  /// reclassification nobody decided."
+  offeredReason       String
+  state               String       @default("offered")
+  declinedAt          DateTime?
+  declinedReason      String?
+  /// FR-DFR-074 — an item the destination refuses returns carrying the refusal.
+  refusalDetail       String?
+  /// FR-DFR-071, FR-DFR-076 — references, never copies.
+  carriedEvidenceRefs Json         @default("[]")
+  targetRef           String?
+  createdAt           DateTime     @default(now())
+  defect              DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_routings")
+}
+
+model EscapeRecord {
+  id                        String       @id @default(uuid())
+  workspaceId               String
+  defectId                  String       @unique
+  origin                    String
+  /// Nullable — but the ROW is not. FR-DFR-082: written at intake, so the
+  /// first quarter of data is not lost waiting for closure.
+  escapePoint               String?
+  severity                  String
+  affectedRequirementRef    String?
+  affectedSpecificationRef  String?
+  resolutionEvidenceRef     String?
+  /// The DOMAIN fact — when the escape data was taken (FR-DFR-082, at intake).
+  capturedAt                DateTime     @default(now())
+  /// The ROW's own, required of every table by FR-002. They coincide today.
+  createdAt                 DateTime     @default(now())
+  defect                    DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@map("defect_escape_records")
+}

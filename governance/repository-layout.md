@@ -191,6 +191,10 @@ path added or removed without updating this document fails the build.
 - `backend/src/modules/change-room/` — `EPIC-034`'s module (`T406c`). Registered in
   `backend/src/app.module.ts` and asserted by `change-room-independence.spec.ts`, which reads this
   directory to prove the Room imports the shared contract rather than forking it
+- `backend/src/modules/defect-room/` — `EPIC-035`'s module (`T997b`). Registered in
+  `backend/src/app.module.ts` and asserted by `defect-room-independence.spec.ts`, which reads this
+  directory to prove the Room runs no tests of its own — the boundary this Epic is most likely to
+  cross, because the port it needs is the one nobody built
 > **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
 > disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
 > rather than left implied: the four older contract packages — `engine-contract`,
