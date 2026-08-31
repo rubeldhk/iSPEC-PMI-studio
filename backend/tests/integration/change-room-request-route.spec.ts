@@ -328,3 +328,91 @@ suite('T996x · two or more options, or a stated reason', () => {
     expect(res.status).toBe(401);
   });
 });
+
+suite('T994q · the four commands', () => {
+  let commandRequestId = '';
+
+  beforeAll(async () => {
+    if (noRuntime) return;
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_commands' }));
+    commandRequestId = String(raised.body.id);
+  }, 120_000);
+
+  it('mounts all four', async () => {
+    // Tier 1. Four routes that exist in a controller and are reachable from
+    // nowhere is the defect this repository has recorded seven times.
+    for (const verb of ['decide', 'rebase', 'apply', 'close']) {
+      const res = await request(app.getHttpServer())
+        .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/${verb}`)
+        .set('Cookie', harness.cookie)
+        .send({});
+      expect(res.status, `${verb} is not mounted`).not.toBe(404);
+    }
+  });
+
+  it('refuses all four without a session', async () => {
+    for (const verb of ['decide', 'rebase', 'apply', 'close']) {
+      const res = await request(app.getHttpServer()).post(
+        `/${PREFIX}/rooms/change/requests/${commandRequestId}/${verb}`,
+      );
+      expect(res.status, `${verb} answered without a session`).toBe(401);
+    }
+  });
+
+  it('decide refuses while EPIC-031 is unbound, rather than deciding', async () => {
+    // The honest state of this deployment. A permissive default would be an
+    // unauthorised approval that looked exactly like an authorised one.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/decide`)
+      .set('Cookie', harness.cookie)
+      .send({
+        decisionId: 'dec_x',
+        impactViewId: 'iv_x',
+        objectVersion: 1,
+        options: [],
+        chosenOptionId: 'a',
+        rationale: 'because',
+      });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(JSON.stringify(res.body)).toMatch(/EPIC-031|not among the options/);
+  });
+
+  it('close refuses while EPIC-032 is unbound, rather than closing', async () => {
+    // `SC-CHR-005` — zero changes close with an unmet contract, and an unbound
+    // source cannot say the contract is met.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/close`)
+      .set('Cookie', harness.cookie)
+      .send({
+        evidenceContractRef: 'ec_1',
+        whatChanged: 'the window shortened',
+        why: 'the regulator asked',
+        validatedBy: ['ev_1'],
+        supersedingBaselineId: 'b_2',
+        supersedingBaselineVersion: 2,
+      });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(JSON.stringify(res.body)).toContain('EPIC-032');
+  });
+
+  it('rebase names the baseline it moves onto, or is refused', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/rebase`)
+      .set('Cookie', harness.cookie)
+      .send({ toBaselineId: 'b_next' });
+    expect(res.status).toBe(400);
+  });
+
+  it('and every command is absent for a change in another workspace', async () => {
+    for (const verb of ['decide', 'rebase', 'apply', 'close']) {
+      const res = await request(app.getHttpServer())
+        .post(`/${PREFIX}/rooms/change/requests/cr_not_ours/${verb}`)
+        .set('Cookie', harness.cookie)
+        .send({});
+      expect(res.status, `${verb} leaked existence`).toBe(404);
+    }
+  });
+});

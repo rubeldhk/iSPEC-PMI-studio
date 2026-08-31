@@ -36,7 +36,22 @@ export const CHAIN_STAGES = [
   'operation',
 ] as const;
 
-export type TraceArtifactType = (typeof CHAIN_STAGES)[number];
+/**
+ * `T994n` (EPIC-034) — `change` is an artifact type and **not** a chain stage.
+ *
+ * `CHAIN_STAGES` is the ordered derivation chain, and `chain-gap.service.ts`
+ * indexes into it to decide what is up-chain of what. A change request is not a
+ * stage of derivation; it is the reason a derivation changed. Adding it to the
+ * chain would hand the gap report an ordering question with no correct answer.
+ *
+ * So it joins the type without joining the sequence, and appears only as an
+ * edge TARGET (`FR-CHR-064`).
+ */
+export const NON_CHAIN_ARTIFACT_TYPES = ['change'] as const;
+
+export type TraceArtifactType =
+  | (typeof CHAIN_STAGES)[number]
+  | (typeof NON_CHAIN_ARTIFACT_TYPES)[number];
 
 /** Kept for callers that predate the widening. */
 export const TRACE_ARTIFACT_TYPES = CHAIN_STAGES;
@@ -62,8 +77,21 @@ export type TraceRelationship =
   | 'derived_from'
   | (typeof CHAIN_LINK_TYPES)[number];
 
+/**
+ * True for the twelve chain stages, false for artifact types that are not part
+ * of the derivation chain (`change`).
+ *
+ * A type predicate rather than a cast: every place that asks a chain question
+ * of an artifact type now has to say what it does about the ones that have no
+ * chain position, instead of receiving `-1` and behaving in whatever way that
+ * happens to produce.
+ */
+export function isChainStage(type: TraceArtifactType): type is (typeof CHAIN_STAGES)[number] {
+  return (CHAIN_STAGES as readonly string[]).includes(type);
+}
+
 export function stageIndex(stage: TraceArtifactType): number {
-  const index = CHAIN_STAGES.indexOf(stage);
+  const index = isChainStage(stage) ? CHAIN_STAGES.indexOf(stage) : -1;
   if (index === -1) {
     throw new ValidationFailedError(
       `Unknown chain stage "${stage}". Stages: ${CHAIN_STAGES.join(' → ')}.`,
@@ -93,6 +121,12 @@ export const PERMITTED_EDGES: readonly { sourceType: TraceArtifactType; targetTy
   { sourceType: 'test', targetType: 'code' },
   { sourceType: 'release', targetType: 'test' },
   { sourceType: 'operation', targetType: 'release' },
+  // `FR-CHR-064` (EPIC-034) — work arising from an approved change traces back
+  // to it. `change` is never a source: a change does not derive from the work
+  // it caused, and an edge that way would put it in the chain by the back door.
+  { sourceType: 'specification', targetType: 'change' },
+  { sourceType: 'task', targetType: 'change' },
+  { sourceType: 'test', targetType: 'change' },
 ];
 
 export function assertPermittedEdge(sourceType: TraceArtifactType, targetType: TraceArtifactType): void {

@@ -29,6 +29,7 @@ import {
   type TraversalPort,
 } from './impact.composer.js';
 import { ChangeIntakeService } from './intake.service.js';
+import { ClosureService } from './closure.service.js';
 import { DecisionService } from './decision.service.js';
 import { OptionsService } from './options.service.js';
 import { RebaselineService } from './rebase.service.js';
@@ -124,6 +125,19 @@ export class ChangeRoomService {
         new DecisionService(store, undefined, undefined),
     },
     {
+      provide: ClosureService,
+      inject: [CHANGE_ROOM_STORE],
+      /**
+       * `T994p` - the Evidence Contract source is `EPIC-032`'s, unbound here.
+       *
+       * Closure refuses without it. An unbound source means nothing proved the
+       * change, and closing anyway would record that something did - which is
+       * `SC-CHR-005`'s zero, broken quietly.
+       */
+      useFactory: (store: ChangeRoomStore): ClosureService =>
+        new ClosureService(store, undefined),
+    },
+    {
       provide: RebaselineService,
       inject: [CHANGE_ROOM_STORE],
       /**
@@ -151,6 +165,7 @@ export class ChangeRoomService {
     OptionsService,
     DecisionService,
     RebaselineService,
+    ClosureService,
   ],
 })
 export class ChangeRoomModule {}

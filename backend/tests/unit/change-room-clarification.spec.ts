@@ -222,7 +222,9 @@ describe('T996g · retention is structural', () => {
     expect(mutators.sort()).toEqual([
       'create',
       'latestImpactViewFor',
+      'recordClosure',
       'recordDecision',
+      'recordRePlanObligation',
       'retainForDecision',
       'saveDelta',
       'saveImpactView',

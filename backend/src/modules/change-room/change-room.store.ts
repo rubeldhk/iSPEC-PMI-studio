@@ -16,6 +16,7 @@
 import type { ImpactView } from './impact.types.js';
 import type { ChangeOption } from './option.types.js';
 import type { BaselineDelta } from './delta.service.js';
+import type { RePlanObligation } from './replan.types.js';
 
 export interface ChangeRequestRow {
   readonly id: string;
@@ -121,6 +122,41 @@ export interface ChangeRoomStore {
     workspaceId: string,
     changeDecisionId: string,
   ): Promise<StoredBaselineDelta | null>;
+
+  /**
+   * `FR-CHR-062` — what a re-plan must address, recorded and never executed.
+   *
+   * Append-only, and there is no `setRePlanState` here: `discharged-by-U-12` is
+   * `U-12`'s to set, and this Epic offers no path to it.
+   */
+  recordRePlanObligation(row: StoredRePlanObligation): Promise<StoredRePlanObligation>;
+  listRePlanObligations(
+    workspaceId: string,
+    changeDecisionId: string,
+  ): Promise<StoredRePlanObligation[]>;
+
+  /** `FR-CHR-070` — one per change, and there is no path that reopens one. */
+  recordClosure(row: ChangeClosureRow): Promise<ChangeClosureRow>;
+  findClosure(workspaceId: string, changeRequestId: string): Promise<ChangeClosureRow | null>;
+}
+
+export interface StoredRePlanObligation extends RePlanObligation {
+  readonly workspaceId: string;
+}
+
+/** `BR-0048`, `FR-CHR-070` — the four questions, stored so none needs deriving. */
+export interface ChangeClosureRow {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly changeRequestId: string;
+  readonly whatChanged: string;
+  readonly why: string;
+  /** Tests and evidence. `[]` is refused — `FR-CHR-072`. */
+  readonly evidenceRefs: readonly string[];
+  readonly supersedingBaselineId: string;
+  readonly supersedingBaselineVersion: number;
+  readonly closedBy: string;
+  readonly closedAt: Date;
 }
 
 export interface StoredBaselineDelta extends BaselineDelta {
@@ -261,6 +297,40 @@ export class InMemoryChangeRoomStore implements ChangeRoomStore {
   ): Promise<ChangeDecisionRow[]> {
     return this.#decisions.filter(
       (row) => row.workspaceId === workspaceId && row.changeRequestId === changeRequestId,
+    );
+  }
+
+  readonly #closures: ChangeClosureRow[] = [];
+
+  async recordClosure(row: ChangeClosureRow): Promise<ChangeClosureRow> {
+    this.#closures.push(row);
+    return row;
+  }
+
+  async findClosure(
+    workspaceId: string,
+    changeRequestId: string,
+  ): Promise<ChangeClosureRow | null> {
+    return (
+      this.#closures.find(
+        (row) => row.workspaceId === workspaceId && row.changeRequestId === changeRequestId,
+      ) ?? null
+    );
+  }
+
+  readonly #obligations: StoredRePlanObligation[] = [];
+
+  async recordRePlanObligation(row: StoredRePlanObligation): Promise<StoredRePlanObligation> {
+    this.#obligations.push(row);
+    return row;
+  }
+
+  async listRePlanObligations(
+    workspaceId: string,
+    changeDecisionId: string,
+  ): Promise<StoredRePlanObligation[]> {
+    return this.#obligations.filter(
+      (row) => row.workspaceId === workspaceId && row.changeDecisionId === changeDecisionId,
     );
   }
 

@@ -2291,6 +2291,9 @@ model ChangeClosure {
   whatChanged     String
   why             String
   evidenceRefs    Json          @default("[]")
+  /// BR-0048's fourth question — which baseline supersedes the old state.
+  supersedingBaselineId      String
+  supersedingBaselineVersion Int
   closedBy        String
   closedAt        DateTime
   createdAt       DateTime      @default(now())

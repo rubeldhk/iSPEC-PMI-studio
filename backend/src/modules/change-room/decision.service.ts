@@ -29,7 +29,7 @@
  * Framework-free (PC-1).
  */
 import { randomUUID } from 'node:crypto';
-import { ValidationFailedError } from '../../core/errors.js';
+import { ForbiddenError, ValidationFailedError } from '../../core/errors.js';
 import type { ChangeDecisionRow, ChangeRoomStore } from './change-room.store.js';
 import type { ChangeOption, ChangeOptions } from './option.types.js';
 
@@ -103,6 +103,27 @@ export interface RecordDecisionInput {
   readonly chosenOptionId: string;
   readonly rationale: string;
   readonly now: Date;
+}
+
+/**
+ * `403`, carrying the `EPIC-031` decision id (`T994q`, `FR-CHR-084`).
+ *
+ * `ForbiddenError` rather than the opaque 404 this repository uses for
+ * visibility: the caller can already see the change — what is refused is the
+ * **authority** to decide it, and telling them so is the only way they can act
+ * on it. `UX-0033` requires a policy-refused action to show the refusing
+ * policy, and a refusal that named nothing would leave them guessing which of
+ * their roles fell short.
+ */
+export class ChangeDecisionRefusedError extends ForbiddenError {
+  constructor(reason: string, decisionId: string) {
+    super(`the decision was not authorised: ${reason}`, {
+      remedy: 'decision-authority',
+      // EPIC-031's Decision — the record that evaluated the band and said no.
+      decisionId,
+      reason,
+    });
+  }
 }
 
 export class DecisionService {
@@ -212,7 +233,8 @@ export class DecisionService {
       decidedByKind: input.decidedByKind,
     });
     if (!verdict.authorized) {
-      throw new ValidationFailedError(`the decision was not authorised: ${verdict.reason}`);
+      // 403, and it names the `EPIC-031` Decision that refused. `UX-0033`.
+      throw new ChangeDecisionRefusedError(verdict.reason, input.decisionId);
     }
     if (verdict.band !== REQUIRED_BAND) {
       // `FR-CHR-051`, `ADR-0025` constraint 1.

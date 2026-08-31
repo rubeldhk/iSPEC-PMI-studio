@@ -16,7 +16,11 @@
  * no delete of any kind — the retention promise is kept by the absence of the
  * capability rather than by everyone remembering not to use it.
  */
-import type { StoredBaselineDelta } from './change-room.store.js';
+import type {
+  ChangeClosureRow,
+  StoredBaselineDelta,
+  StoredRePlanObligation,
+} from './change-room.store.js';
 import type {
   ChangeDecisionRow,
   ChangeRequestRow,
@@ -46,6 +50,8 @@ export interface ChangeRoomPrismaClient {
   readonly changeImpactArea: Delegate;
   readonly changeDecision: Delegate;
   readonly changeBaselineDelta: Delegate;
+  readonly changeRePlanObligation: Delegate;
+  readonly changeClosure: Delegate;
 }
 
 /**
@@ -121,6 +127,47 @@ export class PrismaChangeRoomStore implements ChangeRoomStore {
         data: { openQuestions: questions as unknown },
       }),
     );
+  }
+
+  /** `FR-CHR-070` — the four questions, stored. */
+  async recordClosure(row: ChangeClosureRow): Promise<ChangeClosureRow> {
+    await this.prisma.changeClosure.create({
+      data: { ...row, evidenceRefs: row.evidenceRefs as unknown },
+    });
+    return row;
+  }
+
+  async findClosure(
+    workspaceId: string,
+    changeRequestId: string,
+  ): Promise<ChangeClosureRow | null> {
+    const row = (await this.prisma.changeClosure.findFirst({
+      where: { workspaceId, changeRequestId },
+    })) as (ChangeClosureRow & { evidenceRefs: unknown }) | null;
+    if (!row) return null;
+    return {
+      ...row,
+      // An unreadable list becomes `[]`, which the service and the database
+      // both refuse to store — so a closure that read back this way is visibly
+      // broken rather than quietly evidence-free.
+      evidenceRefs: Array.isArray(row.evidenceRefs) ? (row.evidenceRefs as string[]) : [],
+    };
+  }
+
+  /** `FR-CHR-062` — recorded. There is no path here that executes one. */
+  async recordRePlanObligation(row: StoredRePlanObligation): Promise<StoredRePlanObligation> {
+    await this.prisma.changeRePlanObligation.create({ data: row });
+    return row;
+  }
+
+  async listRePlanObligations(
+    workspaceId: string,
+    changeDecisionId: string,
+  ): Promise<StoredRePlanObligation[]> {
+    return (await this.prisma.changeRePlanObligation.findMany({
+      where: { workspaceId, changeDecisionId },
+      orderBy: { createdAt: 'asc' },
+    })) as StoredRePlanObligation[];
   }
 
   /** `FR-CHR-063` — stored with the decision, never recomputed on read. */

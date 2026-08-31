@@ -31,7 +31,7 @@
  *
  * Framework-free (PC-1).
  */
-import { ValidationFailedError } from '../../core/errors.js';
+import { ConflictError, ValidationFailedError } from '../../core/errors.js';
 import { randomUUID } from 'node:crypto';
 import type { ChangeRequestRow, ChangeRoomStore } from './change-room.store.js';
 import { computeBaselineDelta } from './delta.service.js';
@@ -135,6 +135,43 @@ export interface RebaseAssessment {
   readonly because: string;
 }
 
+/** What a refused apply offers instead. `T994q`, and `BR-0042`'s shape. */
+export interface RebaseAffordance {
+  readonly remedy: 'rebase';
+  readonly decidedAgainstVersion: number;
+  readonly currentVersion: number;
+  readonly changeRequestId: string;
+  /** Where to take the remedy. A remedy nobody can find is not offered. */
+  readonly rebaseAt: 'POST /rooms/change/requests/:id/rebase';
+}
+
+/**
+ * `409`, carrying the rebase affordance. `FR-CHR-054`, `SC-CHR-009`.
+ *
+ * A `ConflictError` because that is exactly what this is — the request is
+ * well-formed and conflicts with a baseline that has moved. Modelled on
+ * `EPIC-033`'s `InPlaceEditRefusedError`, and for the same reason: a refusal
+ * that only says no leaves the caller with a change they cannot apply and no
+ * route to applying it, which is how silent retargeting gets argued back in.
+ */
+export class RebaseRequiredError extends ConflictError {
+  constructor(changeRequestId: string, decidedAgainstVersion: number, currentVersion: number) {
+    const affordance: RebaseAffordance = {
+      remedy: 'rebase',
+      decidedAgainstVersion,
+      currentVersion,
+      changeRequestId,
+      rebaseAt: 'POST /rooms/change/requests/:id/rebase',
+    };
+    super(
+      `this change was decided against v${decidedAgainstVersion} and the current baseline is ` +
+        `v${currentVersion}; it must be explicitly rebased first, and re-decided if the rebase ` +
+        'changes its impact view (FR-CHR-054)',
+      affordance,
+    );
+  }
+}
+
 export class RebaselineService {
   constructor(
     private readonly store: ChangeRoomStore,
@@ -179,10 +216,10 @@ export class RebaselineService {
       // applying to whatever is current would ship an approval whose impact
       // view, trade-offs and authority all referred to a baseline no longer in
       // force — and nothing would error.
-      throw new ValidationFailedError(
-        `this change was decided against v${input.decidedAgainstVersion} and the current ` +
-          `baseline is v${current.version}; it must be explicitly rebased first, and ` +
-          're-decided if the rebase changes its impact view (FR-CHR-054)',
+      throw new RebaseRequiredError(
+        input.changeRequestId,
+        input.decidedAgainstVersion,
+        current.version,
       );
     }
 

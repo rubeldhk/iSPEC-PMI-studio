@@ -218,14 +218,14 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 7 and 9
 
-- [ ] T994j [P] [US5] Write failing unit tests for the re-plan recorder in `backend/tests/unit/change-room-replan.spec.ts` — an approved change **records** a `RePlanObligation` naming what must change and why, and **executes nothing** (`FR-CHR-062`, `R-034-2`)
-- [ ] T994k [US5] Implement `backend/src/modules/change-room/replan.recorder.ts` (unit test: T994j) — a recorder that performs no re-plan
-- [ ] T994l [P] [US5] Write the failing integration test for re-plan safety in `backend/tests/integration/change-room-replan-safety.spec.ts` — apply a change affecting a specification with completed tasks and assert **no task is replaced and no completed task loses its state** (`FR-CHR-065`, `SC-CHR-007`)
-- [ ] T994m [P] [US5] Write failing unit tests for change traceability in `backend/tests/unit/change-room-traceability.spec.ts` — specification, task and test changes arising from an approved change are traceable to that change (`FR-CHR-064`)
-- [ ] T994n [US5] Implement change traceability links via `EPIC-011`'s `LinkWriterService` in `backend/src/modules/change-room/replan.recorder.ts` (unit test: T994m) — no second link store
-- [ ] T994o [P] [US5] Write failing unit tests for closure in `backend/tests/unit/change-room-closure.spec.ts` — all four `BR-0048` questions answerable from the record alone; closure refused while the Evidence Contract is unmet; a completion declaration does not substitute for the evidence (`FR-CHR-070`, `FR-CHR-071`, `FR-CHR-072`, `FR-CHR-073`, `SC-CHR-005`, `SC-CHR-006`)
-- [ ] T994p [US5] Implement `backend/src/modules/change-room/closure.service.ts` (unit test: T994o)
-- [ ] T994q [US5] Implement `POST …/decide`, `POST …/rebase`, `POST …/apply` and `POST …/close` in the controller (integration test: T406u) — `403` carrying the `EPIC-031` decision id, `409` carrying the rebase affordance
+- [X] T994j [P] [US5] Write failing unit tests for the re-plan recorder in `backend/tests/unit/change-room-replan.spec.ts` — an approved change **records** a `RePlanObligation` naming what must change and why, and **executes nothing** (`FR-CHR-062`, `R-034-2`)
+- [X] T994k [US5] Implement `backend/src/modules/change-room/replan.recorder.ts` (unit test: T994j) — a recorder that performs no re-plan
+- [X] T994l [P] [US5] Write the failing integration test for re-plan safety in `backend/tests/integration/change-room-replan-safety.spec.ts` — apply a change affecting a specification with completed tasks and assert **no task is replaced and no completed task loses its state** (`FR-CHR-065`, `SC-CHR-007`)
+- [X] T994m [P] [US5] Write failing unit tests for change traceability in `backend/tests/unit/change-room-traceability.spec.ts` — specification, task and test changes arising from an approved change are traceable to that change (`FR-CHR-064`)
+- [X] T994n [US5] Implement change traceability links via `EPIC-011`'s `LinkWriterService` in `backend/src/modules/change-room/replan.recorder.ts` (unit test: T994m) — no second link store
+- [X] T994o [P] [US5] Write failing unit tests for closure in `backend/tests/unit/change-room-closure.spec.ts` — all four `BR-0048` questions answerable from the record alone; closure refused while the Evidence Contract is unmet; a completion declaration does not substitute for the evidence (`FR-CHR-070`, `FR-CHR-071`, `FR-CHR-072`, `FR-CHR-073`, `SC-CHR-005`, `SC-CHR-006`)
+- [X] T994p [US5] Implement `backend/src/modules/change-room/closure.service.ts` (unit test: T994o)
+- [X] T994q [US5] Implement `POST …/decide`, `POST …/rebase`, `POST …/apply` and `POST …/close` in the controller (integration test: T406u) — `403` carrying the `EPIC-031` decision id, `409` carrying the rebase affordance
 
 **Checkpoint**: US5 demonstrable — and nothing completed was destroyed getting there
 

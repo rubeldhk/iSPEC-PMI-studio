@@ -23,7 +23,9 @@ import { CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import type { ChangeRoomStore } from './change-room.store.js';
 import { ImpactComposer } from './impact.composer.js';
 import { ChangeIntakeService, type RaiseChangeInput } from './intake.service.js';
-import { DecisionService } from './decision.service.js';
+import { ClosureService, type CloseChangeInput } from './closure.service.js';
+import { DecisionService, type RecordDecisionInput } from './decision.service.js';
+import { RebaselineService } from './rebase.service.js';
 import { OptionsService } from './options.service.js';
 
 /**
@@ -67,6 +69,24 @@ function strip(body: unknown): Record<string, unknown> {
   return safe;
 }
 
+/**
+ * What a caller may supply for a decision and a closure.
+ *
+ * Everything the session decides is removed from the type, so a body carrying
+ * `decidedBy` is not merely overwritten -- it does not typecheck as an input at
+ * all. `strip` takes it away at runtime as well; the two say the same thing in
+ * the two places a reader looks.
+ */
+type RecordDecisionRest = Omit<
+  RecordDecisionInput,
+  'workspaceId' | 'changeRequestId' | 'decidedBy' | 'decidedByKind' | 'now'
+>;
+
+type CloseChangeRest = Omit<
+  CloseChangeInput,
+  'workspaceId' | 'projectId' | 'changeRequestId' | 'closedBy' | 'now'
+>;
+
 @Controller()
 export class ChangeRoomController {
   constructor(
@@ -76,6 +96,8 @@ export class ChangeRoomController {
     @Inject(ImpactComposer) private readonly impact: ImpactComposer,
     @Inject(OptionsService) private readonly options: OptionsService,
     @Inject(DecisionService) private readonly decisions: DecisionService,
+    @Inject(RebaselineService) private readonly rebases: RebaselineService,
+    @Inject(ClosureService) private readonly closures: ClosureService,
   ) {}
 
   /**
@@ -232,5 +254,131 @@ export class ChangeRoomController {
       throw new NotFoundError('This change has been decided but not yet re-baselined.');
     }
     return delta;
+  }
+
+  /**
+   * `FR-CHR-050`-`FR-CHR-053` - record the decision.
+   *
+   * A policy refusal surfaces as **403 carrying the `EPIC-031` decision id**
+   * (`ChangeDecisionRefusedError`). Not the opaque 404 this repository uses for
+   * visibility: the caller can already see the change, and what is refused is
+   * the authority to decide it. `UX-0033` requires the refusing policy to be
+   * shown, and a refusal naming nothing leaves them guessing which of their
+   * roles fell short.
+   */
+  @Post('rooms/change/requests/:id/decide')
+  async decide(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const safe = strip(body) as Record<string, unknown>;
+    return this.decisions.record({
+      ...(safe as unknown as RecordDecisionRest),
+      workspaceId: principal.workspaceId,
+      changeRequestId: request.id,
+      // From the session, never the body: `RULE-03` turns on who decided, and
+      // `T1149`'s lesson is that a body which looks authoritative is believed.
+      decidedBy: principal.userId,
+      decidedByKind: 'human',
+      now: new Date(),
+    });
+  }
+
+  /**
+   * `FR-CHR-013`, `FR-CHR-054` - move the change onto a newer baseline, as a
+   * recorded act.
+   */
+  @Post('rooms/change/requests/:id/rebase')
+  async rebase(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: { toBaselineId?: string; toBaselineVersion?: number },
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+    if (!body?.toBaselineId || !Number.isInteger(body.toBaselineVersion)) {
+      throw new ValidationFailedError(
+        'a rebase names the baseline it moves onto: toBaselineId and toBaselineVersion',
+      );
+    }
+    return this.rebases.recordRebase({
+      workspaceId: principal.workspaceId,
+      changeRequestId: request.id,
+      toBaselineId: body.toBaselineId,
+      toBaselineVersion: body.toBaselineVersion as number,
+    });
+  }
+
+  /**
+   * `FR-CHR-060`, `FR-CHR-061` - apply the decided change to the baseline.
+   *
+   * Applying to a baseline the decision was not taken against surfaces as
+   * **409 carrying the rebase affordance** (`RebaseRequiredError`). A refusal
+   * that only said no would leave the caller with a change they cannot apply
+   * and no route to applying it, which is how silent retargeting gets argued
+   * back in - `BR-0042`'s reasoning, one Room over.
+   */
+  @Post('rooms/change/requests/:id/apply')
+  async apply(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: { memberVersionIds?: string[]; rationale?: string; evidenceContractRef?: string },
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    return this.rebases.rebaseline({
+      workspaceId: principal.workspaceId,
+      projectId: request.projectId,
+      changeRequestId: request.id,
+      // The version this change targets IS what it was decided against:
+      // `recordRebase` is the only thing that moves it, and it records where it
+      // came from when it does.
+      decidedAgainstVersion: request.targetBaselineVersion,
+      memberVersionIds: body?.memberVersionIds ?? [],
+      approvedBy: principal.userId,
+      rationale: body?.rationale ?? request.reason,
+      evidenceContractRef: body?.evidenceContractRef ?? null,
+      now: new Date(),
+      // `EPIC-007`'s join is not resolvable from here (`FR-RQR-002`), so the
+      // delta records additions and removals and pairs nothing. Stated rather
+      // than guessed: a wrong pairing would invent a requirement history.
+      requirementOf: (): string | null => null,
+    });
+  }
+
+  /**
+   * `FR-CHR-070`-`FR-CHR-073` - close the change.
+   *
+   * Refused while the Evidence Contract is unmet, naming the unmet items
+   * (`FR-CHR-071`), and there is no field in which a declaration of completion
+   * could stand in for them (`FR-CHR-072`, `BR-0144`).
+   */
+  @Post('rooms/change/requests/:id/close')
+  async close(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const safe = strip(body) as Record<string, unknown>;
+    return this.closures.close({
+      ...(safe as unknown as CloseChangeRest),
+      workspaceId: principal.workspaceId,
+      projectId: request.projectId,
+      changeRequestId: request.id,
+      closedBy: principal.userId,
+      now: new Date(),
+    });
   }
 }

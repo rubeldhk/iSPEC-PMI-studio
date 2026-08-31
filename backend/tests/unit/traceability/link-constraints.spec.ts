@@ -22,7 +22,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const schema = readFileSync(resolve(here, '../../../prisma/schema.prisma'), 'utf8');
 
 describe('the permitted edges (FR-029 + FR-ENH-021, widened by EPIC-022 T302)', () => {
-  it('are exactly the two Phase 1 edges plus the ten chain-adjacent pairs', () => {
+  it('are exactly the two Phase 1 edges, the ten chain-adjacent pairs, and the three change edges', () => {
     expect(PERMITTED_EDGES.map((e) => `${e.sourceType}->${e.targetType}`).sort()).toEqual(
       [
         'specification->requirement',
@@ -37,6 +37,12 @@ describe('the permitted edges (FR-029 + FR-ENH-021, widened by EPIC-022 T302)', 
         'test->code',
         'release->test',
         'operation->release',
+        // `EPIC-034` `FR-CHR-064` — work arising from an approved change traces
+        // back to it. Enumerated here rather than counted, so a fourteenth edge
+        // has to be named before it can exist.
+        'specification->change',
+        'task->change',
+        'test->change',
       ].sort(),
     );
   });
