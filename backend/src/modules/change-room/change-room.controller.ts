@@ -33,13 +33,18 @@ import { RebaselineService } from './rebase.service.js';
 import { OptionsService } from './options.service.js';
 
 /**
- * `DEFAULT_IMPACT_DEPTH`, adopted from `EPIC-020` (`R-034-1`).
+ * `R-034-1` — adopted from `EPIC-020`, **imported rather than restated**.
  *
- * Named here so the number enters the Room at exactly one point. This module
- * never chooses it: two traversals that disagree about depth is worse than
- * either being wrong.
+ * `T995g` caught this as a local `const ADOPTED_IMPACT_DEPTH = 25`. It agreed
+ * with `EPIC-020` on the day it was written, which is the only day a duplicated
+ * constant ever agrees: the moment `EPIC-020` retunes its traversal, the Room
+ * would go on recording a depth nothing traversed at, and the stored
+ * `traversalDepth` would describe a run that never happened.
+ *
+ * Two traversals disagreeing about depth is worse than either being wrong,
+ * because both look right.
  */
-const ADOPTED_IMPACT_DEPTH = 25;
+import { DEFAULT_IMPACT_DEPTH } from '../dependencies/impact.service.js';
 
 interface ActingPrincipal {
   readonly workspaceId: string;
@@ -166,7 +171,7 @@ export class ChangeRoomController {
       // The change is against a baseline, so the baseline is what the blast
       // radius is traced from (`FR-CHR-010`).
       changedArtifactId: request.targetBaselineId,
-      traversalDepth: ADOPTED_IMPACT_DEPTH,
+      traversalDepth: DEFAULT_IMPACT_DEPTH,
       now: new Date(),
       id: randomUUID(),
     });
