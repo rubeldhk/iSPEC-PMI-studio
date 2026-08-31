@@ -20,23 +20,46 @@
 >
 > **Scope was derived from the named source, not supplied with the command.** The invocation
 > carried only `038`. Every requirement below traces to `BR-0091`–`BR-0096`; nothing was invented
-> to fill a gap, and the four judgement calls that were made are listed under **Assumptions**.
+> to fill a gap, and the four judgement calls that were made are listed under **Assumptions** —
+> where the clarification session of 2026-08-31 confirmed three and **overturned one**.
+
+## Clarifications
+
+### Session 2026-08-31
+
+- Q: Should this Epic build its own semantic search over your engineering documents, or connect to
+  a search capability provided elsewhere? → A: **Build it.** This Epic owns indexing and semantic
+  search end to end. *(Overturns the recommendation to integrate; the Epic's scope is materially
+  larger as a result, and `PP-018` moves from a deferral to a live concern.)*
+- Q: Which of your project's material should be eligible to be assembled into a context package? →
+  A: **Governed documents plus execution history** — specifications, requirements, baselines and
+  decisions, together with the records of what governed runs did. Not source code, not imported
+  external documents.
+- Q: If the cost budget cannot fit material that somebody has marked essential for the task, should
+  assembly proceed with a smaller package or stop? → A: **Proceed unless an item marked essential
+  is excluded** — then refuse and say which.
+- Q: How long should a context package be retained so it can be inspected later? → A: **As long as
+  the execution it fed**, inheriting that record's retention.
+- Q: Should Context be a full governed workspace with its own lifecycle and approval stages, or a
+  screen for looking at packages? → A: **An inspection screen** in its own application area. No
+  workflow type is declared.
 
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
 |--------|---------|--------|
-| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0091` — Semantic retrieval | FR-CTX-010 to FR-CTX-014 |
+| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0091` — Semantic retrieval | FR-CTX-010 to FR-CTX-018 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0092` — Live state | FR-CTX-020 to FR-CTX-023 |
-| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0093` — Context curation | FR-CTX-030 to FR-CTX-037 |
+| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0093` — Context curation | FR-CTX-030 to FR-CTX-039 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0094` — Context provenance | FR-CTX-040 to FR-CTX-044 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0095` — Context isolation | FR-CTX-050 to FR-CTX-054 |
-| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0096` — Context inspection | FR-CTX-060 to FR-CTX-065 |
+| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.10 `BR-0096` — Context inspection | FR-CTX-060 to FR-CTX-066 |
 | `SRS/PMI-DOC-006` | §4.1 — the **Context** application area | The area this Epic claims |
 | `.specify/memory/constitution.md` | XII — Execution Registration | FR-CTX-061, FR-CTX-062 |
 
-**Requirements not yet covered by SRS**: none. `FR-CTX-070`–`FR-CTX-074` (the Room surface) derive
-from the shared Room pattern (`UX-0030`, `UX-0035`) rather than from §6.10, and are marked as such.
+**Requirements not yet covered by SRS**: none. `FR-CTX-070`–`FR-CTX-074` (the inspection screen)
+derive from the shared application-shell pattern (`UX-0031`, `UX-0032`, `UX-0040`) rather than from
+§6.10, and are marked as such.
 
 ## Principle Conformance & Deferrals *(mandatory — PMI-DOC-003, decision D-6)*
 
@@ -46,9 +69,9 @@ from the shared Room pattern (`UX-0030`, `UX-0035`) rather than from §6.10, and
 | PP-002 | Single Source of Truth | Satisfied | `FR-CTX-041` — a package item points at its source and never restates it |
 | PP-003 | Human-in-the-Loop | Satisfied | `FR-CTX-060` — a reviewer inspects what was actually supplied |
 | PP-004 | End-to-End Traceability | Satisfied | `FR-CTX-062` — a package binds to the execution it fed, through `EPIC-037` |
-| PP-005 | Modular Architecture | Satisfied | Retrieval, live state and access are ports; none is implemented here |
-| PP-006 | Engine Independence | Satisfied | `FR-CTX-013` — no retrieval provider is named in this Epic's model |
-| PP-007 | API & MCP First | Satisfied | Every capability is callable without the Room |
+| PP-005 | Modular Architecture | Satisfied | Live state and access are ports implemented elsewhere; retrieval is a module **owned here** *(clarified 2026-08-31)*, behind its own boundary |
+| PP-006 | Engine Independence | Satisfied | `FR-CTX-013` — retrieval is built here *(clarified 2026-08-31)*, and the embedding model stays behind a boundary so the record never binds to one vendor's vector shape |
+| PP-007 | API & MCP First | Satisfied | Every capability is callable without the inspection screen |
 | PP-008 | Security by Design | Satisfied | `BR-0095` is the Epic's sharpest requirement — see `FR-CTX-050`–`FR-CTX-054` |
 | PP-009 | Quality by Design | Satisfied | `SC-CTX-003` mutation-tests the isolation boundary |
 | PP-010 | Observability by Default | Partial | Package assembly emits counts and refusals; retrieval latency telemetry → `EPIC-023` |
@@ -59,12 +82,13 @@ from the shared Room pattern (`UX-0030`, `UX-0035`) rather than from §6.10, and
 | PP-015 | Open Standards | Partial | Attestation reuses `EPIC-032`'s in-toto shape; no retrieval standard is adopted |
 | PP-016 | Explainable AI | Satisfied | `FR-CTX-064` — *why each item was included* is part of the record |
 | PP-017 | Cost-Aware AI | Satisfied | `FR-CTX-035` — the budget is an input, and exceeding it refuses rather than truncating silently |
-| PP-018 | Scalability First | Deferred | Retrieval corpus scale targets land in `plan.md` `R-038-*`, as `EPIC-035` did |
+| PP-018 | Scalability First | Partial | **Raised by the 2026-08-31 clarification**: building retrieval makes corpus scale a first-class concern rather than a downstream one. Targets land in `plan.md` `R-038-*` |
 | PP-019 | Continuous Improvement (DORA/SPACE) | Deferred | Context-quality feedback is `BR-0163`, capability area `U-19`, **unowned** |
 | PP-020 | Customer Value | Satisfied | `SC-CTX-006` — a reviewer answers *"what did it see?"* without asking anyone |
 
-**Deferral count**: 2 — `PP-018` (owned, lands in this Epic's plan) and `PP-019` (**unowned**,
-`BR-0163`/`U-19`, restated in the closing report rather than silently carried).
+**Deferral count**: 1 — `PP-019` (**unowned**, `BR-0163`/`U-19`, restated in the closing report
+rather than silently carried). `PP-018` moved from Deferred to Partial on 2026-08-31: this Epic now
+builds retrieval, so scale is its own problem and not a later Epic's.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -91,6 +115,8 @@ inputs are all consulted and recorded.
 3. **Given** a source the assembler cannot classify, **When** the package is assembled, **Then**
    the item is **excluded and the exclusion recorded**, never included on the assumption that an
    unclassified source is safe.
+4. **Given** an item marked **essential** that the budget cannot fit, **When** assembly runs,
+   **Then** it **refuses** and names the item, rather than proceeding without it.
 
 ### User Story 2 - Every item says where it came from and whether it is still true (Priority: P1)
 
@@ -158,11 +184,12 @@ session.
 
 1. **Given** an objective, **When** retrieval runs, **Then** candidates are ranked by relevance and
    each carries the score that ranked it.
-2. **Given** no retrieval provider is bound, **When** assembly runs, **Then** it **refuses** and
-   names the unbound capability — an unranked package is not a degraded package, it is a different
-   one.
+2. **Given** the index has never been built, **When** assembly runs, **Then** it **refuses** and
+   says so — an unranked package is not a degraded package, it is a different one.
 3. **Given** a source outside the approved set, **When** retrieval runs, **Then** it is never a
    candidate.
+4. **Given** a source that has changed since it was indexed, **When** retrieval runs, **Then** the
+   entry is marked stale rather than ranked as current.
 
 ### User Story 6 - Live engineering state can be part of the picture (Priority: P3)
 
@@ -188,8 +215,11 @@ to permissions.
   `n` candidates, `n` excluded, and why.
 - **A source is deleted between assembly and inspection.** The retained package still shows the
   item; the drift note says the source no longer resolves.
-- **A retrieval provider returns items outside the approved set.** They are dropped and the event
-  recorded — the boundary is enforced here, not trusted from the provider.
+- **Retrieval returns an item outside the approved set.** It is dropped and the event recorded —
+  the boundary is enforced at assembly, not trusted from the ranker, even though this Epic now owns
+  the ranker.
+- **The whole corpus is stale.** Assembly refuses rather than ranking every entry as current, which
+  would be the silent version of the same failure.
 - **A consequential session is registered but never ran.** Inspection shows the package that was
   prepared for it, and that nothing consumed it.
 
@@ -201,12 +231,22 @@ to permissions.
 
 - **FR-CTX-010**: The platform MUST retrieve candidate context by semantic relevance over the
   approved source set.
-- **FR-CTX-011**: Retrieval MUST be reachable through a port with **no implementation in this
-  Epic**, so a provider can be integrated rather than rebuilt.
-- **FR-CTX-012**: Where no retrieval capability is bound, assembly MUST **refuse** and name the
-  unbound capability. It MUST NOT assemble an unranked package.
-- **FR-CTX-013**: No retrieval provider MAY be named in this Epic's data model (`PP-006`).
+- **FR-CTX-011**: This Epic MUST **implement** semantic retrieval — indexing, embedding and
+  ranking — rather than integrating a provider *(clarified 2026-08-31)*.
+- **FR-CTX-012**: Where the index is unavailable or has never been built, assembly MUST **refuse**
+  and say which of the two it is. It MUST NOT assemble an unranked package.
+- **FR-CTX-013**: The **embedding model MUST sit behind a boundary** and MUST NOT be named in this
+  Epic's data model (`PP-006`). Building retrieval is not licence to bind the stored record to one
+  vendor's vector shape, which is the part that cannot be swapped later.
 - **FR-CTX-014**: Retrieved candidates MUST carry the relevance score that ranked them.
+- **FR-CTX-015**: The approved source set MUST comprise **governed documents** — specifications,
+  requirements, baselines and decisions — **and execution history** recorded under Constitution XII
+  *(clarified 2026-08-31)*. Source code and imported external documents are **out of scope**.
+- **FR-CTX-016**: Every index entry MUST record the source **version** it was built from.
+- **FR-CTX-017**: Where a source has changed since its entry was built, the entry MUST be treated as
+  **stale** and marked so. A stale entry MUST NOT be ranked as though it were current.
+- **FR-CTX-018**: Re-indexing MUST be incremental: one changed source MUST NOT require rebuilding
+  the corpus.
 
 **Live state (`BR-0092`)**
 
@@ -232,6 +272,11 @@ to permissions.
 - **FR-CTX-036**: Budget policy and source classes MUST be configuration, not code.
 - **FR-CTX-037**: Where the budget admits nothing, assembly MUST refuse rather than return an empty
   package.
+- **FR-CTX-038**: A candidate MAY be marked **essential** for the objective.
+- **FR-CTX-039**: Where an essential item is excluded for **any** reason — budget, permission,
+  classification or boundary — assembly MUST **refuse**, naming the item and the reason
+  *(clarified 2026-08-31)*. Proceeding without material somebody deemed essential produces a
+  session that looks ordinary and was not.
 
 **Provenance (`BR-0094`)**
 
@@ -264,11 +309,18 @@ to permissions.
 - **FR-CTX-064**: Each item MUST carry **why it was included** — the objective term or rule that
   selected it (`PP-016`).
 - **FR-CTX-065**: A refused package MUST be inspectable, showing the refusal and its reason.
+- **FR-CTX-066**: A package MUST be retained for **at least as long as the execution it fed**,
+  inheriting that record's retention *(clarified 2026-08-31)*. A shorter retention would leave
+  executions that are still auditable whose context has gone.
 
-**The Room surface** *(from the shared Room pattern, not §6.10)*
+**The inspection screen** *(from the shared application-shell pattern, not §6.10)*
 
-- **FR-CTX-070**: The Context surface MUST present its regions through the shared `RoomShell`.
-- **FR-CTX-071**: Region names MUST match the shared pattern (`UX-0035`).
+- **FR-CTX-070**: Context MUST be presented as an **inspection screen in its own application area**,
+  **not** as a governed Room *(clarified 2026-08-31)*. No workflow type is declared, and no stages,
+  gates or approval authorities are introduced — a context package is assembled, used and
+  inspected, and moves through no states a person decides on.
+- **FR-CTX-071**: The screen MUST list packages, open one, and show both its items **and its
+  exclusions**.
 - **FR-CTX-072**: Retrieved-and-ranked material MUST be visually distinguishable from recorded fact
   (`UX-0031`).
 - **FR-CTX-073**: What excluded an item MUST be visible without opening another screen (`UX-0032`).
@@ -286,6 +338,8 @@ to permissions.
   filtered one are indistinguishable.
 - **Source Class** — configuration describing a class of approved source and its security
   classification.
+- **Index Entry** — one indexed unit of an approved source, carrying the source version it was
+  built from, so staleness is a fact rather than an assumption.
 - **Reusable Knowledge Authorisation** — the explicit permission that allows one named source to
   cross a tenant or project boundary.
 
@@ -300,38 +354,46 @@ to permissions.
 - **SC-CTX-003**: **Zero** items cross a tenant or project boundary without a named authorisation —
   mutation-tested by removing the boundary check and observing the suite fail.
 - **SC-CTX-004**: **Zero** packages are silently truncated: every bounded package names what it
-  excluded.
+  excluded, and **zero** packages are assembled with an essential item missing.
 - **SC-CTX-005**: **100%** of consequential sessions have an inspectable package or an inspectable
   refusal.
 - **SC-CTX-006**: A reviewer can answer *"what material did this session see?"* from the record
   alone, without asking the person who ran it.
 - **SC-CTX-007**: **Zero** unclassified sources are included by default.
-- **SC-CTX-008**: Assembly refuses, rather than degrading, whenever a required capability is
-  unbound — measured as **zero** packages assembled with an unbound retrieval capability.
+- **SC-CTX-008**: Assembly refuses, rather than degrading, whenever it cannot do its job —
+  measured as **zero** packages assembled while the index is unavailable or unbuilt.
+- **SC-CTX-009**: **Zero** stale index entries are ranked as current.
+- **SC-CTX-010**: A changed source is re-indexed without rebuilding the corpus.
 
 ## Assumptions
 
-Four judgement calls were made rather than asked, because the command carried only `038` and each
-has a defensible default in this repository's established pattern. Each is listed so
-`/speckit-clarify` can overturn it cheaply.
+Four judgement calls were made when this document was first written, because the command carried
+only `038`. **Three were confirmed and one overturned** by the clarification session of
+2026-08-31; the overturned one is recorded here rather than deleted, because the reasoning that
+lost still describes the risk being accepted.
 
-1. **`BR-0091` is satisfied by integration, not by building a retrieval engine.** The requirement
-   says *"provide or integrate"*. This programme's consistent pattern — `EPIC-035`'s
-   `TestExecution`, `EPIC-034`'s `ImpactSource` — is a port with no implementation and a refusal
-   when unbound. Building an embedding and vector-search stack inside this Epic would be the
-   largest unreviewed scope decision in the programme.
-2. **Isolation is adjudicated by `EPIC-024`, not re-implemented** (`FR-CTX-054`). A second access
-   model is a second thing that can be wrong, and `EPIC-032` already refuses to read around
-   artifact access for the same reason.
-3. **"Consequential" is `EPIC-037`'s determination** (`FR-CTX-061`). Defining it here would put two
-   definitions of a governed session in the programme.
-4. **The Room surface is included in scope.** `FR-CTX-060` requires a person to inspect a package;
-   the three sibling Rooms establish the pattern, and an inspection capability reachable only by
-   API would satisfy the letter of `BR-0096` and not its purpose.
+1. **~~`BR-0091` is satisfied by integration~~ — OVERTURNED. This Epic builds retrieval.**
+   The original reasoning: this programme's consistent pattern (`EPIC-035`'s `TestExecution`,
+   `EPIC-034`'s `ImpactSource`) is a port with no implementation and a refusal when unbound, and
+   building an embedding and vector-search stack would be the largest scope decision here.
+   **The decision was taken deliberately with that stated**, so what it commits to is on the
+   record: indexing, embedding, ranking, staleness and incremental re-indexing are now this Epic's
+   to build and to operate. `PP-018` moved from Deferred to Partial as a direct consequence, and
+   `plan.md` owes corpus-scale targets rather than inheriting somebody else's.
+2. **Isolation is adjudicated by `EPIC-024`, not re-implemented** (`FR-CTX-054`) — confirmed. A
+   second access model is a second thing that can be wrong, and `EPIC-032` already refuses to read
+   around artifact access for the same reason.
+3. **"Consequential" is `EPIC-037`'s determination** (`FR-CTX-061`) — confirmed. Defining it here
+   would put two definitions of a governed session in the programme.
+4. **A person can inspect a package through a screen** (`FR-CTX-070`) — confirmed, and narrowed:
+   an inspection screen in its own area rather than a governed Room. An inspection capability
+   reachable only by API would satisfy the letter of `BR-0096` and not its purpose.
 
-**Dependencies**: `EPIC-024` (access), `EPIC-032` (evidence and attestation shape), `EPIC-033`
-(`room-contract`, `RoomShell`), `EPIC-037` (execution registration), `EPIC-019` (steering
-constraints — the nearest existing owner, which governs constraints but not assembly).
+**Dependencies**: `EPIC-024` (access), `EPIC-032` (evidence and attestation shape), `EPIC-036`
+(the application shell this screen is an area of — **not** `EPIC-033`'s `RoomShell`, since
+`FR-CTX-070` declares no Room), `EPIC-037` (execution registration, and the history this Epic
+indexes), `EPIC-019` (steering constraints — the nearest existing owner, which governs constraints
+but not assembly).
 
 ## Epic Exit Criteria *(mandatory — Constitution IV, V, VI, IX)*
 

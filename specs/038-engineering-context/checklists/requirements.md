@@ -31,34 +31,45 @@
 
 ## Notes
 
-**Validation run 2026-08-31. All items pass.** Three were checked more carefully than the rest,
-because this specification was derived from a source document rather than from a description the
-requester typed — the invocation carried only `038`.
+**Re-validated 2026-08-31 after `/speckit-clarify`. All 16 items still pass — 16/16 → 16/16, no
+state changes.** The notes below are rewritten because the reasoning behind two of them changed.
 
-**"No [NEEDS CLARIFICATION] markers remain"** — none were written, and that is a decision rather
-than a happy accident. Four judgement calls were required; each had a defensible default in this
-repository's established pattern, so each is recorded under **Assumptions** with the reasoning that
-chose it. The most consequential is the first: `BR-0091` says *"provide or integrate"* semantic
-retrieval, and this specification reads that as **integrate**. If that is wrong, it is the largest
-scope change available here, and `/speckit-clarify` should overturn it before `/speckit-plan`.
+**"No [NEEDS CLARIFICATION] markers remain"** — still true, and now for a better reason. The first
+validation passed this item because four judgement calls had defensible defaults recorded under
+Assumptions. A clarification session has since put all four to the requester: **three confirmed,
+one overturned.**
 
-**"No implementation details"** — `FR-CTX-013` explicitly forbids naming a retrieval provider in
-the data model, so the specification states a prohibition on implementation detail rather than
-containing one. The token/cost budget in `FR-CTX-031` is a business constraint from `BR-0093`, not
-a technical one.
+**The overturned one is the largest decision in the Epic.** `BR-0091` says *"provide or integrate"*
+semantic retrieval; the specification assumed *integrate*, and the answer was **build**. That is
+recorded in Assumptions with the original reasoning struck through rather than deleted, because the
+reasoning that lost still describes the risk being accepted: indexing, embedding, ranking,
+staleness and incremental re-indexing are now this Epic's to build **and to operate**.
 
-**"Success criteria are technology-agnostic"** — `SC-CTX-006` is deliberately phrased as a question
-a person can answer (*"what material did this session see?"*) rather than as a system property,
-because `BR-0096` is about a reviewer's ability and not about an endpoint's existence.
+**"Scope is clearly bounded"** — materially stronger than at first validation. The approved source
+set was previously the undefined phrase *"approved project engineering sources"*, inherited from
+`BR-0091`. It is now `FR-CTX-015`: governed documents plus execution history, with source code and
+imported external documents explicitly **out of scope**.
 
-### Carried forward from the superseded declaration
+**"Requirements are testable and unambiguous"** — three ambiguities closed that the first pass had
+left as reasonable-sounding prose: what happens when the budget cannot fit essential material
+(`FR-CTX-038`, `FR-CTX-039`), how long a package survives (`FR-CTX-066`), and whether Context is a
+governed Room or a screen (`FR-CTX-070`).
 
-The ownership declaration of 2026-08-25 recorded three things this specification preserves rather
-than discards: the project owner's authorisation, the scheduling condition (satisfied — `EPIC-033`
-is complete), and the rule that requirement identifiers stay authoritative in PMI-DOC-004 and are
-pointed at rather than restated.
+**"No implementation details"** — re-checked deliberately, because building retrieval is exactly
+the decision that invites them in. `FR-CTX-013` still forbids naming the embedding model in the
+data model, so the specification states a prohibition on implementation detail rather than
+containing one. No index format, store or algorithm is named.
 
-### Recommended before planning
+### Consequences carried into planning
 
-`/speckit-clarify 038` — for the retrieval scope decision above, and because a specification
-derived from a source rather than from a stated intent has had no one confirm the intent.
+- `PP-018` **Scalability** moved from *Deferred* to *Partial*: corpus scale is now this Epic's
+  problem, not a later Epic's, and `plan.md` owes targets rather than inheriting them.
+- `PP-005` and `PP-007` were corrected — the first said retrieval was implemented elsewhere, the
+  second referred to a Room that no longer exists.
+- The dependency on `EPIC-033`'s `RoomShell` was replaced by one on `EPIC-036`'s application shell,
+  since `FR-CTX-070` declares no Room.
+
+### Recommended next command
+
+`/speckit-plan` — the specification is unambiguous and the requester has confirmed its scope.
+`plan.md` owes the retrieval design and the corpus-scale targets `PP-018` now requires.

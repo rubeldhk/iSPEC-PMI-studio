@@ -48,7 +48,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-035](../specs/035-defect-room/) | Defect Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-036](../specs/036-application-shell/) | Application Shell & Dashboard | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-037](../specs/037-governed-execution-registry/) | Governed Execution Registry | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
-| [EPIC-038](../specs/038-engineering-context/) | Engineering Context | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-038](../specs/038-engineering-context/) | Engineering Context | delivery | Checklisted | stalled | Not ready | `/speckit-plan` |
 | [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-040](../specs/040-metrics-reporting/) | Metrics \& Reporting | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 
@@ -59,4 +59,3 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | Epic | Finding | Severity |
 |---|---|---|
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-038 | Checklisted evidence present without the stage before it — stage held at Specified | report |
