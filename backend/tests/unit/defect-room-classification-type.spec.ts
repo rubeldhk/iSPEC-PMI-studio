@@ -127,6 +127,21 @@ describe('T997e · the mapping is total by construction', () => {
     expect(/default\s*:/.test('  default: return DEFECT_ROOM;')).toBe(true);
   });
 
+  it('and `destination` is not nullable on the Classification itself', () => {
+    // The other half of the hole `T999n(a)` found. A total `Record` guarantees
+    // every OUTCOME has a destination; it says nothing about whether a stored
+    // classification must carry one. `string | null` satisfies every other
+    // assertion in this file while letting a row rest with nowhere to go.
+    expect(CODE).toMatch(/readonly destination: string;/);
+    expect(CODE).not.toMatch(/readonly destination: string \| null/);
+  });
+
+  it('the nullable-destination check can fire', () => {
+    expect(/readonly destination: string \| null/.test('  readonly destination: string | null;')).toBe(
+      true,
+    );
+  });
+
   it('and the Record is declared over the outcome type', () => {
     // The positive half: absence of a switch is not the same as presence of a
     // total mapping.

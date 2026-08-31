@@ -132,6 +132,18 @@ suite('T997u · the Defect Room refuses at the database', () => {
       );
     });
 
+    it('and refuses a NULL destination outright', async () => {
+      // The hole `T999n(a)`'s mutation found. The two cases above prove a WRONG
+      // destination is refused; neither tried an absent one, so relaxing the
+      // column to nullable passed the whole file. A classification resting with
+      // nowhere to go is exactly what `FR-DFR-077` forbids, and it looks
+      // complete from every direction except this one.
+      const d = await defect();
+      await expect(classify(d, { destination: null })).rejects.toThrow(
+        /destination|not-null|violates/i,
+      );
+    });
+
     it('accepts each outcome with its own destination', async () => {
       // All three, so the constraint is shown admitting the whole mapping
       // rather than one row of it.

@@ -160,6 +160,30 @@ describe('T998u · a passing run raises a check, and offers exactly three ways o
     });
     expect(await store.evidenceChecksFor('ws_1', 'df_1')).toHaveLength(0);
   });
+
+  it('and the answer it gives carries no choice either', async () => {
+    // The hole `T999m`'s mutation found: the assertion above proves nothing was
+    // WRITTEN, and a raise that RETURNS a suggested path passes it while every
+    // screen rendering the response shows one pre-selected. That is the
+    // automatic reclassification arriving through the caller instead of through
+    // the store — `SC-DFR-004` counts it the same way.
+    const { subject } = await room();
+    const raised = await subject.raise({
+      workspaceId: 'ws_1',
+      defectId: 'df_1',
+      testId: 'dt_1',
+      outcome: 'pass',
+      evidenceRef: 'ev_run_1',
+    });
+
+    expect(Object.keys(raised)).toEqual(['paths']);
+    expect(JSON.stringify(raised)).not.toMatch(/chosen|selected|recommend|suggest|default/i);
+  });
+
+  it('the no-choice check can fire', () => {
+    // The control. Without it a broken matcher would pass every response.
+    expect(JSON.stringify({ paths: [], autoChosen: 'reclassify' })).toMatch(/chosen/i);
+  });
 });
 
 describe('T998u · the path is chosen by a person, and recorded', () => {
