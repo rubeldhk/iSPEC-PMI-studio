@@ -42,6 +42,7 @@ import {
 import { DEFECT_ROOM_PORTS, DEFECT_ROOM_STORE } from './defect-room.tokens.js';
 import { DefectRoutingService, RoutingResolver } from './routing.service.js';
 import { DefectIntakeService } from './intake.service.js';
+import { RepairService } from './repair.service.js';
 import {
   DefectAnalyticsService,
   DefectBlockersService,
@@ -124,6 +125,25 @@ export class DefectRoomService {
       inject: [DEFECT_ROOM_STORE, DefectAnalyticsService],
     },
     {
+      provide: RepairService,
+      /**
+       * `FR-DFR-050` — bound with **both** its ports unfilled, and that is the
+       * honest state rather than an oversight.
+       *
+       * `RepairTaskPort`'s only permitted backing is `EPIC-012`'s
+       * `TaskStore.createMany` (`R-035-2`), and `TASK_STORE` is bound in
+       * `tasks.module.ts` to `InMemoryTaskStore`. Wiring to it would create
+       * repair tasks that vanish on restart — `T1178`'s failure, in the one
+       * place where the record IS that somebody was asked to fix something.
+       * Refusing is worse for nobody and honest about what exists.
+       *
+       * `ChainLinkPort` needs `EPIC-011`'s writer through an adapter this Epic
+       * has no route to exercise while the first port refuses.
+       */
+      useFactory: (store: DefectRoomStore): RepairService => new RepairService(store),
+      inject: [DEFECT_ROOM_STORE],
+    },
+    {
       provide: TriageService,
       /**
        * Bound with `BaselineReader` **unfilled**, which is the honest state.
@@ -138,8 +158,13 @@ export class DefectRoomService {
        * A permissive default here would be invisible at the call site and
        * wrong in the same direction every time.
        */
-      useFactory: (store: DefectRoomStore): TriageService => new TriageService(store, undefined),
-      inject: [DEFECT_ROOM_STORE],
+      useFactory: (store: DefectRoomStore, repairs: RepairService): TriageService =>
+        // `US7` scenario 4 — the orphan port IS bound. Unbound, a
+        // reclassification would leave repair tasks pointing at a defect that
+        // no longer claims to be one, and a backlog item for a change nobody
+        // approved gets worked with every artifact looking correct.
+        new TriageService(store, undefined, repairs),
+      inject: [DEFECT_ROOM_STORE, RepairService],
     },
     {
       provide: DefectTestService,
@@ -231,6 +256,7 @@ export class DefectRoomService {
   ],
   exports: [
     DefectIntakeService,
+    RepairService,
     DefectBlockersService,
     DefectAnalyticsService,
     DefectRoomService,

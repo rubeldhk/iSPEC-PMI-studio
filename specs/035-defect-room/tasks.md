@@ -329,11 +329,21 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 12 and 13
 
-- [ ] T999g [P] [US7] Write failing unit tests for repair conversion in `backend/tests/unit/defect-room-repair.spec.ts` — a confirmed defect becomes `EPIC-012` `TaskRecord` rows, each reachable from the defect **and its test**; conversion before classification is **refused** (`FR-DFR-050`, `FR-DFR-051`, `FR-DFR-052`, `SC-DFR-012`)
-- [ ] T999h [US7] Implement `backend/src/modules/defect-room/repair.service.ts` and `POST /rooms/defect/:id/repair-tasks` (unit test: T999g; integration test: T997v) — creates through `TaskStore.createMany` and writes the chain through `EPIC-011`'s `LinkWriterService`; **`GenerateTasksService` is banned** because it derives tasks from specification text through an engine and stamps that engine's name on them (`R-035-2`)
-- [ ] T999i [P] [US7] Write failing unit tests for the provenance sentinel in `backend/tests/unit/defect-room-task-provenance.spec.ts` — `engineName`/`engineVersion` are non-optional on `TaskRecord` and a repair task has no engine, so the documented sentinel is asserted **so it cannot drift into looking like a real engine name** (`R-035-3`, `BR-0151` is `U-12`)
-- [ ] T999j [P] [US7] Write failing unit tests for orphaning in `backend/tests/unit/defect-room-repair-orphaning.spec.ts` — a defect reclassified after tasks exist marks the `RepairLink` rows, so **the tasks and the reclassification are both visible** and neither is deleted (`FR-DFR-025`, `US7` scenario 4)
-- [ ] T999k [US7] Implement the sentinel and orphan marking in `backend/src/modules/defect-room/repair.service.ts` (unit tests: T999i, T999j)
+- [X] T999g [P] [US7] Write failing unit tests for repair conversion in `backend/tests/unit/defect-room-repair.spec.ts` — a confirmed defect becomes `EPIC-012` `TaskRecord` rows, each reachable from the defect **and its test**; conversion before classification is **refused** (`FR-DFR-050`, `FR-DFR-051`, `FR-DFR-052`, `SC-DFR-012`)
+- [X] T999h [US7] Implement `backend/src/modules/defect-room/repair.service.ts` and `POST /rooms/defect/:id/repair-tasks` (unit test: T999g; integration test: T997v) — creates through `TaskStore.createMany` and writes the chain through `EPIC-011`'s `LinkWriterService`; **`GenerateTasksService` is banned** because it derives tasks from specification text through an engine and stamps that engine's name on them (`R-035-2`)
+- [X] T999i [P] [US7] Write failing unit tests for the provenance sentinel in `backend/tests/unit/defect-room-task-provenance.spec.ts` — `engineName`/`engineVersion` are non-optional on `TaskRecord` and a repair task has no engine, so the documented sentinel is asserted **so it cannot drift into looking like a real engine name** (`R-035-3`, `BR-0151` is `U-12`)
+- [X] T999j [P] [US7] Write failing unit tests for orphaning in `backend/tests/unit/defect-room-repair-orphaning.spec.ts` — a defect reclassified after tasks exist marks the `RepairLink` rows, so **the tasks and the reclassification are both visible** and neither is deleted (`FR-DFR-025`, `US7` scenario 4)
+- [X] T999k [US7] Implement the sentinel and orphan marking in `backend/src/modules/defect-room/repair.service.ts` (unit tests: T999i, T999j)
+
+*Four deviations recorded 2026-08-31, in `T999h`/`T999k`:*
+
+*(a) **`RepairTaskPort` is bound to nothing, deliberately.** `R-035-2` names its only permitted backing as `EPIC-012`'s `TaskStore.createMany`, and `TASK_STORE` is bound in `tasks.module.ts` to `InMemoryTaskStore`. Wiring to it would create repair tasks that vanish on restart — `T1178`'s failure, in the one record whose purpose is to show somebody was asked to fix something. The route exists and refuses, naming the Epic that owes the binding. **`TASK_STORE`'s in-memory binding is a named unowned dependency for the closing report.***
+
+*(b) **A `ChainLinkPort` the task list does not name.** `T999h` requires the chain to be written through `EPIC-011`'s `LinkWriterService`, and a `RepairLink` row is readable only inside this Room. The port is checked **before** anything is created: a chain writer discovered missing afterwards would leave tasks in `EPIC-012` that nothing outside this Room can trace — `FR-DFR-050`'s failure arrived at by being half-finished rather than by being wrong.*
+
+*(c) **Two new traceability edges, named in `link-constraints.spec.ts`.** `task → defect` and `test → defect`, with `defect` added to `NON_CHAIN_ARTIFACT_TYPES`. `defect` follows `change`: **never a source**, because a defect does not derive from the work that fixed it. The enumerated-edge test refused the addition until both were named, which is the guard working as designed.*
+
+*(d) **A confirmed defect with no failing test cannot be converted.** `RepairLink.defectTestId` is `NOT NULL` and `FR-DFR-050` links each task to the failing behaviour **and its test**, so there is nothing to link. The consequence worth stating: a defect recorded `not-automatable` under `FR-DFR-043` has no test row and therefore **no repair-conversion path**. That is what the schema and the requirement say together; it is recorded here rather than worked around.*
 
 **Checkpoint**: all seven user stories demonstrable
 

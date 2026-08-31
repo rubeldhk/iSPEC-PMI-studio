@@ -18,6 +18,7 @@ import { DEFECT_ROOM_STORE } from './defect-room.tokens.js';
 import type { DefectRoomStore } from './defect-room.store.js';
 import { TriageService, type ReevaluateInput, type TriageInput } from './triage.service.js';
 import { DefectIntakeService, type IntakeInput } from './intake.service.js';
+import { RepairService } from './repair.service.js';
 import {
   DefectAnalyticsService,
   DefectBlockersService,
@@ -109,6 +110,7 @@ export class DefectRoomController {
     @Inject(DefectRoutingService) private readonly routing: DefectRoutingService,
     @Inject(EvidenceCheckService) private readonly evidenceChecks: EvidenceCheckService,
     @Inject(DefectIntakeService) private readonly intake: DefectIntakeService,
+    @Inject(RepairService) private readonly repairs: RepairService,
     @Inject(DefectAnalyticsService) private readonly analytics: DefectAnalyticsService,
     @Inject(DefectBlockersService) private readonly blockers: DefectBlockersService,
     @Inject(DEFECT_ROOM_STORE) private readonly store: DefectRoomStore,
@@ -214,6 +216,38 @@ export class DefectRoomController {
   ): Promise<unknown> {
     const principal = requireAuth(ctx);
     return this.blockers.blockersFor(principal.workspaceId, id);
+  }
+
+  /**
+   * `FR-DFR-050`, `FR-DFR-052` — a confirmed defect becomes repair work.
+   *
+   * `BR-0055` calls this the bridge where traceability is usually lost, and the
+   * route exists in the commit that implements the service for that reason: a
+   * conversion nobody can invoke is a bridge to nowhere.
+   *
+   * It refuses in this deployment, and says which Epic owes the binding.
+   * `EPIC-012`'s `TASK_STORE` is in-memory, so wiring to it would create repair
+   * tasks that vanish on restart — in the one record whose whole purpose is to
+   * show somebody was asked to fix something.
+   */
+  @Post('rooms/defect/:id/repair-tasks')
+  createRepairTasks(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const { specificationId, descriptions } = strip(body) as {
+      specificationId?: string;
+      descriptions?: string[];
+    };
+    return this.repairs.createRepairTasks({
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      specificationId: specificationId ?? '',
+      requestedBy: principal.userId,
+      descriptions: descriptions ?? [],
+    });
   }
 
   @Get('rooms/defect/held')

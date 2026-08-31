@@ -527,6 +527,42 @@ suite('T998r · decline, return and gap routing', () => {
  * the note has to survive serialisation, and a `Object.freeze`d nested array is
  * exactly the kind of thing that quietly does not.
  */
+suite('T999h · POST /rooms/defect/:id/repair-tasks', () => {
+  it('refuses with no session', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/repair-tasks`)
+      .send({ specificationId: 'spec_1', descriptions: ['fix it'] });
+    expect(res.status).toBe(401);
+  });
+
+  it('refuses conversion of a defect nobody has classified', async () => {
+    // `FR-DFR-052`, `SC-DFR-012` — zero before classification, and the route
+    // says so rather than creating tasks somebody would then have to unpick.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/repair-tasks`)
+      .set('Cookie', harness.cookie)
+      .send({ specificationId: 'spec_1', descriptions: ['fix it'] });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/FR-DFR-052|classif/i);
+  });
+
+  it('and an empty task list', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/repair-tasks`)
+      .set('Cookie', harness.cookie)
+      .send({ specificationId: 'spec_1', descriptions: [] });
+    expect(res.status).toBe(400);
+  });
+
+  it('a defect nobody may see is absent rather than forbidden', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/df_nothing/repair-tasks`)
+      .set('Cookie', harness.cookie)
+      .send({ specificationId: 'spec_1', descriptions: ['fix it'] });
+    expect(res.status).toBe(404);
+  });
+});
+
 suite('T999f · GET /rooms/defect/analytics', () => {
   it('refuses with no session', async () => {
     const res = await request(app.getHttpServer()).get(`/${PREFIX}/rooms/defect/analytics`);

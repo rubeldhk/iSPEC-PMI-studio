@@ -47,7 +47,7 @@ export const CHAIN_STAGES = [
  * So it joins the type without joining the sequence, and appears only as an
  * edge TARGET (`FR-CHR-064`).
  */
-export const NON_CHAIN_ARTIFACT_TYPES = ['change'] as const;
+export const NON_CHAIN_ARTIFACT_TYPES = ['change', 'defect'] as const;
 
 export type TraceArtifactType =
   | (typeof CHAIN_STAGES)[number]
@@ -127,6 +127,13 @@ export const PERMITTED_EDGES: readonly { sourceType: TraceArtifactType; targetTy
   { sourceType: 'specification', targetType: 'change' },
   { sourceType: 'task', targetType: 'change' },
   { sourceType: 'test', targetType: 'change' },
+  // `FR-DFR-050` (EPIC-035) — repair work traces back to the defect it fixes,
+  // and the failing test traces to the defect it proved. `defect` follows
+  // `change`: never a source. A defect does not derive from the work that
+  // fixed it, and an edge that way would put it in the derivation chain by the
+  // back door — which is what `BR-0055` loses when the bridge is built wrong.
+  { sourceType: 'task', targetType: 'defect' },
+  { sourceType: 'test', targetType: 'defect' },
 ];
 
 export function assertPermittedEdge(sourceType: TraceArtifactType, targetType: TraceArtifactType): void {

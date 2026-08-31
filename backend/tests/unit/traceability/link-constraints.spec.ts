@@ -22,7 +22,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const schema = readFileSync(resolve(here, '../../../prisma/schema.prisma'), 'utf8');
 
 describe('the permitted edges (FR-029 + FR-ENH-021, widened by EPIC-022 T302)', () => {
-  it('are exactly the two Phase 1 edges, the ten chain-adjacent pairs, and the three change edges', () => {
+  it('are exactly the two Phase 1 edges, the ten chain-adjacent pairs, the three change edges, and the two defect edges', () => {
     expect(PERMITTED_EDGES.map((e) => `${e.sourceType}->${e.targetType}`).sort()).toEqual(
       [
         'specification->requirement',
@@ -43,6 +43,11 @@ describe('the permitted edges (FR-029 + FR-ENH-021, widened by EPIC-022 T302)', 
         'specification->change',
         'task->change',
         'test->change',
+        // `EPIC-035` `FR-DFR-050` — repair work traces back to the defect it
+        // fixes, and the failing test to the defect it proved. Named here for
+        // the same reason: an edge nobody enumerated is an edge nobody decided.
+        'task->defect',
+        'test->defect',
       ].sort(),
     );
   });

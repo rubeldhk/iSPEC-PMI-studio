@@ -121,10 +121,25 @@ function destinationColumnFor(outcome: ClassificationOutcome): string {
 /** States in which implementation work has begun or finished. */
 const WORK_STARTED = new Set(['repairing', 'verifying', 'closed', 'routed']);
 
+/**
+ * `US7` scenario 4 — what to do about repair tasks when a judgement changes.
+ *
+ * A one-method view of `RepairService`, declared here so the composition lives
+ * in the domain rather than in a controller. Optional: a deployment with no
+ * repair conversion has no links to cut loose. The Room binds it (`T997v`
+ * asserts the composed service carries one), because the failure this prevents
+ * is silent — a backlog item for a change nobody approved, worked to
+ * completion, with every artifact looking correct.
+ */
+export interface RepairOrphanPort {
+  orphanFor(workspaceId: string, defectId: string, classificationId: string): Promise<unknown>;
+}
+
 export class TriageService {
   constructor(
     private readonly store: DefectRoomStore,
     private readonly baselines?: BaselineReaderPort | undefined,
+    private readonly repairs?: RepairOrphanPort | undefined,
   ) {}
 
   async triage(input: TriageInput): Promise<TriageResult> {
@@ -197,6 +212,20 @@ export class TriageService {
     // method refuses outright. In this order the worst case is two live rows,
     // which is visible and repairable.
     await this.store.markSuperseded(input.workspaceId, previous.id, classification.id, new Date());
+
+    if (classification.outcome !== 'confirmed-defect') {
+      // `FR-DFR-025`, `US7` scenario 4. The defect is no longer a defect, so
+      // any repair tasks it produced are cut loose — MARKED, never deleted.
+      // Deleting them would make the record say it was always a change
+      // request, with nothing to show people were asked to fix it; leaving
+      // them unmarked lets a backlog item for a change nobody approved get
+      // worked, with every artifact looking correct.
+      //
+      // Only when the outcome actually moved away from a confirmed defect. A
+      // re-evaluation that still confirms it must not cut loose the tasks for
+      // a defect somebody is still repairing.
+      await this.repairs?.orphanFor(input.workspaceId, defect.id, classification.id);
+    }
 
     return { classification, destination: DESTINATIONS[classification.outcome] };
   }

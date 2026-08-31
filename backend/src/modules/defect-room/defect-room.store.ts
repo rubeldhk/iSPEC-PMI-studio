@@ -131,6 +131,24 @@ export interface EvidenceCheckRow {
   readonly createdAt: Date;
 }
 
+/**
+ * `R-035-3` — the link `TaskRecord` has nowhere to put.
+ *
+ * `EPIC-012`'s row is created unmodified; this is where the defect and the test
+ * that proved it are recorded, on this Room's side of the boundary.
+ */
+export interface RepairLinkRow {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly defectId: string;
+  /** `FR-DFR-050` — NOT NULL. Repair work traces to the test that proved it. */
+  readonly defectTestId: string;
+  readonly taskId: string;
+  /** `US7` scenario 4 — set when a reclassification cuts these tasks loose. */
+  readonly orphanedByClassificationId: string | null;
+  readonly createdAt: Date;
+}
+
 export interface DefectRoomStore {
   createDefect(row: DefectRow): Promise<DefectRow>;
   findDefect(workspaceId: string, id: string): Promise<DefectRow | null>;
@@ -148,6 +166,22 @@ export interface DefectRoomStore {
 
   /** `SC-DFR-006` — what is held, without opening every record. */
   heldForTriage(workspaceId: string): Promise<readonly DefectRow[]>;
+
+  /** `FR-DFR-050` — one row per repair task, linking it to the defect and test. */
+  recordRepairLink(row: RepairLinkRow): Promise<RepairLinkRow>;
+  repairLinksFor(workspaceId: string, defectId: string): Promise<readonly RepairLinkRow[]>;
+  /**
+   * `FR-DFR-025`, `US7` scenario 4 — mark, never delete.
+   *
+   * Marks only rows not already cut loose: the first classification that
+   * orphaned them is the honest answer, and a later one overwriting it would
+   * claim the tasks survived until then.
+   */
+  orphanRepairLinks(
+    workspaceId: string,
+    defectId: string,
+    classificationId: string,
+  ): Promise<readonly RepairLinkRow[]>;
 
   /**
    * `FR-DFR-025` — append-only.
@@ -236,6 +270,7 @@ export interface DefectRoomStore {
 export class InMemoryDefectRoomStore implements DefectRoomStore {
   readonly #defects = new Map<string, DefectRow>();
   readonly #classifications: Classification[] = [];
+  #repairLinks: RepairLinkRow[] = [];
   readonly #tests: DefectTestRow[] = [];
   readonly #reproductions: ReproductionRow[] = [];
   readonly #routings: RoutingRow[] = [];
@@ -274,6 +309,38 @@ export class InMemoryDefectRoomStore implements DefectRoomStore {
     return [...this.#defects.values()].filter(
       (row) => row.workspaceId === workspaceId && row.state === 'held-for-triage',
     );
+  }
+
+  async recordRepairLink(row: RepairLinkRow): Promise<RepairLinkRow> {
+    this.#repairLinks.push(row);
+    return row;
+  }
+
+  async repairLinksFor(workspaceId: string, defectId: string): Promise<readonly RepairLinkRow[]> {
+    return this.#repairLinks.filter(
+      (row) => row.workspaceId === workspaceId && row.defectId === defectId,
+    );
+  }
+
+  async orphanRepairLinks(
+    workspaceId: string,
+    defectId: string,
+    classificationId: string,
+  ): Promise<readonly RepairLinkRow[]> {
+    const marked: RepairLinkRow[] = [];
+    this.#repairLinks = this.#repairLinks.map((row) => {
+      if (
+        row.workspaceId !== workspaceId ||
+        row.defectId !== defectId ||
+        row.orphanedByClassificationId !== null
+      ) {
+        return row;
+      }
+      const next = { ...row, orphanedByClassificationId: classificationId };
+      marked.push(next);
+      return next;
+    });
+    return marked;
   }
 
   async recordClassification(row: Classification): Promise<Classification> {

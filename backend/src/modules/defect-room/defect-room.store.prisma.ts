@@ -24,6 +24,7 @@
  * remembering not to use it.
  */
 import type { Classification } from './classification.types.js';
+import type { RepairLinkRow } from './defect-room.store.js';
 import type {
   Bucket,
   EscapeAggregate,
@@ -46,6 +47,7 @@ interface Delegate {
   findFirst(args: unknown): Promise<unknown>;
   findMany(args: unknown): Promise<unknown[]>;
   update(args: unknown): Promise<unknown>;
+  updateMany(args: unknown): Promise<unknown>;
 }
 
 /**
@@ -69,6 +71,7 @@ export interface DefectRoomPrismaClient {
   readonly reproduction: Delegate;
   readonly routing: Delegate;
   readonly evidenceCheck: Delegate;
+  readonly repairLink: Delegate;
 }
 
 /** `carriedEvidenceRefs` is a JSON column, narrowed on the way out. */
@@ -321,6 +324,38 @@ export class PrismaDefectRoomStore implements DefectRoomStore {
     if (!existing) throw new Error(`no routing ${id}`);
     return toRouting(await this.prisma.routing.update({ where: { id }, data }));
   }
+  async recordRepairLink(row: RepairLinkRow): Promise<RepairLinkRow> {
+    return (await this.prisma.repairLink.create({ data: row })) as RepairLinkRow;
+  }
+
+  async repairLinksFor(workspaceId: string, defectId: string): Promise<readonly RepairLinkRow[]> {
+    return (await this.prisma.repairLink.findMany({
+      where: { workspaceId, defectId },
+      orderBy: { createdAt: 'asc' },
+    })) as RepairLinkRow[];
+  }
+
+  /**
+   * `US7` scenario 4 — `updateMany` over the rows not already cut loose.
+   *
+   * The predicate carries `orphanedByClassificationId: null`, so a second
+   * reclassification cannot overwrite the first one's answer. Nothing here
+   * deletes, and `taskId` and `defectTestId` are never in the `data`.
+   */
+  async orphanRepairLinks(
+    workspaceId: string,
+    defectId: string,
+    classificationId: string,
+  ): Promise<readonly RepairLinkRow[]> {
+    await this.prisma.repairLink.updateMany({
+      where: { workspaceId, defectId, orphanedByClassificationId: null },
+      data: { orphanedByClassificationId: classificationId },
+    });
+    return (await this.prisma.repairLink.findMany({
+      where: { workspaceId, defectId, orphanedByClassificationId: classificationId },
+    })) as RepairLinkRow[];
+  }
+
   async recordEvidenceCheck(row: EvidenceCheckRow): Promise<EvidenceCheckRow> {
     return (await this.prisma.evidenceCheck.create({ data: row })) as EvidenceCheckRow;
   }
