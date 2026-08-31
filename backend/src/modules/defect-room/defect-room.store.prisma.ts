@@ -24,7 +24,12 @@
  * remembering not to use it.
  */
 import type { Classification } from './classification.types.js';
-import type { DefectRoomStore, DefectRow } from './defect-room.store.js';
+import type {
+  DefectRoomStore,
+  DefectRow,
+  DefectTestRow,
+  ReproductionRow,
+} from './defect-room.store.js';
 
 /** The Prisma surface this store uses, named rather than imported (PC-1). */
 interface Delegate {
@@ -37,6 +42,26 @@ interface Delegate {
 export interface DefectRoomPrismaClient {
   readonly defectRecord: Delegate;
   readonly classification: Delegate;
+  readonly defectTest: Delegate;
+  readonly reproduction: Delegate;
+}
+
+/**
+ * `evidenceRefs` is a JSON column, so it arrives as `unknown`.
+ *
+ * Narrowed on the way out rather than trusted: a row written by an older shape
+ * would otherwise reach `FR-DFR-043`'s "alternative evidence is required" as
+ * something that is not a list, and `length > 0` on a non-array is how an
+ * exception with no evidence starts passing the check that exists to stop it.
+ */
+function toReproduction(row: unknown): ReproductionRow {
+  const record = row as ReproductionRow & { evidenceRefs: unknown };
+  return {
+    ...record,
+    evidenceRefs: Array.isArray(record.evidenceRefs)
+      ? (record.evidenceRefs as string[])
+      : [],
+  };
 }
 
 export class PrismaDefectRoomStore implements DefectRoomStore {
@@ -120,5 +145,62 @@ export class PrismaDefectRoomStore implements DefectRoomStore {
       orderBy: { createdAt: 'asc' },
     })) as Classification[];
     return rows.length === 0 ? null : rows[rows.length - 1]!;
+  }
+
+  async recordTest(row: DefectTestRow): Promise<DefectTestRow> {
+    return (await this.prisma.defectTest.create({ data: row })) as DefectTestRow;
+  }
+
+  async testsFor(workspaceId: string, defectId: string): Promise<DefectTestRow[]> {
+    return (await this.prisma.defectTest.findMany({
+      where: { workspaceId, defectId },
+      orderBy: { createdAt: 'asc' },
+    })) as DefectTestRow[];
+  }
+
+  /**
+   * The only update this store makes to a test, and it touches two fields.
+   *
+   * `firstObservedFailingAt` is never among them: that instant is the record
+   * `FR-DFR-040` rests on, and a later run cannot change when the defect was
+   * first demonstrated.
+   */
+  async setTestRun(
+    workspaceId: string,
+    id: string,
+    outcome: string,
+    evidenceRef: string | null,
+  ): Promise<DefectTestRow> {
+    const existing = await this.prisma.defectTest.findFirst({ where: { id, workspaceId } });
+    if (!existing) throw new Error(`no defect test ${id}`);
+    return (await this.prisma.defectTest.update({
+      where: { id },
+      data: { lastRunOutcome: outcome, lastRunEvidenceRef: evidenceRef },
+    })) as DefectTestRow;
+  }
+
+  async recordReproduction(row: ReproductionRow): Promise<ReproductionRow> {
+    return toReproduction(
+      await this.prisma.reproduction.create({
+        data: { ...row, evidenceRefs: row.evidenceRefs as unknown },
+      }),
+    );
+  }
+
+  async reproductionsFor(workspaceId: string, defectId: string): Promise<ReproductionRow[]> {
+    const rows = await this.prisma.reproduction.findMany({
+      where: { workspaceId, defectId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return rows.map(toReproduction);
+  }
+
+  /** `FR-DFR-043` — the exception, counted rather than described. */
+  async notAutomatableIn(workspaceId: string): Promise<ReproductionRow[]> {
+    const rows = await this.prisma.reproduction.findMany({
+      where: { workspaceId, reproducible: 'not-automatable' },
+      orderBy: { createdAt: 'asc' },
+    });
+    return rows.map(toReproduction);
   }
 }

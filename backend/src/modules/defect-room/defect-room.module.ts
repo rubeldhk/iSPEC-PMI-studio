@@ -41,6 +41,9 @@ import {
 import { DEFECT_ROOM_PORTS, DEFECT_ROOM_STORE } from './defect-room.tokens.js';
 import { RoutingResolver } from './routing.service.js';
 import { TriageService } from './triage.service.js';
+import { DefectTestService } from './defect-test.service.js';
+import { ReproductionService } from './reproduction.service.js';
+import { VerificationService } from './verification.service.js';
 
 /** Resolvable proof the module is in the graph — `T997v` asks for it by name. */
 export class DefectRoomService {
@@ -85,6 +88,46 @@ export class DefectRoomService {
       inject: [DEFECT_ROOM_STORE],
     },
     {
+      provide: DefectTestService,
+      useFactory: (store: DefectRoomStore): DefectTestService => new DefectTestService(store),
+      inject: [DEFECT_ROOM_STORE],
+    },
+    {
+      provide: ReproductionService,
+      /**
+       * Bound with `EvidenceStore` **unfilled** (`EPIC-032`).
+       *
+       * So every reproduction carrying evidence refuses, and none is stored
+       * under this Room's access rules instead of the artifact's (`FR-DFR-033`,
+       * `BR-0062`, `R-035-7`). This is the route where a user is encouraged to
+       * paste a payload that reproduces a failure (`PP-008`); refusing is the
+       * safe direction to be wrong in.
+       */
+      useFactory: (store: DefectRoomStore): ReproductionService =>
+        new ReproductionService(store, undefined),
+      inject: [DEFECT_ROOM_STORE],
+    },
+    {
+      provide: VerificationService,
+      /**
+       * Bound with **both** seams unfilled, and they are unfilled for different
+       * reasons.
+       *
+       * `TestExecution` has no owner at all (`R-035-1`): `BR-0080` is a gate on
+       * promotion, `EPIC-015` built that gate rather than a service, and
+       * nothing in the programme exposes a callable runner. `EPIC-011`'s chain
+       * source exists but is not wired into this Room's graph yet.
+       *
+       * Either absence refuses, and neither degrades: an unknown regression set
+       * and an empty one must not behave alike (`FR-DFR-064`), and *"we could
+       * not run the tests"* must never resolve to *"the tests passed"*
+       * (`BR-0144`).
+       */
+      useFactory: (store: DefectRoomStore, tests: DefectTestService): VerificationService =>
+        new VerificationService(store, tests, undefined, undefined),
+      inject: [DEFECT_ROOM_STORE, DefectTestService],
+    },
+    {
       provide: RoutingResolver,
       /**
        * Constructed with **no destination ports**, which is the honest state.
@@ -98,6 +141,14 @@ export class DefectRoomService {
       useFactory: (): RoutingResolver => new RoutingResolver({}),
     },
   ],
-  exports: [DefectRoomService, RoutingResolver, TriageService, DEFECT_ROOM_STORE],
+  exports: [
+    DefectRoomService,
+    RoutingResolver,
+    TriageService,
+    DefectTestService,
+    ReproductionService,
+    VerificationService,
+    DEFECT_ROOM_STORE,
+  ],
 })
 export class DefectRoomModule {}

@@ -39,6 +39,45 @@ export interface DefectRow {
   readonly withdrawnReason?: string | null;
 }
 
+/**
+ * `T998h` — the row behind `DefectTest`.
+ *
+ * The domain type in `test-first.types.ts` is what a caller reasons about; this
+ * adds what the table carries: the workspace, and the last run's outcome and
+ * evidence. `lastRunOutcome` starts at `not-run`, which is a third value rather
+ * than a boolean's false — *"nobody has run it"* and *"it failed"* are different
+ * facts, and a boolean would make them the same one.
+ */
+export interface DefectTestRow {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly defectId: string;
+  readonly testRef: string;
+  /** `FR-DFR-042` — the behaviour, not only the defect. */
+  readonly contestedBehaviourRef: string;
+  /** `FR-DFR-040` — NOT NULL. The field the whole requirement rests on. */
+  readonly firstObservedFailingAt: Date;
+  readonly lastRunOutcome: string;
+  readonly lastRunEvidenceRef?: string | null;
+  readonly createdAt: Date;
+}
+
+/** `T998k` — the row behind `Reproduction`. Evidence by reference only. */
+export interface ReproductionRow {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly defectId: string;
+  readonly reproducible: string;
+  readonly environment: string;
+  /** `FR-DFR-032` — ids into `EPIC-032`. Never inline content. */
+  readonly evidenceRefs: readonly string[];
+  readonly affectedBehaviourRef: string;
+  /** `FR-DFR-043` — required exactly when `reproducible` is `not-automatable`. */
+  readonly notAutomatableReason: string | null;
+  readonly observedAt: Date;
+  readonly createdAt: Date;
+}
+
 export interface DefectRoomStore {
   createDefect(row: DefectRow): Promise<DefectRow>;
   findDefect(workspaceId: string, id: string): Promise<DefectRow | null>;
@@ -68,12 +107,45 @@ export interface DefectRoomStore {
   ): Promise<Classification>;
   listClassifications(workspaceId: string, defectId: string): Promise<Classification[]>;
   currentClassification(workspaceId: string, defectId: string): Promise<Classification | null>;
+
+  /** `FR-DFR-040` — the test that was seen to fail. */
+  recordTest(row: DefectTestRow): Promise<DefectTestRow>;
+  testsFor(workspaceId: string, defectId: string): Promise<DefectTestRow[]>;
+  /**
+   * The outcome of the most recent run, and the evidence for it.
+   *
+   * An update rather than a new row, and the one place this store updates a
+   * test: the run history lives in `EPIC-032` as attestations, so a second copy
+   * here would be a history that could disagree with the evidence it cites.
+   * `firstObservedFailingAt` is never touched — that instant is the record.
+   */
+  setTestRun(
+    workspaceId: string,
+    id: string,
+    outcome: string,
+    evidenceRef: string | null,
+  ): Promise<DefectTestRow>;
+
+  /** `FR-DFR-030` — reproducibility, environment, evidence, affected behaviour. */
+  recordReproduction(row: ReproductionRow): Promise<ReproductionRow>;
+  reproductionsFor(workspaceId: string, defectId: string): Promise<ReproductionRow[]>;
+  /**
+   * `FR-DFR-043` — every stated exception in the workspace.
+   *
+   * A query rather than a filter a caller assembles, because "visible and
+   * enumerable" is a requirement and a requirement nobody can call is one
+   * nobody meets. An exception that can only be found by opening every defect
+   * is indistinguishable from a policy.
+   */
+  notAutomatableIn(workspaceId: string): Promise<ReproductionRow[]>;
 }
 
 /** For unit tests and database-less runs. Loses data, and does so visibly. */
 export class InMemoryDefectRoomStore implements DefectRoomStore {
   readonly #defects = new Map<string, DefectRow>();
   readonly #classifications: Classification[] = [];
+  readonly #tests: DefectTestRow[] = [];
+  readonly #reproductions: ReproductionRow[] = [];
 
   async createDefect(row: DefectRow): Promise<DefectRow> {
     this.#defects.set(row.id, row);
@@ -143,5 +215,52 @@ export class InMemoryDefectRoomStore implements DefectRoomStore {
     // absence of a newer one.
     const live = all.filter((row) => row.supersededByClassificationId === null);
     return live.length === 0 ? null : live[live.length - 1]!;
+  }
+
+  async recordTest(row: DefectTestRow): Promise<DefectTestRow> {
+    this.#tests.push(row);
+    return row;
+  }
+
+  async testsFor(workspaceId: string, defectId: string): Promise<DefectTestRow[]> {
+    return this.#tests.filter(
+      (row) => row.workspaceId === workspaceId && row.defectId === defectId,
+    );
+  }
+
+  async setTestRun(
+    workspaceId: string,
+    id: string,
+    outcome: string,
+    evidenceRef: string | null,
+  ): Promise<DefectTestRow> {
+    const index = this.#tests.findIndex(
+      (row) => row.id === id && row.workspaceId === workspaceId,
+    );
+    if (index < 0) throw new Error(`no defect test ${id}`);
+    const next: DefectTestRow = {
+      ...this.#tests[index]!,
+      lastRunOutcome: outcome,
+      lastRunEvidenceRef: evidenceRef,
+    };
+    this.#tests[index] = next;
+    return next;
+  }
+
+  async recordReproduction(row: ReproductionRow): Promise<ReproductionRow> {
+    this.#reproductions.push(row);
+    return row;
+  }
+
+  async reproductionsFor(workspaceId: string, defectId: string): Promise<ReproductionRow[]> {
+    return this.#reproductions.filter(
+      (row) => row.workspaceId === workspaceId && row.defectId === defectId,
+    );
+  }
+
+  async notAutomatableIn(workspaceId: string): Promise<ReproductionRow[]> {
+    return this.#reproductions.filter(
+      (row) => row.workspaceId === workspaceId && row.reproducible === 'not-automatable',
+    );
   }
 }

@@ -11,10 +11,16 @@
  * convergence pass, every one with a passing unit test. The question that finds
  * them is **which capabilities have a caller**.
  */
-import { Body, Controller, Inject, Param, Post, Req } from '@nestjs/common';
-import { UnauthenticatedError } from '../../core/errors.js';
+import { Body, Controller, Get, Inject, Param, Post, Req } from '@nestjs/common';
+import { UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import { TriageService, type ReevaluateInput, type TriageInput } from './triage.service.js';
+import { DefectTestService, type RecordTestInput } from './defect-test.service.js';
+import {
+  ReproductionService,
+  type RecordReproductionInput,
+} from './reproduction.service.js';
+import { VerificationService, type CloseInput } from './verification.service.js';
 
 interface ActingPrincipal {
   readonly workspaceId: string;
@@ -75,6 +81,9 @@ export class DefectRoomController {
   constructor(
     // @Inject by token: esbuild/tsx emits no `design:paramtypes` (DEF-001-005).
     @Inject(TriageService) private readonly triage: TriageService,
+    @Inject(DefectTestService) private readonly tests: DefectTestService,
+    @Inject(ReproductionService) private readonly reproductions: ReproductionService,
+    @Inject(VerificationService) private readonly verification: VerificationService,
   ) {}
 
   /**
@@ -125,4 +134,135 @@ export class DefectRoomController {
       classifiedByKind: 'human',
     });
   }
+
+  /**
+   * `FR-DFR-040`, `FR-DFR-042` — the route every refusal points at.
+   *
+   * `acceptFix` names it verbatim. Until this handler existed it was a string
+   * in an error body pointing at nothing, which is how the rule it enforces
+   * gets argued back in.
+   */
+  @Post('rooms/defect/:id/test')
+  recordTest(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<
+      RecordTestInput,
+      'workspaceId' | 'defectId' | 'recordedBy' | 'firstObservedFailingAt'
+    > & { firstObservedFailingAt?: unknown };
+
+    return this.tests.recordTest({
+      ...rest,
+      // `FR-DFR-040`: absent means absent. Defaulting to "now" would mint the
+      // very observation the requirement asks somebody to have made.
+      firstObservedFailingAt: requireInstant(
+        rest.firstObservedFailingAt,
+        'firstObservedFailingAt is required — it is the instant the test was seen to fail, and ' +
+          'the field the whole requirement rests on (FR-DFR-040)',
+      ),
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      recordedBy: principal.userId,
+    });
+  }
+
+  /**
+   * `FR-DFR-030` to `FR-DFR-033`, `FR-DFR-043` — capture a reproduction.
+   *
+   * The evidence in the body is **forwarded** to `EPIC-032` and never stored
+   * here. With that store unbound the request refuses, which is the honest
+   * answer: this is the one route where a user is encouraged to paste a payload
+   * that reproduces a failure (`PP-008`), and a Room-local copy would be filed
+   * under "who can see defects" rather than under the artifact's own rules.
+   */
+  @Post('rooms/defect/:id/reproduction')
+  recordReproduction(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<
+      RecordReproductionInput,
+      'workspaceId' | 'defectId' | 'recordedBy' | 'observedAt'
+    > & { observedAt?: unknown };
+
+    return this.reproductions.record({
+      ...rest,
+      evidence: rest.evidence ?? [],
+      // Unlike the instant above, "when it was observed" defaults to now: the
+      // caller is reporting something they are watching, and `FR-DFR-030` asks
+      // for the observation rather than for a moment somebody attests to.
+      observedAt: rest.observedAt === undefined ? new Date() : requireInstant(
+        rest.observedAt,
+        'observedAt must be a date (FR-DFR-030)',
+      ),
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      recordedBy: principal.userId,
+    });
+  }
+
+  /** `FR-DFR-043` — the exception, countable rather than merely stated. */
+  @Get('rooms/defect/exceptions')
+  exceptions(@Req() ctx: WorkspaceContext | undefined): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.reproductions.exceptions(principal.workspaceId);
+  }
+
+  /**
+   * `FR-DFR-060`, `FR-DFR-062` — request the applicable runs.
+   *
+   * Separate from closure because a run that happened should be recorded even
+   * when its outcome refuses closure.
+   */
+  @Post('rooms/defect/:id/verify')
+  verify(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.verification.verify(this.closeInput(principal, id, body));
+  }
+
+  /** `FR-DFR-060`, `FR-DFR-063`, `FR-DFR-064` — close, or refuse and say why. */
+  @Post('rooms/defect/:id/close')
+  close(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.verification.close(this.closeInput(principal, id, body));
+  }
+
+  private closeInput(principal: ActingPrincipal, id: string, body: unknown): CloseInput {
+    const rest = strip(body) as Omit<CloseInput, 'workspaceId' | 'defectId' | 'closedBy'>;
+    return {
+      ...rest,
+      // Absent is not empty. An empty set is refused by the service anyway
+      // (`FR-DFR-060`), and defaulting here would turn "the caller said
+      // nothing" into "the fix touched nothing".
+      touchedArtifacts: rest.touchedArtifacts ?? [],
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      closedBy: principal.userId,
+    };
+  }
+}
+
+/**
+ * A body carries strings; these fields are instants.
+ *
+ * Refusing rather than coercing: `new Date(undefined)` is `Invalid Date`, which
+ * compares false against every bound and would sail past a `>` check.
+ */
+function requireInstant(value: unknown, message: string): Date {
+  const parsed = typeof value === 'string' || value instanceof Date ? new Date(value) : null;
+  if (!parsed || Number.isNaN(parsed.getTime())) throw new ValidationFailedError(message);
+  return parsed;
 }
