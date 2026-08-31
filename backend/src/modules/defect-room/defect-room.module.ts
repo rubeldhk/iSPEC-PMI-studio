@@ -31,6 +31,10 @@
  * loop with its own store.
  */
 import { Module } from '@nestjs/common';
+import { ChangeRoomModule } from '../change-room/change-room.module.js';
+import { ChangeIntakeService } from '../change-room/intake.service.js';
+import { RequirementRoomModule } from '../requirement-room/requirement-room.module.js';
+import { IntakeService as RequirementIntakeService } from '../requirement-room/intake.service.js';
 import { prismaClient } from '../../persistence/prisma.js';
 import { DefectRoomController } from './defect-room.controller.js';
 import { InMemoryDefectRoomStore, type DefectRoomStore } from './defect-room.store.js';
@@ -65,6 +69,9 @@ export class DefectRoomService {
 }
 
 @Module({
+  // The two destinations `FR-DFR-071` and `FR-DFR-076` name. Imported, not
+  // reimplemented — `FR-DFR-002`.
+  imports: [ChangeRoomModule, RequirementRoomModule],
   controllers: [DefectRoomController],
   providers: [
     { provide: DefectRoomService, useFactory: (): DefectRoomService => new DefectRoomService() },
@@ -209,22 +216,53 @@ export class DefectRoomService {
     {
       provide: DefectRoutingService,
       /**
-       * Bound with **neither** destination filled.
+       * `T999v` (Phase Z) — **both destinations bound**, which they were not
+       * when this Room was built.
        *
-       * `EPIC-034`'s change intake and `EPIC-033`'s gap intake are both real
-       * routes now — `T998s` and `T998t` drive this Room straight into their
-       * services — but neither is wired into this deployment's graph. Until
-       * they are, an offer can be made and a delivery refuses, naming the Epic
-       * that owes the binding.
+       * The comment this replaces said both inbound routes were real and
+       * neither was wired. `T338u`/`T338v` had in fact landed in `EPIC-033`,
+       * and `EPIC-034`'s `fromDefectTransfer` with them — so by closure the
+       * refusal was no longer honest, only untouched. Exit Criterion 5 asks for
+       * all three outcomes routed end to end, and the fallback it allows
+       * ("record the refusal") applies where the route does not exist. Both do.
        *
-       * Refusing rather than recording is the whole of `SC-DFR-010`: a defect
-       * recorded as routed with nothing at the other end is the state where
-       * this Room believes somebody else has it, nobody does, and nobody is
-       * looking.
+       * Adapted rather than passed through: `gapIntake` answers with `EPIC-033`'s
+       * candidate rows and this Room's port asks only for an id. Narrowing here
+       * keeps the two Rooms' shapes independent — the alternative is this Room
+       * following every change to a return type it does not own.
+       *
+       * `SC-DFR-010` still governs what happens when a destination fails: an
+       * empty answer refuses rather than recording a routing nothing received.
        */
-      useFactory: (store: DefectRoomStore): DefectRoutingService =>
-        new DefectRoutingService(store, {}),
-      inject: [DEFECT_ROOM_STORE],
+      useFactory: (
+        store: DefectRoomStore,
+        change: ChangeIntakeService,
+        requirement: RequirementIntakeService,
+      ): DefectRoutingService =>
+        new DefectRoutingService(store, {
+          changeIntake: {
+            async fromDefectTransfer(input) {
+              return { id: (await change.fromDefectTransfer(input)).id };
+            },
+          },
+          requirementIntake: {
+            async gapIntake(input) {
+              const candidates = await requirement.gapIntake(input);
+              const first = candidates[0];
+              if (!first) {
+                // `EPIC-033` accepted the intake and produced nothing. Refusing
+                // is the honest answer: `SC-DFR-010` says nothing is recorded as
+                // routed to a destination that never received it, and an
+                // invented id would record exactly that.
+                throw new Error(
+                  'EPIC-033 gap intake returned no candidate, so nothing received this gap',
+                );
+              }
+              return { id: first.id };
+            },
+          },
+        }),
+      inject: [DEFECT_ROOM_STORE, ChangeIntakeService, RequirementIntakeService],
     },
     {
       provide: EvidenceCheckService,
@@ -250,6 +288,13 @@ export class DefectRoomService {
        * `route` returns `routed: false` naming the Epic that owes the binding —
        * and nothing is recorded as routed to a destination that never received
        * it (`SC-DFR-010`).
+       */
+      /**
+       * Constructed with **no delivery ports**, and that stays true.
+       *
+       * This resolver is the generic destination-delivery surface; the two real
+       * inbound routes are bound on `DefectRoutingService` below, which is
+       * where `FR-DFR-071` and `FR-DFR-076` actually go.
        */
       useFactory: (): RoutingResolver => new RoutingResolver({}),
     },

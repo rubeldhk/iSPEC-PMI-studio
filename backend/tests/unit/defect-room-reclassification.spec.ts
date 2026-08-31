@@ -164,6 +164,14 @@ describe('T998e · re-evaluation against current is a separate, recorded act', (
   });
 
   it('nothing is deleted, ever', async () => {
+    // `SC-DFR-005` — **zero** reclassified defect records deleted, all retained
+    // as reclassified. Cited here at convergence (`T999y`, finding `F1`): the
+    // guarantee was built and proved by this file and `T999j`, and the
+    // identifier appeared in no source or test, so the criterion was satisfied
+    // and not findable by anything that extracts rather than reads. That is
+    // `EPIC-033`'s `A1` failure exactly — legible to a person, invisible to a
+    // search.
+    //
     // The store offers no delete at all — the promise is kept by the absence of
     // the capability rather than by everyone remembering not to use it.
     const store = new InMemoryDefectRoomStore();

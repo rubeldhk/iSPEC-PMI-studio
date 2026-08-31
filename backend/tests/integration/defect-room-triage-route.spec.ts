@@ -411,8 +411,14 @@ suite('T998p · POST /rooms/defect/:id/transfer', () => {
     }
   });
 
-  it('and refuses to accept it while EPIC-034 is unbound', async () => {
-    // Nothing is recorded as routed on the strength of having tried.
+  it('and accepting it reaches EPIC-034 (T999v)', async () => {
+    // Rewritten at Phase Z. This asserted a refusal naming `EPIC-034` while the
+    // change intake was unbound; `T999v` bound it, because Exit Criterion 5
+    // allows recording a refusal only where the inbound route does not exist —
+    // and `fromDefectTransfer` had been there since `EPIC-034` Phase 4.
+    //
+    // The assertion is not weaker for it: a refusal proved the Room would not
+    // pretend, and this proves it actually arrives.
     const res = await request(app.getHttpServer())
       .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer/accept`)
       .set('Cookie', harness.cookie)
@@ -424,18 +430,27 @@ suite('T998p · POST /rooms/defect/:id/transfer', () => {
         requestedOutcome: 'notify within thirty minutes',
       });
 
-    expect(res.status).toBe(400);
-    expect(JSON.stringify(res.body)).toMatch(/EPIC-034/);
+    expect(res.status).toBeLessThan(300);
   });
 
-  it('while the defect stays here, not marked routed', async () => {
+  it('and the change request exists in EPIC-034’s table, naming the defect it came from', async () => {
+    // `FR-DFR-071`, `FR-CHR-012` — the origin is visible from the resulting
+    // change request. A routing recorded without this row is `SC-DFR-010`'s
+    // failure: this Room believing somebody else has it, nobody does, and
+    // nobody looking.
     const db = new Client({ connectionString: harness.databaseUrl });
     await db.connect();
     try {
+      const changes = await db.query(
+        'SELECT "originDefectRef","state" FROM "change_requests" WHERE "originDefectRef" = $1',
+        [TRANSFERABLE],
+      );
+      expect(changes.rowCount).toBe(1);
+
       const rows = await db.query('SELECT "state" FROM "defect_records" WHERE "id" = $1', [
         TRANSFERABLE,
       ]);
-      expect(rows.rows[0]?.state).toBe('triaged');
+      expect(rows.rows[0]?.state).toBe('routed');
     } finally {
       await db.end();
     }
@@ -446,26 +461,68 @@ suite('T998r · decline, return and gap routing', () => {
   it('a decline is refused with no reason, and accepted with one', async () => {
     // `FR-DFR-073` — both halves retained. The database CHECK says the same
     // thing; this is the route a person actually uses.
+    // Its own offer, on its own defect. Reusing `TRANSFERABLE`'s worked while
+    // the accept above refused; now that the accept succeeds, that routing is
+    // `accepted` and declining it is a `409` — a real conflict, and a test
+    // reading a state another test left behind.
+    const declinable = 'df_route_decline';
     const db = new Client({ connectionString: harness.databaseUrl });
     await db.connect();
     let routingId = '';
     try {
-      const rows = await db.query('SELECT "id" FROM "defect_routings" WHERE "defectId" = $1', [
-        TRANSFERABLE,
-      ]);
-      routingId = String(rows.rows[0]?.id ?? '');
+      await db.query(
+        `INSERT INTO "defect_records"
+           ("id","workspaceId","projectId","epicId","state","origin","contestedArtifactRef",
+            "contestedArtifactVersion","severity","reportedBy")
+         VALUES ($1,$2,$3,'EPIC-035','triaged','manual-report','spec_route','v2','medium',$4)
+         ON CONFLICT ("id") DO NOTHING`,
+        [declinable, WS, PROJECT, USER],
+      );
+      // An offer requires a current `change-request` classification — a defect
+      // is not transferable because somebody wants it to be.
+      await db.query(
+        `INSERT INTO "defect_classifications"
+           ("id","workspaceId","defectId","outcome","destination","approvedBehaviourRef",
+            "classifiedBy","classifiedByKind","rationale")
+         VALUES ($1,$2,$3,'change-request','change-room','rv_1',$4,'human',
+                 'the baseline asks for one hour and the reporter wants thirty minutes')
+         ON CONFLICT ("id") DO NOTHING`,
+        ['cl_route_decline', WS, declinable, USER],
+      );
     } finally {
       await db.end();
     }
 
+    const offered = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${declinable}/transfer`)
+      .set('Cookie', harness.cookie)
+      .send({
+        offeredReason: 'the baseline says one hour; the reporter is asking for thirty minutes',
+        evidenceRefs: ['ev_1'],
+      });
+    expect(offered.status).toBeLessThan(300);
+
+    const db2 = new Client({ connectionString: harness.databaseUrl });
+    await db2.connect();
+    try {
+      const rows = await db2.query(
+        `SELECT "id" FROM "defect_routings" WHERE "defectId" = $1 AND "state" = 'offered'`,
+        [declinable],
+      );
+      routingId = String(rows.rows[0]?.id ?? '');
+      expect(routingId).not.toBe('');
+    } finally {
+      await db2.end();
+    }
+
     const bare = await request(app.getHttpServer())
-      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer/decline`)
+      .post(`/${PREFIX}/rooms/defect/${declinable}/transfer/decline`)
       .set('Cookie', harness.cookie)
       .send({ routingId, declinedReason: '  ' });
     expect(bare.status).toBe(400);
 
     const answered = await request(app.getHttpServer())
-      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer/decline`)
+      .post(`/${PREFIX}/rooms/defect/${declinable}/transfer/decline`)
       .set('Cookie', harness.cookie)
       .send({ routingId, declinedReason: 'the regulator requires the one-hour window' });
     expect(answered.status).toBeLessThan(300);
