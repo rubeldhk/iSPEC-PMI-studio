@@ -12,8 +12,10 @@
  * them is **which capabilities have a caller**.
  */
 import { Body, Controller, Get, Inject, Param, Post, Req } from '@nestjs/common';
-import { UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
+import { NotFoundError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
+import { DEFECT_ROOM_STORE } from './defect-room.tokens.js';
+import type { DefectRoomStore } from './defect-room.store.js';
 import { TriageService, type ReevaluateInput, type TriageInput } from './triage.service.js';
 import { DefectTestService, type RecordTestInput } from './defect-test.service.js';
 import {
@@ -99,6 +101,7 @@ export class DefectRoomController {
     @Inject(VerificationService) private readonly verification: VerificationService,
     @Inject(DefectRoutingService) private readonly routing: DefectRoutingService,
     @Inject(EvidenceCheckService) private readonly evidenceChecks: EvidenceCheckService,
+    @Inject(DEFECT_ROOM_STORE) private readonly store: DefectRoomStore,
   ) {}
 
   /**
@@ -428,6 +431,72 @@ export class DefectRoomController {
       defectId: id,
       chosenBy: principal.userId,
     });
+  }
+
+  /**
+   * `FR-DFR-090` — what the Room's object-state and timeline regions read.
+   *
+   * Declared **after** `GET /rooms/defect/exceptions`, which is a literal path
+   * and would otherwise be swallowed by `:id`. Nest matches in declaration
+   * order, so the order here is load-bearing rather than stylistic.
+   */
+  @Get('rooms/defect/:id')
+  async readDefect(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const defect = await this.store.findDefect(principal.workspaceId, id);
+    // Absent rather than forbidden — a caller learns nothing about a defect it
+    // may not see.
+    if (!defect) throw new NotFoundError('Not found.');
+    return defect;
+  }
+
+  /**
+   * `FR-DFR-022`, `FR-DFR-077` — the decision region.
+   *
+   * `null` rather than a 404 when nothing has been classified: "this defect
+   * does not exist" and "nobody has judged it yet" are different answers, and
+   * the Room shows the second as a state rather than as an error.
+   */
+  @Get('rooms/defect/:id/classification')
+  async readClassification(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const defect = await this.store.findDefect(principal.workspaceId, id);
+    if (!defect) throw new NotFoundError('Not found.');
+    return this.store.currentClassification(principal.workspaceId, id);
+  }
+
+  /**
+   * `FR-DFR-030` to `FR-DFR-044` — the evidence region, in one read.
+   *
+   * Three lists rather than three endpoints, because they answer one question:
+   * *what has been established about this defect?* Split across three round
+   * trips, a person would see them settle one at a time and read the gaps as
+   * absences.
+   *
+   * References only. No attestation content passes through here — that is
+   * `EPIC-032`'s, under the access rules of the artifact it concerns.
+   */
+  @Get('rooms/defect/:id/evidence')
+  async readEvidence(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const defect = await this.store.findDefect(principal.workspaceId, id);
+    if (!defect) throw new NotFoundError('Not found.');
+
+    const [tests, reproductions, evidenceChecks] = await Promise.all([
+      this.store.testsFor(principal.workspaceId, id),
+      this.store.reproductionsFor(principal.workspaceId, id),
+      this.store.evidenceChecksFor(principal.workspaceId, id),
+    ]);
+    return { tests, reproductions, evidenceChecks };
   }
 
   private closeInput(principal: ActingPrincipal, id: string, body: unknown): CloseInput {

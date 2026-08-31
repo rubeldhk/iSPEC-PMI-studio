@@ -22,6 +22,7 @@ import { RequirementEditor } from '../components/RequirementEditor';
 import { ProjectDetail, ProjectsPage } from '../pages/Projects';
 import { RequirementRoomPage } from '../pages/RequirementRoom';
 import { ChangeRoomPage } from '../pages/ChangeRoom';
+import { DefectRoomPage } from '../pages/DefectRoom';
 import { RequirementIntake } from '../pages/RequirementIntake';
 import { RequirementRooms } from '../pages/RequirementRooms';
 import { RequirementsPage } from '../pages/Requirements';
@@ -401,6 +402,41 @@ export function ChangeRoomView(): ReactElement {
       {(projectId): ReactElement => (
         <MainLandmark>
           <ChangeRoomPage api={api} changeRequestId={changeRequestId} projectId={projectId} />
+        </MainLandmark>
+      )}
+    </RequireProject>
+  );
+}
+
+/**
+ * `T998z` (EPIC-035) — the Defect Room, mounted.
+ *
+ * Project-scoped like the other two Rooms, and for the same reason: a defect is
+ * against an artifact version, and artifacts belong to a project.
+ *
+ * The client is passed straight through. `DefectRoomApi`'s method names match
+ * `ApiClient`'s so no adapter is needed here — `FR-SHL-003` forbids the shell
+ * reaching a domain endpoint, and an adapter in this file would be exactly that
+ * with an extra step.
+ *
+ * **The area stays `declared-not-delivered`.** There is no Defect Room index
+ * yet, so a person can only arrive here by following a link that carries an id
+ * — the state `change-room` stands in and `requirement-room` stood in until
+ * `T1172`. Inventing an area landing to justify a status change would be the
+ * status driving the product.
+ *
+ * It is mounted now rather than later because `T200a` refuses a module under
+ * `src/pages/` that nothing renders, and a page reachable from nowhere is the
+ * defect this repository has recorded seven times.
+ */
+export function DefectRoomView(): ReactElement {
+  const { api } = useShell();
+  const { defectId = '' } = useParams();
+  return (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
+          <DefectRoomPage api={api} defectId={defectId} projectId={projectId} />
         </MainLandmark>
       )}
     </RequireProject>

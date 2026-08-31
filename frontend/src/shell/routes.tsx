@@ -22,6 +22,7 @@ import { NotFound } from './NotFound';
 import { reachableAreas } from './areas';
 import {
   ChangeRoomView,
+  DefectRoomView,
   ProjectDetailView,
   RequirementIntakeView,
   RequirementRoomView,
@@ -50,6 +51,10 @@ export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[]
   // (no index yet), and `routes.spec.tsx` only forbids routing an
   // undelivered area's OWN path - which this is not.
   { path: '/change-room/:changeRequestId', element: ChangeRoomView },
+  // `T998z` — the Defect Room. Same posture as the Change Room above: the
+  // area has no index yet, and `routes.spec.tsx` only forbids routing an
+  // undelivered area's OWN path, which this is not.
+  { path: '/defect-room/:defectId', element: DefectRoomView },
 ]);
 
 /**

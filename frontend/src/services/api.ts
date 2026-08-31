@@ -965,6 +965,38 @@ export class ApiClient {
   }
 
   /**
+   * `T998z` — what the Defect Room page reads.
+   *
+   * Three reads for six regions, and the names match the page's `DefectRoomApi`
+   * exactly, so the shell passes this client straight through. `FR-SHL-003`
+   * forbids the shell reaching a domain endpoint, and an adapter renaming these
+   * in `area-views.tsx` would be that with an extra step — which is what
+   * `T996s` caught in `EPIC-034`.
+   *
+   * `workspaceId` is deliberately not a parameter, for the reason
+   * `loopProgress` gives.
+   */
+  async defect(defectId: string): Promise<DefectSummary> {
+    return this.request('GET', `/rooms/defect/${encodeURIComponent(defectId)}`);
+  }
+
+  /**
+   * `null` when nothing has been classified — not a 404.
+   *
+   * "This defect does not exist" and "nobody has judged it yet" are different
+   * answers, and the Room shows the second as a state rather than an error.
+   */
+  async defectClassification(defectId: string): Promise<DefectClassificationSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/defect/${encodeURIComponent(defectId)}/classification`),
+    );
+  }
+
+  async defectEvidence(defectId: string): Promise<DefectEvidenceSummary> {
+    return this.request('GET', `/rooms/defect/${encodeURIComponent(defectId)}/evidence`);
+  }
+
+  /**
    * A 404 becomes `null`; every other failure still throws.
    *
    * Narrow on purpose. Swallowing all errors here would turn an unreachable
@@ -1057,4 +1089,68 @@ export interface ChangeClosureSummary {
   evidenceRefs: string[];
   supersedingBaselineId: string;
   supersedingBaselineVersion: number;
+}
+
+/** `T998z` — what the Defect Room page reads. Carries no requirement text. */
+export interface DefectSummary {
+  id: string;
+  projectId: string;
+  epicId: string | null;
+  state: string;
+  origin: string;
+  originDetail?: string | null;
+  contestedArtifactRef: string;
+  /** `FR-DFR-024` — the version REPORTED, never silently re-targeted. */
+  contestedArtifactVersion: string;
+  severity: string;
+  reportedBy: string;
+  reportedAt: string;
+}
+
+/** `FR-DFR-022`, `FR-DFR-077` — one of three outcomes, and where it goes. */
+export interface DefectClassificationSummary {
+  id: string;
+  outcome: string;
+  destination: string;
+  approvedBehaviourRef: string | null;
+  /** `FR-DFR-021` — the absence is a finding, not a blank. */
+  absenceRecorded: boolean;
+  classifiedBy: string;
+  classifiedByKind: string;
+  /** `FR-DFR-023` — an agent may propose; the confirming actor must be human. */
+  proposedByAgent: boolean;
+  rationale: string;
+  /** `FR-DFR-024` — `null` means the version reported on the defect. */
+  evaluatedAgainstVersion: string | null;
+}
+
+/**
+ * What has been established about a defect: references, never content.
+ *
+ * Attestation payloads live in `EPIC-032` under the access rules of the
+ * artifact they concern (`FR-DFR-033`), and nothing here carries one.
+ */
+export interface DefectEvidenceSummary {
+  tests: {
+    id: string;
+    testRef: string;
+    contestedBehaviourRef: string;
+    firstObservedFailingAt: string;
+    lastRunOutcome: string;
+    lastRunEvidenceRef: string | null;
+  }[];
+  reproductions: {
+    id: string;
+    reproducible: string;
+    environment: string;
+    evidenceRefs: string[];
+    affectedBehaviourRef: string;
+    notAutomatableReason: string | null;
+  }[];
+  evidenceChecks: {
+    id: string;
+    path: string;
+    resolvedBy: string;
+    rationale: string;
+  }[];
 }
