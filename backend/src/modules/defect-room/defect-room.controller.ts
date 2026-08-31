@@ -21,6 +21,19 @@ import {
   type RecordReproductionInput,
 } from './reproduction.service.js';
 import { VerificationService, type CloseInput } from './verification.service.js';
+import {
+  EvidenceCheckService,
+  type ChoosePathInput,
+  type RaiseCheckInput,
+} from './evidence-check.service.js';
+import {
+  DefectRoutingService,
+  type DeclineTransferInput,
+  type DeliverTransferInput,
+  type OfferTransferInput,
+  type RecordReturnInput,
+  type RouteGapInput,
+} from './routing.service.js';
 
 interface ActingPrincipal {
   readonly workspaceId: string;
@@ -84,6 +97,8 @@ export class DefectRoomController {
     @Inject(DefectTestService) private readonly tests: DefectTestService,
     @Inject(ReproductionService) private readonly reproductions: ReproductionService,
     @Inject(VerificationService) private readonly verification: VerificationService,
+    @Inject(DefectRoutingService) private readonly routing: DefectRoutingService,
+    @Inject(EvidenceCheckService) private readonly evidenceChecks: EvidenceCheckService,
   ) {}
 
   /**
@@ -238,6 +253,181 @@ export class DefectRoomController {
   ): Promise<unknown> {
     const principal = requireAuth(ctx);
     return this.verification.close(this.closeInput(principal, id, body));
+  }
+
+  /**
+   * `FR-DFR-070`, `FR-DFR-072` — offer the transfer, and say why.
+   *
+   * The offer and the delivery are separate routes because they are separate
+   * acts: this one asks a person, and `…/transfer/accept` acts on their answer.
+   * Folding them together would make the transfer something the system did.
+   */
+  @Post('rooms/defect/:id/transfer')
+  offerTransfer(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<
+      OfferTransferInput,
+      'workspaceId' | 'defectId' | 'offeredBy'
+    >;
+    return this.routing.offerTransfer({
+      ...rest,
+      offeredReason: rest.offeredReason ?? '',
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      offeredBy: principal.userId,
+    });
+  }
+
+  /** `FR-DFR-071` — the answer is yes: hand it to `EPIC-034`. */
+  @Post('rooms/defect/:id/transfer/accept')
+  acceptTransfer(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<
+      DeliverTransferInput,
+      'workspaceId' | 'defectId' | 'requester'
+    >;
+    return this.routing.deliverTransfer({
+      ...rest,
+      targetBaselineId: rest.targetBaselineId ?? '',
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      requester: principal.userId,
+    });
+  }
+
+  /** `FR-DFR-073` — the answer is no, and both halves are kept. */
+  @Post('rooms/defect/:id/transfer/decline')
+  declineTransfer(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<
+      DeclineTransferInput,
+      'workspaceId' | 'defectId' | 'declinedBy'
+    >;
+    return this.routing.declineTransfer({
+      ...rest,
+      routingId: rest.routingId ?? '',
+      declinedReason: rest.declinedReason ?? '',
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      declinedBy: principal.userId,
+    });
+  }
+
+  /**
+   * `FR-DFR-074` — a refusal raised elsewhere, brought back here.
+   *
+   * `EPIC-034`'s `TransferRefusedError` carries `returnTo: 'EPIC-035'` and the
+   * defect id. This is the address that names.
+   */
+  @Post('rooms/defect/:id/transfer-return')
+  returnTransfer(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<
+      RecordReturnInput,
+      'workspaceId' | 'defectId' | 'returnedBy'
+    >;
+    return this.routing.recordReturn({
+      ...rest,
+      routingId: rest.routingId ?? '',
+      refusalDetail: rest.refusalDetail ?? '',
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      returnedBy: principal.userId,
+    });
+  }
+
+  /**
+   * `FR-DFR-076` — a Requirement Gap, to `EPIC-033`, as new intent.
+   *
+   * No offer step: a transfer asks whether the item should leave, because
+   * declining is a real answer. A gap has nowhere else to go — there is no
+   * approved baseline to change, and that absence is what makes it a gap.
+   */
+  @Post('rooms/defect/:id/route-gap')
+  routeGap(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<RouteGapInput, 'workspaceId' | 'defectId' | 'routedBy'>;
+    return this.routing.routeGap({
+      ...rest,
+      text: rest.text ?? '',
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      routedBy: principal.userId,
+    });
+  }
+
+  /**
+   * `FR-DFR-044` — a passing reproduction run raises the check.
+   *
+   * A route rather than an internal call, because the run is reported from
+   * outside: `TestExecution` has no owner in the programme (`R-035-1`), and a
+   * check that could only be raised by a runner nobody has built would make
+   * `ADR-0016`'s failure mode unreachable in the one direction that matters.
+   *
+   * It answers with the three paths and records **no** choice.
+   */
+  @Post('rooms/defect/:id/evidence-check/raise')
+  raiseEvidenceCheck(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<RaiseCheckInput, 'workspaceId' | 'defectId'>;
+    return this.evidenceChecks.raise({
+      ...rest,
+      // Absent is not `pass`. Defaulting would raise a check for a run nobody
+      // reported the outcome of, which is the automatic path with extra steps.
+      outcome: rest.outcome ?? ('fail' as const),
+      evidenceRef: rest.evidenceRef ?? null,
+      workspaceId: principal.workspaceId,
+      defectId: id,
+    });
+  }
+
+  /**
+   * `FR-DFR-044`, `FR-DFR-031` — a person takes one of the three paths.
+   *
+   * `chosenBy` comes from the session, never the body: a path with no chooser
+   * is an automatic reclassification wearing a person's clothes, and one whose
+   * chooser the caller supplied is the same thing with a name attached.
+   */
+  @Post('rooms/defect/:id/evidence-check')
+  chooseEvidencePath(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body) as Omit<ChoosePathInput, 'workspaceId' | 'defectId' | 'chosenBy'>;
+    return this.evidenceChecks.choose({
+      ...rest,
+      path: rest.path ?? '',
+      reason: rest.reason ?? '',
+      workspaceId: principal.workspaceId,
+      defectId: id,
+      chosenBy: principal.userId,
+    });
   }
 
   private closeInput(principal: ActingPrincipal, id: string, body: unknown): CloseInput {

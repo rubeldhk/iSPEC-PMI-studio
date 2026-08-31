@@ -33,6 +33,8 @@ const WS = 'ws_defect';
 const USER = 'u_defect';
 const PROJECT = 'pr_defect';
 const DEFECT = 'df_route_1';
+/** A second defect, already classified a change request, for the Phase 5 routes. */
+const TRANSFERABLE = 'df_route_2';
 
 const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
 const suite = noRuntime ? describe.skip : describe;
@@ -58,6 +60,25 @@ beforeAll(async () => {
             "contestedArtifactVersion","severity","reportedBy")
          VALUES ($1,$2,$3,'held-for-triage','manual-report','spec_route_1','v3','high',$4)`,
         [DEFECT, ids.workspaceId, PROJECT, ids.userId],
+      );
+      // `BaselineReader` is unbound in this deployment, so no classification can
+      // be produced through the API. Seeding one directly is the only way to
+      // reach the Phase 5 routes at all — and a route nobody can reach is the
+      // defect this repository has now recorded seven times.
+      await db.query(
+        `INSERT INTO "defect_records"
+           ("id","workspaceId","projectId","epicId","state","origin","contestedArtifactRef",
+            "contestedArtifactVersion","severity","reportedBy")
+         VALUES ($1,$2,$3,'EPIC-999','triaged','manual-report','b_route_1','v3','high',$4)`,
+        [TRANSFERABLE, ids.workspaceId, PROJECT, ids.userId],
+      );
+      await db.query(
+        `INSERT INTO "defect_classifications"
+           ("id","workspaceId","defectId","outcome","destination","approvedBehaviourRef",
+            "absenceRecorded","classifiedBy","classifiedByKind","rationale")
+         VALUES ('cl_route_1',$1,$2,'change-request','change-room','rv_1',false,$3,'human',
+                 'the system does what the baseline says; the reporter wants it changed')`,
+        [ids.workspaceId, TRANSFERABLE, ids.userId],
       );
     },
   });
@@ -329,6 +350,305 @@ suite('T998n · POST /rooms/defect/:id/verify and /close', () => {
       expect(rows.rows[0]?.state).not.toBe('closed');
     } finally {
       await db.end();
+    }
+  });
+});
+
+/**
+ * `T998p`, `T998r` — the Phase 5 routes, mounted.
+ *
+ * `BR-0057` is the reason this Room is not a bug tracker, and the transfer is
+ * the whole of it. A transfer offered by a service nothing calls is the rule
+ * described rather than enforced.
+ */
+suite('T998p · POST /rooms/defect/:id/transfer', () => {
+  it('refuses with no session', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer`)
+      .send({ offeredReason: 'x' });
+    expect(res.status).toBe(401);
+  });
+
+  it('refuses an offer that does not say why', async () => {
+    // `UX-0034`. An unexplained transfer button is a reclassification nobody
+    // decided, and the person it is done to is usually the reporter.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer`)
+      .set('Cookie', harness.cookie)
+      .send({ offeredReason: '   ' });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/UX-0034|FR-DFR-072/);
+  });
+
+  it('records the offer, with its reason', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer`)
+      .set('Cookie', harness.cookie)
+      .send({
+        offeredReason: 'the baseline says one hour; you are asking for thirty minutes',
+        evidenceRefs: ['ev_1'],
+      });
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.state).toBe('offered');
+    expect(res.body.destination).toBe('change-room');
+  });
+
+  it('and the offer is in PostgreSQL, not in a process', async () => {
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const rows = await db.query(
+        'SELECT "state","offeredReason","targetRef" FROM "defect_routings" WHERE "defectId" = $1',
+        [TRANSFERABLE],
+      );
+      expect(rows.rowCount).toBe(1);
+      expect(rows.rows[0].offeredReason).toMatch(/thirty minutes/);
+      // `SC-DFR-010` — an offer is a question, not a delivery.
+      expect(rows.rows[0].targetRef).toBeNull();
+    } finally {
+      await db.end();
+    }
+  });
+
+  it('and refuses to accept it while EPIC-034 is unbound', async () => {
+    // Nothing is recorded as routed on the strength of having tried.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer/accept`)
+      .set('Cookie', harness.cookie)
+      .send({
+        projectId: PROJECT,
+        roomObjectId: 'ro_1',
+        targetBaselineId: 'b_route_1',
+        targetBaselineVersion: 2,
+        requestedOutcome: 'notify within thirty minutes',
+      });
+
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/EPIC-034/);
+  });
+
+  it('while the defect stays here, not marked routed', async () => {
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const rows = await db.query('SELECT "state" FROM "defect_records" WHERE "id" = $1', [
+        TRANSFERABLE,
+      ]);
+      expect(rows.rows[0]?.state).toBe('triaged');
+    } finally {
+      await db.end();
+    }
+  });
+});
+
+suite('T998r · decline, return and gap routing', () => {
+  it('a decline is refused with no reason, and accepted with one', async () => {
+    // `FR-DFR-073` — both halves retained. The database CHECK says the same
+    // thing; this is the route a person actually uses.
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    let routingId = '';
+    try {
+      const rows = await db.query('SELECT "id" FROM "defect_routings" WHERE "defectId" = $1', [
+        TRANSFERABLE,
+      ]);
+      routingId = String(rows.rows[0]?.id ?? '');
+    } finally {
+      await db.end();
+    }
+
+    const bare = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer/decline`)
+      .set('Cookie', harness.cookie)
+      .send({ routingId, declinedReason: '  ' });
+    expect(bare.status).toBe(400);
+
+    const answered = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer/decline`)
+      .set('Cookie', harness.cookie)
+      .send({ routingId, declinedReason: 'the regulator requires the one-hour window' });
+    expect(answered.status).toBeLessThan(300);
+    expect(answered.body.state).toBe('declined');
+    // The offer survives the decline.
+    expect(answered.body.offeredReason).toMatch(/thirty minutes/);
+  });
+
+  it('transfer-return refuses with no session', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer-return`)
+      .send({ routingId: 'x', refusalDetail: 'y' });
+    expect(res.status).toBe(401);
+  });
+
+  it('and answers 404 for a routing that does not exist', async () => {
+    // Reachability with a real answer: the route is mounted and reached the
+    // service, which found nothing to return.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/transfer-return`)
+      .set('Cookie', harness.cookie)
+      .send({ routingId: 'rt_nope', refusalDetail: 'the Change Room refused' });
+    expect(res.status).toBe(404);
+  });
+
+  it('route-gap refuses a defect that is not a gap', async () => {
+    // `FR-DFR-076` — this one is a change request, and a gap is the outcome
+    // with no approved baseline to change.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${TRANSFERABLE}/route-gap`)
+      .set('Cookie', harness.cookie)
+      .send({ projectId: PROJECT, roomObjectId: 'ro_1', text: 'x' });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/change-request|requirement gap/i);
+  });
+});
+
+/**
+ * `T998v` — the evidence-check routes, mounted.
+ *
+ * `ADR-0016`'s failure mode is closed by a service that depends on nothing
+ * external, so unlike most of this Room these routes work end to end. A check
+ * nobody can raise or answer would leave the guarantee described rather than
+ * offered.
+ */
+suite('T998v · POST /rooms/defect/:id/evidence-check', () => {
+  it('raise refuses with no session', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/evidence-check/raise`)
+      .send({ testId: 'x', outcome: 'pass' });
+    expect(res.status).toBe(401);
+  });
+
+  it('and refuses to raise one for a failing run', async () => {
+    // A failing reproduction test is the ordinary state: the defect
+    // reproduces. There is nothing to explain.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/evidence-check/raise`)
+      .set('Cookie', harness.cookie)
+      .send({ testId: 'dt_x', outcome: 'fail' });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/FR-DFR-044/);
+  });
+
+  it('raises one for a passing run, offering three paths and choosing none', async () => {
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    let testId = '';
+    try {
+      const rows = await db.query('SELECT "id" FROM "defect_tests" WHERE "defectId" = $1', [
+        DEFECT,
+      ]);
+      testId = String(rows.rows[0]?.id ?? '');
+    } finally {
+      await db.end();
+    }
+
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/evidence-check/raise`)
+      .set('Cookie', harness.cookie)
+      .send({ testId, outcome: 'pass', evidenceRef: 'ev_run_1' });
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.paths).toHaveLength(3);
+
+    const db2 = new Client({ connectionString: harness.databaseUrl });
+    await db2.connect();
+    try {
+      // `FR-DFR-044` — raising is a question. Nothing has been answered.
+      const rows = await db2.query(
+        'SELECT * FROM "defect_evidence_checks" WHERE "defectId" = $1',
+        [DEFECT],
+      );
+      expect(rows.rowCount).toBe(0);
+    } finally {
+      await db2.end();
+    }
+  });
+
+  it('refuses a path nobody declared', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/evidence-check`)
+      .set('Cookie', harness.cookie)
+      .send({ testId: 'dt_x', path: 'close-it', reason: 'because' });
+    expect(res.status).toBe(400);
+  });
+
+  it('and records the one a person chose, in PostgreSQL', async () => {
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    let testId = '';
+    try {
+      const rows = await db.query('SELECT "id" FROM "defect_tests" WHERE "defectId" = $1', [
+        DEFECT,
+      ]);
+      testId = String(rows.rows[0]?.id ?? '');
+    } finally {
+      await db.end();
+    }
+
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/evidence-check`)
+      .set('Cookie', harness.cookie)
+      .send({
+        testId,
+        path: 'investigate-further',
+        reason: 'the run passed against staging and the report was against production',
+      });
+    expect(res.status).toBeLessThan(300);
+    // `SC-DFR-004` — no classification was written by choosing a path.
+    expect(res.body.next).toBeNull();
+
+    const db2 = new Client({ connectionString: harness.databaseUrl });
+    await db2.connect();
+    try {
+      const checks = await db2.query(
+        'SELECT "path","resolvedBy" FROM "defect_evidence_checks" WHERE "defectId" = $1',
+        [DEFECT],
+      );
+      expect(checks.rowCount).toBe(1);
+      expect(checks.rows[0].path).toBe('investigate');
+      expect(checks.rows[0].resolvedBy).toBe(USER);
+
+      const classifications = await db2.query(
+        'SELECT * FROM "defect_classifications" WHERE "defectId" = $1',
+        [DEFECT],
+      );
+      expect(classifications.rowCount).toBe(0);
+    } finally {
+      await db2.end();
+    }
+  });
+
+  it('and choosing reclassify hands back the route, still writing no classification', async () => {
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    let testId = '';
+    try {
+      const rows = await db.query('SELECT "id" FROM "defect_tests" WHERE "defectId" = $1', [
+        DEFECT,
+      ]);
+      testId = String(rows.rows[0]?.id ?? '');
+    } finally {
+      await db.end();
+    }
+
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/evidence-check`)
+      .set('Cookie', harness.cookie)
+      .send({ testId, path: 'reclassify', reason: 'the behaviour is what the baseline asks for' });
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.next).toMatch(/reevaluate/);
+
+    const db2 = new Client({ connectionString: harness.databaseUrl });
+    await db2.connect();
+    try {
+      const rows = await db2.query('SELECT * FROM "defect_classifications" WHERE "defectId" = $1', [
+        DEFECT,
+      ]);
+      expect(rows.rowCount).toBe(0);
+    } finally {
+      await db2.end();
     }
   });
 });

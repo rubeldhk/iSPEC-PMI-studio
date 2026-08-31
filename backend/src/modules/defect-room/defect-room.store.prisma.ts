@@ -28,7 +28,9 @@ import type {
   DefectRoomStore,
   DefectRow,
   DefectTestRow,
+  EvidenceCheckRow,
   ReproductionRow,
+  RoutingRow,
 } from './defect-room.store.js';
 
 /** The Prisma surface this store uses, named rather than imported (PC-1). */
@@ -44,6 +46,19 @@ export interface DefectRoomPrismaClient {
   readonly classification: Delegate;
   readonly defectTest: Delegate;
   readonly reproduction: Delegate;
+  readonly routing: Delegate;
+  readonly evidenceCheck: Delegate;
+}
+
+/** `carriedEvidenceRefs` is a JSON column, narrowed on the way out. */
+function toRouting(row: unknown): RoutingRow {
+  const record = row as RoutingRow & { carriedEvidenceRefs: unknown };
+  return {
+    ...record,
+    carriedEvidenceRefs: Array.isArray(record.carriedEvidenceRefs)
+      ? (record.carriedEvidenceRefs as string[])
+      : [],
+  };
 }
 
 /**
@@ -202,5 +217,72 @@ export class PrismaDefectRoomStore implements DefectRoomStore {
       orderBy: { createdAt: 'asc' },
     });
     return rows.map(toReproduction);
+  }
+  async recordRouting(row: RoutingRow): Promise<RoutingRow> {
+    return toRouting(
+      await this.prisma.routing.create({
+        data: { ...row, carriedEvidenceRefs: row.carriedEvidenceRefs as unknown },
+      }),
+    );
+  }
+
+  async routingsFor(workspaceId: string, defectId: string): Promise<RoutingRow[]> {
+    const rows = await this.prisma.routing.findMany({
+      where: { workspaceId, defectId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return rows.map(toRouting);
+  }
+
+  /**
+   * Four narrow transitions, each writing exactly the columns its state
+   * requires — the same pairing the table's CHECKs enforce. Nothing that
+   * recorded the offer is overwritten, which is how `FR-DFR-073` keeps both
+   * halves.
+   */
+  async declineRouting(
+    workspaceId: string,
+    id: string,
+    reason: string,
+    at: Date,
+  ): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, {
+      state: 'declined',
+      declinedAt: at,
+      declinedReason: reason,
+    });
+  }
+
+  async acceptRouting(workspaceId: string, id: string, targetRef: string): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, { state: 'accepted', targetRef });
+  }
+
+  async refuseRouting(workspaceId: string, id: string, detail: string): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, { state: 'refused', refusalDetail: detail });
+  }
+
+  async returnRouting(workspaceId: string, id: string, detail: string): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, { state: 'returned', refusalDetail: detail });
+  }
+
+  async #moveRouting(
+    workspaceId: string,
+    id: string,
+    data: Record<string, unknown>,
+  ): Promise<RoutingRow> {
+    const existing = await this.prisma.routing.findFirst({ where: { id, workspaceId } });
+    if (!existing) throw new Error(`no routing ${id}`);
+    return toRouting(await this.prisma.routing.update({ where: { id }, data }));
+  }
+  async recordEvidenceCheck(row: EvidenceCheckRow): Promise<EvidenceCheckRow> {
+    return (await this.prisma.evidenceCheck.create({ data: row })) as EvidenceCheckRow;
+  }
+
+  /** Every entry, in order. `FR-DFR-031` — the pattern is the evidence. */
+  async evidenceChecksFor(workspaceId: string, defectId: string): Promise<EvidenceCheckRow[]> {
+    return (await this.prisma.evidenceCheck.findMany({
+      where: { workspaceId, defectId },
+      orderBy: { createdAt: 'asc' },
+    })) as EvidenceCheckRow[];
   }
 }

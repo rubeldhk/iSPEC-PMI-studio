@@ -39,7 +39,8 @@ import {
   type DefectRoomPrismaClient,
 } from './defect-room.store.prisma.js';
 import { DEFECT_ROOM_PORTS, DEFECT_ROOM_STORE } from './defect-room.tokens.js';
-import { RoutingResolver } from './routing.service.js';
+import { DefectRoutingService, RoutingResolver } from './routing.service.js';
+import { EvidenceCheckService } from './evidence-check.service.js';
 import { TriageService } from './triage.service.js';
 import { DefectTestService } from './defect-test.service.js';
 import { ReproductionService } from './reproduction.service.js';
@@ -128,6 +129,40 @@ export class DefectRoomService {
       inject: [DEFECT_ROOM_STORE, DefectTestService],
     },
     {
+      provide: DefectRoutingService,
+      /**
+       * Bound with **neither** destination filled.
+       *
+       * `EPIC-034`'s change intake and `EPIC-033`'s gap intake are both real
+       * routes now — `T998s` and `T998t` drive this Room straight into their
+       * services — but neither is wired into this deployment's graph. Until
+       * they are, an offer can be made and a delivery refuses, naming the Epic
+       * that owes the binding.
+       *
+       * Refusing rather than recording is the whole of `SC-DFR-010`: a defect
+       * recorded as routed with nothing at the other end is the state where
+       * this Room believes somebody else has it, nobody does, and nobody is
+       * looking.
+       */
+      useFactory: (store: DefectRoomStore): DefectRoutingService =>
+        new DefectRoutingService(store, {}),
+      inject: [DEFECT_ROOM_STORE],
+    },
+    {
+      provide: EvidenceCheckService,
+      /**
+       * No seams at all, and none missing.
+       *
+       * Everything this service needs is recorded in this Room: the passing
+       * run, the reproducibility, and the path a person chose. That it depends
+       * on nothing external is why `ADR-0016`'s failure mode can be closed
+       * here rather than waited on.
+       */
+      useFactory: (store: DefectRoomStore): EvidenceCheckService =>
+        new EvidenceCheckService(store),
+      inject: [DEFECT_ROOM_STORE],
+    },
+    {
       provide: RoutingResolver,
       /**
        * Constructed with **no destination ports**, which is the honest state.
@@ -144,6 +179,8 @@ export class DefectRoomService {
   exports: [
     DefectRoomService,
     RoutingResolver,
+    DefectRoutingService,
+    EvidenceCheckService,
     TriageService,
     DefectTestService,
     ReproductionService,

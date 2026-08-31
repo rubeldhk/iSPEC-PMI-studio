@@ -29,6 +29,7 @@
 import { randomUUID } from 'node:crypto';
 import { NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import type { DefectRoomStore, DefectTestRow } from './defect-room.store.js';
+import { fixBlockFor } from './routing.service.js';
 import type { DefectTest, FixAcceptance } from './test-first.types.js';
 
 /**
@@ -128,6 +129,16 @@ export class DefectTestService {
   async acceptFix(input: AcceptFixInput): Promise<FixAcceptance> {
     const defect = await this.store.findDefect(input.workspaceId, input.defectId);
     if (!defect) throw new NotFoundError('Not found.');
+
+    // `FR-DFR-075`, `SC-DFR-003` — checked before the test, because a change
+    // request with a perfectly good failing test is still not a defect. The
+    // rule lives in `routing.service.ts` and is consulted here, where fixes are
+    // actually accepted: a second copy of the outcome list would be the
+    // `DEF-034-001` shape, two artifacts agreeing until one is edited.
+    const blocked = fixBlockFor(
+      await this.store.currentClassification(input.workspaceId, defect.id),
+    );
+    if (blocked) return { accepted: false, reason: blocked };
 
     const tests = await this.store.testsFor(input.workspaceId, defect.id);
     const failing = tests.find((row) => row.firstObservedFailingAt instanceof Date);

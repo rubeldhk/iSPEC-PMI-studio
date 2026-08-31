@@ -78,6 +78,59 @@ export interface ReproductionRow {
   readonly createdAt: Date;
 }
 
+/**
+ * `T998p` — the row behind a routing, offer and outcome in one record.
+ *
+ * `FR-DFR-073` asks that a declined transfer retain **both** the offer and the
+ * decline, and this row does that by keeping `offeredReason` while gaining
+ * `declinedReason` — the state moves, and no column that recorded the offer is
+ * overwritten. That is why a state change here is not the history loss
+ * `ADR-0016` forbids for a classification: nothing a routing row said earlier
+ * stops being readable.
+ */
+export interface RoutingRow {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly defectId: string;
+  /** Not the defect alone: a transfer is a consequence of a judgement. */
+  readonly classificationId: string;
+  readonly destination: string;
+  /** `FR-DFR-072`, `UX-0034` — NOT NULL, and non-empty. */
+  readonly offeredReason: string;
+  readonly state: string;
+  readonly declinedAt: Date | null;
+  readonly declinedReason: string | null;
+  /** `FR-DFR-074` — what the destination said when it refused. */
+  readonly refusalDetail: string | null;
+  /** `FR-DFR-071` — references into `EPIC-032`, never copies. */
+  readonly carriedEvidenceRefs: readonly string[];
+  /** `SC-DFR-010` — what the destination called the thing it created. */
+  readonly targetRef: string | null;
+  readonly createdAt: Date;
+}
+
+/**
+ * `T998v` — the row behind an `EvidenceCheck`.
+ *
+ * A table rather than a status field, because `US4` scenario 2 requires **which
+ * path was taken** to be recorded, and because an intermittent defect can pass
+ * through this step more than once (`FR-DFR-031`). One row per defect would keep
+ * only the most recent reading and lose the pattern — which is the only
+ * evidence intermittency ever produces.
+ */
+export interface EvidenceCheckRow {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly defectId: string;
+  readonly defectTestId: string;
+  /** The column vocabulary: `refine-test` | `investigate` | `reclassify`. */
+  readonly path: string;
+  readonly resolvedBy: string;
+  readonly resolvedAt: Date;
+  readonly rationale: string;
+  readonly createdAt: Date;
+}
+
 export interface DefectRoomStore {
   createDefect(row: DefectRow): Promise<DefectRow>;
   findDefect(workspaceId: string, id: string): Promise<DefectRow | null>;
@@ -138,6 +191,32 @@ export interface DefectRoomStore {
    * is indistinguishable from a policy.
    */
   notAutomatableIn(workspaceId: string): Promise<ReproductionRow[]>;
+
+  /** `FR-DFR-070` to `FR-DFR-076` — where an item went, and what happened. */
+  recordRouting(row: RoutingRow): Promise<RoutingRow>;
+  routingsFor(workspaceId: string, defectId: string): Promise<RoutingRow[]>;
+  /**
+   * Four narrow transitions rather than one patch.
+   *
+   * Each writes exactly the columns its state requires, which is what the
+   * table's CHECKs already say: a decline carries a time and a reason, a
+   * refusal carries detail, an acceptance carries a target. A general
+   * `update(patch)` would let a caller reach `accepted` with no target — the
+   * state where this Room believes somebody else has the item and nobody does.
+   */
+  declineRouting(
+    workspaceId: string,
+    id: string,
+    reason: string,
+    at: Date,
+  ): Promise<RoutingRow>;
+  acceptRouting(workspaceId: string, id: string, targetRef: string): Promise<RoutingRow>;
+  refuseRouting(workspaceId: string, id: string, detail: string): Promise<RoutingRow>;
+  returnRouting(workspaceId: string, id: string, detail: string): Promise<RoutingRow>;
+
+  /** `FR-DFR-044` — which of the three paths was taken, and by whom. */
+  recordEvidenceCheck(row: EvidenceCheckRow): Promise<EvidenceCheckRow>;
+  evidenceChecksFor(workspaceId: string, defectId: string): Promise<EvidenceCheckRow[]>;
 }
 
 /** For unit tests and database-less runs. Loses data, and does so visibly. */
@@ -146,6 +225,8 @@ export class InMemoryDefectRoomStore implements DefectRoomStore {
   readonly #classifications: Classification[] = [];
   readonly #tests: DefectTestRow[] = [];
   readonly #reproductions: ReproductionRow[] = [];
+  readonly #routings: RoutingRow[] = [];
+  readonly #evidenceChecks: EvidenceCheckRow[] = [];
 
   async createDefect(row: DefectRow): Promise<DefectRow> {
     this.#defects.set(row.id, row);
@@ -261,6 +342,65 @@ export class InMemoryDefectRoomStore implements DefectRoomStore {
   async notAutomatableIn(workspaceId: string): Promise<ReproductionRow[]> {
     return this.#reproductions.filter(
       (row) => row.workspaceId === workspaceId && row.reproducible === 'not-automatable',
+    );
+  }
+  async recordRouting(row: RoutingRow): Promise<RoutingRow> {
+    this.#routings.push(row);
+    return row;
+  }
+
+  async routingsFor(workspaceId: string, defectId: string): Promise<RoutingRow[]> {
+    return this.#routings.filter(
+      (row) => row.workspaceId === workspaceId && row.defectId === defectId,
+    );
+  }
+
+  async declineRouting(
+    workspaceId: string,
+    id: string,
+    reason: string,
+    at: Date,
+  ): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, {
+      state: 'declined',
+      declinedAt: at,
+      declinedReason: reason,
+    });
+  }
+
+  async acceptRouting(workspaceId: string, id: string, targetRef: string): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, { state: 'accepted', targetRef });
+  }
+
+  async refuseRouting(workspaceId: string, id: string, detail: string): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, { state: 'refused', refusalDetail: detail });
+  }
+
+  async returnRouting(workspaceId: string, id: string, detail: string): Promise<RoutingRow> {
+    return this.#moveRouting(workspaceId, id, { state: 'returned', refusalDetail: detail });
+  }
+
+  async #moveRouting(
+    workspaceId: string,
+    id: string,
+    patch: Partial<RoutingRow>,
+  ): Promise<RoutingRow> {
+    const index = this.#routings.findIndex(
+      (row) => row.id === id && row.workspaceId === workspaceId,
+    );
+    if (index < 0) throw new Error(`no routing ${id}`);
+    const next = { ...this.#routings[index]!, ...patch };
+    this.#routings[index] = next;
+    return next;
+  }
+  async recordEvidenceCheck(row: EvidenceCheckRow): Promise<EvidenceCheckRow> {
+    this.#evidenceChecks.push(row);
+    return row;
+  }
+
+  async evidenceChecksFor(workspaceId: string, defectId: string): Promise<EvidenceCheckRow[]> {
+    return this.#evidenceChecks.filter(
+      (row) => row.workspaceId === workspaceId && row.defectId === defectId,
     );
   }
 }
