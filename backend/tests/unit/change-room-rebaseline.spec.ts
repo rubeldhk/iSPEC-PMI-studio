@@ -28,6 +28,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { InMemoryChangeRoomStore } from '../../src/modules/change-room/change-room.store.js';
+import { storeWithImpactView } from '../helpers/change-room-fixtures.js';
 import {
   DecisionService,
   type ChangeDecisionInboxPort,
@@ -160,7 +161,7 @@ const input = (over: Record<string, unknown> = {}) => ({
 });
 
 async function fixture() {
-  const store = new InMemoryChangeRoomStore();
+  const store = await storeWithImpactView();
   await decided(store);
   const w = writer();
   return { store, w, service: new RebaselineService(store, w.port) };
@@ -239,14 +240,14 @@ describe('T994d · FR-CHR-050 — no decision, no baseline move', () => {
     // The ordering, enforced rather than assumed. Until something refuses to
     // proceed without a decision, "decided before implementation affects a
     // baseline" is a sentence.
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     const w = writer();
     const service = new RebaselineService(store, w.port);
     await expect(service.rebaseline(input())).rejects.toThrow(/no decision/i);
   });
 
   it('and writes nothing when it refuses', async () => {
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     const w = writer();
     await expect(new RebaselineService(store, w.port).rebaseline(input())).rejects.toThrow();
     expect(w.created).toHaveLength(0);
@@ -274,7 +275,7 @@ describe('T994d · what else it refuses', () => {
     // Re-baselining supersedes something. With nothing current there is
     // nothing to supersede, and `EPIC-033`'s approve path is where a first
     // baseline comes from.
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     await decided(store);
     const w = writer({ ...PRIOR, supersededBy: 9 });
     await expect(new RebaselineService(store, w.port).rebaseline(input())).rejects.toThrow(
@@ -285,7 +286,7 @@ describe('T994d · what else it refuses', () => {
   it('an unbound baseline writer', async () => {
     // `CHANGE_ROOM_PORTS` — the baseline seam refuses when absent. A change
     // with no target has nothing to be a change to.
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     await decided(store);
     await expect(new RebaselineService(store, undefined).rebaseline(input())).rejects.toThrow(
       /EPIC-033/,

@@ -416,3 +416,115 @@ suite('T994q · the four commands', () => {
     }
   });
 });
+
+suite('T1215-T1218 · the paths convergence found unreachable', () => {
+  let cid = '';
+
+  beforeAll(async () => {
+    if (noRuntime) return;
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_converge', questions: ['which currencies?'] }));
+    cid = String(raised.body.id);
+  }, 120_000);
+
+  it('all four are mounted', async () => {
+    // `/speckit-converge` found each of these built, tested and reachable from
+    // nowhere. A test that only proved the service works would have passed
+    // throughout — which is how they got here.
+    //
+    // Against a throwaway request, because probing `/withdraw` **withdraws**.
+    // The first draft used the shared fixture and the later withdrawal case
+    // then failed with "this one is withdrawn" — a mount probe with a side
+    // effect, which is its own small lesson about what "just checking it is
+    // there" costs on a POST.
+    const probe = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_probe' }));
+    const probeId = String(probe.body.id);
+
+    const paths = [
+      `rooms/change/requests/${probeId}/questions/q_1/answer`,
+      `rooms/change/requests/${probeId}/withdraw`,
+      `rooms/change/requests/${probeId}/replan`,
+      `rooms/change/requests/${probeId}/trace`,
+    ];
+    for (const path of paths) {
+      const res = await request(app.getHttpServer())
+        .post(`/${PREFIX}/${path}`)
+        .set('Cookie', harness.cookie)
+        .send({});
+      expect(res.status, `${path} is not mounted`).not.toBe(404);
+    }
+  });
+
+  it('and none of them answers without a session', async () => {
+    for (const path of [`${cid}/withdraw`, `${cid}/replan`, `${cid}/trace`]) {
+      const res = await request(app.getHttpServer()).post(
+        `/${PREFIX}/rooms/change/requests/${path}`,
+      );
+      expect(res.status, `${path} answered unauthenticated`).toBe(401);
+    }
+  });
+
+  it('answering a question that exists records the answer', async () => {
+    const before = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${cid}`)
+      .set('Cookie', harness.cookie);
+    const questionId = before.body.openQuestions?.[0]?.id;
+    expect(questionId, 'the fixture carries no open question').toBeTruthy();
+
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/questions/${questionId}/answer`)
+      .set('Cookie', harness.cookie)
+      .send({ answer: 'Sterling only.' });
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.openQuestions[0].answer).toBe('Sterling only.');
+    // From the session, never the body.
+    expect(res.body.openQuestions[0].answeredBy).toBe(USER);
+  });
+
+  it('a re-plan obligation is refused before the change is decided', async () => {
+    // It belongs to a decision. Recorded without one it would name work arising
+    // from a change nobody approved.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/replan`)
+      .set('Cookie', harness.cookie)
+      .send({ affectedSpecificationId: 'spec_1', whatMustChange: 'x', why: 'y' });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/decided change/i);
+  });
+
+  it('tracing refuses while EPIC-011’s link writer is unbound', async () => {
+    // Rather than recording locally. A trace nobody else can traverse is not a
+    // trace, and a local table for it is the second link store T994n forbids.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/trace`)
+      .set('Cookie', harness.cookie)
+      .send({ artifacts: [{ type: 'specification', id: 'spec_1' }] });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toContain('EPIC-011');
+  });
+
+  it('withdrawal is a state change, and the analysis survives it', async () => {
+    // Last, because it closes the request the cases above use.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/withdraw`)
+      .set('Cookie', harness.cookie)
+      .send({});
+
+    expect(res.status, JSON.stringify(res.body)).toBeLessThan(300);
+    expect(res.body.state).toBe('withdrawn');
+    expect(res.body.openQuestions[0].answer).toBe('Sterling only.');
+
+    // Retained, not deleted: still readable after withdrawal.
+    const reread = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${cid}`)
+      .set('Cookie', harness.cookie);
+    expect(reread.status).toBeLessThan(300);
+    expect(reread.body.state).toBe('withdrawn');
+  });
+});

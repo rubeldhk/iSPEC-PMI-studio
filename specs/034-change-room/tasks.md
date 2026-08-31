@@ -272,20 +272,20 @@ and `T406a` is its discharge. Label the session `EPIC-034 Change Room`.
 
 Ordered as the constitution's *"Quality gates in order"* states them.
 
-- [ ] T995m Confirm every implementation task has a passing unit test or conformance check
-- [ ] T995n **Constitution XI Tier 1 (ALWAYS)** — `T406u` drives the Room through its **real HTTP routes** against the composed module graph via the real `AppModule`, and `T995d` proved it fails when the module is unregistered
-- [ ] T995o **Constitution XI Tier 2 (Epics delivering a journey)** — **APPLIES.** The request → impact → decision → re-baseline journey is exercised against a **running application** and a **run-generated** transcript is committed. It must cover the **whole chain**: the failure mode is a Room whose regions each work and whose flow does not. Hand-written evidence is a constitution violation of the first order
-- [ ] T995p [P] Write the transcript conformance check in `backend/tests/architecture/change-room-transcript.spec.ts` — asserts the transcript exists, names the run, covers all four stages, and was **generated** rather than authored
-- [ ] T995q Confirm this Epic published **no package** and derived **no region vocabulary** — the Room pattern is `EPIC-033`'s, and a second one would make its compile-time `UX-0035` guarantee decorative
-- [ ] T995r Restate in the closing report that **`BR-0154` re-plan remains `U-12`'s**. This Epic records the obligation and executes nothing; `FR-CHR-062` is **half-dischargeable by design** until `U-12` is declared, and saying so is the difference between a known gap and a silent one
-- [ ] T995s Restate that **`BR-0073` architecture-violation flagging remains `U-17`'s** — the impact area carries `unknown` with a reason, and this Room's delivery does not close it
-- [ ] T995t Restate that **`BR-0083` rationale queries remain `U-17`'s** — this Room retains the *why* of each change; it does not answer queries over it
+- [X] T995m Confirm every implementation task has a passing unit test or conformance check
+- [X] T995n **Constitution XI Tier 1 (ALWAYS)** — `T406u` drives the Room through its **real HTTP routes** against the composed module graph via the real `AppModule`, and `T995d` proved it fails when the module is unregistered
+- [X] T995o **Constitution XI Tier 2 (Epics delivering a journey)** — **APPLIES.** The request → impact → decision → re-baseline journey is exercised against a **running application** and a **run-generated** transcript is committed. It must cover the **whole chain**: the failure mode is a Room whose regions each work and whose flow does not. Hand-written evidence is a constitution violation of the first order
+- [X] T995p [P] Write the transcript conformance check in `backend/tests/architecture/change-room-transcript.spec.ts` — asserts the transcript exists, names the run, covers all four stages, and was **generated** rather than authored
+- [X] T995q Confirm this Epic published **no package** and derived **no region vocabulary** — the Room pattern is `EPIC-033`'s, and a second one would make its compile-time `UX-0035` guarantee decorative
+- [X] T995r Restate in the closing report that **`BR-0154` re-plan remains `U-12`'s**. This Epic records the obligation and executes nothing; `FR-CHR-062` is **half-dischargeable by design** until `U-12` is declared, and saying so is the difference between a known gap and a silent one
+- [X] T995s Restate that **`BR-0073` architecture-violation flagging remains `U-17`'s** — the impact area carries `unknown` with a reason, and this Room's delivery does not close it
+- [X] T995t Restate that **`BR-0083` rationale queries remain `U-17`'s** — this Room retains the *why* of each change; it does not answer queries over it
 - [ ] T995u Confirm the `EPIC-035` transfer path was exercised end to end from both sides, jointly with that Epic (`FR-CHR-012`, `FR-DFR-074`)
-- [ ] T995v Run `/speckit-converge`; append and complete any remaining unbuilt work
-- [ ] T995w Triage `specs/034-change-room/defects/`; every record closed or deferred to a named Epic
-- [ ] T995x Re-run the full suite green — `pnpm lint && pnpm typecheck && pnpm test && pnpm test:governance`
-- [ ] T995y **Hand the task-identifier exhaustion to `EPIC-026` as a blocker on `EPIC-035`, not a warning.** 992 of 999 prefixes are in use; **three remain** after this Epic — 81 identifiers — against a seven-user-story spec whose two sibling Rooms needed 100 and 98 for six. State precisely what is exhausted: **the identifier space is not** (`G-26-15` requires unique *identifiers*, and `T864a`–`T864z` are unused), **the prefix-block convention is**. Reusing suffixes under someone else's prefix would pass the check and break what the suffix means — `EPIC-029` records it as *"keeps a later addition adjacent to what it pairs with"*. So the fix is one of two, and `EPIC-026` must choose: widen `T\d{3}[a-z]?` to four digits in `task-ids.spec.ts`, `dor.ts` and `task-paths.spec.ts`, or retire the adjacency meaning of the suffix and say so where the convention is written down
-- [ ] T995z Promote `local → dev` (no environment skipped) and publish the Epic closing report: work completed, work deferred, the four mutation observations, the measured performance figures, and the recommended next command (Constitution IX). Refresh the Delivery Board or restate its staleness
+- [X] T995v Run `/speckit-converge`; append and complete any remaining unbuilt work
+- [X] T995w Triage `specs/034-change-room/defects/`; every record closed or deferred to a named Epic
+- [X] T995x Re-run the full suite green — `pnpm lint && pnpm typecheck && pnpm test && pnpm test:governance`
+- [X] T995y **Hand the task-identifier exhaustion to `EPIC-026` as a blocker on `EPIC-035`, not a warning.** 992 of 999 prefixes are in use; **three remain** after this Epic — 81 identifiers — against a seven-user-story spec whose two sibling Rooms needed 100 and 98 for six. State precisely what is exhausted: **the identifier space is not** (`G-26-15` requires unique *identifiers*, and `T864a`–`T864z` are unused), **the prefix-block convention is**. Reusing suffixes under someone else's prefix would pass the check and break what the suffix means — `EPIC-029` records it as *"keeps a later addition adjacent to what it pairs with"*. So the fix is one of two, and `EPIC-026` must choose: widen `T\d{3}[a-z]?` to four digits in `task-ids.spec.ts`, `dor.ts` and `task-paths.spec.ts`, or retire the adjacency meaning of the suffix and say so where the convention is written down
+- [X] T995z Promote `local → dev` (no environment skipped) and publish the Epic closing report: work completed, work deferred, the four mutation observations, the measured performance figures, and the recommended next command (Constitution IX). Refresh the Delivery Board or restate its staleness
 
 ---
 
@@ -355,3 +355,23 @@ and the re-plan safety test. The ban is only known to hold if someone tries it.
   the wrong test.
 - **Constitution V over the skill default**: `/speckit-tasks` calls tests optional; the constitution
   overrides every template, skill and tool default.
+
+---
+
+## Phase C: Convergence
+
+*Appended by `/speckit-converge` 2026-08-31 (`T995v`). Identifiers continue from the repository's
+highest allocated prefix (`T1214`); the three-digit space has been fully allocated since before this
+Epic, and `governance/epic-stage.config.json` recognises `^T\d{3,}[a-z]?$` (see
+[identifier-handoff.md](./identifier-handoff.md)).*
+
+**Four of these five are one defect class** — built, tested, and reachable from nowhere. Every one
+has a passing unit test, and none of them can be reached in the running application. That is the
+pattern `DEF-005-001` and `T1178` both record, found here by asking which capabilities have a caller
+rather than which have a test.
+
+- [X] T1215 **CRITICAL** Register `RePlanRecorder` in `backend/src/modules/change-room/change-room.module.ts` and expose the re-plan obligation and change-traceability paths, per `FR-CHR-062`, `FR-CHR-064` (missing) (integration test: T406u) — the recorder appears in no `providers` array and no route reaches it, so `T994k`'s obligation can be recorded only by a test
+- [X] T1216 Expose answering a clarification in `backend/src/modules/change-room/change-room.controller.ts`, per `FR-CHR-022` (missing) (integration test: T406u) — `ChangeIntakeService.answer()` has no route and no caller in `src/`; the questions are presented as one set and none can be answered
+- [X] T1217 Expose withdrawal in `backend/src/modules/change-room/change-room.controller.ts`, per `FR-CHR-023` (missing) (integration test: T406u) — `ChangeIntakeService.withdraw()` has no route and no caller in `src/`
+- [X] T1218 Call `retainForDecision` when a decision references an impact view, in `backend/src/modules/change-room/decision.service.ts`, per `FR-CHR-035` (partial) (integration test: T406u) — nothing in `src/` calls it, so `retainedForDecision` is always `false` and `R-034-5`'s comparison reads a view nobody marked; the Tier 2 transcript records `retained: false` for exactly this reason
+- [ ] T1219 Exercise the `EPIC-035` transfer path end to end from both sides, per `FR-CHR-012`, `FR-DFR-074` (missing) — **blocked**: `EPIC-035` has 0 of 81 tasks complete and no backend module, so only this Epic's half is exercised (`T994x`, 14 tests, including the return path carrying `returnTo: EPIC-035`)

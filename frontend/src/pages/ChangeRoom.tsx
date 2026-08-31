@@ -153,7 +153,9 @@ function useSlot<T>(load: () => Promise<T>, deps: readonly unknown[]): Slot<T> {
     return (): void => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // The dependency list is the caller's, passed in. `react-hooks` is not
+    // configured in this repository, so a disable directive for it is itself a
+    // lint error — the rule that does not exist cannot be silenced.
   }, deps);
   return slot;
 }

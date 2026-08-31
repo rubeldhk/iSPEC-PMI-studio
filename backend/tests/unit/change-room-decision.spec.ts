@@ -23,6 +23,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { InMemoryChangeRoomStore } from '../../src/modules/change-room/change-room.store.js';
+import { storeWithImpactView } from '../helpers/change-room-fixtures.js';
 import {
   DecisionService,
   type ChangeDecisionInboxPort,
@@ -90,14 +91,14 @@ const decision = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-const withInbox = (inbox: ChangeDecisionInboxPort | undefined) =>
-  new DecisionService(new InMemoryChangeRoomStore(), permits, inbox);
+const withInbox = async (inbox: ChangeDecisionInboxPort | undefined) =>
+  new DecisionService(await storeWithImpactView(), permits, inbox);
 
 describe('T994a · a change is submitted for decision', () => {
   it('and surfaces in the Decision Inbox', async () => {
     // `FR-CHR-053`, `BR-0068`.
     const inbox = recordingInbox();
-    const submitted = await withInbox(inbox).submitForDecision(submission());
+    const submitted = await (await withInbox(inbox)).submitForDecision(submission());
 
     expect(inbox.seen).toHaveLength(1);
     expect(submitted.inboxItemId).toBe('inbox_1');
@@ -107,7 +108,7 @@ describe('T994a · a change is submitted for decision', () => {
     // An inbox item that names only the change sends the approver looking for
     // the two things the decision actually turns on.
     const inbox = recordingInbox();
-    await withInbox(inbox).submitForDecision(submission());
+    await (await withInbox(inbox)).submitForDecision(submission());
 
     const item = inbox.seen[0] as { options: unknown[]; impactViewId: string; band: string };
     expect(item.options).toHaveLength(2);
@@ -119,14 +120,14 @@ describe('T994a · a change is submitted for decision', () => {
     // rather than asked for: baseline change is high, and a question invites an
     // answer.
     const inbox = recordingInbox();
-    await withInbox(inbox).submitForDecision(submission());
+    await (await withInbox(inbox)).submitForDecision(submission());
     expect((inbox.seen[0] as { band: string }).band).toBe('high');
   });
 
   it('refuses when the inbox is unbound', async () => {
     // Queueing into a void is worse than refusing: the change would wait
     // forever with nobody aware it was waiting.
-    await expect(withInbox(undefined).submitForDecision(submission())).rejects.toThrow(
+    await expect((await withInbox(undefined)).submitForDecision(submission())).rejects.toThrow(
       /EPIC-031/,
     );
   });
@@ -136,7 +137,7 @@ describe('T994a · a change is submitted for decision', () => {
     // request wearing a decision's clothes.
     const inbox = recordingInbox();
     await expect(
-      withInbox(inbox).submitForDecision(submission({ options: [option('a')] })),
+      (await withInbox(inbox)).submitForDecision(submission({ options: [option('a')] })),
     ).rejects.toThrow(/two or more/i);
     expect(inbox.seen).toHaveLength(0);
   });
@@ -146,7 +147,7 @@ describe('T994a · a change is submitted for decision', () => {
     // part somebody thought of.
     const inbox = recordingInbox();
     await expect(
-      withInbox(inbox).submitForDecision(submission({ impactViewId: '' })),
+      (await withInbox(inbox)).submitForDecision(submission({ impactViewId: '' })),
     ).rejects.toThrow(/impact view/i);
     expect(inbox.seen).toHaveLength(0);
   });
@@ -154,12 +155,12 @@ describe('T994a · a change is submitted for decision', () => {
 
 describe('T994a · FR-CHR-050 — decided before a baseline moves', () => {
   it('a change with no decision is not applicable', async () => {
-    const service = withInbox(recordingInbox());
+    const service = (await withInbox(recordingInbox()));
     expect(await service.decidedFor('ws_1', 'cr_1')).toBeNull();
   });
 
   it('a recorded decision makes it applicable', async () => {
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     const service = new DecisionService(store, permits, recordingInbox());
     await service.record(decision());
 
@@ -170,14 +171,14 @@ describe('T994a · FR-CHR-050 — decided before a baseline moves', () => {
   it('and names the impact view it was decided against', async () => {
     // `R-034-5`'s left-hand side. Without it, "has the impact changed since the
     // decision?" is a human guess.
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     const service = new DecisionService(store, permits, recordingInbox());
     await service.record(decision());
     expect((await service.decidedFor('ws_1', 'cr_1'))?.impactViewId).toBe('iv_1');
   });
 
   it('a decision in another workspace is not visible', async () => {
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     const service = new DecisionService(store, permits, recordingInbox());
     await service.record(decision());
     expect(await service.decidedFor('ws_other', 'cr_1')).toBeNull();
@@ -186,7 +187,7 @@ describe('T994a · FR-CHR-050 — decided before a baseline moves', () => {
 
 describe('T994a · FR-CHR-052 — the authority is published, not asserted', () => {
   it('records the basis the provider returned', async () => {
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     await new DecisionService(store, permits, recordingInbox()).record(decision());
     expect((await store.listDecisionsFor('ws_1', 'cr_1'))[0]?.authorityBasis).toBe('DA-0007');
   });
@@ -198,7 +199,7 @@ describe('T994a · FR-CHR-052 — the authority is published, not asserted', () 
       },
     };
     await expect(
-      new DecisionService(new InMemoryChangeRoomStore(), vague, recordingInbox()).record(decision()),
+      new DecisionService(await storeWithImpactView(), vague, recordingInbox()).record(decision()),
     ).rejects.toThrow(/authority basis/i);
   });
 
@@ -209,7 +210,7 @@ describe('T994a · FR-CHR-052 — the authority is published, not asserted', () 
       },
     };
     await expect(
-      new DecisionService(new InMemoryChangeRoomStore(), denies, recordingInbox()).record(decision()),
+      new DecisionService(await storeWithImpactView(), denies, recordingInbox()).record(decision()),
     ).rejects.toThrow(/no delegation/);
   });
 });
@@ -227,14 +228,14 @@ describe('T994a · FR-CHR-051 — the band cannot be lowered', () => {
       },
     };
     await expect(
-      new DecisionService(new InMemoryChangeRoomStore(), lowered, recordingInbox()).record(
+      new DecisionService(await storeWithImpactView(), lowered, recordingInbox()).record(
         decision(),
       ),
     ).rejects.toThrow(/high band/i);
   });
 
   it('and writes nothing when it does', async () => {
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     const lowered: ChangeDecisionPolicyPort = {
       async authorize() {
         return { authorized: true, authorityBasis: 'DA-0007', band: 'medium' };
@@ -249,7 +250,7 @@ describe('T994a · FR-CHR-051 — the band cannot be lowered', () => {
   it('accepts high — or the check means nothing', async () => {
     // The control. Without it, a refusal of every band would satisfy the two
     // assertions above.
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView();
     await new DecisionService(store, permits, recordingInbox()).record(decision());
     expect(await store.listDecisionsFor('ws_1', 'cr_1')).toHaveLength(1);
   });

@@ -29,6 +29,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
 import { InMemoryChangeRoomStore } from '../../src/modules/change-room/change-room.store.js';
+import { storeWithImpactView } from '../helpers/change-room-fixtures.js';
 import {
   DecisionService,
   type ChangeDecisionInboxPort,
@@ -95,12 +96,12 @@ const decision = (over: Record<string, unknown> = {}) => ({
 
 describe('T994c · the service refuses a lowered band', () => {
   it.each(['low', 'medium', 'standard', 'none'])('refuses %s', async (band) => {
-    const service = new DecisionService(new InMemoryChangeRoomStore(), policyIn(band), inbox);
+    const service = new DecisionService(await storeWithImpactView({ workspaceId: WS }), policyIn(band), inbox);
     await expect(service.record(decision())).rejects.toThrow(/high band/i);
   });
 
   it('accepts high — or every assertion above is vacuous', async () => {
-    const store = new InMemoryChangeRoomStore();
+    const store = await storeWithImpactView({ workspaceId: WS });
     await new DecisionService(store, policyIn('high'), inbox).record(decision());
     expect(await store.listDecisionsFor(WS, 'cr_1')).toHaveLength(1);
   });
@@ -114,7 +115,7 @@ describe('T994c · the service refuses a lowered band', () => {
       },
     };
     await expect(
-      new DecisionService(new InMemoryChangeRoomStore(), persuasive, inbox).record(decision()),
+      new DecisionService(await storeWithImpactView({ workspaceId: WS }), persuasive, inbox).record(decision()),
     ).rejects.toThrow(/high band/i);
   });
 });
@@ -223,7 +224,7 @@ suite('T994c · the database refuses a non-human decider', () => {
   it('the service and the database refuse the same thing', async () => {
     // Belt and braces, shown agreeing. If they disagreed, one of them would be
     // the real rule and the other would be decoration.
-    const service = new DecisionService(new InMemoryChangeRoomStore(), policyIn('high'), inbox);
+    const service = new DecisionService(await storeWithImpactView({ workspaceId: WS }), policyIn('high'), inbox);
     await expect(service.record(decision({ decidedByKind: 'ai' }))).rejects.toThrow(/human/i);
     await expect(insert({ decidedByKind: 'ai' })).rejects.toThrow(/decided_by_a_human/);
   });

@@ -30,6 +30,7 @@ import {
 import { ClosureService, type CloseChangeInput } from './closure.service.js';
 import { DecisionService, type RecordDecisionInput } from './decision.service.js';
 import { RebaselineService } from './rebase.service.js';
+import { RePlanRecorder } from './replan.recorder.js';
 import { OptionsService } from './options.service.js';
 
 /**
@@ -107,6 +108,7 @@ export class ChangeRoomController {
     @Inject(DecisionService) private readonly decisions: DecisionService,
     @Inject(RebaselineService) private readonly rebases: RebaselineService,
     @Inject(ClosureService) private readonly closures: ClosureService,
+    @Inject(RePlanRecorder) private readonly replans: RePlanRecorder,
   ) {}
 
   /**
@@ -467,5 +469,107 @@ export class ChangeRoomController {
       workspaceId: principal.workspaceId,
       requester: principal.userId,
     });
+  }
+
+  /**
+   * `FR-CHR-022`, `T1216` - answer one of the open questions, in place.
+   *
+   * The questions were presented as one set from the first commit and, until
+   * this route, none of them could be answered outside a test. A Room that
+   * shows five questions and offers no way to answer any is worse than one that
+   * shows none: it says the work is somebody else's and gives them no door.
+   */
+  @Post('rooms/change/requests/:id/questions/:questionId/answer')
+  async answerQuestion(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Param('questionId') questionId: string,
+    @Body() body: { answer?: string },
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.intake.answer(
+      principal.workspaceId,
+      id,
+      questionId,
+      body?.answer ?? '',
+      // From the session. Who answered is part of the analysis a withdrawn
+      // request retains.
+      principal.userId,
+    );
+  }
+
+  /**
+   * `FR-CHR-023`, `T1217` - withdraw the change, and keep it.
+   *
+   * A state change, never a delete. That somebody questioned a baseline and
+   * then thought better of it is part of how the baseline earned its standing.
+   */
+  @Post('rooms/change/requests/:id/withdraw')
+  async withdraw(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.intake.withdraw(principal.workspaceId, id);
+  }
+
+  /**
+   * `FR-CHR-062`, `T1215` - record what a re-plan must address.
+   *
+   * **Records. Executes nothing.** `R-034-2`: `TaskRegenerationService`
+   * replaces a task list, and `BR-0154` requires revision without destroying
+   * completed-work history. The obligation sits in `recorded` where anyone can
+   * see it is outstanding, until `U-12` exists to discharge it.
+   */
+  @Post('rooms/change/requests/:id/replan')
+  async recordRePlan(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: { affectedSpecificationId?: string; whatMustChange?: string; why?: string },
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const decided = await this.decisions.decidedFor(principal.workspaceId, request.id);
+    if (!decided) {
+      // A re-plan obligation belongs to a decision. Recorded without one it
+      // would name work arising from a change nobody approved.
+      throw new ValidationFailedError(
+        'a re-plan obligation is recorded against a decided change (FR-CHR-062)',
+      );
+    }
+    return this.replans.record({
+      workspaceId: principal.workspaceId,
+      changeDecisionId: decided.id,
+      affectedSpecificationId: body?.affectedSpecificationId ?? '',
+      whatMustChange: body?.whatMustChange ?? '',
+      why: body?.why ?? '',
+    });
+  }
+
+  /**
+   * `FR-CHR-064`, `T1215` - the work that arose from this change traces to it.
+   *
+   * Written through `EPIC-011`'s link writer, which is the one place links
+   * live. Refuses when that writer is unbound rather than recording locally: a
+   * trace nobody else can traverse is not a trace.
+   */
+  @Post('rooms/change/requests/:id/trace')
+  async traceToChange(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: { artifacts?: { type: 'specification' | 'task' | 'test'; id: string }[] },
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const request = await this.store.findById(principal.workspaceId, id);
+    if (!request) throw new NotFoundError('Not found.');
+
+    const written = await this.replans.traceToChange({
+      workspaceId: principal.workspaceId,
+      changeRequestId: request.id,
+      artifacts: body?.artifacts ?? [],
+    });
+    return { linked: written };
   }
 }

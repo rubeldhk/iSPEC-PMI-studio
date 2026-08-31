@@ -33,6 +33,7 @@ import { ClosureService } from './closure.service.js';
 import { DecisionService } from './decision.service.js';
 import { OptionsService } from './options.service.js';
 import { RebaselineService } from './rebase.service.js';
+import { RePlanRecorder } from './replan.recorder.js';
 import { CHANGE_ROOM_PORTS, CHANGE_ROOM_STORE } from './change-room.tokens.js';
 import { InMemoryChangeRoomStore, type ChangeRoomStore } from './change-room.store.js';
 import {
@@ -151,6 +152,30 @@ export class ChangeRoomService {
         new RebaselineService(store, undefined),
     },
     {
+      provide: RePlanRecorder,
+      inject: [CHANGE_ROOM_STORE],
+      /**
+       * `T1215` - registered, with `EPIC-011`'s link writer **unbound**.
+       *
+       * A convergence pass found this class absent from every `providers`
+       * array: built, tested by `T994j` and `T994m`, and reachable from
+       * nowhere. That is the seventh time this repository has recorded the
+       * pattern, and the first time a check caught one rather than a human
+       * opening a browser.
+       *
+       * (The engine that ran that pass is deliberately unnamed here.
+       * `engine-independence.spec.ts` forbids `backend/src` naming it at all —
+       * `FR-017`, `ADR-0001` — and it caught this comment doing so.)
+       *
+       * The link writer stays unbound until the composition root supplies
+       * `EPIC-011`'s service, and `traceToChange` refuses without it — a trace
+       * nobody else can traverse is not a trace, and a local table for it is
+       * the second link store `T994n` forbids.
+       */
+      useFactory: (store: ChangeRoomStore): RePlanRecorder =>
+        new RePlanRecorder(store, undefined),
+    },
+    {
       provide: ChangeIntakeService,
       inject: [CHANGE_ROOM_STORE],
       useFactory: (store: ChangeRoomStore): ChangeIntakeService => new ChangeIntakeService(store),
@@ -166,6 +191,7 @@ export class ChangeRoomService {
     DecisionService,
     RebaselineService,
     ClosureService,
+    RePlanRecorder,
   ],
 })
 export class ChangeRoomModule {}

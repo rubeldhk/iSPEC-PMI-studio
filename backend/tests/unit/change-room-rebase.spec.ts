@@ -267,19 +267,30 @@ describe('T994h · the impact changed — re-decide', () => {
   it('and when the retained view cannot be read at all', async () => {
     // Reporting "nothing changed" would be a claim about a view nobody can
     // read. Requiring the decision again is the only honest answer.
+    // Written through the store, not the service. `T1218` made
+    // `DecisionService.record` refuse an `impactViewId` it cannot read — a
+    // decision citing a view nobody can see is decided on the part somebody
+    // thought of (`BR-0044`) — so the service can no longer produce this state.
+    //
+    // The branch still matters. A view readable at decision time can stop being
+    // readable afterwards, and `assessRebase` meets that state on a rebase
+    // months later. Reporting "nothing changed" then would be a claim about a
+    // view nobody can read, so it requires the decision again.
     const store = new InMemoryChangeRoomStore();
-    await new DecisionService(store, permits, inbox).record({
+    await store.recordDecision({
+      id: 'cd_orphan',
       workspaceId: 'ws_1',
       changeRequestId: 'cr_1',
-      decisionId: 'dec_1',
-      impactViewId: 'iv_missing',
       decidedBy: 'u_2',
       decidedByKind: 'human',
+      authorityBasis: 'DA-0007',
       objectVersion: 1,
-      options: OPTIONS,
-      chosenOptionId: 'b',
+      decidedAt: new Date('2026-08-30T12:00:00Z'),
+      decisionId: 'dec_1',
+      chosenOption: option('b'),
+      declinedOptions: [option('a')],
       rationale: 'B keeps the migration reversible.',
-      now: new Date('2026-08-30T12:00:00Z'),
+      impactViewId: 'iv_missing',
     });
     const result = await new RebaselineService(store, writerAt(2).port).assessRebase(assess());
 

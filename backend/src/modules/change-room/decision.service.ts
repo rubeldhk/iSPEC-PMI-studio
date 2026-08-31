@@ -256,6 +256,31 @@ export class DecisionService {
       (option) => option.optionId !== chosen.optionId,
     );
 
+    // `BR-0044`, `FR-CHR-035` - the view must exist before it can be cited.
+    //
+    // Made explicit by `T1218`. Calling `retainForDecision` on an absent view
+    // threw `no impact view <id>`, which is the right outcome reached the wrong
+    // way: a decision naming a snapshot nobody can read is decided on the part
+    // somebody thought of, and it deserves a refusal that says so rather than a
+    // store error surfacing from two layers down.
+    const view = await this.store.findImpactView(input.workspaceId, input.impactViewId);
+    if (!view) {
+      throw new ValidationFailedError(
+        `impact view ${input.impactViewId} cannot be read, so this decision would be taken ` +
+          'against a blast radius nobody can see (BR-0044, FR-CHR-035)',
+      );
+    }
+
+    // `FR-CHR-035`, `T1218` - mark the snapshot the decision was taken against.
+    //
+    // Before this, nothing in `src/` called it: `retainedForDecision` was always
+    // `false`, and `R-034-5`'s re-decision comparison read a view nobody had
+    // marked. The Tier 2 transcript recorded `retained: false` for exactly that
+    // reason. Retention is what makes "has the impact changed since the
+    // decision?" a comparison rather than a recollection, so the decision that
+    // relies on it is the thing that must claim it.
+    await this.store.retainForDecision(input.workspaceId, input.impactViewId);
+
     return this.store.recordDecision({
       id: randomUUID(),
       workspaceId: input.workspaceId,
