@@ -2366,6 +2366,10 @@ model Classification {
   proposedByAgent              Boolean      @default(false)
   supersededByClassificationId String?
   reclassifiedAt               DateTime?
+  /// FR-DFR-024 — NULL means the version reported on the defect. A value means
+  /// this classification deliberately judged a later one, which is the only
+  /// place that fact lives.
+  evaluatedAgainstVersion      String?
   rationale                    String
   createdAt                    DateTime     @default(now())
   defect                       DefectRecord @relation(fields: [defectId], references: [id])

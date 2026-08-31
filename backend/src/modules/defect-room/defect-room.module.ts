@@ -31,8 +31,16 @@
  * loop with its own store.
  */
 import { Module } from '@nestjs/common';
-import { DEFECT_ROOM_PORTS } from './defect-room.tokens.js';
+import { prismaClient } from '../../persistence/prisma.js';
+import { DefectRoomController } from './defect-room.controller.js';
+import { InMemoryDefectRoomStore, type DefectRoomStore } from './defect-room.store.js';
+import {
+  PrismaDefectRoomStore,
+  type DefectRoomPrismaClient,
+} from './defect-room.store.prisma.js';
+import { DEFECT_ROOM_PORTS, DEFECT_ROOM_STORE } from './defect-room.tokens.js';
 import { RoutingResolver } from './routing.service.js';
+import { TriageService } from './triage.service.js';
 
 /** Resolvable proof the module is in the graph — `T997v` asks for it by name. */
 export class DefectRoomService {
@@ -44,8 +52,38 @@ export class DefectRoomService {
 }
 
 @Module({
+  controllers: [DefectRoomController],
   providers: [
     { provide: DefectRoomService, useFactory: (): DefectRoomService => new DefectRoomService() },
+    {
+      provide: DEFECT_ROOM_STORE,
+      // `T1178`'s lesson, applied in the commit that first needs it rather than
+      // in a later remediation: `DATABASE_URL` decides, as it does for
+      // `CHANGE_ROOM_STORE` and `REQUIREMENT_ROOM_STORE`. Unset in unit tests,
+      // so the in-memory store stays their default and only theirs.
+      useFactory: (): DefectRoomStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaDefectRoomStore(prismaClient() as unknown as DefectRoomPrismaClient)
+          : new InMemoryDefectRoomStore(),
+    },
+    {
+      provide: TriageService,
+      /**
+       * Bound with `BaselineReader` **unfilled**, which is the honest state.
+       *
+       * `EPIC-033` owns approved behaviour and does not expose a reader in this
+       * deployment yet. Until it does, every triage refuses and names the Epic
+       * that owes the binding — because the alternative is the one mistake this
+       * service is arranged to prevent: *"I could not look"* recorded as
+       * *"no approved behaviour exists"*, which files a requirement gap against
+       * a requirement that may well already exist (`FR-DFR-021`, `FR-GEL-062`).
+       *
+       * A permissive default here would be invisible at the call site and
+       * wrong in the same direction every time.
+       */
+      useFactory: (store: DefectRoomStore): TriageService => new TriageService(store, undefined),
+      inject: [DEFECT_ROOM_STORE],
+    },
     {
       provide: RoutingResolver,
       /**
@@ -60,6 +98,6 @@ export class DefectRoomService {
       useFactory: (): RoutingResolver => new RoutingResolver({}),
     },
   ],
-  exports: [DefectRoomService, RoutingResolver],
+  exports: [DefectRoomService, RoutingResolver, TriageService, DEFECT_ROOM_STORE],
 })
 export class DefectRoomModule {}

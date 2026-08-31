@@ -423,4 +423,62 @@ suite('T997u · the Defect Room refuses at the database', () => {
       );
     });
   });
+
+  describe('FR-DFR-025 · a supersession is never half-written', () => {
+    it('accepts a classification that supersedes nothing — the control', async () => {
+      const d = await defect();
+      await expect(classify(d)).resolves.toBeUndefined();
+    });
+
+    it('accepts one superseded, with both halves present', async () => {
+      const d = await defect();
+      await expect(
+        classify(d, { supersededByClassificationId: 'cl_later', reclassifiedAt: new Date() }),
+      ).resolves.toBeUndefined();
+    });
+
+    it('refuses a pointer to a successor with no date', async () => {
+      // The row cannot say when it stopped standing. `ADR-0016`'s never-delete
+      // rule is about being able to read the history back, and a supersession
+      // with no date is a fact whose position in the history is unknown.
+      const d = await defect();
+      await expect(classify(d, { supersededByClassificationId: 'cl_later' })).rejects.toThrow(
+        /supersession_says_when/,
+      );
+    });
+
+    it('and refuses a date with no successor', async () => {
+      // Worse than the other half: this row claims it was replaced by nothing,
+      // so a reader looking for what supersedes it finds an absence that looks
+      // like the end of the story.
+      const d = await defect();
+      await expect(classify(d, { reclassifiedAt: new Date() })).rejects.toThrow(
+        /supersession_says_when/,
+      );
+    });
+  });
+
+  describe('FR-DFR-024 · a re-evaluation names the version it judged', () => {
+    it('accepts NULL, which means the version reported on the defect', async () => {
+      // NULL is not "unknown" here — it is a specific answer that lives on the
+      // defect row, and the control that keeps the refusal below from being a
+      // rule against absence.
+      const d = await defect();
+      await expect(classify(d, { evaluatedAgainstVersion: null })).resolves.toBeUndefined();
+    });
+
+    it('accepts a later version', async () => {
+      const d = await defect();
+      await expect(classify(d, { evaluatedAgainstVersion: 'v7' })).resolves.toBeUndefined();
+    });
+
+    it('refuses a blank one', async () => {
+      // Worse than NULL, which at least says exactly which version it means.
+      // An empty string reads as "some other version, unspecified".
+      const d = await defect();
+      await expect(classify(d, { evaluatedAgainstVersion: '  ' })).rejects.toThrow(
+        /reevaluation_names_its_version/,
+      );
+    });
+  });
 });

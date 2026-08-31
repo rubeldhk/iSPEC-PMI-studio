@@ -73,26 +73,46 @@ export interface Classification {
   readonly workspaceId: string;
   readonly defectId: string;
   readonly outcome: ClassificationOutcome;
-  /** `null` records that no approved behaviour exists — `FR-DFR-021`. */
-  readonly contestedBehaviourRef: string | null;
   /**
-   * `FR-DFR-024` — the version the defect was reported against.
+   * `FR-DFR-077` — the destination the outcome maps to, stored.
    *
-   * Kept even when the artifact has moved on. A defect re-targeted at current
-   * silently would be answering a question about behaviour nobody reported.
+   * Denormalised deliberately, and CHECKed against the outcome in SQL. A
+   * classification that had to be joined to a mapping to say where it goes
+   * could rest with nowhere to go while looking complete.
    */
-  readonly reportedAgainstVersion: string;
-  /** `FR-DFR-023` — a human. An agent may propose; it may not confirm. */
+  readonly destination: string;
+  /** `null` only when the outcome is a requirement gap — CHECKed. */
+  readonly approvedBehaviourRef: string | null;
+  /** `FR-DFR-021` — the absence is RECORDED, not left blank. */
+  readonly absenceRecorded: boolean;
   readonly classifiedBy: string;
+  /** `FR-DFR-023` — `human` for a confirmed defect, and the database agrees. */
   readonly classifiedByKind: string;
-  readonly rationale: string;
+  /** `FR-DFR-023` — an agent may propose; the confirming actor must be human. */
+  readonly proposedByAgent: boolean;
   /**
-   * `FR-DFR-025` — set when this classification supersedes an earlier one.
+   * `FR-DFR-025` — set on the row this one replaced, when it is replaced.
    *
-   * A reclassification is recorded, never a deletion (`ADR-0016`): that a
-   * defect was once read differently is part of how the current reading earned
-   * its standing.
+   * A forward pointer on the OLD row, matching the shape `EPIC-033` uses for a
+   * superseded baseline: the row stands, and only this field moves. The
+   * substance is never rewritten, because an updated row destroys the same
+   * history a deleted one does, more quietly.
    */
-  readonly reclassifiedFrom: string | null;
-  readonly classifiedAt: Date;
+  readonly supersededByClassificationId: string | null;
+  readonly reclassifiedAt: Date | null;
+  /**
+   * `FR-DFR-024` — which version this classification judged.
+   *
+   * **`null` means the version reported on the defect**, which is where that
+   * answer lives and the only place it lives. A value means this classification
+   * deliberately judged a later version — the re-evaluation half of *"recorded
+   * against the version reported and re-evaluated against current"*.
+   *
+   * Nullable rather than always-populated because the alternative is a copy of
+   * `DefectRow.contestedArtifactVersion` on every first triage, and a copy is a
+   * second place the same answer lives.
+   */
+  readonly evaluatedAgainstVersion: string | null;
+  readonly rationale: string;
+  readonly createdAt: Date;
 }
