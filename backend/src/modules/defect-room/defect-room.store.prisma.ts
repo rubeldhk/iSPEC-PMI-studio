@@ -24,6 +24,7 @@
  * remembering not to use it.
  */
 import type { Classification } from './classification.types.js';
+import type { EscapePoint, EscapeRecordRow, EscapeStore } from './analytics.service.js';
 import type {
   DefectRoomStore,
   DefectRow,
@@ -43,6 +44,7 @@ interface Delegate {
 
 export interface DefectRoomPrismaClient {
   readonly defectRecord: Delegate;
+  readonly escapeRecord: Delegate;
   readonly classification: Delegate;
   readonly defectTest: Delegate;
   readonly reproduction: Delegate;
@@ -107,6 +109,32 @@ export class PrismaDefectRoomStore implements DefectRoomStore {
     const existing = await this.findDefect(workspaceId, id);
     if (!existing) throw new Error(`no defect ${id}`);
     return (await this.prisma.defectRecord.update({ where: { id }, data: { state } })) as DefectRow;
+  }
+
+  /**
+   * `FR-DFR-012` — the Epic and the state in one `update`.
+   *
+   * Not two calls: a half-applied link leaves either a linked defect in a queue
+   * nobody works, or a held one that every per-Epic report counts.
+   */
+  async linkEpic(workspaceId: string, id: string, epicId: string): Promise<DefectRow> {
+    const existing = await this.findDefect(workspaceId, id);
+    if (!existing) throw new Error(`no defect ${id}`);
+    return (await this.prisma.defectRecord.update({
+      where: { id },
+      data: {
+        epicId,
+        state: existing.state === 'held-for-triage' ? 'triaged' : existing.state,
+      },
+    })) as DefectRow;
+  }
+
+  /** `SC-DFR-006` — the held ones, so "visibly" is a query and not a promise. */
+  async heldForTriage(workspaceId: string): Promise<readonly DefectRow[]> {
+    return (await this.prisma.defectRecord.findMany({
+      where: { workspaceId, state: 'held-for-triage' },
+      orderBy: { reportedAt: 'asc' },
+    })) as DefectRow[];
   }
 
   async recordClassification(row: Classification): Promise<Classification> {
@@ -284,5 +312,53 @@ export class PrismaDefectRoomStore implements DefectRoomStore {
       where: { workspaceId, defectId },
       orderBy: { createdAt: 'asc' },
     })) as EvidenceCheckRow[];
+  }
+}
+
+/**
+ * `T999a` (EPIC-035) — escape records, in PostgreSQL.
+ *
+ * `FR-DFR-082` writes this row **at intake**, which means it is written on the
+ * busiest path in the Room and read months later by whoever asks where defects
+ * come from. An in-memory one would answer that question with whatever arrived
+ * since the last restart — a number that looks like data and is not.
+ *
+ * Its own class rather than a method on `PrismaDefectRoomStore`, because
+ * `DefectAnalyticsService` takes an `EscapeStore` and nothing else: the service
+ * that aggregates escape data should not be able to reach the defect table.
+ */
+export class PrismaEscapeStore implements EscapeStore {
+  constructor(private readonly prisma: Pick<DefectRoomPrismaClient, 'escapeRecord'>) {}
+
+  async create(row: EscapeRecordRow): Promise<EscapeRecordRow> {
+    return (await this.prisma.escapeRecord.create({ data: row })) as EscapeRecordRow;
+  }
+
+  /**
+   * Workspace in the predicate, never a lookup by `defectId` alone.
+   *
+   * `defectId` is unique, so a `findUnique` would work and would make a row in
+   * another workspace observable (`FR-002`).
+   */
+  async findForDefect(workspaceId: string, defectId: string): Promise<EscapeRecordRow | null> {
+    return (await this.prisma.escapeRecord.findFirst({
+      where: { workspaceId, defectId },
+    })) as EscapeRecordRow | null;
+  }
+
+  async setEscapePoint(
+    workspaceId: string,
+    defectId: string,
+    escapePoint: EscapePoint,
+  ): Promise<EscapeRecordRow> {
+    const existing = await this.findForDefect(workspaceId, defectId);
+    // Refuses rather than creating. A row appearing here means capture did not
+    // run at intake, and writing one now would close that gap silently — which
+    // is the gap `FR-DFR-082` exists to keep open and visible.
+    if (!existing) throw new Error(`no escape record for defect ${defectId}`);
+    return (await this.prisma.escapeRecord.update({
+      where: { id: existing.id },
+      data: { escapePoint },
+    })) as EscapeRecordRow;
   }
 }

@@ -36,10 +36,17 @@ import { DefectRoomController } from './defect-room.controller.js';
 import { InMemoryDefectRoomStore, type DefectRoomStore } from './defect-room.store.js';
 import {
   PrismaDefectRoomStore,
+  PrismaEscapeStore,
   type DefectRoomPrismaClient,
 } from './defect-room.store.prisma.js';
 import { DEFECT_ROOM_PORTS, DEFECT_ROOM_STORE } from './defect-room.tokens.js';
 import { DefectRoutingService, RoutingResolver } from './routing.service.js';
+import { DefectIntakeService } from './intake.service.js';
+import {
+  DefectAnalyticsService,
+  InMemoryEscapeStore,
+  type EscapeStore,
+} from './analytics.service.js';
 import { EvidenceCheckService } from './evidence-check.service.js';
 import { TriageService } from './triage.service.js';
 import { DefectTestService } from './defect-test.service.js';
@@ -69,6 +76,38 @@ export class DefectRoomService {
         process.env['DATABASE_URL']
           ? new PrismaDefectRoomStore(prismaClient() as unknown as DefectRoomPrismaClient)
           : new InMemoryDefectRoomStore(),
+    },
+    {
+      provide: DefectAnalyticsService,
+      /**
+       * `FR-DFR-082` — persistent for the same reason the defect store is.
+       *
+       * This row is written at intake and read months later by whoever asks
+       * where defects come from. Backed by memory, that question is answered
+       * with whatever arrived since the last restart: a number that looks like
+       * data and is not, which is worse than no answer at all.
+       */
+      useFactory: (): DefectAnalyticsService => {
+        const store: EscapeStore = process.env['DATABASE_URL']
+          ? new PrismaEscapeStore(prismaClient() as unknown as DefectRoomPrismaClient)
+          : new InMemoryEscapeStore();
+        return new DefectAnalyticsService(store);
+      },
+    },
+    {
+      provide: DefectIntakeService,
+      /**
+       * `FR-DFR-010`-`FR-DFR-013`, bound with no port unfilled.
+       *
+       * Intake depends on nothing outside this Room, which is why it works end
+       * to end while most of the Room refuses. That is not an accident of
+       * scheduling: a Room whose front door needed `EPIC-033` to be reachable
+       * would drop the monitoring report at three in the morning, and
+       * `BR-0051` counts exactly those.
+       */
+      useFactory: (store: DefectRoomStore, analytics: DefectAnalyticsService): DefectIntakeService =>
+        new DefectIntakeService(store, analytics),
+      inject: [DEFECT_ROOM_STORE, DefectAnalyticsService],
     },
     {
       provide: TriageService,
@@ -177,6 +216,8 @@ export class DefectRoomService {
     },
   ],
   exports: [
+    DefectIntakeService,
+    DefectAnalyticsService,
     DefectRoomService,
     RoutingResolver,
     DefectRoutingService,

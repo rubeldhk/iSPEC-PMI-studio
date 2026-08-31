@@ -284,10 +284,18 @@ depend on them are written to **prove the refusal**, not to wait for the collabo
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 14
 
-- [ ] T999 [P] [US5] Write failing unit tests for intake in `backend/tests/unit/defect-room-intake.spec.ts` — six origins accepted (automated test, manual report, monitoring, review tool, production incident, **agent**), each linked to an Epic and a project with its origin recorded (`FR-DFR-010`, `FR-DFR-011`, `FR-DFR-013`, `SC-DFR-006`)
-- [ ] T999a [US5] Implement `backend/src/modules/defect-room/intake.service.ts` and `POST /rooms/defect/reports` (unit test: T999; integration test: T997v)
-- [ ] T999b [P] [US5] Write failing unit tests for the unlinkable defect in `backend/tests/unit/defect-room-held-for-triage.spec.ts` — held for triage with the **missing link named**, never silently accepted unlinked; an agent-filed defect is an origin and still cannot be confirmed by the agent (`FR-DFR-012`, `FR-DFR-023`)
-- [ ] T999c [US5] Implement the held-for-triage state in `backend/src/modules/defect-room/intake.service.ts` (unit test: T999b)
+- [X] T999 [P] [US5] Write failing unit tests for intake in `backend/tests/unit/defect-room-intake.spec.ts` — six origins accepted (automated test, manual report, monitoring, review tool, production incident, **agent**), each linked to an Epic and a project with its origin recorded (`FR-DFR-010`, `FR-DFR-011`, `FR-DFR-013`, `SC-DFR-006`)
+- [X] T999a [US5] Implement `backend/src/modules/defect-room/intake.service.ts` and `POST /rooms/defect/reports` (unit test: T999; integration test: T997v)
+- [X] T999b [P] [US5] Write failing unit tests for the unlinkable defect in `backend/tests/unit/defect-room-held-for-triage.spec.ts` — held for triage with the **missing link named**, never silently accepted unlinked; an agent-filed defect is an origin and still cannot be confirmed by the agent (`FR-DFR-012`, `FR-DFR-023`)
+- [X] T999c [US5] Implement the held-for-triage state in `backend/src/modules/defect-room/intake.service.ts` (unit test: T999b)
+
+*Three deviations recorded 2026-08-31, in `T999a`/`T999c`:*
+
+*(a) **Two routes the task list does not name: `GET /rooms/defect/held` and `POST /rooms/defect/:id/link-epic`.** `SC-DFR-006` measures defects that carry a link **or are visibly held**, and the word doing the work is *visibly*: a held defect findable only by opening every record is indistinguishable from one nobody held. The link route matters more — without a way out, held-for-triage is a grave rather than a queue, and the measure would read 100% because nothing was ever linked rather than because everything was.*
+
+*(b) **A missing project is refused, not held.** `FR-DFR-012` holds a defect that **cannot be linked**; `projectId` is `NOT NULL`, so a report with no project cannot be stored at all, and holding it would claim to have recorded something nothing wrote. The Epic is the link that can legitimately be unknown at intake — the project is the context the report arrived in.*
+
+*(c) **`PrismaEscapeStore` was written now rather than in Phase 8.** `FR-DFR-082` writes the escape row **at intake**, which is this phase's code path. Backed by memory it would answer "where do our defects come from" with whatever arrived since the last restart — a number that looks like data and is not. The aggregation over these rows is still Phase 8's.*
 
 **Checkpoint**: US5 demonstrable — nothing arrives unlinked and invisible
 

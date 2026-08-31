@@ -137,6 +137,19 @@ export interface DefectRoomStore {
   setDefectState(workspaceId: string, id: string, state: string): Promise<DefectRow>;
 
   /**
+   * `FR-DFR-012` — link an Epic to a defect that arrived without one.
+   *
+   * The Epic and the state move together, because they are one fact: a linked
+   * defect is no longer held FOR anything. Two calls could half-succeed and
+   * leave a linked defect sitting in a queue nobody works, or a held one that
+   * every per-Epic report counts.
+   */
+  linkEpic(workspaceId: string, id: string, epicId: string): Promise<DefectRow>;
+
+  /** `SC-DFR-006` — what is held, without opening every record. */
+  heldForTriage(workspaceId: string): Promise<readonly DefectRow[]>;
+
+  /**
    * `FR-DFR-025` — append-only.
    *
    * There is deliberately no `updateClassification`. A reclassification is a
@@ -246,6 +259,21 @@ export class InMemoryDefectRoomStore implements DefectRoomStore {
     const next = { ...row, state };
     this.#defects.set(id, next);
     return next;
+  }
+
+  async linkEpic(workspaceId: string, id: string, epicId: string): Promise<DefectRow> {
+    const row = await this.findDefect(workspaceId, id);
+    if (!row) throw new Error(`no defect ${id}`);
+    // Both fields in one write, for the reason on the interface.
+    const next = { ...row, epicId, state: row.state === 'held-for-triage' ? 'triaged' : row.state };
+    this.#defects.set(id, next);
+    return next;
+  }
+
+  async heldForTriage(workspaceId: string): Promise<readonly DefectRow[]> {
+    return [...this.#defects.values()].filter(
+      (row) => row.workspaceId === workspaceId && row.state === 'held-for-triage',
+    );
   }
 
   async recordClassification(row: Classification): Promise<Classification> {

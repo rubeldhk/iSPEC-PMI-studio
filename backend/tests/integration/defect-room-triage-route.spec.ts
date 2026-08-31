@@ -511,6 +511,158 @@ suite('T998r · decline, return and gap routing', () => {
  * nobody can raise or answer would leave the guarantee described rather than
  * offered.
  */
+/**
+ * `T999a`, `T999c` — the front door, through the real routes.
+ *
+ * Intake is the one path in this Room that depends on nothing external, so it
+ * works end to end rather than refusing. That makes it the only place a route
+ * test can prove the whole journey — report, held, linked — against PostgreSQL.
+ */
+suite('T999a · POST /rooms/defect/reports', () => {
+  it('refuses with no session', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/reports`)
+      .send({ projectId: PROJECT, origin: 'monitoring' });
+    expect(res.status).toBe(401);
+  });
+
+  it('accepts a linked report and writes it to PostgreSQL', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/reports`)
+      .set('Cookie', harness.cookie)
+      .send({
+        projectId: PROJECT,
+        epicId: 'EPIC-035',
+        origin: 'production-incident',
+        contestedArtifactRef: 'spec_route',
+        contestedArtifactVersion: 'v2',
+        severity: 'high',
+      });
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.heldFor).toBeNull();
+
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const rows = await db.query(
+        'SELECT "origin","epicId","state","reportedBy" FROM "defect_records" WHERE "id" = $1',
+        [res.body.defect.id],
+      );
+      expect(rows.rows[0].origin).toBe('production-incident');
+      expect(rows.rows[0].epicId).toBe('EPIC-035');
+      expect(rows.rows[0].state).toBe('triaged');
+      // `FR-DFR-013` — the session says who filed it, never the body.
+      expect(rows.rows[0].reportedBy).toBe(USER);
+
+      // `FR-DFR-082` — the escape row exists from the moment the defect does.
+      const escape = await db.query(
+        'SELECT "origin","escapePoint" FROM "defect_escape_records" WHERE "defectId" = $1',
+        [res.body.defect.id],
+      );
+      expect(escape.rowCount).toBe(1);
+      expect(escape.rows[0].origin).toBe('production-incident');
+      expect(escape.rows[0].escapePoint).toBeNull();
+    } finally {
+      await db.end();
+    }
+  });
+
+  it('cannot be filed in another person’s name', async () => {
+    // `strip` removes it before the service ever sees it, so this is not a
+    // rejection — it is the field not existing.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/reports`)
+      .set('Cookie', harness.cookie)
+      .send({
+        projectId: PROJECT,
+        epicId: 'EPIC-035',
+        origin: 'manual-report',
+        contestedArtifactRef: 'spec_route',
+        contestedArtifactVersion: 'v2',
+        severity: 'low',
+        reportedBy: 'somebody-else',
+      });
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.defect.reportedBy).toBe(USER);
+  });
+
+  it('refuses an origin nobody declared', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/reports`)
+      .set('Cookie', harness.cookie)
+      .send({
+        projectId: PROJECT,
+        epicId: 'EPIC-035',
+        origin: 'slack-thread',
+        contestedArtifactRef: 'spec_route',
+        contestedArtifactVersion: 'v2',
+        severity: 'low',
+      });
+    expect(res.status).toBe(400);
+  });
+
+  it('holds an unlinkable report, names why, and lists it', async () => {
+    // `FR-DFR-012`, `SC-DFR-006` — the whole journey in one request each.
+    const filed = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/reports`)
+      .set('Cookie', harness.cookie)
+      .send({
+        projectId: PROJECT,
+        origin: 'monitoring',
+        contestedArtifactRef: 'spec_route',
+        contestedArtifactVersion: 'v2',
+        severity: 'medium',
+      });
+
+    expect(filed.status).toBeLessThan(300);
+    expect(filed.body.defect.state).toBe('held-for-triage');
+    expect(filed.body.heldFor).toMatch(/epic/i);
+
+    const held = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/defect/held`)
+      .set('Cookie', harness.cookie);
+    expect(held.status).toBe(200);
+    expect(held.body.map((row: { id: string }) => row.id)).toContain(filed.body.defect.id);
+
+    // `held` is not read as an id by the `:id` route above it.
+    expect(held.body).toBeInstanceOf(Array);
+
+    const linked = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${filed.body.defect.id}/link-epic`)
+      .set('Cookie', harness.cookie)
+      .send({ epicId: 'EPIC-035' });
+    expect(linked.status).toBeLessThan(300);
+
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const rows = await db.query(
+        'SELECT "epicId","state" FROM "defect_records" WHERE "id" = $1',
+        [filed.body.defect.id],
+      );
+      expect(rows.rows[0].epicId).toBe('EPIC-035');
+      expect(rows.rows[0].state).toBe('triaged');
+    } finally {
+      await db.end();
+    }
+
+    const after = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/defect/held`)
+      .set('Cookie', harness.cookie);
+    expect(after.body.map((row: { id: string }) => row.id)).not.toContain(filed.body.defect.id);
+  });
+
+  it('and refuses to link a blank Epic', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/link-epic`)
+      .set('Cookie', harness.cookie)
+      .send({ epicId: '   ' });
+    expect(res.status).toBe(400);
+  });
+});
+
 suite('T998v · POST /rooms/defect/:id/evidence-check', () => {
   it('raise refuses with no session', async () => {
     const res = await request(app.getHttpServer())

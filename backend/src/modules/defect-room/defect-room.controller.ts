@@ -17,6 +17,7 @@ import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import { DEFECT_ROOM_STORE } from './defect-room.tokens.js';
 import type { DefectRoomStore } from './defect-room.store.js';
 import { TriageService, type ReevaluateInput, type TriageInput } from './triage.service.js';
+import { DefectIntakeService, type IntakeInput } from './intake.service.js';
 import { DefectTestService, type RecordTestInput } from './defect-test.service.js';
 import {
   ReproductionService,
@@ -101,6 +102,7 @@ export class DefectRoomController {
     @Inject(VerificationService) private readonly verification: VerificationService,
     @Inject(DefectRoutingService) private readonly routing: DefectRoutingService,
     @Inject(EvidenceCheckService) private readonly evidenceChecks: EvidenceCheckService,
+    @Inject(DefectIntakeService) private readonly intake: DefectIntakeService,
     @Inject(DEFECT_ROOM_STORE) private readonly store: DefectRoomStore,
   ) {}
 
@@ -112,6 +114,61 @@ export class DefectRoomController {
    * identity — and cannot arrive here claiming to be human, because the field
    * is not readable from the body at all.
    */
+  /**
+   * `FR-DFR-010`-`FR-DFR-013` — the front door.
+   *
+   * `POST /rooms/defect/reports` and not `/rooms/defect`, because a report is
+   * what arrives: six origins send one, and five of them are not a person
+   * deciding a defect exists. What gets created is decided here, from the
+   * report.
+   *
+   * Declared **above** `:id` routes: `reports` would otherwise be read as an
+   * id by any route matcher that takes the first match.
+   */
+  @Post('rooms/defect/reports')
+  report(@Req() ctx: WorkspaceContext | undefined, @Body() body: unknown): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.intake.report({
+      ...(strip(body) as Omit<IntakeInput, 'workspaceId' | 'reportedBy'>),
+      workspaceId: principal.workspaceId,
+      // The session says who filed it. A body-supplied reporter would let one
+      // person file in another's name, and `FR-DFR-013` is about knowing where
+      // a defect came from.
+      reportedBy: principal.userId,
+    });
+  }
+
+  /**
+   * `SC-DFR-006` — what is held for triage, in one request.
+   *
+   * The measure's word is *visibly*. A held defect findable only by opening
+   * every record is indistinguishable from one nobody held, and this is the
+   * route that makes the difference real rather than asserted.
+   */
+  @Get('rooms/defect/held')
+  held(@Req() ctx: WorkspaceContext | undefined): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    return this.intake.heldForTriage(principal.workspaceId);
+  }
+
+  /**
+   * `FR-DFR-012` — the way out of the hold.
+   *
+   * Without it, held-for-triage is a grave rather than a queue: every
+   * unlinkable defect stays uncounted forever, and `SC-DFR-006` reads 100%
+   * because nothing was ever linked rather than because everything was.
+   */
+  @Post('rooms/defect/:id/link-epic')
+  linkEpic(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const { epicId } = strip(body) as { epicId?: string };
+    return this.intake.linkToEpic(principal.workspaceId, id, epicId ?? '', principal.userId);
+  }
+
   @Post('rooms/defect/:id/triage')
   classify(
     @Req() ctx: WorkspaceContext | undefined,
