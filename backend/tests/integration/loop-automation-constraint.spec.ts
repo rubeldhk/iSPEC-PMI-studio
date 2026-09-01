@@ -23,6 +23,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { Client } from 'pg';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -81,7 +82,7 @@ suite('T993q · the database refuses a transition record nobody could interpret'
   let db: Client;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     db = new Client({ connectionString: container.getConnectionUri() });
     await db.connect();
     for (const dir of readdirSync(MIGRATIONS).filter((d) => /^\d/.test(d)).sort()) {

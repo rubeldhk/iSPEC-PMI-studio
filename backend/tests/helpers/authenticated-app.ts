@@ -20,6 +20,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from './postgres-image.js';
 import { Client } from 'pg';
 import type { INestApplication } from '@nestjs/common';
 
@@ -52,7 +53,7 @@ export async function startAuthenticatedApp(
   const workspaceId = options.workspaceId ?? 'ws_test';
   const userId = options.userId ?? 'u_test';
 
-  const container = await new PostgreSqlContainer('postgres:16-alpine').start();
+  const container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
   const databaseUrl = container.getConnectionUri();
 
   const db = new Client({ connectionString: databaseUrl });

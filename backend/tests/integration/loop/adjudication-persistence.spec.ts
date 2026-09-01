@@ -21,6 +21,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../../helpers/postgres-image.js';
 import { Client } from 'pg';
 import { REFUSAL_REASON_CODES } from '@pmi/loop-contract';
 import type { AdjudicationProposal } from '@pmi/loop-contract';
@@ -125,7 +126,7 @@ suite('T1096 · every verdict survives a real round trip', () => {
   let records: PrismaAdjudicationRecords;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     db = new Client({ connectionString: container.getConnectionUri() });
     await db.connect();
     for (const dir of readdirSync(MIGRATIONS)
@@ -203,7 +204,7 @@ suite('T1096 · the database refuses what the type refuses', () => {
   let db: Client;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     db = new Client({ connectionString: container.getConnectionUri() });
     await db.connect();
     for (const dir of readdirSync(MIGRATIONS)
@@ -385,7 +386,7 @@ suite('T1097 · the durable intent store is append-only', () => {
   let intents: PrismaApplicationIntents;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     db = new Client({ connectionString: container.getConnectionUri() });
     await db.connect();
     for (const dir of readdirSync(MIGRATIONS)

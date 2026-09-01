@@ -25,6 +25,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { PrismaClient } from '@prisma/client';
 import { Client } from 'pg';
 import type { TransactionHandle } from '@pmi/loop-contract';
@@ -58,7 +59,7 @@ suite('T1179 · the loop store against a real database', () => {
     });
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();
@@ -148,7 +149,7 @@ suite('T1179 · advanceObject is conditional, not read-then-write', () => {
   let store: LoopStore;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();
@@ -233,7 +234,7 @@ suite('T1179 · transitions and rollback', () => {
   let store: LoopStore;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();

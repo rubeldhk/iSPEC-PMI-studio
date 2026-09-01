@@ -10,6 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { Client } from 'pg';
 import { PrismaClient } from '@prisma/client';
 import { AccessEnforcementService } from '../../src/modules/access/access-enforcement.service.js';
@@ -48,7 +49,7 @@ suite('T815 · SC-018 — open-time visibility against a real PostgreSQL', () =>
   let store: PrismaAccessStore;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();

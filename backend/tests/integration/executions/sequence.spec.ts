@@ -12,6 +12,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../../helpers/postgres-image.js';
 import { PrismaClient } from '@prisma/client';
 import { Client } from 'pg';
 import {
@@ -54,7 +55,7 @@ suite('T1046 · the sequence is gapless per execution, and nobody shares one', (
   };
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();
@@ -143,7 +144,7 @@ suite('T1044 · terminality blocks lifecycle events only', () => {
   let projections: ExecutionProjectionService;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();
@@ -252,7 +253,7 @@ suite('T1040 · idempotency returns the original, never a second event', () => {
   let events: ExecutionEventService;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();

@@ -26,6 +26,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../../helpers/postgres-image.js';
 import { Client } from 'pg';
 import type { INestApplication } from '@nestjs/common';
 import type { AdjudicationProposal } from '@pmi/loop-contract';
@@ -71,7 +72,7 @@ suite('T1102 · the adjudicator is reachable from the composed application', () 
   let adjudicator: any;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
 
     const db = new Client({ connectionString: container.getConnectionUri() });
     await db.connect();

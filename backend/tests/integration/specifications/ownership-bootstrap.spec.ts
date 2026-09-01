@@ -17,6 +17,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../../helpers/postgres-image.js';
 import { PrismaClient } from '@prisma/client';
 import { Client } from 'pg';
 import {
@@ -149,7 +150,7 @@ suite('T1128 · a specification and its owner grant commit together', () => {
   let store: PrismaSpecificationStore;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     await seedSchema(url, 'own');
     prisma = new PrismaClient({ datasources: { db: { url } } });
@@ -215,7 +216,7 @@ suite('T1128 · who may own what an agent creates', () => {
   let store: PrismaSpecificationStore;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     await seedSchema(url, 'agent');
     prisma = new PrismaClient({ datasources: { db: { url } } });
