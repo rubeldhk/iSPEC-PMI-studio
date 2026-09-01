@@ -40,6 +40,8 @@ export type AuthoritativeStatus = (typeof AUTHORITATIVE_STATUSES)[number];
 /** What every item carries regardless of its status. */
 interface PackageItemBase {
   readonly id: string;
+  /** `FR-002` — its own tenant, so isolation is a predicate rather than a join. */
+  readonly workspaceId: string;
   readonly packageId: string;
   /** `FR-CTX-040` — the reference, never the material. */
   readonly sourceType: string;

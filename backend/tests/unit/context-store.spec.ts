@@ -60,6 +60,7 @@ describe('T1309 · a package and everything hanging off it round-trips', () => {
     await store.createPackage(pkg());
     await store.addItem({
       id: 'pi_1',
+      workspaceId: 'ws_1',
       packageId: 'cp_1',
       sourceType: 'requirement',
       sourceId: 'rq_1',
@@ -77,6 +78,7 @@ describe('T1309 · a package and everything hanging off it round-trips', () => {
     await store.createPackage(pkg());
     await store.addExclusion({
       id: 'ex_1',
+      workspaceId: 'ws_1',
       packageId: 'cp_1',
       sourceType: 'specification',
       sourceId: 'sp_4',
@@ -118,6 +120,7 @@ describe('T1309 · another workspace is absent, not forbidden', () => {
     await store.createPackage(pkg());
     await store.addItem({
       id: 'pi_1',
+      workspaceId: 'ws_1',
       packageId: 'cp_1',
       sourceType: 'requirement',
       sourceId: 'rq_1',

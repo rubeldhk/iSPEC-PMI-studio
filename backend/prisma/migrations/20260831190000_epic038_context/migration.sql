@@ -53,13 +53,17 @@ CREATE TABLE "context_packages" (
     )
 );
 
-CREATE INDEX "context_packages_workspace_idx" ON "context_packages" ("workspaceId");
+CREATE INDEX "context_packages_workspaceId_idx" ON "context_packages"("workspaceId");
 -- FR-CTX-062 — the audit path: from an execution to what it was shown.
-CREATE INDEX "context_packages_execution_idx" ON "context_packages" ("executionId");
+CREATE INDEX "context_packages_executionId_idx" ON "context_packages"("executionId");
 
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE "context_items" (
     "id"                   TEXT NOT NULL,
+    -- FR-002. Denormalised from the package deliberately: an item that carries
+    -- its own tenant can be scoped by a predicate rather than by remembering to
+    -- join, and FR-CTX-050 is the requirement least worth leaving to memory.
+    "workspaceId"          TEXT NOT NULL,
     "packageId"            TEXT NOT NULL,
     -- FR-CTX-040, FR-CTX-041 — the reference. There is deliberately NO content,
     -- body, payload or text column: a copy here would sit under this Epic's
@@ -108,13 +112,16 @@ CREATE TABLE "context_items" (
     )
 );
 
-CREATE INDEX "context_items_package_idx" ON "context_items" ("packageId");
+CREATE INDEX "context_items_workspaceId_idx" ON "context_items"("workspaceId");
+CREATE INDEX "context_items_packageId_idx" ON "context_items"("packageId");
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- The load-bearing table. Without it an empty package and a filtered one are
 -- the same row with no children.
 CREATE TABLE "context_exclusions" (
     "id"           TEXT NOT NULL,
+    -- FR-002, as above.
+    "workspaceId"  TEXT NOT NULL,
     "packageId"    TEXT NOT NULL,
     "sourceType"   TEXT NOT NULL,
     "sourceId"     TEXT NOT NULL,
@@ -137,7 +144,8 @@ CREATE TABLE "context_exclusions" (
     )
 );
 
-CREATE INDEX "context_exclusions_package_idx" ON "context_exclusions" ("packageId");
+CREATE INDEX "context_exclusions_workspaceId_idx" ON "context_exclusions"("workspaceId");
+CREATE INDEX "context_exclusions_packageId_idx" ON "context_exclusions"("packageId");
 
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE "context_source_classes" (
@@ -152,6 +160,8 @@ CREATE TABLE "context_source_classes" (
     CONSTRAINT "context_source_classes_unique" UNIQUE ("workspaceId","sourceType")
 );
 
+CREATE INDEX "context_source_classes_workspaceId_idx" ON "context_source_classes"("workspaceId");
+
 -- FR-CTX-034 — `indexable` defaults to FALSE. A source type absent from this
 -- table is NOT classified, and an unclassified source is excluded. The default
 -- that permits is the one nobody sees (FR-GEL-062).
@@ -161,19 +171,22 @@ CREATE TABLE "context_reusable_authorisations" (
     "id"              TEXT NOT NULL,
     "sourceType"      TEXT NOT NULL,
     "sourceId"        TEXT NOT NULL,
-    -- Directional deliberately: "A may read B's handbook" does not imply the
-    -- reverse, and a symmetric row would grant a permission nobody stated.
-    "fromWorkspaceId" TEXT NOT NULL,
+    -- FR-002: the row belongs to the workspace that OWNS the source and grants
+    -- the crossing. Directional deliberately — "A may read B's handbook" does
+    -- not imply the reverse, and a symmetric row would grant a permission
+    -- nobody stated.
+    "workspaceId"     TEXT NOT NULL,
     "toWorkspaceId"   TEXT NOT NULL,
     "authorisedBy"    TEXT NOT NULL,
     "authorisedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "rationale"       TEXT NOT NULL,
+    "createdAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "context_reusable_authorisations_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "context_reusable_authorisations_state_why" CHECK (
         length(trim("rationale")) > 0
     ),
     CONSTRAINT "context_reusable_authorisations_cross_two" CHECK (
-        "fromWorkspaceId" <> "toWorkspaceId"
+        "workspaceId" <> "toWorkspaceId"
     )
 );
 
@@ -209,6 +222,12 @@ CREATE TABLE "context_index_entries" (
     "dimension"         INTEGER NOT NULL,
     "embedding"         vector,
     "indexedAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- FR-002. Added even though T012a's parser cannot see this table: a
+    -- partitioned table's DDL ends `) PARTITION BY ...` rather than `);`, so it
+    -- falls outside that check. The invariant is the repository's, not the
+    -- checker's, and holding it only where something is watching is how an
+    -- invariant becomes a habit.
+    "createdAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "context_index_entries_pkey" PRIMARY KEY ("id","workspaceId"),
     CONSTRAINT "context_index_entries_dimension_positive" CHECK ("dimension" > 0)
 ) PARTITION BY LIST ("workspaceId");
@@ -219,7 +238,7 @@ CREATE TABLE "context_index_entries" (
 CREATE TABLE "context_index_entries_default"
     PARTITION OF "context_index_entries" DEFAULT;
 
-CREATE INDEX "context_index_entries_source_idx"
-    ON "context_index_entries" ("workspaceId","sourceType","sourceId");
-CREATE INDEX "context_index_entries_model_idx"
-    ON "context_index_entries" ("embeddingModelId");
+CREATE INDEX "context_index_entries_workspaceId_idx" ON "context_index_entries"("workspaceId","sourceType","sourceId");
+CREATE INDEX "context_index_entries_model_idx" ON "context_index_entries"("embeddingModelId");
+
+CREATE INDEX "context_reusable_authorisations_workspaceId_idx" ON "context_reusable_authorisations"("workspaceId");

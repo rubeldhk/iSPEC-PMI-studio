@@ -127,11 +127,13 @@ export class InMemoryContextStore implements ContextStore {
   }
 
   async itemsFor(workspaceId: string, packageId: string): Promise<PackageItem[]> {
-    // Scoped through the package rather than trusting the caller: an item
-    // carries no workspace of its own, and reading it by `packageId` alone
-    // would cross the boundary for anyone who knew an id.
-    if (!(await this.findPackage(workspaceId, packageId))) return [];
-    return this.#items.filter((row) => row.packageId === packageId);
+    // Scoped by the item's OWN workspace, not by a join. `FR-002` required the
+    // column and the column removes the failure mode: an item read by
+    // `packageId` alone can no longer cross a boundary for anyone who knows an
+    // id, because the predicate is on the row itself.
+    return this.#items.filter(
+      (row) => row.workspaceId === workspaceId && row.packageId === packageId,
+    );
   }
 
   async addExclusion(row: ExclusionRecord): Promise<ExclusionRecord> {
@@ -140,8 +142,9 @@ export class InMemoryContextStore implements ContextStore {
   }
 
   async exclusionsFor(workspaceId: string, packageId: string): Promise<ExclusionRecord[]> {
-    if (!(await this.findPackage(workspaceId, packageId))) return [];
-    return this.#exclusions.filter((row) => row.packageId === packageId);
+    return this.#exclusions.filter(
+      (row) => row.workspaceId === workspaceId && row.packageId === packageId,
+    );
   }
 
   async classifySource(workspaceId: string, sourceType: string): Promise<SourceClass | null> {

@@ -84,14 +84,16 @@ export class PrismaContextStore implements ContextStore {
   }
 
   /**
-   * Scoped through the package, not by `packageId` alone.
+   * Scoped on the item's own `workspaceId`.
    *
-   * An item carries no workspace of its own, so reading by id would cross the
-   * boundary for anyone who knew one. The join is the scoping.
+   * This was a join through the package until `T012a` required the column
+   * (`FR-002`) — and the column is the better answer: a predicate on the row
+   * cannot be forgotten the way a join can, which matters most for the
+   * requirement least worth leaving to memory.
    */
   async itemsFor(workspaceId: string, packageId: string): Promise<PackageItem[]> {
     return (await this.prisma.contextItem.findMany({
-      where: { packageId, package: { workspaceId } },
+      where: { workspaceId, packageId },
       orderBy: { relevanceScore: 'desc' },
     })) as PackageItem[];
   }
@@ -102,7 +104,7 @@ export class PrismaContextStore implements ContextStore {
 
   async exclusionsFor(workspaceId: string, packageId: string): Promise<ExclusionRecord[]> {
     return (await this.prisma.contextExclusion.findMany({
-      where: { packageId, package: { workspaceId } },
+      where: { workspaceId, packageId },
     })) as ExclusionRecord[];
   }
 

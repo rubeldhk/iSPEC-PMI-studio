@@ -66,6 +66,7 @@ async function pkg(over: Record<string, unknown> = {}): Promise<string> {
 async function item(packageId: string, over: Record<string, unknown> = {}): Promise<void> {
   const row: Record<string, unknown> = {
     id: id('pi'),
+    workspaceId: WS,
     packageId,
     sourceType: 'requirement',
     sourceId: 'rq_1',

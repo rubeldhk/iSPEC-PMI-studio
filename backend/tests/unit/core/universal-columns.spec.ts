@@ -132,6 +132,23 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'change_requests',
       'clarifications',
       'connector_registrations',
+    // EPIC-038 Engineering Context (T1231).
+    //
+    // `context_index_entries` and `context_index_entries_default` are absent
+    // deliberately: `createdTables` above matches a body terminated by a
+    // newline then `);`, and a `PARTITION BY LIST (...)` table ends
+    // `) PARTITION BY ...` while a `PARTITION OF` child has no parenthesised
+    // body at all. Neither is therefore visible to this check.
+    //
+    // **That is a gap in the checker, not a licence.** Both carry `workspaceId`,
+    // an index on it and a creation timestamp, asserted instead by
+    // `context-partitioning.spec.ts` (T1232) — which reads the live catalogue
+    // rather than the DDL text and so sees what this parser cannot.
+    'context_exclusions',
+    'context_items',
+    'context_packages',
+    'context_reusable_authorisations',
+    'context_source_classes',
     'defect_classifications',
     'defect_escape_records',
     'defect_evidence_checks',

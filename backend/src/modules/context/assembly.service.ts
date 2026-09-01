@@ -72,12 +72,20 @@ export interface AssemblyPorts {
   readonly access: {
     mayRead(actorId: string, source: SourceRef): Promise<boolean>;
   };
-  /** `FR-CTX-034` — `null` means NOT classified, which excludes. */
+  /**
+   * `FR-CTX-034`, `FR-CTX-015` — two distinct exclusions live here.
+   *
+   * `null` means the type is **not classified**, which excludes. A class with
+   * `indexable: false` means the type is classified and deliberately **outside
+   * the corpus**, which also excludes — and for a different reason a reader
+   * needs to be able to tell apart: one is *nobody registered this*, the other
+   * is *somebody decided against it*.
+   */
   readonly sourceClasses: {
     classify(
       workspaceId: string,
       sourceType: string,
-    ): Promise<{ classification: string } | null>;
+    ): Promise<{ securityClassification: string; indexable: boolean } | null>;
   };
   /**
    * What one candidate costs against the budget.
@@ -157,6 +165,22 @@ export class AssemblyService {
         continue;
       }
 
+      if (!classified.indexable) {
+        // `FR-CTX-015` — classified, and deliberately outside the corpus.
+        // Distinct from the case above: somebody decided this, and the detail
+        // says so, because "nobody registered it" sends a reader to a different
+        // action than "we chose not to index it".
+        rejected.push({
+          candidate,
+          reason: 'classification',
+          detail:
+            `'${candidate.sourceType}' is registered as ` +
+            `${classified.securityClassification} and marked not indexable — it is outside the ` +
+            'approved source set (FR-CTX-015)',
+        });
+        continue;
+      }
+
       if (!(await this.ports.access.mayRead(input.actorId, candidate))) {
         rejected.push({
           candidate,
@@ -227,10 +251,12 @@ export class AssemblyService {
     await this.store.createPackage(this.#packageRow(packageId, input, outcome, 'assembled', null));
 
     for (const { candidate, reason } of kept) {
-      await this.store.addItem(this.#item(packageId, candidate, reason));
+      await this.store.addItem(this.#item(input.workspaceId, packageId, candidate, reason));
     }
     for (const r of rejected) {
-      await this.store.addExclusion(this.#exclusion(packageId, r, isEssential(r.candidate)));
+      await this.store.addExclusion(
+        this.#exclusion(input.workspaceId, packageId, r, isEssential(r.candidate)),
+      );
     }
 
     return {
@@ -260,7 +286,12 @@ export class AssemblyService {
     );
     for (const r of rejected) {
       await this.store.addExclusion(
-        this.#exclusion(packageId, r, essential.has(`${r.candidate.sourceType}:${r.candidate.sourceId}`)),
+        this.#exclusion(
+          input.workspaceId,
+          packageId,
+          r,
+          essential.has(`${r.candidate.sourceType}:${r.candidate.sourceId}`),
+        ),
       );
     }
   }
@@ -292,9 +323,15 @@ export class AssemblyService {
     };
   }
 
-  #item(packageId: string, candidate: Candidate, inclusionReason: string): PackageItem {
+  #item(
+    workspaceId: string,
+    packageId: string,
+    candidate: Candidate,
+    inclusionReason: string,
+  ): PackageItem {
     return {
       id: randomUUID(),
+      workspaceId,
       packageId,
       sourceType: candidate.sourceType,
       sourceId: candidate.sourceId,
@@ -310,9 +347,15 @@ export class AssemblyService {
     };
   }
 
-  #exclusion(packageId: string, r: Rejected, wasEssential: boolean): ExclusionRecord {
+  #exclusion(
+    workspaceId: string,
+    packageId: string,
+    r: Rejected,
+    wasEssential: boolean,
+  ): ExclusionRecord {
     return {
       id: randomUUID(),
+      workspaceId,
       packageId,
       sourceType: r.candidate.sourceType,
       sourceId: r.candidate.sourceId,

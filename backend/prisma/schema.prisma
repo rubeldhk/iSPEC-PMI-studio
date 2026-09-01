@@ -2542,6 +2542,9 @@ model ContextPackage {
 
 model ContextItem {
   id                  String         @id @default(uuid())
+  /// FR-002 — denormalised from the package so isolation is a predicate rather
+  /// than a join somebody must remember.
+  workspaceId         String
   packageId           String
   /// FR-CTX-041 — a reference. There is deliberately no content column.
   sourceType          String
@@ -2560,12 +2563,15 @@ model ContextItem {
   createdAt           DateTime       @default(now())
   package             ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
+  @@index([workspaceId])
   @@index([packageId])
   @@map("context_items")
 }
 
 model ContextExclusion {
   id           String         @id @default(uuid())
+  /// FR-002, as above.
+  workspaceId  String
   packageId    String
   sourceType   String
   sourceId     String
@@ -2577,6 +2583,7 @@ model ContextExclusion {
   createdAt    DateTime       @default(now())
   package      ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
+  @@index([workspaceId])
   @@index([packageId])
   @@map("context_exclusions")
 }
@@ -2591,6 +2598,7 @@ model ContextSourceClass {
   createdAt              DateTime @default(now())
 
   @@unique([workspaceId, sourceType])
+  @@index([workspaceId])
   @@map("context_source_classes")
 }
 
@@ -2598,13 +2606,16 @@ model ContextReusableAuthorisation {
   id              String   @id @default(uuid())
   sourceType      String
   sourceId        String
+  /// FR-002 — the row belongs to the workspace that grants the crossing.
   /// Directional: A may read B's handbook does not imply the reverse.
-  fromWorkspaceId String
+  workspaceId     String
   toWorkspaceId   String
   authorisedBy    String
   authorisedAt    DateTime @default(now())
   rationale       String
+  createdAt       DateTime @default(now())
 
+  @@index([workspaceId])
   @@map("context_reusable_authorisations")
 }
 
@@ -2623,7 +2634,9 @@ model ContextIndexEntry {
   embeddingModelId String
   dimension        Int
   indexedAt        DateTime @default(now())
+  createdAt        DateTime @default(now())
 
+  @@index([workspaceId])
   @@index([workspaceId, sourceType, sourceId])
   @@index([embeddingModelId])
   @@map("context_index_entries")

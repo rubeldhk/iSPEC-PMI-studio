@@ -76,6 +76,7 @@ describe('T1227 · an exclusion says enough to act on', () => {
     // tells them which rule — the difference between a chart and an answer.
     const row: ExclusionRecord = {
       id: 'ex_1',
+      workspaceId: 'ws_1',
       packageId: 'cp_1',
       sourceType: 'specification',
       sourceId: 'sp_4',

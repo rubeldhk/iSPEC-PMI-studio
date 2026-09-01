@@ -41,6 +41,8 @@ export type ExclusionReason = (typeof EXCLUSION_REASONS)[number];
 
 export interface ExclusionRecord {
   readonly id: string;
+  /** `FR-002` — its own tenant, for the same reason `PackageItem` carries one. */
+  readonly workspaceId: string;
   readonly packageId: string;
   readonly sourceType: string;
   readonly sourceId: string;

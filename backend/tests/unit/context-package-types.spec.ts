@@ -92,6 +92,7 @@ describe('T1225 · a superseded item names its successor, at the type level', ()
     // typecheck.
     const item: PackageItem = {
       id: 'pi_1',
+      workspaceId: 'ws_1',
       packageId: 'cp_1',
       sourceType: 'requirement',
       sourceId: 'rq_1',
@@ -108,6 +109,7 @@ describe('T1225 · a superseded item names its successor, at the type level', ()
   it('and the undetermined arm carries a reason', () => {
     const item: PackageItem = {
       id: 'pi_2',
+      workspaceId: 'ws_1',
       packageId: 'cp_1',
       sourceType: 'specification',
       sourceId: 'sp_9',
@@ -126,6 +128,7 @@ describe('T1225 · a superseded item names its successor, at the type level', ()
     // shape with optional members — which is what it exists not to be.
     const item: PackageItem = {
       id: 'pi_3',
+      workspaceId: 'ws_1',
       packageId: 'cp_1',
       sourceType: 'requirement',
       sourceId: 'rq_2',

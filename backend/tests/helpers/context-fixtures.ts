@@ -14,6 +14,7 @@
  */
 import type { AssembleInput, AssemblyPorts } from '../../src/modules/context/assembly.service.js';
 import type { Candidate, RetrievalOutcome } from '../../src/modules/context/retrieval/outcome.types.js';
+import type { BaselineReaderPort, SourceStatus } from '../../src/modules/context/provenance.service.js';
 
 /** Ranked candidates, newest ranking first. */
 export function candidates(ids: readonly string[], score = 0.9): Candidate[] {
@@ -62,15 +63,25 @@ export function denyFor(...denied: readonly string[]): AssemblyPorts['access'] {
   };
 }
 
-/** Source classes for the named types. A type absent from this list is unclassified. */
+/**
+ * Source classes for the named types, all indexable.
+ *
+ * A type absent from this list is **unclassified**. For the other exclusion —
+ * classified but deliberately outside the corpus — use `classifiedNotIndexable`.
+ */
 export function classes(
   indexableTypes: readonly string[],
 ): AssemblyPorts['sourceClasses'] {
   return {
-    async classify(_workspaceId, sourceType): Promise<{ classification: string } | null> {
+    async classify(
+      _workspaceId,
+      sourceType,
+    ): Promise<{ securityClassification: string; indexable: boolean } | null> {
       // `FR-CTX-034` — null means NOT classified, which excludes. The absence
       // of a class is never a permissive default.
-      return indexableTypes.includes(sourceType) ? { classification: 'internal' } : null;
+      return indexableTypes.includes(sourceType)
+        ? { securityClassification: 'internal', indexable: true }
+        : null;
     },
   };
 }
@@ -87,5 +98,41 @@ export function input(over: Partial<AssembleInput> = {}): AssembleInput {
     budgetCost: 40,
     essentialSources: [],
     ...over,
+  };
+}
+
+/**
+ * A class that exists and is marked **not indexable** (`FR-CTX-015`).
+ *
+ * The second of the two classification exclusions, and the one an
+ * `if (!classified)` check silently admits.
+ */
+export function classifiedNotIndexable(
+  types: readonly string[],
+): AssemblyPorts['sourceClasses'] {
+  return {
+    async classify(_workspaceId, sourceType) {
+      return types.includes(sourceType)
+        ? { securityClassification: 'restricted', indexable: false }
+        : null;
+    },
+  };
+}
+
+/**
+ * A baseline reader answering from a table keyed `sourceId@sourceVersion`.
+ *
+ * A version absent from the table answers `unknown` — the reader **looked** and
+ * has nothing recorded. That is deliberately not the same as the reader
+ * throwing, which is an outage; `T1249` asserts the two produce different
+ * reasons, and this fixture only ever produces the first.
+ */
+export function baselines(
+  known: Readonly<Record<string, SourceStatus>>,
+): BaselineReaderPort {
+  return {
+    async statusOf(input): Promise<SourceStatus> {
+      return known[`${input.sourceId}@${input.sourceVersion}`] ?? { status: 'unknown' };
+    },
   };
 }

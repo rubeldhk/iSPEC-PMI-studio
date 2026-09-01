@@ -19,7 +19,13 @@
 import { describe, expect, it } from 'vitest';
 import { AssemblyService } from '../../src/modules/context/assembly.service.js';
 import { InMemoryContextStore } from '../../src/modules/context/context.store.js';
-import { allow, classes, input, retrieval } from '../helpers/context-fixtures.js';
+import {
+  allow,
+  classes,
+  classifiedNotIndexable,
+  input,
+  retrieval,
+} from '../helpers/context-fixtures.js';
 import type { Candidate } from '../../src/modules/context/retrieval/outcome.types.js';
 
 /** One classified candidate and one whose type nobody registered. */
@@ -67,6 +73,42 @@ describe('T1239 · a source type with no class is excluded', () => {
     const store = new InMemoryContextStore();
     const result = await service(store, ['requirement']).assemble(input());
     expect(result.state).toBe('assembled');
+  });
+});
+
+describe('T1239 · a classified type marked not-indexable is also excluded', () => {
+  it('is excluded even though it HAS a class', async () => {
+    // `FR-CTX-015`. Found by a type error rather than by reading: assembly
+    // checked only that a class existed, so a type registered and deliberately
+    // kept out of the corpus would have been admitted. `if (!classified)` reads
+    // as though it covers this and does not.
+    const store = new InMemoryContextStore();
+    const subject = new AssemblyService(store, {
+      retrieval: retrieval(mixed),
+      access: allow(),
+      sourceClasses: classifiedNotIndexable(['requirement', 'imported-doc']),
+    });
+
+    const result = await subject.assemble(input());
+    expect(await store.itemsFor('ws_1', result.packageId)).toHaveLength(0);
+    expect(await store.exclusionsFor('ws_1', result.packageId)).toHaveLength(2);
+  });
+
+  it('and its exclusion says somebody decided, not that nobody registered it', async () => {
+    // The two exclusions send a reader to different actions: register the type,
+    // or argue with the decision to keep it out. A shared message would hide
+    // which one applies.
+    const store = new InMemoryContextStore();
+    const subject = new AssemblyService(store, {
+      retrieval: retrieval(mixed),
+      access: allow(),
+      sourceClasses: classifiedNotIndexable(['requirement', 'imported-doc']),
+    });
+
+    const result = await subject.assemble(input());
+    const exclusions = await store.exclusionsFor('ws_1', result.packageId);
+    expect(exclusions[0]?.detail).toMatch(/not indexable|approved source set/i);
+    expect(exclusions[0]?.detail).not.toMatch(/no source class is registered/i);
   });
 });
 
