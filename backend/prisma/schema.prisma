@@ -2510,3 +2510,121 @@ model EscapeRecord {
   @@index([workspaceId])
   @@map("defect_escape_records")
 }
+
+// ─── EPIC-038 Engineering Context (T1231, T1235) ────────────────────────────
+
+model ContextPackage {
+  id               String            @id @default(uuid())
+  workspaceId      String
+  projectId        String
+  /// FR-CTX-062 — the execution this fed. Null only while assembly is in flight.
+  executionId      String?
+  /// FR-CTX-032 — what it was assembled for, in the requester's own words.
+  objective        String
+  actorId          String
+  actorRole        String
+  budgetTokens     Int
+  budgetCost       Decimal           @db.Decimal(12, 4)
+  state            String
+  /// FR-CTX-065 — required when refused, CHECKed. A refusal is a row.
+  refusalReason    String?
+  /// R-038-4 — which model ranked these candidates.
+  embeddingModelId String
+  assembledAt      DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  items            ContextItem[]
+  exclusions       ContextExclusion[]
+
+  @@index([workspaceId])
+  @@index([executionId])
+  @@map("context_packages")
+}
+
+model ContextItem {
+  id                  String         @id @default(uuid())
+  packageId           String
+  /// FR-CTX-041 — a reference. There is deliberately no content column.
+  sourceType          String
+  sourceId            String
+  sourceVersion       String
+  /// FR-CTX-042 — required, no default; CHECKed against three values.
+  authoritativeStatus String
+  supersededBy        String?
+  undeterminedReason  String?
+  /// FR-CTX-064, PP-016 — the objective term or rule that selected it.
+  inclusionReason     String
+  /// FR-CTX-014 — the score that ranked it.
+  relevanceScore      Float
+  crossBoundary       Boolean        @default(false)
+  authorisationRef    String?
+  createdAt           DateTime       @default(now())
+  package             ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@map("context_items")
+}
+
+model ContextExclusion {
+  id           String         @id @default(uuid())
+  packageId    String
+  sourceType   String
+  sourceId     String
+  /// Five, closed, no default — a reason by omission cannot be explained.
+  reason       String
+  detail       String
+  /// FR-CTX-039 — so the refusal it caused is explainable after the fact.
+  wasEssential Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  package      ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@map("context_exclusions")
+}
+
+model ContextSourceClass {
+  id                     String   @id @default(uuid())
+  workspaceId            String
+  sourceType             String
+  securityClassification String
+  /// FR-CTX-034 — defaults to false. An unclassified source is excluded.
+  indexable              Boolean  @default(false)
+  createdAt              DateTime @default(now())
+
+  @@unique([workspaceId, sourceType])
+  @@map("context_source_classes")
+}
+
+model ContextReusableAuthorisation {
+  id              String   @id @default(uuid())
+  sourceType      String
+  sourceId        String
+  /// Directional: A may read B's handbook does not imply the reverse.
+  fromWorkspaceId String
+  toWorkspaceId   String
+  authorisedBy    String
+  authorisedAt    DateTime @default(now())
+  rationale       String
+
+  @@map("context_reusable_authorisations")
+}
+
+/// R-038-2 — PARTITIONED BY LIST (workspaceId) in the migration, which Prisma
+/// Schema Language cannot express. The `embedding vector` column is likewise
+/// absent here and written through raw SQL: Prisma has no vector type, and
+/// modelling it as Unsupported would put a column in the client that no query
+/// may safely select.
+model ContextIndexEntry {
+  id               String   @id @default(uuid())
+  workspaceId      String
+  sourceType       String
+  sourceId         String
+  /// FR-CTX-016 — staleness is a version comparison, never a timestamp.
+  sourceVersion    String
+  embeddingModelId String
+  dimension        Int
+  indexedAt        DateTime @default(now())
+
+  @@index([workspaceId, sourceType, sourceId])
+  @@index([embeddingModelId])
+  @@map("context_index_entries")
+}
