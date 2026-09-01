@@ -32,7 +32,7 @@
  */
 import type { ContextPackage, PackageItem } from './package.types.js';
 import type { ExclusionRecord } from './retrieval/outcome.types.js';
-import type { ContextStore, IndexEntry } from './context.store.js';
+import type { ContextStore, IndexEntry, SourceClass } from './context.store.js';
 
 /** The Prisma surface this store uses, named rather than imported (PC-1). */
 interface Delegate {
@@ -47,6 +47,7 @@ export interface ContextPrismaClient {
   readonly contextItem: Delegate;
   readonly contextExclusion: Delegate;
   readonly contextIndexEntry: Delegate;
+  readonly contextSourceClass: Delegate;
 }
 
 export class PrismaContextStore implements ContextStore {
@@ -103,6 +104,20 @@ export class PrismaContextStore implements ContextStore {
     return (await this.prisma.contextExclusion.findMany({
       where: { packageId, package: { workspaceId } },
     })) as ExclusionRecord[];
+  }
+
+  /** `FR-CTX-034` — `null` for an unregistered type. Never a default. */
+  async classifySource(workspaceId: string, sourceType: string): Promise<SourceClass | null> {
+    return (await this.prisma.contextSourceClass.findFirst({
+      where: { workspaceId, sourceType },
+    })) as SourceClass | null;
+  }
+
+  async sourceClassesFor(workspaceId: string): Promise<SourceClass[]> {
+    return (await this.prisma.contextSourceClass.findMany({
+      where: { workspaceId },
+      orderBy: { sourceType: 'asc' },
+    })) as SourceClass[];
   }
 
   /**

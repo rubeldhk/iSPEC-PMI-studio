@@ -46,6 +46,16 @@ export interface IndexEntry {
   readonly indexedAt: Date;
 }
 
+/** `FR-CTX-015`, `FR-CTX-036` — a class of approved source, and its handling. */
+export interface SourceClass {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly sourceType: string;
+  readonly securityClassification: string;
+  /** `FR-CTX-015` — whether it enters the corpus at all. Defaults to false. */
+  readonly indexable: boolean;
+}
+
 export interface ContextStore {
   createPackage(row: ContextPackage): Promise<ContextPackage>;
   findPackage(workspaceId: string, id: string): Promise<ContextPackage | null>;
@@ -60,6 +70,15 @@ export interface ContextStore {
    */
   addExclusion(row: ExclusionRecord): Promise<ExclusionRecord>;
   exclusionsFor(workspaceId: string, packageId: string): Promise<ExclusionRecord[]>;
+
+  /**
+   * `FR-CTX-036`, `PP-014` — the classes are configuration, read not inferred.
+   *
+   * `null` for an unregistered type, never a permissive stand-in: `FR-CTX-034`
+   * excludes what cannot be classified, and a default here would admit it.
+   */
+  classifySource(workspaceId: string, sourceType: string): Promise<SourceClass | null>;
+  sourceClassesFor(workspaceId: string): Promise<SourceClass[]>;
 
   /**
    * `FR-CTX-018` — replace an entry when its source version moves.
@@ -82,6 +101,7 @@ export class InMemoryContextStore implements ContextStore {
   readonly #items: PackageItem[] = [];
   readonly #exclusions: ExclusionRecord[] = [];
   #entries: IndexEntry[] = [];
+  readonly #classes: SourceClass[] = [];
 
   async createPackage(row: ContextPackage): Promise<ContextPackage> {
     this.#packages.set(row.id, row);
@@ -122,6 +142,24 @@ export class InMemoryContextStore implements ContextStore {
   async exclusionsFor(workspaceId: string, packageId: string): Promise<ExclusionRecord[]> {
     if (!(await this.findPackage(workspaceId, packageId))) return [];
     return this.#exclusions.filter((row) => row.packageId === packageId);
+  }
+
+  async classifySource(workspaceId: string, sourceType: string): Promise<SourceClass | null> {
+    return (
+      this.#classes.find(
+        (row) => row.workspaceId === workspaceId && row.sourceType === sourceType,
+      ) ?? null
+    );
+  }
+
+  async sourceClassesFor(workspaceId: string): Promise<SourceClass[]> {
+    return this.#classes.filter((row) => row.workspaceId === workspaceId);
+  }
+
+  /** Test seam: configuration arrives from a migration or an operator, not code. */
+  async addSourceClass(row: SourceClass): Promise<SourceClass> {
+    this.#classes.push(row);
+    return row;
   }
 
   async upsertIndexEntry(row: IndexEntry): Promise<IndexEntry> {
