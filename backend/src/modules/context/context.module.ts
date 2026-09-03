@@ -105,6 +105,21 @@ export class ContextService {
           sourceClasses: {
             classify: (workspaceId, sourceType) => store.classifySource(workspaceId, sourceType),
           },
+          /**
+           * `FR-CTX-053` — no authorisations are readable yet, and the honest
+           * default is **none**.
+           *
+           * `T1260` binds this to `context_reusable_authorisations`. Until
+           * then, own-workspace material is unaffected and every crossing is
+           * refused — which is the direction to be wrong in, and the direction
+           * `FR-CTX-053` names: the absence of a prohibition is not a
+           * permission, and neither is the absence of a reader.
+           */
+          authorisations: {
+            async find(): Promise<null> {
+              return null;
+            },
+          },
         };
         return new AssemblyService(store, ports);
       },

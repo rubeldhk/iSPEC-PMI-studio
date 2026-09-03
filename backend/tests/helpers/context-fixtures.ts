@@ -23,6 +23,9 @@ export function candidates(ids: readonly string[], score = 0.9): Candidate[] {
     sourceId,
     sourceVersion: 'v1',
     relevanceScore: score - index * 0.01,
+    // Own-workspace material. Cross-boundary candidates are built explicitly at
+    // the call site, so a test that means to cross a boundary says so.
+    workspaceId: 'ws_1',
   }));
 }
 
@@ -133,6 +136,45 @@ export function baselines(
   return {
     async statusOf(input): Promise<SourceStatus> {
       return known[`${input.sourceId}@${input.sourceVersion}`] ?? { status: 'unknown' };
+    },
+  };
+}
+
+/** No authorisations at all — the ordinary case, and the default posture. */
+export function noAuthorisations(): AssemblyPorts['authorisations'] {
+  return {
+    async find() {
+      return null;
+    },
+  };
+}
+
+/**
+ * One authorisation, in one direction, for one source.
+ *
+ * Matches on both endpoints so a test asserting direction cannot pass against a
+ * fixture that ignores it.
+ */
+export function authorisedCrossing(
+  sourceId: string,
+  fromWorkspaceId: string,
+  toWorkspaceId: string,
+): AssemblyPorts['authorisations'] {
+  return {
+    async find(input) {
+      return input.sourceId === sourceId &&
+        input.fromWorkspaceId === fromWorkspaceId &&
+        input.toWorkspaceId === toWorkspaceId
+        ? {
+            id: 'rka_1',
+            sourceType: input.sourceType,
+            sourceId,
+            workspaceId: fromWorkspaceId,
+            toWorkspaceId,
+            authorisedBy: 'u_owner',
+            rationale: 'the shared engineering handbook is deliberately common',
+          }
+        : null;
     },
   };
 }

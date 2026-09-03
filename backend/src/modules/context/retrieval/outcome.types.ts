@@ -60,11 +60,20 @@ export interface ExclusionRecord {
   readonly wasEssential: boolean;
 }
 
-/** One ranked candidate, before permission and classification have spoken. */
+/** One ranked candidate, before the boundary, permission and classification have spoken. */
 export interface Candidate {
   readonly sourceType: string;
   readonly sourceId: string;
   readonly sourceVersion: string;
+  /**
+   * `FR-CTX-050` — the workspace that OWNS this material.
+   *
+   * Required rather than optional, and never defaulted to the requester's:
+   * `judgeBoundary` compares the two, and a default would make every candidate
+   * look like own-workspace material — which is the leak, arriving as a
+   * convenience.
+   */
+  readonly workspaceId: string;
   /** `FR-CTX-014` — the score that ranked it. Never defaulted; see `T1308`. */
   readonly relevanceScore: number;
 }

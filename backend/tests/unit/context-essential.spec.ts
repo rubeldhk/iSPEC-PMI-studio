@@ -29,6 +29,7 @@ import {
   classes,
   denyFor,
   input,
+  noAuthorisations,
   retrieval,
 } from '../helpers/context-fixtures.js';
 
@@ -40,6 +41,7 @@ describe('T1241 · an essential item excluded by budget refuses', () => {
       retrieval: retrieval(candidates(['rq_1', 'rq_2'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
       costOf: () => 1000,
     });
 
@@ -94,6 +96,7 @@ describe('T1241 · and for any other reason too', () => {
       retrieval: retrieval(candidates(['rq_1', 'rq_2'])),
       access: denyFor('rq_2'),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
       costOf: () => 10,
     });
     await expect(
@@ -107,6 +110,7 @@ describe('T1241 · and for any other reason too', () => {
       retrieval: retrieval(candidates(['rq_1', 'rq_2'])),
       access: allow(),
       sourceClasses: classes([]),
+      authorisations: noAuthorisations(),
       costOf: () => 10,
     });
     await expect(
@@ -121,6 +125,7 @@ describe('T1241 · and the controls', () => {
       retrieval: retrieval(candidates(['rq_1', 'rq_2'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
       costOf: () => 1000,
     });
 

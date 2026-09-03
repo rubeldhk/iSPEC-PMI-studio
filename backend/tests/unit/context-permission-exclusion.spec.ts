@@ -19,7 +19,15 @@
 import { describe, expect, it } from 'vitest';
 import { AssemblyService } from '../../src/modules/context/assembly.service.js';
 import { InMemoryContextStore } from '../../src/modules/context/context.store.js';
-import { allow, candidates, classes, denyFor, input, retrieval } from '../helpers/context-fixtures.js';
+import {
+  allow,
+  candidates,
+  classes,
+  denyFor,
+  input,
+  noAuthorisations,
+  retrieval,
+} from '../helpers/context-fixtures.js';
 
 const service = (
   store: InMemoryContextStore,
@@ -30,6 +38,7 @@ const service = (
     retrieval: retrieval(candidates(ids)),
     access,
     sourceClasses: classes(['requirement']),
+    authorisations: noAuthorisations(),
   });
 
 describe('T1238 · an item the actor may not read is excluded', () => {

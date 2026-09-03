@@ -25,13 +25,21 @@
 import { describe, expect, it } from 'vitest';
 import { AssemblyService } from '../../src/modules/context/assembly.service.js';
 import { InMemoryContextStore } from '../../src/modules/context/context.store.js';
-import { allow, candidates, classes, input, retrieval } from '../helpers/context-fixtures.js';
+import {
+  allow,
+  candidates,
+  classes,
+  input,
+  noAuthorisations,
+  retrieval,
+} from '../helpers/context-fixtures.js';
 
 const service = (store: InMemoryContextStore): AssemblyService =>
   new AssemblyService(store, {
     retrieval: retrieval(candidates(['rq_1', 'rq_2'])),
     access: allow(),
     sourceClasses: classes(['requirement']),
+    authorisations: noAuthorisations(),
   });
 
 describe('T1306 · every item says why it is here', () => {

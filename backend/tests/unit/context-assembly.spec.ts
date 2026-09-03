@@ -23,6 +23,7 @@ import {
   candidates,
   classes,
   input,
+  noAuthorisations,
   retrieval,
 } from '../helpers/context-fixtures.js';
 
@@ -33,6 +34,7 @@ describe('T1237 · the six inputs are consulted and recorded', () => {
       retrieval: retrieval(candidates(['rq_1'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
 
     const result = await subject.assemble(input());
@@ -46,6 +48,7 @@ describe('T1237 · the six inputs are consulted and recorded', () => {
       retrieval: retrieval(candidates(['rq_1'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
 
     const result = await subject.assemble(input());
@@ -62,6 +65,7 @@ describe('T1237 · the six inputs are consulted and recorded', () => {
       retrieval: retrieval(candidates(['rq_1'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
 
     const result = await subject.assemble(input({ budgetTokens: 9000 }));
@@ -77,6 +81,7 @@ describe('T1237 · the six inputs are consulted and recorded', () => {
       retrieval: retrieval(candidates(['rq_1']), { modelId: 'model-b' }),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
 
     const result = await subject.assemble(input());
@@ -91,6 +96,7 @@ describe('T1237 · the six inputs are consulted and recorded', () => {
       retrieval: retrieval(candidates(['rq_1'], 0.77)),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
 
     const result = await subject.assemble(input());
@@ -106,6 +112,7 @@ describe('T1237 · what assembly refuses before writing anything', () => {
       retrieval: retrieval(candidates(['rq_1'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
     await expect(subject.assemble(input({ objective: '   ' }))).rejects.toThrow(/objective/i);
   });
@@ -118,6 +125,7 @@ describe('T1237 · what assembly refuses before writing anything', () => {
       retrieval: retrieval(candidates(['rq_1'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
     await expect(subject.assemble(input({ objective: '' }))).rejects.toThrow();
     expect(await store.findPackage('ws_1', 'cp_1')).toBeNull();
@@ -136,6 +144,7 @@ describe('T1237 · what assembly refuses before writing anything', () => {
       },
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
     await expect(subject.assemble(input())).rejects.toThrow(/index/i);
   });
@@ -148,6 +157,7 @@ describe('T1237 · what assembly refuses before writing anything', () => {
       retrieval: retrieval(candidates(['rq_1'])),
       access: allow(),
       sourceClasses: classes(['requirement']),
+      authorisations: noAuthorisations(),
     });
     const result = await subject.assemble(input());
     expect(result.state).toBe('assembled');

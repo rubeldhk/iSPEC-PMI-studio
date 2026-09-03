@@ -25,7 +25,14 @@
 import { describe, expect, it } from 'vitest';
 import { AssemblyService } from '../../src/modules/context/assembly.service.js';
 import { InMemoryContextStore } from '../../src/modules/context/context.store.js';
-import { allow, candidates, classes, input, retrieval } from '../helpers/context-fixtures.js';
+import {
+  allow,
+  candidates,
+  classes,
+  input,
+  noAuthorisations,
+  retrieval,
+} from '../helpers/context-fixtures.js';
 
 /** Four candidates; the service charges a fixed cost per item in these tests. */
 const service = (store: InMemoryContextStore): AssemblyService =>
@@ -33,6 +40,7 @@ const service = (store: InMemoryContextStore): AssemblyService =>
     retrieval: retrieval(candidates(['rq_1', 'rq_2', 'rq_3', 'rq_4'])),
     access: allow(),
     sourceClasses: classes(['requirement']),
+    authorisations: noAuthorisations(),
     // Fixed so the arithmetic in these tests is about the rule, not about a
     // tokeniser's judgement.
     costOf: () => 1000,

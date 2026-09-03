@@ -24,14 +24,27 @@ import {
   classes,
   classifiedNotIndexable,
   input,
+  noAuthorisations,
   retrieval,
 } from '../helpers/context-fixtures.js';
 import type { Candidate } from '../../src/modules/context/retrieval/outcome.types.js';
 
 /** One classified candidate and one whose type nobody registered. */
 const mixed: Candidate[] = [
-  { sourceType: 'requirement', sourceId: 'rq_1', sourceVersion: 'v1', relevanceScore: 0.9 },
-  { sourceType: 'imported-doc', sourceId: 'im_1', sourceVersion: 'v1', relevanceScore: 0.88 },
+  {
+    sourceType: 'requirement',
+    sourceId: 'rq_1',
+    sourceVersion: 'v1',
+    relevanceScore: 0.9,
+    workspaceId: 'ws_1',
+  },
+  {
+    sourceType: 'imported-doc',
+    sourceId: 'im_1',
+    sourceVersion: 'v1',
+    relevanceScore: 0.88,
+    workspaceId: 'ws_1',
+  },
 ];
 
 const service = (store: InMemoryContextStore, known: readonly string[]): AssemblyService =>
@@ -39,6 +52,7 @@ const service = (store: InMemoryContextStore, known: readonly string[]): Assembl
     retrieval: retrieval(mixed),
     access: allow(),
     sourceClasses: classes(known),
+    authorisations: noAuthorisations(),
   });
 
 describe('T1239 · a source type with no class is excluded', () => {
@@ -87,6 +101,7 @@ describe('T1239 · a classified type marked not-indexable is also excluded', () 
       retrieval: retrieval(mixed),
       access: allow(),
       sourceClasses: classifiedNotIndexable(['requirement', 'imported-doc']),
+      authorisations: noAuthorisations(),
     });
 
     const result = await subject.assemble(input());
@@ -103,6 +118,7 @@ describe('T1239 · a classified type marked not-indexable is also excluded', () 
       retrieval: retrieval(mixed),
       access: allow(),
       sourceClasses: classifiedNotIndexable(['requirement', 'imported-doc']),
+      authorisations: noAuthorisations(),
     });
 
     const result = await subject.assemble(input());

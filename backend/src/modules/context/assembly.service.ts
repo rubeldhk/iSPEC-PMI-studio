@@ -41,6 +41,7 @@ import type {
   RetrievalOutcome,
 } from './retrieval/outcome.types.js';
 import { shortfallOf } from './retrieval/outcome.types.js';
+import { judgeBoundary, type AuthorisationReader } from './isolation.js';
 
 /** One source, named the way a caller names it. */
 export interface SourceRef {
@@ -87,6 +88,15 @@ export interface AssemblyPorts {
       sourceType: string,
     ): Promise<{ securityClassification: string; indexable: boolean } | null>;
   };
+  /**
+   * `FR-CTX-050`–`FR-CTX-053` — who may cross a tenant boundary.
+   *
+   * Separate from `access` deliberately, and `T1257` is the test that keeps
+   * them separate: this decides whether the **material** may appear here at
+   * all, `access` decides whether the **actor** may read it, and an item needs
+   * both (`R-038-7`).
+   */
+  readonly authorisations: AuthorisationReader;
   /**
    * What one candidate costs against the budget.
    *
@@ -141,7 +151,11 @@ export class AssemblyService {
     const isEssential = (c: Candidate): boolean =>
       essential.has(`${c.sourceType}:${c.sourceId}`);
 
-    const kept: { candidate: Candidate; reason: string }[] = [];
+    const kept: {
+      candidate: Candidate;
+      reason: string;
+      crossing: { crossBoundary: boolean; authorisationRef?: string };
+    }[] = [];
     const rejected: Rejected[] = [];
     let spent = 0;
 
@@ -181,6 +195,17 @@ export class AssemblyService {
         continue;
       }
 
+      // `FR-CTX-050`. Asked BEFORE the actor's permission, because the two
+      // answer different questions and this one is about whether the material
+      // may be here at all. `R-038-7`: the partition is not the permission, and
+      // a permissive `AccessPolicy` must never become a route around the tenant
+      // boundary.
+      const boundary = await judgeBoundary(candidate, input.workspaceId, this.ports.authorisations);
+      if (!boundary.allowed) {
+        rejected.push({ candidate, reason: 'boundary', detail: boundary.reason });
+        continue;
+      }
+
       if (!(await this.ports.access.mayRead(input.actorId, candidate))) {
         rejected.push({
           candidate,
@@ -203,6 +228,12 @@ export class AssemblyService {
       spent += cost;
       kept.push({
         candidate,
+        // `FR-CTX-052` — the marking travels with the item, and names the
+        // authorisation. A boolean alone would say somebody decided this was
+        // fine without saying who.
+        crossing: boundary.crossBoundary
+          ? { crossBoundary: true, authorisationRef: boundary.authorisationRef }
+          : { crossBoundary: false },
         // `FR-CTX-064`, `PP-016` — recorded at the moment of selection, because
         // a reason reconstructed later is a guess about what this loop was
         // thinking. An essential item was not chosen by relevance, and saying
@@ -250,8 +281,10 @@ export class AssemblyService {
     const packageId = randomUUID();
     await this.store.createPackage(this.#packageRow(packageId, input, outcome, 'assembled', null));
 
-    for (const { candidate, reason } of kept) {
-      await this.store.addItem(this.#item(input.workspaceId, packageId, candidate, reason));
+    for (const { candidate, reason, crossing } of kept) {
+      await this.store.addItem(
+        this.#item(input.workspaceId, packageId, candidate, reason, crossing),
+      );
     }
     for (const r of rejected) {
       await this.store.addExclusion(
@@ -328,6 +361,7 @@ export class AssemblyService {
     packageId: string,
     candidate: Candidate,
     inclusionReason: string,
+    crossing: { crossBoundary: boolean; authorisationRef?: string },
   ): PackageItem {
     return {
       id: randomUUID(),
@@ -343,7 +377,9 @@ export class AssemblyService {
       undeterminedReason: 'provenance resolution is not yet bound (FR-CTX-042, T1250)',
       inclusionReason,
       relevanceScore: candidate.relevanceScore,
-      crossBoundary: false,
+      ...(crossing.crossBoundary
+        ? { crossBoundary: true as const, authorisationRef: crossing.authorisationRef }
+        : { crossBoundary: false as const }),
     };
   }
 
