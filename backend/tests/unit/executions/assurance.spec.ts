@@ -48,9 +48,13 @@ function harness() {
   };
   const db = {
     $transaction: async <T>(fn: (t: typeof tx) => Promise<T>): Promise<T> => fn(tx),
-    $queryRawUnsafe: vi.fn(async () => [
-      { id: 'exec_1', workspaceId: WS, command: 'specify', surface: 'local-cli', assurance: 'local', governanceState: 'governed', parentExecutionId: null, lifecycleState: null, projectedThroughSequence: null },
-    ]),
+    // EPIC-043 T1443: the replay lookup (by idempotency key) sees nothing; the
+    // snapshot read sees the row.
+    $queryRawUnsafe: vi.fn(async (sql: string) =>
+      /"idempotencyKey" = \/.test(sql)
+        ? []
+        : [{ id: 'exec_1', workspaceId: WS, command: 'specify', surface: 'local-cli', assurance: 'local', governanceState: 'governed', parentExecutionId: null, lifecycleState: null, projectedThroughSequence: null }],
+    ),
   };
   const events = { append: vi.fn(async () => ({ sequence: 1 })) };
   const identity = {
