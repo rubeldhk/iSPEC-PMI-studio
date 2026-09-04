@@ -43,7 +43,7 @@ does not depend on its own product to govern itself.
 | [ADR-0014](./ADR-0014-source-of-truth-boundaries.md) | Source-of-truth boundaries between PostgreSQL, Git, Spec Kit and the agent workspace | Accepted | 2026-08-17 |
 | [ADR-0015](./ADR-0015-requirement-change-defect-governance-authority.md) | Requirement, Change and Defect governance authority | Accepted | 2026-08-17 |
 | [ADR-0016](./ADR-0016-tdd-defect-execution-policy.md) | TDD defect execution policy | Open | 2026-08-17 |
-| [ADR-0017](./ADR-0017-interactive-workspace-vs-autonomous-sandbox.md) | Interactive developer workspace versus autonomous agent sandbox | Open | 2026-08-17 |
+| [ADR-0017](./ADR-0017-interactive-workspace-vs-autonomous-sandbox.md) | Interactive developer workspace versus autonomous agent sandbox | Accepted | 2026-09-04 |
 | [ADR-0018](./ADR-0018-governed-engineering-loops.md) | Governed Engineering Loops as a shared workflow abstraction | Open | 2026-08-17 |
 | [ADR-0019](./ADR-0019-context-engine-composition.md) | Context Engine composition — four capabilities, not one store | Open | 2026-08-17 |
 | [ADR-0020](./ADR-0020-engineering-expert-model.md) | Engineering Expert model for registered agents | Accepted | 2026-08-17 |

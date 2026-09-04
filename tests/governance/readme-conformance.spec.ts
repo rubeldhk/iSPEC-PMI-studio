@@ -139,3 +139,26 @@ describe('T452 · README.md covers the documented setup', () => {
     }
   });
 });
+
+describe('T1382 · README.md names the six local-workspace variables (EPIC-041)', () => {
+  // `R-041-2`: the projects root is mounted, the public URL is written into
+  // every project's `.pmi/project.json`, and the worker host needs `uv`. A
+  // README that leaves one of the six out sends an operator to the source.
+  const VARIABLES = [
+    'PMI_PROJECTS_ROOT',
+    'PMI_PROJECTS_ROOT_HOST',
+    'PMI_PUBLIC_URL',
+    'PMI_ENGINE_TAG',
+    'PMI_MCP_SERVER_VERSION',
+    'PMI_INITIALISE_WAIT_MS',
+  ];
+
+  it.each(VARIABLES)('documents %s', (variable) => {
+    expect(readme, `README.md does not mention ${variable}`).toContain(variable);
+  });
+
+  it('tells the operator that uv must be on the worker host, and what happens without it', () => {
+    expect(readme).toMatch(/\buv\b/);
+    expect(readme).toMatch(/initialisation pending/i);
+  });
+});

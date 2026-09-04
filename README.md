@@ -95,6 +95,34 @@ SEED_USER_EMAIL=dev@pmi.local SEED_USER_PASSWORD='choose-something' pnpm --filte
 
 The seed refuses to run with `NODE_ENV=production`.
 
+### Local workspace — the six variables (EPIC-041)
+
+A project can own a **directory on your machine** that PMI Studio prepares and your own agent
+works in (`specs/041-local-project-workspace`). Six variables govern it; `.env.example` carries
+the defaults:
+
+| Variable | What it is | Default |
+|---|---|---|
+| `PMI_PROJECTS_ROOT` | where the **API** writes project directories (inside the container this is the mount) | `/projects` in the containerised stack |
+| `PMI_PROJECTS_ROOT_HOST` | the same directory **as your machine sees it** — written into each project's `.pmi/project.json` and mounted by `docker-compose.yml` | required for the containerised stack |
+| `PMI_PUBLIC_URL` | the URL the agent on your machine reaches the API at | `http://localhost:3000` |
+| `PMI_ENGINE_TAG` | the pinned tag of the engine's local toolkit the initialise step installs | `v0.16.4` |
+| `PMI_MCP_SERVER_VERSION` | the MCP server package version written into each project's `.mcp.json` | see `.env.example` |
+| `PMI_INITIALISE_WAIT_MS` | how long a *prepared* project waits for a worker before it reads *initialisation pending* | `30000` |
+
+The credential the agent uses is never written into the directory: `.mcp.json` carries the
+reference `${PMI_STUDIO_TOKEN}`, and you set that variable yourself from the value PMI Studio shows
+you **once** when the project is created.
+
+**`uv` must be on the worker host's PATH.** The initialise step runs the engine's toolkit at
+`PMI_ENGINE_TAG` through `uvx`. What happens depends on which stack you run:
+
+| Stack | Worker | After *Create* the project reads | Then |
+|---|---|---|---|
+| Reference local, `uv` installed | on the host | *prepared* → **provisioned** (about 25 s on first use, cached after) | open the directory with your agent |
+| Reference local, no `uv` | on the host | *prepared* → **failed** at `run_engine_init`, naming `initialiser_unavailable` | install `uv` and provision again |
+| Containerised | none reaches your directory | *prepared* → **initialisation pending** after `PMI_INITIALISE_WAIT_MS` | run the setup skill `setup-PMIStudio` from the directory with your agent |
+
 ## Tests
 
 ```bash

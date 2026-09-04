@@ -118,3 +118,40 @@ the body. **Expect**: refused naming the field.
 `SC-LPW-010`. The e2e run performs Scenarios 1, 4 (reference local) or 5 (containerised), 8 and 9
 and writes `docs/uat/EPIC-041-<stack>-transcript.md`. **Expect**: two transcripts committed, each
 naming its stack, neither hand-edited.
+
+---
+
+## Results — recorded 2026-09-04 at `/speckit-implement` (T1382)
+
+**Stacks in this session.** Every automated scenario ran through the composed `AppModule` against
+a PostgreSQL 16 Testcontainer (the **Tier 1** stack of Constitution XI — the API's own composition
+root, a real database, no HTTP proxy), on `win32 x64`, Node 22.13. Scenario 4 ran the worker's
+initialise step directly on this host (`uv 0.11.33`). The **containerised** stack (`docker compose
+up --build`) and the **reference local** three-terminal stack were **not** brought up in this
+session; the rows below say so where it matters.
+
+| Scenario | Stack | Result | Evidence |
+|---|---|---|---|
+| 1 — root path becomes a directory | Tier 1 | PASS — `201`, `prepared`, `.git/`, `.pmi/project.json`, `.mcp.json`, skill present | `backend/tests/integration/provisioning-route.spec.ts` |
+| 2 — path outside the root refused, nothing written | Tier 1 · unit | PASS — `400` names the root; no row | `provisioning-route.spec.ts`, `tests/unit/projects/projects-root.spec.ts` |
+| 3 — non-empty directory refused by name; empty git repo adopted | Tier 1 | PASS — `400` / adopted | `provisioning-route.spec.ts` |
+| 4 — initialise completes with `uv` | **this host** (the reference-local worker half) | PASS — `run_engine_init`, `copy_extension`, `register_hooks`, `verify_structure` in **25.3 s** (first use, `v0.16.4` fetched) | probe run of `LocalSpecKitInitialiser` with `execFileOnHost`; `.specify/` and `.claude/skills` present |
+| 5 — no worker → *initialisation pending* | unit (containerised stack not run) | PASS at unit level — derived from the ledger after `PMI_INITIALISE_WAIT_MS`; **not observed on the containerised stack in this session** | `tests/unit/projects/initialisation-pending.spec.ts` |
+| 6 — re-provisioning changes nothing | Tier 1 | PASS — `200`, `no_change`, no file rewritten | `provisioning-route.spec.ts` |
+| 7 — interrupted run resumes | unit | PASS — resumes from the failed step; `git init` not repeated | `tests/unit/projects/provisioning.service.spec.ts` |
+| 8 — credential value in no file under the root | contract · Tier 1 | PASS — no file matches `pmi_ct_…`; **mutation observed** (T1388) | `backend/tests/contract/project-files.spec.ts`, `connector-credential-route.spec.ts` |
+| 9 — a credential opens exactly one project | Tier 1 | PASS — `whoami` → A; B with A's token → `404`; **mutation observed** (T1388) | `backend/tests/integration/connector-credential-route.spec.ts` |
+| 10 — revocation immediate, irreversible | Tier 1 | PASS — `401` identical to unknown; one audit entry; second revoke `200` | `connector-credential-route.spec.ts` |
+| 11 — minting without the owner grant refused and audited | Tier 1 | PASS — `403`; audit names actor and project | `connector-credential-route.spec.ts` |
+| 12 — generation from the project screen persists across a restart | Tier 1 · component | PASS — the route-through persists and survives `rebootApp`; the control mounts `JobProgress` | `generation-persists-through-route.spec.ts`, `survives-restart.spec.ts`, `frontend/tests/unit/pages/project-generate.spec.tsx` |
+| 13 — assurance derived, never accepted | unit · Tier 1 | PASS — `assurance_not_accepted`; stored by surface | `backend/tests/unit/executions/assurance.spec.ts`, `tests/integration/executions/` |
+| 14 — the journey, recorded | — | NOT RUN — the e2e harness was not driven against a running stack in this session (T1387 open) | — |
+
+**Performance (research.md §Performance), measured on this host:**
+
+| Target | Bound | Measured | How |
+|---|---|---|---|
+| Prepare step, p95 | < 2 s | **104.5 ms** (max 110.8, min 55.3; 20 runs) | `ProvisioningService.prepare` with real files and `git init`, in-memory stores |
+| Initialise step, p95 | < 90 s | **25.3 s** (one run, first use — `uvx` fetched `v0.16.4`) | Scenario 4 probe |
+| Credential verification | < 5 ms | **0.024 ms** p95 (max 2.2 ms; 2,000 runs) | prefix lookup + constant-time digest, in memory |
+| Create → open in agent, first-time user | < 2 min | **not measured with a person**; the automated path is prepare (about 0.1 s) + initialise (about 25 s) | `SC-LPW-001` remains a UAT observation |

@@ -99,3 +99,29 @@ replaces:
 | `DEF-028-008` | a 404 fixture labelled by the same assumption as the code |
 | `DEF-028-009` | an image's `ENTRYPOINT` composed with a provider's `Cmd` — in neither artifact |
 | `DEF-028-010` | a digest the stub invented and the system had no field for |
+
+## 6. The local workspace — a directory on the user's machine (EPIC-041)
+
+A project with a root path is a directory PMI Studio **prepares** and the user's own agent works
+in. The API writes it; a worker initialises it; the credential that lets the agent reach the API
+is shown once and never written into the directory (`specs/041-local-project-workspace`).
+
+**Six variables** (`.env.example` carries defaults): `PMI_PROJECTS_ROOT` (where the API writes),
+`PMI_PROJECTS_ROOT_HOST` (the same directory as the host sees it — mounted at `/projects` by
+`docker-compose.yml`, and the path written into every `.pmi/project.json`), `PMI_PUBLIC_URL` (what
+the agent's MCP server calls), `PMI_ENGINE_TAG` (the engine toolkit tag the initialise step pins),
+`PMI_MCP_SERVER_VERSION` (written into `.mcp.json`), `PMI_INITIALISE_WAIT_MS` (how long a prepared
+project waits for a worker before reading *initialisation pending*).
+
+**`uv` on the worker host.** The initialise step runs the engine toolkit at the pinned tag through
+`uvx` (`specify init --here --force --integration <i> --script <s>`) in the project directory.
+Without `uv` the step fails by name (`initialiser_unavailable`) and the project reads *failed* at
+`run_engine_init`; with no worker at all it reads *initialisation pending* and the setup skill
+`setup-PMIStudio` finishes the job from inside the directory. Neither outcome is silent. The
+containerised stack has no worker that can reach the host directory, so *initialisation pending*
+is its expected result — see the outcome table in `README.md` §Setup.
+
+**What to check after `docker compose up`:** `docker compose config` shows the `/projects` mount;
+`POST /v1/projects` with a `rootPath` answers `201` with `provisioningState: prepared` and — once —
+`connectorCredential.value`; `GET /v1/projects/:id/provisioning` lists the record with every step
+it completed. A `503 projects_root_unavailable` means the mount is missing or not writable.
