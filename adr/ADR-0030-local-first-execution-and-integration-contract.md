@@ -81,3 +81,14 @@ PMI-DOC-007 v1.0 §1, §2, §9.1 · PMI-DOC-004B §3 · `D-47` · Constitution X
 `BR-0132`, `BR-0133`, `BR-0201` · `ADR-0002` (retained) · `ADR-0009` (amended 2026-09-03) ·
 `ADR-0010` (closes with `EPIC-043`) · `ADR-0014` (extended by PMI-DOC-007 §2.3) · `ADR-0017`
 (owned by `EPIC-041`) · `ADR-0024` (amended 2026-09-03) · `EPIC-041` · `EPIC-042` · `EPIC-043`
+
+## Amendment — 2026-09-04, `EPIC-043` `/speckit-plan` (`FR-PIC-061`)
+
+**The integration contract is bound.** `EPIC-043` delivers the MCP binding of `EPIC-037`'s
+contract as the stdio server `pmi-studio` — a REST client of the mounted registry, holding no
+business rule and importing nothing from the backend — and mounts the registry's REST surface
+behind `EPIC-041`'s connector guard. Surface and assurance are derived from the transport
+(`local-cli` for REST with a credential, `mcp-client` for the server; both `local`). The reads a
+local agent needs to begin (`pmi.health`, `pmi.project.context`, `pmi.requirements.list`) ship
+here; the tools `EPIC-042`, `EPIC-045` and `EPIC-046` own are reserved by name in the same server.
+`ADR-0010` closes with this Epic. Records: `specs/043-pmi-integration-contract/`.

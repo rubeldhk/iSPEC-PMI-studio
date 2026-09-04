@@ -1,0 +1,74 @@
+# Contract — the `pmi-studio` MCP tool surface (`EPIC-043`)
+
+**Checked by** `backend/tests/contract/mcp-tool-surface.spec.ts`: the running server's `tools/list`
+must name exactly the tools below, with the argument and result shapes stated here (`FR-PIC-005`).
+The semantics of the seven execution tools are `EPIC-037`'s
+(`specs/037-governed-execution-registry/contracts/execution-contract.md`) and are **not restated**.
+
+**Server identity**: name `pmi-studio`; `serverInfo.version` = the package version;
+`instructions` states the contract version and that every call requires `PMI_STUDIO_TOKEN` in the
+environment.
+
+**Rules for every tool** (`R-043-5`, `R-043-6`): a refusal is a tool result with `isError: true`
+and `structuredContent: { code, message, …detail }`, never a protocol error; every mutating tool
+requires `idempotencyKey` and `correlationId`; every tool accepts an optional `contractVersion` and
+refuses a value other than the server's; **no argument, result or refusal carries a credential**
+— a credential-shaped value in any argument is refused as `credential_in_argument` naming the
+argument, never its value.
+
+## 1. Execution tools — exactly `EPIC-037`'s seven
+
+| Tool | Route it translates to | Mutating | Scope |
+|---|---|---|---|
+| `pmi.execution.register` | `POST /v1/executions` | yes | `execution.register` |
+| `pmi.execution.appendEvent` | `POST /v1/executions/{id}/events` | yes | `execution.append` |
+| `pmi.execution.complete` | `POST /v1/executions/{id}/completion` | yes | `execution.complete` |
+| `pmi.execution.comment` | `POST /v1/executions/{id}/comments` | yes | `execution.comment` |
+| `pmi.execution.proposeStatus` | `POST /v1/executions/{id}/proposals` | yes | `execution.propose` |
+| `pmi.execution.history` | `GET /v1/executions/{id}/history` | no | `execution.read` |
+| `pmi.execution.sync` | `POST /v1/executions/sync` | yes | `execution.sync` |
+
+Argument shapes are the contract's request types **minus** `workspaceId`, `projectId`, `surface`,
+`identity` and `assurance` — the server never sends them and the route never accepts them. The
+server adds the header `X-PMI-Surface: mcp-client`. Result shapes are the contract's
+`ExecutionSnapshot`, `AppendedEvent` and history list, as `structuredContent`.
+
+## 2. Reads
+
+| Tool | Route | Scope | Result (`structuredContent`) |
+|---|---|---|---|
+| `pmi.health` | `POST /v1/projects/{id}/health` — `{id}` resolved from the credential | `health.write` | `{ projectId, contractVersion, apiVersion, serverVersion, connectedAt }` |
+| `pmi.project.context` | `GET /v1/projects/{id}/context` | `project.read` | `{ projectId, name, agentIntegration, scriptType, provisioningState, extensionVersion, contractVersion, platformUrl, epics: [{number, slug, name}], epicSource }` |
+| `pmi.requirements.list` | `GET /v1/projects/{id}/requirements?groupBy=epic` | `requirements.read` | `{ groups: [{ epic: {number, slug, name} \| 'unassigned', requirements: [{ id, reference, description, type, priority, status, baselineState }] }], epicSource }` |
+
+`pmi.health` arguments: `{ extensionVersion?, toolkitVersion?, serverVersion? }` — what the caller
+knows about itself; the platform records them (`R-043-8`).
+
+## 3. Reserved — listed, schema-validated, refusing by name (`FR-PIC-002`, `FR-PIC-045`)
+
+| Tool | Refusal | Owner |
+|---|---|---|
+| `pmi.constitution.get` | `not_available_until { epic: 'EPIC-042' }` | `EPIC-042` |
+| `pmi.project.decompose` | `not_available_until { epic: 'EPIC-042' }` | `EPIC-042` |
+| `pmi.artifacts.sync` | `not_available_until { epic: 'EPIC-045' }` | `EPIC-045` |
+| `pmi.tasks.sync` | `not_available_until { epic: 'EPIC-046' }` | `EPIC-046` |
+
+Their argument schemas are the ones PMI-DOC-007 §4.1 describes; an argument that fails the schema
+is refused as a schema error **before** the `not_available_until` refusal, so a client is
+validated even while the content is absent.
+
+## 4. Refusal codes a client must handle
+
+`invalid_connector_credential` · `scope_required` · `identity_not_accepted` ·
+`surface_not_accepted` · `unsupported_contract_version` · `not_available_until` ·
+`platform_unreachable` · `credential_in_argument` — plus every code in `EPIC-037`'s
+`REGISTRY_REFUSALS`, passed through unchanged.
+
+## 5. Environment
+
+| Variable | Meaning |
+|---|---|
+| `PMI_STUDIO_URL` | the platform's public address (`EPIC-041` writes it into `.mcp.json`) |
+| `PMI_STUDIO_TOKEN` | the connector credential, from the user's environment only; empty → every tool refuses `invalid_connector_credential` and `pmi.health` says `credential_absent` in its detail |
+
+The server reads **no file** under the project directory (`FR-PIC-007`).

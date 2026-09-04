@@ -107,3 +107,28 @@ principal — EPIC-039, or the later parity slice of this Epic.
 - [`DEF-001-006`](../../001-platform-foundation/defects/DEF-001-006-the-error-filter-swallows-every-framework-exception.md)
   — the `500` above is that filter's behaviour for a non-`PlatformError`; it is not a second fault.
 - `T1060`–`T1079` — the unauthorized band that will carry REST/MCP/SDK parity.
+
+## Annotation — 2026-09-04, `EPIC-043` `/speckit-plan` (`FR-PIC-061`)
+
+**Closed by mounting, by the mechanism this record named.** *"A transport that authenticates a
+non-human principal and mints the trusted context server-side"* now exists: `EPIC-041`'s
+`ConnectorAuthGuard` resolves a project-scoped connector credential to a `connector` Principal and
+puts a `ConnectorRequestContext` on the request. `EPIC-043` mounts `ExecutionsController` behind
+that guard on every route, derives `identity`, `workspaceId`, `projectId`, `surface` and
+`assurance` server-side, and refuses a body that carries any of them
+(`specs/043-pmi-integration-contract/contracts/mounted-registry-api.md`).
+
+The two faults, each with the test that now proves its absence:
+
+1. **Unauthenticated cross-workspace read** — the `:workspaceId` path segment is gone; the
+   workspace is the credential's. `backend/tests/integration/mounted-registry.spec.ts` presents an
+   absent, malformed, revoked and other-project credential to every route and receives one `401`.
+2. **Caller-asserted identity** — `identity` in the body is `400 identity_not_accepted`;
+   `connector-identity.ts` builds `ExecutionIdentityRefs` from the credential's snapshot,
+   registration and delegation (`data-model.md` §5).
+
+`backend/tests/architecture/executions-unmounted.spec.ts` is **replaced** by
+`executions-mounted.spec.ts` (`R-043-10`): static — every handler carries the guard and a
+registered scope; live — every route answers an absent credential with the one `401`. `T1038`'s
+posture moves from **BLOCKED** to **delivered by `EPIC-043`** when that Epic closes; until then
+this annotation records the plan, not the fact.

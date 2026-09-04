@@ -36,7 +36,7 @@ does not depend on its own product to govern itself.
 | [ADR-0007](./ADR-0007-spec-kit-embedded-engine.md) | Spec Kit as an embedded engine, not an application dependency | Accepted | 2026-08-17 |
 | [ADR-0008](./ADR-0008-project-execution-environment-abstraction.md) | ProjectExecutionEnvironment abstraction | Accepted | 2026-08-17 |
 | [ADR-0009](./ADR-0009-persistent-project-state-vs-ephemeral-execution.md) | Persistent project state versus ephemeral agent execution | Accepted | 2026-08-17 |
-| [ADR-0010](./ADR-0010-pmi-studio-mcp-architecture.md) | PMI Studio MCP architecture | Open | 2026-08-17 |
+| [ADR-0010](./ADR-0010-pmi-studio-mcp-architecture.md) | PMI Studio MCP architecture | Accepted — closed as delivered by `EPIC-043` | 2026-09-04 |
 | [ADR-0011](./ADR-0011-agent-context-authorization.md) | Agent context authorization | Open | 2026-08-17 |
 | [ADR-0012](./ADR-0012-agent-credential-isolation.md) | Agent credential isolation | Accepted | 2026-08-17 |
 | [ADR-0013](./ADR-0013-controlled-network-egress.md) | Controlled network egress | Accepted | 2026-08-17 |
