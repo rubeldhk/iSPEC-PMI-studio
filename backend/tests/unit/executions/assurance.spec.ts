@@ -12,7 +12,7 @@
  * Written to FAIL before `T1366`.
  */
 import { describe, expect, it, vi } from 'vitest';
-import type { RegisterExecutionRequest } from '@pmi/execution-registry-contract';
+import { RegistryRefusedError, type RegisterExecutionRequest } from '@pmi/execution-registry-contract';
 import { ExecutionRegistrationService } from '../../../src/modules/executions/execution-registration.service.js';
 
 const WS = 'ws_assure';
@@ -49,7 +49,7 @@ function harness() {
   const db = {
     $transaction: async <T>(fn: (t: typeof tx) => Promise<T>): Promise<T> => fn(tx),
     $queryRawUnsafe: vi.fn(async () => [
-      { id: 'exec_1', workspaceId: WS, command: 'specify', surface: 'x', governanceState: 'governed', parentExecutionId: null, lifecycleState: null, projectedThroughSequence: null },
+      { id: 'exec_1', workspaceId: WS, command: 'specify', surface: 'local-cli', assurance: 'local', governanceState: 'governed', parentExecutionId: null, lifecycleState: null, projectedThroughSequence: null },
     ]),
   };
   const events = { append: vi.fn(async () => ({ sequence: 1 })) };
@@ -110,5 +110,23 @@ describe('T1365 · every registration writes an assurance derived from its surfa
     await service.register(request('local-cli'));
     const insert = executed.find((e) => /INSERT INTO "executions"/.test(e.sql));
     expect(insert?.sql).toMatch(/"assurance"/);
+  });
+});
+
+describe('T1365 · assurance is never accepted from the caller (FR-LPW-034)', () => {
+  it('refuses a body carrying assurance, naming the field', async () => {
+    const { service, executed } = harness();
+    const forged = { ...request('local-cli'), assurance: 'managed' } as unknown as RegisterExecutionRequest;
+    const error = await service.register(forged).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RegistryRefusedError);
+    expect((error as RegistryRefusedError).refusal).toBe('assurance_not_accepted');
+    expect((error as Error).message).toMatch(/assurance/);
+    expect(executed).toEqual([]);
+  });
+
+  it('the projection carries it — a snapshot reads the stored assurance (SC-LPW-009)', async () => {
+    const { service } = harness();
+    const snapshot = await service.snapshot(WS, 'exec_1');
+    expect(snapshot?.assurance).toBe('local');
   });
 });

@@ -28,13 +28,32 @@ import type {
   ExecutionIdentityRefs,
   ExecutionRegistry,
   ExecutionSnapshot,
+  ExecutionSurface,
   GovernedCommand,
   InputBinding,
   OutputBinding,
 } from './contract.js';
 
+/** EPIC-041 T1370 (FR-LPW-030, FR-LPW-032): the environment a local surface binds. */
+export interface FixtureEnvironment {
+  readonly kind: 'managed-isolated' | 'controlled-local';
+  readonly workspace:
+    | { readonly kind: 'persistent'; readonly projectRef: string; readonly mode: 'read-only' | 'read-write'; readonly branch: string }
+    | { readonly kind: 'ephemeral'; readonly scratchPath: string };
+}
+
+/** The wire form of an environment: kind, lifecycle, and what it binds. */
+export function describeEnvironment(environment: FixtureEnvironment): string {
+  const bound = environment.workspace.kind === 'persistent' ? environment.workspace.projectRef : environment.workspace.scratchPath;
+  return `${environment.kind}:${environment.workspace.kind}:${bound}`;
+}
+
 export interface FixtureConnectorOptions {
   readonly workspaceId: string;
+  /** Defaults to 'fixture'. A local surface ('mcp-client', 'local-cli') is what EPIC-041 admits (FR-LPW-032). */
+  readonly surface?: ExecutionSurface;
+  /** Sent as the request's environment string; absent when not given. */
+  readonly environment?: FixtureEnvironment;
   readonly identity: ExecutionIdentityRefs;
   readonly correlationId: string;
   /** Injected so a test can make keys deterministic. */
@@ -80,7 +99,8 @@ export class FixtureConnector {
       workspaceId: this.options.workspaceId,
       command: input.command,
       argsSanitized: input.args,
-      surface: 'fixture',
+      surface: this.options.surface ?? 'fixture',
+      ...(this.options.environment !== undefined ? { environment: describeEnvironment(this.options.environment) } : {}),
       identity: this.options.identity,
       input: input.binding,
       correlationId: this.options.correlationId,

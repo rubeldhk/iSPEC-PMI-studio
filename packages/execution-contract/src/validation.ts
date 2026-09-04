@@ -142,3 +142,38 @@ export function assertExecutionRequest(
   request.credentials.forEach(assertCredentialRef);
   assertNoSecretsInEnv(request.env, request.credentials);
 }
+
+/**
+ * `T1367` (EPIC-041, `FR-LPW-033`) — the descriptor half of provider
+ * conformance, by environment kind. The Docker provider's tests and the
+ * fixture descriptors call this one function, so every provider is held to
+ * the same words:
+ *
+ * - `managed-isolated` MUST NOT declare the persistent lifecycle — its refusal
+ *   of persistent bindings (`T571`) stays in force for the managed provider;
+ * - `controlled-local` MUST declare it — a developer's directory is persistent
+ *   by definition (`assertEnvironmentKindCoherent`);
+ * - anything else is refused, not ignored.
+ *
+ * The refusal of a persistent binding is asserted ONLY for `managed-isolated`;
+ * the contract itself admits both lifecycles (`FR-LPW-030`).
+ */
+export function assertDescriptorConformance(descriptor: ExecutionEnvironmentDescriptor): void {
+  switch (descriptor.kind) {
+    case 'managed-isolated':
+      if (descriptor.supportedLifecycles.includes('persistent')) {
+        throw new PolicyRefusedError(
+          `Provider "${descriptor.provider}" declares kind managed-isolated but would accept a persistent workspace. ` +
+            'A managed sandbox is ephemeral by definition; persistent project state is the controlled-local kind\'s (FR-LPW-033).',
+        );
+      }
+      return;
+    case 'controlled-local':
+      assertEnvironmentKindCoherent(descriptor);
+      return;
+    default:
+      throw new PolicyRefusedError(
+        `Provider "${descriptor.provider}" declares an environment kind the contract does not admit: "${String(descriptor.kind)}".`,
+      );
+  }
+}

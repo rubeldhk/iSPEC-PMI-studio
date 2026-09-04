@@ -150,14 +150,14 @@ how much its evidence rests on.
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 13; the provider conformance suite.
 
-- [ ] T1365 [P] [US3] Write failing unit tests for the registry's assurance write in `backend/tests/unit/executions/assurance.spec.ts` — a registration from `local-cli` stores `assurance: local`; from `managed-sandbox`, `managed`; a body carrying `assurance` is refused naming the field; the projection carries it (`FR-LPW-034`, `SC-LPW-009`)
-- [ ] T1366 [US3] Implement the assurance write and the body refusal in `backend/src/modules/executions/` (registration service and sanitisation) (unit test: T1365) — through `assuranceFor`, the only writer
-- [ ] T1367 [P] [US3] Extend the provider conformance suite in `packages/execution-contract/tests/` — a `managed-isolated` provider must refuse a persistent binding; a `controlled-local` descriptor must declare `supportedLifecycles` including `persistent`; the suite asserts the refusal **only** for `managed-isolated` (`FR-LPW-033`)
-- [ ] T1368 [US3] Update `execution-providers/docker/tests/` and the fixture provider to the extended suite (conformance: T1367) — the Docker provider's behaviour does not change; the suite's expectation of it becomes explicit
-- [ ] T1369 [P] [US3] Write the failing fixture-connector test `packages/execution-registry-contract/tests/local-surface.spec.ts` — the fixture connector registers with `surface: 'mcp-client'` and a `controlled-local` environment binding a `persistent` workspace, and the registry accepts it (`FR-LPW-030`, `FR-LPW-032`)
-- [ ] T1370 [US3] Extend the fixture connector in `packages/execution-registry-contract/src/fixture-connector.ts` to declare its environment kind and surface (test: T1369)
-- [ ] T1371 [P] [US3] Write the failing unit test for the default mode in `backend/tests/unit/projects/default-mode.spec.ts` — a project with `rootPath` resolves `controlled-local` as its default execution kind; one without resolves `managed-isolated`; the choice is a project attribute, not a global (`FR-LPW-035`)
-- [ ] T1372 [US3] Implement the default-mode resolution in `projects.service.ts` (unit test: T1371)
+- [X] T1365 [P] [US3] Write failing unit tests for the registry's assurance write in `backend/tests/unit/executions/assurance.spec.ts` — a registration from `local-cli` stores `assurance: local`; from `managed-sandbox`, `managed`; a body carrying `assurance` is refused naming the field; the projection carries it (`FR-LPW-034`, `SC-LPW-009`)
+- [X] T1366 [US3] Implement the assurance write and the body refusal in `backend/src/modules/executions/` (registration service and sanitisation) (unit test: T1365) — through `assuranceFor`, the only writer
+- [X] T1367 [P] [US3] Extend the provider conformance suite in `packages/execution-contract/tests/` — a `managed-isolated` provider must refuse a persistent binding; a `controlled-local` descriptor must declare `supportedLifecycles` including `persistent`; the suite asserts the refusal **only** for `managed-isolated` (`FR-LPW-033`)
+- [X] T1368 [US3] Update `execution-providers/docker/tests/` and the fixture provider to the extended suite (conformance: T1367) — the Docker provider's behaviour does not change; the suite's expectation of it becomes explicit
+- [X] T1369 [P] [US3] Write the failing fixture-connector test `packages/execution-registry-contract/tests/local-surface.spec.ts` — the fixture connector registers with `surface: 'mcp-client'` and a `controlled-local` environment binding a `persistent` workspace, and the registry accepts it (`FR-LPW-030`, `FR-LPW-032`)
+- [X] T1370 [US3] Extend the fixture connector in `packages/execution-registry-contract/src/fixture-connector.ts` to declare its environment kind and surface (test: T1369)
+- [X] T1371 [P] [US3] Write the failing unit test for the default mode in `backend/tests/unit/projects/default-mode.spec.ts` — a project with `rootPath` resolves `controlled-local` as its default execution kind; one without resolves `managed-isolated`; the choice is a project attribute, not a global (`FR-LPW-035`)
+- [X] T1372 [US3] Implement the default-mode resolution in `projects.service.ts` (unit test: T1371)
 
 **Checkpoint**: US3 demonstrable — an execution from a developer's machine is recorded, labelled
 honestly, and governed identically.

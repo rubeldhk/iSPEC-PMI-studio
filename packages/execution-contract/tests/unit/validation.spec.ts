@@ -152,3 +152,10 @@ describe('T580 · credentials are refs, scoped, and short-lived (D-27)', () => {
     expect(() => assertNoSecretsInEnv({ CORRELATION_ID: 'abc' }, refs)).not.toThrow();
   });
 });
+
+describe('T1368 · the fixture descriptors conform to the extended suite (FR-LPW-033)', () => {
+  it('the capable managed fixture passes descriptor conformance', async () => {
+    const { assertDescriptorConformance } = await import('../../src/validation.js');
+    expect(() => assertDescriptorConformance(CAPABLE)).not.toThrow();
+  });
+});

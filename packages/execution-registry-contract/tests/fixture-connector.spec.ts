@@ -53,6 +53,7 @@ function recorder(): { registry: ExecutionRegistry; seen: Recorded } {
     workspaceId: 'ws_a',
     command: 'specify',
     surface: 'fixture',
+    assurance: 'local',
     lifecycleState: 'registered',
     governanceState: 'governed',
     projectedThroughSequence: 1,

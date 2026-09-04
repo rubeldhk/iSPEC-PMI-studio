@@ -220,6 +220,8 @@ export interface ExecutionSnapshot {
   readonly workspaceId: string;
   readonly command: GovernedCommand;
   readonly surface: ExecutionSurface;
+  /** Derived from the surface by the registry (FR-LPW-034, SC-LPW-009); the projection carries it. */
+  readonly assurance: ExecutionAssurance;
   readonly lifecycleState: string;
   readonly governanceState: 'provisional' | 'pending_sync' | 'governed';
   /** Makes projection staleness visible rather than invisible. */
@@ -255,6 +257,8 @@ export const REGISTRY_REFUSALS = Object.freeze([
   'idempotency_conflict',
   'completion_comment_required',
   'credential_detected',
+  // EPIC-041 FR-LPW-034: assurance is derived by the registry, never accepted.
+  'assurance_not_accepted',
 ] as const);
 export type RegistryRefusal = (typeof REGISTRY_REFUSALS)[number];
 

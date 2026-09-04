@@ -10,6 +10,7 @@
  * surface as the opaque `NotFoundError`.
  */
 import { randomUUID } from 'node:crypto';
+import type { ExecutionEnvironmentKind } from '@pmi/execution-contract';
 import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import { assertSameWorkspace, type RefusalRecord } from '../../core/workspace.guard.js';
 import type { ProvisioningState } from './provisioning.types.js';
@@ -159,6 +160,14 @@ export class ProjectsService {
 
   async list(workspaceId: string): Promise<ProjectRecord[]> {
     return this.store.list(workspaceId);
+  }
+
+  /**
+   * EPIC-041 T1372 (`FR-LPW-035`) — the default execution mode is a project
+   * attribute, read from the record, not a platform-wide setting.
+   */
+  async defaultExecutionKind(workspaceId: string, id: string): Promise<ExecutionEnvironmentKind> {
+    return defaultExecutionKind(await this.get(workspaceId, id));
   }
 
   async get(workspaceId: string, id: string): Promise<ProjectRecord> {
@@ -328,4 +337,13 @@ export class InMemoryProjectStore implements ProjectStore {
   async findEngineName(projectId: string): Promise<string | null> {
     return this.rows.get(projectId)?.engineName ?? null;
   }
+}
+
+/**
+ * EPIC-041 T1372 (`FR-LPW-035`, ADR-0024 as amended by PMI-DOC-007 §9.2):
+ * controlled-local is the default for a project with a root path; managed
+ * isolated remains the default — and available, unchanged — without one.
+ */
+export function defaultExecutionKind(project: Pick<ProjectRecord, 'rootPath'>): ExecutionEnvironmentKind {
+  return project.rootPath !== null && project.rootPath !== undefined ? 'controlled-local' : 'managed-isolated';
 }

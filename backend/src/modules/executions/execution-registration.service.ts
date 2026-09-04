@@ -130,6 +130,14 @@ export class ExecutionRegistrationService {
   }
 
   async register(request: RegisterExecutionRequest): Promise<ExecutionSnapshot> {
+    // FR-LPW-034 — assurance is derived from the surface by this registry and
+    // never accepted from the caller. Refused by name, before anything else.
+    if ('assurance' in (request as unknown as Record<string, unknown>)) {
+      throw new RegistryRefusedError(
+        'assurance_not_accepted',
+        'The field "assurance" is derived by the registry from the surface and cannot be supplied.',
+      );
+    }
     if (!SUPPORTED_CONTRACT_VERSIONS.includes(request.contractVersion)) {
       throw new RegistryRefusedError(
         'unsupported_contract_version',
@@ -361,13 +369,14 @@ export class ExecutionRegistrationService {
         workspaceId: string;
         command: string;
         surface: string;
+        assurance: string;
         governanceState: string;
         parentExecutionId: string | null;
         lifecycleState: string | null;
         projectedThroughSequence: number | null;
       }[]
     >(
-      `SELECT e."id", e."workspaceId", e."command", e."surface", e."governanceState",
+      `SELECT e."id", e."workspaceId", e."command", e."surface", e."assurance", e."governanceState",
               e."parentExecutionId", s."lifecycleState", s."projectedThroughSequence"
          FROM "executions" e
          LEFT JOIN "execution_state" s ON s."executionId" = e."id"
@@ -382,6 +391,7 @@ export class ExecutionRegistrationService {
       workspaceId: row.workspaceId,
       command: row.command as ExecutionSnapshot['command'],
       surface: row.surface as ExecutionSnapshot['surface'],
+      assurance: row.assurance as ExecutionSnapshot['assurance'],
       lifecycleState: row.lifecycleState ?? 'registered',
       governanceState: row.governanceState as ExecutionSnapshot['governanceState'],
       projectedThroughSequence: row.projectedThroughSequence ?? 0,
