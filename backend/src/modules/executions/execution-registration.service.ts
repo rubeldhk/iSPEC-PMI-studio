@@ -76,6 +76,43 @@ export interface RegistrationTx {
 
 const SUPPORTED_CONTRACT_VERSIONS = Object.freeze(['1.0']);
 
+/**
+ * EPIC-043 T1415 (`R-043-3`) — the delegation a registration relies on.
+ *
+ * Tried against the **target** first (unchanged from EPIC-037), then — only
+ * when the execution names a project — against `{ project, projectId }`, so a
+ * connector delegated on a project may register work against any target inside
+ * it. A target in another project, or an execution with no project, gets no
+ * second chance: the check is widened by one well-defined artifact, not weakened.
+ */
+export async function resolveDelegationForRegistration(
+  delegations: DelegationPort,
+  input: {
+    workspaceId: string;
+    principalId: string;
+    projectId: string | undefined;
+    target: { targetType: string; targetId: string };
+    action: string;
+  },
+): Promise<{ id: string; identityVersion: number }> {
+  try {
+    return await delegations.requireDelegated({
+      workspaceId: input.workspaceId,
+      principalId: input.principalId,
+      artifact: { artifactType: input.target.targetType, artifactId: input.target.targetId },
+      action: input.action,
+    });
+  } catch (error) {
+    if (input.projectId === undefined || (input.target.targetType === 'project' && input.target.targetId === input.projectId)) throw error;
+    return delegations.requireDelegated({
+      workspaceId: input.workspaceId,
+      principalId: input.principalId,
+      artifact: { artifactType: 'project', artifactId: input.projectId },
+      action: input.action,
+    });
+  }
+}
+
 export class ExecutionRegistrationService {
   constructor(
     private readonly db: RegistrationDb,
@@ -83,6 +120,20 @@ export class ExecutionRegistrationService {
     private readonly identity: IdentityResolverPort,
     private readonly delegations: DelegationPort,
   ) {}
+
+  /**
+   * EPIC-043 T1421 (`FR-PIC-032`) — which project an execution belongs to, for
+   * the mounted read routes' non-disclosure rule. Null when unknown to this
+   * workspace, which the caller renders as absent.
+   */
+  async projectIdOf(workspaceId: string, executionId: string): Promise<string | null> {
+    const rows = await this.db.$queryRawUnsafe<{ projectId: string | null }[]>(
+      `SELECT "projectId" FROM "executions" WHERE "id" = $1 AND "workspaceId" = $2 LIMIT 1`,
+      executionId,
+      workspaceId,
+    );
+    return rows[0]?.projectId ?? null;
+  }
 
   /**
    * Resolve every identity reference authoritatively.
@@ -173,19 +224,20 @@ export class ExecutionRegistrationService {
     const { agentSnapshot } = await this.resolveIdentity(request.workspaceId, request.identity);
 
     // EPIC-024. The sponsor's ownership does not reach this agent.
-    const delegation = await this.delegations
-      .requireDelegated({
-        workspaceId: request.workspaceId,
-        principalId: request.identity.authenticatedPrincipalId,
-        artifact: { artifactType: request.input.targetType, artifactId: request.input.targetId },
-        action: 'execution.register',
-      })
-      .catch((error: unknown) => {
-        throw new RegistryRefusedError(
-          'delegation_missing',
-          error instanceof Error ? error.message : 'No delegation authorises registration.',
-        );
-      });
+    // EPIC-043 T1415 (R-043-3): a delegation on the execution's project covers a
+    // target inside it; the target itself is tried first, exactly as before.
+    const delegation = await resolveDelegationForRegistration(this.delegations, {
+      workspaceId: request.workspaceId,
+      principalId: request.identity.authenticatedPrincipalId,
+      projectId: request.projectId,
+      target: { targetType: request.input.targetType, targetId: request.input.targetId },
+      action: 'execution.register',
+    }).catch((error: unknown) => {
+      throw new RegistryRefusedError(
+        'delegation_missing',
+        error instanceof Error ? error.message : 'No delegation authorises registration.',
+      );
+    });
 
     const executionId = request.executionId ?? randomUUID();
 

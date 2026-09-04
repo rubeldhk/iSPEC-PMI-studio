@@ -20,7 +20,7 @@
  */
 import { Inject, Injectable, type CanActivate, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ForbiddenError, NotFoundError, UnauthenticatedError } from '../../core/errors.js';
+import { ForbiddenError, InvalidConnectorCredentialError, NotFoundError } from '../../core/errors.js';
 import { TrustedPrincipalFactory } from '../agents/trusted-principal.js';
 import type { TrustedPrincipalContext } from '../agents/trusted-principal.js';
 import { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
@@ -106,7 +106,9 @@ export class ConnectorAuthGuard implements CanActivate {
     return ctx;
   }
 
-  private refuse(): UnauthenticatedError {
-    return new UnauthenticatedError(ConnectorAuthGuard.REFUSAL_MESSAGE);
+  private refuse(): InvalidConnectorCredentialError {
+    // EPIC-043 T1421: the code names the boundary (`invalid_connector_credential`,
+    // 401) so the extension can act on it; the message is unchanged.
+    return new InvalidConnectorCredentialError();
   }
 }

@@ -25,6 +25,11 @@ export interface ConnectorCredentialRecord {
   readonly lastUsedAt: Date | null;
   readonly revokedAt: Date | null;
   readonly revokedById: string | null;
+  /**
+   * EPIC-043 T1411 (R-043-3): the identity snapshot captured at mint. Null on a
+   * credential minted before EPIC-043 until its first guarded call completes it.
+   */
+  readonly snapshotId?: string | null;
 }
 
 export interface CredentialListFilter {
@@ -44,6 +49,8 @@ export interface ConnectorCredentialStore {
   touchLastUsed(id: string, at: Date): Promise<boolean>;
   /** Sets `revokedAt` once. A second call returns the record unchanged. */
   revoke(workspaceId: string, id: string, revokedById: string, at: Date): Promise<ConnectorCredentialRecord>;
+  /** EPIC-043 T1411 — record (or clear, in tests) the identity snapshot the credential carries. */
+  setSnapshot(id: string, snapshotId: string | null): Promise<ConnectorCredentialRecord>;
 }
 
 const OPAQUE = 'Not found.';
@@ -98,6 +105,14 @@ export class InMemoryConnectorCredentialStore implements ConnectorCredentialStor
     this.rows.set(id, revoked);
     return revoked;
   }
+
+  async setSnapshot(id: string, snapshotId: string | null): Promise<ConnectorCredentialRecord> {
+    const row = this.rows.get(id);
+    if (row === undefined) throw new NotFoundError(OPAQUE);
+    const updated = Object.freeze({ ...row, snapshotId });
+    this.rows.set(id, updated);
+    return updated;
+  }
 }
 
 /** The subset of `PrismaClient['connectorCredential']` the store uses. */
@@ -148,5 +163,9 @@ export class PrismaConnectorCredentialStore implements ConnectorCredentialStore 
     if (row === null) throw new NotFoundError(OPAQUE);
     if (row.revokedAt !== null) return row;
     return this.credentials.update({ where: { id }, data: { revokedAt: at, revokedById } });
+  }
+
+  async setSnapshot(id: string, snapshotId: string | null): Promise<ConnectorCredentialRecord> {
+    return this.credentials.update({ where: { id }, data: { snapshotId } });
   }
 }

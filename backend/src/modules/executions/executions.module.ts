@@ -52,6 +52,18 @@ import {
 import { ExecutionCommentService, type CommentDb } from './execution-comment.service.js';
 import { StatusProposalService, type ProposalDb } from './status-proposal.service.js';
 import { ExecutionRegistryFacade } from './execution-registry.facade.js';
+import {
+  CONNECTOR_IDENTITY_RESOLVER,
+  EXECUTION_OWNERSHIP,
+  ExecutionsController,
+  type ConnectorIdentityResolver,
+  type ExecutionOwnership,
+} from './executions.controller.js';
+import { identityFromConnector } from './connector-identity.js';
+import { ConnectorModule } from '../connector/connector.module.js';
+import { ConnectorCredentialService } from '../connector/connector-credential.service.js';
+import { CONNECTOR_CREDENTIAL_STORE } from '../connector/connector.tokens.js';
+import type { ConnectorCredentialStore } from '../connector/connector-credential.store.js';
 import { AgentsModule } from '../agents/agents.module.js';
 import {
   IdentitySnapshotService,
@@ -69,11 +81,15 @@ export const EXECUTION_IDENTITY = Symbol('EXECUTION_IDENTITY');
 export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
 
 @Module({
-  imports: [AgentsModule, AccessModule, GOVERNED_LOOP],
-  // `controllers` is deliberately EMPTY. See the header: `ExecutionsController`
-  // exists but is NOT mounted, because nothing can authenticate its callers.
-  // `tests/architecture/executions-unmounted.spec.ts` fails if it returns.
-  controllers: [],
+  // EPIC-043 T1419 (R-043-10): `ConnectorModule` supplies the guard, the
+  // credential store and the credential service the mounted controller needs.
+  // Its own import graph (Projects, Agents, Audit, Access) never reaches here,
+  // so no forwardRef is required.
+  imports: [AgentsModule, AccessModule, GOVERNED_LOOP, ConnectorModule],
+  // MOUNTED — behind `ConnectorAuthGuard` on every route, since EPIC-043
+  // (`DEF-037-001` closed by mounting). `tests/architecture/executions-mounted.spec.ts`
+  // fails if a route loses the guard or names an unregistered scope.
+  controllers: [ExecutionsController],
   providers: [
     {
       provide: EXECUTION_DB,
@@ -170,12 +186,48 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
     },
     {
       provide: ExecutionRegistryFacade,
-      inject: [ExecutionRegistrationService, ExecutionEventService, StatusProposalService],
+      inject: [ExecutionRegistrationService, ExecutionEventService, StatusProposalService, ExecutionCommentService],
       useFactory: (
         registration: ExecutionRegistrationService,
         events: ExecutionEventService,
         proposals: StatusProposalService,
-      ): ExecutionRegistryFacade => new ExecutionRegistryFacade(registration, events, proposals),
+        comments: ExecutionCommentService,
+      ): ExecutionRegistryFacade => new ExecutionRegistryFacade(registration, events, proposals, comments),
+    },
+    {
+      // EPIC-043 T1419 (R-043-3): identity for a guarded request, from the
+      // credential — never from a body. `connector-identity.ts` holds the rule;
+      // this binds its lookups to the credential service and the delegation service.
+      provide: CONNECTOR_IDENTITY_RESOLVER,
+      inject: [CONNECTOR_CREDENTIAL_STORE, ConnectorCredentialService, PrincipalDelegationService],
+      useFactory: (
+        credentials: ConnectorCredentialStore,
+        service: ConnectorCredentialService,
+        delegations: PrincipalDelegationService,
+      ): ConnectorIdentityResolver => ({
+        forRequest: (ctx) =>
+          identityFromConnector(ctx, {
+            snapshotOf: async (workspaceId, credentialId) => (await credentials.find(workspaceId, credentialId))?.snapshotId ?? null,
+            completeIdentity: (workspaceId, credentialId) => service.completeIdentity(workspaceId, credentialId),
+            delegationFor: async (workspaceId, principalId, projectId) => {
+              const d = await delegations.requireDelegated({
+                workspaceId,
+                principalId,
+                artifact: { artifactType: 'project', artifactId: projectId },
+                action: 'execution.register',
+              });
+              return { id: d.id, identityVersion: d.identityVersion };
+            },
+          }),
+      }),
+    },
+    {
+      // EPIC-043 T1421 (FR-PIC-032): the read routes' non-disclosure rule.
+      provide: EXECUTION_OWNERSHIP,
+      inject: [ExecutionRegistrationService],
+      useFactory: (registration: ExecutionRegistrationService): ExecutionOwnership => ({
+        projectIdOf: (workspaceId, executionId) => registration.projectIdOf(workspaceId, executionId),
+      }),
     },
   ],
   exports: [

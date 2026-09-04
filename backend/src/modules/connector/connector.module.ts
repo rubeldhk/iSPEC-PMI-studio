@@ -16,7 +16,8 @@ import { Reflector } from '@nestjs/core';
 import { AccessGrantService } from '../access/access-grant.service.js';
 import { AccessModule } from '../access/access.module.js';
 import { AgentsModule } from '../agents/agents.module.js';
-import { PrincipalRegistryService } from '../agents/principal-registry.service.js';
+import { IdentitySnapshotService, PrincipalRegistryService } from '../agents/principal-registry.service.js';
+import { PrincipalDelegationService } from '../access/principal-delegation.service.js';
 import { TrustedPrincipalFactory } from '../agents/trusted-principal.js';
 import { AuditModule } from '../audit/audit.module.js';
 import { AuditService } from '../audit/audit.service.js';
@@ -49,13 +50,15 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
     },
     {
       provide: ConnectorCredentialService,
-      inject: [CONNECTOR_CREDENTIAL_STORE, ProjectsService, PrincipalRegistryService, AuditService, AccessGrantService],
+      inject: [CONNECTOR_CREDENTIAL_STORE, ProjectsService, PrincipalRegistryService, AuditService, AccessGrantService, IdentitySnapshotService, PrincipalDelegationService],
       useFactory: (
         credentials: ConnectorCredentialStore,
         projects: ProjectsService,
         principals: PrincipalRegistryService,
         audit: AuditService,
         grants: AccessGrantService,
+        snapshots: IdentitySnapshotService,
+        delegations: PrincipalDelegationService,
       ): ConnectorCredentialService =>
         new ConnectorCredentialService({
           credentials,
@@ -65,6 +68,29 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
           // tests/architecture/connector-boundary.spec.ts.
           grants: { activeForArtifact: (workspaceId, artifact) => grants.activeGrants(workspaceId, artifact) },
           audit,
+          // EPIC-043 T1411 (R-043-3): EPIC-028's services, by shape — what the
+          // registry will resolve when this credential registers an execution.
+          // Delegations are granted and revoked here; never approval or application.
+          identity: {
+            captureSnapshot: async (workspaceId, principalId) => {
+              const s = await snapshots.capture(workspaceId, principalId);
+              return { snapshotId: s.snapshotId, identityVersion: s.identityVersion };
+            },
+            ensureRegistration: async (workspaceId, kind, registeredByUserId) => {
+              const c = await principals.ensureConnector({ workspaceId, kind, registeredByUserId });
+              return { registrationId: c.connectorId };
+            },
+            attachRegistration: (input) => principals.attachConnectorRegistration(input),
+            delegate: async (input) => {
+              const d = await delegations.delegate(input);
+              return { id: d.id };
+            },
+            revokeDelegations: async (input) => {
+              const rows = await delegations.listActive(input.workspaceId, input.principalId, input.artifact);
+              for (const row of rows) await delegations.revoke(input.workspaceId, row.id, input.revokedById);
+              return rows.length;
+            },
+          },
         }),
     },
     {
@@ -74,6 +100,7 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
         new ConnectorAuthGuard(credentials, principals, { reflector }),
     },
   ],
-  exports: [ConnectorCredentialService, CONNECTOR_CREDENTIAL_STORE],
+  // EPIC-043: the executions module mounts its controller behind the guard.
+  exports: [ConnectorCredentialService, CONNECTOR_CREDENTIAL_STORE, ConnectorAuthGuard],
 })
 export class ConnectorModule {}

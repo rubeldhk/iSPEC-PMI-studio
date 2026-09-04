@@ -51,6 +51,7 @@ model Workspace {
   projects              Project[]
   provisioningRecords   ProvisioningRecord[]
   connectorCredentials  ConnectorCredential[]
+  workstationConnections WorkstationConnection[]
   generationJobs        GenerationJob[]
   auditEntries          AuditEntry[]
   requirements          Requirement[]
@@ -165,6 +166,7 @@ model Project {
   runs            Run[]
   provisioningRecords  ProvisioningRecord[]
   connectorCredentials ConnectorCredential[]
+  workstationConnections WorkstationConnection[]
 
   @@unique([workspaceId, name])
   // One directory, one project (data-model.md §1).
@@ -1757,6 +1759,8 @@ model Execution {
   @@unique([workspaceId, idempotencyKey])
   @@index([workspaceId, correlationId])
   @@index([parentExecutionId])
+  // EPIC-043 T1409 (R-043-7): the per-project timeline, newest first.
+  @@index([workspaceId, projectId, registeredAt(sort: Desc)])
   @@map("executions")
 }
 
@@ -2721,13 +2725,42 @@ model ConnectorCredential {
   lastUsedAt  DateTime?
   revokedAt   DateTime?
   revokedById String?
+  // EPIC-043 T1409 (R-043-3): the identity snapshot captured at mint; null on
+  // a credential minted before EPIC-043 until its first guarded call completes it.
+  snapshotId  String?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   project   Project   @relation(fields: [projectId], references: [id])
   principal Principal @relation(fields: [principalId], references: [id])
+  workstationConnection WorkstationConnection?
 
   @@index([tokenPrefix])
   @@index([projectId])
   @@index([workspaceId])
   @@map("connector_credentials")
+}
+
+/// EPIC-043 T1409 (R-043-8) -- one row per credential, created or touched by
+/// pmi.health: when a workstation last spoke for this project, with which versions.
+/// Never deleted; revocation of the credential leaves the row.
+model WorkstationConnection {
+  id               String   @id @default(uuid())
+  workspaceId      String
+  projectId        String
+  credentialId     String   @unique
+  firstSeenAt      DateTime @default(now())
+  lastSeenAt       DateTime @default(now())
+  extensionVersion String?
+  toolkitVersion   String?
+  contractVersion  String
+  serverVersion    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workspace  Workspace           @relation(fields: [workspaceId], references: [id])
+  project    Project             @relation(fields: [projectId], references: [id])
+  credential ConnectorCredential @relation(fields: [credentialId], references: [id])
+
+  @@index([workspaceId, projectId])
+  @@map("workstation_connections")
 }

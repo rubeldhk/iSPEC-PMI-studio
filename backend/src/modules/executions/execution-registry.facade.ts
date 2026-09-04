@@ -15,6 +15,7 @@ import type {
   AppendEventRequest,
   AppendedEvent,
   CompleteExecutionRequest,
+  ExecutionIdentityRefs,
   ExecutionRegistry,
   ExecutionSnapshot,
   ProposeTransitionRequest,
@@ -23,13 +24,50 @@ import type {
 import type { ExecutionEventService } from './execution-event.service.js';
 import type { ExecutionRegistrationService } from './execution-registration.service.js';
 import type { StatusProposalService } from './status-proposal.service.js';
+import type { ExecutionCommentService, CommentType } from './execution-comment.service.js';
+
+/**
+ * EPIC-043 `T1466` — the comment operation `EPIC-037`'s contract names and its
+ * facade never carried. The identity is the registry's (derived by the
+ * transport), the author is that identity's principal.
+ */
+export interface CommentRequest {
+  readonly executionId: string;
+  readonly workspaceId: string;
+  readonly identity: ExecutionIdentityRefs;
+  readonly body: string;
+  readonly commentType?: string;
+  readonly idempotencyKey: string;
+  readonly parentCommentId?: string;
+}
 
 export class ExecutionRegistryFacade implements ExecutionRegistry {
   constructor(
     private readonly registration: ExecutionRegistrationService,
     private readonly events: ExecutionEventService,
     private readonly proposals: StatusProposalService,
+    /** EPIC-043 T1466 — optional only for EPIC-037's own fixtures; the module always supplies it. */
+    private readonly comments?: ExecutionCommentService,
   ) {}
+
+  /** EPIC-043 T1466 — `pmi.execution.comment` / `POST /v1/executions/:id/comments`. */
+  async comment(request: CommentRequest): Promise<{ commentId: string }> {
+    if (this.comments === undefined) {
+      throw new Error('ExecutionRegistryFacade was composed without ExecutionCommentService; comment() is unavailable.');
+    }
+    const commentType = (request.commentType ?? 'clarification') as CommentType;
+    return this.comments.add({
+      workspaceId: request.workspaceId,
+      executionId: request.executionId,
+      authorId: request.identity.authenticatedPrincipalId,
+      authorType: 'connector',
+      agentIdentitySnapshotId: request.identity.agentSnapshotId,
+      commentType,
+      body: request.body,
+      idempotencyKey: request.idempotencyKey,
+      ...(request.parentCommentId !== undefined ? { parentCommentId: request.parentCommentId } : {}),
+    });
+  }
 
   async register(request: RegisterExecutionRequest): Promise<ExecutionSnapshot> {
     return this.registration.register(request);

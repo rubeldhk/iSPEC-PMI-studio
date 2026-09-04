@@ -43,17 +43,20 @@ describe('T1364 · the connector module authenticates and scopes, nothing else (
     // The module may READ grants (the owner-grant check, FR-LPW-027) through a
     // narrow port. It may not import the enforcement or inheritance services,
     // and nothing in it calls grant()/revoke() on an access-grant service.
-    const importsMutation = connector.filter((f) => /access-enforcement|access-inheritance|principal-delegation/.test(f.body)).map((f) => f.rel);
+    // EPIC-043 T1411 (R-043-3): the credential grants and revokes its OWN delegations
+    // at mint and revoke through PrincipalDelegationService — never an access grant.
+    const importsMutation = connector.filter((f) => /access-enforcement|access-inheritance/.test(f.body)).map((f) => f.rel);
     expect(importsMutation).toEqual([]);
     const callsMutation = connector.filter((f) => /\b(grants|accessGrants|grantService)\.(grant|revoke)\(/.test(f.body)).map((f) => f.rel);
     expect(callsMutation).toEqual([]);
   });
 
-  it('exposes exactly one connector scope in this Epic', () => {
+  it('exposes exactly the eleven connector scopes of record (EPIC-041 one, EPIC-043 ten)', () => {
     const scope = connector.find((f) => f.rel.endsWith('connector-scope.ts'));
     expect(scope, 'connector-scope.ts is the registry').toBeDefined();
     const registered = [...(scope?.body ?? '').matchAll(/registerConnectorScope\(\s*'([^']+)'/g)].map((m) => m[1]);
-    expect(registered).toEqual(['connector.whoami']);
+    // EPIC-043 T1416: the eleven scopes the contract binds (data-model.md §8).
+    expect(registered.sort()).toEqual(['connector.whoami', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
   });
 });
 

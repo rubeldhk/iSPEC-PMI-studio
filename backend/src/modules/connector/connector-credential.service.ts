@@ -57,12 +57,49 @@ export interface MintedCredential {
   readonly value: string;
 }
 
+/**
+ * EPIC-043 T1411 (`R-043-3`) — what completes the registry's identity for a
+ * credential: a snapshot of its principal, a connector registration per
+ * workspace per surface kind, and the delegable actions on the project.
+ * `EPIC-028`'s services, by shape.
+ */
+export interface ConnectorIdentityPort {
+  captureSnapshot(workspaceId: string, principalId: string): Promise<{ snapshotId: string; identityVersion: number }>;
+  ensureRegistration(workspaceId: string, kind: 'mcp-client' | 'local-cli', registeredByUserId: string): Promise<{ registrationId: string }>;
+  attachRegistration(input: { workspaceId: string; principalId: string; registrationId: string }): Promise<void>;
+  delegate(input: {
+    workspaceId: string;
+    principalId: string;
+    sponsorUserId: string;
+    artifact: { artifactType: 'project'; artifactId: string };
+    actions: readonly string[];
+    identityVersion: number;
+    correlationId: string;
+  }): Promise<{ id: string }>;
+  revokeDelegations(input: {
+    workspaceId: string;
+    principalId: string;
+    artifact: { artifactType: 'project'; artifactId: string };
+    revokedById: string;
+  }): Promise<number>;
+}
+
+/** The four actions a connector may be delegated (`PrincipalDelegationService.DELEGABLE_ACTIONS`); never approval or application. */
+export const CONNECTOR_DELEGATED_ACTIONS = Object.freeze([
+  'execution.register',
+  'execution.report',
+  'execution.attach-evidence',
+  'transition.propose',
+] as const);
+
 export interface ConnectorCredentialServiceDeps {
   readonly credentials: ConnectorCredentialStore;
   readonly projects: Pick<ProjectsService, 'get'>;
   readonly principals: CredentialPrincipalPort;
   readonly grants: OwnerGrantPort | null;
   readonly audit: AuditService;
+  /** Absent only in EPIC-041's own unit tests; the composition root always supplies it. */
+  readonly identity?: ConnectorIdentityPort;
   readonly now?: () => Date;
   readonly random?: () => Buffer;
   readonly newId?: () => string;
@@ -124,7 +161,10 @@ export class ConnectorCredentialService {
       lastUsedAt: null,
       revokedAt: null,
       revokedById: null,
+      snapshotId: null,
     });
+    // EPIC-043 T1411 — the identity the registry will resolve, completed now.
+    const completed = await this.establishIdentity(record, correlationId);
     await this.deps.audit.record({
       workspaceId: ctx.workspaceId,
       actorId: ctx.userId,
@@ -134,7 +174,40 @@ export class ConnectorCredentialService {
       outcome: 'success',
       detail: { projectId: project.id, label, tokenPrefix: minted.tokenPrefix, principalId: principal.principalId },
     });
-    return { record: publicView(record), value: minted.value };
+    return { record: publicView(completed), value: minted.value };
+  }
+
+  /**
+   * EPIC-043 T1411 (`R-043-3`) — complete a credential's identity: snapshot,
+   * registrations, delegations. Idempotent by construction — a credential that
+   * already carries a snapshot is returned as is — so a credential minted before
+   * this Epic is completed on its first guarded call and never again.
+   */
+  async completeIdentity(workspaceId: string, credentialId: string): Promise<{ snapshotId: string | null }> {
+    const existing = await this.deps.credentials.find(workspaceId, credentialId);
+    if (existing === null) throw new NotFoundError('Not found.');
+    if (existing.snapshotId) return { snapshotId: existing.snapshotId };
+    const completed = await this.establishIdentity(existing, randomUUID());
+    return { snapshotId: completed.snapshotId ?? null };
+  }
+
+  private async establishIdentity(record: ConnectorCredentialRecord, correlationId: string): Promise<ConnectorCredentialRecord> {
+    const identity = this.deps.identity;
+    if (identity === undefined) return record;
+    const { registrationId } = await identity.ensureRegistration(record.workspaceId, 'mcp-client', record.createdById);
+    await identity.ensureRegistration(record.workspaceId, 'local-cli', record.createdById);
+    await identity.attachRegistration({ workspaceId: record.workspaceId, principalId: record.principalId, registrationId });
+    const snapshot = await identity.captureSnapshot(record.workspaceId, record.principalId);
+    await identity.delegate({
+      workspaceId: record.workspaceId,
+      principalId: record.principalId,
+      sponsorUserId: record.createdById,
+      artifact: { artifactType: 'project', artifactId: record.projectId },
+      actions: CONNECTOR_DELEGATED_ACTIONS,
+      identityVersion: snapshot.identityVersion,
+      correlationId,
+    });
+    return this.deps.credentials.setSnapshot(record.id, snapshot.snapshotId);
   }
 
   /** `GET /projects/:id/connector-credentials` — never the digest (`FR-LPW-053`). */
@@ -153,6 +226,14 @@ export class ConnectorCredentialService {
     if (existing.revokedAt !== null) return { record: publicView(existing), changed: false };
 
     const revoked = await this.deps.credentials.revoke(ctx.workspaceId, credentialId, ctx.userId, this.now());
+    // EPIC-043 T1411 — a revoked credential fails the registry's own delegation
+    // check too, should anything ever bypass the guard.
+    await this.deps.identity?.revokeDelegations({
+      workspaceId: ctx.workspaceId,
+      principalId: existing.principalId,
+      artifact: { artifactType: 'project', artifactId: existing.projectId },
+      revokedById: ctx.userId,
+    });
     await this.deps.audit.record({
       workspaceId: ctx.workspaceId,
       actorId: ctx.userId,

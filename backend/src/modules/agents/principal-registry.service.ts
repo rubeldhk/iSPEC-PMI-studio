@@ -283,6 +283,45 @@ export class PrincipalRegistryService implements PrincipalRegistryPort {
     return row === null ? null : toPrincipal(row);
   }
 
+  /**
+   * EPIC-043 T1411 (`R-043-3`) — a connector credential's principal was
+   * registered by EPIC-041 without a connector registration; the credential
+   * service attaches one at mint (or lazily). Identity version is untouched:
+   * the registration is *where it arrives through*, not *who it is*.
+   */
+  async attachConnectorRegistration(input: {
+    workspaceId: string;
+    principalId: string;
+    registrationId: string;
+  }): Promise<void> {
+    const principal = await this.db.principal.findFirst({ where: { id: input.principalId, workspaceId: input.workspaceId } });
+    if (principal === null) {
+      throw new PrincipalRegistrationRefused('Cannot attach a connector registration to a principal not registered in this workspace.');
+    }
+    if (principal.connectorRegistrationId === input.registrationId) return;
+    await this.db.principal.update({ where: { id: input.principalId }, data: { connectorRegistrationId: input.registrationId } });
+  }
+
+  /** EPIC-043 T1411 — one registration per workspace per kind; created on first need. */
+  async ensureConnector(input: {
+    workspaceId: string;
+    kind: ConnectorRegistration['kind'];
+    registeredByUserId: string;
+  }): Promise<ConnectorRegistration> {
+    const existing = await this.db.connectorRegistration.findFirst({ where: { workspaceId: input.workspaceId, kind: input.kind, state: 'active' } });
+    if (existing !== null) {
+      return {
+        connectorId: existing.id,
+        workspaceId: existing.workspaceId,
+        kind: existing.kind as ConnectorRegistration['kind'],
+        registeredByUserId: existing.registeredByUserId,
+        state: existing.state as PrincipalState,
+        registeredAt: iso(existing.createdAt),
+      };
+    }
+    return this.registerConnector(input);
+  }
+
   async registerConnector(input: {
     workspaceId: string;
     kind: ConnectorRegistration['kind'];

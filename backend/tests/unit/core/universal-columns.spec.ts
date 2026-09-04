@@ -223,6 +223,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'users',
       'validation_findings',
       'workspaces',
+      // EPIC-043 T1409 — one row per credential, touched by pmi.health.
+      'workstation_connections',
     ]);
   });
 

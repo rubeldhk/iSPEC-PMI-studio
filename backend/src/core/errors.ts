@@ -21,6 +21,14 @@ export type ErrorCode =
   | 'governance_seam_unbound'
   // EPIC-041 T1334 — the platform exists and cannot currently write a project directory (503).
   | 'projects_root_unavailable'
+  // EPIC-043 T1421 (R-043-5) — the connector-facing refusals, one vocabulary
+  // with the MCP binding (`REGISTRY_REFUSALS` in @pmi/execution-registry-contract).
+  | 'invalid_connector_credential'
+  | 'scope_required'
+  | 'identity_not_accepted'
+  | 'surface_not_accepted'
+  | 'unsupported_contract_version'
+  | 'not_available_until'
   | 'internal_error';
 
 export interface ErrorBody {
@@ -73,6 +81,59 @@ export class ConflictError extends PlatformError {
  */
 export class ForbiddenError extends PlatformError {
   readonly code = 'forbidden' as const;
+}
+
+// ---------------------------------------------------------------- EPIC-043
+
+/**
+ * The ONE refusal for every credential failure — absent, malformed, unknown,
+ * revoked, another project's (`FR-PIC-021`). 401. The message is fixed and
+ * compared verbatim by the tests; nothing about the reason is disclosed.
+ */
+export class InvalidConnectorCredentialError extends PlatformError {
+  readonly code = 'invalid_connector_credential' as const;
+  constructor() {
+    super('Invalid connector credential.');
+  }
+}
+
+/** 403 — a valid credential reaching an operation outside its scopes; names the scope required. */
+export class ScopeRequiredError extends PlatformError {
+  readonly code = 'scope_required' as const;
+  constructor(scope: string) {
+    super(`This operation requires the connector scope "${scope}".`, { scope });
+  }
+}
+
+/** 400 — a body asserted something the platform derives (`FR-PIC-024`, `R-043-4`). */
+export class IdentityNotAcceptedError extends PlatformError {
+  readonly code = 'identity_not_accepted' as const;
+  constructor(field: string) {
+    super(`The request may not carry "${field}"; the platform derives it from the credential.`, { field });
+  }
+}
+
+export class SurfaceNotAcceptedError extends PlatformError {
+  readonly code = 'surface_not_accepted' as const;
+  constructor(field: string) {
+    super(`The request may not carry "${field}"; the platform derives it from the transport.`, { field });
+  }
+}
+
+/** 400 — the contract version negotiated, never best-guessed (`R-043-6`). */
+export class UnsupportedContractVersionError extends PlatformError {
+  readonly code = 'unsupported_contract_version' as const;
+  constructor(supported: string, received: string | null) {
+    super(`Contract version ${received ?? '(none)'} is not supported; this platform speaks ${supported}.`, { supported, received });
+  }
+}
+
+/** 501 — a reserved operation whose content a later Epic supplies (`FR-PIC-002`, `FR-PIC-034`). */
+export class NotAvailableUntilError extends PlatformError {
+  readonly code = 'not_available_until' as const;
+  constructor(epic: string, what: string) {
+    super(`${what} is not available until ${epic} is delivered.`, { epic });
+  }
 }
 
 /** FR-RUN-014: submission is refused naming the unanswered questions. */
@@ -186,6 +247,13 @@ const STATUS: Record<ErrorCode, number> = {
   provider_unavailable: 502,
   governance_seam_unbound: 503,
   projects_root_unavailable: 503,
+  // EPIC-043 (contracts/mounted-registry-api.md, data-model.md §7).
+  invalid_connector_credential: 401,
+  scope_required: 403,
+  identity_not_accepted: 400,
+  surface_not_accepted: 400,
+  unsupported_contract_version: 400,
+  not_available_until: 501,
   internal_error: 500,
 };
 

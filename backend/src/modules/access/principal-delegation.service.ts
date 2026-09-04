@@ -231,4 +231,17 @@ export class PrincipalDelegationService {
   ): Promise<DelegationRow> {
     return this.store.revoke(workspaceId, delegationId, revokedById);
   }
+
+  /**
+   * EPIC-043 T1411 — the unrevoked delegations a principal holds on one
+   * artifact, so revoking a connector credential can revoke each of them.
+   */
+  async listActive(
+    workspaceId: string,
+    principalId: string,
+    artifact: { artifactType: string; artifactId: string },
+  ): Promise<DelegationRow[]> {
+    const rows = await this.store.activeFor(workspaceId, principalId, artifact);
+    return rows.filter((r) => r.revokedAt === null);
+  }
 }

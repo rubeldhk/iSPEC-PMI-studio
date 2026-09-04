@@ -12,7 +12,7 @@
  * Written to FAIL before `T1360` exists.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { ForbiddenError, NotFoundError, UnauthenticatedError } from '../../../src/core/errors.js';
+import { ForbiddenError, InvalidConnectorCredentialError, NotFoundError } from '../../../src/core/errors.js';
 import { ConnectorAuthGuard, type ConnectorRequest } from '../../../src/modules/connector/connector-auth.guard.js';
 import {
   CONNECTOR_SCOPE_KEY,
@@ -66,7 +66,7 @@ describe('T1359 · one identical 401 for every credential failure', () => {
     const h = await harness();
     const req = request(await header(h));
     const error = await h.guard.authenticate(req, 'connector.whoami').catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(UnauthenticatedError);
+    expect(error).toBeInstanceOf(InvalidConnectorCredentialError);
     expect((error as Error).message).toBe(ConnectorAuthGuard.REFUSAL_MESSAGE);
     expect(h.forPrincipal).not.toHaveBeenCalled();
   });
@@ -95,8 +95,9 @@ describe('T1359 · a valid credential', () => {
 });
 
 describe('T1359 · the scope registry', () => {
-  it('holds exactly connector.whoami in this Epic', () => {
-    expect(registeredConnectorScopes()).toEqual(['connector.whoami']);
+  it('holds exactly the eleven scopes of record', () => {
+    // EPIC-043 T1417 widened the registry to the eleven scopes of record (data-model.md §8).
+    expect(registeredConnectorScopes()).toEqual(['connector.whoami', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
   });
 
   it('refuses a route that declares no scope, and one whose scope is not registered — 403, after the credential is verified', async () => {
@@ -104,7 +105,7 @@ describe('T1359 · the scope registry', () => {
     await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), undefined)).rejects.toBeInstanceOf(ForbiddenError);
     await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), 'artifacts.sync')).rejects.toBeInstanceOf(ForbiddenError);
     // An invalid credential on an unscoped route is still the 401 — identity before scope.
-    await expect(h.guard.authenticate(request('Bearer pmi_ct_nope'), undefined)).rejects.toBeInstanceOf(UnauthenticatedError);
+    await expect(h.guard.authenticate(request('Bearer pmi_ct_nope'), undefined)).rejects.toBeInstanceOf(InvalidConnectorCredentialError);
   });
 
   it('can be extended by a later Epic without touching the guard (U1)', async () => {
@@ -115,7 +116,7 @@ describe('T1359 · the scope registry', () => {
     } finally {
       registerConnectorScope('artifacts.sync', { remove: true });
     }
-    expect(registeredConnectorScopes()).toEqual(['connector.whoami']);
+    expect(registeredConnectorScopes()).toEqual(['connector.whoami', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
   });
 
   it('the decorator writes the scope as route metadata the guard reads', () => {

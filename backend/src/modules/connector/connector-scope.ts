@@ -35,5 +35,22 @@ export function ConnectorScope(scope: string): MethodDecorator & ClassDecorator 
   return SetMetadata(CONNECTOR_SCOPE_KEY, scope);
 }
 
-// The one scope of this Epic.
+// The one scope of EPIC-041.
 registerConnectorScope('connector.whoami');
+
+// EPIC-043 T1417 — the ten scopes the integration contract binds
+// (data-model.md §8; contracts/mcp-tool-surface.md). Exactly these: the
+// architecture test refuses an eleventh, and a route without one of them cannot
+// be mounted behind the guard.
+// Registered one literal at a time, so the architecture test can read the list
+// from this file without executing it.
+registerConnectorScope('execution.register');
+registerConnectorScope('execution.append');
+registerConnectorScope('execution.complete');
+registerConnectorScope('execution.comment');
+registerConnectorScope('execution.propose');
+registerConnectorScope('execution.read');
+registerConnectorScope('execution.sync');
+registerConnectorScope('project.read');
+registerConnectorScope('requirements.read');
+registerConnectorScope('health.write');

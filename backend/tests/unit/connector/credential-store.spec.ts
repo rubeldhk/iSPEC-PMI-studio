@@ -88,7 +88,8 @@ describe('T1355 · ConnectorCredentialStore (in-memory)', () => {
     const store = fresh();
     const names = Object.getOwnPropertyNames(Object.getPrototypeOf(store)).filter((n) => n !== 'constructor');
     expect(names.some((n) => /delete|remove|purge|clear/i.test(n))).toBe(false);
-    expect(names.sort()).toEqual(['create', 'find', 'findByPrefix', 'listForProject', 'revoke', 'touchLastUsed']);
+    // EPIC-043 T1411 adds setSnapshot — a write of one identity reference, never a delete.
+    expect(names.sort()).toEqual(['create', 'find', 'findByPrefix', 'listForProject', 'revoke', 'setSnapshot', 'touchLastUsed']);
   });
 
   it('has no expiresAt: a credential minted ninety days ago still verifies (FR-LPW-028)', async () => {
