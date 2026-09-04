@@ -36,3 +36,13 @@ CREATE INDEX "executions_workspaceId_projectId_registeredAt_idx" ON "executions"
 ALTER TABLE "principal_identity_snapshots" DROP CONSTRAINT IF EXISTS "principal_identity_snapshots_kind_vocabulary";
 ALTER TABLE "principal_identity_snapshots"
     ADD CONSTRAINT "principal_identity_snapshots_kind_vocabulary" CHECK ("kind" IN ('agent', 'service', 'connector'));
+
+-- §5 · EPIC-037's initiator and author vocabularies stopped at agent and service.
+-- A connector credential's principal is the initiator of every execution it
+-- registers and the author of every comment it adds (R-043-3).
+ALTER TABLE "executions" DROP CONSTRAINT IF EXISTS "executions_initiator_type_vocabulary";
+ALTER TABLE "executions"
+    ADD CONSTRAINT "executions_initiator_type_vocabulary" CHECK ("initiatorType" IN ('human', 'agent', 'service', 'connector'));
+ALTER TABLE "execution_comments" DROP CONSTRAINT IF EXISTS "execution_comments_author_type_vocabulary";
+ALTER TABLE "execution_comments"
+    ADD CONSTRAINT "execution_comments_author_type_vocabulary" CHECK ("authorType" IN ('human', 'agent', 'service', 'connector'));

@@ -18,6 +18,8 @@ import {
   type ProvisioningRecord,
   type Requirement,
   type Run,
+  type ExecutionTimelineEntry,
+  type ExecutionTimelineEvent,
 } from '../services/api';
 import { CredentialOnce } from '../components/CredentialOnce';
 import { JobProgress } from '../components/JobProgress';
@@ -238,6 +240,170 @@ export function ProvisioningPanel({ api, project }: { api: ApiClient; project: P
             {stateGuidance(project, record)}
           </p>
         </>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- executions
+
+const EXECUTION_SURFACES = ['managed-sandbox', 'mcp-client', 'ide-extension', 'local-cli', 'ci-cd', 'fixture'] as const;
+const EXECUTION_STATES = ['registered', 'started', 'completed', 'partially-completed', 'failed', 'cancelled', 'timed-out', 'blocked'] as const;
+
+/**
+ * EPIC-043 T1434 (`FR-PIC-050`–`FR-PIC-054`) — the execution timeline: every
+ * governed command registered for this project, wherever it ran, newest first.
+ * Read-only by construction: nothing here applies or approves a transition;
+ * that belongs to the governed workflow in PMI Studio (`EPIC-030`).
+ */
+export function ExecutionTimeline({ api, projectId }: { api: ApiClient; projectId: string }): ReactElement {
+  const [items, setItems] = useState<ExecutionTimelineEntry[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [surface, setSurface] = useState('');
+  const [state, setState] = useState('');
+  const [initiator, setInitiator] = useState('');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [events, setEvents] = useState<Record<string, ExecutionTimelineEvent[] | 'loading' | { error: string }>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    setItems(null);
+    setError(null);
+    void (async (): Promise<void> => {
+      try {
+        const page = await api.listExecutions(projectId, {
+          ...(surface ? { surface } : {}),
+          ...(state ? { state } : {}),
+          ...(initiator ? { initiator } : {}),
+        });
+        if (!cancelled) setItems(page.items);
+      } catch (err) {
+        if (!cancelled) {
+          setError(message(err));
+          setItems([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, projectId, surface, state, initiator]);
+
+  async function toggle(executionId: string): Promise<void> {
+    if (expanded === executionId) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(executionId);
+    if (events[executionId] !== undefined) return;
+    setEvents((e) => ({ ...e, [executionId]: 'loading' }));
+    try {
+      const list = await api.getExecutionEvents(projectId, executionId);
+      setEvents((e) => ({ ...e, [executionId]: list }));
+    } catch (err) {
+      setEvents((e) => ({ ...e, [executionId]: { error: message(err) } }));
+    }
+  }
+
+  return (
+    <section className="ds-stack" aria-label="Execution timeline" role="region">
+      <h2>Execution timeline</h2>
+      <p className="ds-field__hint">
+        Every governed command registered for this project, wherever it ran. A proposed transition is approved or refused in the governed
+        workflow in PMI Studio, never here.
+      </p>
+      <div className="ds-row">
+        <FormField id="exec-surface" label="Surface">
+          <Select value={surface} onChange={(e) => setSurface(e.target.value)}>
+            <option value="">any</option>
+            {EXECUTION_SURFACES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+        <FormField id="exec-state" label="State">
+          <Select value={state} onChange={(e) => setState(e.target.value)}>
+            <option value="">any</option>
+            {EXECUTION_STATES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+        <FormField id="exec-initiator" label="Initiator">
+          <input id="exec-initiator" className="ds-input" value={initiator} onChange={(e) => setInitiator(e.target.value)} placeholder="principal id" />
+        </FormField>
+      </div>
+      {items === null && error === null && <LoadingIndicator label="Loading executions" />}
+      {error !== null && (
+        <p className="ds-field__error" role="alert">
+          {error}
+        </p>
+      )}
+      {items !== null && error === null && items.length === 0 && <p className="ds-field__hint">No executions yet for this project.</p>}
+      {items !== null && items.length > 0 && (
+        <table className="ds-table">
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Surface</th>
+              <th>Assurance</th>
+              <th>State</th>
+              <th>Initiator</th>
+              <th>Sponsor</th>
+              <th>Registered</th>
+              <th>Proposal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <>
+                <tr key={item.executionId}>
+                  <td>{item.command}</td>
+                  <td>{item.surface}</td>
+                  <td>{item.assurance}</td>
+                  <td>
+                    <StatusPill tone={item.state === 'failed' ? 'danger' : item.state === 'completed' ? 'success' : 'neutral'}>{item.state}</StatusPill>
+                  </td>
+                  <td>{item.initiator.label ?? item.initiator.principalId}</td>
+                  <td>{item.sponsorUserId ?? '—'}</td>
+                  <td>{new Date(item.registeredAt).toLocaleString()}</td>
+                  <td>{item.proposal ? `${item.proposal.proposedState} (${item.proposal.state}${item.proposal.decidedBy ? ` by ${item.proposal.decidedBy}` : ''})` : '—'}</td>
+                  <td>
+                    <button type="button" className="ds-button ds-button--ghost" onClick={() => void toggle(item.executionId)}>
+                      {expanded === item.executionId ? 'Hide events' : 'Events'}
+                    </button>
+                  </td>
+                </tr>
+                {expanded === item.executionId && (
+                  <tr key={`${item.executionId}-events`}>
+                    <td colSpan={9}>
+                      {events[item.executionId] === 'loading' && <LoadingIndicator label="Loading events" />}
+                      {typeof events[item.executionId] === 'object' && !Array.isArray(events[item.executionId]) && events[item.executionId] !== 'loading' && (
+                        <p className="ds-field__error" role="alert">
+                          {(events[item.executionId] as { error: string }).error}
+                        </p>
+                      )}
+                      {Array.isArray(events[item.executionId]) && (
+                        <ol aria-label={`Events of ${item.executionId}`}>
+                          {(events[item.executionId] as ExecutionTimelineEvent[]).map((ev) => (
+                            <li key={ev.sequence}>
+                              {ev.sequence} · {ev.type} · {ev.category} · {ev.actorId ?? 'platform'} · {new Date(ev.occurredAt).toLocaleString()}
+                            </li>
+                          ))}
+                        </ol>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </>
+            ))}
+          </tbody>
+        </table>
       )}
     </section>
   );
@@ -521,6 +687,7 @@ export function ProjectDetail({ api, projectId, onBack, children, pollMs }: Proj
       <ProvisioningPanel api={api} project={project} />
       <GenerateSpecification api={api} projectId={projectId} />
       <StartRun api={api} projectId={projectId} {...(pollMs !== undefined ? { pollMs } : {})} />
+      <ExecutionTimeline api={api} projectId={projectId} />
       {children}
     </main>
   );

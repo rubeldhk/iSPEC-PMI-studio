@@ -25,6 +25,7 @@ import type { ExecutionEventService } from './execution-event.service.js';
 import type { ExecutionRegistrationService } from './execution-registration.service.js';
 import type { StatusProposalService } from './status-proposal.service.js';
 import type { ExecutionCommentService, CommentType } from './execution-comment.service.js';
+import type { ExecutionProjectionService } from './execution-projection.service.js';
 
 /**
  * EPIC-043 `T1466` — the comment operation `EPIC-037`'s contract names and its
@@ -48,6 +49,13 @@ export class ExecutionRegistryFacade implements ExecutionRegistry {
     private readonly proposals: StatusProposalService,
     /** EPIC-043 T1466 — optional only for EPIC-037's own fixtures; the module always supplies it. */
     private readonly comments?: ExecutionCommentService,
+    /**
+     * EPIC-043 T1435 — the projection is rebuilt on read, so a snapshot never
+     * reports a lifecycle state the event stream has moved past. Nothing
+     * advanced `execution_state` after registration; a read-time rebuild is
+     * the "materialised on read" posture PMI-DOC-007 §3 takes for projections.
+     */
+    private readonly projections?: ExecutionProjectionService,
   ) {}
 
   /** EPIC-043 T1466 — `pmi.execution.comment` / `POST /v1/executions/:id/comments`. */
@@ -112,6 +120,13 @@ export class ExecutionRegistryFacade implements ExecutionRegistry {
   }
 
   async snapshot(workspaceId: string, executionId: string): Promise<ExecutionSnapshot | null> {
+    if (this.projections !== undefined) {
+      try {
+        await this.projections.rebuild(workspaceId, executionId);
+      } catch {
+        // An execution this workspace does not hold: the read below answers null.
+      }
+    }
     return this.registration.snapshot(workspaceId, executionId);
   }
 }

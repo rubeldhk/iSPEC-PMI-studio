@@ -33,6 +33,8 @@
   },
   "//devDependencies": "Adapters are TEST-ONLY (T137 engine-swap). They must never move to dependencies: backend/src may import the contract and never a concrete engine (FR-017, ADR-0001). The architecture test enforces that regardless of what is installed.",
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@pmi/mcp-server": "workspace:*",
     "@pmi/agent-adapter-claude": "workspace:*",
     "@pmi/agent-adapter-fixture": "workspace:*",
     "@pmi/engine-adapter-fixture": "workspace:*",

@@ -55,6 +55,7 @@ function api(over: Partial<Record<keyof ApiClient, unknown>> = {}): ApiClient {
   return {
     getProject: vi.fn(async () => PROJECT),
     listProvisioning: vi.fn(async () => []),
+    listExecutions: vi.fn(async () => ({ items: [], nextCursor: null })),
     listRequirements: vi.fn(async () => [requirement('r1', 'REQ-001'), requirement('r2', 'REQ-002')]),
     generateSpecification: vi.fn(async () => JOB),
     getJob: vi.fn(async () => ({ ...JOB, state: 'running' })),

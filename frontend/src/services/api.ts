@@ -290,6 +290,57 @@ export interface Run {
   endedAt: string | null;
 }
 
+// ---- execution timeline (EPIC-043 US1, FR-PIC-050–054) ----
+
+export interface ExecutionTimelineEntry {
+  executionId: string;
+  command: string;
+  surface: string;
+  assurance: string;
+  state: string;
+  governanceState?: string;
+  initiator: { principalId: string; kind: string; label?: string };
+  sponsorUserId: string | null;
+  registeredAt: string;
+  completedAt: string | null;
+  proposal: { id: string; proposedState: string; state: 'proposed' | 'approved' | 'refused'; decidedBy: string | null } | null;
+}
+
+export interface ExecutionTimelinePage {
+  items: ExecutionTimelineEntry[];
+  nextCursor: string | null;
+}
+
+export interface ExecutionTimelineEvent {
+  sequence: number;
+  type: string;
+  category: string;
+  actorId: string | null;
+  occurredAt: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ExecutionTimelineFilters {
+  surface?: string;
+  state?: string;
+  initiator?: string;
+  after?: string;
+  limit?: number;
+}
+
+/** EPIC-043 US5 (FR-PIC-053) — when a workstation last spoke for this project. */
+export interface WorkstationConnection {
+  credentialId: string;
+  label: string;
+  credentialState: 'active' | 'revoked';
+  firstSeenAt: string;
+  lastSeenAt: string;
+  extensionVersion: string | null;
+  toolkitVersion: string | null;
+  contractVersion: string;
+  serverVersion: string | null;
+}
+
 export interface ReviewSession {
   id: string;
   runId: string;
@@ -670,6 +721,25 @@ export class ApiClient {
    */
   async listRuns(projectId: string): Promise<Run[]> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/runs`);
+  }
+
+  // ---- execution timeline (EPIC-043) ----
+
+  async listExecutions(projectId: string, filters: ExecutionTimelineFilters = {}): Promise<ExecutionTimelinePage> {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== '') query.set(key, String(value));
+    }
+    const suffix = query.toString();
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/executions${suffix ? `?${suffix}` : ''}`);
+  }
+
+  async getExecutionEvents(projectId: string, executionId: string): Promise<ExecutionTimelineEvent[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/executions/${encodeURIComponent(executionId)}/events`);
+  }
+
+  async listWorkstationConnections(projectId: string): Promise<WorkstationConnection[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/workstation-connections`);
   }
 
   async getRunReview(runId: string): Promise<ReviewSession> {

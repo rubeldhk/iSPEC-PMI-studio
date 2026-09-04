@@ -16,7 +16,14 @@
  * There is no path to EPIC-009 from here at all. A connector cannot apply a
  * lifecycle transition because nothing in this module can.
  *
- * ## Why no controller is mounted (C3C closure)
+ * ## The controller is MOUNTED since EPIC-043 (T1419) — the history below is kept
+ *
+ * `EPIC-041`'s connector credential is the authentication this note said did
+ * not exist; `ConnectorAuthGuard` resolves it to a `connector` Principal and
+ * `executions.controller.ts` derives identity, workspace, project, surface and
+ * assurance from it. `DEF-037-001` is annotated closed by mounting.
+ *
+ * ## Why no controller was mounted (C3C closure, 2026-08-27 → 2026-09-04)
  *
  * `ExecutionsController` was written under `T1038` and briefly mounted here.
  * Booting the composed application and issuing real HTTP proved the mistake:
@@ -60,6 +67,8 @@ import {
   type ExecutionOwnership,
 } from './executions.controller.js';
 import { identityFromConnector } from './connector-identity.js';
+import { ExecutionTimelineController } from './execution-timeline.controller.js';
+import { ExecutionTimelineService, type TimelineDb } from './execution-timeline.service.js';
 import { ConnectorModule } from '../connector/connector.module.js';
 import { ConnectorCredentialService } from '../connector/connector-credential.service.js';
 import { CONNECTOR_CREDENTIAL_STORE } from '../connector/connector.tokens.js';
@@ -89,7 +98,7 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
   // MOUNTED — behind `ConnectorAuthGuard` on every route, since EPIC-043
   // (`DEF-037-001` closed by mounting). `tests/architecture/executions-mounted.spec.ts`
   // fails if a route loses the guard or names an unregistered scope.
-  controllers: [ExecutionsController],
+  controllers: [ExecutionsController, ExecutionTimelineController],
   providers: [
     {
       provide: EXECUTION_DB,
@@ -186,13 +195,14 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
     },
     {
       provide: ExecutionRegistryFacade,
-      inject: [ExecutionRegistrationService, ExecutionEventService, StatusProposalService, ExecutionCommentService],
+      inject: [ExecutionRegistrationService, ExecutionEventService, StatusProposalService, ExecutionCommentService, ExecutionProjectionService],
       useFactory: (
         registration: ExecutionRegistrationService,
         events: ExecutionEventService,
         proposals: StatusProposalService,
         comments: ExecutionCommentService,
-      ): ExecutionRegistryFacade => new ExecutionRegistryFacade(registration, events, proposals, comments),
+        projections: ExecutionProjectionService,
+      ): ExecutionRegistryFacade => new ExecutionRegistryFacade(registration, events, proposals, comments, projections),
     },
     {
       // EPIC-043 T1419 (R-043-3): identity for a guarded request, from the
@@ -220,6 +230,12 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
             },
           }),
       }),
+    },
+    {
+      // EPIC-043 T1432 (R-043-7): the session-scoped timeline read model.
+      provide: ExecutionTimelineService,
+      inject: [EXECUTION_DB],
+      useFactory: (db: unknown): ExecutionTimelineService => new ExecutionTimelineService(db as TimelineDb),
     },
     {
       // EPIC-043 T1421 (FR-PIC-032): the read routes' non-disclosure rule.

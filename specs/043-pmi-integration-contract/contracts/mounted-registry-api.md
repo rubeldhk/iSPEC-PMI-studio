@@ -69,7 +69,7 @@ documents can be read together.
 ## 4. The timeline read — session-scoped, for the screen (`FR-PIC-035`, `R-043-7`)
 
 ```text
-GET /v1/projects/:id/executions?surface=&state=&initiator=&cursor=&limit=     200
+GET /v1/projects/:id/executions?surface=&state=&initiator=&after=&limit=     200
     { items: [{ executionId, command, surface, assurance, state, initiator: { principalId, kind, label }, sponsorUserId, registeredAt, completedAt, proposal: { id, state, decidedBy } | null }], nextCursor }
 GET /v1/projects/:id/executions/:executionId/events                          200
     [{ sequence, type, category, actorId, occurredAt, payload }]

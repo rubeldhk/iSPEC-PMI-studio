@@ -114,6 +114,9 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
     devDependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.30.0(zod@3.25.76)
       '@pmi/agent-adapter-claude':
         specifier: workspace:*
         version: link:../agent-adapters/claude
@@ -126,6 +129,9 @@ importers:
       '@pmi/engine-adapter-speckit':
         specifier: workspace:*
         version: link:../engine-adapters/speckit
+      '@pmi/mcp-server':
+        specifier: workspace:*
+        version: link:../packages/mcp-server
       '@pmi/storage-adapter-fixture':
         specifier: workspace:*
         version: link:../packages/storage-adapters/fixture

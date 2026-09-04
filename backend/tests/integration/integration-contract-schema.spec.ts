@@ -66,6 +66,11 @@ suite('T1408 · the EPIC-043 migration', () => {
     expect(res.rows[0]?.consrc).toContain("'connector'");
   });
 
+  it.each(['executions_initiator_type_vocabulary', 'execution_comments_author_type_vocabulary'])('%s admits connector (R-043-3)', async (name) => {
+    const res = await db.query<{ consrc: string }>(`SELECT pg_get_constraintdef(oid) AS consrc FROM pg_constraint WHERE conname = $1`, [name]);
+    expect(res.rows[0]?.consrc).toContain("'connector'");
+  });
+
   it('adds a nullable snapshotId to connector_credentials', async () => {
     const cols = await columns('connector_credentials');
     expect(cols['snapshotId']).toBeDefined();
