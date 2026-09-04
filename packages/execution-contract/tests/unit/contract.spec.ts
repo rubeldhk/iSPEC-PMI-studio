@@ -76,6 +76,7 @@ describe('T545 · descriptor consistency', () => {
   it('cannot claim persistent state while supporting only ephemeral', () => {
     const d: ExecutionEnvironmentDescriptor = {
       provider: 'docker',
+      kind: 'managed-isolated',
       supportedLifecycles: ['ephemeral'],
       supportsPersistentState: false,
       supportsNetworkPolicy: true,

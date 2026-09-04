@@ -1,0 +1,23 @@
+# PMI Studio Spec Kit extension — bundle v0.1 (EPIC-041 T1317, R-041-9).
+#
+# The INSTALLATION MECHANISM ships here; the CONTENT ships with EPIC-042. This
+# manifest deliberately provides no commands and registers no hooks: a hook that
+# called a speckit.pmi.* command EPIC-042 has not written would fail the user's
+# next /speckit-* run (specs/041-local-project-workspace/contracts/project-files.md).
+schema_version: "1.0"
+
+extension:
+  id: "pmi"
+  name: "PMI Studio"
+  version: "0.1.0"
+  description: "Registers governed Spec Kit executions with PMI Studio and syncs artifacts (EPIC-042 fills this in)."
+  author: "PMI Studio"
+  license: "UNLICENSED"
+
+requires:
+  speckit_version: ">=0.14.0"
+
+provides:
+  commands: []
+
+hooks: {}

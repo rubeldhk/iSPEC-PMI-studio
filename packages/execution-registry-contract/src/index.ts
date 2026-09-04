@@ -62,3 +62,6 @@ export {
   type FixtureConnectorOptions,
   type FixtureRunResult,
 } from './fixture-connector.js';
+
+// EPIC-041 T1315 — assurance is derived from the surface, never supplied (FR-LPW-034).
+export { EXECUTION_ASSURANCES, assuranceFor, type ExecutionAssurance } from './contract.js';

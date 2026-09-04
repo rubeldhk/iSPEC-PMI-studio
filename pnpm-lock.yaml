@@ -258,6 +258,8 @@ importers:
 
   packages/storage-contract: {}
 
+  packages/workspace-bundle: {}
+
   worker:
     dependencies:
       '@opentelemetry/api':

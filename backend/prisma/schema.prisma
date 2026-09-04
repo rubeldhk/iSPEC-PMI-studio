@@ -49,6 +49,8 @@ model Workspace {
 
   users                 User[]
   projects              Project[]
+  provisioningRecords   ProvisioningRecord[]
+  connectorCredentials  ConnectorCredential[]
   generationJobs        GenerationJob[]
   auditEntries          AuditEntry[]
   requirements          Requirement[]
@@ -144,6 +146,13 @@ model Project {
   engineName  String?
   ownerUserId String
   // FR-001: archive is a status, never a delete. Content is preserved intact.
+  // EPIC-041 (T1319) — the local workspace (FR-LPW-001, R-041-2). rootPath is the
+  // directory AS THE USER'S MACHINE SEES IT; the API writes under PMI_PROJECTS_ROOT.
+  rootPath          String?
+  agentIntegration  String?
+  scriptType        String?
+  provisioningState ProvisioningState @default(not_provisioned)
+  provisionedAt     DateTime?
   archivedAt  DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -154,8 +163,12 @@ model Project {
   specifications  Specification[]
   decisionRecords ArchitectureDecisionRecord[]
   runs            Run[]
+  provisioningRecords  ProvisioningRecord[]
+  connectorCredentials ConnectorCredential[]
 
   @@unique([workspaceId, name])
+  // One directory, one project (data-model.md §1).
+  @@unique([workspaceId, rootPath])
   @@index([workspaceId])
   @@index([workspaceId, status])
   @@map("projects")
@@ -566,6 +579,8 @@ enum JobKind {
   generate_specification
   generate_tasks
   validate_specification
+  // EPIC-041 (T1319) — the worker's initialise step for a local workspace (R-041-1).
+  initialise_workspace
 }
 
 enum JobState {
@@ -1717,6 +1732,8 @@ model Execution {
   initiatorId       String
   surface           String
   environment       String?
+  // EPIC-041 (T1319) — derived from surface at registration, never supplied (FR-LPW-034).
+  assurance         String
   governanceState   String   @default("provisional")
   parentExecutionId String?
   contractVersion   String
@@ -1999,6 +2016,7 @@ model Principal {
   connector   ConnectorRegistration? @relation(fields: [connectorRegistrationId], references: [id])
   stateEvents PrincipalStateEvent[]
   delegations PrincipalDelegation[]
+  connectorCredentials ConnectorCredential[]
 
   @@index([workspaceId])
   @@index([sponsorUserId])
@@ -2640,4 +2658,75 @@ model ContextIndexEntry {
   @@index([workspaceId, sourceType, sourceId])
   @@index([embeddingModelId])
   @@map("context_index_entries")
+}
+
+// ---------------------------------------------------------------- local workspace (EPIC-041)
+
+// data-model.md §1.1. `prepared` and `initialisation_pending` are DIFFERENT facts:
+// one says wait for the worker, the other says run the setup skill.
+enum ProvisioningState {
+  not_provisioned
+  prepared
+  initialisation_pending
+  provisioned
+  failed
+}
+
+// data-model.md §2 — one provisioning attempt. Append-only: the migration
+// attaches reject_mutation(), so a failed run cannot be edited into a success.
+// The project's provisioningState is a projection of the latest record.
+model ProvisioningRecord {
+  id             String    @id @default(uuid())
+  workspaceId    String
+  projectId      String
+  actorId        String
+  correlationId  String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  // succeeded | no_change | pending | failed — CHECKed in the migration.
+  outcome        String
+  // Ordered step names from the fixed vocabulary (data-model.md §2.1).
+  stepsCompleted Json
+  // Required when outcome = 'failed' — CHECKed in the migration.
+  failedStep     String?
+  // Sanitised: never a path outside the root, never a credential.
+  failureReason  String?
+  specKitTag     String?
+  bundleVersion  String?
+  // Relative paths, so a partial run is inspectable (US1 scenario 5).
+  filesWritten   Json
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([projectId, startedAt])
+  @@index([workspaceId])
+  @@map("provisioning_records")
+}
+
+// data-model.md §3 — a project-scoped credential, stored as a digest. There is
+// NO value column and NO expiresAt (FR-LPW-021, FR-LPW-028): the only place the
+// value exists after minting is the response that minted it, and the only thing
+// that ends a credential is revokedAt.
+model ConnectorCredential {
+  id          String    @id @default(uuid())
+  workspaceId String
+  projectId   String
+  principalId String
+  tokenPrefix String
+  tokenHash   String
+  label       String
+  createdById String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  revokedById String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  principal Principal @relation(fields: [principalId], references: [id])
+
+  @@index([tokenPrefix])
+  @@index([projectId])
+  @@map("connector_credentials")
 }

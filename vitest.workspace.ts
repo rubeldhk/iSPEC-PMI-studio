@@ -234,4 +234,15 @@ export default defineWorkspace([
       environment: 'node',
     },
   },
+  {
+    // EPIC-041 T1317 — the workspace bundle: the setup skill and the PMI Spec
+    // Kit extension, versioned together (R-041-9). Registered in the same
+    // change as its first spec, per the T537/T539 rule. No `passWithNoTests`.
+    test: {
+      name: 'workspace-bundle',
+      root: './packages/workspace-bundle',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
 ]);

@@ -17,8 +17,25 @@
 
 export type ExecutionLifecycle = 'ephemeral' | 'persistent';
 
+/**
+ * Where an execution environment lives, and therefore which governance
+ * assurance it can offer (EPIC-041 `T1313`, `FR-LPW-030`, `R-041-4`, `ADR-0030`).
+ *
+ * Two members, deliberately. Customer cloud (`BR-0131`) gets one when it gets an
+ * owner — a value nothing produces is decoration (PMI-DOC-007 `D-9`).
+ *
+ * `controlled-local` is the developer's own project directory. It is
+ * **persistent by definition**: a directory that vanished after each command
+ * would not be the developer's directory. `assertEnvironmentKindCoherent`
+ * refuses a descriptor that claims the kind without the lifecycle.
+ */
+export const ENVIRONMENT_KINDS = Object.freeze(['managed-isolated', 'controlled-local'] as const);
+export type ExecutionEnvironmentKind = (typeof ENVIRONMENT_KINDS)[number];
+
 export interface ExecutionEnvironmentDescriptor {
   readonly provider: string;
+  /** Required. A descriptor that cannot say where it lives cannot say what its evidence rests on. */
+  readonly kind: ExecutionEnvironmentKind;
   readonly supportedLifecycles: readonly ExecutionLifecycle[];
   readonly supportsPersistentState: boolean;
   /** A provider declaring false cannot accept ANY egress profile. */

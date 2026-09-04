@@ -22,6 +22,7 @@ import type { EgressProfile, ExecutionEnvironmentDescriptor } from '../../src/in
 
 const CAPABLE: ExecutionEnvironmentDescriptor = {
   provider: 'docker',
+  kind: 'managed-isolated',
   supportedLifecycles: ['ephemeral'],
   supportsPersistentState: false,
   supportsNetworkPolicy: true,

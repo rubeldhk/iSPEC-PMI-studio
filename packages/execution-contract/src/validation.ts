@@ -67,6 +67,24 @@ export function assertProviderCanEnforce(
   }
 }
 
+/**
+ * EPIC-041 `T1313` — a `controlled-local` environment is persistent by
+ * definition. A descriptor claiming the kind without the lifecycle would let a
+ * registration say "the developer's directory" about a workspace that was
+ * thrown away, which is the misstatement `ADR-0009`'s union exists to prevent.
+ *
+ * The converse is NOT asserted: a `managed-isolated` provider MAY support
+ * persistence one day. Only the Docker provider refuses it, and that refusal is
+ * the provider's (`FR-LPW-033`), not the contract's.
+ */
+export function assertEnvironmentKindCoherent(descriptor: ExecutionEnvironmentDescriptor): void {
+  if (descriptor.kind === 'controlled-local' && !descriptor.supportedLifecycles.includes('persistent')) {
+    throw new PolicyRefusedError(
+      `Provider "${descriptor.provider}" declares kind controlled-local but does not support a persistent workspace. A developer's directory that is discarded after each command is not a developer's directory (FR-LPW-030).`,
+    );
+  }
+}
+
 export function assertLifecycleSupported(
   descriptor: ExecutionEnvironmentDescriptor,
   binding: WorkspaceBinding,

@@ -50,6 +50,42 @@ export const GOVERNED_COMMANDS = Object.freeze([
 export type GovernedCommand = (typeof GOVERNED_COMMANDS)[number];
 
 /**
+ * How much an execution's evidence rests on (EPIC-041 `T1315`, `FR-LPW-034`,
+ * `R-041-5`, `ADR-0030`). Two values, not three: customer cloud has no owner and
+ * no Epic, and a value nothing produces is decoration (PMI-DOC-007 `D-9`).
+ *
+ * **Recorded, never consulted by policy** (`FR-LPW-031`, `BR-0133`). Assurance
+ * is the honest label on the evidence, not a switch that relaxes a rule.
+ */
+export const EXECUTION_ASSURANCES = Object.freeze(['managed', 'local'] as const);
+export type ExecutionAssurance = (typeof EXECUTION_ASSURANCES)[number];
+
+/**
+ * Derived from the surface at registration — **never supplied by the caller**.
+ * A connector asserting its own assurance is the same shape as the request-body
+ * `authenticatedPrincipalId` that got the executions controller unmounted
+ * (`DEF-037-001`).
+ *
+ * Total over `EXECUTION_SURFACES`: a `switch` with no `default` arm, so adding
+ * a surface without a mapping fails to compile before it fails a test.
+ */
+export function assuranceFor(surface: ExecutionSurface): ExecutionAssurance {
+  switch (surface) {
+    case 'managed-sandbox':
+    case 'ci-cd':
+      return 'managed';
+    case 'local-cli':
+    case 'mcp-client':
+    case 'ide-extension':
+      return 'local';
+    case 'fixture':
+      // A fixture proves the contract; it should never make evidence look
+      // stronger than a real local run would.
+      return 'local';
+  }
+}
+
+/**
  * Who is acting, as **references** to server-minted frozen identities.
  *
  * Eight concepts, kept apart. A connector is the surface an execution arrived
