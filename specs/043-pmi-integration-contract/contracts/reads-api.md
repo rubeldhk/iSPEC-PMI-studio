@@ -35,14 +35,16 @@ Nothing from another project; nothing about the workspace beyond its id.
 200 {
   groups: [{
     epic: { number, slug, name } | 'unassigned',
-    requirements: [{ id, reference, description, type, priority, status, baselineState }]
+    requirements: [{ id, reference, description, type, priority, status, baselineState }]   // baselineState is null until requirements link to baselines (EPIC-020 baselines are specification-level); baselineSource states it
   }],
-  epicSource: 'unavailable-until-EPIC-044'
+  epicSource: 'unavailable-until-EPIC-044',
+  baselineSource: 'unavailable-until-requirements-link-to-baselines'
 }
 ```
 
-Every active requirement appears exactly once; retired ones are omitted. `baselineState` comes
-from the requirement's current version (`EPIC-007`). `groupBy` other than `epic` is `400`.
+Every active requirement appears exactly once; retired ones are omitted. `baselineState` is `null`
+until a requirement can be linked to a baseline (`EPIC-020` baselines are specification-level; no
+requirement link exists), and `baselineSource` says so. `groupBy` other than `epic` is `400`.
 
 ## 4. Whoami — unchanged from `EPIC-041`
 

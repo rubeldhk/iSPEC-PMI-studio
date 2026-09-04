@@ -55,6 +55,8 @@ const BINDINGS: readonly Binding[] = [
   // threw AuditPersistenceUnavailableError — the writer was never bound.
   { module: 'audit/audit.module.ts', token: 'AUDIT_WRITER', prisma: 'PrismaAuditWriter', inMemory: 'UnconfiguredAuditWriter' },
   { module: 'audit/audit.module.ts', token: 'AUDIT_READER', prisma: 'PrismaAuditReader', inMemory: 'UnconfiguredAuditReader' },
+  // EPIC-043 T1449: one workstation connection per credential (R-043-8).
+  { module: 'connector/connector.module.ts', token: 'WORKSTATION_CONNECTION_STORE', prisma: 'PrismaWorkstationConnectionStore', inMemory: 'InMemoryWorkstationConnectionStore' },
 ];
 
 function stripComments(source: string): string {

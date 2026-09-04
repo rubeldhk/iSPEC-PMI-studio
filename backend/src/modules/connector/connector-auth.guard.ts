@@ -90,8 +90,10 @@ export class ConnectorAuthGuard implements CanActivate {
     }
 
     // FR-LPW-025 — a resource of another project is absent, not forbidden.
+    // EPIC-043 T1445: `me` is the credential's own project — the pmi-studio
+    // server never knows a project id, so it addresses the one it opens.
     const requested = request.params?.['projectId'];
-    if (requested !== undefined && requested !== credential.projectId) throw new NotFoundError('Not found.');
+    if (requested !== undefined && requested !== 'me' && requested !== credential.projectId) throw new NotFoundError('Not found.');
 
     const principal = await this.principals.forPrincipal(credential.workspaceId, credential.principalId);
     const ctx: ConnectorRequestContext = {

@@ -20,6 +20,7 @@ import {
   type Run,
   type ExecutionTimelineEntry,
   type ExecutionTimelineEvent,
+  type WorkstationConnection,
 } from '../services/api';
 import { CredentialOnce } from '../components/CredentialOnce';
 import { JobProgress } from '../components/JobProgress';
@@ -239,9 +240,62 @@ export function ProvisioningPanel({ api, project }: { api: ApiClient; project: P
           <p className="ds-field__hint" role="status">
             {stateGuidance(project, record)}
           </p>
+          <WorkstationConnections api={api} projectId={project.id} />
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * EPIC-043 T1451 (`FR-PIC-053`) — when a workstation last spoke for this
+ * project, per credential, so *nothing is arriving* is distinguishable from
+ * *nobody is connected*. A revoked credential's last connection stays visible
+ * beside the fact of its revocation.
+ */
+function WorkstationConnections({ api, projectId }: { api: ApiClient; projectId: string }): ReactElement {
+  const [rows, setRows] = useState<WorkstationConnection[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async (): Promise<void> => {
+      try {
+        const list = await api.listWorkstationConnections(projectId);
+        if (!cancelled) setRows(list);
+      } catch (err) {
+        if (!cancelled) {
+          setError(message(err));
+          setRows([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [api, projectId]);
+
+  return (
+    <div className="ds-stack">
+      <h3>Workstation connections</h3>
+      {rows === null && error === null && <LoadingIndicator label="Loading workstation connections" />}
+      {error !== null && (
+        <p className="ds-field__error" role="alert">
+          {error}
+        </p>
+      )}
+      {rows !== null && rows.length === 0 && error === null && <p className="ds-field__hint">No workstation has connected yet.</p>}
+      {rows !== null && rows.length > 0 && (
+        <ul aria-label="Workstation connections">
+          {rows.map((row) => (
+            <li key={row.credentialId}>
+              <strong>{row.label}</strong> · {row.credentialState} · last seen {new Date(row.lastSeenAt).toLocaleString()} · extension {row.extensionVersion ?? '—'} · toolkit{' '}
+              {row.toolkitVersion ?? '—'} · contract {row.contractVersion}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

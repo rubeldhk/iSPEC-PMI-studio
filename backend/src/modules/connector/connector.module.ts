@@ -33,13 +33,22 @@ import {
   type ConnectorCredentialStore,
 } from './connector-credential.store.js';
 import { ConnectorController, ConnectorCredentialsController, ProjectConnectorCredentialsController } from './connector.controller.js';
-import { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
+import { ConnectorReadsController, WorkstationConnectionsController } from './connector-reads.controller.js';
+import { ProjectContextService } from './project-context.service.js';
+import { WorkstationConnectionService } from './workstation-connection.service.js';
+import { InMemoryWorkstationConnectionStore, PrismaWorkstationConnectionStore, type WorkstationConnectionDelegate, type WorkstationConnectionStore } from './workstation-connection.store.js';
+import { CONTRACT_VERSION } from '@pmi/execution-registry-contract';
+import { BUNDLE_VERSION } from '@pmi/workspace-bundle';
+import { RequirementsModule } from '../requirements/requirements.module.js';
+import { RequirementsService } from '../requirements/requirements.service.js';
+import { readProjectsRootConfig } from '../projects/projects-root.js';
+import { API_VERSION, CONNECTOR_CREDENTIAL_STORE, WORKSTATION_CONNECTION_STORE } from './connector.tokens.js';
 
 export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
 
 @Module({
-  imports: [forwardRef(() => ProjectsModule), AgentsModule, AuditModule, AccessModule],
-  controllers: [ProjectConnectorCredentialsController, ConnectorCredentialsController, ConnectorController],
+  imports: [forwardRef(() => ProjectsModule), AgentsModule, AuditModule, AccessModule, RequirementsModule],
+  controllers: [ProjectConnectorCredentialsController, ConnectorCredentialsController, ConnectorController, ConnectorReadsController, WorkstationConnectionsController],
   providers: [
     {
       provide: CONNECTOR_CREDENTIAL_STORE,
@@ -98,6 +107,35 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
       inject: [CONNECTOR_CREDENTIAL_STORE, TrustedPrincipalFactory, Reflector],
       useFactory: (credentials: ConnectorCredentialStore, principals: TrustedPrincipalFactory, reflector: Reflector): ConnectorAuthGuard =>
         new ConnectorAuthGuard(credentials, principals, { reflector }),
+    },
+    {
+      // EPIC-043 T1449 (R-043-8) — one workstation connection per credential;
+      // Prisma under DATABASE_URL (tests/architecture/durable-stores.spec.ts).
+      provide: WORKSTATION_CONNECTION_STORE,
+      useFactory: (): WorkstationConnectionStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaWorkstationConnectionStore(prismaClient().workstationConnection as unknown as WorkstationConnectionDelegate)
+          : new InMemoryWorkstationConnectionStore(),
+    },
+    {
+      provide: WorkstationConnectionService,
+      inject: [WORKSTATION_CONNECTION_STORE, CONNECTOR_CREDENTIAL_STORE, AuditService],
+      useFactory: (store: WorkstationConnectionStore, credentials: ConnectorCredentialStore, audit: AuditService): WorkstationConnectionService =>
+        new WorkstationConnectionService({ store, credentials, contractVersion: CONTRACT_VERSION, apiVersion: API_VERSION, audit: { record: (row) => audit.record(row as never) } }),
+    },
+    {
+      // EPIC-043 T1445 (R-043-9) — the reads a local agent needs to begin.
+      provide: ProjectContextService,
+      inject: [ProjectsService, RequirementsService, AuditService],
+      useFactory: (projects: ProjectsService, requirements: RequirementsService, audit: AuditService): ProjectContextService =>
+        new ProjectContextService({
+          projects,
+          requirements,
+          bundleVersion: BUNDLE_VERSION,
+          contractVersion: CONTRACT_VERSION,
+          publicUrl: readProjectsRootConfig(process.env).publicUrl,
+          audit: { record: (row) => audit.record(row as never) },
+        }),
     },
   ],
   // EPIC-043: the executions module mounts its controller behind the guard.

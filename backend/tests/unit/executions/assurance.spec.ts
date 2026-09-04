@@ -51,7 +51,7 @@ function harness() {
     // EPIC-043 T1443: the replay lookup (by idempotency key) sees nothing; the
     // snapshot read sees the row.
     $queryRawUnsafe: vi.fn(async (sql: string) =>
-      /"idempotencyKey" = \/.test(sql)
+      sql.includes('"idempotencyKey" = $2')
         ? []
         : [{ id: 'exec_1', workspaceId: WS, command: 'specify', surface: 'local-cli', assurance: 'local', governanceState: 'governed', parentExecutionId: null, lifecycleState: null, projectedThroughSequence: null }],
     ),

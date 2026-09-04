@@ -12,7 +12,7 @@
  * Written to FAIL before `T1379` exists.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ProjectDetail, ProjectsPage } from '../../../src/pages/Projects';
 import type { ApiClient, Project, ProvisioningRecord } from '../../../src/services/api';
 
@@ -185,5 +185,46 @@ describe('T1397 · the panel keeps its own loading and error states (FR-LPW-051,
     await waitFor(() => expect(panel.textContent).toMatch(/history unavailable/i));
     expect(screen.getByText('Alpha')).toBeDefined();
     expect(panel.textContent).toContain('/home/me/projects/alpha');
+  });
+});
+
+describe('T1450 · the Local workspace panel shows the workstation connections (EPIC-043 FR-PIC-053)', () => {
+  it('lists the most recent connection per credential with label, last seen, versions and credential state', async () => {
+    const api = {
+      getProject: vi.fn(async () => project()),
+      listProvisioning: vi.fn(async () => [record()]),
+      listRequirements: vi.fn(async () => []),
+      listExecutions: vi.fn(async () => ({ items: [], nextCursor: null })),
+      listWorkstationConnections: vi.fn(async () => [
+        { credentialId: 'cred_1', label: 'laptop', credentialState: 'active', firstSeenAt: '2026-09-04T09:00:00Z', lastSeenAt: '2026-09-04T10:00:00Z', extensionVersion: '0.1.0', toolkitVersion: 'v0.16.4', contractVersion: '1.0', serverVersion: '0.1.0' },
+        { credentialId: 'cred_0', label: 'old desktop', credentialState: 'revoked', firstSeenAt: '2026-09-01T09:00:00Z', lastSeenAt: '2026-09-02T10:00:00Z', extensionVersion: null, toolkitVersion: null, contractVersion: '1.0', serverVersion: null },
+      ]),
+    } as unknown as ApiClient;
+    render(<ProjectDetail api={api} projectId="p1" onBack={vi.fn()} />);
+    const panel = await screen.findByRole('region', { name: /local workspace/i });
+    await waitFor(() => expect(panel.textContent).toMatch(/laptop/));
+    expect(api.listWorkstationConnections).toHaveBeenCalledWith('p1');
+    const list = within(panel).getByRole('list', { name: /workstation connections/i });
+    const items = within(list).getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]?.textContent).toMatch(/laptop/);
+    expect(items[0]?.textContent).toMatch(/0\.1\.0/);
+    expect(items[0]?.textContent).toMatch(/v0\.16\.4/);
+    expect(items[0]?.textContent).toMatch(/active/);
+    expect(items[1]?.textContent).toMatch(/old desktop/);
+    expect(items[1]?.textContent).toMatch(/revoked/);
+  });
+
+  it('says so when no workstation has connected yet', async () => {
+    const api = {
+      getProject: vi.fn(async () => project()),
+      listProvisioning: vi.fn(async () => [record()]),
+      listRequirements: vi.fn(async () => []),
+      listExecutions: vi.fn(async () => ({ items: [], nextCursor: null })),
+      listWorkstationConnections: vi.fn(async () => []),
+    } as unknown as ApiClient;
+    render(<ProjectDetail api={api} projectId="p1" onBack={vi.fn()} />);
+    const panel = await screen.findByRole('region', { name: /local workspace/i });
+    await waitFor(() => expect(panel.textContent).toMatch(/no workstation has connected yet/i));
   });
 });
