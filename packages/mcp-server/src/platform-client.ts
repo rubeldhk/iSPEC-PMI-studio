@@ -99,7 +99,9 @@ export function createPlatformClient(options: PlatformClientOptions): PlatformPo
         const details = error.details !== null && typeof error.details === 'object' ? (error.details as Record<string, unknown>) : {};
         const safe: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(details)) safe[k] = typeof v === 'string' ? sanitise(v) : v;
-        return { ok: false, refusal: { code: error.code, message: sanitise(error.message ?? error.code), ...safe } };
+        // The registry's own word wins over the transport's status vocabulary (R-043-5).
+        const code = typeof safe['refusal'] === 'string' ? (safe['refusal'] as string) : error.code;
+        return { ok: false, refusal: { code, message: sanitise(error.message ?? error.code), ...safe } };
       }
       return {
         ok: false,

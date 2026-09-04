@@ -239,6 +239,39 @@ export class ExecutionRegistrationService {
       );
     });
 
+    // EPIC-043 T1443 (`FR-EXR-009`, `SC-PIC-006`): a repeated registration key is a
+    // REPLAY when the content and the emitting principal are the same — the
+    // original is returned and nothing is appended — and a CONFLICT otherwise.
+    // Before this, a repeat reached the event ledger with a new execution id and
+    // was refused as "a different event", which is the wrong word for a retry.
+    const replayed = await this.db.$queryRawUnsafe<{ id: string; command: string; initiatorId: string; targetType: string | null; targetId: string | null }[]>(
+      `SELECT e."id", e."command", e."initiatorId", b."targetType", b."targetId"
+         FROM "executions" e
+         LEFT JOIN "execution_target_bindings" b ON b."executionId" = e."id" AND b."phase" = 'input'
+        WHERE e."workspaceId" = $1 AND e."idempotencyKey" = $2
+        LIMIT 1`,
+      request.workspaceId,
+      request.idempotencyKey,
+    );
+    // A unit fixture may answer the raw query with nothing; only a row is a replay.
+    const prior = Array.isArray(replayed) ? replayed[0] : undefined;
+    if (prior !== undefined) {
+      const same =
+        prior.command === request.command &&
+        prior.initiatorId === agentSnapshot.principalId &&
+        prior.targetType === request.input.targetType &&
+        prior.targetId === request.input.targetId;
+      if (!same) {
+        throw new RegistryRefusedError(
+          'idempotency_conflict',
+          'This idempotency key was already used for a registration with a different command, target or principal.',
+        );
+      }
+      const original = await this.snapshot(request.workspaceId, prior.id);
+      if (original === null) throw new RegistryRefusedError('identity_not_resolvable', 'The replayed registration did not resolve.');
+      return original;
+    }
+
     const executionId = request.executionId ?? randomUUID();
 
     await this.db.$transaction(async (tx) => {

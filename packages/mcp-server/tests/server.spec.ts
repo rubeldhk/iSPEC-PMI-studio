@@ -143,3 +143,18 @@ describe('T1422 · the tool surface', () => {
     expect(result.structuredContent).toMatchObject({ code: 'delegation_missing' });
   });
 });
+
+describe('T1443 · replay passthrough (US3)', () => {
+  it('forwards the same idempotency key unchanged on a retry and returns whatever the platform answers', async () => {
+    let calls = 0;
+    const { port, calls: seen } = stubPlatform(() => ({ ok: true, status: 201, body: { executionId: 'exec_1', replayed: (calls += 1) > 1 } }));
+    const o = await connect(port);
+    open.push(o);
+    const args = { command: 'specify', argsSanitized: {}, input: { targetType: 'project', targetId: 'proj_1' }, correlationId: 'corr_1', idempotencyKey: 'k_retry' };
+    const first = await o.client.callTool({ name: 'pmi.execution.register', arguments: args });
+    const again = await o.client.callTool({ name: 'pmi.execution.register', arguments: args });
+    expect(seen.map((c) => c.idempotencyKey)).toEqual(['k_retry', 'k_retry']);
+    expect((first.structuredContent as { executionId: string }).executionId).toBe('exec_1');
+    expect((again.structuredContent as { replayed: boolean }).replayed).toBe(true);
+  });
+});

@@ -35,6 +35,7 @@ import {
   CONTRACT_VERSION,
   CONTRACT_VERSION_HEADER,
   PMI_SURFACE_HEADER,
+  RegistryRefusedError,
   type AppendEventRequest,
   type AppendedEvent,
   type CompleteExecutionRequest,
@@ -45,12 +46,15 @@ import {
   type RegisterExecutionRequest,
 } from '@pmi/execution-registry-contract';
 import {
+  ConflictError,
+  ForbiddenError,
   IdentityNotAcceptedError,
   InvalidConnectorCredentialError,
   NotAvailableUntilError,
   NotFoundError,
   SurfaceNotAcceptedError,
   UnsupportedContractVersionError,
+  ValidationFailedError,
 } from '../../core/errors.js';
 import { ConnectorAuthGuard, type ConnectorRequestContext } from '../connector/connector-auth.guard.js';
 import { ConnectorScope } from '../connector/connector-scope.js';
@@ -91,6 +95,28 @@ interface StatusSetter {
 const IDENTITY_FIELDS = ['identity', 'workspaceId', 'projectId'] as const;
 const TRANSPORT_FIELDS = ['surface', 'assurance'] as const;
 
+/**
+ * `R-043-5` — a registry refusal is a governed outcome, rendered with the
+ * platform's status vocabulary and the registry's own code in `details.refusal`
+ * so both bindings carry the same word. Anything else passes through untouched.
+ */
+export function translateRefusal(error: unknown): unknown {
+  if (!(error instanceof RegistryRefusedError)) return error;
+  const detail = { refusal: error.refusal };
+  switch (error.refusal) {
+    case 'idempotency_conflict':
+    case 'sequence_conflict':
+      return new ConflictError(error.message, detail);
+    case 'unsupported_contract_version':
+      return new UnsupportedContractVersionError(CONTRACT_VERSION, null);
+    case 'identity_not_resolvable':
+    case 'delegation_missing':
+      return new ForbiddenError(error.message, detail);
+    default:
+      return new ValidationFailedError(error.message, detail);
+  }
+}
+
 function header(req: GuardedRequest, name: string): string | null {
   const raw = req.headers[name];
   const value = Array.isArray(raw) ? raw[0] : raw;
@@ -109,7 +135,9 @@ export class ExecutionsController {
 
   /** `FR-PIC-036` — every accepted call names the principal, the project, the operation and the outcome. */
   private async audited<T>(ctx: ConnectorRequestContext, operation: string, executionId: string | null, work: () => Promise<T>): Promise<T> {
-    const result = await work();
+    const result = await work().catch((error: unknown) => {
+      throw translateRefusal(error);
+    });
     const targetId = executionId ?? (result as { executionId?: string } | null)?.executionId;
     await this.audit?.record({
       workspaceId: ctx.workspaceId,

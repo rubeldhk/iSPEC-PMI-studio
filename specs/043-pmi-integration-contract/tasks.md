@@ -138,8 +138,8 @@ against every tool and route; then remove the project-scope check and watch the 
 
 **Independent test**: Scenario 8.
 
-- [ ] T1442 [P] [US3] Write the failing Tier 1 integration test `backend/tests/integration/execution-replay.spec.ts` — over REST and over the MCP client: the same key and payload return the original execution with identical identifying fields and create no second row; the same key with a different command, target or binding is a conflict; the same key from a second credential of the same project is a conflict on emitting principal; no sequence number is consumed by a refused replay (`SC-PIC-006`)
-- [ ] T1443 [US3] Ensure `packages/mcp-server/src/tools/execution.ts` forwards `idempotencyKey` unchanged and `backend/src/modules/executions/executions.controller.ts` passes the credential's principal into the registry's replay comparison; extend `packages/mcp-server/tests/server.spec.ts` for the passthrough (integration test: T1442; unit test: T1422)
+- [X] T1442 [P] [US3] Write the failing Tier 1 integration test `backend/tests/integration/execution-replay.spec.ts` — over REST and over the MCP client: the same key and payload return the original execution with identical identifying fields and create no second row; the same key with a different command, target or binding is a conflict; the same key from a second credential of the same project is a conflict on emitting principal; no sequence number is consumed by a refused replay (`SC-PIC-006`)
+- [X] T1443 [US3] Ensure `packages/mcp-server/src/tools/execution.ts` forwards `idempotencyKey` unchanged and `backend/src/modules/executions/executions.controller.ts` passes the credential's principal into the registry's replay comparison; extend `packages/mcp-server/tests/server.spec.ts` for the passthrough (integration test: T1442; unit test: T1422)
 
 ---
 
