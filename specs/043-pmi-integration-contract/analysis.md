@@ -1,7 +1,7 @@
 # Analysis — EPIC-043 PMI Integration Contract
 
 **Session**: 2026-09-04 · **Artifacts**: `spec.md` (clarified 2026-09-04), `plan.md`, `research.md`,
-`data-model.md`, `contracts/` (3), `quickstart.md`, `tasks.md` (`T1398`–`T1464`, 67 tasks) ·
+`data-model.md`, `contracts/` (3), `quickstart.md`, `tasks.md` (`T1398`–`T1466`, 69 tasks after remediation) ·
 **Constitution**: v1.6.0
 
 ## Findings
@@ -28,7 +28,7 @@ has acceptance scenarios and every scenario maps to at least one test task.
 
 | Requirement key | Has task? | Task IDs | Notes |
 |---|---|---|---|
-| `FR-PIC-001` server, the seven tools | ⚠ | T1422, T1425, T1428 | **C1** — five exist; comment and sync need tasks or reservation |
+| `FR-PIC-001` server, the seven tools | ✅ | T1422, T1425, T1428, T1465, T1466 | **C1** remediated — six live, `sync` reserved |
 | `FR-PIC-002` reads + reserved | ✅ | T1422, T1425, T1445, T1447 | |
 | `FR-PIC-003` fixture conformance over MCP | ✅ | T1428, T1429 | `SC-PIC-001` |
 | `FR-PIC-004` idempotency + correlation + audit actor | ✅ | T1423, T1424, T1439, T1440 | |
@@ -43,11 +43,11 @@ has acceptance scenarios and every scenario maps to at least one test task.
 | `FR-PIC-025` surface and assurance derived | ✅ | T1419, T1420, T1435 | |
 | `FR-PIC-026`, `027` no credential material; structured refusals | ✅ | T1437, T1438, T1440, T1441 | `SC-PIC-003` |
 | `FR-PIC-030`, `031` mounted; replaced check | ✅ | T1418, T1419 | `SC-PIC-009` |
-| `FR-PIC-032` reads scoped to the project | ⚠ | T1439 | **C2** |
+| `FR-PIC-032` reads scoped to the project | ✅ | T1420, T1421, T1439 | **C2** remediated |
 | `FR-PIC-033` no apply/approve | ✅ | T1420, T1433 | |
-| `FR-PIC-034` sync intake | ⚠ | T1425 | **C1** |
+| `FR-PIC-034` sync reserved | ✅ | T1422, T1466 | **C1** remediated |
 | `FR-PIC-035` session timeline read | ✅ | T1431, T1432, T1436 | |
-| `FR-PIC-036` audit entries | ⚠ | T1439, T1440 | **C3** for reads/health |
+| `FR-PIC-036` audit entries | ✅ | T1439, T1440, T1444, T1448 | **C3** remediated |
 | `FR-PIC-040`–`043` context and requirements reads | ✅ | T1444, T1445, T1446 | |
 | `FR-PIC-044`, `046` health and connection record | ✅ | T1448, T1449, T1452 | |
 | `FR-PIC-045` reserved tools validate | ✅ | T1447 | |
