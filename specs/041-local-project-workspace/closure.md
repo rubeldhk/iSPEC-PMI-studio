@@ -128,3 +128,10 @@ execution registry, artifact and task sync behind the connector guard).
 | `pnpm test:integration` | 90 passed, 1 skipped | 858 passed, 2 skipped | `T147` `scale.spec.ts` p95 under the combined run (load-sensitive, known-red before this Epic) |
 | `pnpm lint` | — | — | 14 pre-existing errors: unused imports in older tests, a missing `react-hooks` rule definition, and `engine-default.spec.ts` importing the worker (the boundary this Epic made an error; the test predates it) |
 | `pnpm -r typecheck` | all packages | clean | — |
+
+## The register (`T1392`)
+
+`pnpm register:update` (run twice, per its known first-run failure on `T884`) derives EPIC-041 as
+**`Ready` — every DOR condition passes** (`DOR-08` needed `T1388` to name its two tests). The
+register derives no stage past `Ready` from evidence on disk; `Implemented` is this report's claim,
+and `/speckit-converge` is what turns it into a derived one.
