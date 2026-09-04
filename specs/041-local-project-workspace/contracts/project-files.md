@@ -20,7 +20,7 @@ conformance test reads every file the platform wrote and fails on a match of `pm
 │
 │   ── process boundary: everything below is the initialise step (worker), or the setup skill ──
 │
-├── .specify/                      run_spec_kit_init  (initialise)
+├── .specify/                      run_engine_init  (initialise)
 │   ├── memory/constitution.md         Spec Kit's default until EPIC-042 generates it
 │   ├── templates/ · scripts/ · …
 │   ├── extensions/pmi/            copy_extension     (initialise)
@@ -62,7 +62,7 @@ A refusal rather than a default is deliberate: copying a skill into another agen
   "platformUrl": "http://localhost:3000",
   "agentIntegration": "claude",
   "scriptType": "ps",
-  "specKitTag": "v0.16.4",
+  "engineTag": "v0.16.4",
   "bundleVersion": "0.1.0",
   "provisionedBy": "pmi-studio",
   "preparedAt": "<ISO-8601>"
@@ -129,7 +129,7 @@ must do and must not do, because it is the completion path for `initialisation_p
 Must:
 1. Read `.pmi/project.json`; refuse with a clear message if absent or of an unknown `schemaVersion`.
 2. Report whether `.specify/` exists. If not, show and then run the `R-041-8` command with the
-   file's `agentIntegration`, `scriptType` and `specKitTag`.
+   file's `agentIntegration`, `scriptType` and `engineTag`.
 3. Copy `extensions/pmi/` and register its hooks if absent — from the bundle version the file names.
 4. Check that `PMI_STUDIO_TOKEN` is set in the environment. **Never ask for its value; never print
    it.** If unset, explain where to mint one in PMI Studio and how to export it.

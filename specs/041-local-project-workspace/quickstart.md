@@ -58,8 +58,8 @@ root; no project row; `/tmp/elsewhere` untouched.
 
 `FR-LPW-002` (initialise half), `FR-LPW-008`, `SC-LPW-002`. After Scenario 1, wait for the job.
 **Expect**: `provisioningState: provisioned`; `.specify/` present with the pinned tag's structure;
-`.specify/extensions/pmi/extension.yml` present; `ProvisioningRecord.specKitTag` equals
-`PMI_SPECKIT_TAG`; `bundleVersion` equals the bundle's.
+`.specify/extensions/pmi/extension.yml` present; `ProvisioningRecord.engineTag` equals
+`PMI_ENGINE_TAG`; `bundleVersion` equals the bundle's.
 
 ### Scenario 5 — Without a worker, the project is honestly *initialisation pending* (containerised)
 

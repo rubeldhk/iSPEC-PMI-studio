@@ -34,7 +34,7 @@ const record = (over: Partial<ProvisioningRecord> = {}): ProvisioningRecord => (
   stepsCompleted: [...PREPARE_STEPS],
   failedStep: null,
   failureReason: null,
-  specKitTag: null,
+  engineTag: null,
   bundleVersion: '0.1.0',
   filesWritten: [],
   ...over,
@@ -51,7 +51,7 @@ describe('T1335 · the vocabulary', () => {
       'copy_setup_skill',
       'queue_initialise',
     ]);
-    expect(INITIALISE_STEPS).toEqual(['run_spec_kit_init', 'copy_extension', 'register_hooks', 'verify_structure']);
+    expect(INITIALISE_STEPS).toEqual(['run_engine_init', 'copy_extension', 'register_hooks', 'verify_structure']);
     expect(PROVISIONING_STEPS).toEqual([...PREPARE_STEPS, ...INITIALISE_STEPS]);
   });
 

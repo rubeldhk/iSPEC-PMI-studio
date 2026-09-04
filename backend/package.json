@@ -28,7 +28,8 @@
     "bullmq": "^5.34.6",
     "pino": "^9.6.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "@pmi/workspace-bundle": "workspace:*"
   },
   "//devDependencies": "Adapters are TEST-ONLY (T137 engine-swap). They must never move to dependencies: backend/src may import the contract and never a concrete engine (FR-017, ADR-0001). The architecture test enforces that regardless of what is installed.",
   "devDependencies": {

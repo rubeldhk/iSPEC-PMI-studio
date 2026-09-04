@@ -77,7 +77,7 @@ by construction (`R-041-1`).
 **Configuration** (all six declared in `.env.example` and asserted by `T1310`): `PMI_PROJECTS_ROOT`
 (where the API writes), `PMI_PROJECTS_ROOT_HOST` (the same directory as the user's machine sees it),
 `PMI_PUBLIC_URL` (the address written into a project's files — default
-`http://localhost:${PMI_APP_PORT:-3000}`; a container cannot infer it), `PMI_SPECKIT_TAG` (default
+`http://localhost:${PMI_APP_PORT:-3000}`; a container cannot infer it), `PMI_ENGINE_TAG` (default
 `v0.16.4`), `PMI_MCP_SERVER_VERSION`, `PMI_INITIALISE_WAIT_MS` (default `30000` — the bound after
 which a prepared project with an unclaimed initialise job reads *initialisation pending*).
 
@@ -159,7 +159,7 @@ backend/prisma/migrations/<ts>_epic041_local_workspace/       data-model.md §1�
 backend/tests/architecture/durable-stores.spec.ts             FR-LPW-043
 
 worker/src/main.ts                   R-041-6 — real JobPersistence replaces the throw
-worker/src/provisioning.consumer.ts  the INITIALISE job: run_spec_kit_init · copy_extension · register_hooks · verify_structure
+worker/src/provisioning.consumer.ts  the INITIALISE job: run_engine_init · copy_extension · register_hooks · verify_structure
 worker/src/engine-composition.ts     composes LocalSpecKitInitialiser from engine-adapters/speckit
 
 engine-adapters/speckit/src/local-init.ts     R-041-8 — uvx … specify init --here, on the host
@@ -179,7 +179,7 @@ frontend/src/shell/area-views.tsx    Workspace & Administration gains ConnectorC
 
 docker-compose.yml                   app: volume ${PMI_PROJECTS_ROOT_HOST}:/projects; env PMI_PROJECTS_ROOT=/projects,
                                        PMI_PROJECTS_ROOT_HOST=${PMI_PROJECTS_ROOT_HOST}
-.env.example                         PMI_PROJECTS_ROOT, PMI_PROJECTS_ROOT_HOST, PMI_SPECKIT_TAG, PMI_MCP_SERVER_VERSION
+.env.example                         PMI_PROJECTS_ROOT, PMI_PROJECTS_ROOT_HOST, PMI_ENGINE_TAG, PMI_MCP_SERVER_VERSION
 e2e/                                 EPIC-041 journey → docs/uat/EPIC-041-<stack>-transcript.md (R-041-12)
 backend/tests/contract/project-files.spec.ts  FR-LPW-009, FR-LPW-011 conformance: exact file set, shape, no credential pattern
 tests/governance/projects-root-config.spec.ts the six configuration variables, compose mount (file-reading only)

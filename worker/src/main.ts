@@ -1,5 +1,5 @@
 /**
- * Worker entry point (T004, T653, T1321).
+ * Worker entry point (T004, T653, T1321, T1346).
  *
  * The only process permitted to hold a concrete engine and to spawn sandboxes
  * (ADR-0001, ADR-0002).
@@ -25,12 +25,27 @@
  * version, links, job state and owner grant in one transaction. And it records
  * what it composed into `engine_registrations`, so the API can resolve a
  * descriptor for a submission without ever holding an engine.
+ *
+ * T1346 (EPIC-041, `R-041-1`): this process now INITIALISES local workspaces.
+ * The API's prepare step queues an `initialise_workspace` job; the worker
+ * dispatches on the job's kind, runs Spec Kit at the pinned tag in the user's
+ * directory through the adapter's local initialiser, and records the outcome
+ * through the same barrel. A host with no worker leaves the project honestly
+ * *initialisation pending* for the setup skill.
  */
 import { Worker } from 'bullmq';
 import { buildObservability, newCorrelationId, NullMetricSink } from '@pmi/observability';
-import { createGenerationRunner, recordEngineRegistrations } from '@pmi/backend/worker-api';
+import { LocalSpecKitInitialiser, execFileOnHost } from '@pmi/engine-adapter-speckit';
+import { extensionDir } from '@pmi/workspace-bundle';
+import {
+  createGenerationRunner,
+  describeJob,
+  finaliseInitialisation,
+  recordEngineRegistrations,
+} from '@pmi/backend/worker-api';
 import { composeEngineRegistry } from './engine-composition.js';
 import { reportGenerationResult } from './observability-composition.js';
+import { createProvisioningConsumer } from './provisioning.consumer.js';
 import { createGenerationWorker, type RunningWorker } from './worker-bootstrap.js';
 import { resolveJobTimeoutMs } from './config.js';
 
@@ -62,9 +77,15 @@ async function main(): Promise<void> {
   // platform took, which includes claiming and persisting.
   const inFlight = new Map<string, { startedAt: number; engineName: string }>();
 
-  const runner = createGenerationRunner({
+  const generation = createGenerationRunner({
     // Per job, so a project's engine selection is honoured (FR-019).
     resolveEngine: (engineName) => registry.resolve(engineName ?? undefined),
+  });
+
+  const provisioning = createProvisioningConsumer({
+    initialiser: new LocalSpecKitInitialiser({ exec: execFileOnHost }),
+    finalise: finaliseInitialisation,
+    extensionDir,
   });
 
   const worker: RunningWorker = createGenerationWorker({
@@ -82,7 +103,14 @@ async function main(): Promise<void> {
           ...opts,
         },
       ),
-    runner,
+    // Dispatch on the job's kind (T1346): an initialise job never reaches an
+    // engine, and a generation job never reaches the initialiser.
+    runner: {
+      async run(jobId, limits) {
+        const described = await describeJob(jobId);
+        return described.kind === 'initialise_workspace' ? provisioning.run(described) : generation.run(jobId, limits);
+      },
+    },
     limits: { timeoutMs: JOB_TIMEOUT_MS },
     onResult: (job, result) => {
       const started = inFlight.get(job.id);

@@ -1,5 +1,5 @@
 /**
- * T054/T055 — projects module wiring.
+ * T054/T055 — projects module wiring. T1350 (EPIC-041) — provisioning.
  *
  * Services stay framework-free (PC-1); plain classes wired with factory
  * providers, the same shape as `jobs.module.ts` (T651).
@@ -13,19 +13,42 @@
  * It satisfies `ProjectEngineSelectionPort` by reading the project's own
  * `engineName` — swap it in for `PROJECT_ENGINE_SELECTION` at the same
  * composition root that supplies the Prisma delegates.
+ *
+ * ## Provisioning (EPIC-041)
+ *
+ * `ProvisioningService` composes the projects-root configuration (six variables,
+ * `R-041-2`), the record store, the job queue that carries the initialise step
+ * to the worker (`R-041-1`), the ledger `refresh()` reads to derive
+ * *initialisation pending*, the workspace bundle (`R-041-9`), `git init` as a
+ * tool on PATH, and the audit service. **Nothing here names an engine.**
  */
 import { Module } from '@nestjs/common';
+import { BUNDLE_VERSION, DEFAULT_AGENT_INTEGRATION, skillsDir, skillsPathFor } from '@pmi/workspace-bundle';
 import type { ProjectEngineSelectionPort } from '../engines/engine-resolver.service.js';
+import { AuditModule } from '../audit/audit.module.js';
+import { AuditService } from '../audit/audit.service.js';
+import { JobsModule } from '../jobs/jobs.module.js';
+import { JobsService } from '../jobs/jobs.service.js';
+import { PrismaGenerationJobLedger } from '../specifications/generation-job.ledger.prisma.js';
 import { ProjectsController } from './projects.controller.js';
 import { prismaClient } from '../../persistence/prisma.js';
+import { readProjectsRootConfig } from './projects-root.js';
 import {
   InMemoryProjectStore,
   PrismaProjectStore,
   ProjectsService,
+  type ProjectDelegate,
   type ProjectStore,
 } from './projects.service.js';
+import { ProvisioningService, gitInit } from './provisioning.service.js';
+import {
+  InMemoryProvisioningRecordStore,
+  PrismaProvisioningRecordStore,
+  type ProvisioningRecordStore,
+} from './provisioning.store.js';
 
 export const PROJECT_STORE = Symbol('PROJECT_STORE');
+export const PROVISIONING_RECORD_STORE = Symbol('PROVISIONING_RECORD_STORE');
 
 /** FR-019 — the per-project engine selection, read from the project record. */
 export class ProjectEngineSelection implements ProjectEngineSelectionPort {
@@ -37,6 +60,7 @@ export class ProjectEngineSelection implements ProjectEngineSelectionPort {
 }
 
 @Module({
+  imports: [JobsModule, AuditModule],
   controllers: [ProjectsController],
   providers: [
     {
@@ -52,13 +76,44 @@ export class ProjectEngineSelection implements ProjectEngineSelectionPort {
       // database.
       useFactory: (): ProjectStore =>
         process.env['DATABASE_URL']
-          ? new PrismaProjectStore(prismaClient().project)
+          ? new PrismaProjectStore(prismaClient().project as unknown as ProjectDelegate)
           : new InMemoryProjectStore(),
+    },
+    {
+      provide: PROVISIONING_RECORD_STORE,
+      // EPIC-041 T1341 — append-only in the database (reject_mutation) and by
+      // interface. Asserted by tests/architecture/durable-stores.spec.ts.
+      useFactory: (): ProvisioningRecordStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaProvisioningRecordStore(prismaClient().provisioningRecord)
+          : new InMemoryProvisioningRecordStore(),
     },
     {
       provide: ProjectsService,
       inject: [PROJECT_STORE],
       useFactory: (store: ProjectStore): ProjectsService => new ProjectsService(store),
+    },
+    {
+      provide: ProvisioningService,
+      inject: [PROJECT_STORE, PROVISIONING_RECORD_STORE, JobsService, AuditService],
+      useFactory: (
+        projects: ProjectStore,
+        records: ProvisioningRecordStore,
+        jobs: JobsService,
+        audit: AuditService,
+      ): ProvisioningService =>
+        new ProvisioningService({
+          config: readProjectsRootConfig(process.env),
+          projects,
+          records,
+          jobs,
+          // `refresh()` reads the same generation_jobs rows the worker claims.
+          // Without a database there is no worker either, so nothing to read.
+          ledger: process.env['DATABASE_URL'] ? new PrismaGenerationJobLedger(prismaClient().generationJob) : null,
+          bundle: { version: BUNDLE_VERSION, defaultIntegration: DEFAULT_AGENT_INTEGRATION, skillsDir, skillsPathFor },
+          git: { init: gitInit },
+          audit,
+        }),
     },
     {
       provide: ProjectEngineSelection,
@@ -67,6 +122,6 @@ export class ProjectEngineSelection implements ProjectEngineSelectionPort {
         new ProjectEngineSelection(projects),
     },
   ],
-  exports: [ProjectsService, PROJECT_STORE, ProjectEngineSelection],
+  exports: [ProjectsService, ProvisioningService, PROJECT_STORE, PROVISIONING_RECORD_STORE, ProjectEngineSelection],
 })
 export class ProjectsModule {}

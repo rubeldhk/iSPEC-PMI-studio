@@ -46,8 +46,8 @@ suite('T1046 · the sequence is gapless per execution, and nobody shares one', (
     await prisma.$executeRawUnsafe(
       `INSERT INTO "executions"
          ("id","correlationId","idempotencyKey","workspaceId","command","argsSanitized",
-          "initiatorType","initiatorId","surface","contractVersion")
-       VALUES ($1,'c1',$1,$2,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0')`,
+          "initiatorType","initiatorId","surface","contractVersion","assurance")
+       VALUES ($1,'c1',$1,$2,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0','local')`,
       id,
       WS,
     );
@@ -159,8 +159,8 @@ suite('T1044 · terminality blocks lifecycle events only', () => {
     await db.query(
       `INSERT INTO "executions"
          ("id","correlationId","idempotencyKey","workspaceId","command","argsSanitized",
-          "initiatorType","initiatorId","surface","contractVersion")
-       VALUES ('exec_term','c1','k1',$1,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0')`,
+          "initiatorType","initiatorId","surface","contractVersion","assurance")
+       VALUES ('exec_term','c1','k1',$1,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0','local')`,
       [WS],
     );
     await db.end();
@@ -268,8 +268,8 @@ suite('T1040 · idempotency returns the original, never a second event', () => {
     await db.query(
       `INSERT INTO "executions"
          ("id","correlationId","idempotencyKey","workspaceId","command","argsSanitized",
-          "initiatorType","initiatorId","surface","contractVersion")
-       VALUES ('exec_idem','c1','k1',$1,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0')`,
+          "initiatorType","initiatorId","surface","contractVersion","assurance")
+       VALUES ('exec_idem','c1','k1',$1,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0','local')`,
       [WS],
     );
     await db.end();

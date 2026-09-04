@@ -31,7 +31,7 @@ this project directory. End with the table in step 7.
    with the project directory as the working directory and the values from `.pmi/project.json`:
 
    ```
-   uvx --from git+https://github.com/github/spec-kit.git@<specKitTag> specify init --here --force --integration <agentIntegration> --script <scriptType>
+   uvx --from git+https://github.com/github/spec-kit.git@<engineTag> specify init --here --force --integration <agentIntegration> --script <scriptType>
    ```
 
    If `uv` is not installed, say so and point at the `uv` installation page for this platform. Do

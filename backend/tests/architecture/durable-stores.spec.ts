@@ -51,6 +51,10 @@ const BINDINGS: readonly Binding[] = [
     prisma: 'PrismaTraceabilityLinkStore',
     inMemory: 'InMemoryTraceabilityLinkStore',
   },
+  // Found by T1351, not by PMI-DOC-004B: every audited action under DATABASE_URL
+  // threw AuditPersistenceUnavailableError — the writer was never bound.
+  { module: 'audit/audit.module.ts', token: 'AUDIT_WRITER', prisma: 'PrismaAuditWriter', inMemory: 'UnconfiguredAuditWriter' },
+  { module: 'audit/audit.module.ts', token: 'AUDIT_READER', prisma: 'PrismaAuditReader', inMemory: 'UnconfiguredAuditReader' },
 ];
 
 function stripComments(source: string): string {

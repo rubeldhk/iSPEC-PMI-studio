@@ -66,8 +66,8 @@ suite('T1080 · the execution registry refuses mutation, under the real applicat
     await db.query(
       `INSERT INTO "executions"
          ("id","correlationId","idempotencyKey","workspaceId","command","argsSanitized",
-          "initiatorType","initiatorId","surface","contractVersion")
-       VALUES ($1,'c1','k1',$2,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0')`,
+          "initiatorType","initiatorId","surface","contractVersion","assurance")
+       VALUES ($1,'c1','k1',$2,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0','local')`,
       [EXEC, WS],
     );
     await db.query(

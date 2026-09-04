@@ -92,6 +92,9 @@ importers:
       '@pmi/storage-contract':
         specifier: workspace:*
         version: link:../packages/storage-contract
+      '@pmi/workspace-bundle':
+        specifier: workspace:*
+        version: link:../packages/workspace-bundle
       '@prisma/client':
         specifier: ^5
         version: 5.22.0(prisma@5.22.0)
@@ -295,6 +298,9 @@ importers:
       '@pmi/observability':
         specifier: workspace:*
         version: link:../packages/observability
+      '@pmi/workspace-bundle':
+        specifier: workspace:*
+        version: link:../packages/workspace-bundle
       bullmq:
         specifier: ^5.34.6
         version: 5.81.3

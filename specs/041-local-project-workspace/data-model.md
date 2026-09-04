@@ -66,7 +66,7 @@ record saying so.
 | `stepsCompleted` | `Json` — ordered list of step names from the fixed vocabulary in §2.1 |
 | `failedStep` | `String?` — required when `outcome = 'failed'`, CHECKed |
 | `failureReason` | `String?` — sanitised; never a path outside the root, never a credential |
-| `specKitTag` | the tag written (`FR-LPW-008`); null when initialisation did not run |
+| `engineTag` | the tag written (`FR-LPW-008`); null when initialisation did not run. Engine-neutral in the API (`engine-independence.spec.ts` forbids naming the engine in `backend/src`); stored in the column `specKitTag` the Phase 1 migration created, via `@map` |
 | `bundleVersion` | `@pmi/workspace-bundle` version copied (`FR-LPW-008`) |
 | `filesWritten` | `Json` — relative paths, so a partial run is inspectable (`US1` scenario 5) |
 
@@ -80,7 +80,7 @@ stopped:
 
 ```
 check_root · create_directory · adopt_or_init_git · write_project_json · merge_mcp_json ·
-copy_setup_skill · queue_initialise │ run_spec_kit_init · copy_extension · register_hooks · verify_structure
+copy_setup_skill · queue_initialise │ run_engine_init · copy_extension · register_hooks · verify_structure
 ```
 
 The bar marks the process boundary (`R-041-1`). Nothing before it names an engine.
@@ -129,7 +129,7 @@ otherwise, then adds the `NOT NULL` constraint.
 ## 6. `GenerationJob` — one enum member
 
 `JobKind` gains **`initialise_workspace`**. The job's `inputRefs` carry `projectId`, the resolved
-write path, `agentIntegration`, `scriptType`, `specKitTag` and `bundleVersion`. Its `resultRef` is
+write path, `agentIntegration`, `scriptType`, `engineTag` and `bundleVersion`. Its `resultRef` is
 the `ProvisioningRecord` id. The existing partial unique index over live jobs per `jobKey` gives
 idempotency for free: a second provision request while one is queued joins it.
 

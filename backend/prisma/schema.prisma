@@ -2691,7 +2691,7 @@ model ProvisioningRecord {
   failedStep     String?
   // Sanitised: never a path outside the root, never a credential.
   failureReason  String?
-  specKitTag     String?
+  engineTag      String?      @map("specKitTag")
   bundleVersion  String?
   // Relative paths, so a partial run is inspectable (US1 scenario 5).
   filesWritten   Json

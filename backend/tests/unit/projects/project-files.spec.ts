@@ -36,7 +36,7 @@ const project = {
   platformUrl: 'http://localhost:3000',
   agentIntegration: 'claude',
   scriptType: 'sh' as const,
-  specKitTag: 'v0.16.4',
+  engineTag: 'v0.16.4',
   bundleVersion: '0.1.0',
   preparedAt: new Date('2026-09-03T10:00:00Z'),
 };
@@ -56,7 +56,7 @@ describe('T1337 · .pmi/project.json', () => {
       platformUrl: 'http://localhost:3000',
       agentIntegration: 'claude',
       scriptType: 'sh',
-      specKitTag: 'v0.16.4',
+      engineTag: 'v0.16.4',
       bundleVersion: '0.1.0',
       provisionedBy: 'pmi-studio',
       preparedAt: '2026-09-03T10:00:00.000Z',

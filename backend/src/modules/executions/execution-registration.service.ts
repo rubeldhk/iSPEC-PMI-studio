@@ -28,6 +28,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   RegistryRefusedError,
+  assuranceFor,
   type CompleteExecutionRequest,
   type ExecutionIdentityRefs,
   type ExecutionSnapshot,
@@ -194,8 +195,8 @@ export class ExecutionRegistrationService {
         `INSERT INTO "executions"
            ("id","correlationId","causationId","idempotencyKey","workspaceId","projectId","command",
             "argsSanitized","initiatorType","initiatorId","surface","environment",
-            "governanceState","parentExecutionId","contractVersion")
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,'governed',$13,$14)`,
+            "governanceState","parentExecutionId","contractVersion","assurance")
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,'governed',$13,$14,$15)`,
         executionId,
         request.correlationId,
         request.causationId ?? null,
@@ -210,6 +211,9 @@ export class ExecutionRegistrationService {
         request.environment ?? null,
         request.parentExecutionId ?? null,
         request.contractVersion,
+        // T1366 (EPIC-041, FR-LPW-034): derived from the surface by the one
+        // writer, never accepted from the request. NOT NULL by migration.
+        assuranceFor(request.surface),
       );
 
       // The frozen agent identity. `descriptorRef` is a live reference; the

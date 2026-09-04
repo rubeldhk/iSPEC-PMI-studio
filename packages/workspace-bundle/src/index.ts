@@ -71,3 +71,10 @@ export function skillsPathFor(integration: string): SkillsPathResult {
   }
   return { ok: true, path };
 }
+
+/**
+ * The integration a project gets when the request names none (`FR-LPW-006`):
+ * the one this bundle ships a skills path for. It lives here, not in the API,
+ * because the API names no agent (`agent-independence.spec.ts`).
+ */
+export const DEFAULT_AGENT_INTEGRATION = 'claude';

@@ -47,6 +47,8 @@ import {
   type RequirementSelection,
   type RequirementScopeDelegate,
 } from './modules/specifications/generate-specification.service.js';
+import { randomUUID } from 'node:crypto';
+import { PrismaProvisioningRecordStore } from './modules/projects/provisioning.store.js';
 import { PrismaGenerationJobLedger } from './modules/specifications/generation-job.ledger.prisma.js';
 import {
   PrismaSpecificationStore,
@@ -146,6 +148,102 @@ export function createGenerationRunner(deps: GenerationRunnerDeps): GenerationRu
     },
   };
 }
+
+// ------------------------------------------------- the initialise step (EPIC-041)
+
+export type InitialiseStep = 'run_engine_init' | 'copy_extension' | 'register_hooks' | 'verify_structure';
+
+export interface WorkspaceToInitialise {
+  readonly writePath: string;
+  readonly agentIntegration: string;
+  readonly scriptType: 'sh' | 'ps';
+  readonly engineTag: string;
+  readonly bundleVersion: string;
+}
+
+export type JobDescription =
+  | { readonly jobId: string; readonly kind: 'initialise_workspace'; readonly workspace: WorkspaceToInitialise }
+  | { readonly jobId: string; readonly kind: 'generate_specification' | 'generate_tasks' | 'validate_specification' };
+
+/**
+ * What kind of job the queue handed the worker, and — for an initialise job —
+ * the workspace to initialise. The worker dispatches on this: initialise jobs
+ * go to the provisioning consumer, everything else to the generation runner.
+ */
+export async function describeJob(jobId: string): Promise<JobDescription> {
+  const job = await prismaClient().generationJob.findUnique({ where: { id: jobId } });
+  if (job === null) throw new JobNotFoundError(jobId);
+  if (job.kind === 'initialise_workspace') {
+    const refs = job.inputRefs as { workspace?: WorkspaceToInitialise } | null;
+    if (!refs?.workspace) {
+      throw new Error(`Initialise job "${jobId}" carries no workspace. The prepare step should have recorded one.`);
+    }
+    return { jobId, kind: 'initialise_workspace', workspace: refs.workspace };
+  }
+  return { jobId, kind: job.kind as Exclude<JobDescription['kind'], 'initialise_workspace'> };
+}
+
+export type InitialisationOutcome = (
+  | { readonly ok: true; readonly stepsCompleted: readonly InitialiseStep[]; readonly filesWritten: readonly string[] }
+  | {
+      readonly ok: false;
+      readonly failedStep: InitialiseStep;
+      readonly reason: string;
+      readonly stepsCompleted: readonly InitialiseStep[];
+      readonly filesWritten: readonly string[];
+    }
+) & { readonly engineTag: string; readonly bundleVersion: string };
+
+/**
+ * Record what the worker's initialise step did (`data-model.md` §2): one more
+ * append-only provisioning record carrying the prepare steps the previous
+ * record completed plus the initialise steps this one did, the project moved to
+ * `provisioned` (with `provisionedAt`) or `failed` (with the step), and the job
+ * settled. The same function the setup skill's report will reach through
+ * `EPIC-043`.
+ */
+export async function finaliseInitialisation(jobId: string, outcome: InitialisationOutcome): Promise<void> {
+  const db = prismaClient();
+  const job = await db.generationJob.findUnique({ where: { id: jobId } });
+  if (job === null) throw new JobNotFoundError(jobId);
+
+  const ledger = new PrismaGenerationJobLedger(db.generationJob);
+  if (job.state === 'queued') await ledger.updateState(jobId, { state: 'running', startedAt: new Date() });
+
+  const records = new PrismaProvisioningRecordStore(db.provisioningRecord);
+  const previous = await records.latestForProject(job.workspaceId, job.projectId);
+  const prepareSteps = (previous?.stepsCompleted ?? []).filter((s) => !INITIALISE_STEP_SET.has(s));
+  const now = new Date();
+
+  await records.append({
+    id: randomUUID(),
+    workspaceId: job.workspaceId,
+    projectId: job.projectId,
+    actorId: job.requestedById,
+    correlationId: job.correlationId,
+    startedAt: job.startedAt ?? now,
+    endedAt: now,
+    outcome: outcome.ok ? 'succeeded' : 'failed',
+    stepsCompleted: [...prepareSteps, ...outcome.stepsCompleted],
+    failedStep: outcome.ok ? null : outcome.failedStep,
+    failureReason: outcome.ok ? null : outcome.reason.slice(0, 500),
+    engineTag: outcome.engineTag,
+    bundleVersion: outcome.bundleVersion,
+    filesWritten: [...outcome.filesWritten],
+  });
+
+  await db.project.update({
+    where: { id: job.projectId },
+    data: outcome.ok ? { provisioningState: 'provisioned', provisionedAt: now } : { provisioningState: 'failed' },
+  });
+
+  await ledger.updateState(
+    jobId,
+    outcome.ok ? { state: 'succeeded', endedAt: now } : { state: 'failed', failureReason: 'engine_error', endedAt: now },
+  );
+}
+
+const INITIALISE_STEP_SET: ReadonlySet<string> = new Set(['run_engine_init', 'copy_extension', 'register_hooks', 'verify_structure']);
 
 export interface EngineRegistrationEntry {
   readonly name: string;

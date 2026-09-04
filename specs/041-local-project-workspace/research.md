@@ -212,10 +212,10 @@ Docker and is skipped where Docker is absent, which is exactly when the regressi
 **Decision**: the worker's initialise step runs, with the project directory as working directory:
 
 ```
-uvx --from git+https://github.com/github/spec-kit.git@<PMI_SPECKIT_TAG> specify init --here --force --integration <agentIntegration> --script <scriptType>
+uvx --from git+https://github.com/github/spec-kit.git@<PMI_ENGINE_TAG> specify init --here --force --integration <agentIntegration> --script <scriptType>
 ```
 
-`PMI_SPECKIT_TAG` is configuration with default `v0.16.4` — the tag the engine image already pins
+`PMI_ENGINE_TAG` is configuration with default `v0.16.4` — the tag the engine image already pins
 (`engine-adapters/speckit/docker/Dockerfile`, `specify-cli==0.16.4`) — so the platform initialises a
 directory with the same Spec Kit the sandbox runs. The tag is written into `.pmi/project.json` and
 the `ProvisioningRecord` (`FR-LPW-008`). `--ignore-agent-tools` is **not** passed: on the user's

@@ -40,8 +40,8 @@ suite('T1053 · a re-run links to its parent and never reopens it', () => {
     await prisma.$executeRawUnsafe(
       `INSERT INTO "executions"
          ("id","correlationId","idempotencyKey","workspaceId","command","argsSanitized",
-          "initiatorType","initiatorId","surface","contractVersion","parentExecutionId")
-       VALUES ($1,'c1',$1,$2,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0',$3)`,
+          "initiatorType","initiatorId","surface","contractVersion","parentExecutionId","assurance")
+       VALUES ($1,'c1',$1,$2,'specify','{}'::jsonb,'agent','p_agent','fixture','1.0',$3,'local')`,
       id,
       WS,
       parent,

@@ -103,7 +103,7 @@ export interface JobView {
   workspaceId: string;
   projectId: string;
   jobKey: string;
-  kind: 'generate_specification' | 'generate_tasks' | 'validate_specification';
+  kind: 'generate_specification' | 'generate_tasks' | 'validate_specification' | 'initialise_workspace';
   state: JobState;
   failureReason: EngineFailureReason | null;
   startedAt: Date | null;

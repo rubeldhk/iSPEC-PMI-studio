@@ -25,7 +25,7 @@ const posix = readProjectsRootConfig({
   PMI_PROJECTS_ROOT: '/projects',
   PMI_PROJECTS_ROOT_HOST: '/home/dev/pmi-projects',
   PMI_PUBLIC_URL: 'http://localhost:3000',
-  PMI_SPECKIT_TAG: 'v0.16.4',
+  PMI_ENGINE_TAG: 'v0.16.4',
   PMI_MCP_SERVER_VERSION: '0.1.0',
   PMI_INITIALISE_WAIT_MS: '30000',
 });
@@ -43,7 +43,7 @@ describe('T1333 · configuration', () => {
       root: '/p',
       hostRoot: '/p',
       publicUrl: 'http://localhost:3000',
-      specKitTag: 'v0.16.4',
+      engineTag: 'v0.16.4',
       mcpServerVersion: '0.1.0',
       initialiseWaitMs: 30000,
     });

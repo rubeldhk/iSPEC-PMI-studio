@@ -24,7 +24,7 @@ const VARIABLES = [
   'PMI_PROJECTS_ROOT',
   'PMI_PROJECTS_ROOT_HOST',
   'PMI_PUBLIC_URL',
-  'PMI_SPECKIT_TAG',
+  'PMI_ENGINE_TAG',
   'PMI_MCP_SERVER_VERSION',
   'PMI_INITIALISE_WAIT_MS',
 ] as const;
@@ -62,7 +62,7 @@ describe('T1310 · .env.example declares the six local-workspace variables', () 
   });
 
   it('pins the Spec Kit tag with a leading v, as the release tags are spelled', () => {
-    expect(envExample).toMatch(/^PMI_SPECKIT_TAG=v\d+\.\d+\.\d+/m);
+    expect(envExample).toMatch(/^PMI_ENGINE_TAG=v\d+\.\d+\.\d+/m);
   });
 });
 

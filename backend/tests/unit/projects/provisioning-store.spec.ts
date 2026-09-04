@@ -23,7 +23,7 @@ const record = (over: Partial<ProvisioningRecord> = {}): ProvisioningRecord => (
   stepsCompleted: ['check_root'],
   failedStep: null,
   failureReason: null,
-  specKitTag: null,
+  engineTag: null,
   bundleVersion: '0.1.0',
   filesWritten: [],
   ...over,

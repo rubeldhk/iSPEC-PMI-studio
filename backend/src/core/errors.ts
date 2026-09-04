@@ -19,6 +19,8 @@ export type ErrorCode =
   | 'engine_unavailable'
   | 'provider_unavailable'
   | 'governance_seam_unbound'
+  // EPIC-041 T1334 — the platform exists and cannot currently write a project directory (503).
+  | 'projects_root_unavailable'
   | 'internal_error';
 
 export interface ErrorBody {
@@ -183,6 +185,7 @@ const STATUS: Record<ErrorCode, number> = {
   engine_unavailable: 422,
   provider_unavailable: 502,
   governance_seam_unbound: 503,
+  projects_root_unavailable: 503,
   internal_error: 500,
 };
 

@@ -19,6 +19,7 @@ import {
   extensionDir,
   skillsDir,
   skillsPathFor,
+  DEFAULT_AGENT_INTEGRATION,
 } from '../src/index.js';
 
 describe('T1316 · version', () => {
@@ -89,5 +90,11 @@ describe('T1316 · skillsPathFor is configuration, and refuses rather than guess
     // A '*' or 'default' key would be the silent fallback the requirement forbids.
     expect(SKILLS_PATH_BY_INTEGRATION).not.toHaveProperty('*');
     expect(SKILLS_PATH_BY_INTEGRATION).not.toHaveProperty('default');
+  });
+});
+
+describe("DEFAULT_AGENT_INTEGRATION (FR-LPW-006)", () => {
+  it("is an integration this bundle can place a skill for — the API never names one", () => {
+    expect(skillsPathFor(DEFAULT_AGENT_INTEGRATION)).toMatchObject({ ok: true });
   });
 });
