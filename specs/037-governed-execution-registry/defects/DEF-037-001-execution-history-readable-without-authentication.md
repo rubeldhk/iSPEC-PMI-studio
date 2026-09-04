@@ -132,3 +132,14 @@ The two faults, each with the test that now proves its absence:
 registered scope; live — every route answers an absent credential with the one `401`. `T1038`'s
 posture moves from **BLOCKED** to **delivered by `EPIC-043`** when that Epic closes; until then
 this annotation records the plan, not the fact.
+
+## Delivered — 2026-09-04, `EPIC-043` `/speckit-implement` (`T1461`)
+
+The annotation above is now a fact, not a plan. `ExecutionsController` is mounted in
+`backend/src/modules/executions/executions.module.ts` behind `ConnectorAuthGuard` on every route;
+`backend/tests/architecture/executions-mounted.spec.ts` holds it there (static: guard and a registered
+scope on every handler; live: the composed application answers an absent credential with the one
+`401` on all eight routes), and was observed red by removing the guard (`SC-PIC-009`).
+`backend/tests/integration/mounted-registry.spec.ts` presents absent, malformed, unknown and
+other-project credentials to every route and receives byte-identical refusals with nothing performed;
+`identity` in a body is `400 identity_not_accepted`. `T1038`'s posture: **delivered by `EPIC-043`**.
