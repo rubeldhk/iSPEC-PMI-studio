@@ -243,3 +243,12 @@ then T1424 → T1425 → T1427 → T1429 ;  T1432 ;  T1434
 4. **US3, US4, US5** in that order; each is small and independently demonstrable.
 5. **Polish and closure**: the transcript is the last thing written, because it is the only thing
    here that a person, not a test, will read first.
+
+## Phase 9: Convergence
+
+*Appended by `/speckit-converge` on 2026-09-04 (Constitution VII). Findings F1–F4 of that session; F5 (`SC-PIC-005` transcript) is already the open `T1458` and F6 (publication) the open `T1464`, neither duplicated.*
+
+- [ ] T1467 [P] Write failing unit tests in `backend/tests/unit/connector/connector-auth.guard.spec.ts` (extend) — a refused credential (absent, malformed, unknown, revoked, other-project) writes one audit entry with `actorId: null`, `action: 'access_refused'`, `outcome: 'refused'`, the route's scope and the refusal code in `detail`, and never the presented value — then have `ConnectorAuthGuard` in `backend/src/modules/connector/connector-auth.guard.ts` record it through an optional audit port wired in `backend/src/modules/connector/connector.module.ts` (unit test: T1467) per FR-PIC-036 (partial) — **MEDIUM**
+- [ ] T1468 [P] Extend `backend/tests/architecture/mcp-server-boundary.spec.ts` with a failing scan — no file under `packages/mcp-server/src/` names an engine (`spec[\s_-]?kit`) or a provider (`claude|cursor|codex|copilot|gemini`), not even in a comment — then keep the package clean of them (architecture test: `backend/tests/architecture/mcp-server-boundary.spec.ts`) per FR-PIC-012 (partial) — **LOW**
+- [ ] T1469 [P] Extend `packages/mcp-server/tests/server.spec.ts` with failing tests — every mutating tool accepts an optional `correlationId` and the platform client forwards it as `x-correlation-id`; the contract document `specs/043-pmi-integration-contract/contracts/mcp-tool-surface.md` says so — then add it to `packages/mcp-server/src/tools/execution.ts`, `packages/mcp-server/src/tools/shared.ts` and `packages/mcp-server/src/platform-client.ts` (unit test: T1469) per FR-PIC-004 (partial; `EPIC-037`'s append, complete and comment requests carry no correlation id of their own) — **LOW**
+- [ ] T1470 [P] Extend `packages/mcp-server/tests/main.spec.ts` with a failing test — `serverInfo.version` equals the `version` in `packages/mcp-server/package.json`, read at start rather than repeated as a literal — then replace `PACKAGE_VERSION` in `packages/mcp-server/src/main.ts` with a read of the manifest (unit test: T1470) per FR-PIC-006 and the plan's package design (partial) — **LOW**
