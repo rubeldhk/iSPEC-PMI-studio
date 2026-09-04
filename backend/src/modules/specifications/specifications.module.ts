@@ -19,7 +19,9 @@
 import { Module } from '@nestjs/common';
 import { EnginesModule } from '../engines/engines.module.js';
 import { EngineResolverService } from '../engines/engine-resolver.service.js';
-import { JobsService } from '../jobs/jobs.service.js';
+import { JobsService, type JobQueue, type JobStore } from '../jobs/jobs.service.js';
+import { JOB_QUEUE, JobsModule } from '../jobs/jobs.module.js';
+import { PrismaGenerationJobLedger } from './generation-job.ledger.prisma.js';
 import { REQUIREMENT_STORE, RequirementsModule } from '../requirements/requirements.module.js';
 import type { RequirementStore } from '../requirements/requirements.service.js';
 import {
@@ -130,7 +132,7 @@ import {
 import { prismaClient } from '../../persistence/prisma.js';
 
 @Module({
-  imports: [EnginesModule, RequirementsModule],
+  imports: [EnginesModule, RequirementsModule, JobsModule],
   controllers: [SpecificationsController, SpecificationLifecycleController],
   providers: [
     {
@@ -158,12 +160,23 @@ import { prismaClient } from '../../persistence/prisma.js';
     },
     {
       provide: GENERATION_JOB_LEDGER,
-      useFactory: (): InMemoryGenerationJobLedger => new InMemoryGenerationJobLedger(),
+      // EPIC-041 T1329 (FR-LPW-041, R-041-7) — the real `generation_jobs` rows
+      // when a database is configured; the in-memory ledger is the
+      // database-less posture unit suites run under, never the default of a
+      // deployment that has one. Asserted by tests/architecture/durable-stores.spec.ts.
+      useFactory: (): JobStore & GenerationJobLedger =>
+        process.env['DATABASE_URL']
+          ? new PrismaGenerationJobLedger(prismaClient().generationJob)
+          : new InMemoryGenerationJobLedger(),
     },
     {
       provide: GENERATION_JOBS_SERVICE,
-      inject: [GENERATION_JOB_LEDGER],
-      useFactory: (ledger: InMemoryGenerationJobLedger): JobsService => new JobsService(ledger),
+      // EPIC-041 T1321 — the SAME queue JobsModule dispatches on. Before this
+      // the generation API's JobsService had no queue at all, so a submission
+      // created a row no worker was ever told about (PMI-DOC-004B §2.1).
+      inject: [GENERATION_JOB_LEDGER, JOB_QUEUE],
+      useFactory: (ledger: JobStore & GenerationJobLedger, queue: JobQueue): JobsService =>
+        new JobsService(ledger, queue),
     },
     {
       // T843 — the scope check reads the LIVE requirement register, not a copy.

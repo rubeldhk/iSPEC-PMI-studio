@@ -10,6 +10,8 @@
  * job exists.
  */
 import { Module } from '@nestjs/common';
+import { prismaClient } from '../../persistence/prisma.js';
+import { PrismaTaskStore } from './tasks.store.prisma.js';
 import { newCorrelationId } from '@pmi/observability';
 import { assertSameWorkspace } from '../../core/workspace.guard.js';
 import { EngineResolverService } from '../engines/engine-resolver.service.js';
@@ -92,7 +94,15 @@ class ComposedTasksApi implements TasksApi {
   imports: [EnginesModule, SpecificationsModule, TraceabilityModule],
   controllers: [TasksController],
   providers: [
-    { provide: TASK_STORE, useFactory: (): TaskStore => new InMemoryTaskStore() },
+    {
+      provide: TASK_STORE,
+      // EPIC-041 T1325 (FR-LPW-041, R-041-7) — the real tasks table when a
+      // database is configured. In-memory is the database-less posture unit
+      // suites run under, never a deployment's default. Asserted by
+      // tests/architecture/durable-stores.spec.ts.
+      useFactory: (): TaskStore =>
+        process.env['DATABASE_URL'] ? new PrismaTaskStore(prismaClient().task) : new InMemoryTaskStore(),
+    },
     {
       provide: GenerateTasksService,
       inject: [TASK_STORE, LinkWriterService],

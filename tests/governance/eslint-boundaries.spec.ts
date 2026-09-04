@@ -48,3 +48,39 @@ describe('T540 · the rule carries its reason', () => {
     expect(config).toMatch(/Native §3|agent-contract/);
   });
 });
+
+/**
+ * `T1322` (EPIC-041) — the one permitted worker → backend edge, and only that one.
+ *
+ * `R-041-6`. The worker reaches the platform's persistence through a narrow,
+ * exported barrel — `@pmi/backend/worker-api` — so a generation it completes is
+ * committed by the same code the API uses. Every other worker → backend import
+ * stays forbidden, and backend → worker stays forbidden entirely: the edge points
+ * one way, and it is two exports wide.
+ */
+describe('T1322 · worker may import exactly @pmi/backend/worker-api', () => {
+  /** The `no-restricted-imports` block that applies to `worker/**`. */
+  const workerRule = (() => {
+    const at = config.indexOf("files: ['worker/**/*.ts']");
+    expect(at, 'eslint.config.js has no worker/** rule').toBeGreaterThan(-1);
+    return config.slice(at, config.indexOf('files:', at + 10) === -1 ? undefined : config.indexOf('files:', at + 10));
+  })();
+
+  it('forbids every other backend path', () => {
+    expect(workerRule).toContain('@pmi/backend/*');
+    expect(workerRule).toContain('**/backend/*');
+  });
+
+  it('exempts the barrel by name', () => {
+    expect(workerRule).toContain("'!@pmi/backend/worker-api'");
+  });
+
+  it('and backend never imports the worker', () => {
+    expect(backendRule).toContain('@pmi/worker');
+    expect(backendRule).toContain('**/worker/*');
+  });
+
+  it('names the decision the edge rests on', () => {
+    expect(config).toMatch(/R-041-6|worker-api/);
+  });
+});

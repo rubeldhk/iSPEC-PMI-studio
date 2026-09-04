@@ -2728,5 +2728,6 @@ model ConnectorCredential {
 
   @@index([tokenPrefix])
   @@index([projectId])
+  @@index([workspaceId])
   @@map("connector_credentials")
 }

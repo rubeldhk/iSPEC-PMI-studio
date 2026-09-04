@@ -17,6 +17,8 @@
  */
 import { Module } from '@nestjs/common';
 import { EngineRegistryService } from './engine-registry.service.js';
+import { loadRegisteredEngines } from './registered-engines.js';
+import { prismaClient } from '../../persistence/prisma.js';
 import { EnginesController } from './engines.controller.js';
 import {
   EngineResolverService,
@@ -47,7 +49,16 @@ export class InheritDefaultEngineSelection implements ProjectEngineSelectionPort
   providers: [
     {
       provide: EngineRegistryService,
-      useFactory: (): EngineRegistryService => new EngineRegistryService(),
+      // EPIC-041 T1321 (FR-LPW-042) — descriptor-only engines from what the
+      // worker recorded, when a database is configured. The API resolves and
+      // records engines and never runs one; a DescriptorOnlyEngine refuses to.
+      useFactory: async (): Promise<EngineRegistryService> => {
+        const registry = new EngineRegistryService();
+        if (process.env['DATABASE_URL']) {
+          await loadRegisteredEngines(registry, prismaClient().engineRegistration);
+        }
+        return registry;
+      },
     },
     {
       provide: PROJECT_ENGINE_SELECTION,

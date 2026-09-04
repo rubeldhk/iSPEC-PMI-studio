@@ -61,6 +61,37 @@ export default [
               message:
                 'backend/ must not import an execution provider. Depend on @pmi/execution-contract only — Native §4 forbids business logic depending directly on Docker (FR-AGT-009).',
             },
+            {
+              // EPIC-041 T1323 (R-041-6): the worker → backend edge exists and
+              // points ONE way. backend/ never imports the worker.
+              group: ['@pmi/worker', '**/worker/*'],
+              message:
+                'backend/ must not import the worker. The one permitted edge is worker → @pmi/backend/worker-api (EPIC-041 R-041-6), never the reverse.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // EPIC-041 T1323 (R-041-6) — the ONE permitted edge from the worker into the
+    // backend, two exports wide. `worker/src/main.ts` runs the API's own commit
+    // through `@pmi/backend/worker-api` so a generation it completes is
+    // persisted by the same code the API uses (FR-LPW-040). Every other
+    // backend path stays forbidden: a worker that could import anything from
+    // the backend would erode the service/transport separation T142a protects.
+    // Asserted by tests/governance/eslint-boundaries.spec.ts (T1322).
+    files: ['worker/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@pmi/backend/*', '**/backend/*', '!@pmi/backend/worker-api'],
+              message:
+                'worker/ may import only @pmi/backend/worker-api — the two-export barrel (EPIC-041 R-041-6). Nothing else in backend/ is the worker\'s to reach.',
+            },
           ],
         },
       ],
@@ -88,6 +119,12 @@ export default [
       // without touching both. Scoped to the single FILE, deliberately —
       // widening it to `backend/tests/**` is how RAID R-05 plays out.
       'backend/tests/integration/agent-swap.spec.ts',
+      // EPIC-041 T1383 — the same exception, for the same reason, on the
+      // API-to-worker axis. The route-through proof drives a real BullMQ
+      // consumer running the API's own commit against the fixture engine, and
+      // cannot be written without an engine on the worker's side of the
+      // queue. Scoped to the single FILE, deliberately.
+      'backend/tests/integration/generation-persists-through-route.spec.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',

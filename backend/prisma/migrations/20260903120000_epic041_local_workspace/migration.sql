@@ -110,6 +110,7 @@ CREATE TABLE "connector_credentials" (
 
 CREATE INDEX "connector_credentials_prefix_idx" ON "connector_credentials"("tokenPrefix");
 CREATE INDEX "connector_credentials_project_idx" ON "connector_credentials"("projectId");
+CREATE INDEX "connector_credentials_workspace_idx" ON "connector_credentials"("workspaceId");
 
 ALTER TABLE "connector_credentials"
     ADD CONSTRAINT "connector_credentials_workspaceId_fkey"

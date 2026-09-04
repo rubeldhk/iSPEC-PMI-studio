@@ -65,8 +65,16 @@ function migrationSql(): string {
 /** Table name → the body of its CREATE TABLE statement. */
 function createdTables(sql: string): Map<string, string> {
   const tables = new Map<string, string>();
-  for (const match of sql.matchAll(/CREATE TABLE\s+"?(\w+)"?\s*\(([\s\S]*?)\n\);/g)) {
-    const [, name, body] = match;
+  // The body ends at ITS OWN closing paren — `\n);` for a plain table, or
+  // `\n) PARTITION BY …` for a partitioned one, which is then skipped as the
+  // comment on the expected list explains. (EPIC-041 T1319: the previous lazy
+  // `[\s\S]*?\n\);` had no terminator for the partitioned form, so it ran from
+  // EPIC-038's `context_index_entries` forward across file boundaries to the
+  // first `\n);` in whatever migration came next, swallowing that table's DDL
+  // and reporting the partitioned one as a plain table.)
+  for (const match of sql.matchAll(/CREATE TABLE\s+"?(\w+)"?\s*\(([\s\S]*?)\n\)(;| PARTITION BY)/g)) {
+    const [, name, body, terminator] = match;
+    if (terminator !== ';') continue;
     if (name && body) tables.set(name, body);
   }
   return tables;
@@ -131,6 +139,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'change_replan_obligations',
       'change_requests',
       'clarifications',
+      // EPIC-041 T1319 — the local workspace: a project-scoped credential held
+      // as a digest, and the append-only record of each provisioning attempt.
+      'connector_credentials',
       'connector_registrations',
     // EPIC-038 Engineering Context (T1231).
     //
@@ -185,6 +196,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'projects',
       'provisional_approval_overrides',
       'provisional_markings',
+      'provisioning_records',
       'publish_records',
       'published_file_references',
       'recorded_questions',
@@ -257,6 +269,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // is *recorded* — in each case the timestamp IS the record (FR-RUN-005b,
       // FR-RUN-020, SC-006), not bookkeeping about the row.
       provisional_approval_overrides: 'approvedAt',
+      // EPIC-041 T1319: a provisioning attempt *starts* — the timestamp is the
+      // record's own first fact (data-model.md §2), not bookkeeping about the row.
+      provisioning_records: 'startedAt',
       review_sessions: 'openedAt',
       answers: 'recordedAt',
       // EPIC-024: a grant is *granted*, an attempt is *attempted* — the

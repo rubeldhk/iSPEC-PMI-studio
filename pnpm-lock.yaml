@@ -274,6 +274,9 @@ importers:
       '@pmi/agent-contract':
         specifier: workspace:*
         version: link:../packages/agent-contract
+      '@pmi/backend':
+        specifier: workspace:*
+        version: link:../backend
       '@pmi/engine-adapter-fixture':
         specifier: workspace:*
         version: link:../engine-adapters/fixture

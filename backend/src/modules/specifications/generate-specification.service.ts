@@ -602,9 +602,19 @@ export class GenerateSpecificationService implements GenerationJobApi {
     if (!this.ledger) return;
     const job = await this.ledger.findById(jobId);
     if (!job) return;
-    // Validated by the machine, so an impossible terminal write fails here
-    // rather than silently producing a job whose history cannot have happened.
-    applyTransition(job.state, next.state, next.failureReason);
+    // EPIC-041 T1321 — in a composed deployment the ledger and the store address
+    // the SAME generation_jobs row, so `commitGeneration` and `recordJobOutcome`
+    // have already written the terminal state by the time this runs. Repeating a
+    // terminal state is not a transition and the machine rightly refuses one;
+    // treating it as one turned every persisted success into `engine_error`
+    // (found by T1383, the first run of this path against a shared table).
+    // Same state: write only what the commit could not know (timestamps, the
+    // result reference). Different state: validated by the machine, so an
+    // impossible terminal write fails here rather than silently producing a job
+    // whose history cannot have happened.
+    if (job.state !== next.state) {
+      applyTransition(job.state, next.state, next.failureReason);
+    }
     await this.ledger.updateState(jobId, next);
   }
 }

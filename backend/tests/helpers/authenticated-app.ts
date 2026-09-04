@@ -110,3 +110,37 @@ export async function startAuthenticatedApp(
     },
   };
 }
+
+/**
+ * `T1332` / `T1383` (EPIC-041) — boot a SECOND application against a database
+ * the first one already used, without a new container.
+ *
+ * `startAuthenticatedApp` creates a database and an application together, which
+ * is right for every test that needs one of each. A restart test needs two
+ * applications and one database, in sequence: what the first wrote, the second
+ * must read. The container stays the caller's to stop.
+ */
+export async function rebootApp(
+  databaseUrl: string,
+  ids: { workspaceId: string; userId: string; prefix?: string },
+): Promise<{ app: INestApplication; cookie: string }> {
+  process.env['DATABASE_URL'] = databaseUrl;
+  const { NestFactory } = await import('@nestjs/core');
+  const { AppModule } = await import('../../src/app.module.js');
+  const { ErrorFilter } = await import('../../src/core/error.filter.js');
+  const { SessionService } = await import('../../src/modules/auth/sessions.js');
+  const { SESSION_COOKIE } = await import('../../src/modules/auth/auth.controller.js');
+
+  const app = await NestFactory.create(AppModule, { logger: false });
+  app.useGlobalFilters(new ErrorFilter());
+  app.setGlobalPrefix(ids.prefix ?? 'v1');
+  await app.init();
+
+  const session = app.get(SessionService, { strict: false }).create({
+    userId: ids.userId,
+    workspaceId: ids.workspaceId,
+    email: `${ids.userId}@example.test`,
+    displayName: 'Test User',
+  });
+  return { app, cookie: `${SESSION_COOKIE}=${session.token}` };
+}

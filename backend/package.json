@@ -45,5 +45,8 @@
     "prisma": "^5",
     "supertest": "^7",
     "testcontainers": "^10"
+  },
+  "exports": {
+    "./worker-api": "./src/worker-api.ts"
   }
 }

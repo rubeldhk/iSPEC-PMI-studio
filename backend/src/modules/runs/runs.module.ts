@@ -8,6 +8,13 @@
  * (EPIC-014 F-11.2).
  */
 import { Module } from '@nestjs/common';
+import { prismaClient } from '../../persistence/prisma.js';
+import {
+  PrismaMarkingStore,
+  PrismaOverrideStore,
+  PrismaQuestionStore,
+  PrismaRunStore,
+} from './runs.store.prisma.js';
 import { ProvisionalApprovalService, InMemoryOverrideStore, type OverrideStore } from './provisional-approval.service.js';
 import { InMemoryMarkingStore, ProvisionalService, type MarkingStore } from './provisional.service.js';
 import { InMemoryQuestionStore, QuestionRecorderService, type QuestionStore } from './question-recorder.service.js';
@@ -22,10 +29,35 @@ export const OVERRIDE_STORE = Symbol('OVERRIDE_STORE');
 @Module({
   controllers: [RunsController],
   providers: [
-    { provide: RUN_STORE, useFactory: (): RunStore => new InMemoryRunStore() },
-    { provide: QUESTION_STORE, useFactory: (): QuestionStore => new InMemoryQuestionStore() },
-    { provide: MARKING_STORE, useFactory: (): MarkingStore => new InMemoryMarkingStore() },
-    { provide: OVERRIDE_STORE, useFactory: (): OverrideStore => new InMemoryOverrideStore() },
+    // EPIC-041 T1327 (FR-LPW-041, R-041-7) — Prisma stores when a database is
+    // configured; the in-memory stores remain the database-less posture unit
+    // suites run under. Asserted by tests/architecture/durable-stores.spec.ts.
+    {
+      provide: RUN_STORE,
+      useFactory: (): RunStore =>
+        process.env['DATABASE_URL'] ? new PrismaRunStore(prismaClient().run) : new InMemoryRunStore(),
+    },
+    {
+      provide: QUESTION_STORE,
+      useFactory: (): QuestionStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaQuestionStore(prismaClient().recordedQuestion)
+          : new InMemoryQuestionStore(),
+    },
+    {
+      provide: MARKING_STORE,
+      useFactory: (): MarkingStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaMarkingStore(prismaClient().provisionalMarking)
+          : new InMemoryMarkingStore(),
+    },
+    {
+      provide: OVERRIDE_STORE,
+      useFactory: (): OverrideStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaOverrideStore(prismaClient().provisionalApprovalOverride)
+          : new InMemoryOverrideStore(),
+    },
     {
       provide: RunModeService,
       inject: [RUN_STORE],

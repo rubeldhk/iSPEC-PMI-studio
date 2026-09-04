@@ -76,6 +76,8 @@ const PROJECT_DIRS: Record<string, string> = {
   // EPIC-028 T576a — the manual runner's logic. `scripts/` is application code
   // under Constitution I, so Constitution V applies to it like anything else.
   scripts: 'scripts/tests',
+  // EPIC-041 T1317 — the workspace bundle (setup skill + PMI extension), versioned together.
+  'workspace-bundle': 'packages/workspace-bundle',
   // EPIC-005 T056a — the first component tests, registered the day the
   // PMI-DOC-004 hold discharged and the frontend stopped being a scaffold.
   frontend: 'frontend/tests/unit',
