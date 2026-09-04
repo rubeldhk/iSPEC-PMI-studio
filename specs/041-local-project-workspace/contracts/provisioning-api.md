@@ -117,6 +117,8 @@ mapping ship here; `EPIC-043` mounts the execution registry and the sync routes 
 guard is exercised in this Epic through a single diagnostic route, `GET /connector/whoami`, which
 returns the project id the credential opens and nothing else — enough for the setup skill to verify
 a token (bundle v0.1, `R-041-9`) and for the Tier 1 test to drive the guard through a real route.
+Its project-addressed form, `GET /connector/projects/:projectId/whoami`, is the same handler behind
+the same scope; it exists so Scenario 9 can present A's credential for B and observe the `404`.
 
 ---
 

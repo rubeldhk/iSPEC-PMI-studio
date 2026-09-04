@@ -6,7 +6,7 @@
  * PC-1: this is a transport. It resolves the acting context, strips anything a
  * caller sent that could widen tenancy, and delegates. No business logic.
  */
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Optional, Param, Patch, Post, Req, Res, forwardRef } from '@nestjs/common';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
 // Value import: the class is the DI TOKEN. A `import type` here erases at
@@ -16,6 +16,8 @@ import type { CreateProjectInput, ProjectRecord, UpdateProjectInput } from './pr
 import { ProvisioningService } from './provisioning.service.js';
 import type { ProvisionRequest } from './provisioning.service.js';
 import type { ProvisioningRecord } from './provisioning.types.js';
+import { ConnectorCredentialService } from '../connector/connector-credential.service.js';
+import type { MintedCredentialBody } from '../connector/connector.controller.js';
 
 /**
  * A product endpoint with no session is 401 (contract: "No valid session") —
@@ -36,6 +38,8 @@ function stripScope<T extends Record<string, unknown>>(body: T): T {
 /** `GET /projects/:id` and the create/provision responses: the record plus its latest provisioning (FR-LPW-051). */
 export interface ProjectView extends ProjectRecord {
   latestProvisioning: ProvisioningRecord | null;
+  /** Present ONLY in the create response of a provisioned project, and the value in it exactly once (FR-LPW-020, FR-LPW-021). */
+  connectorCredential?: MintedCredentialBody | null;
 }
 
 export type CreateProjectBody = CreateProjectInput & Partial<ProvisionRequest>;
@@ -53,6 +57,9 @@ export class ProjectsController {
     // throws. Guarded by controller-composition.spec.ts (DEF-001-005).
     @Inject(ProjectsService) private readonly projects: ProjectsService,
     @Inject(ProvisioningService) private readonly provisioner: ProvisioningService,
+    // Optional so the unit tests can build the controller without the connector
+    // module; the composed app always supplies it (controller-composition.spec).
+    @Optional() @Inject(forwardRef(() => ConnectorCredentialService)) private readonly credentials?: ConnectorCredentialService,
   ) {}
 
   @Get()
@@ -84,7 +91,12 @@ export class ProjectsController {
     await this.provisioner.check(actingCtx, request);
     const created = await this.projects.create(actingCtx, projectInput as CreateProjectInput);
     const { project, record } = await this.provisioner.prepare(actingCtx, created.id, request);
-    return { ...project, latestProvisioning: record };
+    // FR-LPW-020 — a credential at provisioning, its value in this response only.
+    const connectorCredential =
+      project.provisioningState === 'prepared' && this.credentials
+        ? await this.credentials.mint(actingCtx, project.id, { label: 'provisioning' }).then((m) => ({ ...m.record, value: m.value }))
+        : null;
+    return { ...project, latestProvisioning: record, connectorCredential };
   }
 
   @Get(':id')

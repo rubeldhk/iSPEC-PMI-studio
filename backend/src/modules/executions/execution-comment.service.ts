@@ -63,7 +63,7 @@ export interface AddCommentInput {
   workspaceId: string;
   executionId: string;
   authorId: string;
-  authorType: 'human' | 'agent' | 'service';
+  authorType: 'human' | 'agent' | 'service' | 'connector';
   agentIdentitySnapshotId?: string;
   commentType: CommentType;
   body: string;

@@ -71,7 +71,7 @@ export const DEFAULT_SEPARATION_POLICY: SeparationPolicy = Object.freeze({
  */
 export interface ResolvedPrincipalIdentity {
   readonly principalId: string;
-  readonly kind: 'human' | 'agent' | 'service';
+  readonly kind: 'human' | 'agent' | 'service' | 'connector';
   /** The accountable human. `null` for a human principal. */
   readonly sponsorUserId: string | null;
 }

@@ -113,7 +113,7 @@ export interface ActingContext {
 export interface OwnershipBootstrap {
   /** Who asked for this — human, agent or service. */
   readonly initiatingActorId: string;
-  readonly initiatingActorType: 'human' | 'agent' | 'service';
+  readonly initiatingActorType: 'human' | 'agent' | 'service' | 'connector';
   /**
    * The human owner. For a human actor this may be themselves; for an agent or
    * service it is the **mandatory sponsor**, and must be someone else.

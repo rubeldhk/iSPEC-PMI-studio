@@ -40,7 +40,7 @@ import { ForbiddenError, ProviderUnavailableError } from '../../core/errors.js';
 export interface ActorRecord {
   readonly id: string;
   readonly workspaceId: string;
-  readonly kind?: 'human' | 'agent' | 'service';
+  readonly kind?: 'human' | 'agent' | 'service' | 'connector';
   readonly state?: 'active' | 'suspended' | 'revoked';
 }
 
@@ -191,7 +191,7 @@ export interface NonHumanPrincipalLookup {
     principalId: string,
   ): Promise<{
     principalId: string;
-    kind: 'agent' | 'service';
+    kind: 'agent' | 'service' | 'connector';
     workspaceId: string;
     state: 'active' | 'suspended' | 'revoked';
     identityVersion: number;

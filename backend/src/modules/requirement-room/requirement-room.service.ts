@@ -77,7 +77,7 @@ export interface PrincipalResolver {
   ): Promise<{
     readonly id: string;
     readonly workspaceId: string;
-    readonly kind?: 'human' | 'agent' | 'service';
+    readonly kind?: 'human' | 'agent' | 'service' | 'connector';
     readonly state?: 'active' | 'suspended' | 'revoked';
   }>;
 }
@@ -86,7 +86,7 @@ export interface PrincipalResolver {
 export interface ResolvedActor {
   readonly workspaceId: string;
   readonly id: string;
-  readonly kind: 'human' | 'agent' | 'service';
+  readonly kind: 'human' | 'agent' | 'service' | 'connector';
 }
 
 /**
@@ -98,7 +98,8 @@ export interface ResolvedActor {
  * property the decision refusal depends on.
  */
 function asActorRef(actor: ResolvedActor): ActorRef {
-  const kind = actor.kind === 'service' ? 'automation' : actor.kind;
+  // A connector credential's principal (EPIC-041) is a service account too.
+  const kind = actor.kind === 'service' || actor.kind === 'connector' ? 'automation' : actor.kind;
   return { kind, id: actor.id };
 }
 

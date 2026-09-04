@@ -133,7 +133,7 @@ function toPrincipal(row: PrincipalRow): NonHumanPrincipal {
 
 export interface RegisterPrincipalInput {
   workspaceId: string;
-  kind: 'agent' | 'service';
+  kind: 'agent' | 'service' | 'connector';
   /** The capability this principal exercises. Metadata, never identity. */
   descriptorRef: string;
   sponsorUserId: string;

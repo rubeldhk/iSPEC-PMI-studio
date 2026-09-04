@@ -70,7 +70,7 @@ export interface LoopPrincipalResolver {
   ): Promise<{
     readonly id: string;
     readonly workspaceId: string;
-    readonly kind?: 'human' | 'agent' | 'service';
+    readonly kind?: 'human' | 'agent' | 'service' | 'connector';
     readonly state?: 'active' | 'suspended' | 'revoked';
   }>;
 }
@@ -192,7 +192,7 @@ export class LoopService {
   async #acting(principal: LoopPrincipal | undefined): Promise<{
     workspaceId: string;
     id: string;
-    kind: 'human' | 'agent' | 'service';
+    kind: 'human' | 'agent' | 'service' | 'connector';
   }> {
     if (!principal?.workspaceId || !principal.userId) {
       throw new UnauthenticatedError('No valid session.');

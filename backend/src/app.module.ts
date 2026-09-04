@@ -10,6 +10,7 @@ import { DecisionsModule } from './modules/decisions/decisions.module.js';
 import { EnginesModule } from './modules/engines/engines.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
+import { ConnectorModule } from './modules/connector/connector.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
@@ -72,6 +73,8 @@ function clientBuildPath(): string {
     EnginesModule,
     JobsModule,
     ProjectsModule,
+    // EPIC-041 T1362 — connector credentials and the guard (R-041-3).
+    ConnectorModule,
     RequirementsModule,
     SpecificationsModule,
     TasksModule,

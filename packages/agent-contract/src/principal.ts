@@ -42,7 +42,7 @@
  */
 
 /** What kind of thing is acting. Humans are `User`; the rest are registered here. */
-export const PRINCIPAL_KINDS = Object.freeze(['human', 'agent', 'service'] as const);
+export const PRINCIPAL_KINDS = Object.freeze(['human', 'agent', 'service', 'connector'] as const);
 export type PrincipalKind = (typeof PRINCIPAL_KINDS)[number];
 
 /**

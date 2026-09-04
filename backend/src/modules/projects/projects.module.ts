@@ -22,10 +22,11 @@
  * *initialisation pending*, the workspace bundle (`R-041-9`), `git init` as a
  * tool on PATH, and the audit service. **Nothing here names an engine.**
  */
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BUNDLE_VERSION, DEFAULT_AGENT_INTEGRATION, skillsDir, skillsPathFor } from '@pmi/workspace-bundle';
 import type { ProjectEngineSelectionPort } from '../engines/engine-resolver.service.js';
 import { AuditModule } from '../audit/audit.module.js';
+import { ConnectorModule } from '../connector/connector.module.js';
 import { AuditService } from '../audit/audit.service.js';
 import { JobsModule } from '../jobs/jobs.module.js';
 import { JobsService } from '../jobs/jobs.service.js';
@@ -60,7 +61,9 @@ export class ProjectEngineSelection implements ProjectEngineSelectionPort {
 }
 
 @Module({
-  imports: [JobsModule, AuditModule],
+  // forwardRef: provisioning mints a credential (FR-LPW-020) and minting reads
+  // the project — the cycle Nest's circular-dependency guidance covers.
+  imports: [JobsModule, AuditModule, forwardRef(() => ConnectorModule)],
   controllers: [ProjectsController],
   providers: [
     {
