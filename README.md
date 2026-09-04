@@ -95,11 +95,11 @@ SEED_USER_EMAIL=dev@pmi.local SEED_USER_PASSWORD='choose-something' pnpm --filte
 
 The seed refuses to run with `NODE_ENV=production`.
 
-### Local workspace — the six variables (EPIC-041)
+### Local workspace — the variables (EPIC-041)
 
 A project can own a **directory on your machine** that PMI Studio prepares and your own agent
-works in (`specs/041-local-project-workspace`). Six variables govern it; `.env.example` carries
-the defaults:
+works in (`specs/041-local-project-workspace`). Six variables govern the directory and two the
+defaults a project gets; `.env.example` carries them all:
 
 | Variable | What it is | Default |
 |---|---|---|
@@ -109,6 +109,8 @@ the defaults:
 | `PMI_ENGINE_TAG` | the pinned tag of the engine's local toolkit the initialise step installs | `v0.16.4` |
 | `PMI_MCP_SERVER_VERSION` | the MCP server package version written into each project's `.mcp.json` | see `.env.example` |
 | `PMI_INITIALISE_WAIT_MS` | how long a *prepared* project waits for a worker before it reads *initialisation pending* | `30000` |
+| `PMI_DEFAULT_AGENT_INTEGRATION` | the agent integration a project gets when its creator chooses none | empty: the workspace bundle's default |
+| `PMI_DEFAULT_SCRIPT_TYPE` | the script type (`sh` or `ps`) a project gets when its creator chooses none | `sh` |
 
 The credential the agent uses is never written into the directory: `.mcp.json` carries the
 reference `${PMI_STUDIO_TOKEN}`, and you set that variable yourself from the value PMI Studio shows

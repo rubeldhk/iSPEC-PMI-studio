@@ -81,3 +81,20 @@ describe('T1310 · docker-compose.yml mounts the projects root into the app serv
     expect(app).toMatch(/PMI_PUBLIC_URL:\s*\$\{PMI_PUBLIC_URL/);
   });
 });
+
+describe('T1396 · the two default variables are configuration, not code (FR-LPW-005)', () => {
+  const DEFAULTS = ['PMI_DEFAULT_AGENT_INTEGRATION', 'PMI_DEFAULT_SCRIPT_TYPE'] as const;
+
+  it.each(DEFAULTS)('.env.example declares %s', (name) => {
+    expect(envExample).toMatch(new RegExp(`^${name}=`, 'm'));
+  });
+
+  it.each(DEFAULTS)('docker-compose.yml passes %s through from the environment', (name) => {
+    expect(appService()).toMatch(new RegExp(name + ':\\s*\\$\\{' + name));
+  });
+
+  it('the script-type default in .env.example is one of the initialiser\'s two words', () => {
+    const match = /^PMI_DEFAULT_SCRIPT_TYPE=(.*)$/m.exec(envExample);
+    expect(match?.[1]?.trim()).toMatch(/^(sh|ps)$/);
+  });
+});

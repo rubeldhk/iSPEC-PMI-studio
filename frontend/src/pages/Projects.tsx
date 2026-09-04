@@ -17,6 +17,7 @@ import {
   type Project,
   type ProvisioningRecord,
   type Requirement,
+  type Run,
 } from '../services/api';
 import { CredentialOnce } from '../components/CredentialOnce';
 import { JobProgress } from '../components/JobProgress';
@@ -178,7 +179,10 @@ function stateGuidance(project: Project, latest: ProvisioningRecord | null): str
  * step in words.
  */
 export function ProvisioningPanel({ api, project }: { api: ApiClient; project: Project }): ReactElement {
+  // T1397 (FR-LPW-051, FR-SHL-060): the history has its own loading and error
+  // states, distinct from the project's — `undefined` is loading.
   const [latest, setLatest] = useState<ProvisioningRecord | null | undefined>(project.latestProvisioning);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (project.latestProvisioning !== undefined) {
@@ -189,7 +193,8 @@ export function ProvisioningPanel({ api, project }: { api: ApiClient; project: P
       try {
         const [first] = await api.listProvisioning(project.id);
         setLatest(first ?? null);
-      } catch {
+      } catch (err) {
+        setHistoryError(message(err));
         setLatest(null);
       }
     })();
@@ -199,6 +204,12 @@ export function ProvisioningPanel({ api, project }: { api: ApiClient; project: P
   return (
     <section className="ds-stack" aria-label="Local workspace" role="region">
       <h2>Local workspace</h2>
+      {latest === undefined && project.rootPath !== null && <LoadingIndicator label="Loading provisioning history" />}
+      {historyError !== null && (
+        <p className="ds-field__error" role="alert">
+          {historyError}
+        </p>
+      )}
       {project.rootPath === null ? (
         <p className="ds-field__hint">{stateGuidance(project, record)}</p>
       ) : (
@@ -227,6 +238,96 @@ export function ProvisioningPanel({ api, project }: { api: ApiClient; project: P
             {stateGuidance(project, record)}
           </p>
         </>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- run
+
+/** States after which the run will not change on its own (`run-mode.service.ts`). */
+const RUN_SETTLED = new Set(['reached_stop_point', 'failed', 'cancelled']);
+
+/**
+ * T1394 (`FR-LPW-042`, US4/AC3): a run is startable from the project screen
+ * and its progress readable there. `POST /projects/:id/runs` existed since
+ * EPIC-023 and nothing on the project screen called it.
+ */
+export function StartRun({ api, projectId, pollMs = 2000 }: { api: ApiClient; projectId: string; pollMs?: number }): ReactElement {
+  const [mode, setMode] = useState('autopilot');
+  const [stopRange, setStopRange] = useState('specify');
+  const [run, setRun] = useState<Run | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function start(): Promise<void> {
+    setError(null);
+    setStarting(true);
+    try {
+      setRun(await api.startRun(projectId, { mode, stopRange }));
+    } catch (err) {
+      setError(message(err));
+    } finally {
+      setStarting(false);
+    }
+  }
+
+  // Refresh the run from the project's list until it settles (there is no
+  // single-run read on the contract; the list is the real entry point).
+  useEffect(() => {
+    if (run === null || RUN_SETTLED.has(run.state)) return;
+    let cancelled = false;
+    const timer = setInterval(() => {
+      void (async (): Promise<void> => {
+        try {
+          const latest = (await api.listRuns(projectId)).find((r) => r.id === run.id);
+          if (!cancelled && latest !== undefined) setRun(latest);
+        } catch {
+          // transient — the next tick retries
+        }
+      })();
+    }, pollMs);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [api, projectId, run, pollMs]);
+
+  return (
+    <section className="ds-stack" aria-labelledby="start-run-heading">
+      <h2 id="start-run-heading">Run</h2>
+      <div className="ds-row">
+        <FormField id="run-mode" label="Run mode">
+          <Select value={mode} onChange={(e) => setMode(e.target.value)}>
+            <option value="autopilot">autopilot</option>
+            <option value="interactive">interactive</option>
+          </Select>
+        </FormField>
+        <FormField id="run-stop-range" label="Stop after">
+          <Select value={stopRange} onChange={(e) => setStopRange(e.target.value)}>
+            <option value="specify">specify</option>
+            <option value="plan">plan</option>
+            <option value="tasks">tasks</option>
+            <option value="implement">implement</option>
+          </Select>
+        </FormField>
+        <Button type="button" disabled={starting} onClick={() => void start()}>
+          Start run
+        </Button>
+      </div>
+      {starting && <LoadingIndicator label="Starting run" />}
+      {error !== null && (
+        <p className="ds-field__error" role="alert">
+          {error}
+        </p>
+      )}
+      {run === null && !starting && <p className="ds-field__hint">No run started yet from this screen.</p>}
+      {run !== null && (
+        <p role="status" aria-label="Run progress">
+          Run {run.id}: {run.state}
+          {run.stoppedAtSelectedRange && <> — stopped after {run.stopRange}, as asked</>}
+          {run.outcomeReason !== null && <> — {run.outcomeReason}</>}
+        </p>
       )}
     </section>
   );
@@ -331,9 +432,11 @@ export interface ProjectDetailProps {
   onBack: () => void;
   /** The register lives with its project; injected so this file stays a page. */
   children?: ReactElement | null;
+  /** How often the run progress refreshes; tests shorten it. */
+  pollMs?: number;
 }
 
-export function ProjectDetail({ api, projectId, onBack, children }: ProjectDetailProps): ReactElement {
+export function ProjectDetail({ api, projectId, onBack, children, pollMs }: ProjectDetailProps): ReactElement {
   const [project, setProject] = useState<Project | null>(null);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -417,6 +520,7 @@ export function ProjectDetail({ api, projectId, onBack, children }: ProjectDetai
       )}
       <ProvisioningPanel api={api} project={project} />
       <GenerateSpecification api={api} projectId={projectId} />
+      <StartRun api={api} projectId={projectId} {...(pollMs !== undefined ? { pollMs } : {})} />
       {children}
     </main>
   );

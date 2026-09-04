@@ -30,6 +30,23 @@ export interface ProjectsRootConfig {
   readonly mcpServerVersion: string;
   /** How long a prepared project waits for a worker before reading *initialisation pending*. */
   readonly initialiseWaitMs: number;
+  /**
+   * T1396 (FR-LPW-005) — the defaults a project gets when its creator chooses
+   * neither. Undefined means "the workspace bundle's default" and "sh"; the
+   * fallbacks live with the bundle and the service, never a provider name here.
+   */
+  readonly defaultAgentIntegration: string | undefined;
+  readonly defaultScriptType: 'sh' | 'ps' | undefined;
+}
+
+const SCRIPT_TYPES = ['sh', 'ps'] as const;
+
+function readScriptType(value: string | undefined): 'sh' | 'ps' | undefined {
+  if (!value) return undefined;
+  if ((SCRIPT_TYPES as readonly string[]).includes(value)) return value as 'sh' | 'ps';
+  throw new ValidationFailedError(`PMI_DEFAULT_SCRIPT_TYPE must be one of ${SCRIPT_TYPES.join(', ')}; got "${value}".`, {
+    fields: [{ field: 'PMI_DEFAULT_SCRIPT_TYPE', reason: 'sh or ps' }],
+  });
 }
 
 export function readProjectsRootConfig(env: Record<string, string | undefined>): ProjectsRootConfig {
@@ -41,6 +58,8 @@ export function readProjectsRootConfig(env: Record<string, string | undefined>):
     engineTag: env['PMI_ENGINE_TAG'] || 'v0.16.4',
     mcpServerVersion: env['PMI_MCP_SERVER_VERSION'] || '0.1.0',
     initialiseWaitMs: Number.isFinite(wait) && wait > 0 ? wait : 30_000,
+    defaultAgentIntegration: env['PMI_DEFAULT_AGENT_INTEGRATION']?.trim() || undefined,
+    defaultScriptType: readScriptType(env['PMI_DEFAULT_SCRIPT_TYPE']?.trim()),
   };
 }
 

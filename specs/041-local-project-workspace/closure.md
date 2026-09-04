@@ -135,3 +135,14 @@ execution registry, artifact and task sync behind the connector guard).
 **`Ready` — every DOR condition passes** (`DOR-08` needed `T1388` to name its two tests). The
 register derives no stage past `Ready` from evidence on disk; `Implemented` is this report's claim,
 and `/speckit-converge` is what turns it into a derived one.
+
+## Convergence pass (`/speckit-converge`, 2026-09-04)
+
+Four findings, four tasks appended as Phase 9 and completed the same day, each test observed
+failing first: a *Start run* control with refreshed progress on the project screen (`T1394`,
+FR-LPW-042); the provisioning audit entry names host path, integration and script type (`T1395`,
+FR-LPW-004); the default integration and script type are configuration —
+`PMI_DEFAULT_AGENT_INTEGRATION`, `PMI_DEFAULT_SCRIPT_TYPE` — falling back to the bundle and `sh`
+(`T1396`, FR-LPW-005); the Local workspace panel keeps its own loading and error states (`T1397`,
+FR-LPW-051). Open after the pass: `T1387` (Tier 2 transcripts) and `T1393` (promotion, needs an
+instruction naming `dev`).

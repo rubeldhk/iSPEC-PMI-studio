@@ -158,3 +158,32 @@ describe('T1378 · the provisioning panel', () => {
     expect(panel.textContent).toMatch(/no local directory/i);
   });
 });
+
+describe('T1397 · the panel keeps its own loading and error states (FR-LPW-051, FR-SHL-060)', () => {
+  it('shows its own loading status while the provisioning history loads', async () => {
+    const api = {
+      getProject: vi.fn(async () => project()),
+      listProvisioning: vi.fn(() => new Promise<ProvisioningRecord[]>(() => undefined)),
+      listRequirements: vi.fn(async () => []),
+    } as unknown as ApiClient;
+    render(<ProjectDetail api={api} projectId="p1" onBack={vi.fn()} />);
+    const panel = await screen.findByRole('region', { name: /local workspace/i });
+    expect(panel.textContent).toMatch(/loading provisioning/i);
+  });
+
+  it('shows its own alert when the history fails, without hiding the project', async () => {
+    const { ApiError } = await import('../../../src/services/api');
+    const api = {
+      getProject: vi.fn(async () => project()),
+      listProvisioning: vi.fn(async () => {
+        throw new ApiError('internal_error', 'Provisioning history unavailable.', 500);
+      }),
+      listRequirements: vi.fn(async () => []),
+    } as unknown as ApiClient;
+    render(<ProjectDetail api={api} projectId="p1" onBack={vi.fn()} />);
+    const panel = await screen.findByRole('region', { name: /local workspace/i });
+    await waitFor(() => expect(panel.textContent).toMatch(/history unavailable/i));
+    expect(screen.getByText('Alpha')).toBeDefined();
+    expect(panel.textContent).toContain('/home/me/projects/alpha');
+  });
+});

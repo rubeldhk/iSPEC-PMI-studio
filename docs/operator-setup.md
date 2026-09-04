@@ -111,7 +111,7 @@ is shown once and never written into the directory (`specs/041-local-project-wor
 `docker-compose.yml`, and the path written into every `.pmi/project.json`), `PMI_PUBLIC_URL` (what
 the agent's MCP server calls), `PMI_ENGINE_TAG` (the engine toolkit tag the initialise step pins),
 `PMI_MCP_SERVER_VERSION` (written into `.mcp.json`), `PMI_INITIALISE_WAIT_MS` (how long a prepared
-project waits for a worker before reading *initialisation pending*).
+project waits for a worker before reading *initialisation pending*), and the two defaults a project gets when its creator chooses neither — `PMI_DEFAULT_AGENT_INTEGRATION` (empty means the workspace bundle's default) and `PMI_DEFAULT_SCRIPT_TYPE` (`sh` or `ps`).
 
 **`uv` on the worker host.** The initialise step runs the engine toolkit at the pinned tag through
 `uvx` (`specify init --here --force --integration <i> --script <s>`) in the project directory.

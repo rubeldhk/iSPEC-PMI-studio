@@ -164,8 +164,11 @@ export class ProvisioningService {
     const attemptedBefore = completed.length;
     const written: string[] = [];
 
-    const agentIntegration = request.agentIntegration ?? project.agentIntegration ?? this.deps.bundle.defaultIntegration;
-    const scriptType = request.scriptType ?? project.scriptType ?? 'sh';
+    // FR-LPW-005 (T1396): the request, then the project, then CONFIGURATION,
+    // then the bundle's default and `sh` — never a provider named here.
+    const agentIntegration =
+      request.agentIntegration ?? project.agentIntegration ?? this.deps.config.defaultAgentIntegration ?? this.deps.bundle.defaultIntegration;
+    const scriptType = request.scriptType ?? project.scriptType ?? this.deps.config.defaultScriptType ?? 'sh';
     let hostPath = project.rootPath;
     let writePath: string | undefined;
 
@@ -285,7 +288,7 @@ export class ProvisioningService {
       }
     } catch (error) {
       const failure = error instanceof StepFailure ? error : new StepFailure('check_root', error as Error);
-      await this.append(ctx, project, correlationId, startedAt, 'failed', completed, written, failure);
+      await this.append(ctx, project, correlationId, startedAt, 'failed', completed, written, failure, { hostPath, agentIntegration, scriptType });
       await this.deps.projects.update(ctx.workspaceId, project.id, {
         provisioningState: 'failed',
         ...(hostPath !== null && hostPath !== project.rootPath ? { rootPath: hostPath } : {}),
@@ -298,7 +301,7 @@ export class ProvisioningService {
     // Every step was already done and nothing was queued again: a no-op, said so.
     if (outcome === 'succeeded' && completed.length === attemptedBefore && written.length === 0) outcome = 'no_change';
 
-    const record = await this.append(ctx, project, correlationId, startedAt, outcome, completed, written, null);
+    const record = await this.append(ctx, project, correlationId, startedAt, outcome, completed, written, null, { hostPath, agentIntegration, scriptType });
     const state: ProvisioningState = stateAfter(record) ?? project.provisioningState;
     const updated = await this.deps.projects.update(ctx.workspaceId, project.id, {
       rootPath: hostPath,
@@ -346,6 +349,13 @@ export class ProvisioningService {
     completed: readonly ProvisioningStep[],
     written: readonly string[],
     failure: StepFailure | null,
+    // FR-LPW-004 (T1395): what the attempt was about, for the audit entry. The
+    // path is the host's, never the write root; defaults to the project's own.
+    about: { hostPath: string | null; agentIntegration: string | null; scriptType: string | null } = {
+      hostPath: project.rootPath,
+      agentIntegration: project.agentIntegration,
+      scriptType: project.scriptType,
+    },
   ): Promise<ProvisioningRecord> {
     const record = await this.deps.records.append({
       id: randomUUID(),
@@ -374,6 +384,9 @@ export class ProvisioningService {
       detail: {
         kind: 'provision',
         outcome,
+        path: about.hostPath,
+        agentIntegration: about.agentIntegration,
+        scriptType: about.scriptType,
         stepsCompleted: [...completed],
         ...(failure ? { failedStep: failure.step } : {}),
         nextStep: nextStep(completed),
