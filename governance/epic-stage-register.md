@@ -52,7 +52,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-040](../specs/040-metrics-reporting/) | Metrics \& Reporting | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-041](../specs/041-local-project-workspace/) | Local Project Workspace | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Planned | stalled | Not ready | `/speckit-tasks` |
+| [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Tasked | stalled | Not ready | `/speckit-analyze` |
 
 ## Findings
 
