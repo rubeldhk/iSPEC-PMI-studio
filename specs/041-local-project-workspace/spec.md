@@ -30,12 +30,40 @@ wiring points recorded in PMI-DOC-004B §2.1 as its Foundational phase." *(PMI-D
 > preference standing in for a decision. No `[NEEDS CLARIFICATION]` marker is used: every call has a
 > defensible default and none changes whether the Epic should exist.
 
+## Clarifications
+
+### Session 2026-09-03
+
+Five of the six judgement calls were put to the requester in one round (Constitution X); the
+sixth (a git repository is initialised where none exists, with no remote) was low-impact and
+reversible at the plan step, and stands as recorded. **All five recommendations were accepted.**
+
+- Q: Which machine creates the project directory when a project is created in PMI Studio? → A:
+  **The platform, on the machine PMI Studio runs on, under a configured projects root** mounted
+  into the container. Remote PMI Studio with a directory elsewhere is out of scope here
+  (`BR-0131`, a later Epic). *(Confirms Assumption 1; `FR-LPW-001`, `FR-LPW-005`, `FR-LPW-007`.)*
+- Q: May a project be provisioned into a directory that already contains files? → A: **No — only
+  an empty directory or an empty git repository.** Anything else is refused by name; brownfield
+  adoption is its own Epic. *(Confirms Assumption 2; `FR-LPW-012`.)*
+- Q: What should happen when the Spec Kit installer is not available on the machine that
+  provisions? → A: **Complete every other step and record the project as *initialisation
+  pending*;** the `EPIC-042` setup skill completes it on the user's machine. The application image
+  is not required to carry Spec Kit. *(Confirms Assumption 3; `FR-LPW-010`.)*
+- Q: Should a connector credential expire on its own, or only when someone revokes it? → A:
+  **Only on revocation, in this Epic.** Last use is visible; an expiry window becomes a tenant
+  setting alongside `EPIC-030`'s policy classes in a later Epic. *(Confirms Assumption 4; adds
+  `FR-LPW-028`.)*
+- Q: Should this Epic also make a sandbox generation startable from the project screen, or only
+  make results persist? → A: **All three repairs as specified** — worker persistence, durable
+  task/run/job stores, and a generation startable from the project screen — as `D-47` approved for
+  milestone `M0`. *(Confirms Assumption 6; `FR-LPW-040`–`FR-LPW-042`.)*
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
 |--------|---------|--------|
 | `SRS/PMI-DOC-007_Local_First_Replan_v1.0` | §7 `EPIC-041` brief | every `FR-LPW-` below |
-| `SRS/PMI-DOC-007_Local_First_Replan_v1.0` | §2.3 source-of-truth boundaries · §2.4 security model | FR-LPW-010 to FR-LPW-013, FR-LPW-020 to FR-LPW-027 |
+| `SRS/PMI-DOC-007_Local_First_Replan_v1.0` | §2.3 source-of-truth boundaries · §2.4 security model | FR-LPW-010 to FR-LPW-013, FR-LPW-020 to FR-LPW-028 |
 | `SRS/PMI-DOC-007_Local_First_Replan_v1.0` | §3 domain model · §9.3 `LR-01`, `LR-02`, `LR-11` | FR-LPW-001, FR-LPW-020, FR-LPW-034 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.14 `BR-0132` — Controlled local connector | FR-LPW-030 to FR-LPW-035 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.14 `BR-0133` — Uniform governance | FR-LPW-031, FR-LPW-033 |
@@ -260,7 +288,10 @@ back on the two screens.
 - **FR-LPW-004**: Every provisioning attempt MUST produce an audit entry naming actor, path,
   integration, outcome and — on failure — the step that failed.
 - **FR-LPW-005**: The **projects root**, the pinned Spec Kit tag, the extension version, and the
-  default agent integration and script type MUST be configuration, not code.
+  default agent integration and script type MUST be configuration, not code. Provisioning writes
+  **on the machine the platform runs on**, under that root *(clarified 2026-09-03)*; where the
+  platform runs containerised, the root is a directory mounted into it, and an unmounted root is
+  refused before anything is written.
 - **FR-LPW-006**: The agent integration MUST be a parameter. Nothing in provisioning MAY name one
   integration as the only possibility (`PP-006`).
 - **FR-LPW-007**: A path outside the projects root, a non-empty directory, or a path already owned
@@ -272,13 +303,16 @@ back on the two screens.
   by environment-variable name only. Both MUST be checked by an executable conformance test.
 - **FR-LPW-010**: Where the Spec Kit initialiser is unavailable on the provisioning host,
   provisioning MUST complete every other step and record the project as **initialisation pending**,
-  never as provisioned. *(Assumption 3.)*
+  never as provisioned *(clarified 2026-09-03)*. The application image is **not** required to carry
+  the initialiser; completing a pending initialisation on the user's machine is `EPIC-042`'s setup
+  skill's job.
 - **FR-LPW-011**: The directory is **authoritative for artifact content** and PMI Studio for status,
   decisions and evidence (PMI-DOC-007 §2.3). Provisioning MUST NOT create a second copy of anything
   PMI Studio already holds, and nothing in PMI Studio MAY be written back into the directory by this
   Epic except the files `FR-LPW-002` names.
-- **FR-LPW-012**: An **empty existing git repository** MAY be adopted as a root path. A non-empty
-  one MUST be refused in this Epic. *(Assumption 2.)*
+- **FR-LPW-012**: An **empty existing git repository** MAY be adopted as a root path. Any
+  directory containing files — with or without Spec Kit in it — MUST be refused in this Epic
+  *(clarified 2026-09-03)*; brownfield adoption is a later Epic's.
 - **FR-LPW-013**: Where no git repository exists at the root path, provisioning MUST initialise one,
   so the directory has the durable substrate `ADR-0009` names. No remote is configured.
 
@@ -301,6 +335,9 @@ back on the two screens.
   transition, or administering the workspace.
 - **FR-LPW-027**: Minting MUST require the owner grant on the project; any other identity MUST be
   refused and the refusal audited.
+- **FR-LPW-028**: A credential MUST NOT expire on its own in this Epic; it ends only by revocation
+  *(clarified 2026-09-03)*. An expiry window is a tenant policy setting for a later Epic, alongside
+  the policy classes `EPIC-030` reads, and MUST NOT be introduced here as a second policy model.
 
 **Controlled-local execution mode (`BR-0132`, `BR-0133`, Constitution XII)**
 
@@ -325,7 +362,9 @@ back on the two screens.
 - **FR-LPW-041**: Tasks, runs and generation jobs MUST be held in durable stores in the composed
   application; the in-memory implementations MAY remain only for tests.
 - **FR-LPW-042**: A generation and a run MUST be startable from the project screen, and their
-  progress readable there, through the real entry points (Constitution XI, Tier 1).
+  progress readable there, through the real entry points (Constitution XI, Tier 1). Retained in
+  scope *(clarified 2026-09-03)* as `D-47`'s milestone `M0`, even though the managed sandbox it
+  serves is an optional mode after the replan.
 - **FR-LPW-043**: The composed module graph MUST be checked by an architecture test that fails when
   a task, run or job store is an in-memory implementation.
 - **FR-LPW-044**: The six built-but-unmounted components recorded in PMI-DOC-004B §2.1 (version
@@ -387,40 +426,44 @@ back on the two screens.
 
 ## Assumptions
 
-Six judgement calls, each with the alternative that lost. `/speckit-clarify` should put all six to
-the requester in one round (Constitution X).
+Six judgement calls, each with the alternative that lost. **Five were put to the requester on
+2026-09-03 and all five confirmed**; the sixth (5) was not asked, being low-impact and reversible
+at the plan step, and stands as recorded. The reasoning is kept because it describes the risk each
+confirmation accepts.
 
 1. **Provisioning is performed by the platform, on the host it runs on, under a configured projects
-   root** (`FR-LPW-005`, `FR-LPW-007`). In the reference-local stack that is the developer's own
+   root** (`FR-LPW-005`, `FR-LPW-007`) — **confirmed**. In the reference-local stack that is the developer's own
    file system; in the containerised stack it is a directory mounted into the application. The
    alternative — provisioning performed on the user's machine by the setup skill, with PMI Studio
    only recording the path — keeps PMI Studio free of file-system writes but makes *create project*
    a two-machine act and leaves PMI Studio unable to say whether the directory exists. **Remote PMI
    Studio with a directory on a different machine is out of scope** here; it is the customer-cloud
    mode (`BR-0131`) and a later Epic.
-2. **Greenfield only, plus adoption of an empty git repository** (`FR-LPW-012`). Adopting an
+2. **Greenfield only, plus adoption of an empty git repository** (`FR-LPW-012`) — **confirmed**.
+   Adopting an
    existing, populated repository (brownfield) is genuinely useful and genuinely different: it needs
    a merge strategy for an existing `.specify/`, existing skills and an existing `.mcp.json`. It is
    deferred rather than half-done; the one merge this Epic does perform is the `.mcp.json` entry
    (edge case above), because an adopted empty repository may already carry one.
 3. **The Spec Kit initialiser may be absent on the provisioning host, and that is a recorded state,
-   not a failure** (`FR-LPW-010`). The containerised application image does not carry Spec Kit
-   today; the engine image does. Rather than make provisioning depend on an image change, the
-   record says *initialisation pending* and `EPIC-042`'s setup skill completes it on the user's
-   machine. The alternative — bake the initialiser into the application image — is a plan-step
-   decision this spec neither requires nor forbids.
+   not a failure** (`FR-LPW-010`) — **confirmed**. The containerised application image does not
+   carry Spec Kit today; the engine image does. Rather than make provisioning depend on an image
+   change, the record says *initialisation pending* and `EPIC-042`'s setup skill completes it on
+   the user's machine. The alternative — bake the initialiser into the application image — was
+   put to the requester and **declined**: the image is not required to carry it.
 4. **Credentials do not expire by default; they are revocable and their last use is visible**
-   (`FR-LPW-022`, `FR-LPW-023`). An expiry policy is a tenant setting that belongs with the other
+   (`FR-LPW-022`, `FR-LPW-023`, `FR-LPW-028`) — **confirmed**. An expiry policy is a tenant setting that belongs with the other
    policy classes `EPIC-030` reads; adding one here would put a second policy model in the
    platform. The alternative — a fixed ninety-day expiry — is safer and more annoying; it can be
    added as configuration without changing this Epic's contract.
-5. **A git repository is initialised where none exists, with no remote** (`FR-LPW-013`).
+5. **A git repository is initialised where none exists, with no remote** (`FR-LPW-013`) — **not
+   asked; stands as recorded**.
    `ADR-0009` names git as the durable substrate, and PMI-DOC-007 §2.3 keeps that for local mode.
    Configuring a remote is a credentials question and a hosting question — `EPIC-039`'s. The
    alternative — no git at all — leaves the user with a directory that Spec Kit can use and
    nothing that versions it.
-6. **The Foundational wiring repairs are in scope** (`FR-LPW-040`–`FR-LPW-044`) even though they
-   predate the replan. `D-47` places them here because *nothing local is demonstrable while the
+6. **The Foundational wiring repairs are in scope** (`FR-LPW-040`–`FR-LPW-044`) — **confirmed**,
+   including the screen control for a sandbox generation, even though they predate the replan. `D-47` places them here because *nothing local is demonstrable while the
    worker throws on persistence*. The alternative — a separate repair Epic — would put the first
    demonstrable milestone behind two Epics instead of one.
 

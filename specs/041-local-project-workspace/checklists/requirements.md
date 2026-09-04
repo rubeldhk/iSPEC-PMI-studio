@@ -31,16 +31,19 @@
 
 ## Notes
 
-**Validated 2026-09-03 at `/speckit-specify`. 16 of 16 items pass.** Three items deserve a note
-about *why* they pass, because each one could be read as a borderline case.
+**Re-validated 2026-09-03 after `/speckit-clarify`. All 16 items still pass — 16/16 → 16/16, no
+state changes.** Five of the six judgement calls were put to the requester in one round and **all
+five confirmed** on the recommendation; the sixth (git initialised where none exists, no remote)
+was not asked and stands. One requirement was added (`FR-LPW-028`, no self-expiry) because the
+credential answer was a rule the specification had only implied. The first-validation notes below
+are kept where their reasoning still holds and rewritten where the session changed it.
 
-**"No [NEEDS CLARIFICATION] markers remain"** — true, and by the same route `EPIC-038` took: the
-brief settles *what* and not every *how*, so six judgement calls were made and recorded under
-**Assumptions**, each with the alternative that lost. None of the six changes whether the Epic
-exists or what it is for; all six change something a requester may reasonably want decided
-differently. That is the precise case for `/speckit-clarify` rather than for a marker that stalls
-the specification. The largest is **Assumption 1** — provisioning happens on the platform's host
-under a configured projects root — because it fixes which machine writes the directory.
+**"No [NEEDS CLARIFICATION] markers remain"** — still true, and now for a better reason. The
+first validation passed this item because six judgement calls had defensible defaults recorded
+under **Assumptions**. A clarification session has since put five of them to the requester and
+confirmed each. The largest — **Assumption 1**, provisioning on the platform's host under a
+configured projects root — is now a decision rather than an author's default, and `FR-LPW-005`
+states it in full.
 
 **"No implementation details"** — re-checked deliberately, because a specification about
 directories, files and credentials invites them. The file names the brief itself uses
@@ -67,13 +70,16 @@ owed by PMI-DOC-004 v2.1; the back-fill is stated under Assumptions per `D-46`/`
 - `ADR-0030` is owed at the plan step, with amendments to `ADR-0009` and `ADR-0024`
   (PMI-DOC-007 §9.2). The plan's Constitution Check must show the XII gate row answered against a
   connector that does not yet exist (`EPIC-043`), honestly as *pending*, not as PASS.
-- Assumption 3 leaves a plan decision open: whether the application image carries the Spec Kit
-  initialiser. The specification is satisfied either way.
+- Assumption 3 is now closed rather than open: the application image is **not** required to carry
+  the Spec Kit initialiser (`FR-LPW-010`). The plan designs the *initialisation pending* state and
+  the hand-off to `EPIC-042`, not an image change.
+- Assumption 1 fixes the projects root as a mounted directory in the containerised stack; the
+  plan owes the compose change and the refusal path for an unmounted root (`FR-LPW-005`).
 - `FR-LPW-044` requires the plan to enumerate the six unmounted components and decide, for each,
   reachable-here or deferred-by-name.
 
 ### Recommended next command
 
-`/speckit-clarify` — six judgement calls await the requester in one round (Constitution X). The
-specification is complete without them, and materially safer with them confirmed, because
-Assumption 1 decides which machine writes the user's directory.
+`/speckit-plan` — the specification is unambiguous and the requester has confirmed its scope.
+`plan.md` owes `ADR-0030`, the two ADR amendments, and the design of the projects-root mount and
+the *initialisation pending* hand-off.
