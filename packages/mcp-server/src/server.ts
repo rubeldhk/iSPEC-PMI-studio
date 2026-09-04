@@ -83,6 +83,13 @@ function registerLive(server: McpServer, platform: PlatformPort, spec: ToolSpec)
       // (EPIC-037); the server always speaks the one it was built with.
       if (spec.name === 'pmi.execution.register') body['contractVersion'] = CONTRACT_VERSION;
       for (const name of spec.strip ?? []) delete body[name];
+      // FR-PIC-004 (T1469): where the request type carries no correlation id of
+      // its own, the tool's travels as a header instead of in the body.
+      let correlationId: string | undefined;
+      if (spec.correlationAsHeader && typeof body['correlationId'] === 'string') {
+        correlationId = body['correlationId'] as string;
+        delete body['correlationId'];
+      }
 
       if (spec.name === 'pmi.health' && !platform.describe().credentialPresent) {
         return refused('invalid_connector_credential', 'Invalid connector credential.', { detail: 'credential_absent' });
@@ -93,6 +100,7 @@ function registerLive(server: McpServer, platform: PlatformPort, spec: ToolSpec)
         path: route.path,
         surface: 'mcp-client',
         ...(route.method === 'POST' ? { body, idempotencyKey: typeof body['idempotencyKey'] === 'string' ? body['idempotencyKey'] : undefined } : {}),
+        ...(correlationId !== undefined ? { correlationId } : {}),
       });
       if (!first.ok) return fromPlatform(first);
 

@@ -8,6 +8,7 @@
  * The published package and a checkout (`PMI_MCP_SERVER_COMMAND`) run this
  * same file.
  */
+import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -37,7 +38,13 @@ export function compose(env: ResolvedEnvironment, options: ComposeOptions): McpS
   return createServer(platform, { serverVersion: options.serverVersion });
 }
 
-export const PACKAGE_VERSION = '0.1.0';
+/** The manifest's version, read at start — never a literal repeated here (T1470). */
+export function packageVersion(): string {
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version?: string };
+  return manifest.version ?? '0.0.0';
+}
+
+export const PACKAGE_VERSION = packageVersion();
 
 export async function run(): Promise<void> {
   let env: ResolvedEnvironment;

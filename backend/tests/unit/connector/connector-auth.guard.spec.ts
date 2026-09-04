@@ -127,3 +127,45 @@ describe('T1359 · the scope registry', () => {
     expect(Reflect.getMetadata(CONNECTOR_SCOPE_KEY, Probe.prototype.whoami)).toBe('connector.whoami');
   });
 });
+
+describe('T1467 · a refused credential is audited, never echoed (EPIC-043 FR-PIC-036)', () => {
+  const CREDENTIAL = 'pmi_ct_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz';
+
+  async function audited() {
+    const h = await harness();
+    const audits: Record<string, unknown>[] = [];
+    const guard = new ConnectorAuthGuard(h.store, { forPrincipal: h.forPrincipal } as never, { now: () => NOW, audit: { record: async (row: Record<string, unknown>) => void audits.push(row) } });
+    return { ...h, guard, audits };
+  }
+
+  it('a wrong digest against a known prefix writes one entry with a null actor, access_refused, the scope and the code, and not the value', async () => {
+    const h = await audited();
+    const wrongDigest = `${h.minted.value.slice(0, -1)}${h.minted.value.endsWith('A') ? 'B' : 'A'}`;
+    await expect(h.guard.authenticate(request(`Bearer ${wrongDigest}`), 'connector.whoami')).rejects.toBeInstanceOf(InvalidConnectorCredentialError);
+    expect(h.audits).toHaveLength(1);
+    expect(h.audits[0]).toMatchObject({ workspaceId: 'ws_a', actorId: null, action: 'access_refused', targetType: 'connector_credential', outcome: 'refused', detail: { kind: 'connector', scope: 'connector.whoami', code: 'invalid_connector_credential' } });
+    expect(JSON.stringify(h.audits)).not.toContain(wrongDigest);
+    expect(JSON.stringify(h.audits)).not.toContain(CREDENTIAL);
+  });
+
+  it('a revoked credential is audited the same way, naming the credential id but not its value', async () => {
+    const h = await audited();
+    await h.store.revoke('ws_a', 'cred_a', 'u_owner', NOW);
+    await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), 'connector.whoami')).rejects.toBeInstanceOf(InvalidConnectorCredentialError);
+    expect(h.audits[0]).toMatchObject({ workspaceId: 'ws_a', actorId: null, outcome: 'refused', detail: { code: 'invalid_connector_credential', credentialId: 'cred_a' } });
+    expect(JSON.stringify(h.audits)).not.toContain(h.minted.value);
+  });
+
+  it('an absent or unknown credential names no workspace, so no audit row can be written for it (the audit table is workspace-scoped); nothing is echoed either', async () => {
+    const h = await audited();
+    await expect(h.guard.authenticate(request(undefined), 'connector.whoami')).rejects.toBeInstanceOf(InvalidConnectorCredentialError);
+    await expect(h.guard.authenticate(request(`Bearer ${CREDENTIAL}`), 'connector.whoami')).rejects.toBeInstanceOf(InvalidConnectorCredentialError);
+    expect(h.audits).toEqual([]);
+  });
+
+  it('an accepted credential writes nothing here; the route audits its own operation', async () => {
+    const h = await audited();
+    await h.guard.authenticate(request(`Bearer ${h.minted.value}`), 'connector.whoami');
+    expect(h.audits).toEqual([]);
+  });
+});

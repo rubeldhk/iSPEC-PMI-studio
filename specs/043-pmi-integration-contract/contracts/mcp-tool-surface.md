@@ -11,7 +11,7 @@ environment.
 
 **Rules for every tool** (`R-043-5`, `R-043-6`): a refusal is a tool result with `isError: true`
 and `structuredContent: { code, message, …detail }`, never a protocol error; every mutating tool
-requires `idempotencyKey` and `correlationId`; every tool accepts an optional `contractVersion` and
+requires `idempotencyKey`, and carries a `correlationId` — required on `register` and `proposeStatus`, optional on `appendEvent`, `complete` and `comment` (whose `EPIC-037` request types have none), where it travels as the `x-correlation-id` header; every tool accepts an optional `contractVersion` and
 refuses a value other than the server's; **no argument, result or refusal carries a credential**
 — a credential-shaped value in any argument is refused as `credential_in_argument` naming the
 argument, never its value.

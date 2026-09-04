@@ -21,6 +21,8 @@ export interface PlatformCall {
   readonly body?: unknown;
   readonly surface: 'mcp-client';
   readonly idempotencyKey?: string;
+  /** FR-PIC-004 — travels as `x-correlation-id` when the request type carries none of its own. */
+  readonly correlationId?: string;
 }
 
 export type PlatformResult =
@@ -70,6 +72,7 @@ export function createPlatformClient(options: PlatformClientOptions): PlatformPo
         [CONTRACT_VERSION_HEADER]: CONTRACT_VERSION,
         [PMI_SURFACE_HEADER]: call.surface,
       };
+      if (call.correlationId !== undefined) headers['x-correlation-id'] = call.correlationId;
       const init: RequestInit = { method: call.method, headers };
       if (call.method === 'POST') {
         headers['content-type'] = 'application/json';

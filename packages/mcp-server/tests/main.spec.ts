@@ -47,3 +47,24 @@ describe('T1426 · compose', () => {
     }
   });
 });
+
+describe('T1470 · serverInfo.version is the manifest version (FR-PIC-006)', () => {
+  it('reads packages/mcp-server/package.json rather than repeating a literal', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { PACKAGE_VERSION, packageVersion } = await import('../src/main.js');
+    const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
+    expect(packageVersion()).toBe(manifest.version);
+    expect(PACKAGE_VERSION).toBe(manifest.version);
+    const server = compose({ baseUrl: 'http://localhost:3000', credential: '' }, { fetch: vi.fn(async () => new Response('{}')), serverVersion: packageVersion() });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    await server.connect(serverTransport);
+    await client.connect(clientTransport);
+    try {
+      expect(client.getServerVersion()?.version).toBe(manifest.version);
+    } finally {
+      await client.close();
+      await server.close();
+    }
+  });
+});

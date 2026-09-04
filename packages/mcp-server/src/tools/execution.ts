@@ -33,6 +33,10 @@ const outputBinding = z
   .passthrough();
 
 const common = { contractVersion: z.string().optional() };
+// FR-PIC-004 (T1469): every mutating tool carries a correlation id. EPIC-037's
+// append, complete and comment requests have none of their own, so on those
+// it is optional and travels as the x-correlation-id header (platform-client.ts).
+const correlated = { correlationId: z.string().optional() };
 
 export const EXECUTION_TOOLS: readonly ToolSpec[] = [
   {
@@ -61,6 +65,7 @@ export const EXECUTION_TOOLS: readonly ToolSpec[] = [
     description: 'Append one immutable event to a registered execution.',
     input: {
       ...common,
+      ...correlated,
       executionId: z.string(),
       type: z.string(),
       payload: z.record(z.unknown()),
@@ -73,6 +78,7 @@ export const EXECUTION_TOOLS: readonly ToolSpec[] = [
     mutating: true,
     route: (a) => ({ method: 'POST', path: `/v1/executions/${encodeURIComponent(String(a['executionId']))}/events` }),
     strip: ['executionId'],
+    correlationAsHeader: true,
   },
   {
     name: 'pmi.execution.complete',
@@ -80,6 +86,7 @@ export const EXECUTION_TOOLS: readonly ToolSpec[] = [
     description: 'Append the terminal lifecycle event with outcome, output binding and the mandatory completion comment.',
     input: {
       ...common,
+      ...correlated,
       executionId: z.string(),
       outcome: z.enum(['completed', 'partially-completed', 'failed', 'cancelled', 'timed-out']),
       occurredAt: z.string(),
@@ -92,6 +99,7 @@ export const EXECUTION_TOOLS: readonly ToolSpec[] = [
     mutating: true,
     route: (a) => ({ method: 'POST', path: `/v1/executions/${encodeURIComponent(String(a['executionId']))}/completion` }),
     strip: ['executionId'],
+    correlationAsHeader: true,
   },
   {
     name: 'pmi.execution.comment',
@@ -99,6 +107,7 @@ export const EXECUTION_TOOLS: readonly ToolSpec[] = [
     description: 'Append to the execution thread. Permitted after completion.',
     input: {
       ...common,
+      ...correlated,
       executionId: z.string(),
       body: z.string(),
       commentType: z.string().optional(),
@@ -109,6 +118,7 @@ export const EXECUTION_TOOLS: readonly ToolSpec[] = [
     mutating: true,
     route: (a) => ({ method: 'POST', path: `/v1/executions/${encodeURIComponent(String(a['executionId']))}/comments` }),
     strip: ['executionId'],
+    correlationAsHeader: true,
   },
   {
     name: 'pmi.execution.proposeStatus',

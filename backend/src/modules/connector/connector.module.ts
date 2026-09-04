@@ -104,9 +104,10 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
     },
     {
       provide: ConnectorAuthGuard,
-      inject: [CONNECTOR_CREDENTIAL_STORE, TrustedPrincipalFactory, Reflector],
-      useFactory: (credentials: ConnectorCredentialStore, principals: TrustedPrincipalFactory, reflector: Reflector): ConnectorAuthGuard =>
-        new ConnectorAuthGuard(credentials, principals, { reflector }),
+      inject: [CONNECTOR_CREDENTIAL_STORE, TrustedPrincipalFactory, Reflector, AuditService],
+      useFactory: (credentials: ConnectorCredentialStore, principals: TrustedPrincipalFactory, reflector: Reflector, audit: AuditService): ConnectorAuthGuard =>
+        // EPIC-043 T1467: refusals with a nameable workspace are audited (FR-PIC-036).
+        new ConnectorAuthGuard(credentials, principals, { reflector, audit: { record: (row) => audit.record(row) } }),
     },
     {
       // EPIC-043 T1449 (R-043-8) — one workstation connection per credential;

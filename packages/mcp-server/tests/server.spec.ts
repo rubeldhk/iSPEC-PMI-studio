@@ -158,3 +158,17 @@ describe('T1443 · replay passthrough (US3)', () => {
     expect((again.structuredContent as { replayed: boolean }).replayed).toBe(true);
   });
 });
+
+describe('T1469 · a correlation id on every mutating tool (FR-PIC-004)', () => {
+  it('appendEvent, complete and comment accept an optional correlationId and it reaches the platform call', async () => {
+    const { port, calls } = stubPlatform(() => ({ ok: true, status: 201, body: { sequence: 2, commentId: 'c_1' } }));
+    const o = await connect(port);
+    open.push(o);
+    await o.client.callTool({ name: 'pmi.execution.appendEvent', arguments: { executionId: 'e', type: 'started', payload: {}, occurredAt: 'now', idempotencyKey: 'k1', correlationId: 'corr-1' } });
+    await o.client.callTool({ name: 'pmi.execution.complete', arguments: { executionId: 'e', outcome: 'completed', occurredAt: 'now', completionComment: 'x', idempotencyKey: 'k2', correlationId: 'corr-2' } });
+    await o.client.callTool({ name: 'pmi.execution.comment', arguments: { executionId: 'e', body: 'b', idempotencyKey: 'k3', correlationId: 'corr-3' } });
+    expect(calls.map((c) => c.correlationId)).toEqual(['corr-1', 'corr-2', 'corr-3']);
+    await o.client.callTool({ name: 'pmi.execution.comment', arguments: { executionId: 'e', body: 'b', idempotencyKey: 'k4' } });
+    expect(calls[3]?.correlationId).toBeUndefined();
+  });
+});

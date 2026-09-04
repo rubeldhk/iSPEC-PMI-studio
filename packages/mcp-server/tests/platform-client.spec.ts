@@ -93,3 +93,14 @@ describe('T1423 · refusals', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 });
+
+describe('T1469 · the correlation id travels as a header', () => {
+  it('sends x-correlation-id when the call carries one, and no header when it does not', async () => {
+    const fetch = fetchStub(201, {});
+    const client = createPlatformClient({ baseUrl: 'http://localhost:3000', credential: CREDENTIAL, fetch });
+    await client.call({ method: 'POST', path: '/v1/executions/e/events', body: {}, surface: 'mcp-client', idempotencyKey: 'k', correlationId: 'corr-9' });
+    expect((fetch.mock.calls[0] as [string, RequestInit])[1].headers).toMatchObject({ 'x-correlation-id': 'corr-9' });
+    await client.call({ method: 'GET', path: '/v1/executions/e', surface: 'mcp-client' });
+    expect(((fetch.mock.calls[1] as [string, RequestInit])[1].headers as Record<string, string>)['x-correlation-id']).toBeUndefined();
+  });
+});

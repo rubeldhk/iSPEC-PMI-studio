@@ -25,6 +25,8 @@ export interface ToolSpec {
   readonly also?: (args: Args) => RouteCall;
   /** Argument names consumed by the path and therefore not sent in the body. */
   readonly strip?: readonly string[];
+  /** True when `correlationId` travels as a header rather than in the body (append, complete, comment). */
+  readonly correlationAsHeader?: boolean;
 }
 
 /** An object schema that keeps every key the platform returns; the contract, not this server, owns the shape. */

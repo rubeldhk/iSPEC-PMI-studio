@@ -9,4 +9,4 @@ export { createServer, SERVER_NAME, type ServerOptions } from './server.js';
 export { createPlatformClient, type FetchLike, type PlatformCall, type PlatformClientOptions, type PlatformPort, type PlatformResult } from './platform-client.js';
 export { registryOverClient } from './registry-adapter.js';
 export { credentialInArguments, refuse, sanitise, type Refusal, type ToolRefusalResult } from './refusals.js';
-export { compose, resolveEnvironment, PACKAGE_VERSION, type ComposeOptions, type ResolvedEnvironment } from './main.js';
+export { compose, resolveEnvironment, packageVersion, PACKAGE_VERSION, type ComposeOptions, type ResolvedEnvironment } from './main.js';

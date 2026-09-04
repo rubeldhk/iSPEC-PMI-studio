@@ -85,3 +85,19 @@ describe('T1400 · packages/mcp-server never reaches the backend in-process (R-0
     }
   });
 });
+
+describe('T1468 · packages/mcp-server names no engine and no provider (FR-PIC-012)', () => {
+  const sources = walk(SRC).map((p) => ({ rel: relative(REPO_ROOT, p), body: readFileSync(p, 'utf8') }));
+  const ENGINE = /spec[\s_-]?kit|speckit/i;
+  const PROVIDER = /\b(claude|cursor|codex|copilot|gemini|anthropic|openai)\b/i;
+
+  it('not even in a comment', () => {
+    const offenders = sources.filter((f) => ENGINE.test(f.body) || PROVIDER.test(f.body)).map((f) => f.rel);
+    expect(offenders).toEqual([]);
+  });
+
+  it('the scan can fail: a provider name in a comment is detectable', () => {
+    expect(PROVIDER.test('// this is fine for claude')).toBe(true);
+    expect(ENGINE.test('const toolkit = "spec-kit";')).toBe(true);
+  });
+});

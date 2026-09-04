@@ -43,6 +43,11 @@ export interface ConnectorRequest {
   connector?: ConnectorRequestContext;
 }
 
+/** `AuditService.record`, by shape — for refusals only (T1467). */
+export interface RefusalAuditPort {
+  record(input: { workspaceId: string; actorId: null; action: 'access_refused'; targetType: string; targetId?: string; outcome: 'refused'; detail?: Record<string, unknown> }): Promise<void>;
+}
+
 /** `TrustedPrincipalFactory.forPrincipal`, by shape. */
 export interface PrincipalContextFactory {
   forPrincipal(workspaceId: string, principalId: string): Promise<TrustedPrincipalContext>;
@@ -58,9 +63,29 @@ export class ConnectorAuthGuard implements CanActivate {
   constructor(
     @Inject(CONNECTOR_CREDENTIAL_STORE) private readonly credentials: ConnectorCredentialStore,
     @Inject(TrustedPrincipalFactory) private readonly principals: PrincipalContextFactory,
-    private readonly options: { now?: () => Date; reflector?: Reflector } = {},
+    private readonly options: { now?: () => Date; reflector?: Reflector; audit?: RefusalAuditPort } = {},
   ) {
     this.now = options.now ?? ((): Date => new Date());
+  }
+
+  /**
+   * EPIC-043 T1467 (`FR-PIC-036`) — a refusal is audited when a credential row
+   * exists to name a workspace (a wrong digest against a known prefix, a
+   * revoked credential). An absent or unknown credential names no workspace,
+   * and the audit table is workspace-scoped, so nothing can be written for it
+   * — recorded here rather than by inventing a workspace. Never the value.
+   */
+  private async auditRefusal(credential: { id: string; workspaceId: string; projectId: string } | undefined, scope: string | undefined): Promise<void> {
+    if (credential === undefined || this.options.audit === undefined) return;
+    await this.options.audit.record({
+      workspaceId: credential.workspaceId,
+      actorId: null,
+      action: 'access_refused',
+      targetType: 'connector_credential',
+      targetId: credential.id,
+      outcome: 'refused',
+      detail: { kind: 'connector', code: 'invalid_connector_credential', credentialId: credential.id, projectId: credential.projectId, ...(scope !== undefined ? { scope } : {}) },
+    });
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -78,7 +103,13 @@ export class ConnectorAuthGuard implements CanActivate {
 
     const candidates = await this.credentials.findByPrefix(prefix);
     const credential = candidates.find((c) => verifyToken(token, c.tokenHash));
-    if (credential === undefined || credential.revokedAt !== null) throw this.refuse();
+    if (credential === undefined || credential.revokedAt !== null) {
+      // A wrong digest against a known prefix names the prefix's rows; a revoked
+      // credential names itself. Either way the workspace is known and the
+      // refusal can be audited (T1467).
+      await this.auditRefusal(credential ?? candidates[0], scope);
+      throw this.refuse();
+    }
 
     // Scope after identity: a bad token on an unscoped route is still 401.
     if (!isRegisteredConnectorScope(scope)) {
