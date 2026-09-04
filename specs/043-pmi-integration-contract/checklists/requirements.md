@@ -42,5 +42,5 @@
 
 ## Notes
 
-- Validated 2026-09-04 in the writing session: all items pass. The six Assumptions are the
-  clarification candidates for `/speckit-clarify`.
+- Validated 2026-09-04 in the writing session: all items pass. Re-validated after `/speckit-clarify`
+  the same day: five assumptions confirmed, one plan-level; all items still pass.

@@ -52,7 +52,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-040](../specs/040-metrics-reporting/) | Metrics \& Reporting | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-041](../specs/041-local-project-workspace/) | Local Project Workspace | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Checklisted | stalled | Not ready | `/speckit-plan` |
 
 ## Findings
 
@@ -61,4 +61,3 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | Epic | Finding | Severity |
 |---|---|---|
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
-| EPIC-043 | Checklisted evidence present without the stage before it — stage held at Specified | report |

@@ -32,6 +32,34 @@ mount the EPIC-037 REST surface behind connector-token authentication, closing `
 > with the requester. No `[NEEDS CLARIFICATION]` marker is used: every call has a defensible
 > default and none changes whether the Epic should exist.
 
+## Clarifications
+
+### Session 2026-09-04
+
+Five of the six judgement calls were put to the requester in one round (Constitution X); the
+sixth (the Epic list is derived from the requirements' grouping until `EPIC-044` exists) is a
+plan-level detail with a reversible default and stands as recorded. **All five recommendations
+were accepted.**
+
+- Q: How should a developer's agent get the MCP server program that `.mcp.json` names? → A: **An
+  npm package built from this repository, run through the package runner `.mcp.json` names, with
+  an environment override that points at a checkout for development.** No copy of platform code
+  is placed in the project directory; PMI Studio does not serve the package. *(Confirms Assumption
+  1; `FR-PIC-062`.)*
+- Q: What should the tools owned by later Epics do until those Epics ship? → A: **Reserved: listed
+  in the tool surface with their schemas, arguments validated, and a refusal naming the owning
+  Epic.** Neither omitted nor built with placeholder content. *(Confirms Assumption 2;
+  `FR-PIC-002`, `FR-PIC-045`.)*
+- Q: Should every tool call check the credential against its stored record, or may the server hold
+  a short-lived session? → A: **Every call is verified; revocation takes effect on the next call.**
+  No session cache, no session token. *(Confirms Assumption 3; `FR-PIC-023`.)*
+- Q: Where do people see executions from a developer's machine? → A: **A panel on the project
+  screen only.** A workspace-wide executions area is `EPIC-040`'s or `EPIC-044`'s. *(Confirms
+  Assumption 4; `FR-PIC-050`.)*
+- Q: Which surface does a REST call with a connector credential register? → A: **REST with a
+  credential records `local-cli`; the MCP server records `mcp-client`.** The caller never
+  declares the surface. *(Confirms Assumption 6; `FR-PIC-025`.)*
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -446,37 +474,39 @@ credential; a second credential's health call creates a second record.
 
 ## Assumptions
 
-Six judgement calls, each with the alternative that lost. They are put to the requester at
-`/speckit-clarify`; until then each stands as recorded.
+Six judgement calls, each with the alternative that lost. **Five were put to the requester on
+2026-09-04 and all five confirmed**; the fifth (the derived Epic list) was not asked, being
+plan-level and reversible, and stands as recorded. The reasoning is kept because it describes the
+risk each confirmation accepts.
 
 1. **The server is an npm package in this repository, run by the agent through the package runner
-   `.mcp.json` names, with a checkout override for development** (`FR-PIC-062`). `EPIC-041` already
+   `.mcp.json` names, with a checkout override for development** (`FR-PIC-062`) — **confirmed**. `EPIC-041` already
    writes `@pmi/mcp-server@<PMI_MCP_SERVER_VERSION>` into `.mcp.json`; this Epic makes that name
    true. The alternative — copying the server into every project directory at provisioning — needs
    no registry but puts a second copy of platform code on every machine, which `PP-002` and the
    toolkit-drift finding in `EPIC-041` argue against. Publication itself is a release act and is a
    promotion condition, not a task.
-2. **`pmi.constitution.get` and `pmi.project.decompose` are reserved, not built** (`FR-PIC-002`,
+2. **`pmi.constitution.get` and `pmi.project.decompose` are reserved, not built** — **confirmed** (`FR-PIC-002`,
    `FR-PIC-045`). Their content is `EPIC-042`'s model (constraints, decomposition policy); building
    them here would either invent that model or return placeholders that look like content. A named
    refusal is honest and lets `EPIC-042` fill the tool without changing the surface. The
    alternative — omit them entirely — leaves a client unable to distinguish *not yet* from *never*.
-3. **The credential is verified on every call** (`FR-PIC-023`). A session cache would make
+3. **The credential is verified on every call** (`FR-PIC-023`) — **confirmed**. A session cache would make
    revocation eventual; `FR-LPW-023` says immediate. The cost is one digest lookup per call,
    measured against `EPIC-041`'s 0.024 ms verification. The alternative — a short-lived session
    token minted from the credential — is a second credential model and was rejected for the same
    reason expiry was in `EPIC-041`.
-4. **The execution timeline is a panel of the project screen, not a new area** (`FR-PIC-050`).
+4. **The execution timeline is a panel of the project screen, not a new area** (`FR-PIC-050`) — **confirmed**.
    PMI-DOC-007 §7 names *the execution timeline* as the one screen in scope and §6 places
    execution visibility on the project; a new navigation area is `EPIC-044`'s board. The
    alternative — a workspace-wide executions area — is useful and deferred to `EPIC-040`/`044`.
 5. **The Epic list is derived from the requirements' grouping until `EPIC-044` exists**
-   (`FR-PIC-043`). `EPIC-044` makes Epic a product entity; this Epic cannot wait for it and must not
+   (`FR-PIC-043`) — **not asked; stands as recorded**. `EPIC-044` makes Epic a product entity; this Epic cannot wait for it and must not
    invent it. Returning the derivation with the data is what lets `EPIC-044` swap the source. The
    alternative — return no Epic list — leaves `EPIC-042`'s decomposition nothing to decompose
    into.
 6. **Mounted REST routes with a connector credential register surface `local-cli`; the server
-   registers `mcp-client`** (`FR-PIC-025`). Both are `BR-0132` surfaces and both derive assurance
+   registers `mcp-client`** (`FR-PIC-025`) — **confirmed**. Both are `BR-0132` surfaces and both derive assurance
    `local`; the distinction is kept because `AC-EXR-02` and `AC-EXR-03` test them separately. The
    alternative — one surface for both — loses information the parity test needs.
 
