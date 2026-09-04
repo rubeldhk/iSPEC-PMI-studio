@@ -173,9 +173,9 @@ stated; the reserved tools honest.
 
 ## Phase 8: Polish & Cross-Cutting — F-043.8
 
-- [ ] T1453 Update `README.md` §Setup and `docs/operator-setup.md` — the `pmi-studio` server, how the agent starts it from `.mcp.json`, `PMI_MCP_SERVER_COMMAND` for a checkout, publication as a promotion condition, and the `M1` flow in words (conformance: `tests/governance/readme-conformance.spec.ts`)
-- [ ] T1454 Write the failing Tier 2 harness `e2e/tests/epic-043-m1.spec.ts` — Playwright creates a project with a root path and reads the credential once; a Node step starts the server from the project's `.mcp.json` over stdio with `PMI_STUDIO_TOKEN` in the environment and, through a real `Client`, registers, reports and completes an execution; Playwright reads the timeline entry and records the elapsed time from the completion call; a second project's credential is refused — writes `docs/uat/EPIC-043-m1-transcript.md` naming the stack (`R-043-12`, `SC-PIC-005`, `SC-PIC-007`)
-- [ ] T1455 Fill `specs/043-pmi-integration-contract/quickstart.md` §Results with the measured figures (timeline latency, per-call verification) and the transcript path
+- [X] T1453 Update `README.md` §Setup and `docs/operator-setup.md` — the `pmi-studio` server, how the agent starts it from `.mcp.json`, `PMI_MCP_SERVER_COMMAND` for a checkout, publication as a promotion condition, and the `M1` flow in words (conformance: `tests/governance/readme-conformance.spec.ts`)
+- [X] T1454 Write the failing Tier 2 harness `e2e/tests/epic-043-m1.spec.ts` — Playwright creates a project with a root path and reads the credential once; a Node step starts the server from the project's `.mcp.json` over stdio with `PMI_STUDIO_TOKEN` in the environment and, through a real `Client`, registers, reports and completes an execution; Playwright reads the timeline entry and records the elapsed time from the completion call; a second project's credential is refused — writes `docs/uat/EPIC-043-m1-transcript.md` naming the stack (`R-043-12`, `SC-PIC-005`, `SC-PIC-007`)
+- [X] T1455 Fill `specs/043-pmi-integration-contract/quickstart.md` §Results with the measured figures (timeline latency, per-call verification) and the transcript path
 
 ---
 

@@ -154,6 +154,16 @@ suite('T1435 · parity across the four surfaces (AC-EXR-01–04)', () => {
 
   it('the timeline read returns the two local executions with their derived surfaces', async () => {
     const api = started.app.getHttpServer();
+    // SC-PIC-005 — how long after a completion call the timeline shows it (in-process, reference-local composition).
+    const t0 = Date.now();
+    const fresh = await throughRest('timing');
+    let seen = false;
+    while (!seen && Date.now() - t0 < 5000) {
+      const page = await request(api).get(`/v1/projects/${projectId}/executions`).set('Cookie', started.cookie).expect(200);
+      seen = (page.body.items as { executionId: string; state: string }[]).some((i) => i.executionId === fresh.executionId && i.state === 'completed');
+    }
+    console.log(`SC-PIC-005 timeline latency after completion: ${Date.now() - t0} ms (seen=${seen})`);
+    expect(seen).toBe(true);
     const res = await request(api).get(`/v1/projects/${projectId}/executions`).set('Cookie', started.cookie).expect(200);
     const surfaces = (res.body.items as { surface: string; assurance: string; state: string }[]).map((i) => `${i.surface}:${i.assurance}:${i.state}`);
     expect(surfaces).toContain('mcp-client:local:completed');

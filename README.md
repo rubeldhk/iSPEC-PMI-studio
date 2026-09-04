@@ -126,6 +126,29 @@ you **once** when the project is created.
 | Reference local, no `uv` | on the host | *prepared* → **failed** at `run_engine_init`, naming `initialiser_unavailable` | install `uv` and provision again |
 | Containerised | none reaches your directory | *prepared* → **initialisation pending** after `PMI_INITIALISE_WAIT_MS` | run the setup skill `setup-PMIStudio` from the directory with your agent |
 
+### The `pmi-studio` server — how your agent reaches PMI Studio (EPIC-043)
+
+Your agent starts the MCP server named in the project's `.mcp.json`
+(`npx -y @pmi/mcp-server@<PMI_MCP_SERVER_VERSION>`) with `PMI_STUDIO_TOKEN` from your
+environment. The server is a client of the platform's REST API and nothing more: every tool is
+one route, every refusal comes back as `isError` with a structured code, and the credential travels
+only in the `Authorization` header. It reads no file under your directory.
+
+**Milestone M1, in words** (`specs/043-pmi-integration-contract`): create a project with a root
+path → copy the credential shown once into `PMI_STUDIO_TOKEN` → open the directory with your
+agent → a governed command calls `pmi.execution.register`, reports progress, and completes → the
+execution appears on the project screen's **Execution timeline**, with surface `mcp-client` and
+assurance `local`. A proposed status transition is approved or refused in PMI Studio, never by the
+agent.
+
+| You are | The server runs from | Set |
+|---|---|---|
+| using a deployed stack | the published `@pmi/mcp-server` package | nothing — `.mcp.json` is complete |
+| developing this repository | this checkout (`packages/mcp-server/src/main.ts`) | `PMI_MCP_SERVER_COMMAND=node ./node_modules/tsx/dist/cli.mjs ./packages/mcp-server/src/main.ts` **before** creating the project, so `.mcp.json` carries it |
+
+Publishing `@pmi/mcp-server` under the name `.mcp.json` carries is a condition of promoting
+`EPIC-043` out of `local`, not a task inside it.
+
 ## Tests
 
 ```bash

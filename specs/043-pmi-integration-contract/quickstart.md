@@ -54,4 +54,27 @@ pnpm --filter e2e test -- epic-043-m1
 
 ## Results
 
-*To be filled at `/speckit-implement` closure with the measured figures and the transcript path.*
+
+### Recorded 2026-09-04 (`T1455`)
+
+| Measurement | Bound | Measured | Stack / method |
+|---|---|---|---|
+| Timeline latency after the completion call (`SC-PIC-005`) | < 5 s | **118 ms** | in-process against the composed `AppModule` (`execution-parity.spec.ts`), Windows 11, Node 22.13 |
+| Credential verification per call (`FR-PIC-023`) | < 1 ms | **0.024 ms** p95 | `EPIC-041` `T1382` measurement, unchanged code path |
+| Fixture conformance suite against the MCP server (`SC-PIC-001`) | 100 % | **5 of 5** pass | `packages/mcp-server/tests/conformance.spec.ts`, expectations unchanged |
+| Parity across the four surfaces (`SC-PIC-002`) | zero differences | **zero** | `execution-parity.spec.ts`: command, lifecycle, governance agree; only surface and assurance differ |
+
+| Scenario | Result |
+|---|---|
+| 1 tools/list equals the contract | ✅ `server.spec.ts`, `mcp-tool-surface.spec.ts` (14 tools) |
+| 2 health and the connection record | ✅ `connector-reads.spec.ts`, `project-provisioning.spec.tsx` |
+| 3 register → appendEvent → complete over MCP, on the timeline | ✅ `execution-parity.spec.ts` |
+| 4 the same over REST, surface `local-cli` | ✅ `execution-parity.spec.ts` |
+| 5 four bad credentials, one refusal, nothing performed | ✅ `mounted-registry.spec.ts`, `refusals.spec.ts` |
+| 6 body identity / surface / assurance refused by field | ✅ `mounted-registry.spec.ts`, `executions.controller.spec.ts` |
+| 7 revocation effective on the next call | ✅ `mounted-registry.spec.ts` |
+| 8 replay returns the original; conflicts refused | ✅ `execution-replay.spec.ts` |
+| 9 context and requirements, this project only | ✅ `connector-reads.spec.ts` |
+| 10 reserved tools validate, then refuse by Epic | ✅ `server.spec.ts`, `connector-reads.spec.ts` |
+| 11 fixture conformance through a real client | ✅ `conformance.spec.ts` |
+| 12 **M1** end to end on a running stack | ⏳ `e2e/tests/epic-043-m1.spec.ts` written; the transcript is `T1458`'s (no stack was brought up in the implementing session) |
