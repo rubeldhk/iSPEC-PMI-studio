@@ -22,10 +22,11 @@ export interface ToolRefusalResult {
 
 /** Shapes that are credentials wherever they appear: ours, and the common API-key forms. */
 const CREDENTIAL_SHAPES = [
+  // The bearer form first, so "Bearer pmi_ct_…" collapses to one placeholder.
+  /\bBearer\s+[A-Za-z0-9._~+/=-]{16,}/g,
   /pmi_ct_[A-Za-z0-9_-]{20,}/g,
   /\bsk-ant-[A-Za-z0-9-]{16,}\b/g,
   /\bsk-[A-Za-z0-9-]{16,}\b/g,
-  /\bBearer\s+[A-Za-z0-9._~+/=-]{16,}/g,
 ];
 
 export function sanitise(text: string): string {

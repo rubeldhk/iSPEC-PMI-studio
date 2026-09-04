@@ -60,9 +60,11 @@ import { ExecutionCommentService, type CommentDb } from './execution-comment.ser
 import { StatusProposalService, type ProposalDb } from './status-proposal.service.js';
 import { ExecutionRegistryFacade } from './execution-registry.facade.js';
 import {
+  CONNECTOR_AUDIT,
   CONNECTOR_IDENTITY_RESOLVER,
   EXECUTION_OWNERSHIP,
   ExecutionsController,
+  type ConnectorAuditPort,
   type ConnectorIdentityResolver,
   type ExecutionOwnership,
 } from './executions.controller.js';
@@ -74,6 +76,8 @@ import { ConnectorCredentialService } from '../connector/connector-credential.se
 import { CONNECTOR_CREDENTIAL_STORE } from '../connector/connector.tokens.js';
 import type { ConnectorCredentialStore } from '../connector/connector-credential.store.js';
 import { AgentsModule } from '../agents/agents.module.js';
+import { AuditModule } from '../audit/audit.module.js';
+import { AuditService } from '../audit/audit.service.js';
 import {
   IdentitySnapshotService,
   PrincipalRegistryService,
@@ -94,7 +98,7 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
   // credential store and the credential service the mounted controller needs.
   // Its own import graph (Projects, Agents, Audit, Access) never reaches here,
   // so no forwardRef is required.
-  imports: [AgentsModule, AccessModule, GOVERNED_LOOP, ConnectorModule],
+  imports: [AgentsModule, AccessModule, GOVERNED_LOOP, ConnectorModule, AuditModule],
   // MOUNTED — behind `ConnectorAuthGuard` on every route, since EPIC-043
   // (`DEF-037-001` closed by mounting). `tests/architecture/executions-mounted.spec.ts`
   // fails if a route loses the guard or names an unregistered scope.
@@ -236,6 +240,12 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
       provide: ExecutionTimelineService,
       inject: [EXECUTION_DB],
       useFactory: (db: unknown): ExecutionTimelineService => new ExecutionTimelineService(db as TimelineDb),
+    },
+    {
+      // EPIC-043 T1440 (FR-PIC-036): every accepted connector call is audited.
+      provide: CONNECTOR_AUDIT,
+      inject: [AuditService],
+      useFactory: (audit: AuditService): ConnectorAuditPort => ({ record: (input) => audit.record(input) }),
     },
     {
       // EPIC-043 T1421 (FR-PIC-032): the read routes' non-disclosure rule.

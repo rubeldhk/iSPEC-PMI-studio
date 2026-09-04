@@ -55,6 +55,7 @@ import {
 import { ConnectorAuthGuard, type ConnectorRequestContext } from '../connector/connector-auth.guard.js';
 import { ConnectorScope } from '../connector/connector-scope.js';
 import { ExecutionRegistryFacade } from './execution-registry.facade.js';
+import { scrubDetail } from './sanitisation.js';
 
 /** What a guarded request carries; the guard puts `connector` there. */
 export interface GuardedRequest {
@@ -74,6 +75,12 @@ export interface ExecutionOwnership {
 
 export const CONNECTOR_IDENTITY_RESOLVER = Symbol('CONNECTOR_IDENTITY_RESOLVER');
 export const EXECUTION_OWNERSHIP = Symbol('EXECUTION_OWNERSHIP');
+
+/** `AuditService.record`, by shape (`FR-PIC-036`). */
+export interface ConnectorAuditPort {
+  record(input: { workspaceId: string; actorId: string | null; action: 'create' | 'update'; targetType: string; targetId?: string; outcome: 'success' | 'refused' | 'failed'; detail?: Record<string, unknown> }): Promise<void>;
+}
+export const CONNECTOR_AUDIT = Symbol('CONNECTOR_AUDIT');
 
 /** The subset of Express's response this controller sets. */
 interface StatusSetter {
@@ -97,7 +104,24 @@ export class ExecutionsController {
     @Inject(ExecutionRegistryFacade) private readonly registry: ExecutionRegistryFacade,
     @Inject(CONNECTOR_IDENTITY_RESOLVER) private readonly identity: ConnectorIdentityResolver,
     @Inject(EXECUTION_OWNERSHIP) private readonly ownership: ExecutionOwnership,
+    @Inject(CONNECTOR_AUDIT) private readonly audit: ConnectorAuditPort | null = null,
   ) {}
+
+  /** `FR-PIC-036` — every accepted call names the principal, the project, the operation and the outcome. */
+  private async audited<T>(ctx: ConnectorRequestContext, operation: string, executionId: string | null, work: () => Promise<T>): Promise<T> {
+    const result = await work();
+    const targetId = executionId ?? (result as { executionId?: string } | null)?.executionId;
+    await this.audit?.record({
+      workspaceId: ctx.workspaceId,
+      actorId: ctx.principal.principalId,
+      action: 'create',
+      targetType: 'execution',
+      ...(targetId ? { targetId } : {}),
+      outcome: 'success',
+      detail: scrubDetail({ kind: 'connector', operation, projectId: ctx.projectId, credentialId: ctx.credentialId, outcome: 'success' }),
+    });
+    return result;
+  }
 
   @Post()
   @ConnectorScope('execution.register')
@@ -107,13 +131,13 @@ export class ExecutionsController {
     this.refuseAsserted(body);
     const surface = this.surfaceOf(req);
     const identity = await this.identity.forRequest(ctx);
-    return this.registry.register({
+    return this.audited(ctx, 'execution.register', null, () => this.registry.register({
       ...(body as unknown as Omit<RegisterExecutionRequest, 'workspaceId' | 'projectId' | 'identity' | 'surface'>),
       workspaceId: ctx.workspaceId,
       projectId: ctx.projectId,
       identity,
       surface,
-    });
+    }));
   }
 
   @Post(':id/events')
@@ -126,12 +150,12 @@ export class ExecutionsController {
     const identity = await this.identity.forRequest(ctx);
     // The path wins over the body: a body that could name a different execution
     // than the URL would let one request write into another's stream.
-    return this.registry.appendEvent({
+    return this.audited(ctx, 'execution.append', id, () => this.registry.appendEvent({
       ...(body as unknown as Omit<AppendEventRequest, 'executionId' | 'workspaceId' | 'identity'>),
       executionId: id,
       workspaceId: ctx.workspaceId,
       identity,
-    });
+    }));
   }
 
   @Post(':id/completion')
@@ -142,12 +166,12 @@ export class ExecutionsController {
     this.refuseAsserted(body);
     await this.requireOwn(ctx, id);
     const identity = await this.identity.forRequest(ctx);
-    return this.registry.complete({
+    return this.audited(ctx, 'execution.complete', id, () => this.registry.complete({
       ...(body as unknown as Omit<CompleteExecutionRequest, 'executionId' | 'workspaceId' | 'identity'>),
       executionId: id,
       workspaceId: ctx.workspaceId,
       identity,
-    });
+    }));
   }
 
   /** New in EPIC-043 (`T1466`): `EPIC-037` built the comment service and no route. */
@@ -159,7 +183,7 @@ export class ExecutionsController {
     this.refuseAsserted(body);
     await this.requireOwn(ctx, id);
     const identity = await this.identity.forRequest(ctx);
-    return this.registry.comment({
+    return this.audited(ctx, 'execution.comment', id, () => this.registry.comment({
       executionId: id,
       workspaceId: ctx.workspaceId,
       identity,
@@ -167,7 +191,7 @@ export class ExecutionsController {
       commentType: (body['commentType'] as string | undefined) ?? 'note',
       idempotencyKey: String(body['idempotencyKey'] ?? ''),
       ...(typeof body['parentCommentId'] === 'string' ? { parentCommentId: body['parentCommentId'] } : {}),
-    });
+    }));
   }
 
   /** `202`: the platform has accepted the proposal, not applied the transition. */
@@ -184,12 +208,12 @@ export class ExecutionsController {
     this.refuseAsserted(body);
     await this.requireOwn(ctx, id);
     const identity = await this.identity.forRequest(ctx);
-    const event = await this.registry.proposeTransition({
+    const event = await this.audited(ctx, 'execution.propose', id, () => this.registry.proposeTransition({
       ...(body as unknown as Omit<ProposeTransitionRequest, 'executionId' | 'workspaceId' | 'identity'>),
       executionId: id,
       workspaceId: ctx.workspaceId,
       identity,
-    });
+    }));
     res.status(202);
     return event;
   }

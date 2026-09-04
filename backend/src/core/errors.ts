@@ -266,10 +266,42 @@ export function toHttpStatus(err: unknown): number {
  * fixed message — its own text is never exposed, because it may carry a
  * connection string, a token, or engine output.
  */
+/**
+ * EPIC-043 T1440 (`FR-PIC-026`, `SC-PIC-003`) — the shapes that are credentials
+ * wherever they appear: this platform's connector credential, and the common
+ * API-key forms. A refusal that echoed one would put a secret in a log, a
+ * screen and an agent transcript at once.
+ */
+const CREDENTIAL_SHAPES: readonly RegExp[] = [
+  // The bearer form first, so "Bearer pmi_ct_…" collapses to one placeholder.
+  /\bBearer\s+[A-Za-z0-9._~+/=-]{16,}/g,
+  /pmi_ct_[A-Za-z0-9_-]{20,}/g,
+  /\bsk-ant-[A-Za-z0-9-]{16,}\b/g,
+  /\bsk-[A-Za-z0-9-]{16,}\b/g,
+];
+
+export function scrubCredentials(text: string): string {
+  let out = text;
+  for (const shape of CREDENTIAL_SHAPES) out = out.replace(shape, '<credential>');
+  return out;
+}
+
+/** The same scrub, applied to every string at any depth of a value. */
+export function scrubCredentialsDeep<T>(value: T): T {
+  if (typeof value === 'string') return scrubCredentials(value) as unknown as T;
+  if (Array.isArray(value)) return value.map((v) => scrubCredentialsDeep(v)) as unknown as T;
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = scrubCredentialsDeep(v);
+    return out as T;
+  }
+  return value;
+}
+
 export function toErrorBody(err: unknown): ErrorBody {
   if (err instanceof PlatformError) {
-    const body: ErrorBody = { error: { code: err.code, message: err.message } };
-    if (err.details !== undefined) body.error.details = err.details;
+    const body: ErrorBody = { error: { code: err.code, message: scrubCredentials(err.message) } };
+    if (err.details !== undefined) body.error.details = scrubCredentialsDeep(err.details);
     return body;
   }
   return { error: { code: 'internal_error', message: 'An unexpected error occurred.' } };

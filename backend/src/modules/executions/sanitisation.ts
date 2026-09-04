@@ -1,3 +1,4 @@
+import { scrubCredentialsDeep } from '../../core/errors.js';
 /**
  * T1043 (EPIC-037 Band A) — arguments are sanitised, and credentials refuse.
  *
@@ -108,4 +109,14 @@ export function sanitiseArgs(args: Readonly<Record<string, unknown>>): Record<st
     out[key] = value;
   }
   return out;
+}
+
+/**
+ * EPIC-043 T1440 (`FR-PIC-036`, `FR-PIC-026`) — an audit detail for a connector
+ * operation, with every credential shape replaced. The shapes are the
+ * platform's own (`core/errors.ts`), so a refusal body and an audit row can
+ * never disagree about what a credential looks like.
+ */
+export function scrubDetail(detail: Record<string, unknown>): Record<string, unknown> {
+  return scrubCredentialsDeep(detail);
 }
