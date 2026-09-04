@@ -62,6 +62,13 @@ string comparison after normalisation, keeps the display path truthful on the us
 detected by the API at start (`PMI_PROJECTS_ROOT` must exist and be writable) and again per
 request, so the refusal *projects root unavailable* precedes any write.
 
+**Two more settings belong to the same decision** (added 2026-09-03, analysis `U2` and `I1`):
+`PMI_PUBLIC_URL`, the address the API writes into `.pmi/project.json` and `.mcp.json` — a container
+cannot infer what the user's machine calls it, so the operator states it, default
+`http://localhost:${PMI_APP_PORT:-3000}`; and `PMI_INITIALISE_WAIT_MS` (default `30000`), the bound
+after which a prepared project whose initialise job nobody has claimed reads *initialisation
+pending*. Both are in `.env.example` and asserted by `T1310`.
+
 **Alternatives considered**. *Arbitrary absolute host paths* — rejected: not writable from the
 container, and "outside the root" becomes undecidable. *A root per workspace* — deferred: one root
 suffices for a single-developer machine; per-workspace roots are a tenant-policy question.
@@ -241,6 +248,11 @@ extension: `extension.yml`, its command files, and the `extensions.yml` hook fra
 paths name no engine). The **initialise** step copies `extension/` into `.specify/extensions/pmi/`
 and registers the hooks in `.specify/extensions.yml` (the worker does this — the extension's content
 necessarily names Spec Kit). `bundleVersion` is recorded on the `ProvisioningRecord`.
+
+**The bundle also owns the integration → skills-directory mapping** (`skillsPathFor`, added
+2026-09-03 for analysis `C4`): `claude` → `.claude/skills/`, and a typed refusal for any
+integration without a row, so provisioning code never names an agent (`FR-LPW-006`) and never
+defaults to one.
 
 **This Epic ships bundle v0.1**: a setup skill whose whole job is the hand-off — verify
 `.pmi/project.json`, report whether initialisation is pending, run the `R-041-8` command when it is,

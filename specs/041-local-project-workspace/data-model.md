@@ -40,7 +40,7 @@ not_provisioned ──► prepared ──► provisioned
 |---|---|---|
 | `not_provisioned` | a row and nothing else — today's state for every project | creation |
 | `prepared` | directory, git, `.pmi/project.json`, `.mcp.json`, setup skill written; initialise job queued | prepare step succeeded |
-| `initialisation_pending` | prepared, and no worker took the initialise job within the bound (`R-041-1`) | job wait exceeded |
+| `initialisation_pending` | prepared, and no worker took the initialise job within `PMI_INITIALISE_WAIT_MS` (default 30 s; `R-041-1`) | job wait exceeded — derived from the job ledger's state, not from a timer the API must keep alive |
 | `provisioned` | Spec Kit initialised and PMI extension installed | initialise step succeeded — by the worker, or reported by the setup skill through `EPIC-043`'s contract |
 | `failed` | a step failed; `ProvisioningRecord.failedStep` names it | any step failed |
 

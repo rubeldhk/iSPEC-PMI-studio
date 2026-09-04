@@ -98,7 +98,19 @@ project.
 | Valid | request proceeds with a connector principal | |
 | Unknown, wrong digest, or revoked | `401` | one message for all three — a distinguishable refusal leaks which |
 | Valid, but the resource belongs to another project | `404` | `FR-LPW-025` — existence is not disclosed |
-| Valid, but the operation is outside `FR-LPW-026`'s set | `403` | scope, not identity |
+| Valid, but the route declares no connector scope, or one the credential lacks | `403` | scope, not identity |
+
+**The scope set is a registry, not a list in prose** (`FR-LPW-026`; analysis `U1`). A route that
+accepts a connector credential declares its scope with a decorator — `@ConnectorScope('connector.whoami')`
+— and the guard refuses any route that declares none. This Epic registers exactly one scope,
+`connector.whoami`. `EPIC-043` registers `execution.*`, `artifacts.sync` and `tasks.sync` on its own
+routes without touching the guard. A credential authorises every registered scope for its project;
+per-scope credentials are a later policy question and are not modelled here.
+
+**Terminology.** This Epic's artifacts say *connector credential*. The wire names are
+`PMI_STUDIO_TOKEN` (the environment variable the agent reads) and the `pmi_ct_` prefix (*connector
+token*), and PMI-DOC-007 §3 named the table `ConnectorToken`. One concept, two spellings: the prose
+name is *credential*, the wire name is *token*, and neither is renamed (analysis `T2`).
 
 **In this Epic nothing is mounted behind the guard yet.** The guard, its tests and its refusal
 mapping ship here; `EPIC-043` mounts the execution registry and the sync routes behind it. The

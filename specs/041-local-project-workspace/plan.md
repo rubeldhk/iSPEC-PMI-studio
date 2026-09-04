@@ -50,10 +50,12 @@ member each on `JobKind` and the principal `kind` vocabulary. Additive migration
 platform writes to and never reads content back from (`FR-LPW-011`).
 
 **Testing**: Vitest 2.1 — `backend-unit` (services with in-memory stores and a temp-dir file
-system), `backend-integration` (Testcontainers PostgreSQL, gated by `DOCKER_UNAVAILABLE=1` as the
-sibling Epics are), `architecture` (two new checks: `durable-stores.spec.ts`; the engine-independence
-check unchanged and load-bearing), `governance` (file-shape conformance for `.pmi/project.json` and
-`.mcp.json`), `frontend`, and `e2e` for the Tier 2 transcripts (`R-041-12`).
+system), `backend-contract` (the files the platform emits into a project directory, `T1352`),
+`backend-integration` (Testcontainers PostgreSQL, gated by `DOCKER_UNAVAILABLE=1` as the sibling
+Epics are; includes the route-through generation proof `T1383`), `architecture` (two new checks:
+`durable-stores.spec.ts`, `connector-boundary.spec.ts`; the engine-independence check unchanged and
+load-bearing), `governance` (configuration conformance, `T1310` — file-reading only), `frontend`, and
+`e2e` for the Tier 2 transcripts (`R-041-12`).
 
 **Target Platform**: Linux server and Windows developer machines (`scriptType: ps` is a first-class
 choice, not an afterthought), browser. **This Epic delivers a journey** — create → provision →
@@ -71,6 +73,13 @@ this is the constraint that shapes the whole design; the credential value exists
 response that minted it and the user's environment (`FR-LPW-021`, `FR-LPW-024`); the containerised
 stack runs no worker (`docker-compose.yml`), so under it every project is *initialisation pending*
 by construction (`R-041-1`).
+
+**Configuration** (all six declared in `.env.example` and asserted by `T1310`): `PMI_PROJECTS_ROOT`
+(where the API writes), `PMI_PROJECTS_ROOT_HOST` (the same directory as the user's machine sees it),
+`PMI_PUBLIC_URL` (the address written into a project's files — default
+`http://localhost:${PMI_APP_PORT:-3000}`; a container cannot infer it), `PMI_SPECKIT_TAG` (default
+`v0.16.4`), `PMI_MCP_SERVER_VERSION`, `PMI_INITIALISE_WAIT_MS` (default `30000` — the bound after
+which a prepared project with an unclaimed initialise job reads *initialisation pending*).
 
 **Scale/Scope**: one projects root per platform instance, designed for 1,000 projects; 35
 functional requirements in five groups; two screens; two Tier 2 transcripts.
@@ -172,7 +181,9 @@ docker-compose.yml                   app: volume ${PMI_PROJECTS_ROOT_HOST}:/proj
                                        PMI_PROJECTS_ROOT_HOST=${PMI_PROJECTS_ROOT_HOST}
 .env.example                         PMI_PROJECTS_ROOT, PMI_PROJECTS_ROOT_HOST, PMI_SPECKIT_TAG, PMI_MCP_SERVER_VERSION
 e2e/                                 EPIC-041 journey → docs/uat/EPIC-041-<stack>-transcript.md (R-041-12)
-tests/governance/project-files.spec.ts        FR-LPW-009 conformance: shape, no credential pattern
+backend/tests/contract/project-files.spec.ts  FR-LPW-009, FR-LPW-011 conformance: exact file set, shape, no credential pattern
+tests/governance/projects-root-config.spec.ts the six configuration variables, compose mount (file-reading only)
+backend/src/modules/connector/connector-scope.ts   FR-LPW-026 — the scope registry a route declares itself into
 
 adr/ADR-0030-local-first-execution-and-integration-contract.md   NEW (this plan)
 adr/ADR-0009-…md · adr/ADR-0024-…md · adr/ADR-0017-…md · adr/README.md   amended (this plan)

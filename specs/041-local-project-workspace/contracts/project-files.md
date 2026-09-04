@@ -31,8 +31,23 @@ conformance test reads every file the platform wrote and fails on a match of `pm
 ```
 
 `.claude/` is the layout for the `claude` integration; another integration's `specify init` writes
-its own agent directory, and the setup skill location follows the integration
-(`.claude/skills/` for Claude Code). `agentIntegration` is a parameter (`FR-LPW-006`).
+its own agent directory, and the setup skill location follows the integration. `agentIntegration`
+is a parameter (`FR-LPW-006`).
+
+## Skills path — `skillsPathFor(integration)`
+
+Where the setup skill is copied is **configuration in `@pmi/workspace-bundle`**, not a literal in
+provisioning code (analysis `C4`). The mapping is a table the bundle ships and `T1316` asserts:
+
+| Integration (`specify init --integration`) | Skills directory |
+|---|---|
+| `claude` | `.claude/skills/` |
+| *(any other)* | **no mapping** — `skillsPathFor` returns a typed refusal; the `copy_setup_skill` step fails **by name**, and the project reads `failed` with that step |
+
+v0.1 of the bundle maps `claude` only, because it is the one integration this programme has run end
+to end. Adding a row is a bundle version bump and a test, never an edit to `provisioning.service.ts`.
+A refusal rather than a default is deliberate: copying a skill into another agent's directory would
+"work" while installing a Claude Code skill where no Claude Code will read it.
 
 ---
 
@@ -58,6 +73,9 @@ Rules:
 
 - **No credential, no secret, no absolute host path other than the platform URL.** The root path
   is not written: the file already knows where it is.
+- `platformUrl` (and `PMI_STUDIO_URL` in `.mcp.json`) comes from **`PMI_PUBLIC_URL`** and nowhere
+  else (analysis `U2`). The API in a container cannot infer the address the user's machine reaches
+  it at; the operator states it once, with the default `http://localhost:${PMI_APP_PORT:-3000}`.
 - `schemaVersion` is bumped by any incompatible change; the setup skill refuses a version it does
   not know rather than guessing.
 - Written with `\n` line endings and a trailing newline regardless of platform, so a git diff after
