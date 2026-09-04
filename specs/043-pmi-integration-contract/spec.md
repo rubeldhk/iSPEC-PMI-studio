@@ -305,9 +305,11 @@ credential; a second credential's health call creates a second record.
 
 - **FR-PIC-001**: The platform MUST provide the MCP binding of the `EPIC-037` execution contract as
   a stdio server named `pmi-studio`, startable by an agent from a project's `.mcp.json` as
-  `EPIC-041` writes it, exposing **exactly** the seven execution tools `EPIC-037` names
-  (`register`, `appendEvent`, `complete`, `comment`, `proposeStatus`, `history`, `sync`) with
-  unchanged semantics (`BR-0122`, `LR-08`).
+  `EPIC-041` writes it, exposing the seven execution tools `EPIC-037` names with unchanged
+  semantics (`BR-0122`, `LR-08`): **six live** — `register`, `appendEvent`, `complete`, `comment`,
+  `proposeStatus`, `history` — and `sync` **reserved** (see `FR-PIC-034`). `comment` MUST be added
+  to the registry facade and its REST route in this Epic, because `EPIC-037` delivered the comment
+  service without either *(analysis `C1`, 2026-09-04)*.
 - **FR-PIC-002**: The server MUST additionally expose `pmi.health`, `pmi.project.context` and
   `pmi.requirements.list`, and MUST reserve `pmi.constitution.get`, `pmi.project.decompose`,
   `pmi.artifacts.sync` and `pmi.tasks.sync` as named tools whose refusal states the Epic that
@@ -375,9 +377,11 @@ credential; a second credential's health call creates a second record.
   project; the workspace and execution named in a path MUST be verified against it, never trusted.
 - **FR-PIC-033**: No mounted route and no tool MAY apply, approve or patch a transition; proposals
   are recorded and a human approves in PMI Studio (`BR-0199`, `BR-0200`, Constitution XII.5–6).
-- **FR-PIC-034**: `pmi.execution.sync` MUST accept a provisional execution's events for
-  reconciliation exactly as `EPIC-037` specifies (`BR-0202`); producing provisional records is
-  `EPIC-042`'s.
+- **FR-PIC-034**: `pmi.execution.sync` and `POST /v1/executions/sync` MUST exist in the surface
+  and MUST refuse `not_available_until { epic: 'EPIC-037' }` until `EPIC-037`'s provisional intake
+  (`T1060`–`T1065`, US4) is delivered; when it is, they accept a provisional execution's events for
+  reconciliation exactly as `EPIC-037` specifies (`BR-0202`) with no change to this surface.
+  Producing provisional records is `EPIC-042`'s *(analysis `C1`, 2026-09-04)*.
 - **FR-PIC-035**: The session-authenticated read of a project's execution timeline MUST be
   available to workspace members through the platform API for the screen in `FR-PIC-050`,
   scoped by workspace and project as every product endpoint is.

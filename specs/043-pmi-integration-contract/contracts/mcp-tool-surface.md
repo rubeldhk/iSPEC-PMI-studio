@@ -16,17 +16,17 @@ refuses a value other than the server's; **no argument, result or refusal carrie
 — a credential-shaped value in any argument is refused as `credential_in_argument` naming the
 argument, never its value.
 
-## 1. Execution tools — exactly `EPIC-037`'s seven
+## 1. Execution tools — `EPIC-037`'s seven: six live, `sync` reserved
 
-| Tool | Route it translates to | Mutating | Scope |
-|---|---|---|---|
-| `pmi.execution.register` | `POST /v1/executions` | yes | `execution.register` |
-| `pmi.execution.appendEvent` | `POST /v1/executions/{id}/events` | yes | `execution.append` |
-| `pmi.execution.complete` | `POST /v1/executions/{id}/completion` | yes | `execution.complete` |
-| `pmi.execution.comment` | `POST /v1/executions/{id}/comments` | yes | `execution.comment` |
-| `pmi.execution.proposeStatus` | `POST /v1/executions/{id}/proposals` | yes | `execution.propose` |
-| `pmi.execution.history` | `GET /v1/executions/{id}/history` | no | `execution.read` |
-| `pmi.execution.sync` | `POST /v1/executions/sync` | yes | `execution.sync` |
+| Tool | Route it translates to | Mutating | Scope | State |
+|---|---|---|---|---|
+| `pmi.execution.register` | `POST /v1/executions` | yes | `execution.register` | live |
+| `pmi.execution.appendEvent` | `POST /v1/executions/{id}/events` | yes | `execution.append` | live |
+| `pmi.execution.complete` | `POST /v1/executions/{id}/completion` | yes | `execution.complete` | live |
+| `pmi.execution.comment` | `POST /v1/executions/{id}/comments` | yes | `execution.comment` | live — **route and facade method added by this Epic** (`T1465`, `T1466`) |
+| `pmi.execution.proposeStatus` | `POST /v1/executions/{id}/proposals` | yes | `execution.propose` | live |
+| `pmi.execution.history` | `GET /v1/executions/{id}/history` | no | `execution.read` | live |
+| `pmi.execution.sync` | `POST /v1/executions/sync` | yes | `execution.sync` | **reserved** — `not_available_until { epic: 'EPIC-037' }` until its provisional intake (US4) is delivered (`FR-PIC-034`) |
 
 Argument shapes are the contract's request types **minus** `workspaceId`, `projectId`, `surface`,
 `identity` and `assurance` — the server never sends them and the route never accepts them. The

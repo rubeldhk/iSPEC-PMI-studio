@@ -30,14 +30,32 @@ Idempotency-Key                                      required on every POST (EPI
 | `POST /v1/executions` | `execution.register` | `201` snapshot; replay `201` original | `workspaceId`, `projectId`, `identity`, `surface`, `assurance` → `400 identity_not_accepted` / `surface_not_accepted` |
 | `POST /v1/executions/:id/events` | `execution.append` | `201 { eventId, sequence }`; `409` on `expectedSequence` mismatch | `workspaceId` |
 | `POST /v1/executions/:id/completion` | `execution.complete` | `201` | `workspaceId` |
-| `POST /v1/executions/:id/comments` | `execution.comment` | `201 { commentId }` | `workspaceId` |
+| `POST /v1/executions/:id/comments` | `execution.comment` | `201 { commentId }` — **new in this Epic**: `ExecutionRegistryFacade.comment()` over `ExecutionCommentService.add()` (`T1465`, `T1466`) | `workspaceId` |
 | `POST /v1/executions/:id/proposals` | `execution.propose` | `202 { proposalId, state }` — accepted, never applied | `workspaceId` |
-| `GET /v1/executions/:id/history` | `execution.read` | `200` ordered events | — (the path no longer carries a workspace) |
-| `GET /v1/executions/:id` | `execution.read` | `200` snapshot | — |
-| `POST /v1/executions/sync` | `execution.sync` | `200 { accepted[], conflicts[] }` | `workspaceId` |
+| `GET /v1/executions/:id/history` | `execution.read` | `200` ordered events; `404` when the execution's `projectId` is not the credential's (`FR-PIC-032`) | — (the path no longer carries a workspace) |
+| `GET /v1/executions/:id` | `execution.read` | `200` snapshot; same `404` rule | — |
+| `POST /v1/executions/sync` | `execution.sync` | `501 not_available_until { epic: 'EPIC-037' }` until `EPIC-037` US4 is delivered; then `200 { accepted[], conflicts[] }` | `workspaceId` |
 
 The `:workspaceId` path segment `DEF-037-001` described is **gone**; the workspace is the
-credential's.
+credential's. Every read verifies the execution's `projectId` against the credential's before
+answering, and answers `404` otherwise — the same non-disclosure rule as the guard's.
+
+### Deviations from `EPIC-037`'s contract document (analysis `I1`)
+
+`specs/037-governed-execution-registry/contracts/execution-contract.md` §2 was written before the
+controller; the **built controller is authoritative** and this Epic mounts it as built.
+
+| `EPIC-037` §2 says | Built and mounted here | Note |
+|---|---|---|
+| `POST …/{id}/complete` | `POST …/:id/completion` | same semantics |
+| `POST …/{id}/status-proposals` | `POST …/:id/proposals` | same `202` |
+| `GET …/{id}/events` | `GET …/:id/history` | same ordered stream |
+| `GET /v1/executions?target=…&targetVersion=…` | not mounted | artifact-history query is `FR-EXR-016`, unbuilt in `EPIC-037`; out of scope here |
+| `POST …/{id}/comments` | added by this Epic | `EPIC-037` built the service, not the route |
+| `POST /v1/executions/sync` | reserved | `EPIC-037` US4 unbuilt |
+
+The drift in `EPIC-037`'s document is its owner's to correct; it is recorded here so the two
+documents can be read together.
 
 ## 3. What the platform derives on `POST /v1/executions`
 
