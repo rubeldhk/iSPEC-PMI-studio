@@ -31,6 +31,8 @@ import { RunsPage } from '../pages/Runs';
 import { SpecificationList } from '../pages/SpecificationList';
 import { SpecificationView } from '../pages/Specification';
 import { StorageConnectionsPage } from '../pages/StorageConnections';
+import { ConnectorCredentialsPage } from '../pages/ConnectorCredentials';
+import { AccessGrants } from '../components/AccessGrants';
 import { TasksPage } from '../pages/Tasks';
 import { TraceabilityPage } from '../pages/Traceability';
 import { Home } from './Home';
@@ -182,7 +184,16 @@ export function WorkspaceAdministrationArea(): ReactElement {
   return (
     <RequireProject>
       {(projectId): ReactElement => (
-        <StorageConnectionsPage api={api} workspaceId={workspaceId} projectId={projectId} />
+        <>
+          <StorageConnectionsPage api={api} workspaceId={workspaceId} projectId={projectId} />
+          {/* EPIC-041 T1381 (`FR-LPW-052`, `R-041-11`): the credentials a
+              project's owner mints for the agent on their machine, and the
+              access grants EPIC-024 built and nothing mounted. */}
+          <ConnectorCredentialsPage api={api} projectId={projectId} />
+          <MainLandmark>
+            <AccessGrants api={api} artifactType="project" artifactId={projectId} />
+          </MainLandmark>
+        </>
       )}
     </RequireProject>
   );

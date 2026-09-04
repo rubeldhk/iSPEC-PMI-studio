@@ -9,9 +9,19 @@
  * FR-DS-012), loading is a status region.
  */
 import { useCallback, useEffect, useState, type FormEvent, type ReactElement } from 'react';
-import { ApiError, type ApiClient, type Job, type Project, type Requirement } from '../services/api';
+import {
+  ApiError,
+  type ApiClient,
+  type Job,
+  type MintedConnectorCredential,
+  type Project,
+  type ProvisioningRecord,
+  type Requirement,
+} from '../services/api';
+import { CredentialOnce } from '../components/CredentialOnce';
 import { JobProgress } from '../components/JobProgress';
 import { Button } from '../design/components/Button';
+import { Select } from '../design/components/Select';
 import { EmptyState } from '../design/components/EmptyState';
 import { FormField } from '../design/components/FormField';
 import { LoadingIndicator } from '../design/components/LoadingIndicator';
@@ -33,6 +43,12 @@ export interface ProjectsPageProps {
 export function ProjectsPage({ api, onOpen }: ProjectsPageProps): ReactElement {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [name, setName] = useState('');
+  // EPIC-041 (FR-LPW-050): the local directory and its integration.
+  const [rootPath, setRootPath] = useState('');
+  const [agentIntegration, setAgentIntegration] = useState('');
+  const [scriptType, setScriptType] = useState<'' | 'sh' | 'ps'>('');
+  // The credential minted at provisioning — held only until the person moves on (FR-LPW-021).
+  const [minted, setMinted] = useState<MintedConnectorCredential | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async (): Promise<void> => {
@@ -51,23 +67,57 @@ export function ProjectsPage({ api, onOpen }: ProjectsPageProps): ReactElement {
     event.preventDefault();
     setError(null);
     try {
-      await api.createProject({ name });
+      const trimmedRoot = rootPath.trim();
+      const created = await api.createProject({
+        name,
+        ...(trimmedRoot !== '' ? { rootPath: trimmedRoot } : {}),
+        ...(agentIntegration.trim() !== '' ? { agentIntegration: agentIntegration.trim() } : {}),
+        ...(scriptType !== '' ? { scriptType } : {}),
+      });
+      setMinted(created.connectorCredential ?? null);
       setName('');
+      setRootPath('');
+      setAgentIntegration('');
+      setScriptType('');
       await refresh();
     } catch (err) {
       setError(message(err));
     }
   }
 
+  const open = (projectId: string): void => {
+    setMinted(null);
+    onOpen(projectId);
+  };
+
   return (
     <main className="ds-page">
       <PageHeader title="Projects" />
-      <form className="ds-row" onSubmit={(e) => void create(e)}>
-        <FormField id="project-name" label="Project name">
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
-        </FormField>
-        <Button type="submit">Create</Button>
+      <form className="ds-stack" onSubmit={(e) => void create(e)}>
+        <div className="ds-row">
+          <FormField id="project-name" label="Project name">
+            <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+          </FormField>
+          <FormField id="project-root-path" label="Root path" hint="A directory name under the projects root. Leave empty for a project without a local directory.">
+            <TextInput value={rootPath} onChange={(e) => setRootPath(e.target.value)} />
+          </FormField>
+        </div>
+        <div className="ds-row">
+          <FormField id="project-agent-integration" label="Agent integration">
+            <TextInput value={agentIntegration} placeholder="platform default" onChange={(e) => setAgentIntegration(e.target.value)} />
+          </FormField>
+          <FormField id="project-script-type" label="Script type">
+            <Select value={scriptType} onChange={(e) => setScriptType(e.target.value as '' | 'sh' | 'ps')}>
+              <option value="">platform default</option>
+              <option value="sh">sh</option>
+              <option value="ps">ps</option>
+            </Select>
+          </FormField>
+          <Button type="submit">Create</Button>
+        </div>
+        <span className="ds-field__hint">Integration and script type use the platform default unless chosen.</span>
       </form>
+      {minted !== null && <CredentialOnce label={minted.label} value={minted.value} onDismiss={() => setMinted(null)} />}
       {error !== null && (
         <p className="ds-field__error" role="alert">
           {error}
@@ -84,7 +134,7 @@ export function ProjectsPage({ api, onOpen }: ProjectsPageProps): ReactElement {
         <ul className="ds-stack">
           {projects.map((project) => (
             <li key={project.id} className="ds-row">
-              <Button variant="ghost" onClick={() => onOpen(project.id)}>
+              <Button variant="ghost" onClick={() => open(project.id)}>
                 {project.name}
               </Button>
               {project.status === 'archived' && <StatusPill tone="neutral">archived</StatusPill>}
@@ -93,6 +143,92 @@ export function ProjectsPage({ api, onOpen }: ProjectsPageProps): ReactElement {
         </ul>
       )}
     </main>
+  );
+}
+
+// ---------------------------------------------------------------- provisioning
+
+const STATE_LABEL: Record<Project['provisioningState'], string> = {
+  not_provisioned: 'Not provisioned',
+  prepared: 'Prepared',
+  initialisation_pending: 'Initialisation pending',
+  provisioned: 'Provisioned',
+  failed: 'Failed',
+};
+
+/** What the state asks of the person, in words (FR-LPW-051, FR-SHL-061). */
+function stateGuidance(project: Project, latest: ProvisioningRecord | null): string {
+  switch (project.provisioningState) {
+    case 'prepared':
+      return 'Prepared — wait. The worker is initialising the directory; this page updates when it is done.';
+    case 'initialisation_pending':
+      return 'Initialisation pending — no worker reached this directory. Run the setup skill (setup-PMIStudio) from the project directory with your agent to finish it.';
+    case 'failed':
+      return `Failed at step ${latest?.failedStep ?? 'unknown'}${latest?.failureReason ? `: ${latest.failureReason}` : ''}. Fix the cause and provision again.`;
+    case 'provisioned':
+      return `Provisioned${project.provisionedAt ? ` on ${project.provisionedAt}` : ''}. Open the directory with your agent.`;
+    default:
+      return 'No local directory. Provision one to work with your agent locally.';
+  }
+}
+
+/**
+ * EPIC-041 T1379 (`FR-LPW-051`): the provisioning panel — path, integration,
+ * script type, engine tag, extension version and state, with the state's next
+ * step in words.
+ */
+export function ProvisioningPanel({ api, project }: { api: ApiClient; project: Project }): ReactElement {
+  const [latest, setLatest] = useState<ProvisioningRecord | null | undefined>(project.latestProvisioning);
+
+  useEffect(() => {
+    if (project.latestProvisioning !== undefined) {
+      setLatest(project.latestProvisioning);
+      return;
+    }
+    void (async (): Promise<void> => {
+      try {
+        const [first] = await api.listProvisioning(project.id);
+        setLatest(first ?? null);
+      } catch {
+        setLatest(null);
+      }
+    })();
+  }, [api, project]);
+
+  const record = latest ?? null;
+  return (
+    <section className="ds-stack" aria-label="Local workspace" role="region">
+      <h2>Local workspace</h2>
+      {project.rootPath === null ? (
+        <p className="ds-field__hint">{stateGuidance(project, record)}</p>
+      ) : (
+        <>
+          <dl>
+            <dt>Path</dt>
+            <dd>
+              <code>{project.rootPath}</code>
+            </dd>
+            <dt>Agent integration</dt>
+            <dd>{project.agentIntegration ?? '—'}</dd>
+            <dt>Script type</dt>
+            <dd>{project.scriptType ?? '—'}</dd>
+            <dt>Engine tag</dt>
+            <dd>{record?.engineTag ?? '—'}</dd>
+            <dt>Extension version</dt>
+            <dd>{record?.bundleVersion ?? '—'}</dd>
+            <dt>State</dt>
+            <dd>
+              <StatusPill tone={project.provisioningState === 'failed' ? 'danger' : project.provisioningState === 'provisioned' ? 'success' : 'neutral'}>
+                {STATE_LABEL[project.provisioningState]}
+              </StatusPill>
+            </dd>
+          </dl>
+          <p className="ds-field__hint" role="status">
+            {stateGuidance(project, record)}
+          </p>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -279,6 +415,7 @@ export function ProjectDetail({ api, projectId, onBack, children }: ProjectDetai
           {error}
         </p>
       )}
+      <ProvisioningPanel api={api} project={project} />
       <GenerateSpecification api={api} projectId={projectId} />
       {children}
     </main>

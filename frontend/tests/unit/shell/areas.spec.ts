@@ -259,3 +259,22 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
     }
   });
 });
+
+describe('T1381 · Workspace & Administration hosts connector credentials and access grants (EPIC-041)', () => {
+  it('stays delivered, with an element to render', () => {
+    const area = AREAS.find((a) => a.id === 'workspace-administration');
+    expect(area?.status).toBe('delivered');
+    expect(area?.element).toBeTypeOf('function');
+  });
+
+  it('mounts ConnectorCredentials and AccessGrants from the area view — not from a test', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { fileURLToPath } = await import('node:url');
+    const { dirname, resolve } = await import('node:path');
+    const source = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../../src/shell/area-views.tsx'), 'utf8');
+    expect(source).toMatch(/from\s+'\.\.\/pages\/ConnectorCredentials'/);
+    expect(source).toMatch(/from\s+'\.\.\/components\/AccessGrants'/);
+    expect(source).toMatch(/<ConnectorCredentialsPage/);
+    expect(source).toMatch(/<AccessGrants/);
+  });
+});
