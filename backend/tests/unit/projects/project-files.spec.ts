@@ -139,3 +139,18 @@ describe('T1337 · .mcp.json', () => {
     expect(existsSync(join(dir, 'nested', '.pmi', 'project.json'))).toBe(true);
   });
 });
+
+describe('T1404 · mcpServerEntry honours the checkout override (EPIC-043 R-043-11)', () => {
+  it('runs the override command instead of npx when one is given, with the same env', () => {
+    const entry = mcpServerEntry({ publicUrl: 'http://localhost:3000', mcpServerVersion: '0.1.0', mcpServerCommand: 'node ./packages/mcp-server/dist/main.js --verbose' });
+    expect(entry.command).toBe('node');
+    expect(entry.args).toEqual(['./packages/mcp-server/dist/main.js', '--verbose']);
+    expect(entry.env).toEqual({ PMI_STUDIO_URL: 'http://localhost:3000', PMI_STUDIO_TOKEN: '${PMI_STUDIO_TOKEN}' });
+  });
+
+  it('keeps the npx entry unchanged when no override is given', () => {
+    const entry = mcpServerEntry({ publicUrl: 'http://localhost:3000', mcpServerVersion: '0.1.0' });
+    expect(entry.command).toBe('npx');
+    expect(entry.args).toEqual(['-y', '@pmi/mcp-server@0.1.0']);
+  });
+});

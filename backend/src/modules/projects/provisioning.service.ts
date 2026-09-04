@@ -245,7 +245,7 @@ export class ProvisioningService {
       await attempt('merge_mcp_json', async () => {
         const result = await mergeMcpJson(
           dir,
-          mcpServerEntry({ publicUrl: this.deps.config.publicUrl, mcpServerVersion: this.deps.config.mcpServerVersion }),
+          mcpServerEntry({ publicUrl: this.deps.config.publicUrl, mcpServerVersion: this.deps.config.mcpServerVersion, mcpServerCommand: this.deps.config.mcpServerCommand }),
         );
         written.push(result.path);
       });

@@ -259,8 +259,42 @@ export const REGISTRY_REFUSALS = Object.freeze([
   'credential_detected',
   // EPIC-041 FR-LPW-034: assurance is derived by the registry, never accepted.
   'assurance_not_accepted',
+  // EPIC-043 R-043-5: the connector-facing codes, rendered three ways (REST
+  // status, MCP isError + structuredContent, SDK rejection). One vocabulary.
+  'invalid_connector_credential',
+  'scope_required',
+  'identity_not_accepted',
+  'surface_not_accepted',
+  'not_available_until',
+  'platform_unreachable',
+  'credential_in_argument',
 ] as const);
 export type RegistryRefusal = (typeof REGISTRY_REFUSALS)[number];
+
+/**
+ * EPIC-043 R-043-6 — the one contract version this package speaks. The server
+ * sends it on every request and refuses a client naming another; the fixture
+ * connector pins it instead of a literal of its own (analysis `U1`).
+ */
+export const CONTRACT_VERSION = '1.0';
+
+/** Header names the REST binding reads, lower-case as Node presents them. */
+export const CONTRACT_VERSION_HEADER = 'x-contract-version';
+export const IDEMPOTENCY_KEY_HEADER = 'idempotency-key';
+/** Sent only by the `pmi-studio` server; its presence is what makes a registration `mcp-client` (R-043-4). */
+export const PMI_SURFACE_HEADER = 'x-pmi-surface';
+
+/** What each connector-facing refusal carries beside `code` and `message`. */
+export interface RefusalDetail {
+  readonly invalid_connector_credential: Record<string, never>;
+  readonly scope_required: { readonly scope: string };
+  readonly identity_not_accepted: { readonly field: string };
+  readonly surface_not_accepted: { readonly field: string };
+  readonly unsupported_contract_version: { readonly supported: string; readonly received: string | null };
+  readonly not_available_until: { readonly epic: string };
+  readonly platform_unreachable: { readonly address: string };
+  readonly credential_in_argument: { readonly argument: string };
+}
 
 export class RegistryRefusedError extends Error {
   constructor(

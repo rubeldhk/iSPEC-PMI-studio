@@ -84,3 +84,27 @@ describe('T1322 · worker may import exactly @pmi/backend/worker-api', () => {
     expect(config).toMatch(/R-041-6|worker-api/);
   });
 });
+
+/**
+ * `T1401` (EPIC-043, `R-043-1`) — the `pmi-studio` server may reach the platform
+ * only over HTTP. The lint rule is the editor-time half of
+ * `backend/tests/architecture/mcp-server-boundary.spec.ts`.
+ */
+describe('T1401 · packages/mcp-server may import only the SDK, zod and the contract packages', () => {
+  const rule = (() => {
+    const at = config.indexOf("files: ['packages/mcp-server/**/*.ts']");
+    expect(at, 'eslint.config.js has no packages/mcp-server rule').toBeGreaterThan(-1);
+    return config.slice(at, config.indexOf('files:', at + 10) === -1 ? undefined : config.indexOf('files:', at + 10));
+  })();
+
+  it.each(['@pmi/backend', '@pmi/worker', '@prisma/client', '**/persistence/*', '**/engine-adapters/*', '**/execution-providers/*'])(
+    'forbids %s',
+    (group) => {
+      expect(rule).toContain(`'${group}'`);
+    },
+  );
+
+  it('names the reason', () => {
+    expect(rule).toContain('REST client');
+  });
+});

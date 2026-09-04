@@ -111,6 +111,7 @@ defaults a project gets; `.env.example` carries them all:
 | `PMI_INITIALISE_WAIT_MS` | how long a *prepared* project waits for a worker before it reads *initialisation pending* | `30000` |
 | `PMI_DEFAULT_AGENT_INTEGRATION` | the agent integration a project gets when its creator chooses none | empty: the workspace bundle's default |
 | `PMI_DEFAULT_SCRIPT_TYPE` | the script type (`sh` or `ps`) a project gets when its creator chooses none | `sh` |
+| `PMI_MCP_SERVER_COMMAND` | development only: a command line that runs the `pmi-studio` server from this checkout instead of the published package | empty: the published `@pmi/mcp-server` |
 
 The credential the agent uses is never written into the directory: `.mcp.json` carries the
 reference `${PMI_STUDIO_TOKEN}`, and you set that variable yourself from the value PMI Studio shows

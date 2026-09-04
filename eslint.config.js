@@ -131,6 +131,28 @@ export default [
     },
   },
   {
+    // EPIC-043 T1401 (R-043-1) — the pmi-studio server is a REST client of the
+    // platform and runs on the user's machine. It never reaches the backend, a
+    // store, Prisma or an adapter in-process; if it could, parity between the
+    // REST and MCP bindings would be discipline rather than structure.
+    // Asserted by backend/tests/architecture/mcp-server-boundary.spec.ts (T1400).
+    files: ['packages/mcp-server/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@pmi/backend', '@pmi/backend/*', '@pmi/worker', '@pmi/worker/*', '@prisma/client', '**/persistence/*', '**/engine-adapters/*', '**/execution-providers/*', '**/*.store', '**/*.store.js'],
+              message:
+                'packages/mcp-server is a REST client of the platform (EPIC-043 R-043-1). It may import only the SDK, zod, node built-ins and the two contract packages.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // PC-1: services stay callable without HTTP so an MCP transport can be
     // added in Phase 3 without redesign.
     files: ['backend/src/**/*.service.ts', 'backend/src/core/**/*.ts'],

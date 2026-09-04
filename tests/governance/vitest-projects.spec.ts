@@ -78,6 +78,7 @@ const PROJECT_DIRS: Record<string, string> = {
   scripts: 'scripts/tests',
   // EPIC-041 T1317 — the workspace bundle (setup skill + PMI extension), versioned together.
   'workspace-bundle': 'packages/workspace-bundle',
+  'mcp-server': 'packages/mcp-server',
   // EPIC-005 T056a — the first component tests, registered the day the
   // PMI-DOC-004 hold discharged and the frontend stopped being a scaffold.
   frontend: 'frontend/tests/unit',

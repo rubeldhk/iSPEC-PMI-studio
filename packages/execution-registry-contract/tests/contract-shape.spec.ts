@@ -117,3 +117,33 @@ describe('T1021 · closed vocabularies', () => {
     expect(error.name).toBe('RegistryRefusedError');
   });
 });
+
+describe('T1406 · the codes, headers and version EPIC-043 adds (R-043-5, R-043-6)', () => {
+  it('REGISTRY_REFUSALS gains the seven connector-facing codes', () => {
+    for (const code of [
+      'invalid_connector_credential',
+      'scope_required',
+      'identity_not_accepted',
+      'surface_not_accepted',
+      'not_available_until',
+      'platform_unreachable',
+      'credential_in_argument',
+    ]) {
+      expect(REGISTRY_REFUSALS as readonly string[]).toContain(code);
+    }
+  });
+
+  it('exports the contract version and the three header names', async () => {
+    const mod = (await import('../src/contract.js')) as Record<string, unknown>;
+    expect(mod['CONTRACT_VERSION']).toBe('1.0');
+    expect(mod['PMI_SURFACE_HEADER']).toBe('x-pmi-surface');
+    expect(mod['CONTRACT_VERSION_HEADER']).toBe('x-contract-version');
+    expect(mod['IDEMPOTENCY_KEY_HEADER']).toBe('idempotency-key');
+  });
+
+  it('the fixture connector pins the exported version, not a literal of its own (analysis U1)', () => {
+    const fixture = readFileSync(join(here, '..', 'src', 'fixture-connector.ts'), 'utf8');
+    expect(fixture).toContain('CONTRACT_VERSION');
+    expect(fixture).not.toMatch(/contractVersion:\s*'1\.0'/);
+  });
+});

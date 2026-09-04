@@ -245,4 +245,14 @@ export default defineWorkspace([
       environment: 'node',
     },
   },
+  {
+    // EPIC-043 T1399 — the pmi-studio server: driven through InMemoryTransport by
+    // a real Client; the fixture conformance suite runs against it (R-037-10).
+    test: {
+      name: 'mcp-server',
+      root: './packages/mcp-server',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
 ]);

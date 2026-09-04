@@ -70,12 +70,19 @@ export interface McpServerEntry {
   readonly env: Readonly<Record<string, string>>;
 }
 
-export function mcpServerEntry(input: { publicUrl: string; mcpServerVersion: string }): McpServerEntry {
+export function mcpServerEntry(input: { publicUrl: string; mcpServerVersion: string; mcpServerCommand?: string | undefined }): McpServerEntry {
+  const env = { PMI_STUDIO_URL: input.publicUrl, PMI_STUDIO_TOKEN: PMI_STUDIO_TOKEN_REFERENCE };
+  // EPIC-043 R-043-11 — a checkout runs the same server from source; the
+  // published package is the default and the only thing the container writes.
+  const override = input.mcpServerCommand?.trim().split(/\s+/).filter((part) => part.length > 0) ?? [];
+  if (override.length > 0) {
+    return { type: 'stdio', command: override[0] as string, args: override.slice(1), env };
+  }
   return {
     type: 'stdio',
     command: 'npx',
     args: ['-y', `@pmi/mcp-server@${input.mcpServerVersion}`],
-    env: { PMI_STUDIO_URL: input.publicUrl, PMI_STUDIO_TOKEN: PMI_STUDIO_TOKEN_REFERENCE },
+    env,
   };
 }
 

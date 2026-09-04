@@ -98,3 +98,20 @@ describe('T1396 · the two default variables are configuration, not code (FR-LPW
     expect(match?.[1]?.trim()).toMatch(/^(sh|ps)$/);
   });
 });
+
+describe('T1402 · PMI_MCP_SERVER_COMMAND is the checkout override, and only that (EPIC-043 R-043-11)', () => {
+  it('.env.example declares it empty, with the checkout use in its comment', () => {
+    expect(envExample).toMatch(/^PMI_MCP_SERVER_COMMAND=\s*$/m);
+    const at = envExample.indexOf('PMI_MCP_SERVER_COMMAND=');
+    expect(envExample.slice(Math.max(0, at - 600), at)).toMatch(/checkout/i);
+  });
+
+  it('docker-compose.yml does not pass it — the containerised stack runs the published package', () => {
+    expect(appService()).not.toContain('PMI_MCP_SERVER_COMMAND');
+  });
+
+  it('README §Setup names it', () => {
+    const readme = readFileSync(join(REPO_ROOT, 'README.md'), 'utf8');
+    expect(readme).toContain('PMI_MCP_SERVER_COMMAND');
+  });
+});

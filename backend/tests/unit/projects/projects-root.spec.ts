@@ -125,3 +125,15 @@ describe('T1333 · assertRootAvailable', () => {
     await expect(assertRootAvailable({ ...posix, root: join(dir, 'not-mounted') })).rejects.toThrow(/projects root unavailable/i);
   });
 });
+
+describe('T1404 · PMI_MCP_SERVER_COMMAND (EPIC-043 R-043-11)', () => {
+  it('exposes the command when set, trimmed', () => {
+    const config = readProjectsRootConfig({ PMI_PROJECTS_ROOT: '/p', PMI_PROJECTS_ROOT_HOST: '/p', PMI_MCP_SERVER_COMMAND: '  node ./packages/mcp-server/dist/main.js ' });
+    expect(config.mcpServerCommand).toBe('node ./packages/mcp-server/dist/main.js');
+  });
+
+  it('is undefined when unset or empty, so the published package is used', () => {
+    expect(readProjectsRootConfig({ PMI_PROJECTS_ROOT: '/p', PMI_PROJECTS_ROOT_HOST: '/p' }).mcpServerCommand).toBeUndefined();
+    expect(readProjectsRootConfig({ PMI_PROJECTS_ROOT: '/p', PMI_PROJECTS_ROOT_HOST: '/p', PMI_MCP_SERVER_COMMAND: '' }).mcpServerCommand).toBeUndefined();
+  });
+});

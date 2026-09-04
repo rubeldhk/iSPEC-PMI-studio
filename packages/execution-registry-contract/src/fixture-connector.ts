@@ -33,6 +33,7 @@ import type {
   InputBinding,
   OutputBinding,
 } from './contract.js';
+import { CONTRACT_VERSION } from './contract.js';
 
 /** EPIC-041 T1370 (FR-LPW-030, FR-LPW-032): the environment a local surface binds. */
 export interface FixtureEnvironment {
@@ -105,7 +106,7 @@ export class FixtureConnector {
       input: input.binding,
       correlationId: this.options.correlationId,
       idempotencyKey: this.key('register'),
-      contractVersion: '1.0',
+      contractVersion: CONTRACT_VERSION,
       ...(input.parentExecutionId !== undefined
         ? { parentExecutionId: input.parentExecutionId }
         : {}),

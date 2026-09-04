@@ -37,6 +37,12 @@ export interface ProjectsRootConfig {
    */
   readonly defaultAgentIntegration: string | undefined;
   readonly defaultScriptType: 'sh' | 'ps' | undefined;
+  /**
+   * EPIC-043 T1405 (R-043-11) — the checkout override: a full command line that
+   * `.mcp.json` runs instead of `npx -y @pmi/mcp-server@<version>`. Undefined
+   * means the published package; never set in the containerised stack.
+   */
+  readonly mcpServerCommand: string | undefined;
 }
 
 const SCRIPT_TYPES = ['sh', 'ps'] as const;
@@ -60,6 +66,7 @@ export function readProjectsRootConfig(env: Record<string, string | undefined>):
     initialiseWaitMs: Number.isFinite(wait) && wait > 0 ? wait : 30_000,
     defaultAgentIntegration: env['PMI_DEFAULT_AGENT_INTEGRATION']?.trim() || undefined,
     defaultScriptType: readScriptType(env['PMI_DEFAULT_SCRIPT_TYPE']?.trim()),
+    mcpServerCommand: env['PMI_MCP_SERVER_COMMAND']?.trim() || undefined,
   };
 }
 

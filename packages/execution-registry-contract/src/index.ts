@@ -38,10 +38,15 @@ export {
 } from './events.js';
 
 export {
+  CONTRACT_VERSION,
+  CONTRACT_VERSION_HEADER,
   EXECUTION_SURFACES,
   GOVERNED_COMMANDS,
+  IDEMPOTENCY_KEY_HEADER,
+  PMI_SURFACE_HEADER,
   REGISTRY_REFUSALS,
   RegistryRefusedError,
+  type RefusalDetail,
   type AppendEventRequest,
   type AppendedEvent,
   type CompleteExecutionRequest,
