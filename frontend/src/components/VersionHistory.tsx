@@ -7,9 +7,11 @@ import { ApiError, type ApiClient, type SpecificationVersionInfo } from '../serv
 export interface VersionHistoryProps {
   api: ApiClient;
   specificationId: string;
+  /** EPIC-041 T1376 — a selection the page turns into a `VersionDiff` (FR-LPW-044). */
+  onSelect?: (versionNumber: number) => void;
 }
 
-export function VersionHistory({ api, specificationId }: VersionHistoryProps): ReactElement {
+export function VersionHistory({ api, specificationId, onSelect }: VersionHistoryProps): ReactElement {
   const [versions, setVersions] = useState<SpecificationVersionInfo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +38,14 @@ export function VersionHistory({ api, specificationId }: VersionHistoryProps): R
             <strong>v{version.versionNumber}</strong> <span>by {version.authoredById}</span>{' '}
             <time dateTime={version.authoredAt}>{version.authoredAt}</time>{' '}
             <span>({version.lifecycleStateAtCreation})</span>
+            {onSelect !== undefined && (
+              <>
+                {' '}
+                <button type="button" onClick={() => onSelect(version.versionNumber)}>
+                  Compare v{version.versionNumber}
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>

@@ -33,8 +33,69 @@ export interface Project {
   engineName: string | null;
   ownerUserId: string;
   archivedAt: string | null;
+  // EPIC-041 (FR-LPW-001, FR-LPW-051) — the local workspace.
+  rootPath: string | null;
+  agentIntegration: string | null;
+  scriptType: 'sh' | 'ps' | null;
+  provisioningState: ProvisioningState;
+  provisionedAt: string | null;
+  /** `GET /projects/:id` and the create response carry the latest record. */
+  latestProvisioning?: ProvisioningRecord | null;
+  /** Present ONLY in the create response of a provisioned project; the value in it exactly once (FR-LPW-020). */
+  connectorCredential?: MintedConnectorCredential | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type ProvisioningState = 'not_provisioned' | 'prepared' | 'initialisation_pending' | 'provisioned' | 'failed';
+
+/** specs/041-local-project-workspace/contracts/provisioning-api.md — append-only, newest first. */
+export interface ProvisioningRecord {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+  actorId: string;
+  correlationId: string;
+  startedAt: string;
+  endedAt: string | null;
+  outcome: 'succeeded' | 'failed' | 'refused' | 'no_change' | 'pending';
+  stepsCompleted: string[];
+  failedStep: string | null;
+  failureReason: string | null;
+  engineTag: string | null;
+  bundleVersion: string | null;
+  filesWritten: string[];
+}
+
+export interface ProvisionInput {
+  rootPath: string;
+  agentIntegration?: string;
+  scriptType?: 'sh' | 'ps';
+}
+
+/** Never carries `value` or `tokenHash` (FR-LPW-053). */
+export interface ConnectorCredential {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+  principalId: string;
+  tokenPrefix: string;
+  label: string;
+  createdById: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  revokedById: string | null;
+}
+
+/** The mint response: the value, exactly once (FR-LPW-021). */
+export interface MintedConnectorCredential extends ConnectorCredential {
+  value: string;
+}
+
+export interface CredentialFilters {
+  revoked?: boolean;
+  label?: string;
 }
 
 export interface Requirement {
@@ -421,8 +482,47 @@ export class ApiClient {
     return this.request('GET', '/projects');
   }
 
-  async createProject(input: { name?: string; description?: string }): Promise<Project> {
+  async createProject(input: { name?: string; description?: string } & Partial<ProvisionInput>): Promise<Project> {
     return this.request('POST', '/projects', input);
+  }
+
+  // ---- provisioning (EPIC-041 US1/US5 · contracts/provisioning-api.md) ----
+
+  async provisionProject(id: string, input: ProvisionInput): Promise<{ project: Project; record: ProvisioningRecord }> {
+    return this.request('POST', `/projects/${encodeURIComponent(id)}/provision`, input);
+  }
+
+  async listProvisioning(id: string): Promise<ProvisioningRecord[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(id)}/provisioning`);
+  }
+
+  // ---- connector credentials (EPIC-041 US2/US5) ----
+
+  async listConnectorCredentials(projectId: string, filters: CredentialFilters = {}): Promise<ConnectorCredential[]> {
+    const query = new URLSearchParams();
+    if (filters.revoked !== undefined) query.set('revoked', String(filters.revoked));
+    if (filters.label !== undefined && filters.label !== '') query.set('label', filters.label);
+    const encoded = query.toString();
+    const suffix = encoded === '' ? '' : `?${encoded}`;
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/connector-credentials${suffix}`);
+  }
+
+  async mintConnectorCredential(projectId: string, label: string): Promise<MintedConnectorCredential> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/connector-credentials`, { label });
+  }
+
+  async revokeConnectorCredential(id: string): Promise<ConnectorCredential> {
+    return this.request('POST', `/connector-credentials/${encodeURIComponent(id)}/revoke`);
+  }
+
+  // ---- generation from the project screen (EPIC-041 US4 · FR-LPW-041, FR-LPW-042) ----
+
+  async generateSpecification(projectId: string, requirementIds: string[]): Promise<Job> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/jobs/generate-specification`, { requirementIds });
+  }
+
+  async startRun(projectId: string, input: { mode?: string; stopRange?: string }): Promise<Run> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/runs`, input);
   }
 
   async getProject(id: string): Promise<Project> {

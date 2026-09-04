@@ -9,7 +9,8 @@
  * FR-DS-012), loading is a status region.
  */
 import { useCallback, useEffect, useState, type FormEvent, type ReactElement } from 'react';
-import { ApiError, type ApiClient, type Project } from '../services/api';
+import { ApiError, type ApiClient, type Job, type Project, type Requirement } from '../services/api';
+import { JobProgress } from '../components/JobProgress';
 import { Button } from '../design/components/Button';
 import { EmptyState } from '../design/components/EmptyState';
 import { FormField } from '../design/components/FormField';
@@ -92,6 +93,97 @@ export function ProjectsPage({ api, onOpen }: ProjectsPageProps): ReactElement {
         </ul>
       )}
     </main>
+  );
+}
+
+// ---------------------------------------------------------------- generate
+
+/**
+ * EPIC-041 T1376 (`FR-LPW-041`, `FR-LPW-042`): the route
+ * `POST /projects/:id/jobs/generate-specification` existed since EPIC-005 and
+ * nothing on screen called it (`R-041-11`). This control does. The four
+ * `FR-SHL-060` states of the requirement picker are distinct: loading, empty,
+ * error, ready.
+ */
+export function GenerateSpecification({ api, projectId }: { api: ApiClient; projectId: string }): ReactElement {
+  const [requirements, setRequirements] = useState<Requirement[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [job, setJob] = useState<Job | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void (async (): Promise<void> => {
+      try {
+        const rows = await api.listRequirements(projectId, { status: 'active' });
+        setRequirements(rows.filter((r) => r.status === 'active'));
+      } catch (err) {
+        setLoadError(message(err));
+      }
+    })();
+  }, [api, projectId]);
+
+  const toggle = (id: string): void => {
+    setSelected((current) => (current.includes(id) ? current.filter((x) => x !== id) : [...current, id]));
+  };
+
+  async function generate(): Promise<void> {
+    setSubmitError(null);
+    try {
+      setJob(await api.generateSpecification(projectId, selected));
+    } catch (err) {
+      setSubmitError(message(err));
+    }
+  }
+
+  return (
+    <section className="ds-stack" aria-labelledby="generate-specification-heading">
+      <h2 id="generate-specification-heading">Generate specification</h2>
+      {loadError !== null && (
+        <p className="ds-field__error" role="alert">
+          {loadError}
+        </p>
+      )}
+      {loadError === null && requirements === null && <LoadingIndicator label="Loading requirements" />}
+      {requirements !== null && requirements.length === 0 && (
+        <EmptyState
+          title="No requirements to generate from."
+          explanation="Add at least one active requirement below; a specification is generated from a selection of them."
+        />
+      )}
+      {requirements !== null && requirements.length > 0 && (
+        <ul className="ds-stack">
+          {requirements.map((requirement) => (
+            <li key={requirement.id}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(requirement.id)}
+                  onChange={() => toggle(requirement.id)}
+                />{' '}
+                {requirement.reference} — {requirement.description}
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="ds-row">
+        <Button type="button" disabled={selected.length === 0} onClick={() => void generate()}>
+          Generate specification
+        </Button>
+        {selected.length === 0 && <span className="ds-field__hint">Select at least one requirement to generate from.</span>}
+      </div>
+      {submitError !== null && (
+        <p className="ds-field__error" role="alert">
+          {submitError}
+        </p>
+      )}
+      {job !== null && (
+        <p>
+          <JobProgress api={api} jobId={job.id} />
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -187,6 +279,7 @@ export function ProjectDetail({ api, projectId, onBack, children }: ProjectDetai
           {error}
         </p>
       )}
+      <GenerateSpecification api={api} projectId={projectId} />
       {children}
     </main>
   );

@@ -4,9 +4,19 @@
  * FR-022: the generating engine and its version are provenance and always
  * shown. FR-032: out-of-date is a state a human acts on — flagged as a live
  * status region, never auto-corrected.
+ *
+ * EPIC-041 T1376 (`FR-LPW-044`, `R-041-11`): `LifecycleControls`,
+ * `ValidationFindings`, `VersionHistory` and `VersionDiff` were built and
+ * tested in EPIC-005 and mounted nowhere. They are mounted here, each keeping
+ * its own four states; a transition refreshes the specification; a diff opens
+ * from two selections in the history.
  */
-import { useEffect, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { ApiError, type ApiClient, type Specification } from '../services/api';
+import { LifecycleControls } from '../components/LifecycleControls';
+import { ValidationFindings } from '../components/ValidationFindings';
+import { VersionDiff } from '../components/VersionDiff';
+import { VersionHistory } from '../components/VersionHistory';
 
 export interface SpecificationViewProps {
   api: ApiClient;
@@ -16,16 +26,20 @@ export interface SpecificationViewProps {
 export function SpecificationView({ api, specificationId }: SpecificationViewProps): ReactElement {
   const [specification, setSpecification] = useState<Specification | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Two selections from the history make a diff; a third starts over.
+  const [selected, setSelected] = useState<number[]>([]);
+
+  const load = useCallback(async (): Promise<void> => {
+    try {
+      setSpecification(await api.getSpecification(specificationId));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
+    }
+  }, [api, specificationId]);
 
   useEffect(() => {
-    void (async (): Promise<void> => {
-      try {
-        setSpecification(await api.getSpecification(specificationId));
-      } catch (err) {
-        setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
-      }
-    })();
-  }, [api, specificationId]);
+    void load();
+  }, [load]);
 
   if (specification === null) {
     return <main>{error !== null ? <p role="alert">{error}</p> : <p>Loading…</p>}</main>;
@@ -37,6 +51,11 @@ export function SpecificationView({ api, specificationId }: SpecificationViewPro
   const stale = specification.isOutOfDate || specification.currencyStatus === 'stale';
   const staleDetail =
     specification.staleReason ?? 'its source requirements changed after generation';
+
+  const select = (versionNumber: number): void => {
+    setSelected((current) => (current.length >= 2 ? [versionNumber] : [...current, versionNumber]));
+  };
+  const [from, to] = selected.length === 2 ? [...selected].sort((a, b) => a - b) : [undefined, undefined];
 
   return (
     <main>
@@ -56,6 +75,17 @@ export function SpecificationView({ api, specificationId }: SpecificationViewPro
         <dt>Generated at</dt>
         <dd>{specification.generatedAt}</dd>
       </dl>
+      <LifecycleControls
+        api={api}
+        specificationId={specificationId}
+        lifecycleState={specification.lifecycleState}
+        onTransitioned={() => void load()}
+      />
+      <ValidationFindings api={api} specificationId={specificationId} />
+      <VersionHistory api={api} specificationId={specificationId} onSelect={select} />
+      {from !== undefined && to !== undefined && from !== to && (
+        <VersionDiff api={api} specificationId={specificationId} fromVersion={from} toVersion={to} />
+      )}
     </main>
   );
 }
