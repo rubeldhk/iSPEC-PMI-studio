@@ -81,7 +81,7 @@ suite('T1507 · the decomposition read', () => {
   it('an empty project is nothing to decompose (FR-EXT-048)', async () => {
     const api = started.app.getHttpServer();
     const res = await request(api).get(`/v1/projects/${emptyId}/decomposition`).set({ Authorization: `Bearer ${emptyToken}`, ...VERSION }).expect(200);
-    expect(res.body).toMatchObject({ firstRun: true, nothingToDecompose: true, epics: [], unassigned: [] });
+    expect(res.body).toMatchObject({ firstRun: true, nothingToDecompose: true, epics: [], unassigned: [], openFirstRun: null });
   });
 
   it('a first run over the composed application today: the Epic list is derived as unavailable, so the loop registers nothing and says so', async () => {
@@ -90,7 +90,7 @@ suite('T1507 · the decomposition read', () => {
       const result = await runFirstRun(m.client, projectDir, { estimate: () => 10, decide: () => ({ decision: 'confirmed' }), runStock: async () => undefined, decidedBy: 'test' });
       expect(result.firstRun).toBe(true);
       expect(result.executions).toEqual([]);
-      expect(result.lines.at(-1)).toBe('PMI · first run: 0 specifications, 0 splits');
+      expect(result.lines.at(-1)).toMatch(/^PMI · first run: 0 specifications, 0 splits \(decomposition policy v\d+\)$/);
       expect(existsSync(join(projectDir, '.pmi', 'first-run'))).toBe(false);
     } finally {
       await m.close();

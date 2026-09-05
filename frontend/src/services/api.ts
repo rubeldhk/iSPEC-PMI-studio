@@ -343,6 +343,8 @@ export interface WorkstationConnection {
   constitutionDigest?: string | null;
   constitutionState?: ConstitutionState | null;
   constitutionReportedAt?: string | null;
+  /** T1542: the render version a `stale` file last matched; null for `drift` or when nothing was reported. */
+  constitutionRenderVersion?: number | null;
 }
 
 // EPIC-042 — constraints, the policy and the render (`contracts/governance-api.md`).

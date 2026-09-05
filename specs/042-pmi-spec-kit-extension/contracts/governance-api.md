@@ -46,9 +46,12 @@ Reserved after this Epic: `pmi.execution.sync` (`EPIC-037`), `pmi.artifacts.sync
 ## 3. Session read for the screens (`FR-EXT-067`)
 
 `GET /v1/projects/{id}/workstation-connections` (`EPIC-043`) rows gain `constitutionDigest`,
-`constitutionState`, `constitutionReportedAt`. The project screen and the Constraints screen show
-*file differs* while any connection's latest state is `drift`, naming the render version whose
-digest it last matched (`stale`) or *no render* (`drift`).
+`constitutionState`, `constitutionReportedAt` and — since Phase 9 (`T1542`) —
+`constitutionRenderVersion`: the version of the render the reported digest is, resolved on the
+read; null for `drift`, `missing` and an unreported file. The project screen and the Constraints
+screen show *file differs* while any connection's latest state is `drift` or `stale`, naming the
+render version whose digest it last matched (`stale` → *matches render v<n>*) or *no render*
+(`drift`).
 
 ## 4. The rendered constitution (`FR-EXT-020`, `FR-EXT-022`, `FR-EXT-023`, `FR-EXT-027`)
 

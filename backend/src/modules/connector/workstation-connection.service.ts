@@ -44,6 +44,8 @@ export interface WorkstationConnectionView {
   readonly constitutionDigest: string | null;
   readonly constitutionState: string | null;
   readonly constitutionReportedAt: string | null;
+  /** EPIC-042 T1542 (`FR-EXT-067`): the render version the reported digest matches — `stale` names it; `drift` and nothing reported are null. */
+  readonly constitutionRenderVersion: number | null;
 }
 
 export interface WorkstationConnectionDeps {
@@ -53,7 +55,13 @@ export interface WorkstationConnectionDeps {
   readonly apiVersion: string;
   readonly audit: { record(row: Record<string, unknown>): Promise<void> };
   /** EPIC-042 T1489: data-model.md §3, one rule shared with the render service. */
-  readonly constitution?: { classify(projectId: string, digest: string | null): Promise<string> } | undefined;
+  readonly constitution?:
+    | {
+        classify(projectId: string, digest: string | null): Promise<string>;
+        /** T1542: the version of the render this digest is, or null when it is none. */
+        renderVersionOf?(projectId: string, digest: string): Promise<number | null>;
+      }
+    | undefined;
   readonly now?: () => Date;
   readonly newId?: () => string;
 }
@@ -129,6 +137,10 @@ export class WorkstationConnectionService {
         constitutionDigest: row.constitutionDigest,
         constitutionState: row.constitutionState,
         constitutionReportedAt: row.constitutionReportedAt ? row.constitutionReportedAt.toISOString() : null,
+        constitutionRenderVersion:
+          row.constitutionDigest && this.deps.constitution?.renderVersionOf
+            ? await this.deps.constitution.renderVersionOf(projectId, row.constitutionDigest)
+            : null,
       });
     }
     return views;

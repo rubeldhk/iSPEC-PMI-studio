@@ -291,7 +291,7 @@ function WorkstationConnections({ api, projectId }: { api: ApiClient; projectId:
           File differs on{' '}
           {rows
             .filter((r) => r.constitutionState === 'drift' || r.constitutionState === 'stale')
-            .map((r) => `${r.label} (${r.constitutionState === 'stale' ? 'matches an earlier render' : 'matches no render'})`)
+            .map((r) => `${r.label} (${r.constitutionState === 'stale' ? (r.constitutionRenderVersion != null ? `matches render v${r.constitutionRenderVersion}` : 'matches an earlier render') : 'matches no render'})`)
             .join('; ')}
           . Change constraints in Governance → Constraints; the next governed command refreshes a stale file and asks before replacing a drifted one.
         </p>

@@ -142,6 +142,25 @@ next Epic on, every governed command in a provisioned directory is registered by
     takes the first token after a ticked checkbox and the partially-completed rule looks for any
     unticked item; the identifier's shape is the platform's configuration, which the bundle —
     installed into other people's projects — has no business restating.
+17. **No in-flight hook for `/speckit-implement`** (`FR-EXT-006`, `R-07`; recorded here by
+    `T1547`, Phase 9): the toolkit offers `before_*` and `after_*` hooks only, so
+    `speckit.pmi.progress` runs from `speckit.pmi.finish` after `implement` ends and the board
+    moves late rather than never — one `progress-reported` event per task ticked since
+    registration, derived from the `tasks.md` diff. `packages/workspace-bundle/extension/commands/progress.md`
+    carries the same sentence; where the toolkit later offers an in-flight hook, that command is
+    registered there without change.
+
+## Phase 9 — convergence tasks (`T1542`–`T1547`, 2026-09-05)
+
+Six partial gaps `/speckit-converge` found, each closed test-first: the *file differs* warnings
+name the render version a stale file last matched (`constitutionRenderVersion` resolved on the
+workstation-connections read); a provisional record that cannot be written refuses as strict mode
+does; the first-run loop refuses while another session's `specify` execution is open
+(`openFirstRun` on the decompose read); every loop completion and the closing line carry the
+decomposition policy version; the Constraints preview explains an owner entry titled *Governed
+Execution*; and assumption 17 above. Deviation: `T1542`'s field is asserted in the unit test and
+the `constitution-drift` integration suite rather than the contract suite, which checks route
+surfaces, not row shapes.
 
 ## Counts
 

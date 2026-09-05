@@ -114,6 +114,7 @@ describe('T1515 · the Local workspace panel shows the constitution state and fi
     credentialId: 'cred', label: 'laptop', credentialState: 'active', firstSeenAt: '2026-09-04T00:00:00Z', lastSeenAt: '2026-09-04T00:00:00Z',
     extensionVersion: '0.2.0', toolkitVersion: 'v0.14.3', contractVersion: '1.0', serverVersion: null,
     constitutionDigest: state ? 'f'.repeat(64) : null, constitutionState: state, constitutionReportedAt: state ? '2026-09-04T12:00:00Z' : null,
+    constitutionRenderVersion: state === 'stale' ? 2 : null,
   });
 
   it('a drifted workstation is named in a file-differs status, and each row shows its state', async () => {
@@ -132,5 +133,22 @@ describe('T1515 · the Local workspace panel shows the constitution state and fi
     const list = await screen.findByRole('list', { name: 'Workstation connections' });
     expect(list.textContent).toContain('constitution current');
     expect(screen.queryByRole('status', { name: 'Constitution file differs' })).toBeNull();
+  });
+});
+
+describe('T1542 · the Local workspace panel names the render a stale file last matched (Phase 9, FR-EXT-067)', () => {
+  const connection = {
+    credentialId: 'cred', label: 'laptop', credentialState: 'active', firstSeenAt: '2026-09-04T00:00:00Z', lastSeenAt: '2026-09-04T00:00:00Z',
+    extensionVersion: '0.2.0', toolkitVersion: 'v0.14.3', contractVersion: '1.0', serverVersion: null,
+    constitutionDigest: 'f'.repeat(64), constitutionState: 'stale', constitutionReportedAt: '2026-09-05T12:00:00Z', constitutionRenderVersion: 2,
+  };
+
+  it('a stale workstation says matches render v2', async () => {
+    render(<ProjectDetail api={api({ listWorkstationConnections: vi.fn(async () => [connection]) })} projectId="p1" onBack={vi.fn()} />);
+    await screen.findByText('Alpha');
+    const status = await screen.findByRole('status', { name: 'Constitution file differs' });
+    expect(status.textContent).toContain('laptop');
+    expect(status.textContent).toContain('matches render v2');
+    expect(status.textContent).not.toContain('matches an earlier render');
   });
 });

@@ -27,6 +27,8 @@ export interface PlanEpic {
 
 export interface DecompositionPlan {
   readonly firstRun: boolean;
+  /** T1542 (Phase 9, edge case): a registered, non-terminal `specify` execution — another session's first run — or null. */
+  readonly openFirstRun: string | null;
   readonly nothingToDecompose: boolean;
   readonly policy: { oneSpecPerEpic: boolean; taskCeiling: number; splitRequiresConfirmation: boolean; offlineMode: string; version: number };
   readonly epics: PlanEpic[];
@@ -37,7 +39,11 @@ export interface DecompositionPlan {
 export interface DecompositionPlanDeps {
   readonly context: Pick<ProjectContextService, 'context' | 'requirementsByEpic'>;
   readonly policy: Pick<DecompositionPolicyService, 'get'>;
-  readonly executions: { hasCompletedCommand(workspaceId: string, projectId: string, command: string): Promise<boolean> };
+  readonly executions: {
+    hasCompletedCommand(workspaceId: string, projectId: string, command: string): Promise<boolean>;
+    /** The id of a registered, non-terminal execution of `command`, or null (T1544). */
+    openCommand(workspaceId: string, projectId: string, command: string): Promise<string | null>;
+  };
   readonly audit: { record(row: Record<string, unknown>): Promise<void> };
 }
 
@@ -58,9 +64,10 @@ export class DecompositionPlanService {
       if (group.epic === 'unassigned') unassigned = [...unassigned, ...rows];
       else epics.push({ number: group.epic.number, slug: group.epic.slug, name: group.epic.name, requirements: rows });
     }
-    const [policy, completedSpecify] = await Promise.all([
+    const [policy, completedSpecify, openFirstRun] = await Promise.all([
       this.deps.policy.get({ workspaceId: ctx.workspaceId, projectId: ctx.projectId }),
       this.deps.executions.hasCompletedCommand(ctx.workspaceId, ctx.projectId, 'specify'),
+      this.deps.executions.openCommand(ctx.workspaceId, ctx.projectId, 'specify'),
     ]);
     await this.deps.audit.record({
       workspaceId: ctx.workspaceId,
@@ -73,6 +80,7 @@ export class DecompositionPlanService {
     });
     return {
       firstRun: !completedSpecify,
+      openFirstRun,
       nothingToDecompose: epics.length === 0 && unassigned.length === 0,
       policy: {
         oneSpecPerEpic: policy.oneSpecPerEpic,

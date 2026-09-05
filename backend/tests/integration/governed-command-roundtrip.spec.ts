@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { createPlatformClient, createServer } from '@pmi/mcp-server';
-import { readLastExecution, runBegin, runFinish, tickedTasks, validateProvisionalRecord } from '@pmi/workspace-bundle';
+import { readLastExecution, runBegin, runFinish, runFirstRun, tickedTasks, validateProvisionalRecord } from '@pmi/workspace-bundle';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startAuthenticatedApp, type AuthenticatedApp } from '../helpers/authenticated-app.js';
@@ -228,6 +228,37 @@ suite('T1531 · unreachable platform: strict refuses, provisional queues (US5)',
       await runFinish(back.client, projectDir, 'specs/007-intake');
     } finally {
       await back.close();
+    }
+  });
+});
+
+suite('T1544 · two sessions: the first-run loop refuses while another first-run execution is open (Phase 9)', () => {
+  it('registers nothing, keeps the marker and names the open execution; after it completes the loop may start', async () => {
+    rmSync(join(projectDir, '.pmi', 'last-execution'), { force: true });
+    writeFileSync(join(projectDir, '.pmi', 'first-run'), '2026-09-05T00:00:00Z corr\n', 'utf8');
+    const other = await mcp(token);
+    const mine = await mcp(token);
+    try {
+      // Session A registers a specify and does not finish it.
+      const open = await runBegin(other.client, projectDir, { command: 'specify', epic: '7', epicDir: 'specs/007-intake' });
+      expect(open.executionId).toMatch(/\S/);
+      const sessionA = readFileSync(join(projectDir, '.pmi', 'last-execution'), 'utf8');
+      rmSync(join(projectDir, '.pmi', 'last-execution'), { force: true }); // session B has no record of A's registration
+      // Session B starts a first run.
+      const refused = await runFirstRun(mine.client, projectDir, { estimate: () => 1, decide: () => ({ decision: 'confirmed' }), runStock: async () => undefined, decidedBy: 'u_owner' });
+      expect(refused.executions).toEqual([]);
+      expect(refused.lines).toEqual([`PMI · refused first_run_in_progress: ${open.executionId} is still open — complete it or wait, then run the first specify again`]);
+      expect(existsSync(join(projectDir, '.pmi', 'first-run'))).toBe(true);
+      // Session A completes through its own finish hook; B's next attempt is no longer refused for that reason.
+      writeFileSync(join(projectDir, '.pmi', 'last-execution'), sessionA, 'utf8');
+      const completed = await runFinish(other.client, projectDir, 'specs/007-intake');
+      expect(completed.outcome).toBe('completed');
+      const again = await runFirstRun(mine.client, projectDir, { estimate: () => 1, decide: () => ({ decision: 'confirmed' }), runStock: async () => undefined, decidedBy: 'u_owner' });
+      expect(again.lines.some((l) => l.startsWith('PMI · refused first_run_in_progress'))).toBe(false);
+    } finally {
+      await other.close();
+      await mine.close();
+      rmSync(join(projectDir, '.pmi', 'first-run'), { force: true });
     }
   });
 });

@@ -174,7 +174,7 @@ export function ConstraintsPage({ api, projectId, currentUserId }: ConstraintsPa
         <p role="status" aria-label="Constitution file differs" className="ds-field__error">
           File differs on{' '}
           {differing
-            .map((c) => `${c.label} (${c.constitutionState === 'stale' ? 'matches an earlier render' : 'matches no render'}${c.constitutionReportedAt ? `, reported ${new Date(c.constitutionReportedAt).toLocaleString()}` : ''})`)
+            .map((c) => `${c.label} (${c.constitutionState === 'stale' ? (c.constitutionRenderVersion != null ? `matches render v${c.constitutionRenderVersion}` : 'matches an earlier render') : 'matches no render'}${c.constitutionReportedAt ? `, reported ${new Date(c.constitutionReportedAt).toLocaleString()}` : ''})`)
             .join('; ')}
           . The next governed command on that workstation refreshes a stale file and asks before replacing a drifted one.
         </p>
@@ -310,6 +310,12 @@ export function ConstraintsPage({ api, projectId, currentUserId }: ConstraintsPa
             Version {render.version} · digest <code>{render.digest}</code> · rendered {new Date(render.renderedAt).toLocaleString()}
           </p>
           <p className="ds-field__hint">The Governed Execution section is owned by PMI Studio and is the same in every project; it cannot be edited here.</p>
+          {entries?.some((e) => e.status === 'active' && e.title.trim().toLowerCase() === 'governed execution') && (
+            // T1546 (edge case): an owner's entry with that title never replaces the invariant section.
+            <p className="ds-field__hint" role="note">
+              An entry titled Governed Execution is filed under its own kind above (Core Principles, Constraints or Non-goals); the Governed Execution section stays PMI Studio's invariant text and is not replaced by it.
+            </p>
+          )}
           <pre className="ds-code" aria-label="Rendered constitution">
             {render.content}
           </pre>

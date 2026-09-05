@@ -157,3 +157,39 @@ describe('T1513 · the Constraints screen', () => {
     expect(screen.getByRole('region', { name: 'Principles' })).toBeDefined();
   });
 });
+
+describe('T1542 · file differs names the render version a stale file last matched (Phase 9, FR-EXT-067)', () => {
+  const connection = (state: string, renderVersion: number | null) => ({
+    credentialId: 'cred', label: 'laptop', credentialState: 'active', firstSeenAt: '2026-09-04T00:00:00Z', lastSeenAt: '2026-09-04T00:00:00Z',
+    extensionVersion: '0.2.0', toolkitVersion: null, contractVersion: '1.0', serverVersion: null,
+    constitutionDigest: 'f'.repeat(64), constitutionState: state, constitutionReportedAt: '2026-09-05T12:00:00Z', constitutionRenderVersion: renderVersion,
+  });
+
+  it('a stale file says which render it matches', async () => {
+    await page(api({ listWorkstationConnections: vi.fn(async () => [connection('stale', 2)]) }));
+    const status = screen.getByRole('status', { name: 'Constitution file differs' });
+    expect(status.textContent).toContain('laptop');
+    expect(status.textContent).toContain('matches render v2');
+    expect(status.textContent).not.toContain('matches an earlier render');
+  });
+
+  it('a drifted file says no render', async () => {
+    await page(api({ listWorkstationConnections: vi.fn(async () => [connection('drift', null)]) }));
+    expect(screen.getByRole('status', { name: 'Constitution file differs' }).textContent).toContain('matches no render');
+  });
+});
+
+describe('T1546 · an owner entry titled Governed Execution is explained in the preview (Phase 9, edge case)', () => {
+  it('says the entry is filed under its own kind and the invariant section stays PMI Studio\'s', async () => {
+    await page(api({ listConstraints: vi.fn(async () => [...ENTRIES, entry({ id: 'c5', title: 'Governed Execution', body: 'My own rules.', order: 3 })]) }));
+    const preview = screen.getByRole('region', { name: 'Constitution preview' });
+    const hint = within(preview).getByText(/filed under its own kind/);
+    expect(hint.textContent).toContain('Governed Execution');
+    expect(hint.textContent).toMatch(/Core Principles/);
+  });
+
+  it('shows no such hint when no entry carries that title', async () => {
+    await page(api());
+    expect(within(screen.getByRole('region', { name: 'Constitution preview' })).queryByText(/filed under its own kind/)).toBeNull();
+  });
+});

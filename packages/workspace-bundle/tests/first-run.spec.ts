@@ -121,7 +121,9 @@ describe('T1509 · the first run', () => {
     expect((body['children'] as { requirements: string[] }[]).map((c) => c.requirements)).toEqual([['REQ-003', 'REQ-004'], ['REQ-005', 'REQ-006']]);
     expect(result.decisionComments).toEqual(['c_exec_2']);
     expect(existsSync(join(dir, '.pmi', 'first-run'))).toBe(false);
-    expect(result.lines.at(-1)).toBe('PMI · first run: 4 specifications, 1 splits');
+    // T1545 (Phase 9): the policy version the plan was computed against travels into every completion and the closing line.
+    expect(result.lines.at(-1)).toBe('PMI · first run: 4 specifications, 1 splits (decomposition policy v3)');
+    for (const c of calls.filter((c) => c.name === 'pmi.execution.complete')) expect(c.arguments['completionComment']).toMatch(/ \(decomposition policy v3\)$/);
   });
 
   it('a rejected split specifies the Epic whole and records the rejection with no children', async () => {
@@ -198,5 +200,17 @@ describe('T1511 · validateDecompositionDecision (data-model.md §8)', () => {
     const result = validateDecompositionDecision(value);
     expect(result.ok).toBe(false);
     expect((result as { ok: false; errors: readonly string[] }).errors.join('\n')).toContain(message);
+  });
+});
+
+describe('T1544 · the first-run loop refuses to start while another first-run execution is open (Phase 9, edge case)', () => {
+  it('registers nothing, keeps the marker, and names the open execution', async () => {
+    const { client, calls } = stubClient(plan({ openFirstRun: 'exec_9' }));
+    const result = await runFirstRun(client, dir, { estimate: () => 1, decide: () => ({ decision: 'confirmed' }), runStock: async () => undefined, decidedBy: 'x' });
+    expect(result.executions).toEqual([]);
+    expect(result.firstRun).toBe(true);
+    expect(result.lines).toEqual(['PMI · refused first_run_in_progress: exec_9 is still open — complete it or wait, then run the first specify again']);
+    expect(calls.filter((c) => c.name === 'pmi.execution.register')).toHaveLength(0);
+    expect(existsSync(join(dir, '.pmi', 'first-run'))).toBe(true);
   });
 });

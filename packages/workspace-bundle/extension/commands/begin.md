@@ -98,15 +98,23 @@ Print **exactly one line per outcome**, using only these forms:
    `execution-sync-queued` with `payload.reason` `platform_unreachable`, and `governed: false`.
    Write `.pmi/last-execution` with `provisional: true`. Print
    `PMI · queued <executionId> (not governed)`. The stock command now runs. Every later line
-   about this execution ends with `(not governed)`.
+   about this execution ends with `(not governed)`. If the record **cannot be written** (the
+   directory is missing and cannot be created, or is not writable), print
+   `PMI · refused platform_unreachable: PMI Studio at <platformUrl> is unreachable and the provisional record could not be written at <path>`
+   and **stop the stock command**, exactly as strict mode does: a record that is not durable is
+   not a record.
 
 ## The first run
 
 The plan from `pmi.project.decompose` carries `policy` (with `taskCeiling`,
 `splitRequiresConfirmation`, `version`), `epics` (each with `number`, `slug`, `name` and its
-`requirements`) and `unassigned`.
+`requirements`), `unassigned` and `openFirstRun` — the id of a `specify` execution another
+session registered and has not completed, or null.
 
-1. If `epics` and `unassigned` are both empty, print
+1. If `openFirstRun` is set, print
+   `PMI · refused first_run_in_progress: <executionId> is still open — complete it or wait, then run the first specify again`
+   and **stop**: two first runs never proceed side by side in one project. Otherwise, if `epics`
+   and `unassigned` are both empty, print
    `PMI · nothing to decompose — add requirements in PMI Studio → Requirement Room` and **stop**.
 2. **Before writing any file**, estimate the task count of each Epic from its requirement bundle
    alone — one integer per Epic — and print the plan: one line per Epic with number, name,
@@ -119,10 +127,13 @@ The plan from `pmi.project.decompose` carries `policy` (with `taskCeiling`,
 4. For each delivery Epic (or confirmed child), in number order: register it as in step 8 with
    `targetType` `epic` and `targetId` the Epic number (or number + suffix); run the stock
    specify flow once with that Epic's requirement bundle as the feature description and
-   `specs/<number>[suffix]-<slug>/` as the directory; then run `speckit.pmi.finish`. This does
-   not change the stock rule of one feature per invocation — the loop invokes it once per Epic.
+   `specs/<number>[suffix]-<slug>/` as the directory; then run `speckit.pmi.finish` with the
+   completion comment ending `(decomposition policy v<version>)` — the plan was computed against
+   that version, and a ceiling changed mid-loop does not re-estimate a later Epic. This does not
+   change the stock rule of one feature per invocation — the loop invokes it once per Epic.
 5. After a split, record the decision on the first child's execution: call
    `pmi.execution.comment` with `executionId`, `commentType` `decomposition-decision`,
    `body` (a JSON document with `policyVersion`, `epic`, `estimate`, `ceiling`, `decision`,
    `children`, `decidedBy`) and `idempotencyKey`.
-6. Delete `.pmi/first-run`. Print `PMI · first run: <n> specifications, <k> splits`.
+6. Delete `.pmi/first-run`. Print
+   `PMI · first run: <n> specifications, <k> splits (decomposition policy v<version>)`.

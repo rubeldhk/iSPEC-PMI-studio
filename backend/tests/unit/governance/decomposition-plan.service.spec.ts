@@ -13,7 +13,7 @@ import { InMemoryDecompositionPolicyStore } from '../../../src/modules/governanc
 const CTX = { credentialId: 'cred_a', workspaceId: 'ws_a', projectId: 'p_a', principalId: 'pr_a' };
 const REQ = (reference: string) => ({ id: `r_${reference}`, reference, description: `${reference} shall`, type: 'functional', priority: 'p1', status: 'approved', baselineState: null });
 
-function harness(opts: { groups?: unknown[]; completedSpecify?: boolean } = {}) {
+function harness(opts: { groups?: unknown[]; completedSpecify?: boolean; openSpecify?: string | null } = {}) {
   const audits: Record<string, unknown>[] = [];
   const policy = new DecompositionPolicyService({ store: new InMemoryDecompositionPolicyStore(), audit: { record: async () => undefined } });
   const service = new DecompositionPlanService({
@@ -22,7 +22,10 @@ function harness(opts: { groups?: unknown[]; completedSpecify?: boolean } = {}) 
       requirementsByEpic: async () => ({ groups: (opts.groups ?? []) as never, epicSource: 'unavailable-until-EPIC-044' as const }),
     } as never,
     policy,
-    executions: { hasCompletedCommand: async (_ws: string, _p: string, command: string) => command === 'specify' && (opts.completedSpecify ?? false) },
+    executions: {
+      hasCompletedCommand: async (_ws: string, _p: string, command: string) => command === 'specify' && (opts.completedSpecify ?? false),
+      openCommand: async (_ws: string, _p: string, command: string) => (command === 'specify' ? (opts.openSpecify ?? null) : null),
+    },
     audit: { record: async (row) => void audits.push(row) },
   });
   return { service, audits };
@@ -60,5 +63,12 @@ describe('T1485 · the plan', () => {
     const { service, audits } = harness();
     await service.plan(CTX);
     expect(audits.at(-1)).toMatchObject({ workspaceId: 'ws_a', actorId: 'pr_a', targetType: 'project', targetId: 'p_a', detail: { kind: 'connector', operation: 'decomposition.read', credentialId: 'cred_a' } });
+  });
+});
+
+describe('T1544 · openFirstRun names a registered, non-terminal specify execution (Phase 9, edge case)', () => {
+  it('is null when none is open and the execution id when one is', async () => {
+    expect((await harness({}).service.plan(CTX)).openFirstRun).toBeNull();
+    expect((await harness({ openSpecify: 'exec_9' }).service.plan(CTX)).openFirstRun).toBe('exec_9');
   });
 });

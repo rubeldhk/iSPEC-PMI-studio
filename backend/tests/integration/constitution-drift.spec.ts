@@ -70,7 +70,7 @@ suite('T1519 · the four states, on health and on the read, and on the connectio
         expect(r.isError).toBeFalsy();
         return (r.structuredContent as { constitutionState: string }).constitutionState;
       };
-      const row = async (): Promise<{ constitutionState: string | null; constitutionDigest: string | null; constitutionReportedAt: string | null }> => {
+      const row = async (): Promise<{ constitutionState: string | null; constitutionDigest: string | null; constitutionReportedAt: string | null; constitutionRenderVersion: number | null }> => {
         const rows = await request(api).get(`/v1/projects/${projectId}/workstation-connections`).set('Cookie', started.cookie).expect(200);
         return rows.body[0];
       };
@@ -83,9 +83,12 @@ suite('T1519 · the four states, on health and on the read, and on the connectio
       await request(api).post(`/v1/projects/${projectId}/constraints`).set('Cookie', started.cookie).send({ kind: 'principle', title: 'Later', body: 'Added after the file was written.' }).expect(201);
       expect(await state(first.body.digest)).toBe('stale');
       expect((await row()).constitutionState).toBe('stale');
+      // T1542 (Phase 9, FR-EXT-067): the screen names the render the file last matched.
+      expect((await row()).constitutionRenderVersion).toBe(first.body.version);
 
       expect(await state('f'.repeat(64))).toBe('drift');
       expect((await row()).constitutionState).toBe('drift');
+      expect((await row()).constitutionRenderVersion).toBeNull();
 
       expect(await state(null)).toBe('missing');
       expect((await row()).constitutionState).toBe('missing');

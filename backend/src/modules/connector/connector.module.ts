@@ -133,7 +133,11 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
           apiVersion: API_VERSION,
           audit: { record: (row) => audit.record(row as never) },
           // EPIC-042 T1489 (R-042-5): the same rule the render service applies, over the shared store.
-          constitution: { classify: (projectId, digest) => classifyOnDiskDigest(renders, projectId, digest) },
+          constitution: {
+            classify: (projectId, digest) => classifyOnDiskDigest(renders, projectId, digest),
+            // T1542 (FR-EXT-067): the screens name the render a stale file last matched.
+            renderVersionOf: async (projectId, digest) => (await renders.findByDigest(projectId, digest))?.version ?? null,
+          },
         }),
     },
     {

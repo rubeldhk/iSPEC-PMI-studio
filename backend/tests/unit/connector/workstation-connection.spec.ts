@@ -116,3 +116,33 @@ describe('T1527 · the setup skill reports its constitution digest on pmi.health
     expect((await store.findByCredential('cred_1'))?.constitutionState).toBe('missing');
   });
 });
+
+describe('T1542 · the read for the screen names the render version a stale file last matched (EPIC-042 FR-EXT-067, Phase 9)', () => {
+  it('resolves constitutionRenderVersion through the port for a digest that matched a render, and null for drift or nothing reported', async () => {
+    const store = new InMemoryWorkstationConnectionStore();
+    const credentials = new InMemoryConnectorCredentialStore();
+    const service = new WorkstationConnectionService({
+      store,
+      credentials,
+      contractVersion: '1.0',
+      apiVersion: '1',
+      audit: { record: async () => undefined },
+      constitution: {
+        classify: async (_projectId, digest) => (digest === 'b'.repeat(64) ? 'stale' : 'drift'),
+        renderVersionOf: async (_projectId, digest) => (digest === 'b'.repeat(64) ? 2 : null),
+      },
+      now: () => new Date('2026-09-05T10:00:00Z'),
+    });
+    await credential(credentials, 'cred_1', 'laptop');
+    await credential(credentials, 'cred_2', 'desktop');
+    await credential(credentials, 'cred_3', 'tablet');
+    await service.touch(CTX, { constitutionDigest: 'b'.repeat(64) });
+    await service.touch({ ...CTX, credentialId: 'cred_2' }, { constitutionDigest: 'c'.repeat(64) });
+    await service.touch({ ...CTX, credentialId: 'cred_3' }, {});
+    const views = await service.listForProject('ws_a', 'proj_1');
+    const byLabel = Object.fromEntries(views.map((v) => [v.label, v]));
+    expect(byLabel['laptop']).toMatchObject({ constitutionState: 'stale', constitutionRenderVersion: 2 });
+    expect(byLabel['desktop']).toMatchObject({ constitutionState: 'drift', constitutionRenderVersion: null });
+    expect(byLabel['tablet']).toMatchObject({ constitutionState: null, constitutionRenderVersion: null });
+  });
+});

@@ -102,6 +102,15 @@ export async function resolvedSteeringForProject(steering: Pick<SteeringService,
               const page = await timeline.list(workspaceId, projectId, { state: 'completed', command, limit: 1 });
               return page.items.length > 0;
             },
+            // T1544 (edge case): a first run another session registered and has not completed.
+            openCommand: async (workspaceId, projectId, command) => {
+              for (const state of ['registered', 'started', 'blocked']) {
+                const page = await timeline.list(workspaceId, projectId, { state, command, limit: 1 });
+                const open = page.items[0];
+                if (open) return open.executionId;
+              }
+              return null;
+            },
           },
           audit: { record: (row) => audit.record(row as never) },
         }),

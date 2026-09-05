@@ -6,7 +6,10 @@
  * Written to FAIL before `T1530`.
  */
 import { describe, expect, it } from 'vitest';
-import { governedExecutionSection, readOfflineMode, validateProvisionalRecord } from '../src/index.js';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { governedExecutionSection, readLastExecution, readOfflineMode, runBegin, validateProvisionalRecord, type ToolClient, type ToolResult } from '../src/index.js';
 
 const record = (over: Record<string, unknown> = {}) => ({
   registration: { executionId: 'prov_1234', command: 'plan', argsSanitized: { command: 'plan' }, correlationId: 'c1', idempotencyKey: 'prov_1234', input: { targetType: 'epic', targetId: '7' }, surface: 'mcp-client' },
@@ -49,5 +52,34 @@ describe('T1529 · readOfflineMode', () => {
     expect(readOfflineMode('Offline mode: sometimes\n')).toBe('strict');
     expect(readOfflineMode('offline mode: provisional\n')).toBe('strict');
     expect(readOfflineMode('Offline mode: provisional is what I want\n')).toBe('strict');
+  });
+});
+
+describe('T1543 · a provisional record that cannot be made durable is not a record (Phase 9, FR-EXT-050)', () => {
+  it('runBegin refuses as strict mode does, naming the path, and writes nothing', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pmi-prov-durable-'));
+    try {
+      mkdirSync(join(dir, '.pmi'), { recursive: true });
+      mkdirSync(join(dir, '.specify', 'memory'), { recursive: true });
+      writeFileSync(join(dir, '.pmi', 'project.json'), JSON.stringify({ projectId: 'p_a', platformUrl: 'http://localhost:3000', bundleVersion: '0.2.0' }));
+      writeFileSync(join(dir, '.specify', 'memory', 'constitution.md'), `# X\n\n## Governed Execution\n\n${governedExecutionSection('provisional')}`, 'utf8');
+      // A FILE where the provisional directory must be: the record cannot be written.
+      writeFileSync(join(dir, '.pmi', 'provisional'), 'not a directory\n', 'utf8');
+      const client: ToolClient = {
+        async callTool(): Promise<ToolResult> {
+          return { isError: true, structuredContent: { code: 'platform_unreachable', message: 'unreachable' } };
+        },
+      };
+      const begun = await runBegin(client, dir, { command: 'clarify' });
+      expect(begun.refused?.code).toBe('platform_unreachable');
+      expect(begun.provisional).toBe(false);
+      expect(begun.executionId).toBeNull();
+      expect(begun.lines).toHaveLength(1);
+      expect(begun.lines[0]).toMatch(/^PMI · refused platform_unreachable: PMI Studio at http:\/\/localhost:3000 is unreachable and the provisional record could not be written at .*provisional/);
+      expect(readLastExecution(dir)).toBeNull();
+      expect(readFileSync(join(dir, '.pmi', 'provisional'), 'utf8')).toBe('not a directory\n');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

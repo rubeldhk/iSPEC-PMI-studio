@@ -68,6 +68,8 @@ export interface FinishOptions {
   readonly outcome?: 'completed' | 'partially-completed' | 'failed' | 'cancelled' | 'timed-out' | undefined;
   readonly commitAfter?: string | undefined;
   readonly completionComment?: string | undefined;
+  /** Appended to the completion comment — the first-run loop records the policy version it ran under (T1545). */
+  readonly commentSuffix?: string | undefined;
   readonly now?: (() => Date) | undefined;
 }
 
@@ -290,8 +292,17 @@ export async function runBegin(client: ToolClient, dir: string, opts: BeginOptio
       events: [{ type: 'execution-sync-queued', occurredAt: registeredAt, payload: { reason: 'platform_unreachable' } }],
       governed: false,
     };
-    mkdirSync(join(dir, '.pmi', 'provisional'), { recursive: true });
-    writeFileSync(join(dir, '.pmi', 'provisional', `${executionId}.json`), JSON.stringify(record, null, 2) + '\n', 'utf8');
+    // T1543 (FR-EXT-050): a record that cannot be made durable is not a record — refuse as strict mode does.
+    const recordPath = join(dir, '.pmi', 'provisional', `${executionId}.json`);
+    try {
+      mkdirSync(join(dir, '.pmi', 'provisional'), { recursive: true });
+      writeFileSync(recordPath, JSON.stringify(record, null, 2) + '\n', 'utf8');
+    } catch (err) {
+      return refuse(
+        'platform_unreachable',
+        `PMI Studio at ${project.platformUrl} is unreachable and the provisional record could not be written at ${recordPath}: ${(err as Error).message}`,
+      );
+    }
     const last: LastExecution = { executionId, command: opts.command, epic: opts.epic ?? null, registeredAt, artifactDigests: digests, tickedTasks: ticked, provisional: true };
     writeFileSync(lastExecutionPath(dir), JSON.stringify(last, null, 2) + '\n', 'utf8');
     lines.push(`PMI · queued ${executionId} (not governed)`);
@@ -368,7 +379,8 @@ export async function runFinish(client: ToolClient, dir: string, epicDir: string
     }
   }
 
-  const completionComment = opts.completionComment ?? (changed.length + added.length === 0 ? 'Nothing changed.' : `Changed: ${changed.join(', ') || 'none'}. New: ${added.join(', ') || 'none'}.`);
+  const baseComment = opts.completionComment ?? (changed.length + added.length === 0 ? 'Nothing changed.' : `Changed: ${changed.join(', ') || 'none'}. New: ${added.join(', ') || 'none'}.`);
+  const completionComment = opts.commentSuffix ? `${baseComment} ${opts.commentSuffix}` : baseComment;
   // The registry binds output identity only to a completed execution (AC-EXR-17d): a
   // partially-completed, failed or cancelled run carries no output.
   const output = outcome === 'completed' ? { ...(commitAfter ? { commitAfter } : {}), generatedArtifactDigests: Object.values(digests) } : undefined;
@@ -438,16 +450,23 @@ export async function runFirstRun(client: ToolClient, dir: string, opts: FirstRu
     lines.push(`PMI · refused ${code(planResult)}: ${message(planResult)}`);
     return { lines, executions: [], splits: 0, decisionComments: [], firstRun: false };
   }
-  const plan = planResult.structuredContent as { firstRun: boolean; nothingToDecompose: boolean; policy: { taskCeiling: number; version: number; splitRequiresConfirmation: boolean }; epics: FirstRunEpic[]; unassigned: { reference: string }[] };
+  const plan = planResult.structuredContent as { firstRun: boolean; openFirstRun?: string | null; nothingToDecompose: boolean; policy: { taskCeiling: number; version: number; splitRequiresConfirmation: boolean }; epics: FirstRunEpic[]; unassigned: { reference: string }[] };
   if (!plan.firstRun) {
     rmSync(marker, { force: true });
     lines.push('PMI · first run: not a first run — marker removed');
     return { lines, executions: [], splits: 0, decisionComments: [], firstRun: false };
   }
+  // Edge case (T1544): another session's first run is still open — never a second loop beside it.
+  if (plan.openFirstRun) {
+    lines.push(`PMI · refused first_run_in_progress: ${plan.openFirstRun} is still open — complete it or wait, then run the first specify again`);
+    return { lines, executions: [], splits: 0, decisionComments: [], firstRun: true };
+  }
   if (plan.nothingToDecompose) {
     lines.push('PMI · nothing to decompose — add requirements in PMI Studio → Requirement Room');
     return { lines, executions: [], splits: 0, decisionComments: [], firstRun: true };
   }
+  // Edge case (T1545): the plan is computed against one policy version; every completion names it.
+  const policyNote = `(decomposition policy v${plan.policy.version})`;
 
   // 2 — the plan, with one estimate per Epic before any file is written.
   const targets: { id: string; slug: string; epicDir: string; requirements: { reference: string }[]; decision?: SplitProposal & { decision: string; children: SplitProposal['children'] } }[] = [];
@@ -514,12 +533,12 @@ export async function runFirstRun(client: ToolClient, dir: string, opts: FirstRu
       const id = (comment.structuredContent as { commentId?: string } | undefined)?.commentId;
       if (id) decisionComments.push(id);
     }
-    const finished = await runFinish(client, dir, target.epicDir, { now: opts.now });
+    const finished = await runFinish(client, dir, target.epicDir, { now: opts.now, commentSuffix: policyNote });
     lines.push(...finished.lines);
   }
 
   // 6 — the marker.
   rmSync(marker, { force: true });
-  lines.push(`PMI · first run: ${executions.length} specifications, ${splits} splits`);
+  lines.push(`PMI · first run: ${executions.length} specifications, ${splits} splits ${policyNote}`);
   return { lines, executions, splits, decisionComments, firstRun: true };
 }
