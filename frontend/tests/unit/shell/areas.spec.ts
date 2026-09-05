@@ -86,7 +86,8 @@ describe('T436f · the area registry is well-formed', () => {
     // moving is the signal it is for — a count edited to match a promoted
     // status, rather than a status promoted because a screen renders, would
     // make the whole matrix decorative.
-    expect(owed.length, 'no areas are awaiting their owners').toBe(12);
+    // EPIC-042 T1514 delivered Governance (the Constraints screen): twelve became eleven.
+    expect(owed.length, 'no areas are awaiting their owners').toBe(11);
     for (const area of owed) {
       expect(area.epic, `${area.id} is owed by nobody`).toMatch(/^EPIC-\d{3}(\s*·\s*EPIC-\d{3})*$/);
     }
@@ -163,16 +164,16 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
    * count followed. `areas.ts` carries the note forbidding the reverse — a
    * landing invented to justify a status is the status driving the product.
    */
-  it('counts 4 delivered, 2 partly delivered, 12 owed, 0 undeclared across all eighteen', () => {
+  it('counts 5 delivered, 2 partly delivered, 11 owed, 0 undeclared across all eighteen (EPIC-042 delivered Governance)', () => {
     expect({
       delivered: by('delivered').length,
       partly: by('partly-delivered').length,
       owed: by('declared-not-delivered').length,
       undeclared: by('undeclared').length,
-    }).toEqual({ delivered: 4, partly: 2, owed: 12, undeclared: 0 });
+    }).toEqual({ delivered: 5, partly: 2, owed: 11, undeclared: 0 });
   });
 
-  it('counts 3 / 2 / 12 / 0 across the seventeen prototype screens — the approved matrix', () => {
+  it('counts 4 / 2 / 11 / 0 across the seventeen prototype screens — the approved matrix plus Governance (EPIC-042)', () => {
     const n = (status: Area['status']): number =>
       PROTOTYPE_17.filter((area) => area.status === status).length;
     expect(PROTOTYPE_17).toHaveLength(17);
@@ -181,7 +182,7 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
       partly: n('partly-delivered'),
       owed: n('declared-not-delivered'),
       undeclared: n('undeclared'),
-    }).toEqual({ delivered: 3, partly: 2, owed: 12, undeclared: 0 });
+    }).toEqual({ delivered: 4, partly: 2, owed: 11, undeclared: 0 });
   });
 
   it('T1173 · the Requirement Room area is delivered AND renders', () => {
@@ -244,11 +245,11 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
     // apart: every member must actually hold `delivered`, so a reachable-but-
     // incomplete area cannot rejoin the count by being routed.
     expect(deliveredAreas().every((area) => area.status === 'delivered')).toBe(true);
-    // Four in the registry; three of them are prototype screens.
-    expect(deliveredAreas().length).toBe(4);
+    // Five in the registry since EPIC-042 delivered Governance; four of them are prototype screens.
+    expect(deliveredAreas().length).toBe(5);
     expect(
       deliveredAreas().filter((a) => a.id !== 'workspace-administration').length,
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it('maps the seventeen V2 prototype pages plus Workspace & Administration', () => {

@@ -339,6 +339,46 @@ export interface WorkstationConnection {
   toolkitVersion: string | null;
   contractVersion: string;
   serverVersion: string | null;
+  /** EPIC-042 (`FR-EXT-067`): what the workstation last reported about its constitution file. */
+  constitutionDigest?: string | null;
+  constitutionState?: ConstitutionState | null;
+  constitutionReportedAt?: string | null;
+}
+
+// EPIC-042 — constraints, the policy and the render (`contracts/governance-api.md`).
+
+export type ConstraintKind = 'principle' | 'constraint' | 'non_goal';
+export type ConstitutionState = 'current' | 'stale' | 'drift' | 'missing';
+
+export interface ProjectConstraint {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+  kind: ConstraintKind;
+  title: string;
+  body: string;
+  order: number;
+  version: number;
+  status: 'active' | 'retired';
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DecompositionPolicy {
+  oneSpecPerEpic: boolean;
+  taskCeiling: number;
+  splitRequiresConfirmation: boolean;
+  offlineMode: 'strict' | 'provisional';
+  version: number;
+}
+
+export interface ConstitutionRender {
+  version: number;
+  digest: string;
+  renderedAt: string;
+  content: string;
+  inputs: Record<string, unknown>;
 }
 
 export interface ReviewSession {
@@ -740,6 +780,44 @@ export class ApiClient {
 
   async listWorkstationConnections(projectId: string): Promise<WorkstationConnection[]> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/workstation-connections`);
+  }
+
+  // EPIC-042 T1514 (`contracts/governance-api.md` §1) — the Constraints screen.
+
+  async listConstraints(projectId: string, filters: { kind?: ConstraintKind; status?: 'active' | 'retired' } = {}): Promise<ProjectConstraint[]> {
+    const query = new URLSearchParams();
+    if (filters.kind) query.set('kind', filters.kind);
+    if (filters.status) query.set('status', filters.status);
+    const qs = query.toString();
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/constraints${qs ? `?${qs}` : ''}`);
+  }
+
+  async createConstraint(projectId: string, input: { kind: ConstraintKind; title: string; body: string; order?: number }): Promise<ProjectConstraint> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/constraints`, input);
+  }
+
+  async updateConstraint(projectId: string, constraintId: string, patch: { title?: string; body?: string; order?: number }): Promise<ProjectConstraint> {
+    return this.request('PATCH', `/projects/${encodeURIComponent(projectId)}/constraints/${encodeURIComponent(constraintId)}`, patch);
+  }
+
+  async reorderConstraint(projectId: string, constraintId: string, order: number): Promise<ProjectConstraint> {
+    return this.updateConstraint(projectId, constraintId, { order });
+  }
+
+  async retireConstraint(projectId: string, constraintId: string): Promise<ProjectConstraint> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/constraints/${encodeURIComponent(constraintId)}/retire`);
+  }
+
+  async getPolicy(projectId: string): Promise<DecompositionPolicy> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/policy`);
+  }
+
+  async putPolicy(projectId: string, policy: Omit<DecompositionPolicy, 'version'>): Promise<DecompositionPolicy> {
+    return this.request('PUT', `/projects/${encodeURIComponent(projectId)}/policy`, policy);
+  }
+
+  async getConstitution(projectId: string): Promise<ConstitutionRender> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/constitution`);
   }
 
   async getRunReview(runId: string): Promise<ReviewSession> {

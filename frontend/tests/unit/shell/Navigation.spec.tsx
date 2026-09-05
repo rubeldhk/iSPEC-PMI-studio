@@ -92,7 +92,7 @@ describe('T437k · SC-SHL-002 — nothing that is not delivered appears', () => 
     renderAt('/');
     await waitFor(() => expect(labels().length).toBeGreaterThan(0));
     expect(AREAS).toHaveLength(18);
-    expect(labels()).toHaveLength(6);
-    expect(AREAS.length - labels().length, 'the title and the arithmetic disagree').toBe(12);
+    expect(labels()).toHaveLength(7);
+    expect(AREAS.length - labels().length, 'the title and the arithmetic disagree').toBe(11);
   });
 });

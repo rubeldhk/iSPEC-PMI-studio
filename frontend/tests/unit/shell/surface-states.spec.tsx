@@ -236,7 +236,7 @@ const SHELL_SURFACES: readonly Surface[] = [
       {
         name: 'specified but not delivered — names the Epic that owes it',
         drive: async () => {
-          renderAt('/governance');
+          renderAt('/reports');
           await waitForIn(MAIN, /not available yet/i);
           return signature(MAIN);
         },

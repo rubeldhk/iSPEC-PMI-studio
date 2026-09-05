@@ -108,3 +108,29 @@ describe('T1433 · Execution timeline', () => {
     await waitFor(() => expect(region.textContent).toMatch(/no executions yet/i));
   });
 });
+
+describe('T1515 · the Local workspace panel shows the constitution state and file differs (EPIC-042 FR-EXT-067)', () => {
+  const connection = (state: string | null) => ({
+    credentialId: 'cred', label: 'laptop', credentialState: 'active', firstSeenAt: '2026-09-04T00:00:00Z', lastSeenAt: '2026-09-04T00:00:00Z',
+    extensionVersion: '0.2.0', toolkitVersion: 'v0.14.3', contractVersion: '1.0', serverVersion: null,
+    constitutionDigest: state ? 'f'.repeat(64) : null, constitutionState: state, constitutionReportedAt: state ? '2026-09-04T12:00:00Z' : null,
+  });
+
+  it('a drifted workstation is named in a file-differs status, and each row shows its state', async () => {
+    render(<ProjectDetail api={api({ listWorkstationConnections: vi.fn(async () => [connection('drift')]) })} projectId="p1" onBack={vi.fn()} />);
+    await screen.findByText('Alpha');
+    const status = await screen.findByRole('status', { name: 'Constitution file differs' });
+    expect(status.textContent).toContain('laptop');
+    expect(status.textContent).toContain('matches no render');
+    const list = await screen.findByRole('list', { name: 'Workstation connections' });
+    expect(list.textContent).toContain('constitution drift');
+  });
+
+  it('a current workstation shows no warning', async () => {
+    render(<ProjectDetail api={api({ listWorkstationConnections: vi.fn(async () => [connection('current')]) })} projectId="p1" onBack={vi.fn()} />);
+    await screen.findByText('Alpha');
+    const list = await screen.findByRole('list', { name: 'Workstation connections' });
+    expect(list.textContent).toContain('constitution current');
+    expect(screen.queryByRole('status', { name: 'Constitution file differs' })).toBeNull();
+  });
+});

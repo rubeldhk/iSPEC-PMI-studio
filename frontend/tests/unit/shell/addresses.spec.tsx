@@ -112,12 +112,12 @@ describe('T437n · an address the shell does not host answers not found', () => 
   });
 
   it('tells a specified-but-unbuilt area apart from a typo, and names its owner', async () => {
-    // `/governance` is `declared-not-delivered`. "No such page" would be false
-    // — it IS part of the product — and an empty Governance area would be
+    // `/reports` is `declared-not-delivered` (Governance was delivered by EPIC-042). "No such page" would be false
+    // — it IS part of the product — and an empty Reports area would be
     // worse: a screen that looks like it works and shows nothing.
-    renderAt('/governance');
-    await waitFor(() => expect(screen.getByText(/Governance is not available yet/)).toBeDefined());
-    expect(screen.getByText(/EPIC-019/)).toBeDefined();
+    renderAt('/reports');
+    await waitFor(() => expect(screen.getByText(/Reports is not available yet/)).toBeDefined());
+    expect(screen.getByText(/EPIC-040/)).toBeDefined();
   });
 
   it('still frames the answer — a not-found is a page, not a blank document', async () => {

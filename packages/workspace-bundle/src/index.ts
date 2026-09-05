@@ -3,11 +3,15 @@
  *
  * The files PMI Studio puts into a user's project directory, versioned as one
  * thing: the `setup-PMIStudio` skill (copied by the API's **prepare** step,
- * before Spec Kit is initialised) and the PMI Spec Kit extension (copied by the
- * worker's **initialise** step, after it). Two halves, one version — because the
- * skill must exist before initialisation for a pending project to have a
- * completion path, and the extension cannot exist before it because it lives
- * under `.specify/`.
+ * before Spec Kit is initialised), the PMI Spec Kit extension (copied by the
+ * worker's **initialise** step, after it), and — since EPIC-042 (bundle 0.2.0,
+ * T1526) — the constitution half: the invariant text the platform renders into
+ * every project's constitution. v0.1 shipped the extension as a mechanism with
+ * no commands and no hooks; 0.2.0 carries the CONTENT: three commands, eighteen
+ * mandatory hooks, the registry fragment, and the full ten-step setup skill.
+ * Two halves, one version — because the skill must exist before initialisation
+ * for a pending project to have a completion path, and the extension cannot
+ * exist before it because it lives under `.specify/`.
  *
  * **This package names no engine in its identifier**, so `backend/` may import
  * it and copy the skills half (`engine-independence.spec.ts` scans `backend/src`

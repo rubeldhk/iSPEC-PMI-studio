@@ -204,3 +204,23 @@ describe('T1339 · idempotence and resumption', () => {
     expect(record.filesWritten).toEqual(['.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md']);
   });
 });
+
+describe('T1521 · provisioning writes the constitution render (EPIC-042 FR-EXT-028)', () => {
+  it('writes .specify/memory/constitution.md from the attached renderer, after .pmi/project.json, and records it', async () => {
+    const h = harness();
+    const render = vi.fn(async (_ws: string, _p: string, _u: string) => '<!-- GENERATED -->\n# Alpha Constitution\n');
+    h.service.attachConstitutionRenderer({ render });
+    const p = await project(h);
+    const { record } = await h.service.prepare(CTX, p.id, { rootPath: 'alpha', agentIntegration: 'claude', scriptType: 'sh' });
+    expect(render).toHaveBeenCalledWith(CTX.workspaceId, p.id, CTX.userId);
+    expect(record.filesWritten).toEqual(['.pmi/project.json', '.pmi/first-run', '.specify/memory/constitution.md', '.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md']);
+    expect(readFileSync(join(root, 'alpha', '.specify', 'memory', 'constitution.md'), 'utf8')).toBe('<!-- GENERATED -->\n# Alpha Constitution\n');
+  });
+
+  it('without a renderer attached, provisioning writes no constitution and says so by omission', async () => {
+    const h = harness();
+    const p = await project(h);
+    const { record } = await h.service.prepare(CTX, p.id, { rootPath: 'alpha', agentIntegration: 'claude', scriptType: 'sh' });
+    expect(record.filesWritten).not.toContain('.specify/memory/constitution.md');
+  });
+});

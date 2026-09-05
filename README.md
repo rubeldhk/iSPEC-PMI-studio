@@ -149,6 +149,41 @@ agent.
 Publishing `@pmi/mcp-server` under the name `.mcp.json` carries is a condition of promoting
 `EPIC-043` out of `local`, not a task inside it.
 
+### The PMI extension, the setup skill and the generated constitution (EPIC-042)
+
+Every governed command your agent runs in a provisioned directory is **registered before it
+starts and completed after it ends** without you typing anything: the `pmi` Spec Kit extension
+registers a mandatory `before_*`/`after_*` hook for each governed command (`speckit.pmi.begin`,
+`speckit.pmi.finish`; `speckit.pmi.progress` after `implement`). The hooks are prompts that call
+only the `pmi-studio` tools; they ship no script and never touch a stock skill file — the ten
+stock skills stay byte-identical to the toolkit's manifest, which a test proves by digest.
+
+**`/setup-PMIStudio`** (bundle 0.2.0) is the full ten-step check — the project file, `uv`, the
+toolkit at the pinned tag, `.specify/`, the extension and its hooks, `PMI_STUDIO_TOKEN` set,
+`.mcp.json` with `pmi-studio`, `context7` and `github`, Docker where relevant, Node ≥ 22, and
+`pmi.health` — installing only the toolkit, the extension and configuration, guiding for the
+rest, and ending with a table on every run. It never asks for a credential value.
+
+**The constitution is generated.** Constraints (principles, constraints, non-goals), the
+decomposition policy and the **offline mode** are authored in PMI Studio under
+**Governance → Constraints**; `.specify/memory/constitution.md` in every workstation is a render
+with a version and a digest. The setup skill and every begin hook refresh a stale file, restore a
+missing one, and **ask before replacing a drifted one** (a file matching no render); the project
+screen and the Constraints screen show *file differs* until a later report matches. The
+*Governed Execution* section is owned by PMI Studio and is the same in every project.
+
+**Offline.** With the default **strict** mode, a governed command stops when PMI Studio is
+unreachable. With **provisional** mode (set by the owner), the begin hook writes a durable
+record under `.pmi/provisional/` before the command runs, every line about it says *(not
+governed)*, and the queue is offered to `pmi.execution.sync` on the next reachable command — a
+reservation until `EPIC-037`'s intake ships.
+
+**The first run.** The first `/speckit-specify` in a project (marker `.pmi/first-run`) reads the
+decomposition plan, estimates each Epic before writing anything, proposes a split above the task
+ceiling for a person to confirm, and runs the stock specify flow once per Epic as its own
+execution. Until `EPIC-044` makes Epic a product entity the platform derives no Epics, so today's
+first run has nothing to decompose beyond the unassigned bundle, and says so.
+
 ## Tests
 
 ```bash

@@ -32,6 +32,7 @@ import { SpecificationList } from '../pages/SpecificationList';
 import { SpecificationView } from '../pages/Specification';
 import { StorageConnectionsPage } from '../pages/StorageConnections';
 import { ConnectorCredentialsPage } from '../pages/ConnectorCredentials';
+import { ConstraintsPage } from '../pages/Constraints';
 import { AccessGrants } from '../components/AccessGrants';
 import { TasksPage } from '../pages/Tasks';
 import { TraceabilityPage } from '../pages/Traceability';
@@ -156,6 +157,20 @@ export function RunsArea(): ReactElement {
           />
         </MainLandmark>
       )}
+    </RequireProject>
+  );
+}
+
+/**
+ * EPIC-042 T1514 (`FR-EXT-065`, `R-042-10`): the Governance area, delivered with
+ * its first screen — the project's constraints, policy and rendered
+ * constitution. One project at a time, like every project-scoped area.
+ */
+export function GovernanceArea(): ReactElement {
+  const { api, identity } = useShell();
+  return (
+    <RequireProject>
+      {(projectId): ReactElement => <ConstraintsPage api={api} projectId={projectId} currentUserId={identity?.user.id} />}
     </RequireProject>
   );
 }

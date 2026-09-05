@@ -125,3 +125,13 @@ is its expected result — see the outcome table in `README.md` §Setup.
 `POST /v1/projects` with a `rootPath` answers `201` with `provisioningState: prepared` and — once —
 `connectorCredential.value`; `GET /v1/projects/:id/provisioning` lists the record with every step
 it completed. A `503 projects_root_unavailable` means the mount is missing or not writable.
+
+**EPIC-042 — what the extension needs from the platform.** Nothing new to configure. Two more
+connector reads are mounted (`GET /v1/projects/{id}/constitution`, `…/decomposition`) under the
+scopes `constitution.read` and `decomposition.read`; `pmi.health` accepts the workstation's
+constitution digest and records its state (`current | stale | drift | missing`) on the workstation
+connection, which the project screen and Governance → Constraints show as *file differs*. The
+constitution a new project directory receives is rendered at provisioning from the project's
+constraints and policy (defaults: one spec per Epic, ceiling 50, splits confirmed, offline mode
+strict). The bundle version written into `.pmi/project.json` is `0.2.0`; a workstation that still
+runs the 0.1 hand-off skill is told so by `/setup-PMIStudio`'s row 5 and re-copies the extension.

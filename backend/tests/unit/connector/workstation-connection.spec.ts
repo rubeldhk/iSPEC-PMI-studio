@@ -85,3 +85,34 @@ describe('T1448 · the read for the screen', () => {
     expect(views[1]).toMatchObject({ credentialId: 'cred_1', lastSeenAt: '2026-09-04T10:00:00.000Z' });
   });
 });
+
+describe('T1527 · the setup skill reports its constitution digest on pmi.health (EPIC-042)', () => {
+  it('classifies the digest through the port, stores digest, state and time, and a second call updates the same row', async () => {
+    const store = new InMemoryWorkstationConnectionStore();
+    const credentials = new InMemoryConnectorCredentialStore();
+    const seen: (string | null)[] = [];
+    const service = new WorkstationConnectionService({
+      store,
+      credentials,
+      contractVersion: '1.0',
+      apiVersion: '1',
+      audit: { record: async () => undefined },
+      constitution: { classify: async (_projectId, digest) => { seen.push(digest); return digest === null ? 'missing' : 'current'; } },
+      now: () => new Date('2026-09-04T10:00:00Z'),
+    });
+    const ctx = { credentialId: 'cred_1', workspaceId: 'ws_1', projectId: 'proj_1', principalId: 'pr_1' };
+    const first = await service.touch(ctx, { extensionVersion: '0.2.0', toolkitVersion: 'v0.14.3', constitutionDigest: 'a'.repeat(64) });
+    expect(first.constitutionState).toBe('current');
+    const row = await store.findByCredential('cred_1');
+    expect(row).toMatchObject({ constitutionDigest: 'a'.repeat(64), constitutionState: 'current', extensionVersion: '0.2.0', toolkitVersion: 'v0.14.3' });
+    expect(row?.constitutionReportedAt?.toISOString()).toBe('2026-09-04T10:00:00.000Z');
+    const second = await service.touch(ctx, { constitutionDigest: null });
+    expect(second.constitutionState).toBe('missing');
+    expect((await store.findByCredential('cred_1'))?.constitutionState).toBe('missing');
+    expect(seen).toEqual(['a'.repeat(64), null]);
+    // Not reported: the stored report is kept, the answer is null.
+    const third = await service.touch(ctx, { serverVersion: '0.2.0' });
+    expect(third.constitutionState).toBeNull();
+    expect((await store.findByCredential('cred_1'))?.constitutionState).toBe('missing');
+  });
+});

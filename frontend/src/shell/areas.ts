@@ -12,6 +12,7 @@
  */
 import type { ComponentType } from 'react';
 import {
+  GovernanceArea,
   HomeArea,
   RequirementRoomIndexView,
   ProjectsArea,
@@ -277,9 +278,11 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'platform',
     label: 'Governance',
     path: '/governance',
-    epic: 'EPIC-019 · EPIC-021 · EPIC-024',
-    status: 'declared-not-delivered',
-    note: 'Governance, steering and access are specified and not built yet.',
+    // EPIC-042 T1514: delivered with the Constraints screen (FR-EXT-065). Steering
+    // and access screens (EPIC-019, EPIC-021, EPIC-024) arrive in this area later.
+    epic: 'EPIC-042 · EPIC-019 · EPIC-021 · EPIC-024',
+    status: 'delivered',
+    element: GovernanceArea,
   },
   {
     id: 'workspace-administration',

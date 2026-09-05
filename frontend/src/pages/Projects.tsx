@@ -285,12 +285,23 @@ function WorkstationConnections({ api, projectId }: { api: ApiClient; projectId:
         </p>
       )}
       {rows !== null && rows.length === 0 && error === null && <p className="ds-field__hint">No workstation has connected yet.</p>}
+      {rows !== null && rows.some((r) => r.constitutionState === 'drift' || r.constitutionState === 'stale') && (
+        // EPIC-042 T1516 (`FR-EXT-067`): a workstation's constitution file matches an earlier render or none.
+        <p role="status" aria-label="Constitution file differs" className="ds-field__error">
+          File differs on{' '}
+          {rows
+            .filter((r) => r.constitutionState === 'drift' || r.constitutionState === 'stale')
+            .map((r) => `${r.label} (${r.constitutionState === 'stale' ? 'matches an earlier render' : 'matches no render'})`)
+            .join('; ')}
+          . Change constraints in Governance → Constraints; the next governed command refreshes a stale file and asks before replacing a drifted one.
+        </p>
+      )}
       {rows !== null && rows.length > 0 && (
         <ul aria-label="Workstation connections">
           {rows.map((row) => (
             <li key={row.credentialId}>
               <strong>{row.label}</strong> · {row.credentialState} · last seen {new Date(row.lastSeenAt).toLocaleString()} · extension {row.extensionVersion ?? '—'} · toolkit{' '}
-              {row.toolkitVersion ?? '—'} · contract {row.contractVersion}
+              {row.toolkitVersion ?? '—'} · contract {row.contractVersion} · constitution {row.constitutionState ?? 'not reported'}
             </li>
           ))}
         </ul>

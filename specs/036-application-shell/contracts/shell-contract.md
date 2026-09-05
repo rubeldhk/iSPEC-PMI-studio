@@ -42,11 +42,11 @@ export interface Area {
 export const AREAS: readonly Area[];
 ```
 
-**Four areas are `delivered`, two are `partly-delivered`, twelve are `declared-not-delivered`, and zero are `undeclared`.**
+**Five areas are `delivered`, two are `partly-delivered`, eleven are `declared-not-delivered`, and zero are `undeclared`.**
 
 > **Corrected 2026-08-25 (Constitution XII Step B, `T1015`).** This said *five delivered*. The registry now reads **3 delivered · 2 partly-delivered · 13 declared-not-delivered · 0 undeclared** across eighteen areas; across the **seventeen V2 prototype screens** it is **2 / 2 / 13 / 0**. Both denominators are stated wherever a count appears — a figure that does not say what it counts is how two published counts came to disagree.
  Only the
-the reachable ones reach navigation and the route tree — four `delivered` and two `partly-delivered`. The middle four carry their owning Epic's identifier so
+the reachable ones reach navigation and the route tree — five `delivered` and two `partly-delivered`. The middle four carry their owning Epic's identifier so
 the outstanding obligation has a name rather than disappearing.
 
 > **Corrected 2026-08-24 (`T442s`).** This said six delivered and three awaiting an owner. `C1`'s remediation set those numbers across every artifact; `N1` then moved **Plan & Tasks** to `declared-not-delivered` during the Phase 2 implementation and only `areas.ts`, the handovers and the tests followed. `T442t` is the check that now disagrees when a document and the registry drift.
@@ -81,12 +81,13 @@ PMI-DOC-006 §4.1 are recorded, and how an address naming one is answered *not f
 /runs                          → Runs                       delivered
 /runs/:runId                   → a run's review session     sub-view
 /storage                       → Workspace & Administration delivered
+/governance                    → Governance                 delivered  (EPIC-042, T1514 — the Constraints screen)
 *                              → not found
 ```
 
-**Four delivered and two partly-delivered areas are routed, and that is the whole table.**
+**Five delivered and two partly-delivered areas are routed, and that is the whole table.**
 
-> **Updated 2026-08-28 (`T1172`).** The Requirement Room area was **delivered**: `/requirement-room` renders the shared `RoomIndex`, which lists the workspace's Rooms and offers the way into a new one. It had stood `declared-not-delivered` since `T403n` because the Room screen existed per object while nothing listed the objects. The registry moved first and these figures follow it — **4 delivered · 2 partly-delivered · 12 owed · 0 undeclared**. *(Updated 2026-08-28, `T1172`: the Requirement Room area was delivered — `/requirement-room` renders the shared `RoomIndex`. The registry moved first; these follow it.)* `/architecture` and `/governance` were listed
+> **Updated 2026-08-28 (`T1172`).** The Requirement Room area was **delivered**: `/requirement-room` renders the shared `RoomIndex`, which lists the workspace's Rooms and offers the way into a new one. It had stood `declared-not-delivered` since `T403n` because the Room screen existed per object while nothing listed the objects. The registry moved first and these figures followed it (superseded by the EPIC-042 note below). *(Updated 2026-08-28, `T1172`: the Requirement Room area was delivered — `/requirement-room` renders the shared `RoomIndex`. The registry moved first; these follow it.)* `/architecture` and `/governance` were listed
 here as declared until the analysis of 2026-08-24 ([../analysis.md](../analysis.md) `I1`); neither
 has a component to render, and `QA & Releases` was never given a path at all. **`Plan & Tasks`
 left the table too** (`N1`): `/specifications/:id/tasks` is a sub-view of Specifications, and a
@@ -200,3 +201,5 @@ Asserted by the Epic's own architecture check:
 
 `EPIC-010` `T200e`'s four buttons on the project view **are superseded** by navigation, and its
 `shell-page-routes.spec.tsx` is replaced by the shell's own. `T200a` is not.
+
+> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **5 delivered · 2 partly-delivered · 11 declared-not-delivered · 0 undeclared**.

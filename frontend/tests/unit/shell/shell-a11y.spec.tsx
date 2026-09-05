@@ -55,7 +55,7 @@ describe('T440e · exactly one main landmark, at every address', () => {
     '/specifications/s1/tasks',
     '/runs/run_1',
     '/traceability',
-    '/governance',
+    '/reports',
     '/no-such-place',
   ];
 
@@ -158,7 +158,7 @@ describe('T440i · SC-SHL-007 — every area reachable by keyboard at 360px', ()
 });
 
 describe('T440g · SC-SHL-008 — zero axe violations on the shell', () => {
-  it.each(['/', '/projects', '/runs', '/governance', '/no-such-place'])(
+  it.each(['/', '/projects', '/runs', '/reports', '/no-such-place'])(
     '%s passes the WCAG 2.2 AA harness',
     async (path) => {
       renderAt(path);

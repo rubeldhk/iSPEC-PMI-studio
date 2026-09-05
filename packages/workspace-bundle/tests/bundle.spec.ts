@@ -99,3 +99,23 @@ describe("DEFAULT_AGENT_INTEGRATION (FR-LPW-006)", () => {
     expect(skillsPathFor(DEFAULT_AGENT_INTEGRATION)).toMatchObject({ ok: true });
   });
 });
+
+describe('T1525 · bundle 0.2.0 carries the content (EPIC-042)', () => {
+  it('the skills half is the full ten-step skill, not the hand-off', () => {
+    const text = readFileSync(join(skillsDir(), 'setup-PMIStudio', 'SKILL.md'), 'utf8');
+    expect(text).not.toMatch(/hand-off half/);
+    expect([...text.matchAll(/^(\d+)\. \*\*/gm)]).toHaveLength(11);
+    expect(text).toMatch(/bundle-version:\s*"?0\.2\.0"?/);
+  });
+
+  it('the extension half carries three commands and eighteen mandatory hooks, and the registry fragment', () => {
+    for (const command of ['begin', 'finish', 'progress']) expect(existsSync(join(extensionDir(), 'commands', `${command}.md`))).toBe(true);
+    expect(existsSync(join(extensionDir(), 'extensions-fragment.yml'))).toBe(true);
+    const manifest = readFileSync(join(extensionDir(), 'extension.yml'), 'utf8');
+    expect([...manifest.matchAll(/^  (before|after)_[a-z]+: { command: "speckit.pmi.(begin|finish)", optional: false/gm)]).toHaveLength(18);
+  });
+
+  it('BUNDLE_VERSION is 0.2.0', () => {
+    expect(BUNDLE_VERSION).toBe('0.2.0');
+  });
+});

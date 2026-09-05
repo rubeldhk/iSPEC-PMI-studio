@@ -168,6 +168,9 @@ importers:
       '@playwright/test':
         specifier: ^1.49.0
         version: 1.62.1
+      '@pmi/workspace-bundle':
+        specifier: workspace:*
+        version: link:../packages/workspace-bundle
 
   engine-adapters/fixture:
     dependencies:
