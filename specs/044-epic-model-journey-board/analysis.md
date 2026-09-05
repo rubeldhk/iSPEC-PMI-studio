@@ -21,6 +21,13 @@ LOW; none CRITICAL. No constitution MUST is violated.
 
 **Overflow**: none.
 
+**Remediation applied 2026-09-05** (approved by the requester in one round, Constitution X):
+`I1` → `FR-EPB-013` amended and `T1612` appended; `C1` → `T1613` appended; `C2` → `T1562`
+extended; `S1` → the departure recorded under spec Assumptions; `A1` → the slug rule carried into
+`FR-EPB-020`; `U1` → `T1584` extended. `I2` is left for the implement step's plan tree update;
+`D1` needs no change. Findings status: `I1` ✅ · `C1` ✅ · `C2` ✅ · `S1` ✅ · `I2` ⏳ (implement) ·
+`D1` ✅ (no change) · `A1` ✅ · `U1` ✅.
+
 ## Coverage Summary
 
 Tasks cite files, research decisions (`R-044-n`) and contract sections rather than requirement

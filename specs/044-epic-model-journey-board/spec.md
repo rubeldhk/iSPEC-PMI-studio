@@ -366,7 +366,8 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
   it is a disagreement.
 - **FR-EPB-013**: The register's existing tests MUST pass unchanged against the package, and the
   register produced after the extraction MUST be byte-identical to the one produced before it, for
-  this repository's `specs/`.
+  this repository's `specs/` — proved **at the extraction step**, before `FR-EPB-012`'s version
+  line is added to the register as a second, separately recorded regeneration (analysis `I1`).
 - **FR-EPB-014**: The package MUST have no dependency on the platform, on this repository's tests
   or on any toolkit adapter; the platform code that consumes it MUST name no toolkit (`EPIC-041`'s
   rule, enforced by the existing scans).
@@ -375,7 +376,8 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
 
 - **FR-EPB-020**: A project owner MUST be able to create an Epic with a title and a description;
   the platform MUST allocate its **number** — the next free integer in the project, unique per
-  project, never reused — and derive a **slug** from the title (`LR-03`, `BR-0041`).
+  project, never reused — and derive a **slug** from the title (`kebab-case`, ASCII letters,
+  digits and hyphens, at most 40 characters; analysis `A1`) (`LR-03`, `BR-0041`).
 - **FR-EPB-021**: An Epic MUST have a status — *active*, *split* or *closed* — and an owner MUST
   be able to close it; a closed or split Epic MUST accept no new requirement assignment and MUST
   keep its requirements, specifications and history.
@@ -563,6 +565,14 @@ recorded. The reasoning is kept because it describes the risk each confirmation 
 
 **Provisional identifiers**: `LR-03` and `LR-07` (PMI-DOC-007 §9.3) receive `BR-` numbers only in
 PMI-DOC-004 v2.1; the back-fill is owed by the Project Owner before the platform release gate.
+
+**Recorded departure from the SRS** (Constitution II; analysis `S1`, 2026-09-05): PMI-DOC-007 §4.2
+lists `GET /v1/epics/{id}/stage` in the REST binding of the integration contract, which a
+connector credential calls. This Epic delivers the route at that path as a **session** route
+(`FR-EPB-063`) and adds no connector binding, because §4.1 names no tool that would call it and the
+board is a human surface; a connector binding under the existing `project.read` scope is the
+follow-up when an agent-side consumer appears (`EPIC-045` or `EPIC-046`). The traceability row for
+§4.2 therefore claims the path and the shape, not connector reachability.
 
 **Dependencies**: `EPIC-043` complete (the connector reads, `pmi.health`, the execution tools);
 `EPIC-042` complete (the first-run loop, the `decomposition-decision` record, the timeline reads
