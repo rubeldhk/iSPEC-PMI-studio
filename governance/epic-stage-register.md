@@ -55,6 +55,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-042](../specs/042-pmi-spec-kit-extension/) | PMI Spec Kit Extension, Setup Skill and Constitution Sync | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-044](../specs/044-epic-model-journey-board/) | Epic Model and Spec Journey Board | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-045](../specs/045-artifact-sync-markdown-viewer/) | Artifact Sync and Markdown Viewer | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 
 ## Findings
 
@@ -63,6 +64,7 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | Epic | Finding | Severity |
 |---|---|---|
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
+| EPIC-045 | Checklisted evidence present without the stage before it — stage held at Specified | report |
 
 
 *Stages derived by `@pmi/epic-stage` v0.1.0.*

@@ -185,6 +185,7 @@ path added or removed without updating this document fails the build.
 - `specs/043-pmi-integration-contract/`
 - `specs/042-pmi-spec-kit-extension/`
 - `specs/044-epic-model-journey-board/`
+- `specs/045-artifact-sync-markdown-viewer/`
 - `packages/epic-stage/` — the SHARED stage derivation (`EPIC-044` `T1550`, PMI-DOC-007 `R-06`): the
   configuration document (mirrored as `governance/epic-stage.config.json`, `G-44-01`), the
   contiguity rule, readiness and the two evidence adapters. Imported by `tests/governance/epic-stage/`
