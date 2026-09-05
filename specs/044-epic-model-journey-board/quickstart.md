@@ -54,4 +54,18 @@ E2E_STACK="reference local" npx playwright test e2e/tests/epic-044-m3.spec.ts
 
 ## Results
 
-*(filled at closure by the Phase Z tasks)*
+### Recorded 2026-09-05 (`T1590` — the extraction, `SC-EPB-002`)
+
+- **Register byte identity**: `governance/epic-stage-register.md` at commit `ef26f24` (before the
+  extraction) and at `8b321f0` (after `tests/governance/epic-stage/derive.ts` and the waiver half of
+  `dor.ts` became shims over `@pmi/epic-stage`) both have SHA-256
+  `71942024a780474201cfee0fb9de47dff595cc7c5f39c7839aa6465e617f69be`; `git diff --quiet ef26f24
+  8b321f0 -- governance/epic-stage-register.md` exits 0. The working tree carries the same digest
+  after every later phase of this Epic (the `T1612` version footer is the one intended change,
+  recorded when it lands).
+- **Governance specs unchanged**: the 32 specs that import `derive.ts` or `dor.ts` were not edited;
+  the governance project after the extraction ran 77 files, 1054 tests passing, 2 failing (`T884`,
+  `EPIC-029`'s manual pass — pre-existing, unrelated).
+- **Scenario 1** holds as stated.
+
+*(the remaining scenarios are filled by `T1603` and the Phase Z tasks)*

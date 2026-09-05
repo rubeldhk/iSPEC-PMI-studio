@@ -74,8 +74,11 @@ PMI-DOC-006 §4.1 are recorded, and how an address naming one is answered *not f
 /traceability                  → (within Projects)          sub-view
 /requirement-room              → Requirement Room           delivered  (EPIC-033, T1172)
 /requirement-room/intake       → open a Room                sub-view
+/requirement-room/epics        → the Epics of a project     sub-view  (EPIC-044, T1587)
+/requirement-room/epics/:epicId → one Epic                  sub-view  (EPIC-044, T1587)
 /requirement-room/:roomObjectId → one Room                  sub-view
 /specifications                → Specifications             delivered
+/specifications/board          → the Spec Journey Board     sub-view  (EPIC-044, T1587)
 /specifications/:id            → one specification          sub-view
 /specifications/:id/tasks      → a specification's tasks     sub-view
 /runs                          → Runs                       delivered

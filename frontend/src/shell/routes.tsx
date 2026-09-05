@@ -25,6 +25,7 @@ import {
   DefectRoomView,
   EpicDetailView,
   EpicListView,
+  JourneyBoardView,
   ProjectDetailView,
   RequirementIntakeView,
   RequirementRoomView,
@@ -42,6 +43,9 @@ import {
 export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[] = Object.freeze([
   { path: '/projects/:projectId', element: ProjectDetailView },
   { path: '/traceability', element: TraceabilityView },
+  // EPIC-044 `T1587` — the Spec Journey Board lives in Specifications (`FR-EPB-040`);
+  // before the `:specificationId` route so the literal segment is not read as an id.
+  { path: '/specifications/board', element: JourneyBoardView },
   { path: '/specifications/:specificationId', element: SpecificationDetailView },
   { path: '/specifications/:specificationId/tasks', element: TasksView },
   { path: '/runs/:runId', element: ReviewSessionView },

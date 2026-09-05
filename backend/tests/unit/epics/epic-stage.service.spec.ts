@@ -40,6 +40,8 @@ describe('T1566 · the board read', () => {
     expect(board.unbound).toEqual([expect.objectContaining({ command: 'specify', targetId: '99' })]);
     expect(board.packageVersion).toBe(packageVersion());
     expect(board.profile).toBe('product');
+    expect(board.columns[0]).toBe('Not started');
+    expect(board.columns).toHaveLength(10);
     expect(board.epics[0]).toMatchObject({ epicId: 'e1', slug: 'intake', title: 'Intake', status: 'active', derivedFrom: 'executions' });
   });
 
@@ -106,5 +108,15 @@ describe('T1566 · the board read', () => {
     const { service } = await harness([row('1', 'specify', 'completed')]);
     expect((await service.stage(CTX, 'e1')).stage).toBe('Specified');
     await expect(service.stage({ ...CTX, projectId: 'p_b' }, 'e1')).rejects.toMatchObject({ code: 'not_found' });
+  });
+});
+
+describe('T1588 · readiness is layered, not derived: the verdict travels with every stage at or above the one before Ready', () => {
+  it('an Implementing Epic still carries the customer profile verdict and note; a Specified one carries n/a', async () => {
+    const base = ['specify', 'clarify', 'checklist', 'plan', 'tasks', 'analyze'].map((c) => row('1', c, 'completed'));
+    const { service } = await harness([...base, row('1', 'implement', 'started'), row('2', 'specify', 'completed')]);
+    const [e1, e2] = (await service.board(CTX)).epics;
+    expect(e1).toMatchObject({ stage: 'Implementing', readiness: { verdict: 'Ready', note: 'no readiness conditions configured' } });
+    expect(e2?.readiness.verdict).toBe('n/a');
   });
 });

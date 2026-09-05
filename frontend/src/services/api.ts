@@ -420,6 +420,8 @@ export interface BoardRead {
   unbound: { executionId: string; command: string; targetId: string; registeredAt: string }[];
   packageVersion: string;
   profile: 'product';
+  /** Not started, then the product profile in order — the columns of the board. */
+  columns: string[];
 }
 
 export interface ProjectConstraint {

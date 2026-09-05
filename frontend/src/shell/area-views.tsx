@@ -35,6 +35,7 @@ import { ConnectorCredentialsPage } from '../pages/ConnectorCredentials';
 import { ConstraintsPage } from '../pages/Constraints';
 import { EpicListPage } from '../pages/EpicList';
 import { EpicDetailPage } from '../pages/EpicDetail';
+import { JourneyBoardPage } from '../pages/JourneyBoard';
 import { AccessGrants } from '../components/AccessGrants';
 import { TasksPage } from '../pages/Tasks';
 import { TraceabilityPage } from '../pages/Traceability';
@@ -336,6 +337,30 @@ export function RequirementIntakeView(): ReactElement {
             projectId={projectId}
             onOpened={(roomObjectId): void => {
               void navigate(`/requirement-room/${encodeURIComponent(roomObjectId)}`);
+            }}
+          />
+        </MainLandmark>
+      )}
+    </RequireProject>
+  );
+}
+
+/** EPIC-044 `T1585` — the Spec Journey Board inside Specifications (`FR-EPB-040`). */
+export function JourneyBoardView(): ReactElement {
+  const { api } = useShell();
+  const navigate = useNavigate();
+  return (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
+          <JourneyBoardPage
+            api={api}
+            projectId={projectId}
+            onOpenEpic={(epicId): void => {
+              void navigate(`/requirement-room/epics/${encodeURIComponent(epicId)}`);
+            }}
+            onOpenTimeline={(id): void => {
+              void navigate(`/projects/${encodeURIComponent(id)}`);
             }}
           />
         </MainLandmark>

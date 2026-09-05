@@ -18,7 +18,7 @@ Every route is under the `v1` prefix, workspace-scoped by the session, and answe
 | `PUT /v1/requirements/{rid}/epic` | owner | `{ epicId: string \| null }` | `200` `Requirement`; `409 epic_not_active` when the target is split or closed; `404` for another project's Epic |
 | `PUT /v1/specifications/{sid}/epic` | owner | `{ epicId: string \| null }` | `200` `Specification` |
 | `GET /v1/epics/{eid}/stage` | member | — | `200` `EpicStage` (data-model §4) — PMI-DOC-007 §4.2 |
-| `GET /v1/projects/{id}/epics/stages` | member | — | `200` `BoardRead` (data-model §4): every Epic's stage, `unbound`, `packageVersion`, `profile` |
+| `GET /v1/projects/{id}/epics/stages` | member | — | `200` `BoardRead` (data-model §4): every Epic's stage, `unbound`, `packageVersion`, `profile`, `columns` |
 
 `Epic` shape: `{ id, projectId, number, slug, title, description, status, parentEpicId,
 splitSuffix, createdAt, updatedAt, closedAt, requirementCount, specificationCount }`.

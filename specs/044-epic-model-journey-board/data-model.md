@@ -69,6 +69,7 @@ BoardRead {
   epics: EpicStage[]                            — number order
   unbound: { executionId, command, targetId, registeredAt }[]   — targetType epic, no matching Epic (FR-EPB-008)
   packageVersion: string                        — @pmi/epic-stage (FR-EPB-012)
+  columns: string[]                             — Not started, then the product profile in order (the screen names no stage)
   profile: 'product'
 }
 ```

@@ -75,3 +75,17 @@ describe('T1559 · resolveReadiness (pure, validator injected)', () => {
     expect(result.blocking).toEqual([]);
   });
 });
+
+describe('T1588 · the customer readiness profile (FR-EPB-045, FR-EPB-046)', () => {
+  it('the configuration names the customer profile as evaluating no condition, so its failure list is empty and the verdict is Ready', async () => {
+    const { loadStageConfig } = await import('../src/index.js');
+    expect(loadStageConfig().readinessProfiles['customer']).toBe('none');
+    const verdict = resolveReadiness({ directory: 'intake', kind: 'delivery', failures: [], waivers: [], today: '2026-09-05', epicsOnDisk: [] }, () => ({ problems: [], expired: false, grantsCover: false }));
+    expect(verdict).toEqual({ readiness: 'Ready', uncovered: [], blocking: [], reported: [] });
+  });
+
+  it('the repository profile evaluates its DOR: a failing condition is Not ready, exactly as before the extraction', () => {
+    const validate = (waiver: WaiverDeclaration): WaiverValidation => validateWaiver(waiver, CTX);
+    expect(resolveReadiness({ directory: '007-intake', kind: 'delivery', failures: ['DOR-01'], waivers: [], today: '2026-09-05', epicsOnDisk: ['007-intake'] }, validate).readiness).toBe('Not ready');
+  });
+});

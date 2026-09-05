@@ -121,3 +121,13 @@ describe('T1578 · the Epic detail', () => {
     expect(screen.getByRole('alert').textContent).toContain('Some of this screen did not load');
   });
 });
+
+describe('T1588 · the stage card shows readiness as a separate claim and offers no control that marks the Epic ready', () => {
+  it('states the verdict and note, and where conditions will be configured', async () => {
+    await page(api({ getEpicStage: vi.fn(async () => ({ ...STAGE, stage: 'Ready', next: '/speckit-implement', readiness: { verdict: 'Ready', note: 'no readiness conditions configured', failing: [] } })) }));
+    const stage = screen.getByRole('region', { name: 'Stage' });
+    expect(stage.textContent).toContain('Readiness: Ready — no readiness conditions configured');
+    expect(stage.textContent).toContain('configured in Governance');
+    expect(within(stage).getAllByRole('button').map((b) => b.textContent)).toEqual(['Open executions']);
+  });
+});

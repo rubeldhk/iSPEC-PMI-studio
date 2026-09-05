@@ -50,6 +50,8 @@ export interface BoardRead {
   readonly unbound: { executionId: string; command: string; targetId: string; registeredAt: string }[];
   readonly packageVersion: string;
   readonly profile: 'product';
+  /** The board's columns in order — *Not started* then the product profile — so no screen names a stage of its own (`FR-EPB-011`). */
+  readonly columns: string[];
 }
 
 export interface EpicStageDeps {
@@ -81,6 +83,7 @@ export class EpicStageService {
       unbound: bound.unbound.map((r) => ({ executionId: r.executionId, command: r.command, targetId: r.targetId, registeredAt: r.registeredAt })),
       packageVersion: packageVersion(),
       profile: 'product',
+      columns: [config.notStarted.name, ...profile.map((s) => s.name)],
     };
   }
 

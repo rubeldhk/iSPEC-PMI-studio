@@ -93,7 +93,8 @@ describe('T1570 · universal rules (epics-api.md §3)', () => {
     const { controller: c } = controller();
     await c.create(session(OWNER), 'p_a', { title: 'Intake' });
     const board = await c.board(session(OWNER), 'p_a');
-    expect(Object.keys(board).sort()).toEqual(['epics', 'packageVersion', 'profile', 'unbound']);
+    expect(Object.keys(board).sort()).toEqual(['columns', 'epics', 'packageVersion', 'profile', 'unbound']);
+    expect(board.columns).toEqual(['Not started', 'Specified', 'Clarified', 'Checklisted', 'Planned', 'Tasked', 'Analyzed', 'Ready', 'Implementing', 'Converged']);
     expect(board.epics[0]).toMatchObject({ number: 1, stage: 'Not started', next: '/speckit-specify', derivedFrom: 'executions', readiness: { verdict: 'n/a' } });
   });
 });

@@ -129,3 +129,37 @@ describe('T437p · SC-SHL-003 — any area is two actions from any other', () =>
     expect(navButtons()).toHaveLength(reachableAreas().length);
   });
 });
+
+describe('T1586 · EPIC-044 sub-views resolve inside their delivered areas (FR-EPB-040, FR-EPB-041)', () => {
+  it('/requirement-room/epics resolves to the project-scoped Epic list (asks for a project when none is selected, never not-found)', async () => {
+    renderAt('/requirement-room/epics');
+    // A project-scoped sub-view entered with no project selected says so (`FR-SHL-024`);
+    // a not-found answer would mean the address did not resolve at all.
+    expect(await screen.findByText('This area shows one project at a time, and none is selected yet.')).toBeDefined();
+    expect(screen.queryByText(/not found/i)).toBeNull();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
+  it('/requirement-room/epics/:epicId renders one Epic', async () => {
+    renderAt('/requirement-room/epics/e1');
+    expect(await screen.findByRole('heading', { name: /^Epic 1 · Intake$/ })).toBeDefined();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
+  it('/specifications/board resolves to the project-scoped board (asks for a project when none is selected, never not-found)', async () => {
+    renderAt('/specifications/board');
+    expect(await screen.findByText('This area shows one project at a time, and none is selected yet.')).toBeDefined();
+    expect(screen.queryByText(/not found/i)).toBeNull();
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
+  it('the shell contract documents the three sub-views', () => {
+    const { readFileSync } = require('node:fs') as typeof import('node:fs');
+    const { resolve } = require('node:path') as typeof import('node:path');
+    const table = readFileSync(resolve(__dirname, '../../../../specs/036-application-shell/contracts/shell-contract.md'), 'utf8');
+    const lines = table.split(/\r?\n/);
+    for (const path of ['/requirement-room/epics', '/requirement-room/epics/:epicId', '/specifications/board']) {
+      expect(lines.some((l) => l.startsWith(`${path} `) && l.includes('→')), `${path} is not in the route table`).toBe(true);
+    }
+  });
+});
