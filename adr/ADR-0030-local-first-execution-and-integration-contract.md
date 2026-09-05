@@ -92,3 +92,21 @@ behind `EPIC-041`'s connector guard. Surface and assurance are derived from the 
 local agent needs to begin (`pmi.health`, `pmi.project.context`, `pmi.requirements.list`) ship
 here; the tools `EPIC-042`, `EPIC-045` and `EPIC-046` own are reserved by name in the same server.
 `ADR-0010` closes with this Epic. Records: `specs/043-pmi-integration-contract/`.
+
+## Amendment — 2026-09-04, `EPIC-042` `/speckit-plan` (`FR-EXT-070`)
+
+**PMI-aware commands are a Spec Kit extension, never edited stock skills** (`D-8`). `EPIC-042`
+ships the `pmi` extension — `speckit.pmi.begin`, `speckit.pmi.finish`, `speckit.pmi.progress` —
+registered as mandatory `before_*`/`after_*` hooks for every governed command, so that
+registration precedes execution and completion follows it without the user typing anything
+(Constitution XII.1, XII.4). The stock skill files stay byte-identical to the toolkit's pinned
+manifest, asserted by digest. The commands are prompts that call only the `pmi-studio` tools;
+they ship no script.
+
+**The project constitution is generated content** (`D-3`). Constraints, the decomposition policy
+and the offline mode are authored in PMI Studio; `.specify/memory/constitution.md` is a render
+with a version and a digest, refreshed by the setup skill and by the begin hook, and never
+overwritten silently when it has drifted. The *Governed Execution* section is invariant text owned
+by PMI Studio and carried by `@pmi/workspace-bundle`, byte-identical in every project. Provisional
+offline records are produced by the hooks and accepted only by `EPIC-037`'s reconciliation intake
+(`BR-0202`). Records: `specs/042-pmi-spec-kit-extension/`.

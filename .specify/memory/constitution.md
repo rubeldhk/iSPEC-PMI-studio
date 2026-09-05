@@ -1,6 +1,28 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.6.0 → 1.6.1
+Bump rationale: PATCH — one clarifying sentence added to the Directory contract under Repository &
+Environment Governance, as PMI-DOC-007 §9.2 names and EPIC-042 FR-EXT-071 directs: a PMI
+Studio-managed project's .specify/memory/constitution.md is generated from PMI Studio and is not
+hand-edited; drift is detected by digest and shown in PMI Studio. No principle is added, removed,
+renamed or redefined; Principle XII is the principle this sentence implements for the product's
+own projects. This repository's constitution is unaffected by the sentence: it is not a PMI
+Studio-managed project and remains amended only through /speckit-constitution (Principle I).
+
+Modified principles: none
+Added sections: none (one sentence added to the existing Directory contract)
+Removed sections: none
+
+Templates requiring updates (v1.6.1):
+  ✅ .specify/templates/plan-template.md   — reviewed; no change required (no gate changes)
+  ✅ .specify/templates/spec-template.md   — reviewed; no change required
+  ✅ .specify/templates/tasks-template.md  — reviewed; no change required
+  ✅ .claude/skills/speckit-*/SKILL.md     — reviewed; no change required
+
+Follow-up TODOs (v1.6.1): none.
+
+--- previous report (v1.6.0) ---
 Version change: 1.5.0 → 1.6.0
 Bump rationale: MINOR — one new principle added (XII. Execution Registration). Nothing removed,
 renamed, or redefined incompatibly; every prior obligation still holds. The amendment ratifies the
@@ -528,6 +550,14 @@ specs/<epic-id>/              # One directory per Epic
 .specify/                     # Spec Kit governance, templates, scripts
 ```
 
+**Generated constitutions in PMI Studio-managed projects** (v1.6.1, PMI-DOC-007 §9.2): a project
+directory that PMI Studio provisions carries a `.specify/memory/constitution.md` that is
+**generated** from PMI Studio — its constraints, decomposition policy, offline mode and resolved
+steering — and MUST NOT be hand-edited; the file carries its version and digest, drift is detected
+by digest and shown in PMI Studio, and the file is refreshed from PMI Studio by the setup skill
+and by every governed command's registration hook. This sentence binds the product's projects; it
+does not change how this repository's own constitution is amended (Principle I).
+
 ## Development Workflow
 
 The delivery loop is fixed and cyclic:
@@ -591,4 +621,4 @@ Principle IX and MUST honor the interaction budget of Principle X for its phase.
 deviation MUST be justified in the plan's Complexity Tracking table, or the work MUST be
 simplified.
 
-**Version**: 1.6.0 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-08-25
+**Version**: 1.6.1 | **Ratified**: 2026-08-02 | **Last Amended**: 2026-09-04
