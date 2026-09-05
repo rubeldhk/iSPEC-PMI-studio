@@ -38,6 +38,7 @@ both readers**: `@pmi/epic-stage` serves the repository's register and the produ
 |---|---|---|
 | `DEF-044-001` — the session requirement list was shadowed | `ConnectorReadsController`'s guarded `projects/:id/requirements` registered before `RequirementsController`'s; every session read of the register answered `401` since `EPIC-043` | `RequirementsModule` imported before `ConnectorModule`; the session controller owns the path and dispatches a bearer request to the connector read through `ModuleRef`; `epics-api.spec.ts` drives the session route through the composed application. CLOSED |
 | `DEF-044-002` — the registry refused the decomposition decision | `COMMENT_TYPES` and the `execution_comments_type_vocabulary` CHECK admitted five types; `EPIC-042`'s hooks record `decomposition-decision`; the hook treats a refused comment as non-fatal, so a confirmed split vanished silently. `EPIC-042` proved the loop against a stub (its closure assumption 8) | The vocabulary gains the sixth value in the service and by migration `20260905130000_epic044_decision_comment_type`; `comments.spec.ts` pins six; `EPIC-037`'s data model carries a dated note; `decision-reconcile.spec.ts` drives the decision through the real server. CLOSED |
+| `DEF-044-003` — concurrent reads raced in decision reconciliation (found in the branch review) | Every read reconciles first; the screens read the list and the board together; the second pass's child insert hit the unique `(decisionCommentId, splitSuffix)` index and the raw `P2002` escaped as `500` — reproduced: *list 200, board 500, list2 500*. The split's audit named the reader, not the decider; `GET /v1/epics/{eid}` took a `projectId` query as its scope | Reconciliation is idempotent per child and resumable (the parent's `lastDecisionCommentId`, written last, is the mark; a child that already exists is read back and processing continues); the project check runs first; the decider is the audit actor with the reader as `readBy`; the in-memory store enforces the decision index; the Prisma store retries the number race five times then refuses as `epic_number_contended`; the query is gone. Three simultaneous reads through the real server answer `200`. CLOSED |
 | `T1599`'s task text named a suite that does not exist | `frontend/tests/unit/pages/specification-list.spec.tsx`; the tests went into the existing `SpecificationList.spec.tsx` | The task text names the real file (`G-26-14` holds) |
 | `T1557`/`T1571` named their pairing as `(check: …)` | `T148` does not read `check:` as a pairing | `(architecture test: T1556)`, `(contract test: T1570)` |
 
@@ -182,5 +183,17 @@ recorded in `README.md` §Known-red checks or here.
   `packages/epic-stage/` (the shared derivation).
 - `governance/epic-stage.config.json` is byte-identical to `packages/epic-stage/epic-stage.config.json`
   (`cmp` exit 0; `G-44-01` green).
-- `specs/044-epic-model-journey-board/defects/` holds `DEF-044-001` and `DEF-044-002`, both CLOSED;
-  no open record.
+- `specs/044-epic-model-journey-board/defects/` holds `DEF-044-001`, `DEF-044-002` and
+  `DEF-044-003`, all CLOSED; no open record.
+
+## The branch review (2026-09-05, after the second converge)
+
+Seven findings; the review is what found `DEF-044-003`. Fixed on the branch: the reconciliation
+race (HIGH), the reader-as-actor audit and the reconcile-before-check order (MEDIUM), the number
+allocation's single retry (MEDIUM — now five attempts then a coded conflict), and the undefined
+`projectId` query on the detail route (LOW). Not a finding after all: the bearer dispatch on the
+requirement path — `ConnectorAuthGuard.authenticate` already refuses any path project other than
+`me` or the credential's own. Left as recorded observations, not fixed: owner-created Epics may
+share a slug while the split path renames a colliding one (one rule would be better; neither
+requirement forbids the other), the derived collision finding can misread a child slug of the form
+`<other slug>-<own number>`, and reconciliation re-lists the project's Epics per decision comment.

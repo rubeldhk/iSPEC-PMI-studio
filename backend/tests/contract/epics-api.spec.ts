@@ -82,11 +82,13 @@ describe('T1570 · universal rules (epics-api.md §3)', () => {
     expect(JSON.stringify(toErrorBody(invalid as Error))).toContain('title');
   });
 
-  it('an Epic of another project is the opaque 404', async () => {
+  it('an Epic of another workspace is the opaque 404; the project is the Epic\'s own, never a caller-supplied scope (DEF-044-003)', async () => {
     const { controller: c } = controller();
     const e = await c.create(session(OWNER), 'p_b', { title: 'Elsewhere' });
-    const err = await c.get(session(OWNER), e.id, 'p_a').catch((x: unknown) => x);
+    const err = await c.get(session({ workspaceId: 'ws_elsewhere', userId: OWNER.userId }), e.id).catch((x: unknown) => x);
     expect(toHttpStatus(err as Error)).toBe(404);
+    // The same Epic read from its own workspace resolves its project from the row.
+    expect((await c.get(session(OWNER), e.id)).projectId).toBe('p_b');
   });
 
   it('the board read has the BoardRead shape', async () => {

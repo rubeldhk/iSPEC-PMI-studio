@@ -10,6 +10,8 @@
  * a stage is derived from executions, never stored (`FR-EPB-001`).
  */
 
+import { ConflictError } from '../../core/errors.js';
+
 export type EpicStatus = 'active' | 'split' | 'closed';
 
 export interface EpicRecord {
@@ -68,6 +70,11 @@ export class InMemoryEpicStore implements EpicStore {
   private readonly rows = new Map<string, EpicRecord>();
 
   async create(row: NewEpic): Promise<EpicRecord> {
+    // DEF-044-003: the same unique index the database enforces, so the unit tests see the
+    // race the integration tests see.
+    if (row.decisionCommentId && [...this.rows.values()].some((r) => r.decisionCommentId === row.decisionCommentId && r.splitSuffix === row.splitSuffix)) {
+      throw uniqueViolation(['decisionCommentId', 'splitSuffix']);
+    }
     const number = Math.max(0, ...[...this.rows.values()].filter((r) => r.projectId === row.projectId).map((r) => r.number)) + 1;
     const now = new Date();
     const frozen = Object.freeze({ ...row, number, createdAt: now, updatedAt: now });
@@ -118,23 +125,40 @@ export interface EpicDelegate {
   aggregate(args: { where: Record<string, unknown>; _max: { number: true } }): Promise<{ _max: { number: number | null } }>;
 }
 
-function isUniqueViolation(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'P2002';
+/** A unique-index violation, `P2002`-shaped like the driver's; `field` narrows it to one index. */
+export function isUniqueViolation(err: unknown, field?: string): boolean {
+  if (typeof err !== 'object' || err === null || (err as { code?: unknown }).code !== 'P2002') return false;
+  if (field === undefined) return true;
+  const target = (err as { meta?: { target?: unknown } }).meta?.target;
+  return Array.isArray(target) ? target.includes(field) : typeof target === 'string' ? target.includes(field) : false;
 }
+
+function uniqueViolation(target: string[]): Error {
+  return Object.assign(new Error(`Unique constraint failed on the fields: (${target.join(',')})`), { code: 'P2002', meta: { target } });
+}
+
+/** How often a create re-reads the max after losing the number race (DEF-044-003). */
+const NUMBER_ATTEMPTS = 5;
 
 export class PrismaEpicStore implements EpicStore {
   constructor(private readonly delegate: EpicDelegate) {}
 
   async create(row: NewEpic): Promise<EpicRecord> {
     // max + 1 with the unique index as the guard: a concurrent create loses the
-    // race, reads the new max and takes the next number (R-044-5).
-    for (let attempt = 0; ; attempt += 1) {
+    // race, reads the new max and takes the next number (R-044-5). Bounded, and
+    // refused as a coded conflict rather than a raw driver error when the
+    // contention outlasts the attempts. A violation of any OTHER unique index
+    // (the decision index) is the caller's to handle and is rethrown at once.
+    for (let attempt = 1; ; attempt += 1) {
       const max = await this.delegate.aggregate({ where: { projectId: row.projectId }, _max: { number: true } });
       const number = (max._max.number ?? 0) + 1;
       try {
         return await this.delegate.create({ data: { ...row, number } });
       } catch (err) {
-        if (!isUniqueViolation(err) || attempt >= 1) throw err;
+        if (!isUniqueViolation(err, 'number')) throw err;
+        if (attempt >= NUMBER_ATTEMPTS) {
+          throw new ConflictError('The Epic number could not be allocated under contention; retry the create.', { code: 'epic_number_contended', attempts: attempt });
+        }
       }
     }
   }

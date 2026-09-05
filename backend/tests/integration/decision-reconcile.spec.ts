@@ -97,7 +97,15 @@ suite('T1593 · a recorded split becomes child Epics once', () => {
       await m.close();
     }
 
-    const first = await request(api).get(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).expect(200);
+    // DEF-044-003: the screens read the list and the board together, so the first read is three
+    // simultaneous requests — every one answers 200 and the children exist once.
+    const [first, boardRace, listAgain] = await Promise.all([
+      request(api).get(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie),
+      request(api).get(`/v1/projects/${projectId}/epics/stages`).set('Cookie', started.cookie),
+      request(api).get(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie),
+    ]);
+    expect([first.status, boardRace.status, listAgain.status]).toEqual([200, 200, 200]);
+    expect((boardRace.body.epics as { number: number }[]).map((e) => e.number)).toEqual([1, 2, 3, 4]);
     const epics = first.body.epics as { id: string; number: number; slug: string; status: string; parentEpicId: string | null; splitSuffix: string | null }[];
     expect(epics.map((e) => [e.number, e.status, e.splitSuffix])).toEqual([
       [1, 'split', null],

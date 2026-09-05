@@ -63,10 +63,11 @@ export class EpicsController {
   }
 
   @Get('epics/:eid')
-  async get(@Req() raw: WorkspaceContext | undefined, @Param('eid') eid: string, @Query('projectId') projectId?: string): Promise<EpicDetail> {
+  async get(@Req() raw: WorkspaceContext | undefined, @Param('eid') eid: string): Promise<EpicDetail> {
     const auth = requireAuth(raw);
     const epic = await this.epics.locate(auth.workspaceId, eid);
-    const ctx = { ...auth, projectId: projectId ?? epic.projectId };
+    // The project is the Epic's own (contracts/epics-api.md); no caller-supplied scope (DEF-044-003).
+    const ctx = { ...auth, projectId: epic.projectId };
     await this.epics.reconcileDecisions(ctx);
     return this.epics.get(ctx, eid);
   }

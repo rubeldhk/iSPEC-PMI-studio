@@ -111,3 +111,33 @@ describe('T1568 · reconcileDecisions', () => {
     expect(audits.some((a) => (a['detail'] as { operation?: string })?.operation === 'epic.split')).toBe(true);
   });
 });
+
+describe('DEF-044-003 · reconciliation under concurrency and interruption', () => {
+  it('two concurrent passes create the children once and neither fails', async () => {
+    const { service, store, parent } = await setup([{ commentId: 'cmt_1', body: decision() }]);
+    const [a, b] = await Promise.all([service.reconcileDecisions(OWNER), service.reconcileDecisions(OWNER)]);
+    const rows = await store.list('ws_a', 'p_a');
+    expect(rows.filter((e) => e.parentEpicId === parent.id).map((e) => e.splitSuffix)).toEqual(['a', 'b']);
+    expect((await store.find(parent.id))?.status).toBe('split');
+    expect(a.created.length + b.created.length).toBe(2);
+  });
+
+  it('a pass interrupted after one child resumes: the missing child is created, the existing one kept, the parent split', async () => {
+    const { service, store, parent } = await setup([{ commentId: 'cmt_1', body: decision() }]);
+    await store.create({ id: 'e_partial', workspaceId: 'ws_a', projectId: 'p_a', slug: 'intake-forms', title: 'Intake (a)', description: '', status: 'active', parentEpicId: parent.id, splitSuffix: 'a', decisionCommentId: 'cmt_1', lastDecisionCommentId: null, createdById: 'u_owner', closedAt: null });
+    const outcome = await service.reconcileDecisions(OWNER);
+    const children = (await store.list('ws_a', 'p_a')).filter((e) => e.parentEpicId === parent.id);
+    expect(children.map((e) => [e.id, e.splitSuffix])).toEqual([['e_partial', 'a'], [expect.any(String), 'b']]);
+    expect(outcome.created.map((e) => e.splitSuffix)).toEqual(['b']);
+    expect((await store.find(parent.id))?.status).toBe('split');
+    expect((await store.find(parent.id))?.lastDecisionCommentId).toBe('cmt_1');
+  });
+
+  it('the split is audited as the decider\'s act, with the reader who triggered it recorded (FR-EPB-028)', async () => {
+    const { service, audits } = await setup([{ commentId: 'cmt_1', body: decision({ decidedBy: 'u_decider' }) }]);
+    await service.reconcileDecisions({ ...OWNER, userId: 'u_reader' });
+    const split = audits.find((a) => (a['detail'] as { operation?: string })?.operation === 'epic.split');
+    expect(split?.['actorId']).toBe('u_decider');
+    expect((split?.['detail'] as { readBy?: string })?.readBy).toBe('u_reader');
+  });
+});

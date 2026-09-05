@@ -14,7 +14,7 @@ import { validateDecompositionDecision } from '@pmi/workspace-bundle';
 import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import type { OwnerGate } from '../governance/owner-gate.js';
 import type { AssignableRequirement, AssignableSpecification, DecisionCommentReader, RequirementAssignmentPort, SpecificationAssignmentPort } from './assignment.ports.js';
-import type { EpicFilters, EpicRecord, EpicStatus, EpicStore } from './epic.store.js';
+import { isUniqueViolation, type EpicFilters, type EpicRecord, type EpicStatus, type EpicStore } from './epic.store.js';
 
 export interface EpicContext {
   readonly workspaceId: string;
@@ -273,10 +273,15 @@ export class EpicService {
   async reconcileDecisions(ctx: Pick<EpicContext, 'workspaceId' | 'projectId'> & { userId?: string }): Promise<ReconcileOutcome> {
     const created: EpicRecord[] = [];
     const findings: string[] = [];
+    // DEF-044-003: the project check comes before the write hidden in this read.
+    await this.deps.gate.requireMember(ctx.workspaceId, ctx.projectId);
     const comments = await this.deps.decisions.decisionsForProject(ctx.workspaceId, ctx.projectId);
     if (comments.length === 0) return { created, findings };
     const epics = await this.deps.store.list(ctx.workspaceId, ctx.projectId);
-    const processed = new Set(epics.flatMap((e) => [e.decisionCommentId, e.lastDecisionCommentId]).filter((id): id is string => id !== null));
+    // A decision is processed when its PARENT carries it — written last — so a pass interrupted
+    // after some children, or racing another pass, resumes from the rows rather than skipping
+    // or duplicating (DEF-044-003).
+    const processed = new Set(epics.map((e) => e.lastDecisionCommentId).filter((id): id is string => id !== null));
 
     for (const comment of comments) {
       if (processed.has(comment.commentId)) continue;
@@ -299,31 +304,46 @@ export class EpicService {
         continue;
       }
       const at = this.now();
+      // FR-EPB-028: the split is the decider's act; the reader whose request processed it is recorded.
+      const actor = { workspaceId: ctx.workspaceId, userId: body.decidedBy };
+      const readBy = ctx.userId ?? null;
       if (body.decision === 'rejected') {
         await this.deps.store.update(parent.id, { lastDecisionCommentId: comment.commentId, updatedAt: at });
-        await this.audited({ ...ctx, userId: ctx.userId ?? body.decidedBy }, 'update', 'epic', parent.id, { operation: 'decomposition.reconcile', projectId: ctx.projectId, decisionCommentId: comment.commentId, decision: 'rejected', children: 0 });
+        await this.audited(actor, 'update', 'epic', parent.id, { operation: 'decomposition.reconcile', projectId: ctx.projectId, decisionCommentId: comment.commentId, decision: 'rejected', children: 0, readBy });
         processed.add(comment.commentId);
         continue;
       }
       const known = new Set((await this.deps.store.list(ctx.workspaceId, ctx.projectId)).map((e) => e.slug));
       const children: EpicRecord[] = [];
       for (const child of [...body.children].sort((a, b) => a.suffix.localeCompare(b.suffix))) {
-        let row = await this.deps.store.create({
-          id: this.newId(),
-          workspaceId: ctx.workspaceId,
-          projectId: ctx.projectId,
-          slug: child.slug,
-          title: `${parent.title} (${child.suffix})`,
-          description: `Split from Epic ${parent.number} by ${body.decidedBy} (decomposition policy v${body.policyVersion}); estimate ${child.estimate}.`,
-          status: 'active',
-          parentEpicId: parent.id,
-          splitSuffix: child.suffix,
-          decisionCommentId: comment.commentId,
-          lastDecisionCommentId: null,
-          createdById: body.decidedBy,
-          closedAt: null,
-        });
-        if (known.has(child.slug)) {
+        let row: EpicRecord;
+        let resumed = false;
+        try {
+          row = await this.deps.store.create({
+            id: this.newId(),
+            workspaceId: ctx.workspaceId,
+            projectId: ctx.projectId,
+            slug: child.slug,
+            title: `${parent.title} (${child.suffix})`,
+            description: `Split from Epic ${parent.number} by ${body.decidedBy} (decomposition policy v${body.policyVersion}); estimate ${child.estimate}.`,
+            status: 'active',
+            parentEpicId: parent.id,
+            splitSuffix: child.suffix,
+            decisionCommentId: comment.commentId,
+            lastDecisionCommentId: null,
+            createdById: body.decidedBy,
+            closedAt: null,
+          });
+        } catch (err) {
+          // DEF-044-003: another pass — concurrent, or interrupted earlier — created this child.
+          // Resume with its row; the unique index (decisionCommentId, splitSuffix) is the arbiter.
+          if (!isUniqueViolation(err, 'decisionCommentId')) throw err;
+          const existing = (await this.deps.store.findByDecision(comment.commentId)).find((e) => e.splitSuffix === child.suffix);
+          if (!existing) throw err;
+          row = existing;
+          resumed = true;
+        }
+        if (!resumed && known.has(child.slug)) {
           // The recorded slug collides with an existing Epic's: suffix it by the child's number (edge case),
           // and say so — the child shows the collision (T1618).
           const holder = [...epics, ...created].find((e) => e.slug === child.slug);
@@ -334,18 +354,22 @@ export class EpicService {
         for (const reference of child.requirements) {
           const requirement = await this.deps.requirements.findByReference(ctx.workspaceId, ctx.projectId, reference);
           if (!requirement) {
-            findings.push(`decision ${comment.commentId}: ${reference} is not a requirement of this project; child ${row.number} created without it`);
+            if (!resumed) findings.push(`decision ${comment.commentId}: ${reference} is not a requirement of this project; child ${row.number} created without it`);
             continue;
           }
           await this.deps.requirements.setEpic(ctx.workspaceId, requirement.id, row.id);
         }
         children.push(row);
-        created.push(row);
+        if (!resumed) created.push(row);
       }
-      await this.deps.store.update(parent.id, { status: 'split', lastDecisionCommentId: comment.commentId, updatedAt: at });
-      const actor = { ...ctx, userId: ctx.userId ?? body.decidedBy };
-      await this.audited(actor, 'update', 'epic', parent.id, { operation: 'epic.split', projectId: ctx.projectId, decisionCommentId: comment.commentId, children: children.map((c) => c.number) });
-      await this.audited(actor, 'create', 'epic', parent.id, { operation: 'decomposition.reconcile', projectId: ctx.projectId, decisionCommentId: comment.commentId, decision: body.decision, children: children.length });
+      // Written last, so it is the mark of a processed decision. A pass that finds the mark
+      // already there lost the race to another; it created nothing that the other did not.
+      const fresh = await this.deps.store.find(parent.id);
+      if (fresh?.lastDecisionCommentId !== comment.commentId) {
+        await this.deps.store.update(parent.id, { status: 'split', lastDecisionCommentId: comment.commentId, updatedAt: at });
+        await this.audited(actor, 'update', 'epic', parent.id, { operation: 'epic.split', projectId: ctx.projectId, decisionCommentId: comment.commentId, children: children.map((c) => c.number), readBy });
+        await this.audited(actor, 'create', 'epic', parent.id, { operation: 'decomposition.reconcile', projectId: ctx.projectId, decisionCommentId: comment.commentId, decision: body.decision, children: children.length, readBy });
+      }
       processed.add(comment.commentId);
     }
     return { created, findings };
