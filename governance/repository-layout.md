@@ -184,6 +184,7 @@ path added or removed without updating this document fails the build.
 - `specs/041-local-project-workspace/`
 - `specs/043-pmi-integration-contract/`
 - `specs/042-pmi-spec-kit-extension/`
+- `specs/044-epic-model-journey-board/`
 - `packages/room-contract/` — the SHARED Room pattern: `RoomShellProps`, `Epistemic`,
   `RoomObjectRef`. Imported by `EPIC-034` and `EPIC-035`, whose first tasks stop if it is not
   built — breaking this path breaks two Epics that cannot be built without it (EPIC-033 `T337d`)
