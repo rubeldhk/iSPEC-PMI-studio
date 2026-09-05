@@ -125,6 +125,9 @@ No credential value is ever written under the directory (`FR-LPW-024`, `FR-EXT-0
 ```text
 DecompositionPlan {
   firstRun: boolean                       — no completed `specify` execution for the project
+  openFirstRun: string | null             — a registered, non-terminal `specify` execution (another
+                                            session's first run), or null (Phase 9, T1544)
+  nothingToDecompose: boolean             — no Epic and no decomposable requirement (FR-EXT-048)
   policy: { oneSpecPerEpic, taskCeiling, splitRequiresConfirmation, offlineMode, version }
   epics: [{ number, slug, name, requirements: [{ reference, description, type, priority, baselineState }] }]
   unassigned: [ requirement… ]

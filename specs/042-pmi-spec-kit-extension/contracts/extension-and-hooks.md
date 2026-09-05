@@ -109,7 +109,10 @@ No entry carries a `condition` (the stock skill skips conditioned hooks).
    registered line. The stock command now runs.
 9. Provisional path: write `.pmi/provisional/<prov_id>.json` with the registration item and the
    `execution-sync-queued` event; print the queued line *(not governed)*; the stock command runs
-   (`FR-EXT-050`, `FR-EXT-053`).
+   (`FR-EXT-050`, `FR-EXT-053`). If the record **cannot be written** (the directory cannot be
+   created or is not writable), print `PMI · refused platform_unreachable: … the provisional
+   record could not be written at <path>` and **stop**, exactly as strict mode does — a record
+   that is not durable is not a record (Phase 9, `T1543`).
 
 ## 5. `speckit.pmi.finish` — sequence
 
@@ -133,20 +136,25 @@ toolkit later offers an in-flight hook, the same command is registered there wit
 
 ## 7. The first-run decomposition loop (`FR-EXT-042`–`FR-EXT-048`)
 
-1. From the decompose response, print the plan: one line per Epic — number, name, requirement
-   count — then **ask the agent for one integer estimate per Epic from the bundle alone**, and
-   print it beside each line. No Epic and no baselined/approved requirement → print the
-   nothing-to-decompose line, **stop**.
+1. From the decompose response: if `openFirstRun` is set — another session's `specify` execution
+   is registered and not terminal — print
+   `PMI · refused first_run_in_progress: <executionId> is still open — …` and **stop**; two first
+   runs never proceed side by side in one project (Phase 9, `T1544`). Otherwise print the plan:
+   one line per Epic — number, name, requirement count — then **ask the agent for one integer
+   estimate per Epic from the bundle alone**, and print it beside each line. No Epic and no
+   baselined/approved requirement → print the nothing-to-decompose line, **stop**.
 2. For each Epic with `estimate > taskCeiling`: propose a split (children with suffix, slug,
    requirements, estimate, seam); print; **wait**: `confirm` / `edit: …` / `reject`.
 3. For each delivery Epic (or child) in number order: register (§4 step 8, `targetId` = the Epic
    number or `<number><suffix>`), run the stock specify flow with the requirement bundle as the
    feature description and `specs/<number>[suffix]-<slug>/` as the directory, then `finish`
-   (§5). After a split, record the decision on the parent's first child execution as a comment
-   `pmi.execution.comment { commentType: 'decomposition-decision', body: <JSON> }`
+   (§5) with a completion comment ending `(decomposition policy v<version>)` — the plan was
+   computed against that policy version, and a ceiling changed mid-loop re-estimates nothing
+   (Phase 9, `T1545`). After a split, record the decision on the parent's first child execution
+   as a comment `pmi.execution.comment { commentType: 'decomposition-decision', body: <JSON> }`
    (`data-model.md` §8).
 4. Delete `.pmi/first-run`. Print one summary line: `PMI · first run: <n> specifications,
-   <k> splits`.
+   <k> splits (decomposition policy v<version>)`.
 
 The stock rule *one feature per invocation* is unchanged: the loop invokes the stock flow once
 per Epic (`R-08`).

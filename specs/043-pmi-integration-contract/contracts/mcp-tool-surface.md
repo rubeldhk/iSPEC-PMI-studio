@@ -52,7 +52,11 @@ missing`), stored on the workstation connection.
 | Tool | Route | Scope | Result (`structuredContent`) |
 |---|---|---|---|
 | `pmi.constitution.get` | `GET /v1/projects/{id}/constitution?onDiskDigest=` | `constitution.read` | `{ version, digest, renderedAt, content, state }` — `state` classified from `onDiskDigest`, `current` when none is given |
-| `pmi.project.decompose` | `GET /v1/projects/{id}/decomposition` | `decomposition.read` | `{ firstRun, nothingToDecompose, policy: { oneSpecPerEpic, taskCeiling, splitRequiresConfirmation, offlineMode, version }, epics: [{ number, slug, name, requirements }], unassigned, epicSource }` |
+| `pmi.project.decompose` | `GET /v1/projects/{id}/decomposition` | `decomposition.read` | `{ firstRun, openFirstRun, nothingToDecompose, policy: { oneSpecPerEpic, taskCeiling, splitRequiresConfirmation, offlineMode, version }, epics: [{ number, slug, name, requirements }], unassigned, epicSource }` |
+
+*Amended 2026-09-05 (`EPIC-042` Phase 9, `T1544`/`T1548`): `openFirstRun` is the id of a
+registered, non-terminal `specify` execution — another session's first run — or `null`; the begin
+hook refuses `first_run_in_progress` while it is set, so two first runs never proceed side by side.*
 
 ## 3. Reserved — listed, schema-validated, refusing by name (`FR-PIC-002`, `FR-PIC-045`)
 
