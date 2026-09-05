@@ -35,6 +35,38 @@ execution; the Epic detail shows a file tree and renders markdown read-only with
 > with the requester. No `[NEEDS CLARIFICATION]` marker is used: every call has a defensible
 > default and none changes whether the Epic should exist.
 
+## Clarifications
+
+### Session 2026-09-05
+
+Five of the eight judgement calls were put to the requester in one round (Constitution X); the
+other three — immutability keyed by digest with a sync record per execution, the Epic resolved
+from the execution's binding rather than the path, and rendering that fetches nothing remote and
+interprets no HTML — stand as recorded. **All five recommendations were accepted.**
+
+- Q: When an Epic's `spec.md` is synced, should it become a version of the Epic's specification in
+  the existing specification list, or stay a separate synced file only? → A: **The synced
+  `spec.md` creates the Epic's specification on first sync and adds a version on each changed
+  sync; the artifact store keeps the file too.** *(Confirms Assumption 1; `FR-ART-030` to
+  `FR-ART-034`.)*
+- Q: Where should a person open an Epic's file tree and read its rendered files? → A: **On the
+  Epic detail in the Requirement Room, reached from the board card; the specification list's row
+  opens the same rendering.** *(Confirms Assumption 2; `FR-ART-011`, `FR-ART-019`.)*
+- Q: Which files should a sync accept for an Epic: exactly the set the finish hook already
+  uploads, or any markdown file under the Epic's directory? → A: **Exactly the hook's set —
+  `spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-model.md`, `analysis.md`,
+  `quickstart.md`, `contracts/*.md`, `checklists/*.md`; nothing else is stored.** `closure.md` and
+  `defects/*.md` are not synced in this Epic. *(Confirms Assumption 4; `FR-ART-002`,
+  `FR-ART-008`.)*
+- Q: Should the agent's connector credential be able to read synced artifacts and file trees, or
+  only upload them? → A: **Upload only; trees and content are session reads for project
+  members.** *(Confirms Assumption 6; `FR-ART-042`, `FR-ART-043`.)*
+- Q: When one file in a sync is bad (wrong digest, too large, outside the set, or contains a
+  credential shape), should the platform refuse just that file or the whole sync? → A: **Per
+  file: the good files are stored, each refused file is reported with a coded reason and recorded
+  on the execution.** *(Confirms Assumption 8; `FR-ART-004`, `FR-ART-008`, `FR-ART-044`,
+  `FR-ART-053`.)*
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -398,7 +430,7 @@ code block.
   files with their versions and producing executions without content; one read returns one version's
   content; both MUST be scoped to the caller's workspace and open to the project's members.
 - **FR-ART-043**: A connector credential MUST NOT read artifact content or trees in this Epic; the
-  agent has the files. (Recorded as a judgement call — Assumption 6.)
+  agent has the files (clarified 2026-09-05).
 - **FR-ART-044**: Sync refusals per file MUST be recorded on the execution as a comment of a type the
   registry admits, so that a refused credential-shaped file or a digest mismatch is visible on the
   timeline, not only in the hook's output.
@@ -477,16 +509,19 @@ code block.
 
 ## Assumptions
 
-Eight judgement calls, each with the alternative that lost. All eight await `/speckit-clarify`.
+Eight judgement calls, each with the alternative that lost. **Five were put to the requester on
+2026-09-05 and all five confirmed** (Assumptions 1, 2, 4, 6 and 8); the other three stand as
+recorded. The reasoning is kept because it describes the risk each confirmation accepts.
 
 1. **The synced `spec.md` becomes the Epic's specification — a version of the existing
-   specification entity, not only an artifact** (`FR-ART-030` to `FR-ART-034`). `EPIC-044` left the
+   specification entity, not only an artifact** — **confirmed** (`FR-ART-030` to `FR-ART-034`). `EPIC-044` left the
    hand-off that artifact sync binds the specification row to the Epic; the specification list,
    the out-of-date tracking and the Rooms already work on that entity. The alternative — keep
    synced files apart from specifications — leaves the specification list empty for every
    local-first project and two notions of *specification* in one product. The risk accepted: a
    specification's engine identity becomes *the agent that ran the command*, which is the truth.
-2. **The file tree and viewer live on the Epic detail, reached from the board card** (`FR-ART-011`).
+2. **The file tree and viewer live on the Epic detail, reached from the board card** — **confirmed**
+   (`FR-ART-011`).
    PMI-DOC-007 §6 places the viewer under *Specifications*; `EPIC-044` put the Epic detail in the
    Requirement Room and the board in Specifications, with the card linking to the detail. One place
    with two ways in beats two renderings; the specification list's row opens the same rendering
@@ -497,7 +532,8 @@ Eight judgement calls, each with the alternative that lost. All eight await `/sp
    `FR-ART-001` says *a re-sync of an unchanged file creates no row*; both hold only if the row is
    the content and the per-execution history is a separate record. The alternative — a row per
    sync — duplicates every unchanged `spec.md` on every command.
-4. **The artifact set is the extension contract's list, not "any markdown"** (`FR-ART-002`). The
+4. **The artifact set is the extension contract's list, not "any markdown"** — **confirmed**
+   (`FR-ART-002`). The
    finish hook digests exactly `spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-model.md`,
    `analysis.md`, `quickstart.md`, `contracts/*.md` and `checklists/*.md`; accepting more would
    store files no hook sends and invite paths outside the Epic. The alternative — accept any path
@@ -507,7 +543,8 @@ Eight judgement calls, each with the alternative that lost. All eight await `/sp
    path names a directory; `EPIC-044` decided directories and Epics are matched by execution, and
    a slug may change. The alternative — parse `specs/007-intake` into Epic 7 — breaks the moment a
    directory is hand-made or renamed.
-6. **Connector credentials sync but do not read artifacts** (`FR-ART-043`). The agent holds the
+6. **Connector credentials sync but do not read artifacts** — **confirmed** (`FR-ART-043`). The
+   agent holds the
    files; a read scope would widen the credential for no consumer. The alternative — a
    `GET /v1/epics/{id}/artifacts` connector read for digest comparison — is unnecessary while the
    server deduplicates by digest, and is the follow-up if a hook ever needs it.
@@ -515,7 +552,8 @@ Eight judgement calls, each with the alternative that lost. All eight await `/sp
    Remote images would leak every reader's address to any host an agent names; raw HTML is the
    classic injection path. The alternative — allow images from an allow-list — is a configuration
    the requester may add later; the default is closed.
-8. **Per-file refusal, not whole-sync refusal** (`FR-ART-004`, `FR-ART-008`, `FR-ART-053`). One bad
+8. **Per-file refusal, not whole-sync refusal** — **confirmed** (`FR-ART-004`, `FR-ART-008`,
+   `FR-ART-053`). One bad
    file should not cost a stakeholder the other nine; the refused file is visible on the execution
    (`FR-ART-044`). The alternative — all-or-nothing — is simpler to reason about and loses more.
 
