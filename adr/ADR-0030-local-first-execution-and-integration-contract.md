@@ -110,3 +110,21 @@ overwritten silently when it has drifted. The *Governed Execution* section is in
 by PMI Studio and carried by `@pmi/workspace-bundle`, byte-identical in every project. Provisional
 offline records are produced by the hooks and accepted only by `EPIC-037`'s reconciliation intake
 (`BR-0202`). Records: `specs/042-pmi-spec-kit-extension/`.
+
+## Amendment — 2026-09-05, `EPIC-044` `/speckit-plan` (`FR-EPB-070`)
+
+**Epic is a product entity, and its stage is derived, never written.** `EPIC-044` adds `Epic` as
+a record a project owner creates and assigns requirements to; every specification belongs to at
+most one Epic; the executions the hooks register bind to an Epic through their input target.
+An Epic's Spec Kit stage — *Specified* through *Ready*, extended with *Implementing* and
+*Converged* — is a projection over those executions, computed on read. No field, route, tool or
+screen control sets a stage (`BR-0113`, `LR-07`).
+
+**The repository register and the product board share one derivation** (PMI-DOC-007 `R-06`).
+The stage configuration and the contiguity rule `EPIC-026` wrote for this repository's own
+`specs/` tree move to `@pmi/epic-stage`, a private package with no runtime dependency; the
+governance register imports it through re-export shims and is byte-identical before and after;
+the platform imports the same package with an execution-evidence adapter. Two consumers, one
+rule, so they cannot disagree about what a stage means. The configuration is canonical in the
+package and mirrored under `governance/`, the mirror asserted identical by a governance check.
+Records: `specs/044-epic-model-journey-board/`.
