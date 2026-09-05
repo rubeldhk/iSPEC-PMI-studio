@@ -55,4 +55,27 @@ E2E_STACK="reference local" npx playwright test e2e/tests/epic-042-m2.spec.ts
 
 ## Results
 
-*(filled at closure — Phase Z)*
+### Recorded 2026-09-05 (`T1534`)
+
+- **Render time** (plan §Performance Goals, bound 100 ms): a project with 50 entries and 20
+  resolved steering documents renders in **0.81 ms** on average over 20 runs (in-memory stores,
+  this checkout; measured with a throwaway unit test, not committed). The digest comparison that
+  decides *unchanged → no new row* is part of that figure.
+- **Hook call counts** (plan §Performance Goals, bound: under three added tool calls in the common
+  case): `speckit.pmi.begin` adds **two** tool calls when the file is current, no queue waits and
+  nothing is left open (`pmi.health`, `pmi.execution.register`); a stale or missing file adds one
+  (`pmi.constitution.get`); each queued provisional record adds one (`pmi.execution.sync`); a
+  left-open execution adds two (`pmi.execution.history`, `pmi.execution.complete`).
+  `speckit.pmi.finish` adds two (`pmi.artifacts.sync`, `pmi.execution.complete`), three after
+  `tasks` and `implement` (`pmi.tasks.sync`), plus one `pmi.execution.appendEvent` per task
+  ticked during `implement`. Counted from `packages/workspace-bundle/src/hook-sequences.ts`, which
+  performs the same calls the prompts instruct.
+- **Scenarios 1–8, 11–14** automated and green in this session (see `closure.md` §T1535 for the
+  suite counts). Scenario 11's three-Epic split runs against a stub client (`first-run.spec.ts`):
+  the composed application derives no Epics until `EPIC-044` (`FR-PIC-043`), so a first run over
+  it registers nothing and says so (`decomposition-read.spec.ts`).
+- **Scenarios 9 and 10** (the setup skill on a red and on a green machine) and the **M2
+  transcript** (`e2e/tests/epic-042-m2.spec.ts`, `docs/uat/EPIC-042-m2-transcript.md`) need the
+  reference-local stack running; not run in this session — open under `T1537`, as `EPIC-043`'s
+  `T1458` is.
+- **Mutation observations**: see `closure.md` §T1538.

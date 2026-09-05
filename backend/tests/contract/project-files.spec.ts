@@ -27,7 +27,8 @@ const CTX = { workspaceId: 'ws_c', userId: 'u_c' };
 const CREDENTIAL_SHAPE = /pmi_ct_[A-Za-z0-9_-]{20,}/;
 
 /** The contract's enumeration for the prepare step, relative to the root. `.git/` when initialised. */
-const CONTRACT_FILES = ['.pmi/project.json', '.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md'];
+// EPIC-042 T1505 (R-042-8): the prepare step also writes the first-run marker the begin hook reads.
+const CONTRACT_FILES = ['.pmi/project.json', '.pmi/first-run', '.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md'];
 
 let root: string;
 let dir: string;
@@ -61,7 +62,7 @@ beforeAll(async () => {
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 describe('T1352 · the written file set is exactly the contract\'s (FR-LPW-011)', () => {
-  it('writes the three files and nothing else', () => {
+  it('writes the four files and nothing else (three from EPIC-041, the first-run marker from EPIC-042)', () => {
     expect(walk(dir).sort()).toEqual([...CONTRACT_FILES].sort());
   });
 });

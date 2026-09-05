@@ -2824,6 +2824,7 @@ model DecompositionPolicy {
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   project   Project   @relation(fields: [projectId], references: [id])
 
+  @@index([workspaceId, projectId])
   @@map("decomposition_policies")
 }
 
@@ -2844,5 +2845,6 @@ model ConstitutionRender {
 
   @@unique([projectId, digest])
   @@index([projectId, version(sort: Desc)])
+  @@index([workspaceId, projectId])
   @@map("constitution_renders")
 }

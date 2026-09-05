@@ -155,11 +155,15 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // an index on it and a creation timestamp, asserted instead by
     // `context-partitioning.spec.ts` (T1232) — which reads the live catalogue
     // rather than the DDL text and so sees what this parser cannot.
+    // EPIC-042 T1480 — a render is appended per governance write; the
+    // constraint and policy tables are the inputs it is rendered from.
+    'constitution_renders',
     'context_exclusions',
     'context_items',
     'context_packages',
     'context_reusable_authorisations',
     'context_source_classes',
+    'decomposition_policies',
     'defect_classifications',
     'defect_escape_records',
     'defect_evidence_checks',
@@ -193,6 +197,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'principal_identity_snapshots',
       'principal_state_events',
       'principals',
+      'project_constraints',
       'projects',
       'provisional_approval_overrides',
       'provisional_markings',
@@ -274,6 +279,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // EPIC-041 T1319: a provisioning attempt *starts* — the timestamp is the
       // record's own first fact (data-model.md §2), not bookkeeping about the row.
       provisioning_records: 'startedAt',
+      // EPIC-042 T1480: a constitution is *rendered* — the timestamp is the
+      // render's own fact (data-model.md §3), not bookkeeping about the row.
+      constitution_renders: 'renderedAt',
       review_sessions: 'openedAt',
       answers: 'recordedAt',
       // EPIC-024: a grant is *granted*, an attempt is *attempted* — the

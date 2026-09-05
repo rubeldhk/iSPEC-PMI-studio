@@ -125,9 +125,13 @@ export function artifactDigests(dir: string, epicDir: string | undefined): Recor
   return out;
 }
 
-/** Task ids ticked in a `tasks.md` (`- [X] T…`). */
+/**
+ * Task ids ticked in a `tasks.md`: the first token after a ticked checkbox.
+ * The identifier's SHAPE is the platform's policy (its governance configuration),
+ * not the harness's — so no pattern for it is written here.
+ */
 export function tickedTasks(tasksMarkdown: string): string[] {
-  return [...tasksMarkdown.matchAll(/^- \[[xX]\] (T\d{3,4}[a-z]?)\b/gm)].map((m) => m[1] as string);
+  return [...tasksMarkdown.matchAll(/^- \[[xX]\] (\S+)/gm)].map((m) => m[1] as string);
 }
 
 /**
@@ -348,7 +352,7 @@ export async function runFinish(client: ToolClient, dir: string, epicDir: string
   if (last.command === 'implement' && !last.provisional) {
     progressEvents = await runProgress(client, dir, epicDir, last, now);
     const tasksPath = epicDir ? join(dir, epicDir, 'tasks.md') : null;
-    if (opts.outcome === undefined && tasksPath && existsSync(tasksPath) && /^- \[ \] T\d/m.test(readFileSync(tasksPath, 'utf8'))) outcome = 'partially-completed';
+    if (opts.outcome === undefined && tasksPath && existsSync(tasksPath) && /^- \[ \] \S/m.test(readFileSync(tasksPath, 'utf8'))) outcome = 'partially-completed';
   }
 
   if (!last.provisional) {

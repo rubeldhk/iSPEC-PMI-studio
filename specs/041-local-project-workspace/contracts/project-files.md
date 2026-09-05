@@ -157,3 +157,15 @@ proven end to end before the content arrives. `EPIC-042` fills both.
 
 `extensions.yml` is merged the way `.mcp.json` is: an existing file keeps every other extension's
 entries.
+
+## `.pmi/first-run` — added by EPIC-042 (`T1505`, `R-042-8`)
+
+> **Amended 2026-09-05 (`EPIC-042`).** The prepare step writes a fourth file in the same step as
+> `.pmi/project.json`: the **first-run marker** the `speckit.pmi.begin` hook reads to decide that
+> the next `/speckit-specify` is the project's first (`FR-EXT-046`). One line — the ISO time and
+> the provisioning correlation id — so a person opening it understands it. The platform's own
+> record (no completed `specify` execution) is the tie-breaker; the hook removes the marker after
+> the first run, or when the platform says it is stale. Recorded on the provisioning record as
+> `firstRunMarkerWritten`. `T1352` now asserts the four files. The extension's content
+> (`extension.yml` with commands and hooks, `commands/`, `extensions-fragment.yml`) also ships in
+> bundle 0.2.0 — see `specs/042-pmi-spec-kit-extension/contracts/extension-and-hooks.md`.

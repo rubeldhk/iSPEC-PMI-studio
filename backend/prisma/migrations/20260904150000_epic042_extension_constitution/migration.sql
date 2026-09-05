@@ -44,6 +44,7 @@ CREATE TABLE "decomposition_policies" (
     CONSTRAINT "decomposition_policies_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 CREATE UNIQUE INDEX "decomposition_policies_projectId_key" ON "decomposition_policies"("projectId");
+CREATE INDEX "decomposition_policies_workspaceId_projectId_idx" ON "decomposition_policies"("workspaceId", "projectId");
 
 -- §3 · append-only renders: what was written, so a file on disk can be matched (R-042-5)
 CREATE TABLE "constitution_renders" (
@@ -62,6 +63,7 @@ CREATE TABLE "constitution_renders" (
 );
 CREATE UNIQUE INDEX "constitution_renders_projectId_digest_key" ON "constitution_renders"("projectId", "digest");
 CREATE INDEX "constitution_renders_projectId_version_idx" ON "constitution_renders"("projectId", "version" DESC);
+CREATE INDEX "constitution_renders_workspaceId_projectId_idx" ON "constitution_renders"("workspaceId", "projectId");
 
 -- §4 · what the workstation last reported about its constitution file (R-042-5)
 ALTER TABLE "workstation_connections" ADD COLUMN "constitutionDigest" CHAR(64);

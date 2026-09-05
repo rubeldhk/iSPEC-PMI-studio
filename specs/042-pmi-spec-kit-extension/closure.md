@@ -15,16 +15,21 @@ suites):
 | Project | Files | Tests | Result |
 |---|---|---|---|
 | `workspace-bundle` | 8 | 82 | pass |
-| `backend-unit` (governance, connector, projects) | see §counts | — | pass |
-| `backend-contract` (`governance-api`, `mcp-tool-surface`) | 2 | — | pass |
+| `backend-unit` (whole project) | 296 | 2689 | 2685 pass, 4 not run on this host (`T832`, see §Counts), 0 fail |
+| `backend-contract` (whole project) | 24 | 242 | pass |
 | `backend-integration` (`governance-schema`, `governance-api`, `connector-reads`, `governed-command-roundtrip`, `decomposition-read`, `constitution-render`, `constitution-drift`) | 7 | 30 | pass |
-| `mcp-server` | 5 | — | pass |
-| `speckit-adapter` (`local-init`) | 1 | 8 | pass |
-| `architecture` | — | — | pass |
-| `frontend` (`constraints`, `project-executions`, the shell) | — | — | pass |
-| `governance` | 74 | — | 2 known-red (`T884`), the rest pass |
+| `mcp-server` | 6 | 48 | pass |
+| `speckit-adapter` (whole project) | 12 | 175 | pass |
+| `architecture` | 24 | 289 | 274 pass, 5 skipped, 1 known-red (`T999u`, `EPIC-035`'s Tier 2 transcript — predates this Epic) |
+| `frontend` (whole project) | — | 864 | pass |
+| `governance` | 75 | 1048 | 1046 pass, 2 known-red (`T884`, `EPIC-029`'s manual pass — predates this Epic) |
 
-*(counts filled at closure — see §Counts below)*
+Three regressions surfaced by the whole-project runs were fixed in this phase and are recorded as
+assumptions 14–16 below: `T1352` (the file-set contract gained the first-run marker), `T012a`
+(the three new tables needed a `workspaceId` index and an entry in the expected set) and `T864a`
+(the harness wrote a task-identifier shape). `G-26-14` found ticked tasks naming the harness at the
+plan's path (`e2e/support/`) rather than where assumption 3 put it; the task lines now name the
+file that exists.
 
 ## T1536 — Constitution XI Tier 1, and the inversion
 
@@ -34,8 +39,10 @@ Every route is driven through the composed `AppModule` (`backend/src/app.module.
 (T1517) and `constitution-drift.spec.ts` (T1519). The stock-skill immutability check runs against a
 real project directory seeded from this checkout's pinned manifest (T1498).
 
-**Inversion**: removing `GovernanceModule` from `backend/src/app.module.ts` and running
-`governance-api.spec.ts` — *(observation recorded below)*.
+**Inversion (observed 2026-09-05)**: with `GovernanceModule` commented out of
+`backend/src/app.module.ts`, `tests/integration/governance-api.spec.ts` went red — `POST
+…/constraints` answered `404` instead of `201` and `GET …/constitution` `404` instead of `200`
+(two failures). The line was restored from the commit and the suite is green again.
 
 ## T1537 — Constitution XI Tier 2
 
@@ -48,13 +55,15 @@ Recorded as open, exactly like `EPIC-043`'s `T1458`; the manual section (two con
 
 ## T1538 — mutation observations and the inversion
 
+All observed on 2026-09-05; each mutation was reverted and the suite re-run green.
+
 | Target | Mutation | Test | Observed |
 |---|---|---|---|
-| `SC-EXT-001` | the install appends one line to `speckit-specify/SKILL.md` | `stock-skills-immutable.spec.ts` | *(recorded below)* |
-| `SC-EXT-004` | `classify` answers `current` for every digest | `constitution-drift.spec.ts` | *(recorded below)* |
-| `SC-EXT-005` | the setup skill prints the variable | `setup-skill.spec.ts` | *(recorded below)* |
-| `SC-EXT-009` | the render takes the Governed Execution text from a constraint entry | `constitution-render.spec.ts` | *(recorded below)* |
-| `FR-EXT-003` (inversion) | a hook names `speckit.pmi.commit`, which no command provides | `extension-conformance.spec.ts` | *(recorded below)* |
+| `SC-EXT-001` | the install step (the test's `installExtension`, the copy-and-merge the adapter performs) appends one line to `speckit-specify/SKILL.md` | `stock-skills-immutable.spec.ts` | **red** — *"speckit-specify/SKILL.md changed by the installation"* and the idempotence check, 2 failures |
+| `SC-EXT-004` | `classifyOnDiskDigest` returns `current` for every non-null digest | `constitution-drift.spec.ts` | **red** — *"expected 'current' to be 'stale'"* |
+| `SC-EXT-005` | a line `echo $PMI_STUDIO_TOKEN` appended to the skill | `setup-skill.spec.ts` | **red** — *"never asks for, prints or writes a credential value"* |
+| `SC-EXT-009` | first attempt: the section takes a constraint's body **only when one is titled Governed Execution** — did **not** bite (the suite creates no such entry); second, stronger mutation: the section always takes the first entry's body instead of the bundle's invariant | `constitution-render.spec.ts` | first: green (mutation too weak, recorded); second: **red** — the byte-equality with `governedExecutionSection('provisional')` failed |
+| `FR-EXT-003` (inversion) | `before_converge` names `speckit.pmi.commit`, which no command file provides | `extension-conformance.spec.ts` | **red** — the manifest check and the fragment check, 2 failures |
 
 ## T1539 — Constitution XII
 
@@ -112,7 +121,43 @@ next Epic on, every governed command in a provisioned directory is registered by
 11. **The digest a workstation reports is computed with the header's digest field zeroed**, the
     way the platform computes it (`contracts/governance-api.md` §4); `begin.md` and the harness say
     so.
+12. **The stock-skill immutability check pins the pre-install digests, not the toolkit's
+    manifest, when seeded from this repository**: this checkout's stock skills carry governance
+    edits (Constitution X), so their digests differ from the toolkit's manifest by design; the
+    property under test — installation moves none — holds either way, and a real
+    `specify init` layer (`PMI_STOCK_SKILLS_REAL_INIT=1`) compares against the toolkit's manifest.
+13. **Stale historical figures in `EPIC-036`'s two `T1172` notes were neutralised** ("these
+    figures followed it (superseded by the EPIC-042 note below)") because the documented-registry
+    check counts every non-`Corrected` claim; the history remains in git.
+14. **The first-run marker joined `EPIC-041`'s file-set contract** (`T1352`, `FR-LPW-011`): the
+    prepare step now writes four files, so `specs/041-local-project-workspace/contracts/project-files.md`
+    carries a dated section for `.pmi/first-run` and the contract test asserts four. Found by the
+    whole-project `backend-contract` run, not by this Epic's own tests.
+15. **`decomposition_policies` and `constitution_renders` gained a `(workspaceId, projectId)`
+    index** (`T012a`, `FR-002`): both are tenant-scoped and the universal-columns check requires
+    an index on `workspaceId` for every such table; `renderedAt` is registered as the render's
+    creation timestamp. The migration file was edited in place — it has run nowhere but this
+    branch's containers.
+16. **The harness no longer writes a task-identifier shape** (`T864a`, `FR-ESK-025`): `tickedTasks`
+    takes the first token after a ticked checkbox and the partially-completed rule looks for any
+    unticked item; the identifier's shape is the platform's configuration, which the bundle —
+    installed into other people's projects — has no business restating.
 
 ## Counts
 
-*(filled by T1535)*
+Whole-project runs on 2026-09-05 after the fixes above (`pnpm -r typecheck` clean; `npx eslint .`
+reports 20 errors, all in files this Epic did not touch or in `.claude/worktrees` copies — the one
+in a file this Epic edited, `frontend/tests/unit/shell/surface-states.spec.tsx` line 43, dates
+from 2026-08-24):
+
+| Project | Files | Tests |
+|---|---|---|
+| `workspace-bundle` | 8 passed | 82 passed |
+| `speckit-adapter` | 12 passed | 175 passed |
+| `mcp-server` | 6 passed | 48 passed |
+| `backend-unit` | 295 passed of 296 | 2685 passed of 2689; the four not run are `T832` in `backend/tests/unit/auth/composition.spec.ts`, whose worker exits at boot on this host: the probe's placeholder `DATABASE_URL` reaches a live PostgreSQL on port 5432 that rejects its credentials during the engine-registration load (`backend/src/modules/engines/registered-engines.ts`, untouched by this Epic — the same four are unaccounted for in the run taken before the fixes). Host-dependent and pre-existing; nothing failed |
+| `backend-contract` | 24 passed | 242 passed |
+| `backend-integration` (this Epic's seven suites) | 7 passed | 30 passed |
+| `architecture` | 22 passed, 1 failed (`T999u`, pre-existing) | 274 passed, 5 skipped, 1 failed |
+| `frontend` | all passed | 864 passed |
+| `governance` | 74 passed, 1 failed (`T884`, pre-existing) | 1046 passed, 2 failed |
