@@ -25,7 +25,9 @@ Indexes: `(workspaceId, projectId, kind, order)`; `(projectId, status)`.
 
 ## 2. New table — `decomposition_policies` (`R-042-6`, `R-042-7`, `FR-EXT-040`, `FR-EXT-051`)
 
-One row per project, created on first read with the defaults.
+One row per project, created on first read with the defaults. The spec's *Offline mode* entity
+**is** the `offlineMode` column of this row (Assumption 3, confirmed: *beside the decomposition
+policy*); the two documents name one thing (analysis `I1`).
 
 | Column | Type | Default | Notes |
 |---|---|---|---|

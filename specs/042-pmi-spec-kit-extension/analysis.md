@@ -68,4 +68,14 @@ Phase Z.
 
 ## Remediation applied — 2026-09-04
 
-*(recorded when the remediation is approved and applied)*
+Approved by the requester in one reply; applied and committed the same day.
+
+| ID | Status | Edit |
+|----|--------|------|
+| C1 | ✅ resolved | `tasks.md` `T1537` now requires two consecutive `/setup-PMIStudio` runs and a clean `git status` in the transcript's manual section (`SC-EXT-010`) |
+| C2 | ✅ resolved | `tasks.md` Phase Z gains `T1541` confirming the `ADR-0030` amendment and constitution `1.6.1` in `closure.md`; range header updated to 71 tasks |
+| U1 | ✅ resolved | `contracts/setup-skill.md` row 5 and `tasks.md` `T1523` now check the pinned tag against `requires.speckit_version` |
+| I1 | ✅ resolved | `data-model.md` §2 states that the spec's *Offline mode* entity is the policy row's column |
+| I2 | ✅ resolved | `tasks.md` `T1502` retargeted to the governed-command round-trip integration test; `T1503` paired with it and names the real files |
+| A1 | ✅ resolved | accepted limitation, recorded in `R-042-12`; no edit |
+| D1 | ✅ resolved | dev-only dependency named in the plan; no edit |
