@@ -24,9 +24,9 @@ const EPICS = [epic(), epic({ id: 'e2', number: 2, slug: 'review', title: 'Revie
 const UNASSIGNED = [{ id: 'r9', reference: 'REQ-009', status: 'active', epicId: null }, { id: 'r10', reference: 'REQ-010', status: 'retired', epicId: null }];
 const BOARD = {
   epics: [
-    { epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Specified', missing: [], last: null, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' },
-    { epicId: 'e2', number: 2, slug: 'review', title: 'Review', status: 'active', stage: 'Not started', missing: [], last: null, next: '/speckit-specify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' },
-    { epicId: 'e3', number: 3, slug: 'reports', title: 'Reports', status: 'closed', stage: 'Not started', missing: [], last: null, next: null, readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' },
+    { epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Specified', missing: [], unrecognised: [], last: null, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' },
+    { epicId: 'e2', number: 2, slug: 'review', title: 'Review', status: 'active', stage: 'Not started', missing: [], unrecognised: [], last: null, next: '/speckit-specify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' },
+    { epicId: 'e3', number: 3, slug: 'reports', title: 'Reports', status: 'closed', stage: 'Not started', missing: [], unrecognised: [], last: null, next: null, readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' },
   ],
   unbound: [],
   packageVersion: '0.1.0',

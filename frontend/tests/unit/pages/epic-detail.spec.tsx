@@ -20,12 +20,12 @@ function detail(over: Partial<EpicDetail> = {}): EpicDetail {
     requirementCount: 1, specificationCount: 1,
     requirements: [{ id: 'r1', reference: 'REQ-001', status: 'active', epicId: 'e1' }],
     specifications: [{ id: 's1', projectId: 'p1', epicId: 'e1' }],
-    parent: null, children: [], decisions: { createdBy: null, lastProcessed: null, decidedBy: null },
+    parent: null, children: [], decisions: { createdBy: null, lastProcessed: null, decidedBy: null }, findings: [],
     ...over,
   };
 }
 
-const STAGE: EpicStage = { epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Specified', missing: [], last: { executionId: 'exec_1', command: 'specify', outcome: 'completed', at: '2026-09-05T10:00:00Z' }, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' };
+const STAGE: EpicStage = { epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Specified', missing: [], unrecognised: [], last: { executionId: 'exec_1', command: 'specify', outcome: 'completed', at: '2026-09-05T10:00:00Z' }, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' };
 const UNASSIGNED = [{ id: 'r2', reference: 'REQ-002', status: 'active', epicId: null, workspaceId: 'ws_a', projectId: 'p1', description: 'x', type: 'functional', priority: 'p1', contentHash: 'h', retiredAt: null, createdAt: '', updatedAt: '' }];
 
 function api(over: Partial<Record<keyof ApiClient, unknown>> = {}): ApiClient {
@@ -138,5 +138,12 @@ describe('T1588 · the stage card shows readiness as a separate claim and offers
     expect(stage.textContent).toContain('Readiness: Ready — no readiness conditions configured');
     expect(stage.textContent).toContain('configured in Governance');
     expect(within(stage).getAllByRole('button').map((b) => b.textContent)).toEqual(['Open executions']);
+  });
+});
+
+describe('T1618 · a slug collision is shown on the child it renamed (EPIC-044, spec §Edge Cases)', () => {
+  it('the Split section carries the finding', async () => {
+    await page(api({ getEpic: vi.fn(async () => detail({ parentEpicId: 'e7', splitSuffix: 'a', slug: 'intake-1', parent: detail({ id: 'e7', number: 7, title: 'Whole', status: 'split' }), decisions: { createdBy: 'cmt_1', lastProcessed: null, decidedBy: 'u_owner' }, findings: ['slug `intake` collided with Epic 7; created as `intake-1`'] })) }));
+    expect(screen.getByRole('region', { name: 'Split' }).textContent).toContain('slug `intake` collided with Epic 7; created as `intake-1`');
   });
 });

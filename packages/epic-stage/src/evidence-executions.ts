@@ -26,6 +26,12 @@ export interface ExecutionEvidence {
   readonly last: ExecutionRow | null;
   /** The newest non-terminal execution, or null. */
   readonly running: ExecutionRow | null;
+  /**
+   * Commands of these executions that no stage's `reachedBy` names, in first-seen order. They
+   * derive nothing; the card shows them as *unrecognised command* rather than a wrong stage
+   * (spec §Edge Cases — the stage configuration changes; `T1617`).
+   */
+  readonly unrecognised: string[];
 }
 
 const NON_TERMINAL = new Set(['registered', 'started', 'blocked']);
@@ -74,7 +80,9 @@ export function evidenceFromExecutions(rows: readonly ExecutionRow[], stages: re
 
   const last = ordered.length > 0 ? ordered[ordered.length - 1]! : null;
   const running = [...ordered].reverse().find((r) => NON_TERMINAL.has(r.state)) ?? null;
-  return { evidence, last, running };
+  const known = new Set(stages.map((s) => s.reachedBy).filter((c): c is string => typeof c === 'string'));
+  const unrecognised = [...new Set(ordered.map((r) => r.command).filter((c) => !known.has(c)))];
+  return { evidence, last, running, unrecognised };
 }
 
 export interface BindableEpic {

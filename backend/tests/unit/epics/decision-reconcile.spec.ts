@@ -90,6 +90,11 @@ describe('T1568 · reconcileDecisions', () => {
     const outcome = await service.reconcileDecisions(OWNER);
     expect(outcome.created[0]?.slug).toBe('intake-2');
     expect((await store.list('ws_a', 'p_a')).map((e) => e.slug)).toEqual(['intake', 'intake-2', 'intake-review']);
+    // T1618 (spec §Edge Cases): the collision is a finding, and the child shows it.
+    expect(outcome.findings).toContain('decision cmt_1: slug `intake` collided with Epic 1; child 2 created as `intake-2`');
+    const child = await service.get(OWNER, outcome.created[0]!.id);
+    expect(child.findings).toEqual(['slug `intake` collided with Epic 1; created as `intake-2`']);
+    expect((await service.get(OWNER, outcome.created[1]!.id)).findings).toEqual([]);
   });
 
   it('a decision naming an Epic number the project does not have is a finding, not a guess', async () => {

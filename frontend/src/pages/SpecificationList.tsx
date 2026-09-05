@@ -28,6 +28,7 @@ export function SpecificationList({ api, projectId, onOpen, currentUserId }: Spe
   const [error, setError] = useState<string | null>(null);
   const [aside, setAside] = useState<string | null>(null);
   const [epicFilter, setEpicFilter] = useState('');
+  const [stageFilter, setStageFilter] = useState('');
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
@@ -68,7 +69,10 @@ export function SpecificationList({ api, projectId, onOpen, currentUserId }: Spe
 
   const canAssign = currentUserId !== undefined && ownerUserId !== null && currentUserId === ownerUserId;
   const stageOf = (epicId: string | null | undefined): string => (epicId ? board?.epics.find((s) => s.epicId === epicId)?.stage ?? '' : '');
-  const visible = epicFilter === '' ? specifications : specifications.filter((s) => (epicFilter === 'none' ? !s.epicId : s.epicId === epicFilter));
+  // FR-EPB-050: both columns filter. A *no Epic* row has an empty stage, so it matches only the empty stage filter.
+  const visible = specifications
+    .filter((s) => (epicFilter === '' ? true : epicFilter === 'none' ? !s.epicId : s.epicId === epicFilter))
+    .filter((s) => (stageFilter === '' ? true : stageOf(s.epicId) === stageFilter));
 
   return (
     <section>
@@ -83,6 +87,15 @@ export function SpecificationList({ api, projectId, onOpen, currentUserId }: Spe
             {epics.map((e) => (
               <option key={e.id} value={e.id}>
                 Epic {e.number} · {e.title}
+              </option>
+            ))}
+          </select>{' '}
+          <label htmlFor="specification-stage-filter">Filter by stage</label>{' '}
+          <select id="specification-stage-filter" value={stageFilter} onChange={(ev) => setStageFilter(ev.target.value)}>
+            <option value="">all</option>
+            {(board?.columns ?? []).map((column) => (
+              <option key={column} value={column}>
+                {column}
               </option>
             ))}
           </select>

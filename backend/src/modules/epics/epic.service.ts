@@ -54,6 +54,24 @@ export interface EpicDetail extends EpicView {
    * parent, its children's creator). Null when no decision touched the Epic (FR-EPB-063).
    */
   readonly decisions: { createdBy: string | null; lastProcessed: string | null; decidedBy: string | null };
+  /**
+   * Findings about this Epic, derived on read like everything else here: today, a slug the
+   * split renamed because it collided with another Epic's (spec §Edge Cases, `T1618`). Derived,
+   * so it disappears when the collision does (the other Epic renamed) — nothing stored goes stale.
+   */
+  readonly findings: string[];
+}
+
+/**
+ * A child whose slug is `<other Epic's slug>-<its own number>` was renamed by the split because the
+ * recorded slug was taken (spec §Edge Cases). Recognised from the rows alone, so it needs no column.
+ */
+function collisionFinding(row: EpicRecord, siblings: readonly EpicRecord[]): string[] {
+  if (!row.decisionCommentId) return [];
+  const match = /^(.+)-(\d+)$/.exec(row.slug);
+  if (!match || Number(match[2]) !== row.number) return [];
+  const holder = siblings.find((e) => e.id !== row.id && e.slug === match[1]);
+  return holder ? [`slug \`${match[1]}\` collided with Epic ${holder.number}; created as \`${row.slug}\``] : [];
 }
 
 export interface ReconcileOutcome {
@@ -241,6 +259,7 @@ export class EpicService {
         lastProcessed: row.lastDecisionCommentId,
         decidedBy: row.decisionCommentId ? row.createdById : (children[0]?.createdById ?? null),
       },
+      findings: collisionFinding(row, siblings),
     };
   }
 
@@ -305,8 +324,11 @@ export class EpicService {
           closedAt: null,
         });
         if (known.has(child.slug)) {
-          // The recorded slug collides with an existing Epic's: suffix it by the child's number (edge case).
+          // The recorded slug collides with an existing Epic's: suffix it by the child's number (edge case),
+          // and say so — the child shows the collision (T1618).
+          const holder = [...epics, ...created].find((e) => e.slug === child.slug);
           row = await this.deps.store.update(row.id, { slug: `${child.slug}-${row.number}`, updatedAt: at });
+          findings.push(`decision ${comment.commentId}: slug \`${child.slug}\` collided with Epic ${holder?.number ?? '?'}; child ${row.number} created as \`${row.slug}\``);
         }
         known.add(row.slug);
         for (const reference of child.requirements) {

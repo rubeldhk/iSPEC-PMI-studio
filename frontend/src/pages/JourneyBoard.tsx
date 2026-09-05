@@ -144,6 +144,7 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
                       <p className="ds-field__hint">{c.next ? `Next: ${c.next}` : whyNoNext(c)}</p>
                       {c.running && <p className="ds-field__hint">running since {new Date(c.running.since).toLocaleString()}</p>}
                       {c.missing.length > 0 && <p className="ds-field__hint">missing: {c.missing.join(', ')}</p>}
+                      {c.unrecognised.length > 0 && <p className="ds-field__hint">unrecognised command: {c.unrecognised.join(', ')}</p>}
                       {c.readiness.verdict !== 'n/a' && (
                         <p className="ds-field__hint">
                           Readiness: {c.readiness.verdict}
@@ -176,7 +177,9 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
             )}
           </section>
 
-          <p className="ds-field__hint">derived from executions · epic-stage v{board.packageVersion}</p>
+          <p className="ds-field__hint">Stages are derived from executions · epic-stage v{board.packageVersion}</p>
+          {/* FR-EPB-046 (T1616): readiness is a separate claim; the screen says where its conditions will live. */}
+          <p className="ds-field__hint">Readiness conditions for this project will be configured under Governance → Constraints; none are configured today.</p>
         </>
       )}
     </section>

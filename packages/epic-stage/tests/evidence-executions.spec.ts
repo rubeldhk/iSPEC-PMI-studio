@@ -95,7 +95,7 @@ describe('T1562 · evidenceFromExecutions — what reaches a stage', () => {
     const result = evidenceFromExecutions(rows, profile);
     expect(result.last?.command).toBe('clarify');
     expect(result.running?.command).toBe('clarify');
-    expect(evidenceFromExecutions([], profile)).toEqual({ evidence: Object.fromEntries(profile.map((s) => [s.name, false])), last: null, running: null });
+    expect(evidenceFromExecutions([], profile)).toEqual({ evidence: Object.fromEntries(profile.map((s) => [s.name, false])), last: null, running: null, unrecognised: [] });
   });
 
   it('is deterministic under any arrival order (FR-EPB-009)', () => {
@@ -143,5 +143,15 @@ describe('T1562 · bindExecutions — which Epic an execution belongs to (R-044-
     const bound = bindExecutions(rows, epics);
     expect(bound.unbound.map((r) => r.targetId)).toEqual(['99', '7c', 'intake']);
     expect([...bound.byEpic.values()].flat()).toEqual([]);
+  });
+});
+
+describe('T1617 · a command the configuration does not list (EPIC-044, spec §Edge Cases — the stage configuration changes)', () => {
+  it('is listed as unrecognised in first-seen order and derives nothing — never a wrong stage', () => {
+    const rows = [row('specify', 'completed'), row('deploy', 'completed'), row('release', 'failed'), row('deploy', 'completed')];
+    const result = evidenceFromExecutions(rows, profile);
+    expect(result.unrecognised).toEqual(['deploy', 'release']);
+    expect(stageOf(rows)).toBe('Specified');
+    expect(evidenceFromExecutions([row('specify', 'completed')], profile).unrecognised).toEqual([]);
   });
 });

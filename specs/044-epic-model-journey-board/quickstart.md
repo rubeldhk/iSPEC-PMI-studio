@@ -86,3 +86,7 @@ E2E_STACK="reference local" npx playwright test e2e/tests/epic-044-m3.spec.ts
   reference-local stack was available. `e2e/tests/epic-044-m3.spec.ts` is authored, not measured.
 - **Mutation observations**: all four owed above were observed red and are recorded in
   `closure.md` §The mutation observations, with a fifth for the `T1613` boundary.
+- **After Phase 9 (convergence, 2026-09-05)**: the board read over 50 Epics and 100 executions
+  printed 16 ms on a warm database (the 214 ms above was the first, cold run); the five Epic
+  integration suites 21 of 21; frontend 909; the package 40 (`unrecognised` commands added to the
+  evidence); governance 1055 with `T884` the only red; register regenerated twice, unchanged.

@@ -241,7 +241,7 @@ export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline }: E
             )}
           </section>
 
-          {(epic.parent !== null || epic.children.length > 0 || epic.decisions.lastProcessed !== null) && (
+          {(epic.parent !== null || epic.children.length > 0 || epic.decisions.lastProcessed !== null || epic.findings.length > 0) && (
             <section aria-label="Split" className="ds-stack">
               <h3>Split</h3>
               {epic.parent !== null && (
@@ -258,6 +258,11 @@ export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline }: E
                 </p>
               )}
               {epic.decisions.lastProcessed !== null && <p className="ds-field__hint">Last decision processed: {epic.decisions.lastProcessed}</p>}
+              {epic.findings.map((finding) => (
+                <p key={finding} className="ds-field__hint">
+                  {finding}
+                </p>
+              ))}
             </section>
           )}
         </>

@@ -120,3 +120,12 @@ describe('T1588 · readiness is layered, not derived: the verdict travels with e
     expect(e2?.readiness.verdict).toBe('n/a');
   });
 });
+
+describe('T1617 · the card names an unrecognised command instead of a wrong stage (spec §Edge Cases)', () => {
+  it('carries unrecognised: [...] and keeps the derived stage from the commands it knows', async () => {
+    const { service } = await harness([row('1', 'specify', 'completed'), row('1', 'deploy', 'completed'), row('2', 'specify', 'completed')]);
+    const board = await service.board(CTX);
+    expect(board.epics[0]).toMatchObject({ number: 1, stage: 'Specified', unrecognised: ['deploy'] });
+    expect(board.epics[1]).toMatchObject({ number: 2, unrecognised: [] });
+  });
+});

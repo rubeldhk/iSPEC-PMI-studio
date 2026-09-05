@@ -59,6 +59,7 @@ EpicStage {
   epicId, number, slug, title, status
   stage: 'Not started' | <stage name>          — highest contiguous stage of the product profile
   missing: string[]                             — predecessors not reached below a present stage (FR-EPB-006)
+  unrecognised: string[]                        — commands of its executions the configuration does not list, first-seen order; derive nothing (spec §Edge Cases — the stage configuration changes; T1617)
   last: { executionId, command, outcome, at } | null   — the newest execution bound to the Epic, whatever its outcome
   next: string | null                           — the stage's configured next; null for Converged and for closed/split
   readiness: { verdict: 'Ready' | 'Not ready' | 'n/a', note?: 'no readiness conditions configured', failing: string[] }

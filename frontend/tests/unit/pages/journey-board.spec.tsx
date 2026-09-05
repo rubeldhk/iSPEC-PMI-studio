@@ -14,7 +14,7 @@ import { ApiError, type ApiClient, type BoardRead, type EpicStage } from '../../
 const COLUMNS = ['Not started', 'Specified', 'Clarified', 'Checklisted', 'Planned', 'Tasked', 'Analyzed', 'Ready', 'Implementing', 'Converged'];
 
 function stage(over: Partial<EpicStage>): EpicStage {
-  return { epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Specified', missing: [], last: { executionId: 'exec_1', command: 'specify', outcome: 'completed', at: '2026-09-05T10:00:00Z' }, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions', ...over };
+  return { epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Specified', missing: [], unrecognised: [], last: { executionId: 'exec_1', command: 'specify', outcome: 'completed', at: '2026-09-05T10:00:00Z' }, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions', ...over };
 }
 
 const BOARD: BoardRead = {
@@ -106,9 +106,10 @@ describe('T1584 · the Spec Journey Board', () => {
     expect(screen.getAllByRole('article').map((a) => a.getAttribute('aria-label'))).toEqual(['Epic 1 · Intake', 'Epic 5 · Old']);
   });
 
-  it('states that stages are derived from executions and names the package version (FR-EPB-049)', async () => {
+  it('states that stages are derived from executions, names the package version, and says where readiness conditions are configured (FR-EPB-049, FR-EPB-046, T1616)', async () => {
     await page(api());
-    expect(screen.getByText(/derived from executions · epic-stage v0\.1\.0/)).toBeDefined();
+    expect(screen.getByText(/Stages are derived from executions · epic-stage v0\.1\.0/)).toBeDefined();
+    expect(screen.getByText(/Readiness conditions for this project will be configured under Governance → Constraints; none are configured today\./)).toBeDefined();
   });
 
   it('re-renders a moved card on reload and offers no manual refresh control (FR-EPB-048)', async () => {
@@ -143,5 +144,16 @@ describe('T1588 · nothing on the board marks an Epic ready by hand (FR-EPB-001,
     const names = screen.getAllByRole('button').map((b) => b.textContent ?? '');
     expect(names.some((n) => /ready|stage|move/i.test(n))).toBe(false);
     expect(screen.queryByRole('combobox', { name: /stage/i })?.getAttribute('id')).toBe('board-stage-filter');
+  });
+});
+
+describe('T1617 · an unrecognised command on a card (EPIC-044, spec §Edge Cases)', () => {
+  it('reads "unrecognised command: …" and keeps the stage the known commands derive', async () => {
+    const board: BoardRead = { ...BOARD, epics: [...BOARD.epics, stage({ epicId: 'e7', number: 7, slug: 'ops', title: 'Ops', stage: 'Specified', unrecognised: ['deploy'] })] };
+    await page(api({ getBoard: vi.fn(async () => board) }));
+    const card = screen.getByRole('article', { name: 'Epic 7 · Ops' });
+    expect(card.textContent).toContain('unrecognised command: deploy');
+    expect(within(screen.getByRole('region', { name: 'Stage: Specified' })).getAllByRole('article').map((a) => a.getAttribute('aria-label'))).toContain('Epic 7 · Ops');
+    expect(screen.getByRole('article', { name: 'Epic 1 · Intake' }).textContent).not.toContain('unrecognised');
   });
 });

@@ -3,8 +3,9 @@
 **Task**: `T1605`–`T1611` (this record; the promotion `T1610` also names is **not** performed — see
 *Work not done*) · **Session**: 2026-09-05 · **Constitution IX**
 
-**Status**: `Implemented` — 63 of 65 tasks complete; **two open, each named below with its reason**
-(`T1607` the Tier 2 run against a stack; `T1610` the converge pass and the promotion). Every
+**Status**: `Implemented` — 69 of 71 tasks complete after the first convergence pass (Phase 9,
+`T1614`–`T1619`, 2026-09-05); **two open, each named below with its reason** (`T1607` the Tier 2
+run against a stack; `T1610` the second converge pass and the promotion). Every
 implementation task carries a unit test, contract test, integration test, architecture test or
 conformance check observed failing before its implementation and passing after (Constitution V),
 with the ordering exceptions recorded honestly under *Assumptions*.
@@ -29,6 +30,7 @@ both readers**: `@pmi/epic-stage` serves the repository's register and the produ
 | 7 US5 | `T1597`–`T1600` | Specification rows carry `epicId`/`epicNumber`/`epicTitle` through the same decoration as requirements; the list filters by Epic and assigns from the row |
 | 8 Polish | `T1601`–`T1604` | README §Setup and the operator guide; the M3 Tier 2 harness (authored); the tool-surface contract and connector boundary confirmed |
 | Z Closure | `T1605`, `T1606`, `T1608`, `T1609`, `T1611` | This report, the counts, the inversion, the mutation observations, the Constitution XII record, the records |
+| 9 Convergence | `T1614`–`T1619` | The owner assigns and unassigns from the requirement rows; the specification list filters by stage; the board says where readiness conditions are configured; an execution whose command the configuration does not list reads *unrecognised command* on its card (package → service → card); a slug collision is a finding shown on the child it renamed; the `FR-EPB-025` deferral is a dated note on the requirement with the `EPIC-045` hand-off |
 
 ## Found on the way — repairs this Epic did not plan and could not leave
 
@@ -98,7 +100,8 @@ Whole-project runs on 2026-09-05 at the head of `epic/044-epic-model-journey-boa
 | `backend-integration` (Docker, PostgreSQL 16) | 108 files: 929 passed, 2 skipped (`real-engine-smoke`, by design), 2 failed — `T147` `scale.spec.ts` p95 (known load-sensitive, `EPIC-030` `DEF-030-002`) and `T1492` `connector-reads.spec.ts` *pmi.project.decompose: first run, the policy, the bundle* (1095 ms in the combined run; **re-run alone: 6 of 6 passed** — load-sensitive on this evidence, flagged below, not fixed) |
 | `pnpm lint` | 21 errors, 43 warnings — every error in a stale `.claude/worktrees/` checkout or in files of earlier Epics (`change-room-*`, `engine-default`, `loop-reachability`, `adjudication-end-to-end`, `error-filter`, the design-token literals); **none in a file this Epic created or edited** |
 | `tsc --noEmit` | `backend` and `frontend` clean |
-| `frontend` alone | 90 files, 903 passed |
+| `frontend` alone | 90 files, 903 passed; after Phase 9, 909 passed |
+| After Phase 9 (2026-09-05) | `epic-stage` 40 passed; `backend-unit` epics 48 passed; contract `epics-api` 30 passed; `architecture` 288 passed (`T999u` the one red); `governance` 1055 passed (`T884` ×2 the reds); the five Epic integration suites 21 passed — once with three `T1572` tests red under the five concurrent Docker suites, then 21 of 21 on the repeat and 5 of 5 alone (assumption 11) |
 | `pnpm register:update` | run twice; the register differs from the previous head only by the footer |
 
 Every ticked implementation task names its test in `tasks.md` and every named test is in the runs
@@ -135,6 +138,22 @@ recorded in `README.md` §Known-red checks or here.
    second combined run by the owner before the converge pass is declared clean.
 10. **The lint errors were left alone**: none is in this Epic's files, and fixing earlier Epics'
     lint under this Epic's branch would widen the change without a task naming it.
+11. **`T1572` (`epics-api.spec.ts`) failed three tests once** in a five-suite concurrent Docker
+    run after Phase 9, then passed 21 of 21 on the immediate repeat and 5 of 5 alone. No assertion
+    text was captured on the failing run; the pattern (quick failures, parallel creates against a
+    live server, four other containers starting) reads as load, like `T1492` and `scale.spec.ts`.
+    Recorded, not assumed away.
+12. **The requirement-row assignment (`T1614`) lives on the requirement register page**
+    (`frontend/src/pages/Requirements.tsx`, reached from the project screen), which is where
+    `T1581` put the Epic column; the Requirement Room's own view lists room objects, not the
+    register. The owner reads the register's rows there and assigns from them; the Epic detail in
+    the Requirement Room assigns as before.
+13. **A slug collision is derived on read, not stored**: a child whose slug is another Epic's slug
+    plus its own number was renamed by the split; the finding disappears if the other Epic is
+    renamed, which is the truth of the moment rather than a stale record. The reconcile outcome
+    also names it at the time.
+14. **The `unrecognised` field is required on the card** and the first-seen order of commands is
+    the registration order; the board's fixtures gained the field rather than making it optional.
 
 ## Work not done, and why
 
@@ -144,7 +163,12 @@ recorded in `README.md` §Known-red checks or here.
 - **`T1610` — the converge pass, and the promotion `local → dev`.** The converge is the next
   command (below). The promotion is performed only on an instruction naming the environment; none
   was given.
-- **`FR-EPB-025` automatic binding** — deferred to `EPIC-045` (assumption 2).
+- **`FR-EPB-025` automatic binding** — deferred to `EPIC-045` (assumption 2), recorded as a dated
+  note on the requirement in `spec.md` (`T1619`). **Hand-off `EPIC-045` MUST pick up**: when
+  artifact sync creates a specification row from the files a completed execution reports, bind
+  the row to the Epic the execution's `targetId` resolves to (number, or parent number plus split
+  suffix, exactly as `bindExecutions` in `@pmi/epic-stage` resolves it); a row from an unbound
+  execution stays *no Epic*.
 
 ## Recommended next task
 

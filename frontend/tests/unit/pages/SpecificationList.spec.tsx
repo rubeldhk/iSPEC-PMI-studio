@@ -73,7 +73,7 @@ describe('SpecificationList (FR-012)', () => {
 });
 
 describe('T1599 · Epic and Stage columns (EPIC-044, FR-EPB-050)', () => {
-  const BOARD = { columns: ['Not started', 'Specified'], epics: [{ epicId: 'e2', number: 2, slug: 'review', title: 'Review', status: 'active', stage: 'Specified', missing: [], last: null, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' }], unbound: [], packageVersion: '0.1.0', profile: 'product' };
+  const BOARD = { columns: ['Not started', 'Specified'], epics: [{ epicId: 'e2', number: 2, slug: 'review', title: 'Review', status: 'active', stage: 'Specified', missing: [], unrecognised: [], last: null, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' }], unbound: [], packageVersion: '0.1.0', profile: 'product' };
   const EPICS = { epics: [{ id: 'e2', projectId: 'p1', number: 2, slug: 'review', title: 'Review', description: '', status: 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 0, specificationCount: 1 }], unassigned: [] };
   function richApi(rows: Specification[], over: Record<string, unknown> = {}): ApiClient {
     return {
@@ -110,6 +110,21 @@ describe('T1599 · Epic and Stage columns (EPIC-044, FR-EPB-050)', () => {
     await screen.findByText('Payments spec');
     fireEvent.change(screen.getByLabelText('Assign Payments spec to an Epic'), { target: { value: 'e2' } });
     await waitFor(() => expect(api.assignSpecificationEpic).toHaveBeenCalledWith('s1', 'e2'));
+  });
+
+  it('filters by stage: a stage matches the rows whose Epic is at it; "no Epic" rows match only the empty filter (T1615)', async () => {
+    render(<SpecificationList api={richApi([spec({ epicId: 'e2', epicNumber: 2, epicTitle: 'Review' }), spec({ id: 's2', title: 'Auth spec', epicId: null })])} projectId="p1" onOpen={vi.fn()} currentUserId="u_owner" />);
+    await screen.findByText('Payments spec');
+    const filter = screen.getByLabelText('Filter by stage') as HTMLSelectElement;
+    expect([...filter.options].map((o) => o.textContent)).toEqual(['all', 'Not started', 'Specified']);
+    fireEvent.change(filter, { target: { value: 'Specified' } });
+    expect(screen.queryByText('Auth spec')).toBeNull();
+    expect(screen.getByText('Payments spec')).toBeDefined();
+    fireEvent.change(filter, { target: { value: 'Not started' } });
+    expect(screen.queryByText('Payments spec')).toBeNull();
+    expect(screen.queryByText('Auth spec')).toBeNull();
+    fireEvent.change(filter, { target: { value: '' } });
+    expect(screen.getByText('Auth spec')).toBeDefined();
   });
 
   it('a member without the grant sees the columns but no assignment control', async () => {

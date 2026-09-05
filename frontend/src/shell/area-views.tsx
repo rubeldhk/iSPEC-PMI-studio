@@ -220,7 +220,7 @@ export function WorkspaceAdministrationArea(): ReactElement {
 // ------------------------------------------------------------- the sub-views
 
 export function ProjectDetailView(): ReactElement {
-  const { api } = useShell();
+  const { api, identity } = useShell();
   const navigate = useNavigate();
   const { projectId = '' } = useParams();
   const [editing, setEditing] = useState<Requirement | null>(null);
@@ -254,7 +254,7 @@ export function ProjectDetailView(): ReactElement {
         >
           Traceability
         </Button>
-        <RequirementsPage api={api} projectId={projectId} onEdit={setEditing} />
+        <RequirementsPage api={api} projectId={projectId} onEdit={setEditing} currentUserId={identity?.user.id} />
         <RequirementEditor
           key={editing?.id ?? 'new'}
           api={api}

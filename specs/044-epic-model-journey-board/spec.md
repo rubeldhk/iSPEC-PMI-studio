@@ -393,6 +393,11 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
 - **FR-EPB-025**: A specification MUST belong to at most one Epic; a specification produced by an
   execution bound to an Epic MUST be bound to that Epic, and an owner MUST be able to assign a
   specification with no Epic to one.
+  *Deferral recorded 2026-09-05 (`T1619`, convergence `F6`)*: the automatic binding has no code
+  path in this Epic — no execution produces a specification row until `EPIC-045`'s artifact sync
+  creates one from the files the finish hook reports. `EPIC-045` MUST bind that row to the Epic of
+  the execution that produced it (the binding's `targetId`, resolved as the board resolves it).
+  The manual assignment and the Epic and Stage columns are delivered here.
 - **FR-EPB-026**: A recorded `decomposition-decision` (`FR-EXT-045`) whose decision is
   *confirmed* or *edited* MUST create one child Epic per recorded child — the next free integer
   numbers in the project (a child's number is never the parent's number with a suffix), the

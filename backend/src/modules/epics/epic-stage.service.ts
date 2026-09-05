@@ -38,6 +38,8 @@ export interface EpicStage {
   readonly stage: string;
   /** Predecessor commands not reached below a present stage (`FR-EPB-006`). */
   readonly missing: string[];
+  /** Commands the stage configuration does not list — shown, never a wrong stage (`T1617`). */
+  readonly unrecognised: string[];
   readonly last: { executionId: string; command: string; outcome: string; at: string } | null;
   readonly next: string | null;
   readonly readiness: { verdict: 'Ready' | 'Not ready' | 'n/a'; note?: string; failing: string[] };
@@ -136,6 +138,7 @@ export class EpicStageService {
       status: epic.status,
       stage,
       missing,
+      unrecognised: evidence.unrecognised,
       last: evidence.last ? { executionId: evidence.last.executionId, command: evidence.last.command, outcome: evidence.last.state, at: evidence.last.completedAt ?? evidence.last.registeredAt } : null,
       next,
       readiness,

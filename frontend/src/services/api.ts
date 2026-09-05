@@ -402,6 +402,8 @@ export interface EpicDetail extends Epic {
   children: Omit<Epic, 'requirementCount' | 'specificationCount'>[];
   /** The decision that created it, the last one processed for it, and who decided (FR-EPB-063). */
   decisions: { createdBy: string | null; lastProcessed: string | null; decidedBy: string | null };
+  /** Findings about this Epic derived on read — today a slug collision the split resolved (T1618). */
+  findings: string[];
 }
 
 /** A projection, never stored: derived from the Epic's governed executions (FR-EPB-001). */
@@ -413,6 +415,8 @@ export interface EpicStage {
   status: string;
   stage: string;
   missing: string[];
+  /** Commands of its executions the stage configuration does not list — shown, never a wrong stage (T1617). */
+  unrecognised: string[];
   last: { executionId: string; command: string; outcome: string; at: string } | null;
   next: string | null;
   readiness: { verdict: 'Ready' | 'Not ready' | 'n/a'; note?: string; failing: string[] };
