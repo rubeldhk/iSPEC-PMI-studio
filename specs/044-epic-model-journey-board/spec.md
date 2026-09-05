@@ -34,6 +34,36 @@ next command." *(PMI-DOC-007 §7, verbatim)*
 > with the requester. No `[NEEDS CLARIFICATION]` marker is used: every call has a defensible
 > default and none changes whether the Epic should exist.
 
+## Clarifications
+
+### Session 2026-09-05
+
+Five of the eight judgement calls were put to the requester in one round (Constitution X); the
+other three — provisional records move no stage (Constitution XII decides it), the derivation is
+extracted into a shared package (PMI-DOC-007 §10 names it as this Epic's work), and a stage is the
+highest reached with every predecessor reached once (a plan-level rule with a reversible default)
+— stand as recorded. **All five recommendations were accepted.**
+
+- Q: When a person confirms splitting an oversized Epic during the first run, how should the
+  resulting child Epics be identified in PMI Studio? → A: **Children get the next free integer
+  numbers in the project plus a link to the parent; the parent is marked *split*.** An Epic's
+  number stays a plain integer everywhere; the recorded slug and the execution binding keep each
+  child matched to its `7a`/`7b` directory. *(Confirms Assumption 2; `FR-EPB-026`.)*
+- Q: Who may create Epics and assign requirements to them? → A: **Only a holder of the project
+  owner grant may create, edit, close, assign and split; every project member may read.** The
+  Constraints screen's precedent. *(Confirms Assumption 8; `FR-EPB-027`.)*
+- Q: While no readiness conditions are defined for customer projects, what should an Epic show
+  once its analysis step has completed? → A: **The card moves to *Ready* with the visible note
+  *no readiness conditions configured*, and `/speckit-implement` as next.** The stage sequence
+  stays identical to the register's. *(Confirms Assumption 1; `FR-EPB-045`, `FR-EPB-046`.)*
+- Q: When a converge step runs and appends new tasks to an Epic, where should that Epic sit on the
+  board afterwards? → A: **It stays in its previous stage with `/speckit-implement` as next; only a
+  converge that reports no remaining work moves it to *Converged*.** *(Confirms Assumption 6;
+  `FR-EPB-005`.)*
+- Q: Where should the Epic list and Epic detail screens live, given that the Spec Journey Board
+  goes in the Specifications area? → A: **In the Requirement Room, beside the requirements they
+  group.** *(Confirms Assumption 5; `FR-EPB-041`.)*
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -308,7 +338,9 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
 - **FR-EPB-005**: *Implementing* MUST be the stage while the latest `implement` execution is
   non-terminal or completed `partially-completed`; *Converged* MUST be the stage when the latest
   `converge` execution completed reporting no remaining work and no `implement` has been
-  registered since; a later `implement` MUST return the Epic to *Implementing*.
+  registered since; a later `implement` MUST return the Epic to *Implementing*. A `converge`
+  that appended tasks MUST leave the Epic in its previous stage with `/speckit-implement` as next
+  — a completed `converge` alone never means *Converged* (clarified 2026-09-05).
 - **FR-EPB-006**: The stage MUST be the highest reached whose predecessor stages have each been
   reached at least once; where a predecessor is missing, the card MUST name it (*missing:
   specify*) rather than skip or invent it.
@@ -360,13 +392,15 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
   execution bound to an Epic MUST be bound to that Epic, and an owner MUST be able to assign a
   specification with no Epic to one.
 - **FR-EPB-026**: A recorded `decomposition-decision` (`FR-EXT-045`) whose decision is
-  *confirmed* or *edited* MUST create one child Epic per recorded child — next free numbers, the
+  *confirmed* or *edited* MUST create one child Epic per recorded child — the next free integer
+  numbers in the project (a child's number is never the parent's number with a suffix), the
   recorded slug, the recorded requirements moved from the parent, a link to the parent — and MUST
   mark the parent *split*; a *rejected* decision MUST create nothing; processing the same decision
-  twice MUST create nothing the second time.
-- **FR-EPB-027**: Creating, editing, closing, assigning and splitting MUST require the project
-  owner grant the Constraints screen uses; reading MUST be open to every workspace member with
-  access to the project.
+  twice MUST create nothing the second time (clarified 2026-09-05).
+- **FR-EPB-027**: Creating, editing, closing, assigning, unassigning and splitting MUST require
+  the project owner grant the Constraints screen uses — a Requirement Room writer without it MAY
+  NOT assign; reading MUST be open to every workspace member with access to the project (clarified
+  2026-09-05).
 - **FR-EPB-028**: Every Epic write MUST produce an audit entry naming the actor, the project, the
   Epic, the operation and the outcome, with the before and after values for edits and
   assignments.
@@ -378,10 +412,11 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
 - **FR-EPB-040**: The Specifications area MUST deliver the **Spec Journey Board** for a chosen
   project: one column per stage in sequence, one card per Epic in the column of its derived stage,
   and an *unbound executions* group where `FR-EPB-008` applies.
-- **FR-EPB-041**: The Requirement Room MUST deliver the **Epic list** — number, title, status,
-  requirement count, stage — and an **Epic detail** — description, its requirements with
-  assign/unassign, its specifications, its stage with last and next command, and a link to its
-  executions on the project's timeline.
+- **FR-EPB-041**: The Requirement Room — not the Projects screen and not the Specifications area
+  (clarified 2026-09-05) — MUST deliver the **Epic list** — number, title, status, requirement
+  count, stage — and an **Epic detail** — description, its requirements with assign/unassign, its
+  specifications, its stage with last and next command, and a link to its executions on the
+  project's timeline.
 - **FR-EPB-042**: Every card MUST show the Epic's number and title, its stage, the last command
   with its outcome and time, and the execution that produced it as a link to the timeline.
 - **FR-EPB-043**: Every card MUST show the next command and, where the configuration limits it by
@@ -392,7 +427,9 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
   verdict as a separate claim — pass, fail with the failing conditions, or *no readiness conditions
   configured* — never merged into the stage name.
 - **FR-EPB-046**: Readiness conditions for customer projects MUST be an empty, configurable set in
-  this Epic; an empty set MUST evaluate as passing with the note of `FR-EPB-045`, and the screen
+  this Epic; an empty set MUST evaluate as passing, so an Epic whose `analyze` completed moves to
+  *Ready* with the note *no readiness conditions configured* and `/speckit-implement` as next
+  (clarified 2026-09-05); the *Ready* column MUST be present from the first release, and the screen
   MUST say where conditions will be configured.
 - **FR-EPB-047**: The board MUST be filterable by Epic title and by stage, and MUST state its four
   states — loading, empty, error, partial (`FR-SHL-060`, PMI-DOC-005); the Epic list is a table with
@@ -479,16 +516,17 @@ its card shows on the board; a specification with no Epic shows *no Epic*; both 
 
 ## Assumptions
 
-Eight judgement calls, each with the alternative that lost, for `/speckit-clarify` to confirm or
-overturn.
+Eight judgement calls, each with the alternative that lost. **Five were put to the requester on
+2026-09-05 and all five confirmed** (Assumptions 1, 2, 5, 6 and 8); the other three stand as
+recorded. The reasoning is kept because it describes the risk each confirmation accepts.
 
-1. **Readiness for customer projects is an empty, passing condition set, shown as such**
+1. **Readiness for customer projects is an empty, passing condition set, shown as such** — **confirmed**
    (`FR-EPB-045`, `FR-EPB-046`). PMI-DOC-007 §7 puts DOR conditions for customer projects out of
    scope (*later*); the board still needs a *Ready* column and a place for the verdict. The
    alternative — omit *Ready* until conditions exist — makes the product's stage sequence differ
    from the register's, which is exactly the drift `R-06` forbids. The risk accepted: *Ready* reads
    as vacuous until conditions arrive; the note on the card says so.
-2. **Children of a recorded split become Epics with their own next numbers and a parent link**
+2. **Children of a recorded split become Epics with their own next numbers and a parent link** — **confirmed**
    (`FR-EPB-026`). `EPIC-042` named the children's *directories* by the parent's number and a suffix
    (`FR-EXT-045`); an Epic's number is an integer, so children cannot carry `7a` as a number. The
    alternative — suffixed identifiers on the Epic — changes the Epic's identity shape for every
@@ -502,12 +540,12 @@ overturn.
    Epic** (`FR-EPB-010`, `FR-EPB-013`). PMI-DOC-007 §10 names *package extraction* as this Epic's
    work and §11 `R-06` as its reason. The alternative — copy the rule into the platform — is the
    drift. The register's byte-identity is the proof the extraction changed nothing.
-5. **The Epic list and detail live in the Requirement Room; the board in Specifications**
+5. **The Epic list and detail live in the Requirement Room; the board in Specifications** — **confirmed**
    (`FR-EPB-040`, `FR-EPB-041`). PMI-DOC-007 §6 offers *Requirement Room / Projects* for the list;
    requirements are assigned where requirements are, so the Room wins; the board is where §6 puts
    it. The alternative — both on the Projects screen — puts owner-level grouping beside developer
    status, the objection `EPIC-042` raised for the Constraints screen.
-6. ***Converged* means the latest `converge` completed reporting no remaining work**
+6. ***Converged* means the latest `converge` completed reporting no remaining work** — **confirmed**
    (`FR-EPB-005`). A `converge` that appended tasks leaves the Epic at its prior stage with
    `/speckit-implement` next; how the completion states *no remaining work* is the plan's (the
    finish hook's completion comment and the unchanged `tasks.md` digest are the candidates). The
