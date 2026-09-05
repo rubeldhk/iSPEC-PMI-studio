@@ -24,6 +24,7 @@
     "register:update": "node scripts/update-register.mjs"
   },
   "devDependencies": {
+    "@pmi/epic-stage": "workspace:*",
     "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",

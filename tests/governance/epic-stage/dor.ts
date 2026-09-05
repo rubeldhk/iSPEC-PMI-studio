@@ -522,13 +522,23 @@ export function evaluateDor(ctx: DorContext, kind: EpicKind = 'delivery'): DorRe
 
 // ---------------------------------------------------------------- waivers
 
-export interface WaiverDeclaration {
-  readonly epic: string;
-  readonly condition: string;
-  readonly owner: string;
-  readonly reason: string;
-  readonly expires: string;
-}
+/**
+ * Since `EPIC-044` (`T1561`, `R-06`): waiver validation and readiness live in
+ * `@pmi/epic-stage`, made pure — the known conditions and the permitted owners
+ * are inputs. This shim supplies them from this repository's governance, so the
+ * signatures every spec imports are unchanged.
+ */
+import {
+  resolveReadiness as resolveReadinessWith,
+  validateWaiver as validateWaiverWith,
+  type Readiness,
+  type ReadinessInput,
+  type ReadinessResult,
+  type WaiverDeclaration,
+  type WaiverValidation,
+} from '@pmi/epic-stage';
+
+export type { Readiness, ReadinessInput, ReadinessResult, WaiverDeclaration, WaiverValidation };
 
 export interface WaiverContext {
   /** Injected, never read from the clock — see `readiness.spec.ts` on determinism. */
@@ -536,128 +546,20 @@ export interface WaiverContext {
   readonly epicsOnDisk: readonly string[];
 }
 
-export interface WaiverValidation {
-  readonly problems: string[];
-  readonly expired: boolean;
-  /** Valid AND unexpired. Anything else grants nothing. */
-  readonly grantsCover: boolean;
-}
-
 /** The three programme roles, read from governance rather than restated (`DF-5`). */
 function permittedOwners(): string[] {
-  const config = JSON.parse(
-    readFileSync(join(REPO_ROOT, 'governance/governance.config.json'), 'utf8'),
-  ) as { owners?: string[] };
+  const config = JSON.parse(readFileSync(join(REPO_ROOT, 'governance/governance.config.json'), 'utf8')) as { owners?: string[] };
   return config.owners ?? [];
 }
 
-export function validateWaiver(
-  waiver: WaiverDeclaration | undefined,
-  ctx: WaiverContext,
-): WaiverValidation {
-  const problems: string[] = [];
-  const known = loadStageConfig().dorConditions.map((condition) => condition.id);
-
-  if (!waiver) {
-    return { problems: ['waiver is absent'], expired: false, grantsCover: false };
-  }
-
-  if (!waiver.epic || !ctx.epicsOnDisk.includes(waiver.epic)) {
-    problems.push(`waiver names "${waiver.epic}", which is not an Epic directory on disk`);
-  }
-
-  // DF-5 — "no arrays of conditions, no wildcard, no waiver of the DOR."
-  // Waiving one named condition is a decision someone can review; waiving a
-  // gate is a decision nobody can.
-  if (Array.isArray(waiver.condition)) {
-    problems.push('a waiver covers exactly one condition, never a list (DF-5)');
-  } else if (!waiver.condition) {
-    problems.push('waiver names no condition');
-  } else if (!known.includes(waiver.condition)) {
-    problems.push(`waiver names "${waiver.condition}", which is not in the current DOR set`);
-  }
-
-  const owners = permittedOwners();
-  if (!waiver.owner || !owners.includes(waiver.owner)) {
-    problems.push(`waiver owner "${waiver.owner ?? '(none)'}" is not one of ${owners.join(', ')}`);
-  }
-
-  if (!waiver.reason?.trim()) {
-    problems.push('waiver carries no reason');
-  }
-
-  let expired = false;
-  if (!waiver.expires || !/^\d{4}-\d{2}-\d{2}$/.test(waiver.expires)) {
-    // An exception with no end is a rule change wearing a costume.
-    problems.push(`waiver expiry "${waiver.expires ?? '(none)'}" is not a YYYY-MM-DD date`);
-  } else {
-    // The expiry date itself is still valid — the alternative makes the last
-    // day of an exception unusable and surprises whoever relied on it.
-    expired = waiver.expires < ctx.today;
-  }
-
-  return { problems, expired, grantsCover: problems.length === 0 && !expired };
-}
-
-// -------------------------------------------------------------- readiness
-
-export type Readiness = 'Ready' | 'Ready (waived)' | 'Not ready' | 'n/a';
-
-export interface ReadinessInput {
-  readonly directory: string;
-  readonly kind: EpicKind;
-  readonly failures: readonly string[];
-  readonly waivers: readonly WaiverDeclaration[];
-  readonly today: string;
-  readonly epicsOnDisk: readonly string[];
-}
-
-export interface ReadinessResult {
-  readonly readiness: Readiness;
-  /** Failing conditions no valid waiver covers. */
-  readonly uncovered: string[];
-  /** Build-failing problems — expired waivers (`DF-6`, `FR-ESK-023`). */
-  readonly blocking: string[];
-  /** Reported but not build-failing — malformed waivers. */
-  readonly reported: string[];
+export function validateWaiver(waiver: WaiverDeclaration | undefined, ctx: WaiverContext): WaiverValidation {
+  return validateWaiverWith(waiver, {
+    ...ctx,
+    knownConditions: loadStageConfig().dorConditions.map((condition) => condition.id),
+    permittedOwners: permittedOwners(),
+  });
 }
 
 export function resolveReadiness(input: ReadinessInput): ReadinessResult {
-  // FR-ESK-024 — a parent design is never evaluated. The DOR requires a task
-  // list, and reporting a permanent failure for its absence trains readers to
-  // ignore the column.
-  if (input.kind === 'parent-design') {
-    return { readiness: 'n/a', uncovered: [], blocking: [], reported: [] };
-  }
-
-  const mine = input.waivers.filter((waiver) => waiver.epic === input.directory);
-  const blocking: string[] = [];
-  const reported: string[] = [];
-  const covering = new Set<string>();
-
-  for (const waiver of mine) {
-    const validation = validateWaiver(waiver, {
-      today: input.today,
-      epicsOnDisk: input.epicsOnDisk,
-    });
-    if (validation.expired) {
-      // DF-6 — an expired waiver FAILS THE BUILD. Someone is still relying on
-      // an exception past its agreed end, which is more dangerous than a
-      // recording error.
-      blocking.push(
-        `${input.directory}: waiver on ${waiver.condition} expired ${waiver.expires} — renew it as a fresh dated record or fix the condition`,
-      );
-    }
-    reported.push(...validation.problems.map((problem) => `${input.directory}: ${problem}`));
-    if (validation.grantsCover) covering.add(waiver.condition);
-  }
-
-  const uncovered = input.failures.filter((failure) => !covering.has(failure));
-
-  // There is no combination producing an unqualified `Ready` while a waiver is
-  // active. That is what stops waivers becoming a second, weaker DOR.
-  const readiness: Readiness =
-    uncovered.length > 0 ? 'Not ready' : covering.size > 0 ? 'Ready (waived)' : 'Ready';
-
-  return { readiness, uncovered, blocking, reported };
+  return resolveReadinessWith(input, (waiver) => validateWaiver(waiver, { today: input.today, epicsOnDisk: input.epicsOnDisk }));
 }

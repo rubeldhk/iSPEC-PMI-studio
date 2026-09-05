@@ -9,3 +9,7 @@
  * nothing but `node:` modules (`FR-EPB-014`).
  */
 export * from './config.js';
+export * from './derive.js';
+export * from './readiness.js';
+export * from './evidence-files.js';
+export * from './evidence-executions.js';

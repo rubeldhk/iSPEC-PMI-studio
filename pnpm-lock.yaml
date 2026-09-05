@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@pmi/epic-stage':
+        specifier: workspace:*
+        version: link:packages/epic-stage
       '@types/node':
         specifier: ^22.10.5
         version: 22.20.1
@@ -253,6 +256,8 @@ importers:
         version: link:../execution-contract
 
   packages/engine-contract: {}
+
+  packages/epic-stage: {}
 
   packages/execution-contract: {}
 
