@@ -17,6 +17,7 @@
  * the Prisma-backed store at the composition root (EPIC-014 F-11.2).
  */
 import { Module } from '@nestjs/common';
+import { EpicStoresModule } from '../epics/epic-stores.module.js';
 import { EnginesModule } from '../engines/engines.module.js';
 import { EngineResolverService } from '../engines/engine-resolver.service.js';
 import { JobsService, type JobQueue, type JobStore } from '../jobs/jobs.service.js';
@@ -132,7 +133,8 @@ import {
 import { prismaClient } from '../../persistence/prisma.js';
 
 @Module({
-  imports: [EnginesModule, RequirementsModule, JobsModule],
+  // EPIC-044 T1598 — specification rows name their Epic through the stores-only module (R-044-7).
+  imports: [EnginesModule, RequirementsModule, JobsModule, EpicStoresModule],
   controllers: [SpecificationsController, SpecificationLifecycleController],
   providers: [
     {

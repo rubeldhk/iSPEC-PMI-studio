@@ -35,6 +35,10 @@ export const COMMENT_TYPES = Object.freeze([
   'review',
   'decision',
   'system',
+  // EPIC-044 DEF-044-002: the type EPIC-042's hooks record a decomposition decision under
+  // (specs/042-pmi-spec-kit-extension/data-model.md §8); admitted here and by the CHECK in
+  // migration 20260905130000_epic044_decision_comment_type.
+  'decomposition-decision',
 ] as const);
 export type CommentType = (typeof COMMENT_TYPES)[number];
 

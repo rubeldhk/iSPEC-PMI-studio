@@ -248,9 +248,15 @@ export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline }: E
                 <p>
                   Child {epic.splitSuffix ?? ''} of Epic {epic.parent.number} · {epic.parent.title}
                   {epic.decisions.createdBy ? ` — created by decision ${epic.decisions.createdBy}` : ''}
+                  {epic.decisions.decidedBy ? ` by ${epic.decisions.decidedBy}` : ''}
                 </p>
               )}
-              {epic.children.length > 0 && <p>split into {epic.children.map((c) => c.number).join(', ')}</p>}
+              {epic.children.length > 0 && (
+                <p>
+                  split into {epic.children.map((c) => c.number).join(', ')}
+                  {epic.decisions.decidedBy ? ` — decided by ${epic.decisions.decidedBy}` : ''}
+                </p>
+              )}
               {epic.decisions.lastProcessed !== null && <p className="ds-field__hint">Last decision processed: {epic.decisions.lastProcessed}</p>}
             </section>
           )}

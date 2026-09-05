@@ -98,7 +98,8 @@ A failed or cancelled execution legitimately has no `output` row (`AC-EXR-17d`).
 ### `execution_comments` — append-only thread
 
 `id` · `executionId` · `authorId` · `authorType` · `agentIdentitySnapshotId` · `commentType`
-(`completion` \| `clarification` \| `review` \| `decision` \| `system`) · `body` ·
+(`completion` \| `clarification` \| `review` \| `decision` \| `system` \| `decomposition-decision` — the
+last admitted 2026-09-05 by `EPIC-044` `DEF-044-002` for the `EPIC-042` decision record) · `body` ·
 `parentCommentId` · `visibilityScope` · `mentions[]` · `attachments[]` · `evidenceRefs[]` ·
 `actionRequired` · `decisionRequired` · `supersedesCommentId` · `createdAt` · `integrityHash` ·
 `redactionState` · `redactedBy` · `redactedAt` · `redactionReason`.

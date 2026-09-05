@@ -26,13 +26,15 @@ const BOARD: BoardRead = {
     stage({ epicId: 'e4', number: 4, slug: 'deep', title: 'Deep', stage: 'Implementing', next: '/speckit-converge', running: { executionId: 'exec_9', since: '2026-09-05T11:00:00Z' }, last: { executionId: 'exec_9', command: 'implement', outcome: 'started', at: '2026-09-05T11:00:00Z' } }),
     stage({ epicId: 'e5', number: 5, slug: 'old', title: 'Old', stage: 'Specified', status: 'closed', next: null }),
     stage({ epicId: 'e6', number: 6, slug: 'parent', title: 'Parent', stage: 'Not started', status: 'split', next: null, last: null }),
+    stage({ epicId: 'e8', number: 8, slug: 'parent-a', title: 'Parent (a)', stage: 'Not started', last: null, next: '/speckit-specify' }),
+    stage({ epicId: 'e9', number: 9, slug: 'parent-b', title: 'Parent (b)', stage: 'Not started', last: null, next: '/speckit-specify' }),
   ],
   unbound: [{ executionId: 'exec_77', command: 'plan', targetId: '99', registeredAt: '2026-09-05T09:00:00Z' }],
   packageVersion: '0.1.0',
   profile: 'product',
 };
 
-const EPICS = { epics: BOARD.epics.map((s) => ({ id: s.epicId, projectId: 'p1', number: s.number, slug: s.slug, title: s.title, description: '', status: s.status as 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 2, specificationCount: 0 })).map((e) => (e.id === 'e6' ? { ...e, status: 'split' as const } : e)), unassigned: [] };
+const EPICS = { epics: BOARD.epics.map((s) => ({ id: s.epicId, projectId: 'p1', number: s.number, slug: s.slug, title: s.title, description: '', status: s.status as 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 2, specificationCount: 0 })).map((e) => (e.id === 'e6' ? { ...e, status: 'split' as const } : e.id === 'e8' ? { ...e, parentEpicId: 'e6', splitSuffix: 'a' } : e.id === 'e9' ? { ...e, parentEpicId: 'e6', splitSuffix: 'b' } : e)), unassigned: [] };
 
 function api(over: Partial<Record<keyof ApiClient, unknown>> = {}): ApiClient {
   return { getBoard: vi.fn(async () => BOARD), listEpics: vi.fn(async () => EPICS), ...over } as unknown as ApiClient;
@@ -71,6 +73,13 @@ describe('T1584 · the Spec Journey Board', () => {
     expect(screen.getByRole('article', { name: 'Epic 6 · Parent' }).textContent).toContain('split');
     expect(screen.getByRole('article', { name: 'Epic 4 · Deep' }).textContent).toContain('running since');
     expect(screen.getByRole('article', { name: 'Epic 2 · Review' }).textContent).toContain('no execution yet');
+  });
+
+  it('a split parent card says which children it became and a child card names its parent and suffix (T1595, FR-EPB-063)', async () => {
+    await page(api());
+    expect(screen.getByRole('article', { name: 'Epic 6 · Parent' }).textContent).toContain('split into 8, 9');
+    expect(screen.getByRole('article', { name: 'Epic 8 · Parent (a)' }).textContent).toContain('child a of Epic 6');
+    expect(screen.getByRole('article', { name: 'Epic 1 · Intake' }).textContent).not.toContain('child');
   });
 
   it('shows the readiness verdict as a separate claim, with the note when no conditions are configured (FR-EPB-045)', async () => {

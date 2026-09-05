@@ -48,8 +48,12 @@ export interface EpicDetail extends EpicView {
   readonly specifications: AssignableSpecification[];
   readonly parent: EpicRecord | null;
   readonly children: EpicRecord[];
-  /** Decisions that touched this Epic: the one that created it, the last one processed for it. */
-  readonly decisions: { createdBy: string | null; lastProcessed: string | null };
+  /**
+   * Decisions that touched this Epic: the one that created it, the last one processed for it,
+   * and who decided — the recorded `decidedBy` of the split (a child's creator; for a split
+   * parent, its children's creator). Null when no decision touched the Epic (FR-EPB-063).
+   */
+  readonly decisions: { createdBy: string | null; lastProcessed: string | null; decidedBy: string | null };
 }
 
 export interface ReconcileOutcome {
@@ -223,6 +227,7 @@ export class EpicService {
     ]);
     const mine = requirements.filter((r) => r.epicId === row.id).sort((a, b) => a.reference.localeCompare(b.reference));
     const specs = specifications.filter((s) => s.epicId === row.id);
+    const children = siblings.filter((e) => e.parentEpicId === row.id);
     return {
       ...row,
       requirementCount: mine.length,
@@ -230,8 +235,12 @@ export class EpicService {
       requirements: mine,
       specifications: specs,
       parent: row.parentEpicId ? (siblings.find((e) => e.id === row.parentEpicId) ?? null) : null,
-      children: siblings.filter((e) => e.parentEpicId === row.id),
-      decisions: { createdBy: row.decisionCommentId, lastProcessed: row.lastDecisionCommentId },
+      children,
+      decisions: {
+        createdBy: row.decisionCommentId,
+        lastProcessed: row.lastDecisionCommentId,
+        decidedBy: row.decisionCommentId ? row.createdById : (children[0]?.createdById ?? null),
+      },
     };
   }
 

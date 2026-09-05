@@ -20,7 +20,7 @@ function detail(over: Partial<EpicDetail> = {}): EpicDetail {
     requirementCount: 1, specificationCount: 1,
     requirements: [{ id: 'r1', reference: 'REQ-001', status: 'active', epicId: 'e1' }],
     specifications: [{ id: 's1', projectId: 'p1', epicId: 'e1' }],
-    parent: null, children: [], decisions: { createdBy: null, lastProcessed: null },
+    parent: null, children: [], decisions: { createdBy: null, lastProcessed: null, decidedBy: null },
     ...over,
   };
 }
@@ -103,11 +103,20 @@ describe('T1578 · the Epic detail', () => {
     expect(screen.getByText(/Only the project's owner may/)).toBeDefined();
   });
 
-  it('shows parent and children with the decision that created them', async () => {
-    await page(api({ getEpic: vi.fn(async () => detail({ status: 'split', children: [detail({ id: 'e8', number: 8, title: 'Intake (a)', splitSuffix: 'a', parentEpicId: 'e1' }), detail({ id: 'e9', number: 9, title: 'Intake (b)', splitSuffix: 'b', parentEpicId: 'e1' })], decisions: { createdBy: null, lastProcessed: 'cmt_1' } })) }));
+  it('shows parent and children with the decision that created them and who decided (T1595)', async () => {
+    await page(api({ getEpic: vi.fn(async () => detail({ status: 'split', children: [detail({ id: 'e8', number: 8, title: 'Intake (a)', splitSuffix: 'a', parentEpicId: 'e1' }), detail({ id: 'e9', number: 9, title: 'Intake (b)', splitSuffix: 'b', parentEpicId: 'e1' })], decisions: { createdBy: null, lastProcessed: 'cmt_1', decidedBy: 'u_owner' } })) }));
     const split = screen.getByRole('region', { name: 'Split' });
     expect(split.textContent).toContain('split into 8, 9');
     expect(split.textContent).toContain('cmt_1');
+    expect(split.textContent).toContain('decided by u_owner');
+  });
+
+  it('a child names its parent and its suffix (T1595, FR-EPB-063)', async () => {
+    await page(api({ getEpic: vi.fn(async () => detail({ parentEpicId: 'e7', splitSuffix: 'a', parent: detail({ id: 'e7', number: 7, title: 'Whole', status: 'split' }), decisions: { createdBy: 'cmt_1', lastProcessed: null, decidedBy: 'u_owner' } })) }));
+    const split = screen.getByRole('region', { name: 'Split' });
+    expect(split.textContent).toContain('Child a of Epic 7 · Whole');
+    expect(split.textContent).toContain('decision cmt_1');
+    expect(split.textContent).toContain('by u_owner');
   });
 
   it('four states: loading, error, partial', async () => {

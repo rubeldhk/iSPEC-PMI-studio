@@ -180,6 +180,10 @@ export interface Specification {
   /** EPIC-020 (FR-ENH-006): one field, wider trigger than isOutOfDate. */
   currencyStatus?: 'current' | 'stale';
   staleReason?: string | null;
+  /** EPIC-044 (FR-EPB-025, FR-EPB-050): the Epic that owns this specification, or null for *no Epic*. */
+  epicId?: string | null;
+  epicNumber?: number | null;
+  epicTitle?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -396,7 +400,8 @@ export interface EpicDetail extends Epic {
   specifications: { id: string; projectId: string; epicId: string | null }[];
   parent: Omit<Epic, 'requirementCount' | 'specificationCount'> | null;
   children: Omit<Epic, 'requirementCount' | 'specificationCount'>[];
-  decisions: { createdBy: string | null; lastProcessed: string | null };
+  /** The decision that created it, the last one processed for it, and who decided (FR-EPB-063). */
+  decisions: { createdBy: string | null; lastProcessed: string | null; decidedBy: string | null };
 }
 
 /** A projection, never stored: derived from the Epic's governed executions (FR-EPB-001). */

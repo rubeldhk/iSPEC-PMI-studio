@@ -104,7 +104,7 @@ export function stubApi({ signedIn = true, runs = [RUN], projects = [PROJECT] }:
     // EPIC-044 T1586 — the Epic list, detail and the board answer on mount.
     listEpics: vi.fn(async () => ({ epics: [], unassigned: [] })),
     getBoard: vi.fn(async () => ({ epics: [], unbound: [], packageVersion: '0.1.0', profile: 'product', columns: ['Not started'] })),
-    getEpic: vi.fn(async () => ({ id: 'e1', projectId: PROJECT.id, number: 1, slug: 'intake', title: 'Intake', description: '', status: 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 0, specificationCount: 0, requirements: [], specifications: [], parent: null, children: [], decisions: { createdBy: null, lastProcessed: null } })),
+    getEpic: vi.fn(async () => ({ id: 'e1', projectId: PROJECT.id, number: 1, slug: 'intake', title: 'Intake', description: '', status: 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 0, specificationCount: 0, requirements: [], specifications: [], parent: null, children: [], decisions: { createdBy: null, lastProcessed: null, decidedBy: null } })),
     getEpicStage: vi.fn(async () => ({ epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Not started', missing: [], last: null, next: '/speckit-specify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' })),
     listEngines: vi.fn(async () => []),
     listSpecifications: vi.fn(async () => ({ items: [], total: 0 })),

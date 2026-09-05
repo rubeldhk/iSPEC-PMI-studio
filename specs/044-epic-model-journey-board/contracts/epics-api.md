@@ -12,7 +12,7 @@ Every route is under the `v1` prefix, workspace-scoped by the session, and answe
 |---|---|---|---|
 | `GET /v1/projects/{id}/epics` | member | — | `200` `Epic[]` in number order; `?status=active\|split\|closed` filters; each with `requirementCount`, `specificationCount` |
 | `POST /v1/projects/{id}/epics` | owner | `{ title, description? }` | `201` `Epic` — number allocated, slug derived |
-| `GET /v1/epics/{eid}` | member | — | `200` `Epic` with `requirements[]`, `specifications[]`, `children[]`, `parent?`, `decisions[]` (`FR-EPB-064`) |
+| `GET /v1/epics/{eid}` | member | — | `200` `Epic` with `requirements[]`, `specifications[]`, `children[]`, `parent?`, `decisions { createdBy, lastProcessed, decidedBy }` (`FR-EPB-063`, `FR-EPB-064`) |
 | `PATCH /v1/epics/{eid}` | owner | `{ title?, description? }` | `200` `Epic`; `number` never changes; slug follows the title |
 | `POST /v1/epics/{eid}/close` | owner | — | `200` `Epic` with `status: closed`, `closedAt`; `409 epic_not_active` for a split or closed Epic |
 | `PUT /v1/requirements/{rid}/epic` | owner | `{ epicId: string \| null }` | `200` `Requirement`; `409 epic_not_active` when the target is split or closed; `404` for another project's Epic |

@@ -11,7 +11,10 @@
  * endpoints (EPIC-009 `T113`), and the validation endpoints (EPIC-009 `T123`).
  * They extend this same controller when their epics run.
  */
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Optional, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { withEpicColumns } from '../epics/epic-columns.js';
+import type { EpicStore } from '../epics/epic.store.js';
+import { EPIC_STORE } from '../epics/epics.tokens.js';
 import { UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
 // Value imports: these classes are the DI TOKENS the module provides. The
@@ -103,6 +106,9 @@ export class SpecificationsController {
     @Inject(GenerateSpecificationService) private readonly generation: GenerationJobApi,
     @Inject(SpecificationsReadService) private readonly reads: SpecificationReadApi,
     @Inject(SpecificationSearchService) private readonly search: SpecificationSearchApi,
+    // EPIC-044 T1598 (FR-EPB-050): list rows name their Epic. Optional so the tests that
+    // build this controller by hand, and a deployment without the store, still work.
+    @Optional() @Inject(EPIC_STORE) private readonly epics?: EpicStore,
   ) {}
 
   // ------------------------------------------------------------------- jobs
@@ -181,12 +187,15 @@ export class SpecificationsController {
       });
     }
 
-    return this.reads.list(workspaceId, projectId, {
+    const page = await this.reads.list(workspaceId, projectId, {
       ...(toPositiveInt(query?.page) === undefined ? {} : { page: toPositiveInt(query.page)! }),
       ...(toPositiveInt(query?.pageSize) === undefined
         ? {}
         : { pageSize: toPositiveInt(query.pageSize)! }),
     });
+    // EPIC-044 T1598 (FR-EPB-050): each row names its Epic, or null for *no Epic*.
+    const epics = this.epics ? await this.epics.list(workspaceId, projectId) : [];
+    return { ...page, rows: withEpicColumns(page.rows as (SpecificationRecord & { epicId?: string | null })[], epics) };
   }
 
   @Get('specifications/:id')

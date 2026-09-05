@@ -58,7 +58,12 @@ beforeAll(async () => {
   emptyId = e.body.id;
   token = a.body.connectorCredential.value;
   emptyToken = e.body.connectorCredential.value;
-  await request(api).post(`/v1/projects/${projectId}/requirements`).set('Cookie', started.cookie).send({ reference: 'REQ-001', description: 'Alpha shall intake', type: 'functional', priority: 'p1' }).expect(201);
+  const r1 = await request(api).post(`/v1/projects/${projectId}/requirements`).set('Cookie', started.cookie).send({ reference: 'REQ-001', description: 'Alpha shall intake', type: 'functional', priority: 'p1' }).expect(201);
+  // EPIC-044 T1591 (FR-EPB-062): the plan is the entity's — two Epics, one requirement assigned, one unassigned.
+  await request(api).post(`/v1/projects/${projectId}/requirements`).set('Cookie', started.cookie).send({ reference: 'REQ-002', description: 'Alpha shall report', type: 'functional', priority: 'p2' }).expect(201);
+  const intake = await request(api).post(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).send({ title: 'Intake' }).expect(201);
+  await request(api).post(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).send({ title: 'Review' }).expect(201);
+  await request(api).put(`/v1/requirements/${r1.body.id}/epic`).set('Cookie', started.cookie).send({ epicId: intake.body.id }).expect(200);
   const constitution = await request(api).get(`/v1/projects/${projectId}/constitution`).set('Cookie', started.cookie).expect(200);
   projectDir = mkdtempSync(join(tmpdir(), 'pmi-dec-dir-'));
   mkdirSync(join(projectDir, '.pmi'), { recursive: true });
@@ -84,38 +89,46 @@ suite('T1507 · the decomposition read', () => {
     expect(res.body).toMatchObject({ firstRun: true, nothingToDecompose: true, epics: [], unassigned: [], openFirstRun: null });
   });
 
-  it('a first run over the composed application today: the Epic list is derived as unavailable, so the loop registers nothing and says so', async () => {
+  it('a first run over the composed application registers one specify execution per Epic of the entity (EPIC-044 T1591, FR-EPB-062)', async () => {
+    const api = started.app.getHttpServer();
+    const plan = await request(api).get(`/v1/projects/${projectId}/decomposition`).set({ Authorization: `Bearer ${token}`, ...VERSION }).expect(200);
+    expect(plan.body.epicSource).toBe('epic.entity');
+    expect((plan.body.epics as { number: number; slug: string; requirements: { reference: string }[] }[]).map((e) => [e.number, e.slug, e.requirements.map((r) => r.reference)])).toEqual([
+      [1, 'intake', ['REQ-001']],
+      [2, 'review', []],
+    ]);
+    expect((plan.body.unassigned as { reference: string }[]).map((r) => r.reference)).toEqual(['REQ-002']);
     const m = await mcp(token);
     try {
       const result = await runFirstRun(m.client, projectDir, { estimate: () => 10, decide: () => ({ decision: 'confirmed' }), runStock: async () => undefined, decidedBy: 'test' });
       expect(result.firstRun).toBe(true);
-      expect(result.executions).toEqual([]);
-      expect(result.lines.at(-1)).toMatch(/^PMI · first run: 0 specifications, 0 splits \(decomposition policy v\d+\)$/);
+      // One registered and completed specify per Epic — the stub-proved loop of EPIC-042
+      // (closure assumption 8), now against real Epics.
+      expect(result.executions).toHaveLength(2);
+      expect(result.lines.at(-1)).toMatch(/^PMI · first run: 2 specifications, 0 splits \(decomposition policy v\d+\)$/);
       expect(existsSync(join(projectDir, '.pmi', 'first-run'))).toBe(false);
     } finally {
       await m.close();
     }
-  });
+  }, 120_000);
 
-  it('firstRun flips to false once a specify execution completes (FR-EXT-046, FR-EXT-047)', async () => {
+  it('firstRun is false once specify executions completed, and a later specify is a single-Epic run (FR-EXT-046, FR-EXT-047)', async () => {
     const api = started.app.getHttpServer();
-    const before = await request(api).get(`/v1/projects/${projectId}/decomposition`).set({ Authorization: `Bearer ${token}`, ...VERSION }).expect(200);
-    expect(before.body.firstRun).toBe(true);
+    const after = await request(api).get(`/v1/projects/${projectId}/decomposition`).set({ Authorization: `Bearer ${token}`, ...VERSION }).expect(200);
+    expect(after.body.firstRun).toBe(false);
+    expect(after.body.unassigned.map((r: { reference: string }) => r.reference)).toEqual(['REQ-002']);
     const m = await mcp(token);
     try {
+      const plan = await m.client.callTool({ name: 'pmi.project.decompose', arguments: {} });
+      expect((plan.structuredContent as { firstRun: boolean }).firstRun).toBe(false);
       const begun = await runBegin(m.client, projectDir, { command: 'specify', epic: '1', epicDir: 'specs/001-intake' });
       expect(begun.executionId).toMatch(/\S/);
       mkdirSync(join(projectDir, 'specs', '001-intake'), { recursive: true });
       writeFileSync(join(projectDir, 'specs', '001-intake', 'spec.md'), '# Intake\n');
       const finished = await runFinish(m.client, projectDir, 'specs/001-intake');
       expect(finished.outcome).toBe('completed');
-      const plan = await m.client.callTool({ name: 'pmi.project.decompose', arguments: {} });
-      expect((plan.structuredContent as { firstRun: boolean }).firstRun).toBe(false);
     } finally {
       await m.close();
     }
-    const after = await request(api).get(`/v1/projects/${projectId}/decomposition`).set({ Authorization: `Bearer ${token}`, ...VERSION }).expect(200);
-    expect(after.body.firstRun).toBe(false);
-    expect(after.body.unassigned.map((r: { reference: string }) => r.reference)).toEqual(['REQ-001']);
   });
 });

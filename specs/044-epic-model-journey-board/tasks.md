@@ -149,21 +149,21 @@ once; children's executions resolve to them.
 **Independent Test**: spec.md `US4` — three Epics through the harness, one confirmed split, five
 Epics on the board with the parent *split*.
 
-- [ ] T1591 [P] [US4] Extend `backend/tests/integration/decomposition-read.spec.ts` with failing expectations — with Epics and assigned requirements, `GET /v1/projects/me/decomposition` returns the entity's bundles (retired requirements excluded), unassigned requirements separately and `epicSource: 'epic.entity'`; `runFirstRun` over the composed application registers **one `specify` execution per Epic** (replacing the *registers nothing* assertion `EPIC-042` recorded)
-- [ ] T1592 [US4] Route `DecompositionPlanService` (`backend/src/modules/governance/decomposition-plan.service.ts`) through the entity-backed `requirementsByEpic` with no shape change, so T1591 passes (integration test: T1591)
-- [ ] T1593 [P] [US4] Write the failing integration test `backend/tests/integration/decision-reconcile.spec.ts` — `runFirstRun` with a confirmed split through the real server records the `decomposition-decision` comment; the next Epic-list read creates two children with the next free numbers, the recorded slugs, the moved requirements, the parent link and the parent marked `split`; a second read creates nothing; executions bound as `7a` and `7b` resolve to the children on the board; a rejected decision creates nothing (`SC-EPB-006`)
-- [ ] T1594 [US4] Wire `reconcileDecisions` into the list, board and stage reads in `backend/src/modules/epics/epics.controller.ts` and the suffix binding in `backend/src/modules/epics/epic-stage.service.ts` so T1593 passes (integration test: T1593)
-- [ ] T1595 [P] [US4] Extend `frontend/tests/unit/pages/epic-detail.spec.tsx` and `frontend/tests/unit/pages/journey-board.spec.tsx` with failing expectations — a split parent shows *split into 8, 9*, its decision and who decided; a child shows its parent and suffix; the parent's card says *split into …*
-- [ ] T1596 [US4] Implement the split and child presentation in `frontend/src/pages/EpicDetail.tsx` and `frontend/src/pages/JourneyBoard.tsx` (unit test: T1595)
+- [X] T1591 [P] [US4] Extend `backend/tests/integration/decomposition-read.spec.ts` with failing expectations — with Epics and assigned requirements, `GET /v1/projects/me/decomposition` returns the entity's bundles (retired requirements excluded), unassigned requirements separately and `epicSource: 'epic.entity'`; `runFirstRun` over the composed application registers **one `specify` execution per Epic** (replacing the *registers nothing* assertion `EPIC-042` recorded)
+- [X] T1592 [US4] Route `DecompositionPlanService` (`backend/src/modules/governance/decomposition-plan.service.ts`) through the entity-backed `requirementsByEpic` with no shape change, so T1591 passes (integration test: T1591)
+- [X] T1593 [P] [US4] Write the failing integration test `backend/tests/integration/decision-reconcile.spec.ts` — `runFirstRun` with a confirmed split through the real server records the `decomposition-decision` comment; the next Epic-list read creates two children with the next free numbers, the recorded slugs, the moved requirements, the parent link and the parent marked `split`; a second read creates nothing; executions bound as `7a` and `7b` resolve to the children on the board; a rejected decision creates nothing (`SC-EPB-006`)
+- [X] T1594 [US4] Wire `reconcileDecisions` into the list, board and stage reads in `backend/src/modules/epics/epics.controller.ts` and the suffix binding in `backend/src/modules/epics/epic-stage.service.ts` so T1593 passes (integration test: T1593)
+- [X] T1595 [P] [US4] Extend `frontend/tests/unit/pages/epic-detail.spec.tsx` and `frontend/tests/unit/pages/journey-board.spec.tsx` with failing expectations — a split parent shows *split into 8, 9*, its decision and who decided; a child shows its parent and suffix; the parent's card says *split into …*
+- [X] T1596 [US4] Implement the split and child presentation in `frontend/src/pages/EpicDetail.tsx` and `frontend/src/pages/JourneyBoard.tsx` (unit test: T1595)
 
 ---
 
 ## Phase 7: User Story 5 — The specification list tells me which Epic and which stage (P3) — F-044.7
 
-- [ ] T1597 [P] [US5] Write failing unit tests `backend/tests/unit/specifications/specification-epic.spec.ts` — listed specifications carry `epicId`, `epicNumber`, `epicTitle` (null when unbound); a specification created by an execution bound to Epic 2 is bound to Epic 2; `PUT /v1/specifications/{sid}/epic` assigns and unassigns under the owner gate
-- [ ] T1598 [US5] Implement the specification binding — the list projection in the specifications module, the binding on creation from the execution's target, and the route in `backend/src/modules/epics/epics.controller.ts` (unit test: T1597)
-- [ ] T1599 [P] [US5] Extend `frontend/tests/unit/pages/specification-list.spec.tsx` with failing expectations — **Epic** and **Stage** columns, both filterable; *no Epic* with an empty stage for an unbound specification; an owner assigns it from the row
-- [ ] T1600 [US5] Implement the two columns in `frontend/src/pages/SpecificationList.tsx` from the extended list response and the board read (unit test: T1599)
+- [X] T1597 [P] [US5] Write failing unit tests `backend/tests/unit/specifications/specification-epic.spec.ts` — listed specifications carry `epicId`, `epicNumber`, `epicTitle` (null when unbound); a specification created by an execution bound to Epic 2 is bound to Epic 2; `PUT /v1/specifications/{sid}/epic` assigns and unassigns under the owner gate
+- [X] T1598 [US5] Implement the specification binding — the list projection in the specifications module, the binding on creation from the execution's target, and the route in `backend/src/modules/epics/epics.controller.ts` (unit test: T1597)
+- [X] T1599 [P] [US5] Extend `frontend/tests/unit/pages/specification-list.spec.tsx` with failing expectations — **Epic** and **Stage** columns, both filterable; *no Epic* with an empty stage for an unbound specification; an owner assigns it from the row
+- [X] T1600 [US5] Implement the two columns in `frontend/src/pages/SpecificationList.tsx` from the extended list response and the board read (unit test: T1599)
 
 ---
 

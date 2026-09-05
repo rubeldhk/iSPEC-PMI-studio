@@ -72,9 +72,10 @@ describe('T1049 · a comment is written and announced as an event', () => {
     ).rejects.toThrow(RegistryRefusedError);
   });
 
-  it('names five comment types, completion among them', () => {
+  it('names six comment types, completion and the decomposition decision among them (EPIC-044 DEF-044-002)', () => {
+    expect(COMMENT_TYPES).toContain('decomposition-decision');
     expect(COMMENT_TYPES).toContain('completion');
-    expect(COMMENT_TYPES).toHaveLength(5);
+    expect(COMMENT_TYPES).toHaveLength(6);
   });
 });
 

@@ -68,6 +68,19 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
   const needle = titleFilter.trim().toLowerCase();
   const visible = (board?.epics ?? []).filter((c) => (needle === '' || c.title.toLowerCase().includes(needle) || String(c.number).includes(needle)) && (stageFilter === '' || c.stage === stageFilter));
   const countOf = (epicId: string): number | null => epics?.find((e) => e.id === epicId)?.requirementCount ?? null;
+  /** FR-EPB-063: a split parent names the children it became; a child names its parent and suffix. */
+  const splitLine = (card: EpicStage): string | null => {
+    const me = epics?.find((e) => e.id === card.epicId);
+    if (card.status === 'split') {
+      const children = (epics ?? []).filter((e) => e.parentEpicId === card.epicId).map((e) => e.number).sort((a, b) => a - b);
+      return children.length > 0 ? `split into ${children.join(', ')}` : 'split';
+    }
+    if (me?.parentEpicId) {
+      const parent = epics?.find((e) => e.id === me.parentEpicId);
+      return `child ${me.splitSuffix ?? ''} of Epic ${parent?.number ?? '?'}`;
+    }
+    return null;
+  };
 
   return (
     <section className="ds-stack">
@@ -138,7 +151,8 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
                           {c.readiness.failing.length > 0 ? ` (${c.readiness.failing.join(', ')})` : ''}
                         </p>
                       )}
-                      {c.status !== 'active' && <p className="ds-field__hint">{c.status}</p>}
+                      {c.status !== 'active' && c.status !== 'split' && <p className="ds-field__hint">{c.status}</p>}
+                      {splitLine(c) !== null && <p className="ds-field__hint">{splitLine(c)}</p>}
                       <Button type="button" variant="ghost" onClick={(): void => onOpenEpic(c.epicId)}>
                         Open Epic {c.number}
                       </Button>
