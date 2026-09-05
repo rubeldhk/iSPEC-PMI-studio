@@ -63,3 +63,6 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | Epic | Finding | Severity |
 |---|---|---|
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
+
+
+*Stages derived by `@pmi/epic-stage` v0.1.0.*

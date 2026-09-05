@@ -135,3 +135,16 @@ constitution a new project directory receives is rendered at provisioning from t
 constraints and policy (defaults: one spec per Epic, ceiling 50, splits confirmed, offline mode
 strict). The bundle version written into `.pmi/project.json` is `0.2.0`; a workstation that still
 runs the 0.1 hand-off skill is told so by `/setup-PMIStudio`'s row 5 and re-copies the extension.
+
+**EPIC-044 — Epics and the Spec Journey Board.** Nothing new to configure and no new variable.
+One migration adds the `epics` table and a nullable `epicId` on requirements and specifications
+(`20260905120000_epic044_epics`), and a second widens the execution-comment vocabulary so the
+decomposition decision the hooks record is admitted (`20260905130000_epic044_decision_comment_type`,
+`DEF-044-002`) — both run with `prisma migrate deploy` like every other. The board's stages are a
+projection over the execution registry: a project whose executions were never registered shows
+every Epic at *Not started* with `/speckit-specify` next, which is the truth, not a fault. The
+derivation package version the board's footer and `governance/epic-stage-register.md` name is
+`@pmi/epic-stage`'s `package.json` version; a mismatch between the two files is a deployment that
+shipped one and not the other. Decomposition decisions are reconciled on read (an Epic-list, board
+or stage read), so a confirmed split appears the next time anyone opens the list or the board — no
+worker is involved.

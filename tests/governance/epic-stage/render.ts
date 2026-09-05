@@ -13,6 +13,7 @@
  *
  * Not a `.spec.ts`, so vitest never collects it.
  */
+import { packageVersion } from '@pmi/epic-stage';
 
 /** The em dash is the SOLE empty marker. Never blank, never `N/A`, never `null`. */
 const EMPTY = '—';
@@ -194,6 +195,11 @@ export function renderRegister(
     '',
     ...renderFindings([...findings].sort((a, b) => a.epic.localeCompare(b.epic))),
     ...renderWaivers([...waivers].sort((a, b) => a.epic.localeCompare(b.epic))),
+    '',
+    // EPIC-044 T1612 (FR-EPB-012): the register and the product board derive stages with the
+    // same package; the footer names its version, read from the package, so the two readers
+    // cannot drift apart unseen. The one intended change to this file after the extraction.
+    `*Stages derived by \`@pmi/epic-stage\` v${packageVersion()}.*`,
   ];
 
   // Exactly one trailing newline. Varying trailing whitespace fails an

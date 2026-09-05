@@ -181,8 +181,34 @@ reservation until `EPIC-037`'s intake ships.
 **The first run.** The first `/speckit-specify` in a project (marker `.pmi/first-run`) reads the
 decomposition plan, estimates each Epic before writing anything, proposes a split above the task
 ceiling for a person to confirm, and runs the stock specify flow once per Epic as its own
-execution. Until `EPIC-044` makes Epic a product entity the platform derives no Epics, so today's
-first run has nothing to decompose beyond the unassigned bundle, and says so.
+execution. Since `EPIC-044` the plan is the project's own Epics (below): one specify per Epic,
+requirements assigned to none listed separately, and a confirmed split becomes child Epics.
+
+### Epics and the Spec Journey Board (EPIC-044)
+
+**Epic is a product entity.** Under **Requirement Room → Epics** the project owner creates an Epic
+(the platform allocates its number, never reused; the slug follows the title), edits its title and
+description, closes it, and assigns requirements to it from the Epic's own screen or from the
+requirement list; the specification list names each specification's Epic the same way. A member
+reads everything; only the owner writes. Nothing here has a stage field: a **stage is derived from
+the project's governed executions**, never stored and never typed — the *Specified* card is the
+completed `specify` execution bound to the Epic, and so on through the product profile up to
+*Converged*.
+
+**The Spec Journey Board** (**Specifications → Board**) shows one card per Epic in the column of its
+derived stage, with the last command (a link to the timeline), the next command or why there is
+none, the readiness verdict as a separate claim (*no readiness conditions configured* until a
+project configures some), running executions, executions bound to no Epic, a split parent with the
+children it became, and a footer naming the derivation package version. There is no manual refresh
+and no control that sets a stage.
+
+**One rule, two readers.** The derivation lives in `packages/epic-stage` (`@pmi/epic-stage`, no
+runtime dependencies): the contiguity rule, the readiness resolver, the file-tree adapter the
+repository's own `governance/epic-stage-register.md` uses, and the execution adapter the board
+uses. Its configuration `packages/epic-stage/epic-stage.config.json` is mirrored byte-for-byte as
+`governance/epic-stage.config.json` (`G-44-01`); an architecture check keeps the package free of
+backend imports and the Epic module free of command-name literals. The register's footer names the
+same package version the board shows, so the two cannot silently drift apart.
 
 ## Tests
 
@@ -212,7 +238,7 @@ deferred to `EPIC-015`), and the two container-backed integration specs compete 
 | `backend/` | The API — NestJS as a transport over framework-free services |
 | `frontend/` | The web client |
 | `worker/` | Job execution, and the composition root where concrete engines and agents are named |
-| `packages/` | Contracts shared across the boundary: engine, agent, execution, loop, room |
+| `packages/` | Contracts shared across the boundary: engine, agent, execution, loop, room; the `pmi-studio` server, the workspace bundle and the stage derivation (`epic-stage`) |
 | `engine-adapters/`, `agent-adapters/`, `execution-providers/` | Implementations, never imported by `backend/` |
 | `specs/` | One directory per Epic: specification, plan, tasks, analysis, defects, closure |
 | `governance/` | The repository's rules, and the generated Epic stage register |

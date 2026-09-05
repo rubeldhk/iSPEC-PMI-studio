@@ -16,6 +16,7 @@
  * multi-line diff, which is the same failure wearing a different hat.
  */
 import { describe, expect, it } from 'vitest';
+import { packageVersion } from '@pmi/epic-stage';
 import { renderRegister, type Finding, type StageRow, type Waiver } from './render';
 
 const ROWS: StageRow[] = [
@@ -168,5 +169,14 @@ describe('T478 · RF-6 · nothing that is not derived', () => {
     expect(text).not.toMatch(/\bM-\d\d\b/);
     expect(text).not.toMatch(/\btasks?\b/i);
     expect(text).not.toMatch(/\bmodule\b/i);
+  });
+});
+
+describe('T1612 · the footer names the derivation package (EPIC-044, FR-EPB-012)', () => {
+  it('ends with "derived by @pmi/epic-stage v<version>", the version read from the package, not typed', () => {
+    const text = render();
+    const version = packageVersion();
+    expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(text.trimEnd().split('\n').at(-1)).toBe(`*Stages derived by \`@pmi/epic-stage\` v${version}.*`);
   });
 });
