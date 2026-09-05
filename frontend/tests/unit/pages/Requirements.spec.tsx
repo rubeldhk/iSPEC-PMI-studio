@@ -105,3 +105,19 @@ describe('RequirementsPage · filter behaviour (FR-008)', () => {
     expect(await screen.findByText(/no requirements/i)).toBeDefined();
   });
 });
+
+describe('T1580 · requirement rows name their Epic (EPIC-044, FR-EPB-023, FR-EPB-024)', () => {
+  it('shows Epic <number> · <title> for an assigned requirement and unassigned for the rest', async () => {
+    const api = {
+      listRequirements: vi.fn(async () => [
+        requirement({ id: 'r1', reference: 'REQ-001', epicId: 'e2', epicNumber: 2, epicTitle: 'Review' }),
+        requirement({ id: 'r2', reference: 'REQ-002', epicId: null, epicNumber: null, epicTitle: null }),
+      ]),
+    } as unknown as ApiClient;
+    render(<RequirementsPage api={api} projectId="p1" />);
+    const rows = await screen.findAllByRole('row');
+    expect(rows[0]?.textContent).toContain('Epic');
+    expect(rows[1]?.textContent).toContain('Epic 2 · Review');
+    expect(rows[2]?.textContent).toContain('unassigned');
+  });
+});

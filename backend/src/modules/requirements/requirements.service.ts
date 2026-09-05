@@ -42,6 +42,8 @@ export interface RequirementRecord {
   retiredAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  /** EPIC-044 T1573 (FR-EPB-023): at most one Epic; null (or absent on older rows) is *unassigned*. */
+  epicId?: string | null;
 }
 
 export interface ActingContext {

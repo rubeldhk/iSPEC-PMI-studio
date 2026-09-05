@@ -33,6 +33,8 @@ import { SpecificationView } from '../pages/Specification';
 import { StorageConnectionsPage } from '../pages/StorageConnections';
 import { ConnectorCredentialsPage } from '../pages/ConnectorCredentials';
 import { ConstraintsPage } from '../pages/Constraints';
+import { EpicListPage } from '../pages/EpicList';
+import { EpicDetailPage } from '../pages/EpicDetail';
 import { AccessGrants } from '../components/AccessGrants';
 import { TasksPage } from '../pages/Tasks';
 import { TraceabilityPage } from '../pages/Traceability';
@@ -339,6 +341,47 @@ export function RequirementIntakeView(): ReactElement {
         </MainLandmark>
       )}
     </RequireProject>
+  );
+}
+
+/** EPIC-044 `T1577` — the Epic list inside the Requirement Room (`FR-EPB-041`). */
+export function EpicListView(): ReactElement {
+  const { api, identity } = useShell();
+  const navigate = useNavigate();
+  return (
+    <RequireProject>
+      {(projectId): ReactElement => (
+        <MainLandmark>
+          <EpicListPage
+            api={api}
+            projectId={projectId}
+            currentUserId={identity?.user.id}
+            onOpen={(epicId): void => {
+              void navigate(`/requirement-room/epics/${encodeURIComponent(epicId)}`);
+            }}
+          />
+        </MainLandmark>
+      )}
+    </RequireProject>
+  );
+}
+
+/** EPIC-044 `T1579` — one Epic: requirements, specifications, the derived stage. */
+export function EpicDetailView(): ReactElement {
+  const { api, identity } = useShell();
+  const navigate = useNavigate();
+  const { epicId = '' } = useParams();
+  return (
+    <MainLandmark>
+      <EpicDetailPage
+        api={api}
+        epicId={epicId}
+        currentUserId={identity?.user.id}
+        onOpenTimeline={(projectId): void => {
+          void navigate(`/projects/${encodeURIComponent(projectId)}`);
+        }}
+      />
+    </MainLandmark>
   );
 }
 

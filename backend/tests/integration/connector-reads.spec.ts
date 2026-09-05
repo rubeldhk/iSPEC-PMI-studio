@@ -81,7 +81,7 @@ suite('T1446 · Scenario 9 — the reads, this project only', () => {
   it('context over REST and over MCP agree, and name the derivation of the Epic list', async () => {
     const api = started.app.getHttpServer();
     const rest = await request(api).get(`/v1/projects/${projectA}/context`).set({ Authorization: `Bearer ${tokenA}`, ...VERSION }).expect(200);
-    expect(rest.body).toMatchObject({ projectId: projectA, name: 'Alpha', scriptType: 'ps', platformUrl: 'http://localhost:3000', contractVersion: CONTRACT_VERSION, epics: [], epicSource: 'unavailable-until-EPIC-044' });
+    expect(rest.body).toMatchObject({ projectId: projectA, name: 'Alpha', scriptType: 'ps', platformUrl: 'http://localhost:3000', contractVersion: CONTRACT_VERSION, epics: [], epicSource: 'epic.entity' });
     const m = await mcp(tokenA);
     try {
       const result = await m.client.callTool({ name: 'pmi.project.context', arguments: {} });
@@ -95,7 +95,7 @@ suite('T1446 · Scenario 9 — the reads, this project only', () => {
   it('requirements grouped by Epic: every active requirement once under unassigned, this project only', async () => {
     const api = started.app.getHttpServer();
     const rest = await request(api).get(`/v1/projects/${projectA}/requirements?groupBy=epic`).set({ Authorization: `Bearer ${tokenA}`, ...VERSION }).expect(200);
-    expect(rest.body.epicSource).toBe('unavailable-until-EPIC-044');
+    expect(rest.body.epicSource).toBe('epic.entity'); // EPIC-044 T1574: the entity replaced the derivation (FR-EPB-061)
     const refs = (rest.body.groups as { epic: string; requirements: { reference: string }[] }[]).flatMap((g) => g.requirements.map((r) => `${g.epic}:${r.reference}`));
     expect(refs.sort()).toEqual(['unassigned:REQ-001', 'unassigned:REQ-002']);
     await request(api).get(`/v1/projects/${projectA}/requirements?groupBy=type`).set({ Authorization: `Bearer ${tokenA}`, ...VERSION }).expect(400);
@@ -154,5 +154,41 @@ suite('T1446 · Scenario 2 — health records the workstation', () => {
     expect(rows.body).toHaveLength(1);
     expect(rows.body[0]).toMatchObject({ credentialState: 'active', extensionVersion: '0.1.0', toolkitVersion: 'v0.16.4', contractVersion: CONTRACT_VERSION });
     await request(api).get(`/v1/projects/${projectB}/workstation-connections`).set('Cookie', started.cookie).expect(200).expect([]);
+  });
+});
+
+suite('T1574 · the reads return the Epic entity (EPIC-044, FR-EPB-060–FR-EPB-062)', () => {
+  it('context lists the project\'s Epics from the entity; requirements group by Epic in number order plus unassigned; project B sees none', async () => {
+    const api = started.app.getHttpServer();
+    const intake = await request(api).post(`/v1/projects/${projectA}/epics`).set('Cookie', started.cookie).send({ title: 'Intake' }).expect(201);
+    const review = await request(api).post(`/v1/projects/${projectA}/epics`).set('Cookie', started.cookie).send({ title: 'Review' }).expect(201);
+    const requirements = await request(api).get(`/v1/projects/${projectA}/requirements`).set('Cookie', started.cookie).expect(200);
+    const byRef = Object.fromEntries((requirements.body as { reference: string; id: string }[]).map((r) => [r.reference, r.id]));
+    await request(api).put(`/v1/requirements/${byRef['REQ-002']}/epic`).set('Cookie', started.cookie).send({ epicId: review.body.id }).expect(200);
+
+    const context = await request(api).get(`/v1/projects/${projectA}/context`).set({ Authorization: `Bearer ${tokenA}`, ...VERSION }).expect(200);
+    expect(context.body.epicSource).toBe('epic.entity');
+    expect(context.body.epics).toEqual([
+      { number: 1, slug: 'intake', name: 'Intake' },
+      { number: 2, slug: 'review', name: 'Review' },
+    ]);
+    const grouped = await request(api).get(`/v1/projects/${projectA}/requirements?groupBy=epic`).set({ Authorization: `Bearer ${tokenA}`, ...VERSION }).expect(200);
+    expect(grouped.body.epicSource).toBe('epic.entity');
+    const groups = grouped.body.groups as { epic: { number: number } | 'unassigned'; requirements: { reference: string }[] }[];
+    expect(groups.map((g) => [typeof g.epic === 'string' ? g.epic : g.epic.number, g.requirements.map((r) => r.reference)])).toEqual([
+      [1, []],
+      [2, ['REQ-002']],
+      ['unassigned', ['REQ-001']],
+    ]);
+    const m = await mcp(tokenA);
+    try {
+      const result = await m.client.callTool({ name: 'pmi.project.context', arguments: {} });
+      expect((result.structuredContent as { epics: unknown[] }).epics).toEqual(context.body.epics);
+    } finally {
+      await m.close();
+    }
+    const other = await request(api).get(`/v1/projects/${projectB}/context`).set({ Authorization: `Bearer ${tokenB}`, ...VERSION }).expect(200);
+    expect(other.body.epics).toEqual([]);
+    expect(intake.body.number).toBe(1);
   });
 });

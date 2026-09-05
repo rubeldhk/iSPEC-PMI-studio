@@ -72,6 +72,9 @@ function clientBuildPath(): string {
           : new UnconfiguredUserDirectory(),
     }),
     AuditModule,
+    // EPIC-044 DEF-044-001 — registered before every module that pulls ConnectorModule in, so the
+    // session route for `projects/:projectId/requirements` owns the path and dispatches bearer callers.
+    RequirementsModule,
     EnginesModule,
     JobsModule,
     ProjectsModule,
@@ -81,7 +84,6 @@ function clientBuildPath(): string {
     GovernanceModule,
     // EPIC-044 T1571 — Epics: the entity, assignment, the derived stage and the board reads.
     EpicsModule,
-    RequirementsModule,
     SpecificationsModule,
     TasksModule,
     SteeringModule,

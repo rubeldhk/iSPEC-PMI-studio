@@ -23,6 +23,8 @@ import { reachableAreas } from './areas';
 import {
   ChangeRoomView,
   DefectRoomView,
+  EpicDetailView,
+  EpicListView,
   ProjectDetailView,
   RequirementIntakeView,
   RequirementRoomView,
@@ -46,6 +48,10 @@ export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[]
   // `T1169` — before the `:roomObjectId` route, so the literal segment is not
   // read as a room id.
   { path: '/requirement-room/intake', element: RequirementIntakeView },
+  // EPIC-044 `T1587` — Epics live in the Requirement Room (`FR-EPB-041`); before the
+  // `:roomObjectId` route for the same reason `intake` is.
+  { path: '/requirement-room/epics', element: EpicListView },
+  { path: '/requirement-room/epics/:epicId', element: EpicDetailView },
   { path: '/requirement-room/:roomObjectId', element: RequirementRoomView },
   // `T994s` - the Change Room. Its area is still `declared-not-delivered`
   // (no index yet), and `routes.spec.tsx` only forbids routing an

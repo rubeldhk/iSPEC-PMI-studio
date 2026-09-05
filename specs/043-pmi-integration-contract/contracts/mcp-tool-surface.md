@@ -84,3 +84,9 @@ validated even while the content is absent.
 | `PMI_STUDIO_TOKEN` | the connector credential, from the user's environment only; empty → every tool refuses `invalid_connector_credential` and `pmi.health` says `credential_absent` in its detail |
 
 The server reads **no file** under the project directory (`FR-PIC-007`).
+
+*Amended 2026-09-05 (`EPIC-044` `T1575`, `FR-EPB-060`–`FR-EPB-062`): `pmi.project.context`'s
+`epics` and `pmi.requirements.list`'s groups now come from the Epic entity, and both reads state
+`epicSource: 'epic.entity'` (the derivation `EPIC-043` shipped answered
+`'unavailable-until-EPIC-044'`). The shapes are unchanged (`FR-PIC-043`); closed Epics are omitted
+from `epics`, and a requirement whose Epic is closed is listed under `unassigned` for the first run.*

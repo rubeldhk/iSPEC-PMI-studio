@@ -9,6 +9,7 @@
  */
 import { prismaClient } from '../../persistence/prisma.js';
 import { Module } from '@nestjs/common';
+import { EpicStoresModule } from '../epics/epic-stores.module.js';
 import { EditAuthorityRegistry } from './edit-authority.js';
 import { RequirementRetireService } from './requirement-retire.service.js';
 import {
@@ -29,6 +30,8 @@ export const REQUIREMENT_STORE = Symbol('REQUIREMENT_STORE');
 export const REQUIREMENT_VERSION_STORE = Symbol('REQUIREMENT_VERSION_STORE');
 
 @Module({
+  // EPIC-044 T1573 — the requirement rows name their Epic through the stores-only module (R-044-7).
+  imports: [EpicStoresModule],
   controllers: [RequirementsController],
   providers: [
     {

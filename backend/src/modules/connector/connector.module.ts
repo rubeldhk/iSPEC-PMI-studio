@@ -46,12 +46,15 @@ import { API_VERSION, CONNECTOR_CREDENTIAL_STORE, WORKSTATION_CONNECTION_STORE }
 import { GovernanceStoresModule } from '../governance/governance-stores.module.js';
 import { CONSTITUTION_RENDER_STORE } from '../governance/governance.tokens.js';
 import { classifyOnDiskDigest } from '../governance/constitution-render.service.js';
+import { EpicStoresModule } from '../epics/epic-stores.module.js';
+import { EPIC_STORE } from '../epics/epics.tokens.js';
+import type { EpicStore } from '../epics/epic.store.js';
 import type { ConstitutionRenderStore } from '../governance/constitution-render.store.js';
 
 export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
 
 @Module({
-  imports: [forwardRef(() => ProjectsModule), AgentsModule, AuditModule, AccessModule, RequirementsModule, GovernanceStoresModule],
+  imports: [forwardRef(() => ProjectsModule), AgentsModule, AuditModule, AccessModule, RequirementsModule, GovernanceStoresModule, EpicStoresModule],
   controllers: [ProjectConnectorCredentialsController, ConnectorCredentialsController, ConnectorController, ConnectorReadsController, WorkstationConnectionsController],
   providers: [
     {
@@ -143,11 +146,13 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
     {
       // EPIC-043 T1445 (R-043-9) — the reads a local agent needs to begin.
       provide: ProjectContextService,
-      inject: [ProjectsService, RequirementsService, AuditService],
-      useFactory: (projects: ProjectsService, requirements: RequirementsService, audit: AuditService): ProjectContextService =>
+      inject: [ProjectsService, RequirementsService, AuditService, EPIC_STORE],
+      useFactory: (projects: ProjectsService, requirements: RequirementsService, audit: AuditService, epics: EpicStore): ProjectContextService =>
         new ProjectContextService({
           projects,
           requirements,
+          // EPIC-044 T1575 (FR-EPB-060, FR-EPB-061): the Epic list and the grouping come from the entity.
+          epics,
           bundleVersion: BUNDLE_VERSION,
           contractVersion: CONTRACT_VERSION,
           publicUrl: readProjectsRootConfig(process.env).publicUrl,

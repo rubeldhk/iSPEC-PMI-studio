@@ -112,6 +112,8 @@ export function RequirementsPage({ api, projectId, onEdit }: RequirementsPagePro
                 <th scope="col">Type</th>
                 <th scope="col">Priority</th>
                 <th scope="col">Status</th>
+                {/* EPIC-044 T1581 (FR-EPB-023, FR-EPB-024): the Epic, or unassigned — never blank. */}
+                <th scope="col">Epic</th>
               </tr>
             </thead>
             <tbody>
@@ -137,6 +139,7 @@ export function RequirementsPage({ api, projectId, onEdit }: RequirementsPagePro
                       <StatusPill tone="success">active</StatusPill>
                     )}
                   </td>
+                  <td>{requirement.epicNumber != null ? `Epic ${requirement.epicNumber} · ${requirement.epicTitle ?? ""}` : "unassigned"}</td>
                 </tr>
               ))}
             </tbody>

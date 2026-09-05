@@ -111,6 +111,10 @@ export interface Requirement {
   retiredAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** EPIC-044 (FR-EPB-023): the Epic this requirement belongs to, or null for *unassigned*. */
+  epicId?: string | null;
+  epicNumber?: number | null;
+  epicTitle?: string | null;
 }
 
 export interface RequirementVersion {
@@ -351,6 +355,72 @@ export interface WorkstationConnection {
 
 export type ConstraintKind = 'principle' | 'constraint' | 'non_goal';
 export type ConstitutionState = 'current' | 'stale' | 'drift' | 'missing';
+
+// ---- EPIC-044 — Epics and the derived stage (specs/044-epic-model-journey-board/contracts/epics-api.md) ----
+
+export type EpicStatus = 'active' | 'split' | 'closed';
+
+export interface Epic {
+  id: string;
+  projectId: string;
+  /** Allocated by the platform, unique per project, never reused. */
+  number: number;
+  slug: string;
+  title: string;
+  description: string;
+  status: EpicStatus;
+  parentEpicId: string | null;
+  splitSuffix: string | null;
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+  requirementCount: number;
+  specificationCount: number;
+}
+
+export interface EpicRequirementRef {
+  id: string;
+  reference: string;
+  status: string;
+  epicId: string | null;
+}
+
+export interface EpicList {
+  epics: Epic[];
+  /** Requirements with no Epic — listed, never omitted (FR-EPB-024). */
+  unassigned: EpicRequirementRef[];
+}
+
+export interface EpicDetail extends Epic {
+  requirements: EpicRequirementRef[];
+  specifications: { id: string; projectId: string; epicId: string | null }[];
+  parent: Omit<Epic, 'requirementCount' | 'specificationCount'> | null;
+  children: Omit<Epic, 'requirementCount' | 'specificationCount'>[];
+  decisions: { createdBy: string | null; lastProcessed: string | null };
+}
+
+/** A projection, never stored: derived from the Epic's governed executions (FR-EPB-001). */
+export interface EpicStage {
+  epicId: string;
+  number: number;
+  slug: string;
+  title: string;
+  status: string;
+  stage: string;
+  missing: string[];
+  last: { executionId: string; command: string; outcome: string; at: string } | null;
+  next: string | null;
+  readiness: { verdict: 'Ready' | 'Not ready' | 'n/a'; note?: string; failing: string[] };
+  running: { executionId: string; since: string } | null;
+  derivedFrom: 'executions';
+}
+
+export interface BoardRead {
+  epics: EpicStage[];
+  unbound: { executionId: string; command: string; targetId: string; registeredAt: string }[];
+  packageVersion: string;
+  profile: 'product';
+}
 
 export interface ProjectConstraint {
   id: string;
@@ -820,6 +890,45 @@ export class ApiClient {
 
   async getConstitution(projectId: string): Promise<ConstitutionRender> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/constitution`);
+  }
+
+  // ---- epics and the Spec Journey Board (EPIC-044) ----
+
+  async listEpics(projectId: string, status?: EpicStatus): Promise<EpicList> {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/epics${query}`);
+  }
+
+  async createEpic(projectId: string, input: { title: string; description?: string }): Promise<Epic> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/epics`, input);
+  }
+
+  async getEpic(epicId: string): Promise<EpicDetail> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}`);
+  }
+
+  async updateEpic(epicId: string, input: { title?: string; description?: string }): Promise<Epic> {
+    return this.request('PATCH', `/epics/${encodeURIComponent(epicId)}`, input);
+  }
+
+  async closeEpic(epicId: string): Promise<Epic> {
+    return this.request('POST', `/epics/${encodeURIComponent(epicId)}/close`);
+  }
+
+  async assignRequirementEpic(requirementId: string, epicId: string | null): Promise<{ id: string; epicId: string | null }> {
+    return this.request('PUT', `/requirements/${encodeURIComponent(requirementId)}/epic`, { epicId });
+  }
+
+  async assignSpecificationEpic(specificationId: string, epicId: string | null): Promise<{ id: string; epicId: string | null }> {
+    return this.request('PUT', `/specifications/${encodeURIComponent(specificationId)}/epic`, { epicId });
+  }
+
+  async getEpicStage(epicId: string): Promise<EpicStage> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/stage`);
+  }
+
+  async getBoard(projectId: string): Promise<BoardRead> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/epics/stages`);
   }
 
   async getRunReview(runId: string): Promise<ReviewSession> {
