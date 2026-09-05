@@ -37,6 +37,10 @@ describe('T1551 · the configuration document', () => {
     for (const stage of config.productStages) expect(stage.evidence, `${stage.name} states no evidence`).toBeTruthy();
   });
 
+  it('names the state before the first stage and the first command to run, so the product names no command in code (FR-EPB-003)', () => {
+    expect(config.notStarted).toEqual({ name: 'Not started', next: '/speckit-specify' });
+  });
+
   it('names the two readiness profiles: the repository evaluates the DOR, a customer project evaluates nothing yet (FR-EPB-046)', () => {
     expect(config.readinessProfiles).toEqual({ repository: 'dor', customer: 'none' });
   });

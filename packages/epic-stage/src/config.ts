@@ -33,6 +33,8 @@ export interface StageConfig {
   readonly epicDirectoryPattern: string;
   readonly taskIdentifierPattern: string;
   readonly taskIdentifierRecogniser: string;
+  /** Before the first stage: an Epic with no completed execution, and the first command to run (`FR-EPB-003`, `FR-EPB-007`). */
+  readonly notStarted: { readonly name: string; readonly next: string };
   /** The register's seven stages (`FR-ESK-001`). */
   readonly stages: StageDefinition[];
   /** The product's two further stages (`FR-EPB-003`); the product profile is `stages ++ productStages`. */

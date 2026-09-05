@@ -5,6 +5,11 @@
   "taskIdentifierPattern": "^T\\d{3,}[a-z]?$",
   "taskIdentifierRecogniser": "^T\\d+[a-z]*$",
   "_taskIdentifierNote": "FR-ESK-025 (T864d). The pattern is held here, not in the checks, because it was hand-copied into six sites across three files and widening it by hand meant editing six correctly with nothing to notice a miss. Four-or-more digits with NO upper bound: 999 of 999 three-digit prefixes were allocated, and a cap is a second exhaustion date. A trailing letter is a SHAPE and carries NO adjacency claim - it does not mean \"added next to the task it shares a prefix with\". That meaning is retired (R-026-9): EPIC-014 allocated T150a-T153h and EPIC-036 allocated T442a-T442v as ordinary blocks adjacent to nothing. The recogniser is deliberately BROADER than the pattern: a token matching it but not the pattern is unrecognised and FAILS, because a single narrow pattern cannot report what it does not match (R-026-10).",
+  "_notStartedNote": "EPIC-044 (FR-EPB-003, FR-EPB-007). An Epic with no completed execution precedes the first stage; its next command is the first governed command. Held here so the product names no toolkit command in code.",
+  "notStarted": {
+    "name": "Not started",
+    "next": "/speckit-specify"
+  },
   "_reachedByNote": "EPIC-044 (FR-EPB-003, R-044-4). reachedBy names the governed command whose COMPLETED execution reaches the stage when the evidence is execution records (the product board); the register still reads the file tree. Ready is the readiness verdict and is reached by no command.",
   "stages": [
     {

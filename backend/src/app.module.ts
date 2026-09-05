@@ -12,6 +12,7 @@ import { JobsModule } from './modules/jobs/jobs.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { ConnectorModule } from './modules/connector/connector.module.js';
 import { GovernanceModule } from './modules/governance/governance.module.js';
+import { EpicsModule } from './modules/epics/epics.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
@@ -78,6 +79,8 @@ function clientBuildPath(): string {
     ConnectorModule,
     // EPIC-042 T1488 — constraints, policy, renders; the Constraints screen and the two connector reads.
     GovernanceModule,
+    // EPIC-044 T1571 — Epics: the entity, assignment, the derived stage and the board reads.
+    EpicsModule,
     RequirementsModule,
     SpecificationsModule,
     TasksModule,
