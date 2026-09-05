@@ -54,7 +54,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-041](../specs/041-local-project-workspace/) | Local Project Workspace | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-042](../specs/042-pmi-spec-kit-extension/) | PMI Spec Kit Extension, Setup Skill and Constitution Sync | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-044](../specs/044-epic-model-journey-board/) | Epic Model and Spec Journey Board | delivery | Planned | stalled | Not ready | `/speckit-tasks` |
+| [EPIC-044](../specs/044-epic-model-journey-board/) | Epic Model and Spec Journey Board | delivery | Tasked | stalled | Not ready | `/speckit-analyze` |
 
 ## Findings
 
