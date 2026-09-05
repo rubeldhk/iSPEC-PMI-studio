@@ -34,6 +34,41 @@ Epic." *(PMI-DOC-007 §7, verbatim)*
 > with the requester. No `[NEEDS CLARIFICATION]` marker is used: every call has a defensible
 > default and none changes whether the Epic should exist.
 
+## Clarifications
+
+### Session 2026-09-04
+
+Five of the six judgement calls were put to the requester in one round (Constitution X); the
+sixth (first-run state is a marker provisioning writes, with the platform's record as tie-breaker)
+is a plan-level mechanism with a reversible default and stands as recorded. **All five
+recommendations were accepted.**
+
+- Q: When PMI Studio is unreachable and the project allows offline work, should this Epic only
+  produce provisional execution records and leave accepting them to `EPIC-037`'s reserved intake?
+  → A: **Yes. Durable provisional records are produced here and submitted to the reserved sync
+  tool; a *not available until `EPIC-037`* refusal keeps the queue and is reported once.** The
+  intake is not built here and provisional mode is not dropped. *(Confirms Assumption 1;
+  `FR-EXT-050`, `FR-EXT-055`.)*
+- Q: When the constitution file on a developer's machine has been edited by hand, should the next
+  governed command stop and ask before regenerating it? → A: **Yes. Drift stops the hook, shows
+  the difference and waits for confirmation; a stale file that matches an older render refreshes
+  without asking; PMI Studio shows *file differs*.** Never regenerate over a hand edit silently.
+  *(Confirms Assumption 2; `FR-EXT-025`, `FR-EXT-026`.)*
+- Q: Should the project's offline mode be a policy value PMI Studio stores and renders into the
+  constitution file, which the hooks read from that file? → A: **Yes. An owner-editable value
+  beside the decomposition policy, default strict, rendered into the Governed Execution section
+  and read by the hooks from the file.** No separate policy file, no environment variable.
+  *(Confirms Assumption 3; `FR-EXT-027`, `FR-EXT-051`.)*
+- Q: When a person confirms splitting an oversized Epic during the first run, should the decision
+  be recorded in PMI Studio and the children specified as their own directories, leaving child
+  Epic entities to `EPIC-044`? → A: **Yes. The split — estimates, seams, who decided — is recorded
+  bound to the execution; the children are specification directories named by the parent's
+  number and a suffix until `EPIC-044` creates the entities.** *(Confirms Assumption 4;
+  `FR-EXT-045`.)*
+- Q: Should the Constraints editor be delivered as the first screen of the Governance area? → A:
+  **Yes. The Governance area is delivered with the Constraints screen, scoped to a project chosen
+  on the screen.** Not a panel on the project screen. *(Confirms Assumption 6; `FR-EXT-065`.)*
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -578,42 +613,43 @@ record.
 
 ## Assumptions
 
-Six judgement calls, each with the alternative that lost. They are listed so `/speckit-clarify`
-can put them to the requester; the reasoning is kept because it describes the risk each default
-accepts.
+Six judgement calls, each with the alternative that lost. **Five were put to the requester on
+2026-09-04 and all five confirmed**; the fifth (the first-run marker) was not asked, being
+plan-level and reversible, and stands as recorded. The reasoning is kept because it describes the
+risk each confirmation accepts.
 
 1. **Provisional operation is produced here and accepted by `EPIC-037`'s reserved intake**
-   (`FR-EXT-050`–`FR-EXT-056`). The hooks write durable provisional records and submit them to
+   (`FR-EXT-050`–`FR-EXT-056`) — **confirmed**. The hooks write durable provisional records and submit them to
    `pmi.execution.sync`, which `EPIC-043` reserved with a refusal naming `EPIC-037`. Until that
    intake ships, the queue persists and the refusal is reported once. The alternative — build the
    intake here — moves `EPIC-037`'s `US4` into this Epic, which is mostly markdown and templates
    (PMI-DOC-007 §10) and should stay so. The risk accepted: provisional records accumulate until
    `EPIC-037`'s intake is delivered; the closure record names it.
-2. **Drift is never overwritten silently** (`FR-EXT-026`). When the on-disk constitution matches no
+2. **Drift is never overwritten silently** (`FR-EXT-026`) — **confirmed**. When the on-disk constitution matches no
    render, the hook shows the difference and waits for the person; PMI Studio shows *file differs*.
    The alternative — regenerate on every governed command, as the §5.4 header could be read —
    loses a hand edit the moment the next command runs, which is exactly the silent file edit the
    replan refuses elsewhere (`R-05`). A stale file (matching an older render) is refreshed without
    asking, because nothing is lost.
 3. **The offline mode is a project policy value stored beside the decomposition policy and read by
-   the hooks from the constitution file** (`FR-EXT-051`). The hook cannot ask the platform which
+   the hooks from the constitution file** (`FR-EXT-051`) — **confirmed**. The hook cannot ask the platform which
    mode applies when the platform is unreachable, so the mode must already be on disk; the
    constitution is the one file the agent already reads. The alternative — a separate policy file
    under the PMI directory — is a second generated file with its own drift story. The default is
    strict, as `BR-0202` and XII.1 name it.
 4. **A confirmed split is recorded, and child Epics become product entities in `EPIC-044`**
-   (`FR-EXT-045`). Epic is not yet a product entity; this Epic cannot create one. The record —
+   (`FR-EXT-045`) — **confirmed**. Epic is not yet a product entity; this Epic cannot create one. The record —
    estimates, seams, who decided — is what `EPIC-044` will consume; until then the children are
    specification directories named by the parent's number and a suffix, the shape rulings `D-18`
    and `D-19` used by hand. The alternative — wait for `EPIC-044` — puts `M2` after `M3`, which
    inverts the roadmap.
 5. **First-run state is a marker provisioning writes, with the platform's record as tie-breaker**
-   (`FR-EXT-046`). PMI-DOC-007 §5.2 names `.pmi/first-run`; provisioning does not yet write it, so
+   (`FR-EXT-046`) — **not asked; stands as recorded**. PMI-DOC-007 §5.2 names `.pmi/first-run`; provisioning does not yet write it, so
    `EPIC-041`'s project files gain one more entry. The platform's *no completed specify execution*
    fact resolves a stale marker. The alternative — derive first-run purely from the platform —
    fails when the platform is unreachable and leaves the hook unable to tell a first run from a
    provisional one.
-6. **The Constraints screen is the first delivered screen of the Governance area** (`FR-EXT-065`).
+6. **The Constraints screen is the first delivered screen of the Governance area** (`FR-EXT-065`) — **confirmed**.
    PMI-DOC-007 §6 places it in Governance, which the shell declares but has not delivered; this Epic
    delivers the area with that one screen, scoped to a project. The alternative — a panel on the
    project screen — keeps the area undelivered and puts owner-level governance beside developer
