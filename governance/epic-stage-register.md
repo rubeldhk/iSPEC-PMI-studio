@@ -55,7 +55,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-042](../specs/042-pmi-spec-kit-extension/) | PMI Spec Kit Extension, Setup Skill and Constitution Sync | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-044](../specs/044-epic-model-journey-board/) | Epic Model and Spec Journey Board | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
-| [EPIC-045](../specs/045-artifact-sync-markdown-viewer/) | Artifact Sync and Markdown Viewer | delivery | Checklisted | stalled | Not ready | `/speckit-plan` |
+| [EPIC-045](../specs/045-artifact-sync-markdown-viewer/) | Artifact Sync and Markdown Viewer | delivery | Planned | stalled | Not ready | `/speckit-tasks` |
 
 ## Findings
 
