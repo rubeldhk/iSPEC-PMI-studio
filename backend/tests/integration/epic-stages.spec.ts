@@ -194,6 +194,7 @@ suite('T1582 · the board over executions the hooks recorded', () => {
     const start = performance.now();
     const b = await board();
     const elapsed = performance.now() - start;
+    console.info(`T1582 board read over 50 Epics and 100 executions: ${elapsed.toFixed(0)} ms`);
     expect(b.epics).toHaveLength(50);
     expect(elapsed).toBeLessThan(2000);
     // 46 bulk Epics plus Epic 3, whose failed plan left it at Clarified in an earlier case.

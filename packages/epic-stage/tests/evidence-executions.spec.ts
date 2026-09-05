@@ -111,7 +111,9 @@ describe('T1562 · evidenceFromExecutions — what reaches a stage', () => {
     for (let i = 0; i < 500; i += 1) rows.push(row(commands[i % commands.length]!, i % 7 === 0 ? 'failed' : 'completed'));
     const start = performance.now();
     for (let i = 0; i < 20; i += 1) deriveStageFromEvidence(evidenceFromExecutions(rows, profile).evidence, profile);
-    expect((performance.now() - start) / 20).toBeLessThan(50);
+    const perDerivation = (performance.now() - start) / 20;
+    console.info(`T1562 derivation over 500 executions: ${perDerivation.toFixed(2)} ms per pass (20 passes)`);
+    expect(perDerivation).toBeLessThan(50);
   });
 });
 

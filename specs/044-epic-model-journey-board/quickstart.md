@@ -68,4 +68,21 @@ E2E_STACK="reference local" npx playwright test e2e/tests/epic-044-m3.spec.ts
   `EPIC-029`'s manual pass — pre-existing, unrelated).
 - **Scenario 1** holds as stated.
 
-*(the remaining scenarios are filled by `T1603` and the Phase Z tasks)*
+### Recorded 2026-09-05 (`T1603` — the measured figures; Phase Z)
+
+- **Derivation timing** (`T1562`, `SC-EPB-005`): one Epic's stage over 500 executions derives in
+  0.61 ms per pass (20 passes, in-memory; budget 50 ms). The figure is printed by the test on every
+  run.
+- **Board read timing** (`T1582`): 50 Epics and 100 executions registered through a real
+  `pmi-studio` server, one `GET /v1/projects/{id}/epics/stages` through the composed application in
+  214 ms (budget 2000 ms). Printed by the test on every run.
+- **Register byte identity after the footer** (`T1612`): SHA-256
+  `1ccb5ba858c0799a5a3acf4846717a8def78577123c829076a10e5c9addaf10b`; `git diff` against the
+  previous head shows three inserted lines and nothing else — the one intended change after the
+  extraction, as `T1590` promised. `pnpm register:update` run twice.
+- **Scenarios 2–5** hold as stated through `epics-api.spec.ts`, `epic-stages.spec.ts`,
+  `decomposition-read.spec.ts` and `decision-reconcile.spec.ts` against the composed application.
+- **Transcript** (`T1607`): `docs/uat/EPIC-044-m3-transcript.md` — **not produced**; no
+  reference-local stack was available. `e2e/tests/epic-044-m3.spec.ts` is authored, not measured.
+- **Mutation observations**: all four owed above were observed red and are recorded in
+  `closure.md` §The mutation observations, with a fifth for the `T1613` boundary.
