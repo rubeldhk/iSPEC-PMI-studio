@@ -57,6 +57,8 @@ const BINDINGS: readonly Binding[] = [
   { module: 'audit/audit.module.ts', token: 'AUDIT_READER', prisma: 'PrismaAuditReader', inMemory: 'UnconfiguredAuditReader' },
   // EPIC-043 T1449: one workstation connection per credential (R-043-8).
   { module: 'connector/connector.module.ts', token: 'WORKSTATION_CONNECTION_STORE', prisma: 'PrismaWorkstationConnectionStore', inMemory: 'InMemoryWorkstationConnectionStore' },
+  // EPIC-044 T1556: Epics — the stores-only module the connector and the board both import (R-044-7).
+  { module: 'epics/epic-stores.module.ts', token: 'EPIC_STORE', prisma: 'PrismaEpicStore', inMemory: 'InMemoryEpicStore' },
 ];
 
 function stripComments(source: string): string {

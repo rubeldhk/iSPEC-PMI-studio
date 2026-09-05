@@ -53,6 +53,7 @@ model Workspace {
   projectConstraints    ProjectConstraint[]
   decompositionPolicies DecompositionPolicy[]
   constitutionRenders   ConstitutionRender[]
+  epics                 Epic[]
   connectorCredentials  ConnectorCredential[]
   workstationConnections WorkstationConnection[]
   generationJobs        GenerationJob[]
@@ -173,6 +174,7 @@ model Project {
   projectConstraints     ProjectConstraint[]
   decompositionPolicy    DecompositionPolicy?
   constitutionRenders    ConstitutionRender[]
+  epics                  Epic[]
 
   @@unique([workspaceId, name])
   // One directory, one project (data-model.md §1).
@@ -230,12 +232,16 @@ model Requirement {
   workspace Workspace            @relation(fields: [workspaceId], references: [id])
   project   Project              @relation(fields: [projectId], references: [id])
   versions  RequirementVersion[]
+  // EPIC-044 T1555 (FR-EPB-023): at most one Epic; null is "unassigned", never omitted.
+  epicId    String?
+  epic      Epic?                @relation(fields: [epicId], references: [id])
 
   @@unique([projectId, reference])
   @@index([workspaceId])
   @@index([projectId, type])
   @@index([projectId, priority])
   @@index([projectId, status])
+  @@index([projectId, epicId])
   @@map("requirements")
 }
 
@@ -328,11 +334,15 @@ model Specification {
   validationFindings   ValidationFinding[]
   adrLinks             AdrSpecificationLink[]
   tasks                Task[]
+  // EPIC-044 T1555 (FR-EPB-025): the Epic that owns this specification, or null.
+  epicId               String?
+  epic                 Epic?                  @relation(fields: [epicId], references: [id])
 
   @@index([workspaceId])
   // SC-009's 1-second p95 applies to listing views, and the list is filtered by
   // lifecycle state — so the filtered read is indexed, not scanned.
   @@index([projectId, lifecycleState])
+  @@index([projectId, epicId])
   @@map("specifications")
 }
 
@@ -2847,4 +2857,49 @@ model ConstitutionRender {
   @@index([projectId, version(sort: Desc)])
   @@index([workspaceId, projectId])
   @@map("constitution_renders")
+}
+
+// ---------------------------------------------------------------------------
+// EPIC-044 T1555 — Epic as a product entity (specs/044-epic-model-journey-board/data-model.md §1)
+// ---------------------------------------------------------------------------
+
+/// A project's Epic: groups requirements and owns specifications (LR-03). Its
+/// NUMBER is allocated by the platform and never reused; its STAGE is not here —
+/// it is derived from the executions bound to it, never stored (FR-EPB-001).
+model Epic {
+  id                    String    @id @default(uuid())
+  workspaceId           String
+  projectId             String
+  number                Int
+  slug                  String
+  title                 String
+  description           String    @default("")
+  /// active | split | closed — TEXT + CHECK in the migration.
+  status                String    @default("active")
+  /// Set on a child created from a decomposition decision (R-044-5).
+  parentEpicId          String?
+  /// The letter the decision recorded; with the parent's number it resolves the hook's `7a` (R-044-3).
+  splitSuffix           String?
+  /// The decomposition-decision comment that created this child; unique with splitSuffix (idempotence).
+  decisionCommentId     String?
+  /// On a parent: the last decision processed for it (confirmed, edited or rejected).
+  lastDecisionCommentId String?
+  createdById           String
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  closedAt              DateTime?
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  project        Project         @relation(fields: [projectId], references: [id])
+  parent         Epic?           @relation("EpicSplit", fields: [parentEpicId], references: [id])
+  children       Epic[]          @relation("EpicSplit")
+  requirements   Requirement[]
+  specifications Specification[]
+
+  @@unique([projectId, number])
+  @@unique([decisionCommentId, splitSuffix])
+  @@index([workspaceId])
+  @@index([projectId, status])
+  @@index([parentEpicId])
+  @@map("epics")
 }

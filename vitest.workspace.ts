@@ -246,6 +246,17 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-044 T1550 — the shared stage derivation (R-06): the configuration
+    // document, the contiguity rule, readiness and the two evidence adapters the
+    // governance register and the product board both import. No `passWithNoTests`.
+    test: {
+      name: 'epic-stage',
+      root: './packages/epic-stage',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     // EPIC-043 T1399 — the pmi-studio server: driven through InMemoryTransport by
     // a real Client; the fixture conformance suite runs against it (R-037-10).
     test: {

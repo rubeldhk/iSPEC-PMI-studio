@@ -185,6 +185,11 @@ path added or removed without updating this document fails the build.
 - `specs/043-pmi-integration-contract/`
 - `specs/042-pmi-spec-kit-extension/`
 - `specs/044-epic-model-journey-board/`
+- `packages/epic-stage/` — the SHARED stage derivation (`EPIC-044` `T1550`, PMI-DOC-007 `R-06`): the
+  configuration document (mirrored as `governance/epic-stage.config.json`, `G-44-01`), the
+  contiguity rule, readiness and the two evidence adapters. Imported by `tests/governance/epic-stage/`
+  (the register) and `backend/src/modules/epics/` (the board); a second copy of a stage rule anywhere
+  is the drift this package exists to remove
 - `packages/room-contract/` — the SHARED Room pattern: `RoomShellProps`, `Epistemic`,
   `RoomObjectRef`. Imported by `EPIC-034` and `EPIC-035`, whose first tasks stop if it is not
   built — breaking this path breaks two Epics that cannot be built without it (EPIC-033 `T337d`)

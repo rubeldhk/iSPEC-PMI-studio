@@ -174,6 +174,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     'defect_tests',
       'dependency_edges',
       'engine_registrations',
+      // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
+      'epics',
       'evidence_contract_items',
       'evidence_contracts',
       'evidence_items',
