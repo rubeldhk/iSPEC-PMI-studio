@@ -58,8 +58,8 @@ suite('T1473 · the EPIC-042 migration', () => {
       expect(cols[c], `${c} missing`).toBeDefined();
     }
     const idx = await indexes('project_constraints');
-    expect(idx.some((d) => /"workspaceId", "projectId", "kind", "order"/.test(d))).toBe(true);
-    expect(idx.some((d) => /"projectId", "status"/.test(d))).toBe(true);
+    expect(idx.some((d) => /"workspaceId", "projectId", "?kind"?, "order"/.test(d))).toBe(true);
+    expect(idx.some((d) => /"projectId", "?status"?/.test(d))).toBe(true);
   });
 
   it('creates decomposition_policies, one per project, with the D-4 defaults and strict offline mode (§2)', async () => {
@@ -80,8 +80,8 @@ suite('T1473 · the EPIC-042 migration', () => {
     }
     expect(cols['renderedById']?.nullable).toBe(true);
     const idx = await indexes('constitution_renders');
-    expect(idx.some((d) => /UNIQUE/.test(d) && /"projectId", "digest"/.test(d))).toBe(true);
-    expect(idx.some((d) => /"projectId", "version"/.test(d))).toBe(true);
+    expect(idx.some((d) => /UNIQUE/.test(d) && /"projectId", "?digest"?/.test(d))).toBe(true);
+    expect(idx.some((d) => /"projectId", "?version"? DESC/.test(d))).toBe(true);
   });
 
   it('adds the three nullable constitution columns to workstation_connections (§4)', async () => {
