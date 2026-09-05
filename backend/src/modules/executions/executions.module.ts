@@ -257,6 +257,8 @@ export const EXECUTION_DELEGATIONS = Symbol('EXECUTION_DELEGATIONS');
     },
   ],
   exports: [
+    // EPIC-042 T1488: the decomposition plan asks the timeline whether a specify execution completed.
+    ExecutionTimelineService,
     ExecutionRegistryFacade,
     ExecutionRegistrationService,
     ExecutionEventService,

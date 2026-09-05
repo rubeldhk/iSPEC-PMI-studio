@@ -60,6 +60,7 @@ const toRecord = (row: RecordRow): ProvisioningRecord => ({
   engineTag: row.engineTag,
   bundleVersion: row.bundleVersion,
   filesWritten: (row.filesWritten as string[] | null) ?? [],
+  firstRunMarkerWritten: (row as { firstRunMarkerWritten?: boolean }).firstRunMarkerWritten ?? false,
 });
 
 export class PrismaProvisioningRecordStore implements ProvisioningRecordStore {
@@ -82,6 +83,7 @@ export class PrismaProvisioningRecordStore implements ProvisioningRecordStore {
         engineTag: record.engineTag,
         bundleVersion: record.bundleVersion,
         filesWritten: [...record.filesWritten],
+        firstRunMarkerWritten: record.firstRunMarkerWritten,
       },
     });
     return toRecord(row);

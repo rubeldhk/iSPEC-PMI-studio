@@ -43,11 +43,15 @@ import { RequirementsModule } from '../requirements/requirements.module.js';
 import { RequirementsService } from '../requirements/requirements.service.js';
 import { readProjectsRootConfig } from '../projects/projects-root.js';
 import { API_VERSION, CONNECTOR_CREDENTIAL_STORE, WORKSTATION_CONNECTION_STORE } from './connector.tokens.js';
+import { GovernanceStoresModule } from '../governance/governance-stores.module.js';
+import { CONSTITUTION_RENDER_STORE } from '../governance/governance.tokens.js';
+import { classifyOnDiskDigest } from '../governance/constitution-render.service.js';
+import type { ConstitutionRenderStore } from '../governance/constitution-render.store.js';
 
 export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
 
 @Module({
-  imports: [forwardRef(() => ProjectsModule), AgentsModule, AuditModule, AccessModule, RequirementsModule],
+  imports: [forwardRef(() => ProjectsModule), AgentsModule, AuditModule, AccessModule, RequirementsModule, GovernanceStoresModule],
   controllers: [ProjectConnectorCredentialsController, ConnectorCredentialsController, ConnectorController, ConnectorReadsController, WorkstationConnectionsController],
   providers: [
     {
@@ -120,9 +124,17 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
     },
     {
       provide: WorkstationConnectionService,
-      inject: [WORKSTATION_CONNECTION_STORE, CONNECTOR_CREDENTIAL_STORE, AuditService],
-      useFactory: (store: WorkstationConnectionStore, credentials: ConnectorCredentialStore, audit: AuditService): WorkstationConnectionService =>
-        new WorkstationConnectionService({ store, credentials, contractVersion: CONTRACT_VERSION, apiVersion: API_VERSION, audit: { record: (row) => audit.record(row as never) } }),
+      inject: [WORKSTATION_CONNECTION_STORE, CONNECTOR_CREDENTIAL_STORE, AuditService, CONSTITUTION_RENDER_STORE],
+      useFactory: (store: WorkstationConnectionStore, credentials: ConnectorCredentialStore, audit: AuditService, renders: ConstitutionRenderStore): WorkstationConnectionService =>
+        new WorkstationConnectionService({
+          store,
+          credentials,
+          contractVersion: CONTRACT_VERSION,
+          apiVersion: API_VERSION,
+          audit: { record: (row) => audit.record(row as never) },
+          // EPIC-042 T1489 (R-042-5): the same rule the render service applies, over the shared store.
+          constitution: { classify: (projectId, digest) => classifyOnDiskDigest(renders, projectId, digest) },
+        }),
     },
     {
       // EPIC-043 T1445 (R-043-9) — the reads a local agent needs to begin.
@@ -140,6 +152,6 @@ export { CONNECTOR_CREDENTIAL_STORE } from './connector.tokens.js';
     },
   ],
   // EPIC-043: the executions module mounts its controller behind the guard.
-  exports: [ConnectorCredentialService, CONNECTOR_CREDENTIAL_STORE, ConnectorAuthGuard],
+  exports: [ConnectorCredentialService, CONNECTOR_CREDENTIAL_STORE, ConnectorAuthGuard, ProjectContextService, WorkstationConnectionService],
 })
 export class ConnectorModule {}

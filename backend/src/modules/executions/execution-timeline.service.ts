@@ -20,6 +20,7 @@ export interface TimelineFilters {
   readonly surface?: string;
   readonly state?: string;
   readonly initiator?: string;
+  readonly command?: string;
   readonly after?: string;
   readonly limit?: number;
 }
@@ -153,6 +154,8 @@ export class ExecutionTimelineService {
       where.push(`COALESCE(l."type", 'registered') = ${bind(filters.state)}`);
     }
     if (filters.initiator !== undefined) where.push(`e."initiatorId" = ${bind(filters.initiator)}`);
+    // EPIC-042 T1488 (R-042-8): first-run is "no completed specify execution".
+    if (filters.command !== undefined) where.push(`e."command" = ${bind(filters.command)}`);
     if (filters.after !== undefined) {
       const page = decodeCursor(filters.after);
       if (page === null) throw new ValidationFailedError('The page token is not one this timeline issued.', { fields: { after: 'opaque' } });

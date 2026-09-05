@@ -88,10 +88,13 @@ describe('T1339 · a prepare that succeeds', () => {
     expect(record.engineTag).toBe('v0.16.4');
 
     const dir = join(root, 'alpha');
-    for (const f of ['.pmi/project.json', '.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md']) {
+    for (const f of ['.pmi/project.json', '.pmi/first-run', '.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md']) {
       expect(existsSync(join(dir, f)), `${f} missing`).toBe(true);
     }
-    expect(record.filesWritten).toEqual(['.pmi/project.json', '.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md']);
+    // EPIC-042 T1505: the first-run marker is written in the same step as .pmi/project.json (R-042-8).
+    expect(record.filesWritten).toEqual(['.pmi/project.json', '.pmi/first-run', '.mcp.json', '.claude/skills/setup-PMIStudio/SKILL.md']);
+    expect(record.firstRunMarkerWritten).toBe(true);
+    expect(readFileSync(join(dir, '.pmi', 'first-run'), 'utf8')).toMatch(/^2026-09-03T10:00:00\.000Z \S+\n$/);
     expect(h.git.init).toHaveBeenCalledWith(dir);
     expect(h.submit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -156,7 +159,7 @@ describe('T1339 · every refusal names its reason and writes nothing (SC-LPW-005
     await expect(h.service.prepare(CTX, p.id, { rootPath: 'cp', agentIntegration: 'copilot', scriptType: 'sh' })).rejects.toThrow(/copilot/);
     const latest = await h.records.latestForProject(CTX.workspaceId, p.id);
     expect(latest).toMatchObject({ outcome: 'failed', failedStep: 'copy_setup_skill' });
-    expect(latest?.filesWritten).toEqual(['.pmi/project.json', '.mcp.json']);
+    expect(latest?.filesWritten).toEqual(['.pmi/project.json', '.pmi/first-run', '.mcp.json']);
     expect(existsSync(join(root, 'cp', '.claude'))).toBe(false);
   });
 });
@@ -189,6 +192,7 @@ describe('T1339 · idempotence and resumption', () => {
       stepsCompleted: ['check_root', 'create_directory', 'adopt_or_init_git', 'write_project_json'],
       failedStep: 'merge_mcp_json', failureReason: 'process interrupted', engineTag: null, bundleVersion: '0.1.0',
       filesWritten: ['.pmi/project.json'],
+      firstRunMarkerWritten: true,
     });
 
     const { record } = await h.service.prepare(CTX, p.id, { rootPath: 'alpha' });

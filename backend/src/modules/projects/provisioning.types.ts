@@ -68,6 +68,8 @@ export interface ProvisioningRecord {
   readonly bundleVersion: string | null;
   /** Relative paths, so a partial run is inspectable (US1 scenario 5). */
   readonly filesWritten: readonly string[];
+  /** EPIC-042 (R-042-8): `.pmi/first-run` was written by this run. */
+  readonly firstRunMarkerWritten: boolean;
 }
 
 /** The first step not yet completed, in vocabulary order — or null when all are. */

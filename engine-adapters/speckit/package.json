@@ -11,7 +11,8 @@
   "dependencies": {
     "@pmi/engine-contract": "workspace:*",
     "@pmi/agent-contract": "workspace:*",
-    "@pmi/execution-contract": "workspace:*"
+    "@pmi/execution-contract": "workspace:*",
+    "@pmi/workspace-bundle": "workspace:*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

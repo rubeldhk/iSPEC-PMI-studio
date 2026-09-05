@@ -230,6 +230,7 @@ export async function finaliseInitialisation(jobId: string, outcome: Initialisat
     engineTag: outcome.engineTag,
     bundleVersion: outcome.bundleVersion,
     filesWritten: [...outcome.filesWritten],
+    firstRunMarkerWritten: previous?.firstRunMarkerWritten ?? false,
   });
 
   await db.project.update({

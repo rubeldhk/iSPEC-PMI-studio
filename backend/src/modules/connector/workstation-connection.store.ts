@@ -15,6 +15,10 @@ export interface WorkstationConnectionRecord {
   readonly toolkitVersion: string | null;
   readonly contractVersion: string;
   readonly serverVersion: string | null;
+  // EPIC-042 T1489 (R-042-5): what the workstation last reported about its constitution file.
+  readonly constitutionDigest: string | null;
+  readonly constitutionState: string | null;
+  readonly constitutionReportedAt: Date | null;
 }
 
 export interface TouchInput {
@@ -27,6 +31,8 @@ export interface TouchInput {
   readonly toolkitVersion?: string | undefined;
   readonly contractVersion: string;
   readonly serverVersion?: string | undefined;
+  /** Present when the caller reported its file: the digest (or null for absent) and the state classified from it. */
+  readonly constitution?: { readonly digest: string | null; readonly state: string } | undefined;
 }
 
 export interface WorkstationConnectionStore {
@@ -52,6 +58,9 @@ export class InMemoryWorkstationConnectionStore implements WorkstationConnection
       toolkitVersion: input.toolkitVersion ?? existing?.toolkitVersion ?? null,
       contractVersion: input.contractVersion,
       serverVersion: input.serverVersion ?? existing?.serverVersion ?? null,
+      constitutionDigest: input.constitution ? input.constitution.digest : (existing?.constitutionDigest ?? null),
+      constitutionState: input.constitution ? input.constitution.state : (existing?.constitutionState ?? null),
+      constitutionReportedAt: input.constitution ? input.at : (existing?.constitutionReportedAt ?? null),
     });
     this.rows.set(input.credentialId, row);
     return row;
@@ -84,6 +93,7 @@ export class PrismaWorkstationConnectionStore implements WorkstationConnectionSt
       ...(input.toolkitVersion !== undefined ? { toolkitVersion: input.toolkitVersion } : {}),
       ...(input.serverVersion !== undefined ? { serverVersion: input.serverVersion } : {}),
       contractVersion: input.contractVersion,
+      ...(input.constitution ? { constitutionDigest: input.constitution.digest, constitutionState: input.constitution.state, constitutionReportedAt: input.at } : {}),
     };
     return this.connections.upsert({
       where: { credentialId: input.credentialId },
@@ -98,6 +108,9 @@ export class PrismaWorkstationConnectionStore implements WorkstationConnectionSt
         toolkitVersion: input.toolkitVersion ?? null,
         serverVersion: input.serverVersion ?? null,
         contractVersion: input.contractVersion,
+        constitutionDigest: input.constitution?.digest ?? null,
+        constitutionState: input.constitution?.state ?? null,
+        constitutionReportedAt: input.constitution ? input.at : null,
       },
       update: { lastSeenAt: input.at, ...versions },
     });

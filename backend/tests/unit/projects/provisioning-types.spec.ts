@@ -37,6 +37,7 @@ const record = (over: Partial<ProvisioningRecord> = {}): ProvisioningRecord => (
   engineTag: null,
   bundleVersion: '0.1.0',
   filesWritten: [],
+  firstRunMarkerWritten: false,
   ...over,
 });
 

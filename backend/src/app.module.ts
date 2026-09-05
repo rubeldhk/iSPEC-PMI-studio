@@ -11,6 +11,7 @@ import { EnginesModule } from './modules/engines/engines.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
 import { ConnectorModule } from './modules/connector/connector.module.js';
+import { GovernanceModule } from './modules/governance/governance.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
@@ -75,6 +76,8 @@ function clientBuildPath(): string {
     ProjectsModule,
     // EPIC-041 T1362 — connector credentials and the guard (R-041-3).
     ConnectorModule,
+    // EPIC-042 T1488 — constraints, policy, renders; the Constraints screen and the two connector reads.
+    GovernanceModule,
     RequirementsModule,
     SpecificationsModule,
     TasksModule,

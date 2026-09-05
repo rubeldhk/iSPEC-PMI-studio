@@ -50,13 +50,15 @@ export class ConnectorReadsController {
   @ConnectorScope('health.write')
   async health(
     @Req() req: { connector?: ConnectorRequestContext },
-    @Body() body: { extensionVersion?: string; toolkitVersion?: string; serverVersion?: string } | undefined,
+    @Body() body: { extensionVersion?: string; toolkitVersion?: string; serverVersion?: string; constitutionDigest?: string | null } | undefined,
   ): Promise<HealthView> {
     const safe = body ?? {};
     return this.connections.touch(readContext(req), {
       ...(typeof safe.extensionVersion === 'string' ? { extensionVersion: safe.extensionVersion } : {}),
       ...(typeof safe.toolkitVersion === 'string' ? { toolkitVersion: safe.toolkitVersion } : {}),
       ...(typeof safe.serverVersion === 'string' ? { serverVersion: safe.serverVersion } : {}),
+      // EPIC-042 T1489 (R-042-5): what the workstation's constitution file is, classified here.
+      ...(safe.constitutionDigest === null || typeof safe.constitutionDigest === 'string' ? { constitutionDigest: safe.constitutionDigest } : {}),
     });
   }
 }

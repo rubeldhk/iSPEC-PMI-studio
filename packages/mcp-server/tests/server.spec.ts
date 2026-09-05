@@ -25,8 +25,11 @@ export const LIVE_TOOLS = [
   'pmi.health',
   'pmi.project.context',
   'pmi.requirements.list',
+  // EPIC-042 T1490 (R-042-11): the two reads EPIC-043 reserved, now live.
+  'pmi.constitution.get',
+  'pmi.project.decompose',
 ] as const;
-export const RESERVED_TOOLS = ['pmi.execution.sync', 'pmi.constitution.get', 'pmi.project.decompose', 'pmi.artifacts.sync', 'pmi.tasks.sync'] as const;
+export const RESERVED_TOOLS = ['pmi.execution.sync', 'pmi.artifacts.sync', 'pmi.tasks.sync'] as const;
 
 export function stubPlatform(answer: (call: PlatformCall) => PlatformResult = () => ({ ok: true, status: 200, body: {} })) {
   const calls: PlatformCall[] = [];

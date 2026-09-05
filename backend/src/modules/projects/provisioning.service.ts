@@ -23,7 +23,7 @@ import { ConflictError, PlatformError, ValidationFailedError } from '../../core/
 import { assertSameWorkspace } from '../../core/workspace.guard.js';
 import type { AuditRecordInput } from '../audit/audit.service.js';
 import type { JobRequest, SubmitResult } from '../jobs/jobs.service.js';
-import { mcpServerEntry, mergeMcpJson, writeProjectJson } from './project-files.js';
+import { FIRST_RUN_MARKER_PATH, mcpServerEntry, mergeMcpJson, writeConstitutionFile, writeFirstRunMarker, writeProjectJson } from './project-files.js';
 import { assertRootAvailable, resolveRootPath, type ProjectsRootConfig } from './projects-root.js';
 import type { ActingContext, ProjectRecord, ProjectStore } from './projects.service.js';
 import type { ProvisioningRecordStore } from './provisioning.store.js';
@@ -69,6 +69,17 @@ export interface AuditPort {
   record(input: AuditRecordInput): Promise<void>;
 }
 
+/**
+ * EPIC-042 `T1522` (`FR-EXT-028`): the current constitution render for a
+ * project, written into a new directory at provisioning. Attached by the
+ * governance module after boot (`attachConstitutionRenderer`) rather than
+ * injected, because that module already depends on this one and a Nest cycle
+ * would put the inversion test in doubt (plan §Structure Decision).
+ */
+export interface ConstitutionRenderPort {
+  render(workspaceId: string, projectId: string, userId: string): Promise<string>;
+}
+
 export interface ProvisioningDeps {
   readonly config: ProjectsRootConfig;
   readonly projects: ProjectStore;
@@ -78,6 +89,7 @@ export interface ProvisioningDeps {
   readonly bundle: WorkspaceBundlePort;
   readonly git: GitPort;
   readonly audit?: AuditPort;
+  readonly constitution?: ConstitutionRenderPort | null;
   readonly now?: () => Date;
   readonly newCorrelationId?: () => string;
 }
@@ -111,6 +123,14 @@ export class ProvisioningService {
   constructor(private readonly deps: ProvisioningDeps) {
     this.now = deps.now ?? ((): Date => new Date());
     this.correlate = deps.newCorrelationId ?? ((): string => randomUUID());
+    this.constitution = deps.constitution ?? null;
+  }
+
+  private constitution: ConstitutionRenderPort | null;
+
+  /** EPIC-042 `T1522`: the governance module attaches the renderer after boot (see `ConstitutionRenderPort`). */
+  attachConstitutionRenderer(port: ConstitutionRenderPort): void {
+    this.constitution = port;
   }
 
   async history(workspaceId: string, projectId: string): Promise<ProvisioningRecord[]> {
@@ -239,6 +259,12 @@ export class ProvisioningService {
             preparedAt: startedAt,
           }),
         );
+        // EPIC-042 T1505 (R-042-8): the first-run marker the begin hook reads, and
+        // T1522 (FR-EXT-028): the current constitution render, when a renderer is attached.
+        written.push(await writeFirstRunMarker(dir, { at: startedAt, correlationId }));
+        if (this.constitution !== null) {
+          written.push(await writeConstitutionFile(dir, await this.constitution.render(project.workspaceId, project.id, ctx.userId)));
+        }
       });
 
       // 5 — .mcp.json, merged (R-041-10).
@@ -372,6 +398,7 @@ export class ProvisioningService {
       engineTag: completed.includes('write_project_json') ? this.deps.config.engineTag : null,
       bundleVersion: this.deps.bundle.version,
       filesWritten: [...written],
+      firstRunMarkerWritten: written.includes(FIRST_RUN_MARKER_PATH),
     });
     await this.deps.audit?.record({
       workspaceId: project.workspaceId,

@@ -26,22 +26,6 @@ export const RESERVED_TOOLS: readonly ReservedToolSpec[] = [
     what: 'Reconciliation of provisional executions',
   },
   {
-    name: 'pmi.constitution.get',
-    title: 'Constitution',
-    description: 'The current rendered constitution and its digest. Reserved until EPIC-042.',
-    schema: z.object({ contractVersion: z.string().optional() }).strict(),
-    epic: 'EPIC-042',
-    what: 'The rendered constitution',
-  },
-  {
-    name: 'pmi.project.decompose',
-    title: 'Decomposition plan',
-    description: 'The decomposition plan for a first specify: per Epic, requirement bundle, estimate, split proposal. Reserved until EPIC-042.',
-    schema: z.object({ contractVersion: z.string().optional(), epicNumber: z.number().int().optional() }).strict(),
-    epic: 'EPIC-042',
-    what: 'The decomposition plan',
-  },
-  {
     name: 'pmi.artifacts.sync',
     title: 'Sync artifacts',
     description: "Upload one Epic's markdown set bound to an execution. Reserved until EPIC-045.",

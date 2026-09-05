@@ -41,15 +41,23 @@ server adds the header `X-PMI-Surface: mcp-client`. Result shapes are the contra
 | `pmi.project.context` | `GET /v1/projects/{id}/context` | `project.read` | `{ projectId, name, agentIntegration, scriptType, provisioningState, extensionVersion, contractVersion, platformUrl, epics: [{number, slug, name}], epicSource }` |
 | `pmi.requirements.list` | `GET /v1/projects/{id}/requirements?groupBy=epic` | `requirements.read` | `{ groups: [{ epic: {number, slug, name} \| 'unassigned', requirements: [{ id, reference, description, type, priority, status, baselineState }] }], epicSource }` |
 
-`pmi.health` arguments: `{ extensionVersion?, toolkitVersion?, serverVersion? }` — what the caller
-knows about itself; the platform records them (`R-043-8`).
+`pmi.health` arguments: `{ extensionVersion?, toolkitVersion?, serverVersion?, constitutionDigest? }` —
+what the caller knows about itself; the platform records them (`R-043-8`). `constitutionDigest`
+(EPIC-042 `R-042-5`) is the SHA-256 of the on-disk constitution file, or `null` when the file is
+absent; the platform classifies it and answers `constitutionState` (`current | stale | drift |
+missing`), stored on the workstation connection.
+
+**Made live by `EPIC-042`** (`specs/042-pmi-spec-kit-extension/contracts/governance-api.md` §2):
+
+| Tool | Route | Scope | Result (`structuredContent`) |
+|---|---|---|---|
+| `pmi.constitution.get` | `GET /v1/projects/{id}/constitution?onDiskDigest=` | `constitution.read` | `{ version, digest, renderedAt, content, state }` — `state` classified from `onDiskDigest`, `current` when none is given |
+| `pmi.project.decompose` | `GET /v1/projects/{id}/decomposition` | `decomposition.read` | `{ firstRun, nothingToDecompose, policy: { oneSpecPerEpic, taskCeiling, splitRequiresConfirmation, offlineMode, version }, epics: [{ number, slug, name, requirements }], unassigned, epicSource }` |
 
 ## 3. Reserved — listed, schema-validated, refusing by name (`FR-PIC-002`, `FR-PIC-045`)
 
 | Tool | Refusal | Owner |
 |---|---|---|
-| `pmi.constitution.get` | `not_available_until { epic: 'EPIC-042' }` | `EPIC-042` |
-| `pmi.project.decompose` | `not_available_until { epic: 'EPIC-042' }` | `EPIC-042` |
 | `pmi.artifacts.sync` | `not_available_until { epic: 'EPIC-045' }` | `EPIC-045` |
 | `pmi.tasks.sync` | `not_available_until { epic: 'EPIC-046' }` | `EPIC-046` |
 

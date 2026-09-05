@@ -16,6 +16,7 @@
  * Unit test: `engine-adapters/speckit/tests/unit/local-init.spec.ts` (T1344).
  */
 import { cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mergeExtensionsRegistry } from '@pmi/workspace-bundle';
 import { join } from 'node:path';
 
 export const SPEC_KIT_REPOSITORY = 'git+https://github.com/github/spec-kit.git';
@@ -120,11 +121,22 @@ export class LocalSpecKitInitialiser implements LocalInitialiser {
     }
     completed.push('copy_extension');
 
-    // 3 — hooks. v0.1 registers none; the file exists and other extensions' entries survive.
+    // 3 — hooks. EPIC-042 T1499: the bundle's registry fragment is merged in —
+    // `pmi` added to `installed` once, one mandatory entry per event unless
+    // present, every other extension's entries byte-identical
+    // (contracts/extension-and-hooks.md §2). An extension dir without a
+    // fragment (the v0.1 mechanism) registers none, as before.
     try {
       const file = join(input.directory, '.specify', 'extensions.yml');
       const existing = await readOrNull(file);
-      if (existing === null) {
+      const fragment = await readOrNull(join(input.extensionDir, 'extensions-fragment.yml'));
+      if (fragment !== null) {
+        const merged = mergeExtensionsRegistry(existing, fragment.replace(/\r\n/g, '\n'));
+        if (merged !== existing) {
+          await writeFile(file, merged, 'utf8');
+          written.push('.specify/extensions.yml');
+        }
+      } else if (existing === null) {
         await writeFile(file, '# Registered by PMI Studio (EPIC-041). Hooks arrive with EPIC-042.\nhooks: {}\n', 'utf8');
         written.push('.specify/extensions.yml');
       } else if (!/^hooks:/m.test(existing)) {

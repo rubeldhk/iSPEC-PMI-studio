@@ -117,14 +117,22 @@ suite('T1446 · Scenario 9 — the reads, this project only', () => {
     expect(JSON.stringify(own.body)).not.toContain('REQ-001');
   });
 
-  it('the reserved tools refuse not_available_until after validating arguments', async () => {
+  it('the reserved tools refuse not_available_until after validating arguments; the EPIC-042 reads are live (T1492)', async () => {
     const m = await mcp(tokenA);
     try {
-      const bad = await m.client.callTool({ name: 'pmi.project.decompose', arguments: { epicNumber: 'x' } });
+      const bad = await m.client.callTool({ name: 'pmi.artifacts.sync', arguments: { epicNumber: 'x' } });
       expect(bad.isError).toBe(true);
       expect((bad.structuredContent as { code: string }).code).toBe('invalid_arguments');
-      const reserved = await m.client.callTool({ name: 'pmi.constitution.get', arguments: {} });
-      expect(reserved.structuredContent).toMatchObject({ code: 'not_available_until', epic: 'EPIC-042' });
+      const reserved = await m.client.callTool({ name: 'pmi.tasks.sync', arguments: {} });
+      expect(reserved.structuredContent).toMatchObject({ code: 'not_available_until', epic: 'EPIC-046' });
+      // EPIC-042 made these two live: content, not a reservation.
+      const constitution = await m.client.callTool({ name: 'pmi.constitution.get', arguments: {} });
+      if (constitution.isError) console.log('CONSTITUTION BODY', JSON.stringify(constitution.structuredContent));
+      expect(constitution.isError).toBeFalsy();
+      expect((constitution.structuredContent as { content: string }).content).toContain('# Alpha Constitution');
+      const plan = await m.client.callTool({ name: 'pmi.project.decompose', arguments: {} });
+      expect(plan.isError).toBeFalsy();
+      expect((plan.structuredContent as { firstRun: boolean }).firstRun).toBe(true);
     } finally {
       await m.close();
     }

@@ -43,7 +43,7 @@ describe('T1448 · touch', () => {
     const { service, store, credentials } = harness();
     await credential(credentials, 'cred_1', 'laptop');
     const health = await service.touch(CTX, { extensionVersion: '0.1.0', toolkitVersion: 'v0.16.4', serverVersion: '0.1.0' });
-    expect(health).toEqual({ projectId: 'proj_1', contractVersion: '1.0', apiVersion: '1', serverVersion: '0.1.0', connectedAt: '2026-09-04T10:00:00.000Z' });
+    expect(health).toEqual({ projectId: 'proj_1', contractVersion: '1.0', apiVersion: '1', serverVersion: '0.1.0', connectedAt: '2026-09-04T10:00:00.000Z', constitutionState: null });
     const row = await store.findByCredential('cred_1');
     expect(row).toMatchObject({ workspaceId: 'ws_a', projectId: 'proj_1', credentialId: 'cred_1', extensionVersion: '0.1.0', toolkitVersion: 'v0.16.4', contractVersion: '1.0', serverVersion: '0.1.0' });
     expect(row?.firstSeenAt.toISOString()).toBe('2026-09-04T10:00:00.000Z');

@@ -1,23 +1,55 @@
-# PMI Studio Spec Kit extension — bundle v0.1 (EPIC-041 T1317, R-041-9).
+# PMI Studio Spec Kit extension — bundle v0.2 (EPIC-042 T1495, R-042-1).
 #
-# The INSTALLATION MECHANISM ships here; the CONTENT ships with EPIC-042. This
-# manifest deliberately provides no commands and registers no hooks: a hook that
-# called a speckit.pmi.* command EPIC-042 has not written would fail the user's
-# next /speckit-* run (specs/041-local-project-workspace/contracts/project-files.md).
+# EPIC-041 shipped the INSTALLATION MECHANISM with no commands and no hooks;
+# this version carries the CONTENT: three commands and a mandatory hook before
+# and after every governed command, so that registration precedes execution
+# and completion follows it (Constitution XII) without the user typing
+# anything (specs/042-pmi-spec-kit-extension/contracts/extension-and-hooks.md).
 schema_version: "1.0"
 
 extension:
   id: "pmi"
   name: "PMI Studio"
   version: "0.2.0"
-  description: "Registers governed Spec Kit executions with PMI Studio and syncs artifacts (EPIC-042 fills this in)."
+  description: "Registers every governed Spec Kit command with PMI Studio, refreshes the generated constitution, and syncs artifacts."
   author: "PMI Studio"
+  repository: "https://github.com/pmi-studio/pmi-studio"
   license: "UNLICENSED"
 
 requires:
   speckit_version: ">=0.14.0"
 
 provides:
-  commands: []
+  commands:
+    - name: "speckit.pmi.begin"
+      file: "commands/begin.md"
+      description: "Register a governed command with PMI Studio before it runs (first run: decompose)"
+    - name: "speckit.pmi.finish"
+      file: "commands/finish.md"
+      description: "Complete a governed command in PMI Studio after it ends, syncing what changed"
+    - name: "speckit.pmi.progress"
+      file: "commands/progress.md"
+      description: "Report tasks ticked during implement as progress events"
 
-hooks: {}
+# optional: false is load-bearing — the stock skill executes a mandatory hook
+# and waits for it. No entry carries a condition (the stock skill skips
+# conditioned hooks).
+hooks:
+  before_specify: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio (first run: decompose)" }
+  after_specify: { command: "speckit.pmi.finish", optional: false, description: "Complete and sync" }
+  before_clarify: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_clarify: { command: "speckit.pmi.finish", optional: false, description: "Complete and sync" }
+  before_checklist: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_checklist: { command: "speckit.pmi.finish", optional: false, description: "Complete and sync" }
+  before_plan: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_plan: { command: "speckit.pmi.finish", optional: false, description: "Complete and sync" }
+  before_tasks: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_tasks: { command: "speckit.pmi.finish", optional: false, description: "Complete, sync artifacts and tasks" }
+  before_analyze: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_analyze: { command: "speckit.pmi.finish", optional: false, description: "Complete and sync" }
+  before_implement: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_implement: { command: "speckit.pmi.finish", optional: false, description: "Progress events, then complete (partially-completed if tasks remain)" }
+  before_converge: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_converge: { command: "speckit.pmi.finish", optional: false, description: "Complete and sync" }
+  before_constitution: { command: "speckit.pmi.begin", optional: false, description: "Register with PMI Studio" }
+  after_constitution: { command: "speckit.pmi.finish", optional: false, description: "Complete and sync" }

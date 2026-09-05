@@ -95,9 +95,9 @@ describe('T1359 · a valid credential', () => {
 });
 
 describe('T1359 · the scope registry', () => {
-  it('holds exactly the eleven scopes of record', () => {
-    // EPIC-043 T1417 widened the registry to the eleven scopes of record (data-model.md §8).
-    expect(registeredConnectorScopes()).toEqual(['connector.whoami', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
+  it('holds exactly the thirteen scopes of record', () => {
+    // EPIC-043 T1417 widened the registry to eleven scopes; EPIC-042 T1476 to thirteen (data-model.md §8).
+    expect(registeredConnectorScopes()).toEqual(['connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
   });
 
   it('refuses a route that declares no scope, and one whose scope is not registered — 403, after the credential is verified', async () => {
@@ -116,7 +116,7 @@ describe('T1359 · the scope registry', () => {
     } finally {
       registerConnectorScope('artifacts.sync', { remove: true });
     }
-    expect(registeredConnectorScopes()).toEqual(['connector.whoami', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
+    expect(registeredConnectorScopes()).toEqual(['connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
   });
 
   it('the decorator writes the scope as route metadata the guard reads', () => {

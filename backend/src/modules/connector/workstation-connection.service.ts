@@ -17,6 +17,8 @@ export interface HealthInput {
   readonly extensionVersion?: string | undefined;
   readonly toolkitVersion?: string | undefined;
   readonly serverVersion?: string | undefined;
+  /** EPIC-042 (R-042-5): the on-disk constitution digest, null when the file is absent; omitted when not reported. */
+  readonly constitutionDigest?: string | null | undefined;
 }
 
 export interface HealthView {
@@ -25,6 +27,8 @@ export interface HealthView {
   readonly apiVersion: string;
   readonly serverVersion: string | null;
   readonly connectedAt: string;
+  /** `current | stale | drift | missing`, or null when the caller reported nothing (EPIC-042). */
+  readonly constitutionState: string | null;
 }
 
 export interface WorkstationConnectionView {
@@ -37,6 +41,9 @@ export interface WorkstationConnectionView {
   readonly toolkitVersion: string | null;
   readonly contractVersion: string;
   readonly serverVersion: string | null;
+  readonly constitutionDigest: string | null;
+  readonly constitutionState: string | null;
+  readonly constitutionReportedAt: string | null;
 }
 
 export interface WorkstationConnectionDeps {
@@ -45,6 +52,8 @@ export interface WorkstationConnectionDeps {
   readonly contractVersion: string;
   readonly apiVersion: string;
   readonly audit: { record(row: Record<string, unknown>): Promise<void> };
+  /** EPIC-042 T1489: data-model.md §3, one rule shared with the render service. */
+  readonly constitution?: { classify(projectId: string, digest: string | null): Promise<string> } | undefined;
   readonly now?: () => Date;
   readonly newId?: () => string;
 }
@@ -60,6 +69,8 @@ export class WorkstationConnectionService {
 
   async touch(ctx: ConnectorReadContext, input: HealthInput): Promise<HealthView> {
     const at = this.now();
+    const reported = input.constitutionDigest !== undefined;
+    const constitutionState = reported && this.deps.constitution ? await this.deps.constitution.classify(ctx.projectId, input.constitutionDigest ?? null) : null;
     const row = await this.deps.store.touch({
       id: this.newId(),
       workspaceId: ctx.workspaceId,
@@ -70,6 +81,7 @@ export class WorkstationConnectionService {
       toolkitVersion: input.toolkitVersion,
       serverVersion: input.serverVersion,
       contractVersion: this.deps.contractVersion,
+      ...(reported && constitutionState !== null ? { constitution: { digest: input.constitutionDigest ?? null, state: constitutionState } } : {}),
     });
     await this.deps.audit.record({
       workspaceId: ctx.workspaceId,
@@ -86,6 +98,7 @@ export class WorkstationConnectionService {
         ...(input.extensionVersion !== undefined ? { extensionVersion: input.extensionVersion } : {}),
         ...(input.toolkitVersion !== undefined ? { toolkitVersion: input.toolkitVersion } : {}),
         ...(input.serverVersion !== undefined ? { serverVersion: input.serverVersion } : {}),
+        ...(reported ? { constitutionState } : {}),
       },
     });
     return {
@@ -94,6 +107,7 @@ export class WorkstationConnectionService {
       apiVersion: this.deps.apiVersion,
       serverVersion: row.serverVersion,
       connectedAt: at.toISOString(),
+      constitutionState,
     };
   }
 
@@ -112,6 +126,9 @@ export class WorkstationConnectionService {
         toolkitVersion: row.toolkitVersion,
         contractVersion: row.contractVersion,
         serverVersion: row.serverVersion,
+        constitutionDigest: row.constitutionDigest,
+        constitutionState: row.constitutionState,
+        constitutionReportedAt: row.constitutionReportedAt ? row.constitutionReportedAt.toISOString() : null,
       });
     }
     return views;

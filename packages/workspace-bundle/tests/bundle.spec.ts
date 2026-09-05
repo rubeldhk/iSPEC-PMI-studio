@@ -64,13 +64,14 @@ describe('T1316 · the extension half', () => {
     expect(text).toMatch(new RegExp(`^\\s*version:\\s*"?${BUNDLE_VERSION.replace(/\./g, '\\.')}"?\\s*$`, 'm'));
   });
 
-  it('registers no commands and no hooks in v0.1', () => {
-    // A hook that calls a speckit.pmi.* command EPIC-042 has not written would
-    // fail the user's next /speckit-* run. The mechanism ships now; the content
-    // arrives with EPIC-042 (contracts/project-files.md §extension).
+  it('registers three commands and eighteen mandatory hooks in v0.2 (EPIC-042 T1525)', () => {
+    // v0.1 shipped the mechanism with no content — a hook calling a command
+    // EPIC-042 had not written would have failed the user's next run. v0.2
+    // carries the content (contracts/extension-and-hooks.md §1); the
+    // conformance test checks it, this asserts the halves match the version.
     const text = readFileSync(manifest, 'utf8');
-    expect(text).toMatch(/^\s*commands:\s*\[\]\s*$/m);
-    expect(text).toMatch(/^hooks:\s*\{\}\s*$/m);
+    expect([...text.matchAll(/^\s+- name: "speckit\.pmi\.(begin|finish|progress)"/gm)]).toHaveLength(3);
+    expect([...text.matchAll(/^  (before|after)_[a-z]+: \{ command: "speckit\.pmi\.(begin|finish)", optional: false/gm)]).toHaveLength(18);
   });
 });
 

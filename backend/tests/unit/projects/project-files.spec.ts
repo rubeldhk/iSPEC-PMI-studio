@@ -20,6 +20,8 @@ import {
   PMI_STUDIO_TOKEN_REFERENCE,
   mcpServerEntry,
   mergeMcpJson,
+  writeConstitutionFile,
+  writeFirstRunMarker,
   writeProjectJson,
 } from '../../../src/modules/projects/project-files.js';
 
@@ -152,5 +154,19 @@ describe('T1404 · mcpServerEntry honours the checkout override (EPIC-043 R-043-
     const entry = mcpServerEntry({ publicUrl: 'http://localhost:3000', mcpServerVersion: '0.1.0' });
     expect(entry.command).toBe('npx');
     expect(entry.args).toEqual(['-y', '@pmi/mcp-server@0.1.0']);
+  });
+});
+
+describe('T1504 · .pmi/first-run and the constitution file (EPIC-042)', () => {
+  it('writeFirstRunMarker writes one line — when and by which run — and reports its relative path', async () => {
+    const path = await writeFirstRunMarker(dir, { at: new Date('2026-09-04T12:00:00Z'), correlationId: 'corr_1' });
+    expect(path).toBe('.pmi/first-run');
+    expect(readFileSync(join(dir, '.pmi', 'first-run'), 'utf8')).toBe('2026-09-04T12:00:00.000Z corr_1\n');
+  });
+
+  it('writeConstitutionFile writes the render as received with LF endings and reports its relative path', async () => {
+    const path = await writeConstitutionFile(dir, '<!-- GENERATED -->\r\n# Alpha Constitution\r\n');
+    expect(path).toBe('.specify/memory/constitution.md');
+    expect(readFileSync(join(dir, '.specify', 'memory', 'constitution.md'), 'utf8')).toBe('<!-- GENERATED -->\n# Alpha Constitution\n');
   });
 });

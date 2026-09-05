@@ -131,3 +131,33 @@ export async function mergeMcpJson(directory: string, entry: McpServerEntry): Pr
   await writeFile(target, stableJson(document), 'utf8');
   return { path: MCP_JSON_PATH, action: existing ? 'merged' : 'created' };
 }
+
+// ---------------------------------------------------------------- EPIC-042
+
+export const FIRST_RUN_MARKER_PATH = '.pmi/first-run';
+export const CONSTITUTION_PATH = '.specify/memory/constitution.md';
+
+/**
+ * EPIC-042 `T1505` (`R-042-8`, `FR-EXT-046`): the first-run marker the begin
+ * hook reads. One line — when it was written and by which provisioning run —
+ * so a person opening it understands it. The platform's own record (no
+ * completed `specify` execution) is the tie-breaker; the hook removes the
+ * marker after the first run, or when the platform says it is stale.
+ */
+export async function writeFirstRunMarker(directory: string, input: { readonly at: Date; readonly correlationId: string }): Promise<string> {
+  const target = join(directory, FIRST_RUN_MARKER_PATH);
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, `${input.at.toISOString()} ${input.correlationId}\n`, 'utf8');
+  return FIRST_RUN_MARKER_PATH;
+}
+
+/**
+ * EPIC-042 `T1522` (`FR-EXT-028`): the constitution render, written as
+ * received — `\n` endings, one trailing newline — so its digest is the render's.
+ */
+export async function writeConstitutionFile(directory: string, content: string): Promise<string> {
+  const target = join(directory, CONSTITUTION_PATH);
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, content.replace(/\r\n/g, '\n'), 'utf8');
+  return CONSTITUTION_PATH;
+}
