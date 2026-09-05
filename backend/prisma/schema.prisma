@@ -50,6 +50,9 @@ model Workspace {
   users                 User[]
   projects              Project[]
   provisioningRecords   ProvisioningRecord[]
+  projectConstraints    ProjectConstraint[]
+  decompositionPolicies DecompositionPolicy[]
+  constitutionRenders   ConstitutionRender[]
   connectorCredentials  ConnectorCredential[]
   workstationConnections WorkstationConnection[]
   generationJobs        GenerationJob[]
@@ -167,6 +170,9 @@ model Project {
   provisioningRecords  ProvisioningRecord[]
   connectorCredentials ConnectorCredential[]
   workstationConnections WorkstationConnection[]
+  projectConstraints     ProjectConstraint[]
+  decompositionPolicy    DecompositionPolicy?
+  constitutionRenders    ConstitutionRender[]
 
   @@unique([workspaceId, name])
   // One directory, one project (data-model.md §1).
@@ -2699,6 +2705,8 @@ model ProvisioningRecord {
   bundleVersion  String?
   // Relative paths, so a partial run is inspectable (US1 scenario 5).
   filesWritten   Json
+  // EPIC-042 T1474 (R-042-8): provisioning wrote .pmi/first-run.
+  firstRunMarkerWritten Boolean @default(false)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id])
   project   Project   @relation(fields: [projectId], references: [id])
@@ -2754,6 +2762,10 @@ model WorkstationConnection {
   toolkitVersion   String?
   contractVersion  String
   serverVersion    String?
+  // EPIC-042 T1474 (R-042-5): what the workstation last reported about its constitution file.
+  constitutionDigest     String?
+  constitutionState      String?
+  constitutionReportedAt DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -2763,4 +2775,74 @@ model WorkstationConnection {
 
   @@index([workspaceId, projectId])
   @@map("workstation_connections")
+}
+
+// EPIC-042 T1474 — extension, setup skill and constitution sync
+// (specs/042-pmi-spec-kit-extension/data-model.md §1–§3). Vocabularies are
+// TEXT + CHECK in the migration, as every EPIC-041/043 record does.
+
+// §1 · owner-authored entries the constitution is rendered from (R-042-4).
+model ProjectConstraint {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  // principle | constraint | non_goal — CHECKed in the migration.
+  kind        String
+  title       String
+  body        String
+  order       Int
+  version     Int      @default(1)
+  // active | retired — CHECKed in the migration. Retired is never deleted.
+  status      String   @default("active")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([workspaceId, projectId, kind, order])
+  @@index([projectId, status])
+  @@map("project_constraints")
+}
+
+// §2 · one policy per project: D-4 defaults; offline mode strict by default (BR-0202).
+model DecompositionPolicy {
+  id                        String   @id @default(uuid())
+  workspaceId               String
+  projectId                 String   @unique
+  oneSpecPerEpic            Boolean  @default(true)
+  taskCeiling               Int      @default(50)
+  splitRequiresConfirmation Boolean  @default(true)
+  // strict | provisional — CHECKed in the migration.
+  offlineMode               String   @default("strict")
+  version                   Int      @default(1)
+  updatedById               String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@map("decomposition_policies")
+}
+
+// §3 · append-only renders; a file on disk is matched to the render that produced it (R-042-5).
+model ConstitutionRender {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  projectId    String
+  version      Int
+  digest       String
+  content      String
+  inputs       Json
+  renderedById String?
+  renderedAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, digest])
+  @@index([projectId, version(sort: Desc)])
+  @@map("constitution_renders")
 }

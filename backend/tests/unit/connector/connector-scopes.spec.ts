@@ -8,6 +8,8 @@ import { registeredConnectorScopes, isRegisteredConnectorScope } from '../../../
 
 export const CONNECTOR_SCOPES_OF_RECORD = [
   'connector.whoami',
+  'constitution.read',
+  'decomposition.read',
   'execution.append',
   'execution.comment',
   'execution.complete',
@@ -20,7 +22,7 @@ export const CONNECTOR_SCOPES_OF_RECORD = [
   'requirements.read',
 ] as const;
 
-describe('T1416 · the eleven connector scopes', () => {
+describe('T1416 + T1475 · the thirteen connector scopes', () => {
   it('are exactly the registered ones, sorted', () => {
     expect(registeredConnectorScopes()).toEqual([...CONNECTOR_SCOPES_OF_RECORD]);
   });

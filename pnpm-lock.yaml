@@ -286,7 +286,11 @@ importers:
 
   packages/storage-contract: {}
 
-  packages/workspace-bundle: {}
+  packages/workspace-bundle:
+    devDependencies:
+      yaml:
+        specifier: 2.9.0
+        version: 2.9.0
 
   worker:
     dependencies:

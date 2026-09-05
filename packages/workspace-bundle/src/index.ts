@@ -24,11 +24,12 @@
  * **no default row**: copying a Claude Code skill into another agent's directory
  * would "work" while installing something nothing will read.
  */
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Semver. Bumped whenever either half changes; recorded on every provisioning record (`FR-LPW-008`). */
-export const BUNDLE_VERSION = '0.1.0';
+export const BUNDLE_VERSION = '0.2.0';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
@@ -41,6 +42,47 @@ export function skillsDir(): string {
 /** The extension half: `<extensionDir()>/extension.yml` and its commands. */
 export function extensionDir(): string {
   return join(root, 'extension');
+}
+
+/**
+ * The constitution half (EPIC-042 `T1478`, `R-042-4`, `FR-EXT-020`): the
+ * invariant *Governed Execution* text and the generated-file header. They live
+ * here, not in `backend/src`, because the text necessarily names the toolkit's
+ * command prefix, which the backend may not contain
+ * (`engine-independence.spec.ts`). The backend imports these functions and
+ * never the words.
+ */
+export function constitutionDir(): string {
+  return join(root, 'constitution');
+}
+
+export type OfflineMode = 'strict' | 'provisional';
+
+function readConstitutionFile(name: string): string {
+  return readFileSync(join(constitutionDir(), name), 'utf8').replace(/\r\n/g, '\n');
+}
+
+/**
+ * The Governed Execution section body: the machine-readable offline-mode line
+ * the hooks read (`R-042-6`), a blank line, then the invariant text
+ * byte-for-byte. Rendered identically into every project (`SC-EXT-009`).
+ */
+export function governedExecutionSection(offlineMode: OfflineMode): string {
+  return `Offline mode: ${offlineMode}\n\n${readConstitutionFile('governed-execution.md')}`;
+}
+
+export interface ConstitutionHeaderInput {
+  readonly projectId: string;
+  readonly version: number;
+  readonly digest: string;
+}
+
+/** The generated-file header (`contracts/governance-api.md` §4). Deterministic. */
+export function constitutionHeader(input: ConstitutionHeaderInput): string {
+  return readConstitutionFile('header.md')
+    .replace('{projectId}', input.projectId)
+    .replace('{version}', String(input.version))
+    .replace('{digest}', input.digest);
 }
 
 /**

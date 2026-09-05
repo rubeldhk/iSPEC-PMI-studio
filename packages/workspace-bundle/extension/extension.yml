@@ -9,7 +9,7 @@ schema_version: "1.0"
 extension:
   id: "pmi"
   name: "PMI Studio"
-  version: "0.1.0"
+  version: "0.2.0"
   description: "Registers governed Spec Kit executions with PMI Studio and syncs artifacts (EPIC-042 fills this in)."
   author: "PMI Studio"
   license: "UNLICENSED"

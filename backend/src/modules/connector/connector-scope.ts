@@ -54,3 +54,6 @@ registerConnectorScope('execution.sync');
 registerConnectorScope('project.read');
 registerConnectorScope('requirements.read');
 registerConnectorScope('health.write');
+// EPIC-042 T1476 (R-042-11): the two reads this Epic makes live (contracts/governance-api.md §2).
+registerConnectorScope('constitution.read');
+registerConnectorScope('decomposition.read');
