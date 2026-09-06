@@ -170,6 +170,14 @@ recorded in `README.md` §Known-red checks or here.
   the row to the Epic the execution's `targetId` resolves to (number, or parent number plus split
   suffix, exactly as `bindExecutions` in `@pmi/epic-stage` resolves it); a row from an unbound
   execution stays *no Epic*.
+  - **Discharged 2026-09-05 by `EPIC-045` (`T1674`).** `FR-ART-030` implements exactly this
+    hand-off: `artifact-sync.service.ts` resolves the Epic through `bindExecutions` from
+    `@pmi/epic-stage` — the same function, not a second copy of the rule — and creates the
+    specification through `SpecificationSyncPort` bound to that Epic with the synced path in
+    `specifications.sourcePath`. A sync whose execution names no Epic of the project stores with
+    `epicId: null` and is listed as unbound; no specification is created for it. Proved by
+    `backend/tests/integration/artifact-sync.spec.ts` (`T1658`) and
+    `backend/tests/unit/artifacts/artifact-sync.service.spec.ts` (`T1632`).
 
 ## Recommended next task
 

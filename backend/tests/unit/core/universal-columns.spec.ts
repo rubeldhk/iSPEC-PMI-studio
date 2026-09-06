@@ -128,6 +128,11 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'application_intents',
       'application_policies',
       'architecture_decision_records',
+      // EPIC-045 T1621 — artifact sync: content once per digest, one row per
+      // sync, and the manifest of what that sync said about each path.
+      'artifact_sync_files',
+      'artifact_syncs',
+      'artifact_versions',
       'audit_entries',
       'baseline_exceptions',
       'baselines',
@@ -284,6 +289,11 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // EPIC-042 T1480: a constitution is *rendered* — the timestamp is the
       // render's own fact (data-model.md §3), not bookkeeping about the row.
       constitution_renders: 'renderedAt',
+      // EPIC-045 T1621: a version is *first synced* and a sync *happens* — in
+      // both cases the timestamp IS the record, not bookkeeping about the row.
+      // The manifest row carries a plain `createdAt`, so it needs no exception.
+      artifact_versions: 'firstSyncedAt',
+      artifact_syncs: 'syncedAt',
       review_sessions: 'openedAt',
       answers: 'recordedAt',
       // EPIC-024: a grant is *granted*, an attempt is *attempted* — the

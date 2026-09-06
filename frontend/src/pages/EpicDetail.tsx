@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { ApiError, type ApiClient, type EpicDetail, type EpicStage, type Project, type Requirement } from '../services/api';
 import { Button } from '../design/components/Button';
+import { EpicFiles } from './EpicFiles';
 import { FormField } from '../design/components/FormField';
 import { LoadingIndicator } from '../design/components/LoadingIndicator';
 import { PageHeader } from '../design/components/PageHeader';
@@ -28,9 +29,14 @@ export interface EpicDetailPageProps {
   readonly currentUserId?: string | undefined;
   /** Opens the project's executions timeline (the project screen). */
   readonly onOpenTimeline: (projectId: string) => void;
+  /** EPIC-045: the file and version the address names (`?file=&version=`). */
+  readonly selectedFile?: string | undefined;
+  readonly selectedVersion?: string | undefined;
+  /** The reader chose a file; the host writes it into the address. */
+  readonly onSelectFile?: ((selection: { file: string | null; version: string | null }) => void) | undefined;
 }
 
-export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline }: EpicDetailPageProps): ReactElement {
+export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline, selectedFile, selectedVersion, onSelectFile }: EpicDetailPageProps): ReactElement {
   const [epic, setEpic] = useState<EpicDetail | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [stage, setStage] = useState<EpicStage | null>(null);
@@ -186,6 +192,18 @@ export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline }: E
               </>
             )}
           </section>
+
+          {/* EPIC-045 T1653 — the Epic's synced files, below Stage. Its own
+              loading and error states, so a failure of the artifacts read
+              leaves the rest of this page standing (FR-ART-015). */}
+          <EpicFiles
+            api={api}
+            epicId={epicId}
+            epicSlug={epic.slug}
+            {...(selectedFile !== undefined ? { selectedFile } : {})}
+            {...(selectedVersion !== undefined ? { selectedVersion } : {})}
+            onSelect={onSelectFile ?? ((): void => {})}
+          />
 
           <Table
             caption="Requirements of this Epic"

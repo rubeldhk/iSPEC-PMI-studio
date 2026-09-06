@@ -57,3 +57,7 @@ registerConnectorScope('health.write');
 // EPIC-042 T1476 (R-042-11): the two reads this Epic makes live (contracts/governance-api.md §2).
 registerConnectorScope('constitution.read');
 registerConnectorScope('decomposition.read');
+// EPIC-045 T1626 (contracts/artifacts-api.md §3): the one write this Epic makes
+// live — the finish hook's artifact sync. It is a WRITE scope with no read
+// beside it: a connector credential never reads artifacts back (FR-ART-043).
+registerConnectorScope('artifacts.sync');

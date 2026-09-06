@@ -50,6 +50,15 @@ export interface SpecificationRecord {
   createdById: string;
   updatedAt: Date;
   updatedById: string;
+  /** EPIC-044 `FR-EPB-025` — the Epic that owns this specification, or null. */
+  epicId?: string | null;
+  /**
+   * EPIC-045 `T1661` (`FR-ART-019`) — the synced path whose versions feed this
+   * specification, or null for one created any other way. Exposed on the read
+   * so the detail can say *synced from `<path>`* rather than presenting an
+   * agent's file as if a person had written it here.
+   */
+  sourcePath?: string | null;
 }
 
 export interface SpecificationVersionRecord {

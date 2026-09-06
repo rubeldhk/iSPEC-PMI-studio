@@ -3,6 +3,10 @@
  * arguments validated against the shapes PMI-DOC-007 §4.1 describes, and then
  * refused by naming the Epic that supplies them. A client can tell *not yet*
  * from *never*, and is validated even while the content is absent.
+ *
+ * EPIC-045 `T1640` removed `pmi.artifacts.sync` from this list: it is live in
+ * `tools/artifacts.ts`. **Two** rows remain — `pmi.execution.sync` (EPIC-037's
+ * provisional intake) and `pmi.tasks.sync` (EPIC-046).
  */
 import { z, type ZodTypeAny } from 'zod';
 
@@ -24,21 +28,6 @@ export const RESERVED_TOOLS: readonly ReservedToolSpec[] = [
     schema: z.object({ contractVersion: z.string().optional(), batch: z.array(z.record(z.unknown())) }).strict(),
     epic: 'EPIC-037',
     what: 'Reconciliation of provisional executions',
-  },
-  {
-    name: 'pmi.artifacts.sync',
-    title: 'Sync artifacts',
-    description: "Upload one Epic's markdown set bound to an execution. Reserved until EPIC-045.",
-    schema: z
-      .object({
-        contractVersion: z.string().optional(),
-        executionId: z.string().optional(),
-        epicNumber: z.number().int().optional(),
-        files: z.array(z.object({ path: z.string(), digest: z.string(), content: z.string() })).optional(),
-      })
-      .strict(),
-    epic: 'EPIC-045',
-    what: 'Artifact sync',
   },
   {
     name: 'pmi.tasks.sync',

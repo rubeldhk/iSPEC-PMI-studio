@@ -37,7 +37,14 @@ const BOARD: BoardRead = {
 const EPICS = { epics: BOARD.epics.map((s) => ({ id: s.epicId, projectId: 'p1', number: s.number, slug: s.slug, title: s.title, description: '', status: s.status as 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 2, specificationCount: 0 })).map((e) => (e.id === 'e6' ? { ...e, status: 'split' as const } : e.id === 'e8' ? { ...e, parentEpicId: 'e6', splitSuffix: 'a' } : e.id === 'e9' ? { ...e, parentEpicId: 'e6', splitSuffix: 'b' } : e)), unassigned: [] };
 
 function api(over: Partial<Record<keyof ApiClient, unknown>> = {}): ApiClient {
-  return { getBoard: vi.fn(async () => BOARD), listEpics: vi.fn(async () => EPICS), ...over } as unknown as ApiClient;
+  return {
+    getBoard: vi.fn(async () => BOARD),
+    listEpics: vi.fn(async () => EPICS),
+    // EPIC-045 T1683: the unbound group reads this. Empty by default; the
+    // tests that care about its content supply their own answer.
+    getUnboundArtifacts: vi.fn(async () => ({ projectId: 'p1', syncs: [] })),
+    ...over,
+  } as unknown as ApiClient;
 }
 
 afterEach(cleanup);
@@ -155,5 +162,65 @@ describe('T1617 · an unrecognised command on a card (EPIC-044, spec §Edge Case
     expect(card.textContent).toContain('unrecognised command: deploy');
     expect(within(screen.getByRole('region', { name: 'Stage: Specified' })).getAllByRole('article').map((a) => a.getAttribute('aria-label'))).toContain('Epic 7 · Ops');
     expect(screen.getByRole('article', { name: 'Epic 1 · Intake' }).textContent).not.toContain('unrecognised');
+  });
+});
+
+/**
+ * `T1682` (EPIC-045, `FR-ART-007`, analysis `C1`) — the unbound group names how
+ * many files each execution's sync stored, and links to them.
+ *
+ * This group is the ONLY place an unbound sync is reachable: no Epic's tree
+ * lists it, by construction. A board that named the execution but not its
+ * files would leave a governed command's output with nowhere to be seen, which
+ * is what `C1` found.
+ */
+describe('T1682 · the unbound group names the files each sync stored', () => {
+  const UNBOUND_SYNCS = {
+    projectId: 'p1',
+    syncs: [
+      {
+        syncId: 'sync_1',
+        executionId: 'exec_77',
+        command: 'specify',
+        outcome: 'completed',
+        at: '2026-09-05T10:00:00Z',
+        created: 2,
+        reused: 0,
+        refused: 1,
+        files: [
+          { path: 'specs/099-ghost/spec.md', digest: 'a'.repeat(64), outcome: 'created', versionId: 'v1', refusalCode: null },
+          { path: 'specs/099-ghost/plan.md', digest: 'b'.repeat(64), outcome: 'created', versionId: 'v2', refusalCode: null },
+          { path: 'specs/099-ghost/notes.txt', digest: 'c'.repeat(64), outcome: 'refused', versionId: null, refusalCode: 'path_not_in_artifact_set' },
+        ],
+      },
+    ],
+  };
+
+  it('names the count and opens the list of paths', async () => {
+    await page(api({ getUnboundArtifacts: vi.fn(async () => UNBOUND_SYNCS) }));
+    const group = await screen.findByRole('region', { name: 'Unbound executions' });
+    const link = await within(group).findByRole('button', { name: '3 files synced' });
+    fireEvent.click(link);
+    expect(within(group).getByText('specs/099-ghost/spec.md')).toBeDefined();
+    expect(within(group).getByText('specs/099-ghost/notes.txt')).toBeDefined();
+    expect(group.textContent).toContain('path_not_in_artifact_set');
+  });
+
+  it('says *no files synced* for an unbound execution whose sync stored nothing', async () => {
+    await page(api({ getUnboundArtifacts: vi.fn(async () => ({ projectId: 'p1', syncs: [] })) }));
+    const group = await screen.findByRole('region', { name: 'Unbound executions' });
+    await waitFor(() => expect(group.textContent).toContain('no files synced'));
+  });
+
+  it('a failure of the unbound-artifacts read leaves the board standing and the group states it', async () => {
+    await page(api({ getUnboundArtifacts: vi.fn(async () => { throw new ApiError('not_found', 'Artifacts are unavailable.', 404); }) }));
+    const group = await screen.findByRole('region', { name: 'Unbound executions' });
+    await waitFor(() => expect(group.textContent).toContain('Artifacts are unavailable.'));
+    // The board itself is untouched.
+    expect(screen.getByRole('region', { name: 'Unbound executions' })).toBeDefined();
+    // The execution row itself is untouched — it names the command and the
+            // target Epic, as EPIC-044 wrote it.
+    expect(group.textContent).toContain('plan for Epic 99');
+    expect(group.textContent).not.toContain('no files synced');
   });
 });

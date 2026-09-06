@@ -56,3 +56,46 @@ describe('SpecificationView', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 });
+
+/**
+ * `T1660` (EPIC-045, `FR-ART-019`) — the specification detail renders its
+ * current version through the SAME `MarkdownViewer` the Epic detail uses.
+ *
+ * One renderer, two hosts: a second rendering path would be a second thing to
+ * keep safe, and the one most likely to be forgotten (`FR-ART-061`, `R-045-13`).
+ */
+describe('SpecificationView · the current version, rendered (T1660)', () => {
+  const SYNCED: Specification = {
+    ...SPEC,
+    isOutOfDate: false,
+    sourcePath: 'specs/003-reports/spec.md',
+    currentVersion: { id: 'sv2', versionNumber: 2, contentRaw: '# Reports\n\nA <b>bold</b> claim.\n', authoredById: 'exec_1', authoredAt: '2026-09-05T10:00:00Z' },
+  };
+
+  it('renders the content as markdown — a heading is a heading element', async () => {
+    render(<SpecificationView api={api(SYNCED)} specificationId="s1" />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Reports' })).toBeDefined();
+  });
+
+  it('escapes raw HTML in the content as text, exactly as the Epic detail does', async () => {
+    render(<SpecificationView api={api(SYNCED)} specificationId="s1" />);
+    await screen.findByRole('heading', { level: 1, name: 'Reports' });
+    const content = screen.getByRole('region', { name: 'Specification content' });
+    expect(content.querySelector('b'), 'raw HTML became an element').toBeNull();
+    expect(content.textContent).toContain('<b>bold</b>');
+  });
+
+  it('says where a synced specification came from', async () => {
+    render(<SpecificationView api={api(SYNCED)} specificationId="s1" />);
+    await screen.findByRole('heading', { level: 1, name: 'Reports' });
+    expect(screen.getByText(/Synced from/).textContent).toContain('specs/003-reports/spec.md');
+    expect(screen.getByText(/Synced from/).textContent).toContain('exec_1');
+  });
+
+  it('says nothing about a source for a specification created another way', async () => {
+    render(<SpecificationView api={api(SPEC)} specificationId="s1" />);
+    await screen.findByText(/speckit/);
+    expect(screen.queryByText(/Synced from/)).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Specification content' })).toBeNull();
+  });
+});

@@ -196,6 +196,20 @@ path added or removed without updating this document fails the build.
   built — breaking this path breaks two Epics that cannot be built without it (EPIC-033 `T337d`)
 - `frontend/src/rooms/` — `RoomShell` and the region primitives; owns the `UX-0041` breakpoints
   and the `UX-0040` 360px floor, so no Room sets its own
+- `frontend/src/design/components/MarkdownViewer.tsx` — `EPIC-045`'s ONE markdown renderer
+  (`T1647`, `FR-ART-061`). Every rendering of untrusted synced content goes through this file, so
+  there is exactly one place to keep safe; `frontend/tests/unit/design/no-raw-html.spec.ts` refuses
+  a second importer of `react-markdown` and any use of `dangerouslySetInnerHTML` under
+  `frontend/src/`
+- `frontend/src/pages/EpicFiles.tsx` — `EPIC-045`'s Files section (`T1651`), hosted by the Epic
+  detail. The tree, the version picker, the refusals and the findings; no control that creates,
+  uploads, renames, edits or deletes, because the project directory is authoritative and this is a
+  mirror (`FR-ART-010`)
+- `frontend/tests/fixtures/hostile-markdown/` — the corpus `markdown-viewer.spec.tsx` renders
+  every one of (`T1662`, `SC-ART-004`): a script element and an inline handler, blocked URL
+  schemes, remote and data-URL images, frames and objects, raw block and inline HTML, unknown
+  fenced languages, and relative links including one to a file no sync produced. Deleting a fixture
+  deletes a proof; the suite reads the directory, so adding one is covered without an edit
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T993f`)
 - `backend/src/modules/change-room/` — `EPIC-034`'s module (`T406c`). Registered in
@@ -205,6 +219,11 @@ path added or removed without updating this document fails the build.
   `backend/src/app.module.ts` and asserted by `defect-room-independence.spec.ts`, which reads this
   directory to prove the Room runs no tests of its own — the boundary this Epic is most likely to
   cross, because the port it needs is the one nobody built
+- `backend/src/modules/artifacts/` — `EPIC-045`'s module (`T1624`). Registered in
+  `backend/src/app.module.ts` and read by `durable-stores.spec.ts`, which proves the synced
+  content survives a restart. The module depends on Epics, executions and specifications and
+  none of them depends back; the specification entity is reached through a **port** the
+  specifications module implements, so nothing here touches a specification table (`R-045-4`)
 > **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
 > disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
 > rather than left implied: the four older contract packages — `engine-contract`,

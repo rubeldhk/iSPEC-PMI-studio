@@ -51,12 +51,27 @@ describe('T1364 · the connector module authenticates and scopes, nothing else (
     expect(callsMutation).toEqual([]);
   });
 
-  it('exposes exactly the eleven connector scopes of record (EPIC-041 one, EPIC-043 ten)', () => {
+  it('exposes exactly the fourteen connector scopes of record (EPIC-041 one, EPIC-043 ten, EPIC-042 two, EPIC-045 one)', () => {
     const scope = connector.find((f) => f.rel.endsWith('connector-scope.ts'));
     expect(scope, 'connector-scope.ts is the registry').toBeDefined();
     const registered = [...(scope?.body ?? '').matchAll(/registerConnectorScope\(\s*'([^']+)'/g)].map((m) => m[1]);
-    // EPIC-043 T1416 + EPIC-042 T1475: the thirteen scopes the contracts bind.
-    expect(registered.sort()).toEqual(['connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
+    // EPIC-043 T1416 + EPIC-042 T1475 + EPIC-045 T1625: the fourteen scopes the contracts bind.
+    expect(registered.sort()).toEqual([
+      'artifacts.sync',
+      'connector.whoami',
+      'constitution.read',
+      'decomposition.read',
+      'execution.append',
+      'execution.comment',
+      'execution.complete',
+      'execution.propose',
+      'execution.read',
+      'execution.register',
+      'execution.sync',
+      'health.write',
+      'project.read',
+      'requirements.read',
+    ]);
   });
 });
 

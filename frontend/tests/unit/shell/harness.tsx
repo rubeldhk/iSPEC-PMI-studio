@@ -106,6 +106,12 @@ export function stubApi({ signedIn = true, runs = [RUN], projects = [PROJECT] }:
     getBoard: vi.fn(async () => ({ epics: [], unbound: [], packageVersion: '0.1.0', profile: 'product', columns: ['Not started'] })),
     getEpic: vi.fn(async () => ({ id: 'e1', projectId: PROJECT.id, number: 1, slug: 'intake', title: 'Intake', description: '', status: 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 0, specificationCount: 0, requirements: [], specifications: [], parent: null, children: [], decisions: { createdBy: null, lastProcessed: null, decidedBy: null }, findings: [] })),
     getEpicStage: vi.fn(async () => ({ epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Not started', missing: [], unrecognised: [], last: null, next: '/speckit-specify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' })),
+    // EPIC-045 T1653/T1683 — the Epic detail's Files section and the board's
+    // unbound group read these on mount. Empty: reachability is about the
+    // route resolving, not about what the Epic happens to have synced.
+    getEpicArtifacts: vi.fn(async () => ({ epicId: 'e1', files: [], refusals: [], findings: { reportedNotSynced: [], syncedNotReported: [] } })),
+    getUnboundArtifacts: vi.fn(async () => ({ projectId: PROJECT.id, syncs: [] })),
+    getArtifactVersion: vi.fn(async () => ({ versionId: 'v1', path: 'specs/001-intake/spec.md', kind: 'spec', digest: 'a'.repeat(64), sizeBytes: 3, content: '# Intake\n', firstSyncedAt: '', deliveredBy: [] })),
     listEngines: vi.fn(async () => []),
     listSpecifications: vi.fn(async () => ({ items: [], total: 0 })),
     getSpecification: vi.fn(async () => ({ id: 's1', title: 'Spec', body: '', version: 1 })),

@@ -184,6 +184,15 @@ export interface Specification {
   epicId?: string | null;
   epicNumber?: number | null;
   epicTitle?: string | null;
+  /**
+   * EPIC-045 (`FR-ART-019`, `FR-ART-030`): the synced path whose versions feed
+   * this specification, or null for one created any other way. Present means
+   * *an agent wrote this file and a governed command synced it* — which the
+   * detail says in words rather than presenting it as authored here.
+   */
+  sourcePath?: string | null;
+  /** The detail read carries the current version, so its content can be rendered. */
+  currentVersion?: { id: string; versionNumber: number; contentRaw: string; authoredById: string; authoredAt: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -431,6 +440,89 @@ export interface BoardRead {
   profile: 'product';
   /** Not started, then the product profile in order — the columns of the board. */
   columns: string[];
+}
+
+/**
+ * Artifacts (EPIC-045) — a synced markdown file, its versions, and which
+ * execution delivered each. Projections over the manifest, never stored
+ * (`specs/045-artifact-sync-markdown-viewer/data-model.md` §5).
+ */
+export interface ArtifactDelivery {
+  executionId: string;
+  command: string;
+  outcome: string;
+  at: string;
+  syncId: string;
+}
+
+export interface ArtifactVersionSummary {
+  versionId: string;
+  digest: string;
+  sizeBytes: number;
+  firstSyncedAt: string;
+  /** Every execution whose sync delivered this digest — an unchanged file has several. */
+  deliveredBy: ArtifactDelivery[];
+}
+
+export interface ArtifactTreeEntry {
+  path: string;
+  kind: string;
+  /** The version of the newest sync that included this path. */
+  current: { versionId: string; digest: string; sizeBytes: number; sync: ArtifactDelivery } | null;
+  /** The Epic's newest sync did not include this path (`FR-ART-014`). */
+  notInLatestSync: boolean;
+  /** Newest first. */
+  versions: ArtifactVersionSummary[];
+}
+
+export interface ArtifactRefusal {
+  path: string;
+  code: string;
+  detail: string | null;
+  executionId: string;
+  at: string;
+}
+
+/** What the completion CLAIMED against what the sync STORED — reported, never repaired. */
+export interface ArtifactFindings {
+  reportedNotSynced: { executionId: string; digest: string }[];
+  syncedNotReported: { executionId: string; digest: string }[];
+}
+
+export interface ArtifactTree {
+  epicId: string;
+  files: ArtifactTreeEntry[];
+  refusals: ArtifactRefusal[];
+  findings: ArtifactFindings;
+}
+
+/** The only read that carries content. */
+export interface ArtifactVersion {
+  versionId: string;
+  path: string;
+  kind: string;
+  digest: string;
+  sizeBytes: number;
+  content: string;
+  firstSyncedAt: string;
+  deliveredBy: ArtifactDelivery[];
+}
+
+export interface UnboundArtifactSync {
+  syncId: string;
+  executionId: string;
+  command: string;
+  outcome: string;
+  at: string;
+  created: number;
+  reused: number;
+  refused: number;
+  files: { path: string; digest: string; outcome: string; versionId: string | null; refusalCode: string | null }[];
+}
+
+export interface UnboundArtifacts {
+  projectId: string;
+  syncs: UnboundArtifactSync[];
 }
 
 export interface ProjectConstraint {
@@ -940,6 +1032,23 @@ export class ApiClient {
 
   async getBoard(projectId: string): Promise<BoardRead> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/epics/stages`);
+  }
+
+  // ---- artifacts (EPIC-045) ----
+
+  /** The Epic's synced files as a tree. Carries no content (`SC-ART-006`). */
+  async getEpicArtifacts(epicId: string): Promise<ArtifactTree> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/artifacts`);
+  }
+
+  /** One version, content included — fetched only when a reader opens a file. */
+  async getArtifactVersion(versionId: string): Promise<ArtifactVersion> {
+    return this.request('GET', `/artifacts/${encodeURIComponent(versionId)}`);
+  }
+
+  /** Syncs whose execution named no Epic of this project (`FR-ART-007`). */
+  async getUnboundArtifacts(projectId: string): Promise<UnboundArtifacts> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/artifacts/unbound`);
   }
 
   async getRunReview(runId: string): Promise<ReviewSession> {

@@ -71,5 +71,48 @@ the transcript is written to `docs/uat/EPIC-045-m3-transcript.md`.
 
 ## Results
 
-*(filled at closure: the measured timings of `SC-ART-006`, the transcript path, the mutation
-observations, the counts)*
+**Measured on 2026-09-05**, by `backend/tests/integration/artifact-sync.spec.ts` against a real
+PostgreSQL 16 (Testcontainers) with the composed `AppModule`:
+
+| What | Bound | Measured |
+|---|---|---|
+| `SC-ART-006` tree read — an Epic with **50 files x 20 versions** (1 000 manifest rows) | < 2 000 ms | **281 ms** first run, **57 ms** on a warm database |
+| `SC-ART-005` — ten syncs of a changing file | ten retrievable versions | **10**, and every version's content re-hashed to its stored digest |
+| `SC-ART-002` — two simultaneous syncs plus one replayed key | three `201`s, one version, two sync records | **as specified** |
+
+The tree read is an order of magnitude inside its bound because it selects **no content**: the
+projection is manifest x sync x execution with `versionSummariesByIds` supplying size and digest.
+The figure to watch on a larger corpus is that one, not the content read, which is always one row.
+
+**Render half of `SC-ART-006`** (a 500 KiB file on the reference-local stack): **not measured** —
+it is recorded by `e2e/tests/epic-045-m3.spec.ts`, which is authored and has not been run against a
+stack in this session. See the transcript note below.
+
+**Transcript**: `docs/uat/EPIC-045-m3-transcript.md` — **absent**. `e2e/tests/epic-045-m3.spec.ts`
+(`T1667`) is authored; no reference-local stack was available in this session, so `SC-ART-003` is
+*authored, not yet measured*. Running the harness writes the transcript; nothing else does.
+
+## Mutation observations (performed 2026-09-05)
+
+Every one was applied to the working tree, the named test run, the failure observed, and the source
+restored. Two of the five did not fail the way this document predicted, and both differences are
+recorded rather than smoothed over — they say something true about where the guarantee lives.
+
+| Target | Mutation | Predicted | Observed |
+|---|---|---|---|
+| `SC-ART-002` | `PrismaArtifactStore.createVersion` reads first and inserts second, instead of inserting and reading back on the unique violation | scenario 3 red (two versions) | **RED** — but as `500`, not as two versions: the unique index still refuses the second insert and the raw `P2002` escapes. Exactly `DEF-044-003`'s failure mode |
+| `SC-ART-002` | the sync skips the idempotency-key lookup | the retried sync creates a second sync record | **GREEN — survived.** The early lookup is an optimisation; the arbiter is the unique `(workspaceId, idempotencyKey)` index, and `recordSync` still read the stored row back |
+| `SC-ART-002` | *and* `recordSync` stops catching the violation — neither layer dedupes | — | **RED** — both concurrency tests answer `500`. This is the mutation that locates the guarantee: it is in the schema, not in the service |
+| `SC-ART-004` | `urlTransform` replaced by the identity | `images.md` and `links.md` red | **RED on `links.md`** (a `javascript:` href survives). `images.md` stayed green: the `components.img` override independently prevents any `src` — two mechanisms, either sufficient |
+| `SC-ART-004` | the `components.img` override removed | `images.md` red | **RED** — the alternative text is gone |
+| `SC-ART-004` | both of the above together | — | **RED, four tests** — including *zero network requests* and *no element with a `src`*, which is the pair nothing else guards |
+| `FR-ART-053` | the credential-shape check removed | scenario 5 red (content stored) | **RED** — `created: 1` where `0` was expected; the file with the token was stored |
+
+**Constitution XI Tier 1, by inversion**: with `ArtifactsModule` removed from
+`backend/src/app.module.ts`, `artifact-sync.spec.ts`'s first scenario failed with `404` on
+`GET /v1/epics/{id}/artifacts` — the routes vanish and the hook's sync has nothing to answer it.
+Restored; green again.
+
+## Counts
+
+See `closure.md` §*The counts*.

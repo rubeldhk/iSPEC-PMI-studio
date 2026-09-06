@@ -738,3 +738,147 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* -- markdown viewer (EPIC-045 T1647) ----------------------------------------
+ * Read-only rendering of a synced artifact. Every value is a token: the
+ * T878 rule refuses a literal here, and the viewer is the surface most likely
+ * to grow one, because markdown has a lot of shapes.
+ */
+
+.ds-markdown {
+  display: grid;
+  gap: var(--space-4);
+  color: var(--color-text);
+  overflow-wrap: break-word;
+}
+
+.ds-markdown h1,
+.ds-markdown h2,
+.ds-markdown h3 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.ds-markdown h1 {
+  font-size: var(--type-5-size);
+  line-height: var(--type-5-line);
+  font-weight: var(--type-5-weight);
+}
+
+.ds-markdown h2 {
+  font-size: var(--type-4-size);
+  line-height: var(--type-4-line);
+  font-weight: var(--type-4-weight);
+}
+
+.ds-markdown h3 {
+  font-size: var(--type-3-size);
+  line-height: var(--type-3-line);
+  font-weight: var(--type-2-weight);
+}
+
+.ds-markdown p,
+.ds-markdown li {
+  margin: 0;
+}
+
+.ds-markdown ul,
+.ds-markdown ol {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-inline-start: var(--space-6);
+}
+
+.ds-markdown blockquote {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: var(--space-1) solid var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+}
+
+/* A wide table scrolls INSIDE itself; the page never scrolls sideways. */
+.ds-markdown table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+.ds-markdown th,
+.ds-markdown td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  text-align: start;
+}
+
+.ds-markdown th {
+  background: var(--color-surface);
+  font-weight: var(--type-2-weight);
+}
+
+.ds-markdown pre,
+.ds-markdown__pre {
+  margin: 0;
+  padding: var(--space-4);
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--type-2-size);
+  line-height: var(--type-2-line);
+}
+
+.ds-markdown code {
+  font-size: var(--type-2-size);
+}
+
+.ds-markdown :not(pre) > code {
+  padding: var(--space-0) var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+/* The fenced language, shown to the reader — an unknown grammar is visibly a
+ * code block in that language rather than mysterious monospace (FR-ART-025). */
+.ds-markdown__language {
+  display: inline-block;
+  padding: var(--space-0) var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  font-size: var(--type-1-size);
+  line-height: var(--type-1-line);
+}
+
+/* An image is never fetched; its alternative text stands in its place, marked
+ * so a reader can tell a described image from prose (FR-ART-022). */
+.ds-markdown__image {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--type-2-size);
+}
+
+.ds-markdown__dead-link {
+  color: var(--color-text-muted);
+}
+
+.ds-markdown__note {
+  font-size: var(--type-1-size);
+  color: var(--color-text-muted);
+}
+
+.ds-markdown__notice {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-warning);
+  background: var(--color-warning-subtle);
+}
+
+.ds-markdown input[type='checkbox'] {
+  margin-inline-end: var(--space-2);
+}

@@ -36,6 +36,10 @@ function api(over: Partial<Record<keyof ApiClient, unknown>> = {}): ApiClient {
     listRequirements: vi.fn(async () => UNASSIGNED),
     updateEpic: vi.fn(async () => detail({ title: 'Intake and triage' })),
     assignRequirementEpic: vi.fn(async () => ({ id: 'r2', epicId: 'e1' })),
+    // EPIC-045 T1653: the Files section reads this on mount. Empty by default —
+    // the tests that care about its content set their own answer.
+    getEpicArtifacts: vi.fn(async () => ({ epicId: 'e1', files: [], refusals: [], findings: { reportedNotSynced: [], syncedNotReported: [] } })),
+    getArtifactVersion: vi.fn(async () => ({ versionId: 'v1', path: 'specs/001-intake/spec.md', kind: 'spec', digest: 'a'.repeat(64), sizeBytes: 3, content: '# Intake\n', firstSyncedAt: '2026-09-05T10:00:00Z', deliveredBy: [] })),
     ...over,
   } as unknown as ApiClient;
 }
@@ -145,5 +149,42 @@ describe('T1618 · a slug collision is shown on the child it renamed (EPIC-044, 
   it('the Split section carries the finding', async () => {
     await page(api({ getEpic: vi.fn(async () => detail({ parentEpicId: 'e7', splitSuffix: 'a', slug: 'intake-1', parent: detail({ id: 'e7', number: 7, title: 'Whole', status: 'split' }), decisions: { createdBy: 'cmt_1', lastProcessed: null, decidedBy: 'u_owner' }, findings: ['slug `intake` collided with Epic 7; created as `intake-1`'] })) }));
     expect(screen.getByRole('region', { name: 'Split' }).textContent).toContain('slug `intake` collided with Epic 7; created as `intake-1`');
+  });
+});
+
+/**
+ * `T1652` (EPIC-045, `FR-ART-011`, `FR-ART-015`) — the Files section is part of
+ * the Epic detail, below Stage, and its failure is contained.
+ *
+ * The containment assertion is the one with teeth: the artifacts read is a new
+ * dependency of a screen that already worked, and a section that took the page
+ * down with it when the read failed would be a regression in the Epic detail,
+ * not a shortcoming of this Epic.
+ */
+describe('T1652 · the Files section on the Epic detail', () => {
+  it('is present, below Stage', async () => {
+    await page(api({ getEpicArtifacts: vi.fn(async () => ({ epicId: 'e1', files: [], refusals: [], findings: { reportedNotSynced: [], syncedNotReported: [] } })) }));
+    const files = await screen.findByRole('region', { name: 'Files' });
+    expect(files).toBeDefined();
+    const stage = screen.getByRole('region', { name: 'Stage' });
+    // Document order: Stage first, then Files.
+    expect(stage.compareDocumentPosition(files) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('passes the Epic\'s slug, so a renamed Epic can say so (FR-ART-035)', async () => {
+    const getEpicArtifacts = vi.fn(async () => ({ epicId: 'e1', files: [], refusals: [], findings: { reportedNotSynced: [], syncedNotReported: [] } }));
+    await page(api({ getEpicArtifacts }));
+    await screen.findByRole('region', { name: 'Files' });
+    expect(getEpicArtifacts).toHaveBeenCalledWith('e1');
+  });
+
+  it('a failure of the artifacts read leaves the rest of the detail standing, and the section states it', async () => {
+    await page(api({ getEpicArtifacts: vi.fn(async () => { throw new ApiError('not_found', 'Artifacts are unavailable.', 404); }) }));
+    const files = await screen.findByRole('region', { name: 'Files' });
+    expect(files.textContent).toContain('Artifacts are unavailable.');
+    // Everything the Epic detail showed before this Epic still shows.
+    expect(screen.getByText('First.')).toBeDefined();
+    expect(screen.getByRole('table', { name: 'Requirements of this Epic' })).toBeDefined();
+    expect(screen.getByRole('region', { name: 'Stage' })).toBeDefined();
   });
 });

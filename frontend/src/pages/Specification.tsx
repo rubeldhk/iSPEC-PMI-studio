@@ -17,6 +17,7 @@ import { LifecycleControls } from '../components/LifecycleControls';
 import { ValidationFindings } from '../components/ValidationFindings';
 import { VersionDiff } from '../components/VersionDiff';
 import { VersionHistory } from '../components/VersionHistory';
+import { MarkdownViewer } from '../design/components/MarkdownViewer';
 
 export interface SpecificationViewProps {
   api: ApiClient;
@@ -75,6 +76,23 @@ export function SpecificationView({ api, specificationId }: SpecificationViewPro
         <dt>Generated at</dt>
         <dd>{specification.generatedAt}</dd>
       </dl>
+      {specification.sourcePath != null && (
+        <p className="ds-field__hint">
+          Synced from <code>{specification.sourcePath}</code>
+          {specification.currentVersion ? ` by execution ${specification.currentVersion.authoredById}` : ''} — the project directory is authoritative.
+        </p>
+      )}
+      {/* EPIC-045 T1661 (FR-ART-019): the SAME renderer the Epic detail uses, so
+          there is exactly one rendering of untrusted markdown to keep safe. */}
+      {specification.currentVersion != null && (
+        <section aria-label="Specification content">
+          <MarkdownViewer
+            markdown={specification.currentVersion.contentRaw}
+            sizeBytes={new TextEncoder().encode(specification.currentVersion.contentRaw).length}
+            {...(specification.sourcePath != null ? { path: specification.sourcePath } : {})}
+          />
+        </section>
+      )}
       <LifecycleControls
         api={api}
         specificationId={specificationId}

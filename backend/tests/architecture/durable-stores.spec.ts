@@ -59,6 +59,10 @@ const BINDINGS: readonly Binding[] = [
   { module: 'connector/connector.module.ts', token: 'WORKSTATION_CONNECTION_STORE', prisma: 'PrismaWorkstationConnectionStore', inMemory: 'InMemoryWorkstationConnectionStore' },
   // EPIC-044 T1556: Epics — the stores-only module the connector and the board both import (R-044-7).
   { module: 'epics/epic-stores.module.ts', token: 'EPIC_STORE', prisma: 'PrismaEpicStore', inMemory: 'InMemoryEpicStore' },
+  // EPIC-045 T1622: synced artifact versions and their manifests. Content that
+  // survives a restart is the whole point of the sync — an in-memory binding
+  // under DATABASE_URL would lose every Epic's files silently (R-045-1).
+  { module: 'artifacts/artifacts.module.ts', token: 'ARTIFACT_STORE', prisma: 'PrismaArtifactStore', inMemory: 'InMemoryArtifactStore' },
 ];
 
 function stripComments(source: string): string {

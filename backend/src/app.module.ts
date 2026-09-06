@@ -13,6 +13,7 @@ import { ProjectsModule } from './modules/projects/projects.module.js';
 import { ConnectorModule } from './modules/connector/connector.module.js';
 import { GovernanceModule } from './modules/governance/governance.module.js';
 import { EpicsModule } from './modules/epics/epics.module.js';
+import { ArtifactsModule } from './modules/artifacts/artifacts.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
@@ -84,6 +85,9 @@ function clientBuildPath(): string {
     GovernanceModule,
     // EPIC-044 T1571 — Epics: the entity, assignment, the derived stage and the board reads.
     EpicsModule,
+    // EPIC-045 T1638 — the artifact sync and the three reads. After EpicsModule:
+    // it resolves an execution's Epic through the same store the board uses.
+    ArtifactsModule,
     SpecificationsModule,
     TasksModule,
     SteeringModule,

@@ -210,6 +210,42 @@ uses. Its configuration `packages/epic-stage/epic-stage.config.json` is mirrored
 backend imports and the Epic module free of command-name literals. The register's footer names the
 same package version the board shows, so the two cannot silently drift apart.
 
+### Artifact sync and the markdown viewer (EPIC-045)
+
+**What is synced.** The finish hook of every governed command uploads that Epic's markdown set —
+`spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-model.md`, `analysis.md`, `quickstart.md`,
+and every `.md` under the Epic's `contracts/` and `checklists/`. Each file becomes an **immutable
+version keyed by its content digest**: syncing unchanged content stores nothing new, changing a
+file adds a version, and no route, tool or screen ever edits or deletes one.
+
+**What is not synced.** `closure.md`, `defects/`, anything outside the Epic directory, anything that
+is not markdown in those two sub-directories, and binaries. A file outside the set is refused **on
+its own** — the rest of the sync still stores — and the refusal appears on the execution's timeline
+with a code, never with the file's content.
+
+**Where to read them.** The Epic detail (**Requirement Room → Epics → open an Epic**) has a
+**Files** section: the tree grouped by folder with each file's kind, size, digest and the command
+that produced it; opening one renders it read-only with a version picker naming every execution
+that delivered each version. The address carries `?file=` and `?version=`, so a link points at
+exactly what you are looking at. The Epic's synced `spec.md` also becomes the Epic's
+**specification**, which is why the specification list has rows in local-first mode.
+
+**The directory stays authoritative.** PMI Studio is a mirror of what a governed command wrote, and
+the record of which execution wrote it. Nothing on these screens creates, uploads, renames, edits or
+deletes a file, and the section says so.
+
+**Two variables** (`.env.example` at the repository root carries both, with their defaults and a
+line each on what a refusal looks like):
+
+| Variable | Default | What a refusal looks like |
+|---|---|---|
+| `PMI_ARTIFACT_MAX_BYTES` | `1048576` (1 MiB) | a larger file is refused `too_large`; the command still completes and the other files are stored |
+| `PMI_ARTIFACT_MAX_FILES` | `200` | the file past the limit is refused `too_many_files`; the ones before it are stored |
+
+Both refuse **per file**, never per sync. A file whose content carries something credential-shaped
+is refused `credential_shape` and **nothing is stored for it** — the timeline names the shape, never
+the value.
+
 ## Tests
 
 ```bash

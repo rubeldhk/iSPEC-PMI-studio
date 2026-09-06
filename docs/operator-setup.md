@@ -148,3 +148,36 @@ derivation package version the board's footer and `governance/epic-stage-registe
 shipped one and not the other. Decomposition decisions are reconciled on read (an Epic-list, board
 or stage read), so a confirmed split appears the next time anyone opens the list or the board — no
 worker is involved.
+
+**EPIC-045 — artifact sync and the markdown viewer.** One migration and two variables.
+
+*The migration* `20260906090000_epic045_artifacts` is additive: three tables (`artifact_versions`,
+`artifact_syncs`, `artifact_sync_files`) and one nullable column (`specifications.sourcePath`) with
+its unique `(epicId, sourcePath)` index. It runs with `prisma migrate deploy` like every other and
+changes no existing row. Plan for the storage: content is held **once per digest**, so an Epic
+re-synced unchanged costs nothing, but a `spec.md` that changes on every command accrues one row per
+distinct version for the life of the Epic — hundreds of rows of at most 1 MiB each per Epic.
+
+*The two variables* are `PMI_ARTIFACT_MAX_BYTES` (default `1048576`, one mebibyte) and
+`PMI_ARTIFACT_MAX_FILES` (default `200`). Both are read once from the environment and both refuse
+**per file**, never per sync — so a project that legitimately produces a 3 MiB `tasks.md` loses that
+file and keeps the rest, and the developer sees which. Raising a limit and running the command again
+fills in what was refused; nothing has to be repaired by hand.
+
+*The idempotency key is derived when the client sends none*, as
+`artifacts:<executionId>:<sha256 of the sorted path=digest list>`. Two consequences worth knowing
+before you read a support ticket: a hook that retries after a timeout produces the **same** key and
+gets the original answer back with `201`, writing nothing; and two identical syncs racing each other
+both answer `201` while leaving exactly one version, because the unique index — not the application
+— is what arbitrates.
+
+*What a refused file looks like* on the timeline: one `system` comment on the execution, authored by
+`platform:artifacts`, listing each refused path with its code — `digest_mismatch`,
+`path_not_in_artifact_set`, `path_escapes_epic`, `not_utf8`, `too_large`, `credential_shape` or
+`too_many_files`. The comment **never carries the file's content**, and for `credential_shape` it
+names the shape of what was found and not the value. The governed command still completes: a
+refused file is a fact about that file, not a failed command.
+
+*A connector credential can write and cannot read.* `artifacts.sync` is the fourteenth connector
+scope and the only one this Epic adds; the three artifact reads are session routes, so a leaked
+credential cannot be used to pull an Epic's documents back out.

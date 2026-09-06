@@ -16,6 +16,7 @@ import { CONTRACT_VERSION } from '@pmi/execution-registry-contract';
 import { z } from 'zod';
 import type { PlatformPort, PlatformResult } from './platform-client.js';
 import { credentialInArguments, refuse } from './refusals.js';
+import { ARTIFACT_TOOLS } from './tools/artifacts.js';
 import { EXECUTION_TOOLS } from './tools/execution.js';
 import { GOVERNANCE_READ_TOOLS, READ_TOOLS } from './tools/reads.js';
 import { RESERVED_TOOLS } from './tools/reserved.js';
@@ -150,7 +151,7 @@ export function createServer(platform: PlatformPort, options: ServerOptions): Mc
         'Mutating tools require an idempotencyKey. Refusals return isError with a structured code.',
     },
   );
-  for (const spec of [...EXECUTION_TOOLS, ...READ_TOOLS, ...GOVERNANCE_READ_TOOLS]) registerLive(server, platform, spec);
+  for (const spec of [...EXECUTION_TOOLS, ...READ_TOOLS, ...GOVERNANCE_READ_TOOLS, ...ARTIFACT_TOOLS]) registerLive(server, platform, spec);
   for (const spec of RESERVED_TOOLS) registerReserved(server, spec);
   return server;
 }

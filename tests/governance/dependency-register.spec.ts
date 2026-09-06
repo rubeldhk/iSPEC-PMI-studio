@@ -138,3 +138,65 @@ describe('D-13 · React Router is registered at the version installed (T436e)', 
     expect(frontend.dependencies?.['react-dom']).toBe('^18.3.1');
   });
 });
+
+/**
+ * T1627 (EPIC-045, `FR-ART-061`) — the renderer is one dependency family,
+ * pinned, verified, and with no HTML path beside it.
+ *
+ * `D-31`/`D-32` were written into the register at the plan step with the
+ * licence column unticked; this check is what makes the tick a fact rather
+ * than a habit. It also refuses the two packages that would reintroduce the
+ * `dangerouslySetInnerHTML` path the spec wants absent: `rehype-raw` (which
+ * admits raw HTML) and `dompurify` (which is only needed once raw HTML is
+ * admitted). Written to FAIL before `T1628`.
+ */
+describe('D-31 / D-32 · the markdown renderer is pinned, verified and alone (T1627)', () => {
+  const frontend = JSON.parse(readFileSync(join(REPO_ROOT, 'frontend', 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+
+  /** The register row for an id, as one line — the table is one row per line. */
+  function row(id: string): string {
+    const line = register()
+      .split(/\r?\n/)
+      .find((l) => l.includes(`**${id}**`) && l.trim().startsWith('|'));
+    expect(line, `${id} has no row in the register`).toBeDefined();
+    return line as string;
+  }
+
+  it.each([
+    ['react-markdown', 'D-31'],
+    ['remark-gfm', 'D-32'],
+  ])('installs %s at an exact major and records it as %s', (pkg, id) => {
+    const range = frontend.dependencies?.[pkg];
+    expect(range, `${pkg} is not a frontend runtime dependency`).toBeDefined();
+    // An exact pin: `TS-001`'s "exact versions pinned" rule, asserted rather
+    // than trusted. `^`/`~` would let a major arrive without a plan change.
+    expect(range, `${pkg} must be pinned exactly, not as a range`).toMatch(/^\d+\.\d+\.\d+$/);
+    const text = row(id);
+    expect(text, `${id} does not name ${pkg}`).toContain(pkg);
+    // The major in the register is the major installed — a row that records a
+    // different major is a register that has stopped describing the build.
+    const major = (range as string).split('.')[0];
+    expect(text, `${id} does not record the installed major ${major}.x`).toContain(`${major}.x`);
+  });
+
+  it.each(['D-31', 'D-32'])('%s has its licence verified, not merely expected', (id) => {
+    // The register's own policy: "Licence verified at pin time, table updated".
+    // ☑ is the tick; ☐ is the plan-time placeholder.
+    expect(row(id), `${id} still carries the unverified box`).toContain('☑');
+    expect(row(id)).not.toContain('☐');
+  });
+
+  it('records the sanitising strategy beside D-31, since that is what makes the dependency safe', () => {
+    const text = row('D-31');
+    expect(text).toContain('rehype-raw');
+    expect(text).toContain('urlTransform');
+  });
+
+  it.each(['rehype-raw', 'dompurify'])('never installs %s — no raw-HTML path exists to sanitise', (pkg) => {
+    expect(Object.keys(frontend.dependencies ?? {}), `${pkg} is a runtime dependency`).not.toContain(pkg);
+    expect(Object.keys(frontend.devDependencies ?? {}), `${pkg} is a dev dependency`).not.toContain(pkg);
+  });
+});

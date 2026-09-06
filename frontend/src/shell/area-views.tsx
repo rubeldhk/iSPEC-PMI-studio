@@ -14,7 +14,7 @@
  * drives every one of these through the real `App`.
  */
 import { useState, type ReactElement } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Button } from '../design/components/Button';
 import { EmptyState } from '../design/components/EmptyState';
 import { EngineSelector } from '../components/EngineSelector';
@@ -391,17 +391,35 @@ export function EpicListView(): ReactElement {
   );
 }
 
-/** EPIC-044 `T1579` — one Epic: requirements, specifications, the derived stage. */
+/**
+ * EPIC-044 `T1579` — one Epic: requirements, specifications, the derived stage.
+ * EPIC-045 `T1653` — and its synced files, whose selection lives in the address
+ * (`?file=&version=`) so a reader can send a colleague a link to the exact
+ * version they are looking at (`contracts/viewer-contract.md` §1).
+ */
 export function EpicDetailView(): ReactElement {
   const { api, identity } = useShell();
   const navigate = useNavigate();
   const { epicId = '' } = useParams();
+  const [search, setSearch] = useSearchParams();
+  const file = search.get('file');
+  const version = search.get('version');
   return (
     <MainLandmark>
       <EpicDetailPage
         api={api}
         epicId={epicId}
         currentUserId={identity?.user.id}
+        {...(file !== null ? { selectedFile: file } : {})}
+        {...(version !== null ? { selectedVersion: version } : {})}
+        onSelectFile={(selection): void => {
+          const next = new URLSearchParams(search);
+          if (selection.file === null) next.delete('file');
+          else next.set('file', selection.file);
+          if (selection.version === null) next.delete('version');
+          else next.set('version', selection.version);
+          setSearch(next, { replace: true });
+        }}
         onOpenTimeline={(projectId): void => {
           void navigate(`/projects/${encodeURIComponent(projectId)}`);
         }}

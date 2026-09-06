@@ -58,16 +58,35 @@ missing`), stored on the workstation connection.
 registered, non-terminal `specify` execution — another session's first run — or `null`; the begin
 hook refuses `first_run_in_progress` while it is set, so two first runs never proceed side by side.*
 
+**Made live by `EPIC-045`** (`specs/045-artifact-sync-markdown-viewer/contracts/artifacts-api.md` §1):
+
+| Tool | Route | Scope | Result (`structuredContent`) |
+|---|---|---|---|
+| `pmi.artifacts.sync` | `POST /v1/projects/me/artifacts/sync` | `artifacts.sync` | `{ syncId, epicId: string \| null, created, reused, refused: [{ path, code, detail? }] }` — `201`; mutating |
+
+`pmi.artifacts.sync` arguments: `{ executionId, files: [{ path, digest, content }], idempotencyKey? }`.
+`epicNumber`, which the reserved schema tolerated, is **accepted and dropped**: the Epic is resolved
+from the execution's input binding and never from an argument (`R-045-2`). The key is derived as
+`artifacts:<executionId>:<sha256 of sorted path=digest>` when absent, and a replay with the same key
+returns the stored answer with `201` and writes nothing (`R-045-8`). Per-file refusal codes:
+`digest_mismatch`, `path_not_in_artifact_set`, `path_escapes_epic`, `not_utf8`, `too_large`,
+`credential_shape`, `too_many_files` — `detail` never carries content or a matched credential.
+
 ## 3. Reserved — listed, schema-validated, refusing by name (`FR-PIC-002`, `FR-PIC-045`)
 
 | Tool | Refusal | Owner |
 |---|---|---|
-| `pmi.artifacts.sync` | `not_available_until { epic: 'EPIC-045' }` | `EPIC-045` |
+| `pmi.execution.sync` | `not_available_until { epic: 'EPIC-037' }` | `EPIC-037` |
 | `pmi.tasks.sync` | `not_available_until { epic: 'EPIC-046' }` | `EPIC-046` |
 
 Their argument schemas are the ones PMI-DOC-007 §4.1 describes; an argument that fails the schema
 is refused as a schema error **before** the `not_available_until` refusal, so a client is
 validated even while the content is absent.
+
+*Amended 2026-09-05 (`EPIC-045` `T1640`, `FR-ART-040`, `FR-ART-041`): `pmi.artifacts.sync` is
+**live** as of `EPIC-045` and has moved out of this section into §2 above. **Two** reserved tools
+remain. The tool surface is unchanged at fourteen — one tool moved sides, none was added or lost —
+and the finish hook that has been calling it since `EPIC-042` is not edited (`FR-ART-046`).*
 
 ## 4. Refusal codes a client must handle
 

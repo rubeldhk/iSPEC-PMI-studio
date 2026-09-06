@@ -46,7 +46,10 @@ describe('T1437 · the four credential failures are one refusal on every tool', 
     const o = await connect(port);
     try {
       for (const name of LIVE_TOOLS) {
-        const args = name.startsWith('pmi.execution.') ? { executionId: 'e', idempotencyKey: 'k', command: 'specify', argsSanitized: {}, input: { targetType: 'project', targetId: 'p' }, correlationId: 'c', type: 't', payload: {}, occurredAt: 'now', outcome: 'completed', completionComment: 'x', body: 'b', targetRef: 'r', targetVersion: 1, expectedCurrentStatus: 's', proposedState: 'p', rationale: 'r' } : {};
+        // EPIC-045 T1640: pmi.artifacts.sync is live and its schema requires an
+        // execution and a file list, so the sweep supplies them — the point of
+        // the loop is the REFUSAL, not the argument shape.
+        const args = name.startsWith('pmi.execution.') ? { executionId: 'e', idempotencyKey: 'k', command: 'specify', argsSanitized: {}, input: { targetType: 'project', targetId: 'p' }, correlationId: 'c', type: 't', payload: {}, occurredAt: 'now', outcome: 'completed', completionComment: 'x', body: 'b', targetRef: 'r', targetVersion: 1, expectedCurrentStatus: 's', proposedState: 'p', rationale: 'r' } : name === 'pmi.artifacts.sync' ? { executionId: 'e', files: [] } : {};
         const result = await o.client.callTool({ name, arguments: args });
         expect(result.isError, name).toBe(true);
         expect(result.structuredContent, name).toMatchObject(ONE_REFUSAL);

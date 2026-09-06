@@ -54,6 +54,9 @@ model Workspace {
   decompositionPolicies DecompositionPolicy[]
   constitutionRenders   ConstitutionRender[]
   epics                 Epic[]
+  artifactVersions      ArtifactVersion[]
+  artifactSyncs         ArtifactSync[]
+  artifactSyncFiles     ArtifactSyncFile[]
   connectorCredentials  ConnectorCredential[]
   workstationConnections WorkstationConnection[]
   generationJobs        GenerationJob[]
@@ -175,6 +178,8 @@ model Project {
   decompositionPolicy    DecompositionPolicy?
   constitutionRenders    ConstitutionRender[]
   epics                  Epic[]
+  artifactVersions       ArtifactVersion[]
+  artifactSyncs          ArtifactSync[]
 
   @@unique([workspaceId, name])
   // One directory, one project (data-model.md §1).
@@ -337,7 +342,13 @@ model Specification {
   // EPIC-044 T1555 (FR-EPB-025): the Epic that owns this specification, or null.
   epicId               String?
   epic                 Epic?                  @relation(fields: [epicId], references: [id])
+  // EPIC-045 T1621 (FR-ART-030, data-model §4): the synced path whose versions
+  // feed this specification. Null for every specification created another way —
+  // a generation job, or a person. Unique with the Epic, so one `spec.md` per
+  // Epic is one specification however many commands sync it.
+  sourcePath           String?
 
+  @@unique([epicId, sourcePath])
   @@index([workspaceId])
   // SC-009's 1-second p95 applies to listing views, and the list is filtered by
   // lifecycle state — so the filtered read is indexed, not scanned.
@@ -1771,6 +1782,10 @@ model Execution {
   comments        ExecutionComment[]
   proposals       StatusTransitionProposal[]
   outbox          ExecutionOutbox[]
+  // EPIC-045 T1621: the files this execution's finish hook synced, and the
+  // versions it was the first to deliver.
+  artifactSyncs           ArtifactSync[]
+  firstArtifactVersions   ArtifactVersion[]
 
   @@unique([workspaceId, idempotencyKey])
   @@index([workspaceId, correlationId])
@@ -2895,6 +2910,7 @@ model Epic {
   children       Epic[]          @relation("EpicSplit")
   requirements   Requirement[]
   specifications Specification[]
+  artifactSyncs  ArtifactSync[]
 
   @@unique([projectId, number])
   @@unique([decisionCommentId, splitSuffix])
@@ -2902,4 +2918,119 @@ model Epic {
   @@index([projectId, status])
   @@index([parentEpicId])
   @@map("epics")
+}
+
+// ---------------------------------------------------------------- artifacts
+//
+// T1621 (EPIC-045) — the Epic's markdown set, synced by the finish hook of
+// every governed command (specs/045-artifact-sync-markdown-viewer/data-model.md
+// §1-§3). The project directory stays authoritative for content; these tables
+// are its mirror and the record of WHICH EXECUTION wrote what.
+//
+// Three tables, not one. PMI-DOC-007 §3 sketched a single `ArtifactFile` row
+// per synced version; that duplicates unchanged content on every command and
+// still cannot answer "what did execution X deliver" when nothing changed.
+// Content lives once per digest (`artifact_versions`); the per-execution
+// history is the manifest (`artifact_syncs` x `artifact_sync_files`).
+//
+// Nothing here is ever updated or deleted through a route, tool or screen
+// (FR-ART-001): no service exposes such a method, and the store's surface is
+// asserted by `tests/unit/artifacts/artifact.store.spec.ts`.
+
+/// Content, once per digest. The unique `(projectId, path, digest)` index is
+/// the arbiter under concurrency (FR-ART-006): a second insert of the same
+/// content loses the race and reads the existing row back, which is why two
+/// simultaneous syncs leave exactly one version (DEF-044-003's rule).
+model ArtifactVersion {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  /// Relative to the project directory, e.g. `specs/003-reports/spec.md` (R-045-9).
+  path        String
+  /// spec | plan | tasks | research | data-model | analysis | quickstart | contract | checklist — TEXT + CHECK in the migration.
+  kind        String
+  /// SHA-256 hex of `content`, recomputed by the platform and never trusted from the sync (FR-ART-004).
+  digest      String
+  /// UTF-8 byte length.
+  sizeBytes   Int
+  /// The file, verbatim.
+  content     String
+  /// The execution whose sync first delivered this content; a reuse never rewrites it.
+  firstExecutionId String
+  firstSyncedAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  execution Execution @relation(fields: [firstExecutionId], references: [id])
+  syncFiles ArtifactSyncFile[]
+
+  @@unique([projectId, path, digest])
+  @@index([workspaceId])
+  @@index([projectId, path])
+  @@map("artifact_versions")
+}
+
+/// One row per sync. The unique `(workspaceId, idempotencyKey)` index makes a
+/// replay return the stored answer and write nothing (R-045-8); the key is the
+/// hook's, or derived as `artifacts:<executionId>:<sha256 of sorted path=digest>`.
+model ArtifactSync {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  /// The sync names it; the platform verifies it is this project's (404 otherwise).
+  executionId String
+  /// Resolved from the execution's input binding (R-045-2); null = unbound (FR-ART-007).
+  epicId      String?
+  /// The connector credential that synced.
+  credentialId   String
+  idempotencyKey String
+  /// The answer, kept — so a replay can return it without recomputing.
+  createdCount Int @default(0)
+  reusedCount  Int @default(0)
+  refusedCount Int @default(0)
+  syncedAt     DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  execution Execution @relation(fields: [executionId], references: [id])
+  epic      Epic?     @relation(fields: [epicId], references: [id])
+  files     ArtifactSyncFile[]
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([epicId, syncedAt(sort: Desc)])
+  @@index([executionId])
+  @@index([workspaceId, projectId])
+  @@map("artifact_syncs")
+}
+
+/// The manifest: what one sync said about one path. A refused row carries a
+/// code and no version; an accepted row is the converse. `refusalDetail` is
+/// safe text — never the content and never a matched credential (FR-ART-053).
+model ArtifactSyncFile {
+  id      String @id @default(uuid())
+  /// Derived from the sync, and carried anyway: a tenancy that exists only as a
+  /// join cannot be enforced by row-level security later without moving data
+  /// (`FR-002`, `T012a`).
+  workspaceId String
+  syncId  String
+  /// As sent.
+  path    String
+  /// As sent — compared against the recomputed one.
+  digest  String
+  /// created | reused | refused — TEXT + CHECK in the migration.
+  outcome String
+  versionId     String?
+  /// digest_mismatch | path_not_in_artifact_set | path_escapes_epic | not_utf8 | too_large | credential_shape | too_many_files.
+  refusalCode   String?
+  refusalDetail String?
+  createdAt     DateTime @default(now())
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  sync      ArtifactSync     @relation(fields: [syncId], references: [id])
+  version   ArtifactVersion? @relation(fields: [versionId], references: [id])
+
+  @@unique([syncId, path])
+  @@index([versionId])
+  @@index([workspaceId])
+  @@map("artifact_sync_files")
 }

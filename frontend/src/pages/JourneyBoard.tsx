@@ -9,7 +9,7 @@
  * (`FR-EPB-048`), with no refresh control of its own.
  */
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
-import { ApiError, type ApiClient, type BoardRead, type Epic, type EpicStage } from '../services/api';
+import { ApiError, type ApiClient, type BoardRead, type Epic, type EpicStage, type UnboundArtifacts } from '../services/api';
 import { Button } from '../design/components/Button';
 import { FormField } from '../design/components/FormField';
 import { LoadingIndicator } from '../design/components/LoadingIndicator';
@@ -45,6 +45,13 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
   const [partial, setPartial] = useState<string[]>([]);
   const [titleFilter, setTitleFilter] = useState('');
   const [stageFilter, setStageFilter] = useState('');
+  // EPIC-045 T1683 (FR-ART-007): what the unbound executions' syncs stored.
+  // Read SEPARATELY from the board, and failing separately: a board that went
+  // blank because the artifacts read failed would be a regression in EPIC-044's
+  // screen paid for by this Epic's addition.
+  const [unboundFiles, setUnboundFiles] = useState<UnboundArtifacts | null>(null);
+  const [unboundError, setUnboundError] = useState<string | null>(null);
+  const [openSync, setOpenSync] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -64,6 +71,25 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let live = true;
+    setUnboundError(null);
+    api
+      .getUnboundArtifacts(projectId)
+      .then((answer) => {
+        if (live) setUnboundFiles(answer);
+      })
+      .catch((err: unknown) => {
+        if (live) {
+          setUnboundFiles(null);
+          setUnboundError(message(err));
+        }
+      });
+    return (): void => {
+      live = false;
+    };
+  }, [api, projectId]);
 
   const needle = titleFilter.trim().toLowerCase();
   const visible = (board?.epics ?? []).filter((c) => (needle === '' || c.title.toLowerCase().includes(needle) || String(c.number).includes(needle)) && (stageFilter === '' || c.stage === stageFilter));
@@ -166,13 +192,44 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
           <section aria-label="Unbound executions" className="ds-stack">
             <h3>Unbound executions</h3>
             {board.unbound.length === 0 && <p className="ds-field__hint">Every execution names an Epic of this project.</p>}
+            {unboundError !== null && (
+              <p className="ds-field__hint">
+                The files these executions synced could not be read — {unboundError} The executions themselves are listed above.
+              </p>
+            )}
             {board.unbound.length > 0 && (
               <ul className="ds-list">
-                {board.unbound.map((u) => (
-                  <li key={u.executionId}>
-                    {u.command} for Epic {u.targetId} · {new Date(u.registeredAt).toLocaleString()} — no such Epic in this project; listed, never attached
-                  </li>
-                ))}
+                {board.unbound.map((u) => {
+                  // EPIC-045 T1683 (FR-ART-007): what this execution's sync
+                  // stored. An unbound execution's files are reachable nowhere
+                  // else — no Epic's tree lists them — so the board is where
+                  // they are named or they are lost.
+                  const sync = unboundFiles?.syncs.find((x) => x.executionId === u.executionId) ?? null;
+                  return (
+                    <li key={u.executionId}>
+                      {u.command} for Epic {u.targetId} · {new Date(u.registeredAt).toLocaleString()} — no such Epic in this project; listed, never attached
+                      {unboundError === null && sync === null && <span className="ds-field__hint"> · no files synced</span>}
+                      {sync !== null && (
+                        <span>
+                          {' '}
+                          ·{' '}
+                          <button type="button" className="ds-link-button" onClick={(): void => setOpenSync(openSync === sync.syncId ? null : sync.syncId)}>
+                            {sync.files.length} file{sync.files.length === 1 ? '' : 's'} synced
+                          </button>
+                        </span>
+                      )}
+                      {sync !== null && openSync === sync.syncId && (
+                        <ul className="ds-list">
+                          {sync.files.map((f) => (
+                            <li key={f.path}>
+                              <code>{f.path}</code> — {f.refusalCode ?? f.outcome}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>

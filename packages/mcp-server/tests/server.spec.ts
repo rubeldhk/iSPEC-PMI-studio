@@ -2,7 +2,7 @@
  * `T1422` (EPIC-043, `contracts/mcp-tool-surface.md`) — the `pmi-studio` server
  * through a real MCP client over an in-memory transport.
  *
- * Fourteen tools (ten live, four reserved), each with an input and an output
+ * Fourteen tools (twelve live, two reserved since EPIC-045 `T1640`), each with an input and an output
  * schema; the contract version declared for a person (`instructions`) and for a
  * program (`pmi.health`); a client naming another version refused before any
  * platform call; a reserved tool validating its arguments and then refusing by
@@ -28,8 +28,10 @@ export const LIVE_TOOLS = [
   // EPIC-042 T1490 (R-042-11): the two reads EPIC-043 reserved, now live.
   'pmi.constitution.get',
   'pmi.project.decompose',
+  // EPIC-045 T1640: the write EPIC-043 reserved, now live (contracts/artifacts-api.md §4).
+  'pmi.artifacts.sync',
 ] as const;
-export const RESERVED_TOOLS = ['pmi.execution.sync', 'pmi.artifacts.sync', 'pmi.tasks.sync'] as const;
+export const RESERVED_TOOLS = ['pmi.execution.sync', 'pmi.tasks.sync'] as const;
 
 export function stubPlatform(answer: (call: PlatformCall) => PlatformResult = () => ({ ok: true, status: 200, body: {} })) {
   const calls: PlatformCall[] = [];
@@ -108,7 +110,7 @@ describe('T1422 · the tool surface', () => {
     expect(JSON.stringify(result.structuredContent ?? result.content)).toMatch(/invalid|expected|schema/i);
     const ok = await o.client.callTool({ name, arguments: {} });
     expect(ok.isError).toBe(true);
-    expect(ok.structuredContent).toMatchObject({ code: 'not_available_until', epic: expect.stringMatching(/^EPIC-04[256]$/) });
+    expect(ok.structuredContent).toMatchObject({ code: 'not_available_until', epic: expect.stringMatching(/^EPIC-0(37|46)$/) });
     expect(calls).toEqual([]);
   });
 
