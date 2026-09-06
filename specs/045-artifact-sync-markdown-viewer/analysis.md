@@ -94,6 +94,24 @@ pairing the repository's own check would catch.
 - Duplication count: 0
 - Critical issues: 0 · HIGH: 1 · MEDIUM: 6 · LOW: 4
 
+## Remediation (2026-09-05, approved by the requester)
+
+| ID | Status | Where |
+|---|---|---|
+| U1 | Applied | `tasks.md` T1660, T1661 and `plan.md` name `frontend/src/pages/Specification.tsx` and `frontend/tests/unit/pages/Specification.spec.tsx` |
+| U2 | Applied | T1668 targets `packages/workspace-bundle/tests/first-run.spec.ts`, asserts completion with no new line, and edits neither the harness nor the prompt |
+| U3 | Applied | T1645 pairs with `readme-conformance.spec.ts`; T1665 writes `frontend/tests/unit/design/no-raw-html.spec.ts` |
+| K1 | Applied | T1673 pairs with `tests/governance/layout.spec.ts` |
+| C1 | Applied | T1682, T1683 appended — the board's unbound group names its synced files |
+| C2 | Applied | T1684, T1685 appended — the slug-differs note on the tree |
+| I1 | Applied | `data-model.md` §5 states *current* is by sync order and why that satisfies the spec's edge case |
+| I2 | Applied | `data-model.md` §5 names the executions join |
+| C3 | Applied | T1667 records the render time of a 500 KiB file |
+| A1 | Recorded | to be stated in the closure as a plan decision (`R-045-8`) |
+| T1 | Applied | `data-model.md` §1 notes the rename from the replan's sketch |
+
+`spec.md` was not edited. Task count 62 → 66; identifiers `T1620`–`T1685`.
+
 ## Next Actions
 
 No CRITICAL finding blocks `/speckit-implement`. The HIGH finding (`U1`) and the four MEDIUM

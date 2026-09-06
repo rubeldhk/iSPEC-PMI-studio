@@ -7,6 +7,10 @@ through a route, tool or screen (`FR-ART-001`); the migration is additive.
 
 ## §1 · `artifact_versions` — content, once per digest (`R-045-1`)
 
+*PMI-DOC-007 §3 sketched this as one `ArtifactFile` row per synced version; the spec calls the
+concept an artifact version. Here it is `ArtifactVersion` — content once per digest — with the
+per-execution history in §2–§3 (analysis `T1`).*
+
 | Column | Type | Notes |
 |---|---|---|
 | `id` | text | uuid |
@@ -81,8 +85,14 @@ manifest rows by `path` →
 }
 ```
 
-`current` = the version of the newest sync that included the path; `notInLatestSync` = the newest
-sync of the Epic did not include the path. Refused manifest rows appear under `refusals`
+`current` = the version of the newest sync that included the path, **ordered by `syncedAt` then
+sync id**. A sync always precedes its execution's completion (the hook syncs, then completes), so
+the spec's edge case — *two executions sync the same path within the same second; the current one
+is the one whose execution completed later* — is satisfied by sync order without reading
+completion times (analysis `I1`). `notInLatestSync` = the newest sync of the Epic did not include
+the path. The tree query joins `artifact_sync_files` → `artifact_syncs` → `executions` and the
+latest lifecycle event, so each entry carries the execution's command, outcome and time without
+storing them on the sync (analysis `I2`, `R-045-7`). Refused manifest rows appear under `refusals`
 (path, code, execution, at), never under `versions`.
 
 **Content** (`GET /v1/artifacts/{vid}`): the version's row with `content`, plus `deliveredBy`.

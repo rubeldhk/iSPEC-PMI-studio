@@ -164,10 +164,11 @@ frontend/src/design/components/MarkdownViewer.tsx      NEW — react-markdown + 
 frontend/src/config/viewer.ts                          RENDER_LIMIT_BYTES
 frontend/src/pages/EpicFiles.tsx                        NEW — tree · header · picker · refusals · findings · states (R-045-13)
 frontend/src/pages/EpicDetail.tsx                       + the Files section; URL selection
-frontend/src/pages/SpecificationDetail.tsx              renders contentRaw through MarkdownViewer (FR-ART-019)
+frontend/src/pages/Specification.tsx                    renders contentRaw through MarkdownViewer (FR-ART-019)
+frontend/src/pages/JourneyBoard.tsx                     the unbound group names its synced files (FR-ART-007)
 frontend/src/services/api.ts                            + getEpicArtifacts · getArtifactVersion · getUnboundArtifacts
 frontend/tests/fixtures/hostile-markdown/*.md           the corpus (viewer-contract.md §6)
-frontend/tests/unit/design/markdown-viewer.spec.tsx · pages/epic-files.spec.tsx · pages/{epic-detail,specification-detail}.spec.tsx (extended)
+frontend/tests/unit/design/markdown-viewer.spec.tsx · design/no-raw-html.spec.ts · pages/epic-files.spec.tsx · pages/{epic-detail,Specification,journey-board}.spec.tsx (extended)
 
 backend/tests/unit/artifacts/*.spec.ts
 backend/tests/contract/artifacts-api.spec.ts · mcp-tool-surface.spec.ts (reserved rows: two)

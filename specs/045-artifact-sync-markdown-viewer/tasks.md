@@ -7,7 +7,8 @@
 [data-model.md](./data-model.md) · [contracts/artifacts-api.md](./contracts/artifacts-api.md) ·
 [contracts/viewer-contract.md](./contracts/viewer-contract.md) · [quickstart.md](./quickstart.md)
 
-**Task ID range**: `T1620`–`T1681`, **62 tasks**.
+**Task ID range**: `T1620`–`T1685`, **66 tasks** (`T1682`–`T1685` appended by the analysis
+remediation).
 
 > **On the identifiers.** `G-26-15` requires task identifiers to be unique **across the corpus**.
 > The corpus maximum before this Epic is `T1619` (`EPIC-044` Phase 9), so allocation starts at
@@ -96,7 +97,7 @@ truth about every file, including the ones it refused and the ones the completio
 - [ ] T1642 [P] [US2] Write failing unit tests `backend/tests/unit/artifacts/artifact-read.service.spec.ts` — over in-memory stores: the tree groups the Epic's manifest by path with versions newest first, each version's `deliveredBy` listing every execution that delivered that digest; `current` is the version of the newest sync that included the path; `notInLatestSync` when the newest sync omitted the path; refusals listed separately; the content read returns the version with `deliveredBy`; the unbound read; the reported-versus-synced comparison against the output binding's comma-joined digests; the tree never loads content (a spy on the store) (`R-045-7`, data-model.md §5)
 - [ ] T1643 [US2] Implement `backend/src/modules/artifacts/artifact-read.service.ts` — tree, content, unbound, findings — as projections over the manifest (unit test: T1642)
 - [ ] T1644 [US2] Implement `backend/src/modules/artifacts/artifacts.controller.ts` — `GET epics/:eid/artifacts`, `GET artifacts/:vid`, `GET projects/:id/artifacts/unbound`, member-scoped through `EpicService.locate`/the project gate, `404` absence for another workspace (contract test: T1637; integration test: T1641)
-- [ ] T1645 [US2] Document `PMI_ARTIFACT_MAX_BYTES` and `PMI_ARTIFACT_MAX_FILES` in `backend/.env.example` with their defaults and one line each on what a refusal looks like to the hook (conformance: `tests/governance/env-example.spec.ts` if present, else `readme-conformance.spec.ts` after `T1669`)
+- [ ] T1645 [US2] Document `PMI_ARTIFACT_MAX_BYTES` and `PMI_ARTIFACT_MAX_FILES` in `backend/.env.example` with their defaults and one line each on what a refusal looks like to the hook (conformance: `tests/governance/readme-conformance.spec.ts`, which `T1669` extends to require both variable names in README §Setup)
 
 **Checkpoint**: every quickstart scenario that needs no screen passes through the composed
 application and the real hook sequence.
@@ -148,8 +149,8 @@ specification detail's extended test.
 
 - [ ] T1658 [P] [US4] Extend `backend/tests/integration/artifact-sync.spec.ts` with failing expectations — after the first `spec.md` sync the session `GET /v1/projects/{id}/specifications` lists one specification under Epic 3 with the Epic's stage (`FR-ART-033`); after a changed sync it has two versions and the current one is the new content; an unchanged sync adds none; a `7a` child's sync creates the child's specification, not the parent's (`FR-ART-034`); the provenance names the execution's agent identity (`FR-ART-032`); `specification.create_from_sync` is audited (`SC-ART-007`)
 - [ ] T1659 [US4] Wire the port call and the audit in `backend/src/modules/artifacts/artifact-sync.service.ts` and the Prisma implementation in `backend/src/modules/specifications/specification-sync.service.ts` until `T1658` holds (integration test: T1658)
-- [ ] T1660 [P] [US4] Extend `frontend/tests/unit/pages/specification-detail.spec.tsx` with a failing expectation — the current version's `contentRaw` renders through `MarkdownViewer` (a heading in the content is a heading element; raw HTML in it is text), and a specification with a `sourcePath` shows *synced from `<path>` by execution `<id>`* (`FR-ART-019`)
-- [ ] T1661 [US4] Render the current version through `MarkdownViewer` in `frontend/src/pages/SpecificationDetail.tsx` and show the source line when `sourcePath` is present; expose `sourcePath` on the specification detail read in `backend/src/modules/specifications/specifications-read.service.ts` and the `Specification` type in `frontend/src/services/api.ts` (unit test: T1660)
+- [ ] T1660 [P] [US4] Extend `frontend/tests/unit/pages/Specification.spec.tsx` with a failing expectation — the current version's `contentRaw` renders through `MarkdownViewer` (a heading in the content is a heading element; raw HTML in it is text), and a specification with a `sourcePath` shows *synced from `<path>` by execution `<id>`* (`FR-ART-019`)
+- [ ] T1661 [US4] Render the current version through `MarkdownViewer` in `frontend/src/pages/Specification.tsx` and show the source line when `sourcePath` is present; expose `sourcePath` on the specification detail read in `backend/src/modules/specifications/specifications-read.service.ts` and the `Specification` type in `frontend/src/services/api.ts` (unit test: T1660)
 
 **Checkpoint**: `US4` demonstrable; the specification list is no longer empty for local-first
 projects.
@@ -165,8 +166,8 @@ projects.
 - [ ] T1662 [P] [US5] Write the hostile corpus `frontend/tests/fixtures/hostile-markdown/{script,links,images,html,fences,relative,large}.md` per `contracts/viewer-contract.md` §6 (`large.md` generated by the test above `RENDER_LIMIT_BYTES`)
 - [ ] T1663 [P] [US5] Extend `frontend/tests/unit/design/markdown-viewer.spec.tsx` (safety half) with failing expectations over the corpus — no `script` element; no attribute starting `on`; no `href` whose scheme is `javascript`, `data` or `vbscript`; no element with a `src`; no `iframe`, `object` or `embed`; raw HTML present as text; the unknown fence present as code; every hostile construct's text still present (nothing dropped); a spy on `fetch` and on image loading records **zero** requests during render (`FR-ART-020` to `FR-ART-024`, `SC-ART-004`)
 - [ ] T1664 [US5] Close every gap `T1663` finds in `frontend/src/design/components/MarkdownViewer.tsx`; document the sanitising strategy in the component's header comment and in `specs/_shared/dependencies.md` `D-31` if it changed (unit test: T1663)
-- [ ] T1665 [P] [US5] Write the failing architecture check `frontend/tests/architecture/no-raw-html.spec.ts` (or extend an existing frontend architecture spec) — no file under `frontend/src/` imports `rehype-raw` or uses `dangerouslySetInnerHTML`; `MarkdownViewer` is the only importer of `react-markdown` (`FR-ART-061`: no second renderer)
-- [ ] T1666 [US5] Keep the boundary clean and register the check in the frontend vitest project if new (architecture test: T1665)
+- [ ] T1665 [P] [US5] Write the failing boundary check `frontend/tests/unit/design/no-raw-html.spec.ts` (collected by the existing `frontend` vitest project) — no file under `frontend/src/` imports `rehype-raw` or uses `dangerouslySetInnerHTML`; `frontend/src/design/components/MarkdownViewer.tsx` is the only importer of `react-markdown` (`FR-ART-061`: no second renderer)
+- [ ] T1666 [US5] Keep the boundary clean in `frontend/src/` — remove any second importer or raw-HTML use the check finds (architecture test: T1665)
 
 **Checkpoint**: `US5` demonstrable; the corpus and its two mutation targets are in the repository.
 
@@ -174,13 +175,13 @@ projects.
 
 ## Phase 8: Polish & Cross-Cutting — F-045.8
 
-- [ ] T1667 [P] Write the failing `M3` second-half harness `e2e/tests/epic-045-m3.spec.ts` (Playwright, run-generated transcript to `docs/uat/EPIC-045-m3-transcript.md` naming the stack) — a governed `specify` on the reference-local stack through the real `pmi-studio` server over stdio and the shipped finish sequence; then a signed-in member with no checkout opens the Epic detail, reads `spec.md`, opens `plan.md` after a `plan`, picks the earlier `spec.md` version, and the digest shown equals the file's (`SC-ART-003`)
-- [ ] T1668 [P] Extend `packages/workspace-bundle/tests/hook-sequences.spec.ts` (or `finish.spec.ts`) with a failing expectation — against a stub that answers the live shape `{ syncId, created, reused, refused }`, `runFinish` reports *PMI · synced N files (M reused, K refused)* in its lines and still completes; against the old `not_available_until` refusal it still reports the information line (the hook is unchanged, `FR-ART-046`) — then adjust **only the line text** in `packages/workspace-bundle/src/hook-sequences.ts` if the live answer was not yet rendered, leaving the calls untouched
+- [ ] T1667 [P] Write the failing `M3` second-half harness `e2e/tests/epic-045-m3.spec.ts` (Playwright, run-generated transcript to `docs/uat/EPIC-045-m3-transcript.md` naming the stack) — a governed `specify` on the reference-local stack through the real `pmi-studio` server over stdio and the shipped finish sequence; then a signed-in member with no checkout opens the Epic detail, reads `spec.md`, opens `plan.md` after a `plan`, picks the earlier `spec.md` version, and the digest shown equals the file's (`SC-ART-003`); the transcript also records the time to render a generated 500 KiB markdown file on the stack (`SC-ART-006`, render half)
+- [ ] T1668 [P] Extend `packages/workspace-bundle/tests/first-run.spec.ts` with a failing expectation — against a stub that answers the live shape `{ syncId, epicId, created, reused, refused }`, `runFinish` completes, the digests still travel on the completion's output binding, and its lines carry **no** new sync line (the finish prompt specifies none: only refusals and the completion are printed); against the old `not_available_until` refusal it still prints the one information line. `packages/workspace-bundle/src/hook-sequences.ts` and `packages/workspace-bundle/extension/commands/finish.md` are **not edited** (`FR-ART-046`); if the expectation fails, the platform's answer shape is what changes
 - [ ] T1669 Update `README.md` §Setup (a subsection *Artifact sync and the markdown viewer (EPIC-045)*: what is synced, what is not, the two variables, that the directory stays authoritative, where to read files) and `docs/operator-setup.md` (an `EPIC-045` paragraph: the migration, the two variables, the derived idempotency key, what a refused file looks like on the timeline) (conformance: `tests/governance/readme-conformance.spec.ts`)
 - [ ] T1670 Fill `specs/045-artifact-sync-markdown-viewer/quickstart.md` §Results — the tree and render timings, the transcript path or its absence, the counts
 - [ ] T1671 [P] Write the failing conformance extension in `backend/tests/contract/mcp-tool-surface.spec.ts` — the contract document's §3 lists exactly two reserved tools and its dated note names `EPIC-045` for `pmi.artifacts.sync`; the server's live tools include it — then confirm green after `T1640` (conformance: `backend/tests/contract/mcp-tool-surface.spec.ts`)
 - [ ] T1672 [P] Extend `backend/tests/architecture/engine-independence.spec.ts` coverage by running it and `agent-independence.spec.ts` against the new module; if either names a provider through a test fixture string, move the string to a fixture file — the production code must already be clean (architecture test: existing scans)
-- [ ] T1673 Register `frontend/src/pages/EpicFiles.tsx` and `frontend/tests/fixtures/hostile-markdown/` in `governance/repository-layout.md` (layout check)
+- [ ] T1673 Register `frontend/src/pages/EpicFiles.tsx` and `frontend/tests/fixtures/hostile-markdown/` in `governance/repository-layout.md` (conformance: `tests/governance/layout.spec.ts`)
 - [ ] T1674 Record in `specs/044-epic-model-journey-board/closure.md` §Work not done that the `FR-EPB-025` hand-off is discharged by `FR-ART-030` (a dated line), and in `specs/045-artifact-sync-markdown-viewer/spec.md` nothing (the spec is not edited by implement)
 
 ---
@@ -194,6 +195,14 @@ projects.
 - [ ] T1679 **Constitution XII** — record in `specs/045-artifact-sync-markdown-viewer/closure.md` that the commands producing this Epic ran **unregistered by hook** (this repository is not a PMI-managed project) and that the `M3` transcript's executions are registered by `speckit.pmi.begin` and their files synced by `speckit.pmi.finish` — the first content a governed command leaves in PMI Studio
 - [ ] T1680 Run `/speckit-converge`; append any remaining work to `specs/045-artifact-sync-markdown-viewer/tasks.md`; triage `specs/045-artifact-sync-markdown-viewer/defects/` leaving no open record; regenerate `governance/epic-stage-register.md` with `pnpm register:update` (twice); re-run `pnpm lint && pnpm -r typecheck && pnpm test && pnpm test:arch && pnpm test:governance`; then promote `local → dev` (no environment skipped) **only on an instruction naming the environment**
 - [ ] T1681 **Records** — confirm `specs/_shared/dependencies.md` carries `D-31`/`D-32` verified, `governance/repository-layout.md` registers the module, the component, the page and the corpus, and `specs/043-pmi-integration-contract/contracts/mcp-tool-surface.md` carries the dated note; record all three in `specs/045-artifact-sync-markdown-viewer/closure.md`
+- [ ] T1682 [P] [US2] Extend `frontend/tests/unit/pages/journey-board.spec.tsx` with failing expectations — each entry of the *unbound executions* group names how many files its sync stored (from `getUnboundArtifacts`) and links to them; an unbound execution with no sync says *no files synced*; a failure of the unbound-artifacts read leaves the board standing and the group states it (`FR-ART-007`, analysis `C1`)
+- [ ] T1683 [US2] Show the unbound files in the board's unbound group in `frontend/src/pages/JourneyBoard.tsx` through `getUnboundArtifacts` (unit test: T1682)
+- [ ] T1684 [P] [US3] Extend `frontend/tests/unit/pages/epic-files.spec.tsx` with a failing expectation — when the Epic's slug differs from a directory name in its synced paths, the tree groups by the path and shows *directory `003-reports` · the Epic's slug is now `reporting`*; when they agree, no note (`FR-ART-035`, analysis `C2`)
+- [ ] T1685 [US3] Implement the slug-differs note in `frontend/src/pages/EpicFiles.tsx` (unit test: T1684)
+
+> `T1682`–`T1685` were appended on 2026-09-05 by the `/speckit-analyze` remediation (findings `C1`,
+> `C2`); identifiers are never renumbered, so they sit after `T1681`. `T1682`/`T1683` execute in
+> Phase 4 after `T1649`; `T1684`/`T1685` execute in Phase 5 alongside `T1654`/`T1655`.
 
 ---
 
