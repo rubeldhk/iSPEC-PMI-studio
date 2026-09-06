@@ -565,3 +565,67 @@ suite('T1658 · the synced spec.md is the Epic specification (quickstart 7, FR-A
     }
   });
 });
+
+suite('DEF-045-001 · a realistic Epic set fits in one sync; an oversized body is a coded 413', () => {
+  it('accepts a 150 KB file - inside PMI_ARTIFACT_MAX_BYTES, far above the framework default body limit', async () => {
+    const { executionId } = await governedSpecify('# Realistic size\n');
+    const api = started.app.getHttpServer();
+    const content = `# Big\n${'x'.repeat(150_000)}\n`;
+    const res = await request(api)
+      .post('/v1/projects/me/artifacts/sync')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ executionId, files: [{ path: `${EPIC_DIR}/analysis.md`, digest: sha256(content), content }] });
+    expect(res.status, JSON.stringify(res.body)).toBe(201);
+    expect(res.body.created).toBe(1);
+  });
+
+  it('refuses a body above PMI_ARTIFACT_SYNC_BODY_BYTES as 413 payload_too_large, never 500', async () => {
+    const { executionId } = await governedSpecify('# Oversized body\n');
+    const api = started.app.getHttpServer();
+    // Above the 16 MiB default, split across files each inside the per-file limit.
+    const piece = 'y'.repeat(900_000);
+    const files = Array.from({ length: 20 }, (_, i) => ({ path: `${EPIC_DIR}/checklists/c${i}.md`, digest: sha256(piece), content: piece }));
+    const res = await request(api).post('/v1/projects/me/artifacts/sync').set('Authorization', `Bearer ${token}`).send({ executionId, files });
+    expect(res.status).toBe(413);
+    expect(res.body).toMatchObject({ error: { code: 'payload_too_large' } });
+  });
+});
+
+suite('DEF-045-002 · the specification step survives a race, and a reused key with a different payload is a conflict', () => {
+  it('two simultaneous first syncs of a NEW Epic spec.md with different content both answer 201, leaving one specification with two versions', async () => {
+    const api = started.app.getHttpServer();
+    const epic = await request(api).post(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).send({ title: 'Raced spec' }).expect(201);
+    const dir = `specs/00${epic.body.number}-raced-spec`;
+    mkdirSync(join(projectDir, dir), { recursive: true });
+    const m = await mcp(token);
+    let executionId = '';
+    try {
+      const begun = await runBegin(m.client, projectDir, { command: 'specify', epic: String(epic.body.number), epicDir: dir, toolkitVersion: 'v0.14.3' });
+      expect(begun.refused, JSON.stringify(begun.lines)).toBeNull();
+      executionId = begun.executionId as string;
+    } finally {
+      await m.close();
+    }
+    const send = (content: string, key: string): request.Test =>
+      request(api).post('/v1/projects/me/artifacts/sync').set('Authorization', `Bearer ${token}`).send({ executionId, idempotencyKey: key, files: [{ path: `${dir}/spec.md`, digest: sha256(content), content }] });
+    const [a, b] = await Promise.all([send('# Raced A\n', 'raced-spec-a'), send('# Raced B\n', 'raced-spec-b')]);
+    expect([a.status, b.status], JSON.stringify([a.body, b.body])).toEqual([201, 201]);
+
+    const list = await request(api).get(`/v1/projects/${projectId}/specifications`).set('Cookie', started.cookie).expect(200);
+    const mine = ((list.body.rows ?? list.body) as { id: string; epicId: string | null }[]).filter((r) => r.epicId === epic.body.id);
+    expect(mine, 'exactly one specification for the Epic').toHaveLength(1);
+    const versions = await request(api).get(`/v1/specifications/${mine[0]?.id}/versions`).set('Cookie', started.cookie).expect(200);
+    expect((versions.body as unknown[]).length, 'both contents became versions').toBe(2);
+  });
+
+  it('a caller-supplied key reused for a DIFFERENT sync is a coded conflict, not another request answer', async () => {
+    const { executionId } = await governedSpecify('# Key reuse\n');
+    const api = started.app.getHttpServer();
+    const send = (content: string): request.Test =>
+      request(api).post('/v1/projects/me/artifacts/sync').set('Authorization', `Bearer ${token}`).send({ executionId, idempotencyKey: 'reused-key', files: [{ path: `${EPIC_DIR}/quickstart.md`, digest: sha256(content), content }] });
+    await send('# one\n').expect(201);
+    const conflict = await send('# two\n');
+    expect(conflict.status).toBe(409);
+    expect(conflict.body).toMatchObject({ error: { code: 'conflict', details: { code: 'idempotency_conflict' } } });
+  });
+});

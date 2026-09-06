@@ -109,7 +109,11 @@ export interface ArtifactStore {
   /** The project's syncs bound to no Epic, newest first (`FR-ART-007`). */
   unboundSyncs(workspaceId: string, projectId: string): Promise<ArtifactSyncRecord[]>;
   syncsForExecution(workspaceId: string, executionId: string): Promise<ArtifactSyncRecord[]>;
+  /** Syncs by id, in one statement (review finding 3). */
+  syncsByIds(ids: readonly string[]): Promise<ArtifactSyncRecord[]>;
   manifestFor(syncId: string): Promise<ArtifactSyncFileRecord[]>;
+  /** Every manifest row that references a version — the content read's `deliveredBy`, in one statement (review finding 3). */
+  manifestsForVersion(versionId: string): Promise<ArtifactSyncFileRecord[]>;
   /**
    * The manifests of many syncs at once, **without loading content** — the tree
    * read's one statement (`SC-ART-006`, data-model.md §8).
@@ -119,12 +123,24 @@ export interface ArtifactStore {
   versionSummariesByIds(ids: readonly string[]): Promise<Omit<ArtifactVersionRecord, 'content'>[]>;
 }
 
-/** A unique-index violation, `P2002`-shaped like the driver's; `field` narrows it to one index. */
+/**
+ * A unique-index violation, in every shape it reaches this code: the ORM's
+ * `P2002` (with `meta.target`), a raw statement's `P2010` wrapping PostgreSQL's
+ * `23505` (with the constraint name in `meta.message`), or the driver's bare
+ * `23505`. `field` narrows it to one index by column name — which every index
+ * name in this schema carries (`DEF-045-002`: the specification tables are
+ * written with raw SQL, and their violations arrive as `P2010`, not `P2002`).
+ */
 export function isUniqueViolation(err: unknown, field?: string): boolean {
-  if (typeof err !== 'object' || err === null || (err as { code?: unknown }).code !== 'P2002') return false;
+  if (typeof err !== 'object' || err === null) return false;
+  const e = err as { code?: unknown; message?: unknown; meta?: { target?: unknown; code?: unknown; message?: unknown } };
+  const unique = e.code === 'P2002' || e.code === '23505' || (e.code === 'P2010' && e.meta?.code === '23505');
+  if (!unique) return false;
   if (field === undefined) return true;
-  const target = (err as { meta?: { target?: unknown } }).meta?.target;
-  return Array.isArray(target) ? target.includes(field) : typeof target === 'string' ? target.includes(field) : false;
+  const target = e.meta?.target;
+  const named = Array.isArray(target) ? target.join(',') : typeof target === 'string' ? target : '';
+  const message = typeof e.meta?.message === 'string' ? e.meta.message : typeof e.message === 'string' ? e.message : '';
+  return named.includes(field) || message.includes(field);
 }
 
 function uniqueViolation(target: string[]): Error {
@@ -236,12 +252,20 @@ export class InMemoryArtifactStore implements ArtifactStore {
     return [...this.syncs.values()].filter((r) => r.workspaceId === workspaceId && r.executionId === executionId).sort(newest);
   }
 
+  async syncsByIds(ids: readonly string[]): Promise<ArtifactSyncRecord[]> {
+    return ids.map((id) => this.syncs.get(id)).filter((s): s is ArtifactSyncRecord => s !== undefined);
+  }
+
   async manifestFor(syncId: string): Promise<ArtifactSyncFileRecord[]> {
     return [...(this.files.get(syncId) ?? [])];
   }
 
   async manifestsFor(syncIds: readonly string[]): Promise<ArtifactSyncFileRecord[]> {
     return syncIds.flatMap((id) => this.files.get(id) ?? []);
+  }
+
+  async manifestsForVersion(versionId: string): Promise<ArtifactSyncFileRecord[]> {
+    return [...this.files.values()].flat().filter((f) => f.versionId === versionId);
   }
 }
 
@@ -339,8 +363,18 @@ export class PrismaArtifactStore implements ArtifactStore {
     return this.db.artifactSync.findMany({ where: { workspaceId, executionId }, orderBy: { syncedAt: 'desc' } });
   }
 
+  async syncsByIds(ids: readonly string[]): Promise<ArtifactSyncRecord[]> {
+    if (ids.length === 0) return [];
+    return this.db.artifactSync.findMany({ where: { id: { in: [...ids] } } });
+  }
+
   async manifestFor(syncId: string): Promise<ArtifactSyncFileRecord[]> {
     return this.db.artifactSyncFile.findMany({ where: { syncId } });
+  }
+
+  async manifestsForVersion(versionId: string): Promise<ArtifactSyncFileRecord[]> {
+    // The `(versionId)` index makes this one indexed statement (review finding 3).
+    return this.db.artifactSyncFile.findMany({ where: { versionId } });
   }
 
   async manifestsFor(syncIds: readonly string[]): Promise<ArtifactSyncFileRecord[]> {

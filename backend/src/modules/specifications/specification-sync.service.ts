@@ -20,6 +20,7 @@
  * here against raw SQL rather than duplicated as a second policy.
  */
 import { randomUUID } from 'node:crypto';
+import { isUniqueViolation } from '../artifacts/artifact.store.js';
 import type {
   AppendVersionInput,
   AppendVersionOutcome,
@@ -69,7 +70,9 @@ export class PrismaSpecificationSyncService implements SpecificationSyncPort {
       sourcePath,
     );
     const row = rows[0];
-    return row === undefined ? null : { ...row, ownerUserId: row.createdById };
+    // The row carries no owner column; the creator is the execution's initiator,
+    // not the project owner, so it is not relabelled as one (review finding 7).
+    return row === undefined ? null : { ...row, ownerUserId: null };
   }
 
   async createFromSync(input: SpecificationSyncInput): Promise<SyncedSpecification> {
@@ -122,38 +125,49 @@ export class PrismaSpecificationSyncService implements SpecificationSyncPort {
   }
 
   async appendVersionIfChanged(input: AppendVersionInput): Promise<AppendVersionOutcome> {
-    const latest = await this.db.$queryRawUnsafe<VersionRow[]>(
-      `SELECT "id","specificationId","versionNumber","contentRaw","contentParsed","authoredById"
-         FROM "specification_versions" WHERE "workspaceId" = $1 AND "specificationId" = $2
-        ORDER BY "versionNumber" DESC LIMIT 1`,
-      input.workspaceId,
-      input.specificationId,
-    );
-    const head = latest[0];
-    if (head !== undefined && head.contentRaw === input.contentRaw) {
-      return { appended: false, version: toVersion(head) };
-    }
-    const id = randomUUID();
-    const versionNumber = (head?.versionNumber ?? 0) + 1;
-    await this.db.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(
-        `INSERT INTO "specification_versions"
-           ("id","workspaceId","specificationId","versionNumber","contentRaw","contentParsed","lifecycleStateAtCreation","authoredById")
-         SELECT $1,$2,$3,$4,$5,$6::jsonb, s."lifecycleState", $7 FROM "specifications" s WHERE s."id" = $3`,
-        id,
+    // DEF-045-002: two syncs appending at once both read the same head and both
+    // compute the same next number; the unique (specificationId, versionNumber)
+    // index refuses the second. Re-read the head and try again — bounded — so
+    // the loser appends after the winner rather than failing the sync.
+    for (let attempt = 1; ; attempt += 1) {
+      const latest = await this.db.$queryRawUnsafe<VersionRow[]>(
+        `SELECT "id","specificationId","versionNumber","contentRaw","contentParsed","authoredById"
+           FROM "specification_versions" WHERE "workspaceId" = $1 AND "specificationId" = $2
+          ORDER BY "versionNumber" DESC LIMIT 1`,
         input.workspaceId,
         input.specificationId,
-        versionNumber,
-        input.contentRaw,
-        JSON.stringify(input.contentParsed ?? { parsed: false }),
-        input.authoredById,
       );
-      await tx.$executeRawUnsafe(`UPDATE "specifications" SET "currentVersionId" = $1, "updatedAt" = now(), "updatedById" = $2 WHERE "id" = $3`, id, input.authoredById, input.specificationId);
-    });
-    return {
-      appended: true,
-      version: { id, specificationId: input.specificationId, versionNumber, contentRaw: input.contentRaw, contentParsed: input.contentParsed ?? { parsed: false }, authoredById: input.authoredById },
-    };
+      const head = latest[0];
+      if (head !== undefined && head.contentRaw === input.contentRaw) {
+        return { appended: false, version: toVersion(head) };
+      }
+      const id = randomUUID();
+      const versionNumber = (head?.versionNumber ?? 0) + 1;
+      try {
+        await this.db.$transaction(async (tx) => {
+          await tx.$executeRawUnsafe(
+            `INSERT INTO "specification_versions"
+               ("id","workspaceId","specificationId","versionNumber","contentRaw","contentParsed","lifecycleStateAtCreation","authoredById")
+             SELECT $1,$2,$3,$4,$5,$6::jsonb, s."lifecycleState", $7 FROM "specifications" s WHERE s."id" = $3`,
+            id,
+            input.workspaceId,
+            input.specificationId,
+            versionNumber,
+            input.contentRaw,
+            JSON.stringify(input.contentParsed ?? { parsed: false }),
+            input.authoredById,
+          );
+          await tx.$executeRawUnsafe(`UPDATE "specifications" SET "currentVersionId" = $1, "updatedAt" = now(), "updatedById" = $2 WHERE "id" = $3`, id, input.authoredById, input.specificationId);
+        });
+      } catch (err) {
+        if (!isUniqueViolation(err, 'versionNumber') || attempt >= 3) throw err;
+        continue;
+      }
+      return {
+        appended: true,
+        version: { id, specificationId: input.specificationId, versionNumber, contentRaw: input.contentRaw, contentParsed: input.contentParsed ?? { parsed: false }, authoredById: input.authoredById },
+      };
+    }
   }
 }
 

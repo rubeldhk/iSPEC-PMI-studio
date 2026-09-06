@@ -29,6 +29,9 @@ export type ErrorCode =
   | 'surface_not_accepted'
   | 'unsupported_contract_version'
   | 'not_available_until'
+  // EPIC-045 DEF-045-001 — a request body above the configured limit (413), reported as a code
+  // rather than escaping the body parser as a 500.
+  | 'payload_too_large'
   | 'internal_error';
 
 export interface ErrorBody {
@@ -254,6 +257,7 @@ const STATUS: Record<ErrorCode, number> = {
   surface_not_accepted: 400,
   unsupported_contract_version: 400,
   not_available_until: 501,
+  payload_too_large: 413,
   internal_error: 500,
 };
 

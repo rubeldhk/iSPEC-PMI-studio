@@ -30,8 +30,8 @@
  */
 import { createHash } from 'node:crypto';
 import { bindExecutions, type BindableEpic } from '@pmi/epic-stage';
-import { NotFoundError } from '../../core/errors.js';
-import type { ArtifactStore, NewArtifactSyncFile, RefusalCode } from './artifact.store.js';
+import { ConflictError, NotFoundError } from '../../core/errors.js';
+import { isUniqueViolation, type ArtifactStore, type NewArtifactSyncFile, type RefusalCode } from './artifact.store.js';
 import { epicDirectoryOf } from './artifact-set.js';
 import { artifactLimits, validateFile, type ArtifactLimits, type SyncedFile } from './artifact-validation.js';
 import type { SpecificationSyncPort } from './specification-sync.port.js';
@@ -156,7 +156,10 @@ export class ArtifactSyncService {
     // file is looked at, so a retry costs nothing and writes nothing.
     const idempotencyKey = request.idempotencyKey ?? deriveIdempotencyKey(request.executionId, request.files);
     const existing = await this.deps.store.findSyncByKey(ctx.workspaceId, idempotencyKey);
-    if (existing !== null) return this.answerFrom(existing);
+    if (existing !== null) {
+      await this.assertSameSync(existing, request);
+      return this.answerFrom(existing);
+    }
 
     // Step 4 — the Epic, from the execution's binding.
     const epicId = await this.resolveEpic(ctx, execution);
@@ -195,18 +198,27 @@ export class ArtifactSyncService {
       if (isEpicSpec(file.path)) epicSpec = { path: file.path, content: file.content };
     }
 
-    // Step 6 — the sync row and its manifest, in one transaction with the
+    // Step 6 — the Epic's spec.md is the Epic's specification. BEFORE the sync
+    // row (DEF-045-002): a sync row is the mark of a finished sync, and a
+    // replay returns early on it. If this step failed after the row existed,
+    // the hook's retry would replay and the specification would never be
+    // created. Ordered this way, a failure here leaves no row, and the retry
+    // redoes the work — the versions are already stored and simply `reused`.
+    if (epicSpec !== null && epicId !== null) {
+      await this.syncSpecification(ctx, execution, epicId, epicSpec);
+    }
+
+    // Step 7 — the sync row and its manifest, in one transaction with the
     // version inserts the store already performed. A concurrent sync with the
-    // same derived key loses the unique index and reads the winner's answer.
+    // same key loses the unique index and reads the winner's answer — after
+    // checking it asked for the same thing (review finding 4).
     const recorded = await this.deps.store.recordSync(
       { workspaceId: ctx.workspaceId, projectId: ctx.projectId, executionId: execution.executionId, epicId, credentialId: ctx.credentialId, idempotencyKey, createdCount: created, reusedCount: reused, refusedCount: refused.length },
       manifest,
     );
-    if (recorded.replayed) return this.answerFrom(recorded.row);
-
-    // Step 7 — the Epic's spec.md is the Epic's specification.
-    if (epicSpec !== null && epicId !== null) {
-      await this.syncSpecification(ctx, execution, epicId, epicSpec);
+    if (recorded.replayed) {
+      await this.assertSameSync(recorded.row, request);
+      return this.answerFrom(recorded.row);
     }
 
     // Step 8 — the refusals on the timeline, and the audit row.
@@ -231,6 +243,22 @@ export class ArtifactSyncService {
     });
 
     return { syncId: recorded.row.id, epicId, created, reused, refused };
+  }
+
+  /**
+   * A replayed key must be the same request (review finding 4). `EPIC-037`'s rule
+   * for every mutating operation: the same key with a different payload is a
+   * conflict, never somebody else's answer. The manifest carries every file the
+   * request named — accepted and refused alike, with the digest as stated — so
+   * comparing it to the request's files is comparing the whole payload.
+   */
+  private async assertSameSync(existing: { id: string; executionId: string }, request: SyncRequest): Promise<void> {
+    const manifest = await this.deps.store.manifestFor(existing.id);
+    const stored = manifest.map((m) => `${m.path}=${m.digest}`).sort().join('\n');
+    const asked = request.files.map((f) => `${f.path}=${f.digest}`).sort().join('\n');
+    if (existing.executionId !== request.executionId || stored !== asked) {
+      throw new ConflictError('The idempotency key was already used for a different sync.', { code: 'idempotency_conflict' });
+    }
   }
 
   /** The stored answer for a replayed key — the counts as they were, not as the replay claims. */
@@ -272,24 +300,37 @@ export class ArtifactSyncService {
   private async syncSpecification(ctx: SyncContext, execution: ExecutionLookupRow, epicId: string, spec: { path: string; content: string }): Promise<void> {
     const parsed = this.deps.parse?.(spec.content) ?? null;
     const contentParsed = parsed ?? { parsed: false };
-    const found = await this.deps.specifications.findByEpicSource(ctx.workspaceId, epicId, spec.path);
+    let found = await this.deps.specifications.findByEpicSource(ctx.workspaceId, epicId, spec.path);
+    if (found === null) {
+      const owner = (await this.deps.owners?.ownerOf(ctx.workspaceId, ctx.projectId)) ?? execution.initiatorId;
+      try {
+        await this.deps.specifications.createFromSync({
+          workspaceId: ctx.workspaceId,
+          projectId: ctx.projectId,
+          epicId,
+          sourcePath: spec.path,
+          title: titleFrom(spec.content, spec.path),
+          contentRaw: spec.content,
+          contentParsed,
+          createdById: execution.initiatorId,
+          ownerUserId: owner,
+          provenance: provenanceOf(execution),
+        });
+      } catch (err) {
+        // DEF-045-002: another sync created the Epic's specification between
+        // our read and our insert. The unique (epicId, sourcePath) index is the
+        // arbiter, as the artifact store's indexes are; read the winner back and
+        // append our content as a version, so both syncs succeed and both
+        // contents are kept.
+        if (!isUniqueViolation(err, 'sourcePath')) throw err;
+        found = await this.deps.specifications.findByEpicSource(ctx.workspaceId, epicId, spec.path);
+        if (found === null) throw err;
+      }
+    }
     if (found !== null) {
       await this.deps.specifications.appendVersionIfChanged({ workspaceId: ctx.workspaceId, specificationId: found.id, contentRaw: spec.content, contentParsed, authoredById: execution.initiatorId });
       return;
     }
-    const owner = (await this.deps.owners?.ownerOf(ctx.workspaceId, ctx.projectId)) ?? execution.initiatorId;
-    await this.deps.specifications.createFromSync({
-      workspaceId: ctx.workspaceId,
-      projectId: ctx.projectId,
-      epicId,
-      sourcePath: spec.path,
-      title: titleFrom(spec.content, spec.path),
-      contentRaw: spec.content,
-      contentParsed,
-      createdById: execution.initiatorId,
-      ownerUserId: owner,
-      provenance: provenanceOf(execution),
-    });
     await this.deps.audit.record({
       workspaceId: ctx.workspaceId,
       actorId: execution.initiatorId,

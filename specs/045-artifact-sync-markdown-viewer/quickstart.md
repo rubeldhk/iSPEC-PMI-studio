@@ -116,3 +116,10 @@ Restored; green again.
 ## Counts
 
 See `closure.md` §*The counts*.
+
+**After the branch review (2026-09-05)**: `DEF-045-001` (a real Epic's set could not be synced under
+the framework's default body limit) and `DEF-045-002` (the specification step raced and was not
+retry-safe) fixed and covered by four new integration cases — a 150 KB file syncs; a 20-file body
+above 16 MiB is `413 payload_too_large`; two simultaneous first syncs of a new Epic's `spec.md` both
+answer `201` and leave one specification with two versions; a reused key with a different payload is
+`409 idempotency_conflict`. The four Epic integration suites: 37 of 37.

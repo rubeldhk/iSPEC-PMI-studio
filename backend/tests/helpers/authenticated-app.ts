@@ -23,6 +23,7 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 import { POSTGRES_IMAGE } from './postgres-image.js';
 import { Client } from 'pg';
 import type { INestApplication } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = resolve(here, '../../prisma/migrations');
@@ -85,7 +86,9 @@ export async function startAuthenticatedApp(
   const { SessionService } = await import('../../src/modules/auth/sessions.js');
   const { SESSION_COOKIE } = await import('../../src/modules/auth/auth.controller.js');
 
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const { configureBodyParsing } = await import('../../src/core/http-body.js');
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false, bodyParser: false });
+  configureBodyParsing(app);
   app.useGlobalFilters(new ErrorFilter());
   app.setGlobalPrefix(prefix);
   await app.init();
@@ -131,7 +134,9 @@ export async function rebootApp(
   const { SessionService } = await import('../../src/modules/auth/sessions.js');
   const { SESSION_COOKIE } = await import('../../src/modules/auth/auth.controller.js');
 
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const { configureBodyParsing } = await import('../../src/core/http-body.js');
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false, bodyParser: false });
+  configureBodyParsing(app);
   app.useGlobalFilters(new ErrorFilter());
   app.setGlobalPrefix(ids.prefix ?? 'v1');
   await app.init();

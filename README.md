@@ -241,6 +241,7 @@ line each on what a refusal looks like):
 |---|---|---|
 | `PMI_ARTIFACT_MAX_BYTES` | `1048576` (1 MiB) | a larger file is refused `too_large`; the command still completes and the other files are stored |
 | `PMI_ARTIFACT_MAX_FILES` | `200` | the file past the limit is refused `too_many_files`; the ones before it are stored |
+| `PMI_ARTIFACT_SYNC_BODY_BYTES` | `16777216` (16 MiB) | the API's request-body limit; a sync above it is refused **whole** as `413 payload_too_large` — split the set or raise the limit (`DEF-045-001`) |
 
 Both refuse **per file**, never per sync. A file whose content carries something credential-shaped
 is refused `credential_shape` and **nothing is stored for it** — the timeline names the shape, never

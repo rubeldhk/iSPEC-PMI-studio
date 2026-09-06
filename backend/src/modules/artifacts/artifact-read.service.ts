@@ -213,16 +213,18 @@ export class ArtifactReadService {
   async content(workspaceId: string, projectId: string, versionId: string): Promise<ArtifactContent | null> {
     const version = await this.deps.store.findVersion(versionId);
     if (version === null || version.workspaceId !== workspaceId || version.projectId !== projectId) return null;
-    const executions = await this.executionsById(workspaceId, projectId);
     // Which syncs delivered this digest — across every Epic, since a version is
     // identified by its content and an execution may have delivered it unbound.
-    const syncs = [...(await this.deps.store.unboundSyncs(workspaceId, projectId)), ...(await this.syncsOfProject(workspaceId, projectId))];
-    const unique = new Map(syncs.map((s) => [s.id, s]));
-    const manifests = await this.deps.store.manifestsFor([...unique.keys()]);
-    const deliveredBy = manifests
-      .filter((m) => m.versionId === versionId)
+    // Three statements, however many executions the project has: the manifest
+    // rows that reference the version, their syncs, and the executions those
+    // syncs name (review finding 3 — this used to fan out one query per
+    // execution of the project).
+    const rows = (await this.deps.store.manifestsForVersion(versionId)).filter((m) => m.workspaceId === workspaceId);
+    const syncs = new Map((await this.deps.store.syncsByIds([...new Set(rows.map((m) => m.syncId))])).filter((s) => s.projectId === projectId).map((s) => [s.id, s]));
+    const executions = await this.executionsById(workspaceId, projectId);
+    const deliveredBy = rows
       .map((m) => {
-        const sync = unique.get(m.syncId);
+        const sync = syncs.get(m.syncId);
         return sync ? this.deliveredBy(sync, executions.get(sync.executionId)) : null;
       })
       .filter((d): d is DeliveredBy => d !== null)
@@ -307,13 +309,6 @@ export class ArtifactReadService {
 
   private async executionsById(workspaceId: string, projectId: string): Promise<ReadonlyMap<string, ExecutionLookupRow>> {
     return new Map((await this.deps.executions.forProject(workspaceId, projectId)).map((e) => [e.executionId, e]));
-  }
-
-  /** Every sync of the project, bound and unbound, for the content read's `deliveredBy`. */
-  private async syncsOfProject(workspaceId: string, projectId: string): Promise<ArtifactSyncRecord[]> {
-    const executions = await this.deps.executions.forProject(workspaceId, projectId);
-    const lists = await Promise.all(executions.map((e) => this.deps.store.syncsForExecution(workspaceId, e.executionId)));
-    return lists.flat();
   }
 
   /** Version metadata — deliberately WITHOUT content (`SC-ART-006`). */

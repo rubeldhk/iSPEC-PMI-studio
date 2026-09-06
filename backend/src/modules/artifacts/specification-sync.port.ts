@@ -55,7 +55,8 @@ export interface SyncedSpecification {
   readonly engineName: string;
   readonly engineVersion: string;
   readonly createdById: string;
-  readonly ownerUserId: string;
+  /** Known at creation (the project owner); null when read back, since the row does not carry it (review finding 7). */
+  readonly ownerUserId: string | null;
 }
 
 export interface SyncedSpecificationVersion {
@@ -96,6 +97,11 @@ export class InMemorySpecificationSyncPort implements SpecificationSyncPort {
   }
 
   async createFromSync(input: SpecificationSyncInput): Promise<SyncedSpecification> {
+    // DEF-045-002: the same unique index the database enforces, thrown in the
+    // same shape, so the unit suites see the race the integration suites see.
+    if (this.specifications.some((s) => s.workspaceId === input.workspaceId && s.epicId === input.epicId && s.sourcePath === input.sourcePath)) {
+      throw Object.assign(new Error('Unique constraint failed on the fields: (epicId,sourcePath)'), { code: 'P2002', meta: { target: ['epicId', 'sourcePath'] } });
+    }
     const specification: SyncedSpecification = Object.freeze({
       id: randomUUID(),
       workspaceId: input.workspaceId,

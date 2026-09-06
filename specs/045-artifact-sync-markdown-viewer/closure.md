@@ -48,6 +48,8 @@ was for.
 | `T1645` named `backend/.env.example` | This repository has no `backend/`-local example file; the artifact limits belong in the root `.env.example` operators copy. `G-26-14` caught the ticked task naming a path that does not exist | The task text names the real file; the limits are documented there, in README §Setup and in the operator guide, with `T1669`'s conformance check holding all three |
 | `T1633`'s task text named an illustrative path as if it were a repository path | `specs/003-reports/notes.txt` is the example of a refused file, not a file here | Reworded to *a stray `notes.txt`*; `G-26-14` green |
 | The findings test tried to edit an execution binding | `execution_target_bindings` is immutable by trigger (`EPIC-037`), so fabricating a reported-versus-synced mismatch by `UPDATE` failed — correctly | The mismatch is produced the way a real one arises: sync one set, complete naming another. Which is also *why* `FR-ART-009` reports rather than repairs |
+| `DEF-045-001` — the API's request-body limit refused any real Epic's set (found in the branch review) | Nothing configured a body limit, so the framework default of about 100 KB applied ahead of both documented artifact limits; a 150 KB file answered `500 internal_error`; every integration fixture was a few bytes | `core/http-body.ts`: the application is created with `bodyParser: false` and `PMI_ARTIFACT_SYNC_BODY_BYTES` (default 16 MiB) is the JSON limit, in `main.ts` and the test helper alike; the parser's refusal is `413 payload_too_large`; documented in `.env.example`, README and the operator guide; a 150 KB file and a 20-file oversized body are integration cases. CLOSED |
+| `DEF-045-002` — the specification step raced and was not retry-safe (found in the branch review) | Step 7 ran after the sync row; two first syncs of one Epic's `spec.md` answered `500`/`201`, and the loser's retry replayed past the step forever; raw-SQL violations arrive as `P2010`+`23505`, which the helper did not recognise; the in-memory port tolerated the duplicate | The specification step runs before the sync row; insert-and-read-back on `(epicId, sourcePath)`; `appendVersionIfChanged` retries a `versionNumber` collision; `isUniqueViolation` recognises the raw shapes; the in-memory port enforces the index. Two simultaneous first syncs answer `201`/`201` and leave one specification with two versions. CLOSED |
 
 ## Constitution XI Tier 1 — proved by inversion (`T1676`)
 
@@ -175,6 +177,24 @@ Three whole-project checks failed on this Epic's first full run, and each was ri
 
 `/speckit-converge for EPIC-045` — then, if it appends nothing, run `T1677` against a stack.
 
+## The branch review (2026-09-05, after the first converge)
+
+Seven findings, two of them reproduced against the composed application before they were named.
+Fixed on the branch: the request-body limit (`DEF-045-001`, HIGH), the specification step's race
+and retry hole (`DEF-045-002`, HIGH), the content read's one-query-per-execution fan-out (now three
+statements however many executions the project has, held by a spy in `review-fixes.spec.ts`), a
+caller-supplied idempotency key reused with a different payload (now `409 idempotency_conflict`; a
+replay must be the same request — the unit test that asserted the old behaviour was corrected), a
+refusal detail that named a vendor (now *a vendor API key*), the literal NUL byte in the validation
+source (now an escape, so tooling reads the file as text), and `findByEpicSource` relabelling the
+execution's initiator as the project owner (now `null`, the type widened). Left as recorded:
+versions inserted before the sync row can be orphaned if the sync row's write fails for a reason
+other than the unique index — immutable, reused by a later sync, untidy rather than wrong.
+
+After the fixes: `backend-unit` 372, `backend-contract` 307, `architecture` 290 (`T999u` the
+pre-existing red), `readme-conformance` 29 with the third variable required, the four Epic
+integration suites 37 of 37 including the four new cases, typecheck clean.
+
 ## The records (`T1681`)
 
 - `specs/_shared/dependencies.md` — `D-31` `react-markdown` **10.x** (pinned `10.1.0`) and `D-32`
@@ -189,3 +209,5 @@ Three whole-project checks failed on this Epic's first full run, and each was ri
   `EPIC-045`. Held by `backend/tests/contract/mcp-tool-surface.spec.ts` (`T1671`).
 - `specs/044-epic-model-journey-board/closure.md` — the `FR-EPB-025` hand-off recorded **discharged**
   by `FR-ART-030`, naming the two tests that prove it (`T1674`).
+- `specs/045-artifact-sync-markdown-viewer/defects/` — `DEF-045-001` and `DEF-045-002`, both
+  CLOSED; no open record.

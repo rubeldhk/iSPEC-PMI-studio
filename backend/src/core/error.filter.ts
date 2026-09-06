@@ -43,8 +43,32 @@ export class ErrorFilter implements ExceptionFilter {
       return;
     }
 
+    // EPIC-045 DEF-045-001: the body parser's own refusal. It is neither a
+    // PlatformError nor an HttpException, so it fell through to 500 and a hook
+    // syncing a real Epic's markdown set saw "an unexpected error occurred"
+    // with nothing to act on. The limit is configuration (PMI_ARTIFACT_SYNC_BODY_BYTES).
+    const tooLarge = payloadTooLarge(exception);
+    if (tooLarge !== null) {
+      res.status(413).json({
+        error: {
+          code: 'payload_too_large',
+          message: 'The request body exceeds the configured limit.',
+          details: { limitBytes: tooLarge.limit, lengthBytes: tooLarge.length },
+        },
+      } satisfies ErrorBody);
+      return;
+    }
+
     res.status(toHttpStatus(exception)).json(toErrorBody(exception));
   }
+}
+
+/** The shape `body-parser` throws for a body above its limit: `type: 'entity.too.large'`, status 413. */
+function payloadTooLarge(exception: unknown): { limit: number | null; length: number | null } | null {
+  if (typeof exception !== 'object' || exception === null) return null;
+  const e = exception as { type?: unknown; status?: unknown; statusCode?: unknown; limit?: unknown; length?: unknown };
+  if (e.type !== 'entity.too.large' && e.status !== 413 && e.statusCode !== 413) return null;
+  return { limit: typeof e.limit === 'number' ? e.limit : null, length: typeof e.length === 'number' ? e.length : null };
 }
 
 /**

@@ -268,12 +268,15 @@ describe('T1632 · step 3 — the idempotency key, derived and replayed (R-045-8
     expect((await store.syncsForEpic(WS, 'epic-3')).length, 'the replay wrote a second sync').toBe(1);
   });
 
-  it('returns the STORED answer on a replay and writes nothing', async () => {
+  it('returns the STORED answer on a replay of the SAME request and writes nothing', async () => {
+    // A replay is the same request again (review finding 4): the same key with a
+    // different payload is a conflict, covered in `review-fixes.spec.ts`.
     const { service, store } = harness();
     const first = await service.sync(ctx, { executionId: 'exec-1', files, idempotencyKey: 'k-1' });
-    const replay = await service.sync(ctx, { executionId: 'exec-1', files: [file('specs/003-reports/spec.md', '# Different\n')], idempotencyKey: 'k-1' });
+    const replay = await service.sync(ctx, { executionId: 'exec-1', files: [...files].reverse(), idempotencyKey: 'k-1' });
     expect(replay.syncId).toBe(first.syncId);
     expect(replay.created).toBe(first.created);
+    expect((await store.syncsForEpic(WS, 'epic-3')).length, 'the replay wrote a second sync').toBe(1);
     expect((await store.manifestFor(first.syncId)).map((m) => m.path).sort()).toEqual(files.map((f) => f.path).sort());
   });
 

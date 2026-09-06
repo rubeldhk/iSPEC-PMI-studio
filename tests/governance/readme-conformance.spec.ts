@@ -176,12 +176,12 @@ describe('T1669 · the artifact limits are documented (EPIC-045)', () => {
   const ENV_EXAMPLE = resolve(ROOT, '.env.example');
   const envExample = existsSync(ENV_EXAMPLE) ? readFileSync(ENV_EXAMPLE, 'utf8') : '';
 
-  it.each(['PMI_ARTIFACT_MAX_BYTES', 'PMI_ARTIFACT_MAX_FILES'])('README §Setup names %s', (name) => {
+  it.each(['PMI_ARTIFACT_MAX_BYTES', 'PMI_ARTIFACT_MAX_FILES', 'PMI_ARTIFACT_SYNC_BODY_BYTES'])('README §Setup names %s', (name) => {
     const setup = readme.split(/^## Setup$/m)[1]?.split(/^## (?!#)/m)[0] ?? '';
     expect(setup, `README §Setup does not name ${name}`).toContain(name);
   });
 
-  it.each(['PMI_ARTIFACT_MAX_BYTES', 'PMI_ARTIFACT_MAX_FILES'])('.env.example carries %s with a default', (name) => {
+  it.each(['PMI_ARTIFACT_MAX_BYTES', 'PMI_ARTIFACT_MAX_FILES', 'PMI_ARTIFACT_SYNC_BODY_BYTES'])('.env.example carries %s with a default', (name) => {
     // A line of the form `NAME=<something>`: the variable is not merely
     // mentioned in a comment, it has a value an operator can copy.
     const assigned = envExample.split(/\r?\n/).find((line) => line.startsWith(`${name}=`));

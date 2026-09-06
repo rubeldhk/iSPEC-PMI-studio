@@ -158,8 +158,11 @@ changes no existing row. Plan for the storage: content is held **once per digest
 re-synced unchanged costs nothing, but a `spec.md` that changes on every command accrues one row per
 distinct version for the life of the Epic — hundreds of rows of at most 1 MiB each per Epic.
 
-*The two variables* are `PMI_ARTIFACT_MAX_BYTES` (default `1048576`, one mebibyte) and
-`PMI_ARTIFACT_MAX_FILES` (default `200`). Both are read once from the environment and both refuse
+*The three variables* are `PMI_ARTIFACT_MAX_BYTES` (default `1048576`, one mebibyte),
+`PMI_ARTIFACT_MAX_FILES` (default `200`) and `PMI_ARTIFACT_SYNC_BODY_BYTES` (default `16777216`,
+sixteen mebibytes — the API's request-body limit, which must hold an Epic's whole set because the
+hook sends it in one request; a body above it is refused whole as `413 payload_too_large`,
+`DEF-045-001`). The first two are read once from the environment and both refuse
 **per file**, never per sync — so a project that legitimately produces a 3 MiB `tasks.md` loses that
 file and keeps the rest, and the developer sees which. Raising a limit and running the command again
 fills in what was refused; nothing has to be repaired by hand.
