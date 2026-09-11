@@ -230,6 +230,13 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'steering_scopes',
       'storage_connections',
       'structure_definitions',
+      // EPIC-046 T1687 — the task sync. All three carry a plain `createdAt`, so
+      // none needs an alias in the map below: `syncedAt` and `proposedAt` are
+      // domain facts that sit BESIDE the row's creation time rather than
+      // standing in for it (the T012a lesson, learned again).
+      'task_status_proposals',
+      'task_sync_lines',
+      'task_syncs',
       'tasks',
       'traceability_links',
       'users',

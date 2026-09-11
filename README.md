@@ -247,6 +247,39 @@ Both refuse **per file**, never per sync. A file whose content carries something
 is refused `credential_shape` and **nothing is stored for it** — the timeline names the shape, never
 the value.
 
+### The task board (EPIC-046)
+
+**What is parsed.** The finish hook of a governed `tasks` or `implement` run sends that Epic's
+`tasks.md`, and the platform reads its **task lines** into rows bound to the execution that
+produced them. A considered line is `- [ ]` or `- [X]` followed by an identifier and a description;
+a ticked box means `done` and an empty one means `not_started`, because those are the only two
+states a checkbox can express.
+
+**The grammar, and where its settings live.** The identifier shape is the repository's own, read
+from `governance/epic-stage.config.json` rather than written here — one definition, so widening it
+is one edit (`FR-ESK-025`). All four settings are in `.env.example` at the repository root with
+their defaults and a line each on what a refusal looks like: `PMI_TASKS_MAX_BYTES` and
+`PMI_TASKS_MAX_LINES` refuse the **whole** sync, so the board keeps the parse it had rather than
+half a new one; `PMI_TASK_ID_PATTERN` and `PMI_TASK_DESCRIPTION_MAX` refuse **one line**, which is
+listed under *Refused lines* with its number and coded reason while the rest of the file syncs. A
+line the parser cannot read is never silently dropped.
+
+**A manual move is a proposal, and never edits the file.** Dragging or choosing a new column opens
+a form that requires a reason, and what it sends is a **proposal** — recorded, adjudicated, and
+answered with one of six verdicts (`validated`, `applied`, `approval_required`, `refused`,
+`inconsistent`, `reconciliation_required`). Nothing PMI Studio does writes to `tasks.md`: the
+project directory is authoritative, and a board that edited it would be inventing the fact it is
+supposed to be reporting. An agent may propose but may never approve its own proposal
+(Constitution XII.6). When a person's status and the file disagree, the board says so on the card
+and in an **Open disagreements** list rather than picking a winner quietly; the file wins the moment
+it speaks, and the proposal record survives unamended.
+
+**Where to read it.** **Plan & Tasks → an Epic** shows the board: four columns, the latest parse's
+header — execution, digest, time, and *lines considered = parsed + refused + duplicates* — the
+progress percentage, and the open disagreements. When the latest parse is older than the Epic's
+latest run, the header says so and names both times, so a board that is behind is never mistaken
+for a current one.
+
 ## Tests
 
 ```bash

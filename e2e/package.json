@@ -1,6 +1,7 @@
 {
   "name": "e2e",
   "private": true,
+  "type": "module",
   "description": "End-to-end journey measurements (SC-001). Requires a running stack — see tests/sc-001-journey.spec.ts for the exact run steps.",
   "scripts": {
     "test": "playwright test"

@@ -123,7 +123,7 @@ suite('T1446 · Scenario 9 — the reads, this project only', () => {
       const bad = await m.client.callTool({ name: 'pmi.artifacts.sync', arguments: { epicNumber: 'x' } });
       expect(bad.isError).toBe(true);
       expect((bad.structuredContent as { code: string }).code).toBe('invalid_arguments');
-      const reserved = await m.client.callTool({ name: 'pmi.tasks.sync', arguments: {} });
+      const reserved = await m.client.callTool({ name: 'pmi.execution.sync', arguments: { batch: [] } });
       expect(reserved.structuredContent).toMatchObject({ code: 'not_available_until', epic: 'EPIC-046' });
       // EPIC-042 made these two live: content, not a reservation.
       const constitution = await m.client.callTool({ name: 'pmi.constitution.get', arguments: {} });

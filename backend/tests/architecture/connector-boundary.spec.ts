@@ -51,11 +51,11 @@ describe('T1364 · the connector module authenticates and scopes, nothing else (
     expect(callsMutation).toEqual([]);
   });
 
-  it('exposes exactly the fourteen connector scopes of record (EPIC-041 one, EPIC-043 ten, EPIC-042 two, EPIC-045 one)', () => {
+  it('exposes exactly the fifteen connector scopes of record (EPIC-041 one, EPIC-043 ten, EPIC-042 two, EPIC-045 one, EPIC-046 one)', () => {
     const scope = connector.find((f) => f.rel.endsWith('connector-scope.ts'));
     expect(scope, 'connector-scope.ts is the registry').toBeDefined();
     const registered = [...(scope?.body ?? '').matchAll(/registerConnectorScope\(\s*'([^']+)'/g)].map((m) => m[1]);
-    // EPIC-043 T1416 + EPIC-042 T1475 + EPIC-045 T1625: the fourteen scopes the contracts bind.
+    // EPIC-043 T1416 + EPIC-042 T1475 + EPIC-045 T1625 + EPIC-046 T1691: the fifteen scopes the contracts bind.
     expect(registered.sort()).toEqual([
       'artifacts.sync',
       'connector.whoami',
@@ -71,6 +71,7 @@ describe('T1364 · the connector module authenticates and scopes, nothing else (
       'health.write',
       'project.read',
       'requirements.read',
+      'tasks.sync',
     ]);
   });
 });

@@ -33,7 +33,11 @@ import {
 } from './generate-tasks.service.js';
 import { TaskRegenerationService } from './task-regeneration.service.js';
 import { TASKS_API, TasksController, type TaskJobBody, type TasksApi } from './tasks.controller.js';
-import { TasksService } from './tasks.service.js';
+import { TasksService, type ProjectProgressSource, type SyncedTaskGuard } from './tasks.service.js';
+import { TaskSyncModule } from '../task-sync/task-sync.module.js';
+import { TaskProgressService } from '../task-sync/task-progress.service.js';
+import { TASK_SYNC_STORE } from '../task-sync/task-sync.tokens.js';
+import type { TaskSyncStore } from '../task-sync/task-sync.store.js';
 
 export const TASK_STORE = Symbol('TASK_STORE');
 
@@ -91,7 +95,11 @@ class ComposedTasksApi implements TasksApi {
 }
 
 @Module({
-  imports: [EnginesModule, SpecificationsModule, TraceabilityModule],
+  // EPIC-046 T1746: one direction only. `TaskSyncModule` imports nothing from
+  // here, so this cannot become a cycle — the gate reads the parse columns
+  // that Epic added to `tasks`, and `EPIC-012` keeps its own path for rows
+  // with no file behind them (`FR-KAN-017`).
+  imports: [EnginesModule, SpecificationsModule, TraceabilityModule, TaskSyncModule],
   controllers: [TasksController],
   providers: [
     {
@@ -120,8 +128,8 @@ class ComposedTasksApi implements TasksApi {
     },
     {
       provide: TasksService,
-      inject: [TASK_STORE, SPECIFICATION_STORE],
-      useFactory: (store: TaskStore, specifications: SpecificationStore): TasksService =>
+      inject: [TASK_STORE, SPECIFICATION_STORE, TASK_SYNC_STORE, TaskProgressService],
+      useFactory: (store: TaskStore, specifications: SpecificationStore, syncStore: TaskSyncStore, progress: TaskProgressService): TasksService =>
         new TasksService(store, {
           // Progress needs the project's specification ids; the store already
           // scopes the read (T083f's findScoped).
@@ -129,6 +137,21 @@ class ComposedTasksApi implements TasksApi {
             (await specifications.findScoped(workspaceId, projectId)).map(
               (candidate) => candidate.specification.id,
             ),
+        }, {
+          syncedTasks: {
+            // A task carrying a source digest was parsed from a file, and the
+            // file is authoritative for it (`FR-KAN-017`).
+            isSynced: async (workspaceId, taskId) => {
+              const row = await syncStore.findTask(taskId);
+              return row !== null && row.workspaceId === workspaceId && row.sourceDigest !== null;
+            },
+          } satisfies SyncedTaskGuard,
+          // `T1780` — the ONE derivation. This service counts nothing itself;
+          // `/plan` and `/tasks` therefore cannot show two different figures
+          // for one project (`FR-KAN-056`, `SC-KAN-009`).
+          progress: {
+            forProject: (workspaceId, projectId) => progress.forProject(workspaceId, projectId),
+          } satisfies ProjectProgressSource,
         }),
     },
     {

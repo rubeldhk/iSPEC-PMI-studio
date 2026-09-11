@@ -85,8 +85,16 @@ describe('T1671 · pmi.artifacts.sync is live as of EPIC-045', () => {
     return [...section.matchAll(/^\|\s*`(pmi\.[a-zA-Z.]+)`\s*\|/gm)].map((m) => m[1] as string);
   }
 
-  it('§3 lists exactly two reserved tools, and pmi.artifacts.sync is not one of them', () => {
-    expect(reservedRows().sort()).toEqual(['pmi.execution.sync', 'pmi.tasks.sync']);
+  it('§3 lists exactly ONE reserved tool — both syncs are live (T1760)', () => {
+    expect(reservedRows().sort()).toEqual(['pmi.execution.sync']);
+  });
+
+  it('carries a dated note naming EPIC-046 as what made pmi.tasks.sync live (T1760)', () => {
+    const note = doc.split(/^## 3\. Reserved/m)[1]?.split(/^## /m)[0] ?? '';
+    expect(note).toMatch(/Amended \d{4}-\d{2}-\d{2}.*EPIC-046/s);
+    expect(note).toContain('pmi.tasks.sync');
+    // The surface is unchanged in SIZE: a tool moved sides, none was added.
+    expect(note).toMatch(/unchanged at fifteen/);
   });
 
   it('carries a dated note naming EPIC-045 as what made the tool live', () => {
@@ -131,7 +139,6 @@ describe('T1671 · pmi.artifacts.sync is live as of EPIC-045', () => {
   it('the other two still refuse, so making one live did not make three live', async () => {
     for (const [name, args] of [
       ['pmi.execution.sync', { batch: [] }],
-      ['pmi.tasks.sync', {}],
     ] as const) {
       const result = await client.callTool({ name, arguments: args });
       expect(result.isError, name).toBe(true);

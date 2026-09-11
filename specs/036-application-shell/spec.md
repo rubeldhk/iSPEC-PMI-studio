@@ -232,7 +232,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
   Workspace & Administration — so it is a live case, not a hypothetical.
 - **A deep link into an area that is not delivered.** Must answer as not-found, not as an empty area
   — the distinction `DEF-001-006` currently gets wrong platform-wide, and this Epic must not add to
-  it. This holds for the zero undeclared areas **and** the eleven awaiting their owners: from an
+  it. This holds for the zero undeclared areas **and** the ten awaiting their owners: from an
   address's point of view *"forbidden to build"* and *"not built yet"* are the same answer.
 - **An address that named an area before its Epic was undeclared, or after.** Same rule: not found,
   and never a blank area with a working chrome around it.
@@ -376,7 +376,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 - **SC-SHL-001**: **100%** of `delivered` areas are reachable from primary navigation —
   mutation-verified by removing one route and observing the check fail. **Six today.**
 - **SC-SHL-002**: **Zero** areas that are not `delivered` appear in navigation, as a placeholder or
-  otherwise — the zero undeclared and the eleven awaiting their owners alike. **Eleven today**, since the Governance area was delivered by EPIC-042 `T1514` (twelve after `T1172`).
+  otherwise — the zero undeclared and the ten awaiting their owners alike. **Ten today**, since the Governance area was delivered by EPIC-042 `T1514` (twelve after `T1172`).
 - **SC-SHL-003**: A user can reach any `delivered` area from any other in **at most two actions**.
 - **SC-SHL-004**: **Zero** shell code changes are required to move an area to `delivered` and into
   navigation.
@@ -395,7 +395,7 @@ This Epic **adopts** that work rather than replacing it — which is why it is P
 
 ## Assumptions
 
-- **The eighteen areas of PMI-DOC-006 §4.1 are the target set**, of which **five are delivered**, two are **partly delivered**, and
+- **The eighteen areas of PMI-DOC-006 §4.1 are the target set**, of which **six are delivered**, two are **partly delivered**, and
   in scope for navigation today: Home (built here), Projects, Specifications, Runs and
   Workspace & Administration. Each has a component in `frontend/src/pages/`, or in Home's case is
   built by this Epic. **Plan & Tasks is not among them** — see the next bullet.
@@ -452,7 +452,7 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
       have caught `DEF-010-001`
 - [ ] **`FR-SHL-002` is proven by adding an area**: an area moved to `delivered` reaches navigation
       with no shell code change (`SC-SHL-004`)
-- [ ] **The eleven `declared-not-delivered` areas are absent from navigation and answer not-found**,
+- [ ] **The ten `declared-not-delivered` areas are absent from navigation and answer not-found**,
       and each names its owning Epic in the registry (Assumptions; [analysis.md](./analysis.md) `C1`,
       `N1`)
 - [ ] **`FR-SHL-062` is mutation-tested**: a failing section is made to render as empty and the suite
@@ -464,4 +464,6 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] **Both deferrals still hold their owners** — `FR-SHL-014` with `EPIC-024`, `BR-0013` with
       `U-03`. A deferral whose owner has vanished is an omission wearing a label (decision `D-6`)
 
-> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **5 delivered · 2 partly-delivered · 11 declared-not-delivered · 0 undeclared**.
+> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.
+
+> **Updated 2026-09-06 (EPIC-046 `T1737`).** The **Plan & Tasks** area was **delivered**: `/plan` renders the project's Epics with their task progress and `/plan/epics/:epicId` renders one Epic's Task Kanban (`specs/046-task-kanban-governed-status`). It had stood `declared-not-delivered` since `N1` (2026-08-24) recorded that the tasks view was scoped to one specification and `:id` is not an address. `EPIC-012` owed it as `T441p`; that task is **superseded, not abandoned** — the specification-scoped list still works and is still reachable. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.

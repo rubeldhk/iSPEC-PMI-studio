@@ -24,9 +24,13 @@ export const CONNECTOR_SCOPES_OF_RECORD = [
   'health.write',
   'project.read',
   'requirements.read',
+  // EPIC-046 T1692: the fifteenth — the finish hook's task sync after `tasks`
+  // and `implement`. Also a WRITE scope with no read beside it: the board is a
+  // human surface and a connector never reads it back (FR-KAN-071).
+  'tasks.sync',
 ] as const;
 
-describe('T1416 + T1475 + T1626 · the fourteen connector scopes', () => {
+describe('T1416 + T1475 + T1626 + T1691 · the fifteen connector scopes', () => {
   it('are exactly the registered ones, sorted', () => {
     expect(registeredConnectorScopes()).toEqual([...CONNECTOR_SCOPES_OF_RECORD]);
   });

@@ -48,10 +48,19 @@ afterEach(cleanup);
 
 async function page(client: ApiClient, currentUserId = 'u_owner') {
   const onOpenTimeline = vi.fn();
-  render(<EpicDetailPage api={client} epicId="e1" currentUserId={currentUserId} onOpenTimeline={onOpenTimeline} />);
+  const onOpenTasks = vi.fn();
+  render(
+    <EpicDetailPage
+      api={client}
+      epicId="e1"
+      currentUserId={currentUserId}
+      onOpenTimeline={onOpenTimeline}
+      onOpenTasks={onOpenTasks}
+    />,
+  );
   await screen.findByRole('heading', { name: 'Epic 1 · Intake' });
   await waitFor(() => expect(screen.queryByText('Loading Epic')).toBeNull());
-  return { onOpenTimeline };
+  return { onOpenTimeline, onOpenTasks };
 }
 
 describe('T1578 · the Epic detail', () => {
@@ -186,5 +195,35 @@ describe('T1652 · the Files section on the Epic detail', () => {
     expect(screen.getByText('First.')).toBeDefined();
     expect(screen.getByRole('table', { name: 'Requirements of this Epic' })).toBeDefined();
     expect(screen.getByRole('region', { name: 'Stage' })).toBeDefined();
+  });
+});
+
+
+/**
+ * `T1784` (EPIC-046, `FR-KAN-050`) — the board is reachable from the Epic.
+ *
+ * `/speckit-converge` found it reachable from the Spec Journey Board's card and
+ * from the Plan &amp; Tasks landing, and not from the Epic itself — which is the
+ * one screen a reader is already on when they wonder about this Epic's tasks.
+ */
+describe('T1784 · the Epic detail opens its task board (FR-KAN-050)', () => {
+  it('offers the control and names the Epic it opens', async () => {
+    const { onOpenTasks } = await page(api());
+    fireEvent.click(screen.getByRole('button', { name: 'Open the task board' }));
+    expect(onOpenTasks).toHaveBeenCalledWith('e1');
+  });
+
+  it('states which side is authoritative, as every surface that reaches a move must', async () => {
+    await page(api());
+    const tasks = screen.getByRole('region', { name: 'Tasks' });
+    expect(tasks.textContent).toContain('project directory');
+    expect(tasks.textContent).toContain('proposal');
+  });
+
+  it('renders no control at all when the host has not routed the board', async () => {
+    // A dead control is worse than none: it promises a screen that is not there.
+    render(<EpicDetailPage api={api()} epicId="e1" currentUserId="u_owner" onOpenTimeline={vi.fn()} />);
+    await screen.findByRole('heading', { name: 'Epic 1 · Intake' });
+    expect(screen.queryByRole('button', { name: 'Open the task board' })).toBeNull();
   });
 });

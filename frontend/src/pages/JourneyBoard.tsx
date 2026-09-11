@@ -9,7 +9,7 @@
  * (`FR-EPB-048`), with no refresh control of its own.
  */
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
-import { ApiError, type ApiClient, type BoardRead, type Epic, type EpicStage, type UnboundArtifacts } from '../services/api';
+import { ApiError, type ApiClient, type BoardRead, type Epic, type EpicStage, type UnboundArtifacts, type UnboundTasks } from '../services/api';
 import { Button } from '../design/components/Button';
 import { FormField } from '../design/components/FormField';
 import { LoadingIndicator } from '../design/components/LoadingIndicator';
@@ -27,6 +27,13 @@ export interface JourneyBoardPageProps {
   readonly api: ApiClient;
   readonly projectId: string;
   readonly onOpenEpic: (epicId: string) => void;
+  /**
+   * Opens the Epic's Task Kanban (`EPIC-046` `T1722`, `FR-KAN-050`). Optional
+   * so a host that has not wired Plan & Tasks renders the board unchanged
+   * rather than throwing — the board is `EPIC-044`'s and must not depend on
+   * a later Epic being present.
+   */
+  readonly onOpenTasks?: ((epicId: string) => void) | undefined;
   /** Opens the project's executions timeline (the project screen). */
   readonly onOpenTimeline: (projectId: string) => void;
 }
@@ -37,7 +44,7 @@ function whyNoNext(card: EpicStage): string {
   return 'end of the journey';
 }
 
-export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }: JourneyBoardPageProps): ReactElement {
+export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTasks, onOpenTimeline }: JourneyBoardPageProps): ReactElement {
   const [board, setBoard] = useState<BoardRead | null>(null);
   const [epics, setEpics] = useState<Epic[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +58,9 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
   // screen paid for by this Epic's addition.
   const [unboundFiles, setUnboundFiles] = useState<UnboundArtifacts | null>(null);
   const [unboundError, setUnboundError] = useState<string | null>(null);
+  // EPIC-046 T1793 (FR-KAN-032): what those same executions' TASK syncs
+  // parsed. Its own read, failing on its own, for the reason above.
+  const [unboundTasks, setUnboundTasks] = useState<UnboundTasks | null>(null);
   const [openSync, setOpenSync] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
@@ -76,6 +86,17 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
     let live = true;
     setUnboundError(null);
     api
+      .getUnboundTasks(projectId)
+      .then((answer) => {
+        if (live) setUnboundTasks(answer);
+      })
+      .catch(() => {
+        // Silent, and deliberately: the artifacts read already reports a
+        // failure of this group, and two notices for one absent group would
+        // tell a reader twice what they can do nothing about.
+        if (live) setUnboundTasks(null);
+      });
+    void api
       .getUnboundArtifacts(projectId)
       .then((answer) => {
         if (live) setUnboundFiles(answer);
@@ -183,6 +204,11 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
                       <Button type="button" variant="ghost" onClick={(): void => onOpenEpic(c.epicId)}>
                         Open Epic {c.number}
                       </Button>
+                      {onOpenTasks !== undefined && (
+                        <Button type="button" variant="ghost" onClick={(): void => onOpenTasks(c.epicId)}>
+                          Open tasks
+                        </Button>
+                      )}
                     </article>
                   ))}
               </section>
@@ -205,10 +231,22 @@ export function JourneyBoardPage({ api, projectId, onOpenEpic, onOpenTimeline }:
                   // else — no Epic's tree lists them — so the board is where
                   // they are named or they are lost.
                   const sync = unboundFiles?.syncs.find((x) => x.executionId === u.executionId) ?? null;
+                  // EPIC-046 T1793 (FR-KAN-032): and what its TASK sync parsed.
+                  // Stored correctly and reachable from no Epic's board, for
+                  // exactly the reason the files are.
+                  const tasks = unboundTasks?.syncs.find((x) => x.executionId === u.executionId) ?? null;
                   return (
                     <li key={u.executionId}>
                       {u.command} for Epic {u.targetId} · {new Date(u.registeredAt).toLocaleString()} — no such Epic in this project; listed, never attached
                       {unboundError === null && sync === null && <span className="ds-field__hint"> · no files synced</span>}
+                      {tasks !== null && (
+                        <span className="ds-field__hint" data-testid="unbound-tasks">
+                          {' '}
+                          · {tasks.counts.parsed} task{tasks.counts.parsed === 1 ? '' : 's'} parsed
+                          {tasks.counts.refused > 0 && <>, {tasks.counts.refused} refused</>}
+                          {tasks.taskKeys.length > 0 && <> ({tasks.taskKeys.join(', ')})</>}
+                        </span>
+                      )}
                       {sync !== null && (
                         <span>
                           {' '}

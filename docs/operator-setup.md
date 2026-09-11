@@ -184,3 +184,49 @@ refused file is a fact about that file, not a failed command.
 *A connector credential can write and cannot read.* `artifacts.sync` is the fourteenth connector
 scope and the only one this Epic adds; the three artifact reads are session routes, so a leaked
 credential cannot be used to pull an Epic's documents back out.
+
+**EPIC-046 — the task board and governed status.** One migration, one widening and four variables.
+
+*The migration* `20260907090000_epic046_task_sync` is additive: three tables (`task_syncs`,
+`task_sync_lines`, `task_status_proposals`), one new project column
+(`projects.taskMoveRequiresApproval`, default `false`) and **one widening** — `tasks` gains the
+columns a synced task needs and `TaskStatus` gains `blocked`. The widening is the only change to an
+existing table and it changes no existing row: a task created before this Epic keeps its status,
+carries no `taskKey`, and stays editable through `EPIC-012`'s task list. Plan for the storage the
+way you would for the artifact sync: one `task_syncs` row and one `task_sync_lines` row per
+considered line per governed `tasks` or `implement` run, so an Epic of 200 tasks costs roughly 200
+manifest rows per run for the life of the Epic. The task rows themselves do not multiply — one row
+per `(epicId, taskKey)`, enforced by a partial unique index, for the life of the Epic.
+
+*The four variables* are `PMI_TASKS_MAX_BYTES` (default `1048576`, one mebibyte),
+`PMI_TASKS_MAX_LINES` (default `1000`), `PMI_TASK_ID_PATTERN` (defaults to the repository's own
+identifier shape from `governance/epic-stage.config.json`) and `PMI_TASK_DESCRIPTION_MAX` (default
+`500` characters). The first two refuse the **whole** sync — a file the platform cannot read at all
+is not partially read, so the board keeps the parse it already had rather than half a new one. The
+last two refuse **one line**, which is reported with its number and code while the rest of the file
+syncs. A 1 MiB `tasks.md` sits well inside `PMI_ARTIFACT_SYNC_BODY_BYTES` (16 MiB), so the default
+limits do not interact: an Epic whose `tasks.md` is at the task limit is nowhere near the body
+limit, and raising one does not silently require raising the other.
+
+*The idempotency key is derived when the client sends none*, as
+`tasks-sync:<executionId>:<sha256 of the tasks.md content>`. Same two consequences as the artifact
+sync: a hook that retries after a timeout produces the same key and gets the original answer back,
+writing nothing; and two identical syncs racing each other both answer while leaving exactly one
+sync row, because the unique index arbitrates and not the application.
+
+*What a refused line looks like* on the timeline: one `system` comment on the execution listing each
+refused line by **number** and code. Six codes, and that is the whole vocabulary:
+`malformed_identifier`, `identifier_not_matched`, `missing_description`, `description_too_long`,
+`duplicate_identifier` and `credential_in_description`. The comment names the family of the problem
+and **never quotes the line's content**, which matters most for `credential_in_description`: a line
+whose text is credential-shaped is refused, and neither the comment nor the sync's answer repeats
+what it found. The governed
+command still completes — a refused line is a fact about that line, not a failed command.
+
+*A connector credential can write and cannot read.* `tasks.sync` is the fifteenth connector scope
+and the only one this Epic adds; the four board reads and both proposal routes are session routes,
+so a leaked credential can push a parse and can never pull a board back out.
+
+*Nothing here writes to the project directory.* A manual move is a proposal: recorded, adjudicated
+and answered, never applied by editing `tasks.md`. If a board and a file disagree, the board says
+so — the file wins the moment it speaks, and the proposal record survives unamended.

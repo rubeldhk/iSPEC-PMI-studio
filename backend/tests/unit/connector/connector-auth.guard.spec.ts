@@ -17,6 +17,7 @@ import { ConnectorAuthGuard, type ConnectorRequest } from '../../../src/modules/
 import {
   CONNECTOR_SCOPE_KEY,
   ConnectorScope,
+  isRegisteredConnectorScope,
   registerConnectorScope,
   registeredConnectorScopes,
 } from '../../../src/modules/connector/connector-scope.js';
@@ -97,31 +98,39 @@ describe('T1359 · a valid credential', () => {
 describe('T1359 · the scope registry', () => {
   it('holds exactly the fourteen scopes of record', () => {
     // EPIC-043 T1417 widened the registry to eleven scopes; EPIC-042 T1476 to thirteen; EPIC-045 T1626 to fourteen (data-model.md §8).
-    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
+    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read', 'tasks.sync']);
   });
 
   it('refuses a route that declares no scope, and one whose scope is not registered — 403, after the credential is verified', async () => {
     const h = await harness();
     await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), undefined)).rejects.toBeInstanceOf(ForbiddenError);
-    // EPIC-045 T1626 registered `artifacts.sync`, so the unregistered example
-    // moves to `tasks.sync` — EPIC-046's, reserved and not yet a scope.
-    await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), 'tasks.sync')).rejects.toBeInstanceOf(ForbiddenError);
+    // EPIC-046 T1693. The example has moved twice: `artifacts.sync` until
+    // EPIC-045 T1626 made it permanent, then `tasks.sync` until EPIC-046 T1692
+    // did the same. **No reserved-but-unregistered scope remains** — the two
+    // tools still reserved (`pmi.execution.sync`) ride a scope that is already
+    // registered — so borrowing a future Epic's name is no longer possible and
+    // would only move the problem again. This is a synthetic name that will
+    // never be registered, and the assertion below is what keeps it that way.
+    expect(isRegisteredConnectorScope('never.registered')).toBe(false);
+    await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), 'never.registered')).rejects.toBeInstanceOf(ForbiddenError);
     // An invalid credential on an unscoped route is still the 401 — identity before scope.
     await expect(h.guard.authenticate(request('Bearer pmi_ct_nope'), undefined)).rejects.toBeInstanceOf(InvalidConnectorCredentialError);
   });
 
   it('can be extended by a later Epic without touching the guard (U1)', async () => {
     const h = await harness();
-    // The same demonstration with a scope no Epic has taken yet: registering it
-    // is the whole change, and the guard is not touched. (`artifacts.sync` was
-    // the example until EPIC-045 T1626 made it permanent.)
-    registerConnectorScope('tasks.sync');
+    // The same demonstration with a synthetic scope no Epic will ever take:
+    // registering it is the whole change, and the guard is not touched.
+    // (`artifacts.sync` was the example until EPIC-045 T1626 made it permanent,
+    // then `tasks.sync` until EPIC-046 T1692 did — hence a name that is not a
+    // future Epic's to claim.)
+    registerConnectorScope('never.registered');
     try {
-      await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), 'tasks.sync')).resolves.toMatchObject({ projectId: 'p_a' });
+      await expect(h.guard.authenticate(request(`Bearer ${h.minted.value}`), 'never.registered')).resolves.toMatchObject({ projectId: 'p_a' });
     } finally {
-      registerConnectorScope('tasks.sync', { remove: true });
+      registerConnectorScope('never.registered', { remove: true });
     }
-    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read']);
+    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read', 'tasks.sync']);
   });
 
   it('the decorator writes the scope as route metadata the guard reads', () => {

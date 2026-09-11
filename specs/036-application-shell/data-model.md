@@ -53,9 +53,9 @@ This model carried a boolean `declared` until the cross-artifact analysis of 202
 
 | `status` | Means | Count | In navigation? | Address answers |
 |---|---|---|---|---|
-| `delivered` | the owning Epic has shipped the screen, conforming to the prototype | **5** | yes | the area |
+| `delivered` | the owning Epic has shipped the screen, conforming to the prototype | **6** | yes | the area |
 | `partly-delivered` | the screen is **reachable** but a prototype element is absent | **2** | yes | the area |
-| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **11** | **no** | not found |
+| `declared-not-delivered` | the Epic is declared (PMI-DOC-006 §9) but **no screen exists** | **10** | **no** | not found |
 | `undeclared` | no Epic owns the area — `UX-0060` forbids building it | **0** | no | not found |
 
 **The middle state is the finding.** `QA & Releases`, `Architecture & Decisions`, `Governance` and
@@ -79,7 +79,7 @@ are recorded, and how `FR-SHL-017` answers *not found* for an address naming one
 would make a specified area indistinguishable from a typo. `FR-SHL-003` keeps them out of
 navigation; it does not keep them out of the list.
 
-### The eighteen: five delivered, two partly, eleven owed
+### The eighteen: six delivered, two partly, ten owed
 
 | Group | Areas | `delivered` / `partly-delivered` | `declared-not-delivered` |
 |---|---|---|---|
@@ -88,7 +88,7 @@ navigation; it does not keep them out of the list.
 | **Delivery** | Plan & Tasks · Engineering Experts · Runs · Evidence & Compliance · QA & Releases | Runs | Plan & Tasks, QA & Releases |
 | **Platform** | Context · Integrations · Reports · Governance · Workspace & Administration | Workspace & Administration | Governance |
 
-**Five delivered, two partly delivered, eleven awaiting their owners, zero undeclared.**
+**Six delivered, two partly delivered, ten awaiting their owners, zero undeclared.**
 
 > **Updated 2026-08-28 (`T1172`).** The Requirement Room area was **delivered**: `/requirement-room` renders the shared `RoomIndex`, which lists the workspace's Rooms and offers the way into a new one. It had stood `declared-not-delivered` since `T403n` because the Room screen existed per object while nothing listed the objects. The registry moved first and these figures followed it (superseded by the EPIC-042 note below).
 
@@ -204,4 +204,6 @@ another.
 | The Room regions | `EPIC-033`'s `packages/room-contract` — adopted, never re-derived (`FR-SHL-040`–`FR-SHL-043`) |
 | Anything persisted | nothing. No table, no migration, no store |
 
-> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **5 delivered · 2 partly-delivered · 11 declared-not-delivered · 0 undeclared**.
+> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.
+
+> **Updated 2026-09-06 (EPIC-046 `T1737`).** The **Plan & Tasks** area was **delivered**: `/plan` renders the project's Epics with their task progress and `/plan/epics/:epicId` renders one Epic's Task Kanban (`specs/046-task-kanban-governed-status`). It had stood `declared-not-delivered` since `N1` (2026-08-24) recorded that the tasks view was scoped to one specification and `:id` is not an address. `EPIC-012` owed it as `T441p`; that task is **superseded, not abandoned** — the specification-scoped list still works and is still reachable. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.

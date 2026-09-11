@@ -159,11 +159,11 @@ suite('T1492 · the connector reads the render and the plan — this project onl
     expect(own.body.content).not.toContain('Spec first');
     const m = await mcp(tokenB);
     try {
-      for (const name of ['pmi.artifacts.sync', 'pmi.tasks.sync', 'pmi.execution.sync']) {
-        const r = await m.client.callTool({ name, arguments: name === 'pmi.execution.sync' ? { batch: [] } : {} });
-        expect(r.isError).toBe(true);
-        expect(r.structuredContent).toMatchObject({ code: 'not_available_until' });
-      }
+      // EPIC-046 T1710: `pmi.tasks.sync` is live, so the only tool still
+      // answering `not_available_until` is EPIC-037's provisional intake.
+      const r = await m.client.callTool({ name: 'pmi.execution.sync', arguments: { batch: [] } });
+      expect(r.isError).toBe(true);
+      expect(r.structuredContent).toMatchObject({ code: 'not_available_until' });
     } finally {
       await m.close();
     }

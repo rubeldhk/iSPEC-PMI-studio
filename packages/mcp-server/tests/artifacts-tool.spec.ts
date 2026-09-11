@@ -93,19 +93,17 @@ describe('T1639 · it is no longer reserved, and the other two still are', () =>
     expect(RESERVED_SPECS.map((t) => t.name)).not.toContain('pmi.artifacts.sync');
   });
 
-  it('leaves exactly two reserved tools, refusing their own Epics (contracts §4)', async () => {
-    expect(RESERVED_SPECS.map((t) => t.name).sort()).toEqual(['pmi.execution.sync', 'pmi.tasks.sync']);
+  it('leaves exactly ONE reserved tool, refusing its own Epic (contracts §4)', async () => {
+    expect(RESERVED_SPECS.map((t) => t.name).sort()).toEqual(['pmi.execution.sync']);
     const { port, calls } = stubPlatform();
     const o = await connect(port);
     open.push(o);
     const sync = await o.client.callTool({ name: 'pmi.execution.sync', arguments: { batch: [] } });
     expect(sync.structuredContent).toMatchObject({ code: 'not_available_until', epic: 'EPIC-037' });
-    const tasks = await o.client.callTool({ name: 'pmi.tasks.sync', arguments: {} });
-    expect(tasks.structuredContent).toMatchObject({ code: 'not_available_until', epic: 'EPIC-046' });
     expect(calls, 'a reserved tool must not reach the platform').toEqual([]);
   });
 
-  it('keeps the surface at fourteen tools — one moved sides, none was added or lost', async () => {
+  it('keeps the surface at fifteen tools — two have moved sides, none was added or lost', async () => {
     const { port } = stubPlatform();
     const o = await connect(port);
     open.push(o);

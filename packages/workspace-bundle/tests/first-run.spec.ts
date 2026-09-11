@@ -356,3 +356,164 @@ describe('T1668 · runFinish against the live artifact sync (FR-ART-046)', () =>
     expect(finishPrompt).not.toMatch(/artifacts?\s+synced/i);
   });
 });
+
+/**
+ * `T1758` (EPIC-046, `FR-KAN-061`) — the same day for `pmi.tasks.sync`.
+ *
+ * `EPIC-042` shipped the call and the one information line it prints when the
+ * platform refuses `not_available_until`. `EPIC-046` makes the platform answer.
+ * The hook is **not edited** — that was the point of reserving the tool — so
+ * what has to be true is what `T1668` established for the artifact sync:
+ *
+ * - `runFinish` completes against the live answer shape;
+ * - the digests still travel on the completion's output binding;
+ * - and it prints **no** new line, because the finish prompt specifies none.
+ *
+ * The third is the one worth asserting. A *tasks synced* line would be a change
+ * to what the hook prints — a change to the prompt's contract, made from the
+ * platform side, where nobody would look for it. If this ever fails, it is the
+ * PLATFORM's answer shape that changes, not the hook.
+ *
+ * The call is made only for `tasks` and `implement`: a `specify` run has no
+ * `tasks.md` to send, and asking it to send one would make the sync a fact
+ * about the command rather than about the file.
+ */
+describe('T1758 · runFinish against the live task sync (FR-KAN-061)', () => {
+  const LIVE = {
+    syncId: 'tsync_1',
+    epicId: 'epic_3',
+    counts: { linesConsidered: 3, parsed: 2, refused: 1, duplicates: 0 },
+    diff: { added: 2, changed: 0, unchanged: 0, disappeared: 0 },
+    refusedLines: [] as { line: number; code: string }[],
+  };
+
+  function liveClient(answer: Record<string, unknown> = LIVE) {
+    const calls: { name: string; arguments: Record<string, unknown> }[] = [];
+    const client: ToolClient = {
+      async callTool(input): Promise<ToolResult> {
+        calls.push(input);
+        switch (input.name) {
+          case 'pmi.health':
+            return { structuredContent: { projectId: 'p_a', constitutionState: 'current' } };
+          case 'pmi.execution.register':
+            return { structuredContent: { executionId: 'exec_tasks', sequence: 1 } };
+          case 'pmi.artifacts.sync':
+            return { structuredContent: { syncId: 'sync_1', epicId: 'epic_3', created: 2, reused: 0, refused: [] } };
+          case 'pmi.tasks.sync':
+            // The LIVE shape, not a refusal.
+            return { structuredContent: answer };
+          case 'pmi.execution.complete':
+            return { structuredContent: { sequence: 2 } };
+          default:
+            return { structuredContent: {} };
+        }
+      },
+    };
+    return { client, calls };
+  }
+
+  /** Everything ticked, so the run itself completes (`FR-EXT-015`). */
+  const DONE = ['- [X] T1 Do the thing', '- [X] T2 Do the other', ''].join('\n');
+  /** Two still open, and one line the grammar refuses. */
+  const OPEN = ['- [ ] T1 Do the thing', '- [X] T2 Do the other', '- [ ] Tidy up', ''].join('\n');
+
+  async function implemented(client: ToolClient, tasks = DONE): Promise<{ lines: string[]; outcome: string | null }> {
+    const epicDir = 'specs/003-reports';
+    mkdirSync(join(dir, epicDir), { recursive: true });
+    writeFileSync(join(dir, epicDir, 'spec.md'), '# Reports\n', 'utf8');
+    const begun = await runBegin(client, dir, { command: 'implement', epic: '3', epicDir });
+    expect(begun.refused, JSON.stringify(begun.lines)).toBeNull();
+    writeFileSync(join(dir, epicDir, 'tasks.md'), tasks, 'utf8');
+    const finished = await runFinish(client, dir, epicDir);
+    return { lines: finished.lines, outcome: finished.outcome };
+  }
+
+  it('completes against the live answer shape', async () => {
+    const { client, calls } = liveClient();
+    const { outcome } = await implemented(client);
+    expect(outcome).toBe('completed');
+    const sync = calls.find((c) => c.name === 'pmi.tasks.sync');
+    expect(sync, 'the hook did not call the task sync').toBeDefined();
+    // The arguments EPIC-042 shipped, unchanged: an execution and the content.
+    expect(Object.keys(sync?.arguments ?? {}).sort()).toEqual(['executionId', 'tasksMarkdown']);
+    expect(sync?.arguments['tasksMarkdown']).toBe(DONE);
+  });
+
+  it('still puts the digests on the completion output binding', async () => {
+    const { client, calls } = liveClient();
+    await implemented(client);
+    const complete = calls.find((c) => c.name === 'pmi.execution.complete');
+    const output = complete?.arguments['output'] as { generatedArtifactDigests?: string[] } | undefined;
+    expect(output?.generatedArtifactDigests, 'the completion carries no digests').not.toHaveLength(0);
+  });
+
+  it('prints NO new line — the finish prompt specifies none (FR-KAN-061)', async () => {
+    const { client } = liveClient();
+    const { lines } = await implemented(client);
+    expect(lines.some((l) => l.includes('EPIC-046')), lines.join('\n')).toBe(false);
+    expect(lines.filter((l) => /tasks synced/i.test(l)), lines.join('\n')).toEqual([]);
+    expect(lines.at(-1)).toBe('PMI · completed exec_tasks (completed)');
+  });
+
+  it('prints nothing extra even when the platform refused some lines', async () => {
+    // A per-line refusal is recorded on the timeline by the platform, not
+    // printed by the hook — the hook was never told to read `refusedLines`.
+    const { client } = liveClient({ ...LIVE, refusedLines: [{ line: 3, code: 'identifier_not_matched' }] });
+    const { lines, outcome } = await implemented(client, OPEN);
+    expect(outcome).toBe('partially-completed');
+    expect(lines.filter((l) => /refused/i.test(l))).toEqual([]);
+  });
+
+  it('reports partially-completed while tasks remain unchecked, and binds no output then', async () => {
+    // `FR-EXT-015` — the run's own outcome, decided by the FILE and not by
+    // the sync's answer. It carries no output binding (`AC-EXR-17d`), and it
+    // moves no card either: a terminal outcome is a fact about the run, and
+    // the file and the events are the facts about the tasks (`FR-KAN-045`).
+    const { client, calls } = liveClient();
+    const { outcome } = await implemented(client, OPEN);
+    expect(outcome).toBe('partially-completed');
+    const complete = calls.find((c) => c.name === 'pmi.execution.complete');
+    expect(complete?.arguments['outcome']).toBe('partially-completed');
+    expect(complete?.arguments['output']).toBeUndefined();
+    // The sync still happened: the file is read whatever the run's outcome.
+    expect(calls.some((c) => c.name === 'pmi.tasks.sync')).toBe(true);
+  });
+
+  it('still prints the ONE information line against the old not_available_until refusal', async () => {
+    // Backwards compatible: an extension pointed at a platform that has not
+    // deployed EPIC-046 behaves exactly as it did.
+    const client: ToolClient = {
+      async callTool(input): Promise<ToolResult> {
+        switch (input.name) {
+          case 'pmi.health':
+            return { structuredContent: { projectId: 'p_a', constitutionState: 'current' } };
+          case 'pmi.execution.register':
+            return { structuredContent: { executionId: 'exec_old_tasks', sequence: 1 } };
+          case 'pmi.artifacts.sync':
+            return { structuredContent: { syncId: 's', epicId: 'e', created: 1, reused: 0, refused: [] } };
+          case 'pmi.tasks.sync':
+            return { isError: true, structuredContent: { code: 'not_available_until', epic: 'EPIC-046' } };
+          case 'pmi.execution.complete':
+            return { structuredContent: { sequence: 2 } };
+          default:
+            return { structuredContent: {} };
+        }
+      },
+    };
+    const { lines } = await implemented(client);
+    expect(lines).toContain('PMI · sync not available until EPIC-046');
+  });
+
+  it('the shipped hook sequence and prompts are NOT edited by this Epic (FR-KAN-061)', () => {
+    // The claim in prose, made checkable. `hook-sequences.ts` still calls the
+    // tool with exactly `{ executionId, tasksMarkdown }` and still prints only
+    // on the `not_available_until` refusal; neither prompt gained a sync line.
+    const harness = readFileSync(join(SRC_DIR, 'hook-sequences.ts'), 'utf8');
+    expect(harness).toContain("name: 'pmi.tasks.sync', arguments: { executionId: last.executionId, tasksMarkdown:");
+    expect(harness).toContain("if (tasks.isError && code(tasks) === 'not_available_until'");
+    const finishPrompt = readFileSync(join(EXTENSION_DIR, 'commands', 'finish.md'), 'utf8');
+    expect(finishPrompt).not.toMatch(/tasks synced/i);
+    const progressPrompt = readFileSync(join(EXTENSION_DIR, 'commands', 'progress.md'), 'utf8');
+    expect(progressPrompt).not.toMatch(/tasks synced/i);
+  });
+});

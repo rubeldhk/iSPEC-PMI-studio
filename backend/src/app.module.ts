@@ -14,6 +14,7 @@ import { ConnectorModule } from './modules/connector/connector.module.js';
 import { GovernanceModule } from './modules/governance/governance.module.js';
 import { EpicsModule } from './modules/epics/epics.module.js';
 import { ArtifactsModule } from './modules/artifacts/artifacts.module.js';
+import { TaskSyncModule } from './modules/task-sync/task-sync.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
@@ -88,6 +89,7 @@ function clientBuildPath(): string {
     // EPIC-045 T1638 — the artifact sync and the three reads. After EpicsModule:
     // it resolves an execution's Epic through the same store the board uses.
     ArtifactsModule,
+    TaskSyncModule,
     SpecificationsModule,
     TasksModule,
     SteeringModule,

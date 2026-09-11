@@ -46,8 +46,17 @@ export const CHAIN_STAGES = [
  *
  * So it joins the type without joining the sequence, and appears only as an
  * edge TARGET (`FR-CHR-064`).
+ *
+ * `T1783` (EPIC-046) — `epic` joins them, for the same reason and by the same
+ * argument. `EPIC-046`'s `Q1` made a synced task's specification optional: its
+ * home is its Epic. Without this type a task parsed from an Epic whose `spec.md`
+ * had not synced resolved back to **nothing**, which is `SC-003` quietly failing
+ * for exactly the tasks the task board introduced.
+ *
+ * An Epic is a container of work, not a stage of derivation, so it is outside
+ * the chain and never a source.
  */
-export const NON_CHAIN_ARTIFACT_TYPES = ['change', 'defect'] as const;
+export const NON_CHAIN_ARTIFACT_TYPES = ['change', 'defect', 'epic'] as const;
 
 export type TraceArtifactType =
   | (typeof CHAIN_STAGES)[number]
@@ -134,6 +143,11 @@ export const PERMITTED_EDGES: readonly { sourceType: TraceArtifactType; targetTy
   // back door — which is what `BR-0055` loses when the bridge is built wrong.
   { sourceType: 'task', targetType: 'defect' },
   { sourceType: 'test', targetType: 'defect' },
+  // `T1783` (EPIC-046) — a task traces back to the Epic it belongs to when it
+  // has no specification, and alongside one when it has. `epic` is never a
+  // source: an Epic does not derive from its tasks, and an edge that way would
+  // put it in the chain by the back door.
+  { sourceType: 'task', targetType: 'epic' },
 ];
 
 export function assertPermittedEdge(sourceType: TraceArtifactType, targetType: TraceArtifactType): void {
@@ -215,6 +229,32 @@ export class LinkWriterService {
         sourceId: taskId,
         targetType: 'specification' as const,
         targetId: input.specificationId,
+        relationship: 'generated_from' as const,
+      })),
+    );
+  }
+
+  /**
+   * `T1783` — a task resolves back to its Epic (`FR-KAN-030`, plan touch-point).
+   *
+   * Written **alongside** any task→specification link rather than instead of
+   * one. Both can be true at once: a synced task whose Epic later gains a
+   * specification-by-sync (`EPIC-045`) belongs to both, and choosing between
+   * them on write would make the graph depend on the order two syncs happened
+   * to arrive in.
+   */
+  async linkTasksToEpic(input: {
+    workspaceId: string;
+    epicId: string;
+    taskIds: string[];
+  }): Promise<TraceabilityLinkRecord[]> {
+    return this.writeAll(
+      input.taskIds.map((taskId) => ({
+        workspaceId: input.workspaceId,
+        sourceType: 'task' as const,
+        sourceId: taskId,
+        targetType: 'epic' as const,
+        targetId: input.epicId,
         relationship: 'generated_from' as const,
       })),
     );

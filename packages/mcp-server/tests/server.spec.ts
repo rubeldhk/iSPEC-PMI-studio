@@ -30,8 +30,10 @@ export const LIVE_TOOLS = [
   'pmi.project.decompose',
   // EPIC-045 T1640: the write EPIC-043 reserved, now live (contracts/artifacts-api.md §4).
   'pmi.artifacts.sync',
+  // EPIC-046 T1709: the second reserved write made live (contracts/tasks-api.md §5).
+  'pmi.tasks.sync',
 ] as const;
-export const RESERVED_TOOLS = ['pmi.execution.sync', 'pmi.tasks.sync'] as const;
+export const RESERVED_TOOLS = ['pmi.execution.sync'] as const;
 
 export function stubPlatform(answer: (call: PlatformCall) => PlatformResult = () => ({ ok: true, status: 200, body: {} })) {
   const calls: PlatformCall[] = [];

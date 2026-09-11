@@ -200,3 +200,38 @@ describe('D-31 / D-32 · the markdown renderer is pinned, verified and alone (T1
     expect(Object.keys(frontend.devDependencies ?? {}), `${pkg} is a dev dependency`).not.toContain(pkg);
   });
 });
+
+/**
+ * `T1694` (EPIC-046, `R-046-10`) — the dependency this Epic decided **not** to take.
+ *
+ * The Task Kanban is the largest surface in the product that a drag-and-drop
+ * library would plausibly serve, and it takes none. The reasoning, from
+ * `research.md` `R-046-10`: every move opens a reason-required dialog
+ * (`FR-KAN-011`), and `BR-0193` requires the board be operable without a
+ * pointer — so the accessible status control has to exist regardless, and once
+ * it exists the library is decoration.
+ *
+ * An absence is not self-documenting: without this check, a later reader finds
+ * no `D-` row for `EPIC-046` and cannot tell a decision from an oversight. So
+ * the check asserts both halves — no package, and no register row claiming one.
+ */
+describe('T1694 · EPIC-046 takes no new runtime dependency', () => {
+  const pkg = JSON.parse(readFileSync(join(REPO_ROOT, 'frontend/package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+
+  it.each(['@dnd-kit/core', '@dnd-kit/sortable', 'react-beautiful-dnd', 'react-dnd', 'react-dnd-html5-backend', 'sortablejs'])(
+    'never installs %s — the accessible control is the primary affordance, not an add-on',
+    (name) => {
+      expect(Object.keys(pkg.dependencies ?? {}), `${name} is a runtime dependency`).not.toContain(name);
+      expect(Object.keys(pkg.devDependencies ?? {}), `${name} is a dev dependency`).not.toContain(name);
+    },
+  );
+
+  it('adds no D- row for EPIC-046, and the register still ends at D-32', () => {
+    const register = readFileSync(join(REPO_ROOT, 'specs/_shared/dependencies.md'), 'utf8');
+    const ids = [...register.matchAll(/\*\*(D-\d+)\*\*/g)].map((m) => Number(m[1]?.slice(2)));
+    expect(Math.max(...ids), 'a D- row appeared for EPIC-046; R-046-10 says there is none').toBe(32);
+  });
+});

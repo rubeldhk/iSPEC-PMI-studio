@@ -56,6 +56,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-044](../specs/044-epic-model-journey-board/) | Epic Model and Spec Journey Board | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-045](../specs/045-artifact-sync-markdown-viewer/) | Artifact Sync and Markdown Viewer | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-046](../specs/046-task-kanban-governed-status/) | Task Kanban with Governed Auto-Status | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 
 ## Findings
 

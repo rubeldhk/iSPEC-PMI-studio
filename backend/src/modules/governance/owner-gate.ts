@@ -21,6 +21,29 @@ export class OwnerGate {
     if (!project) throw new NotFoundError('The project does not exist.');
   }
 
+  /**
+   * `EPIC-046` `T1789` (`BR-0003`) — may this reader write to the project?
+   *
+   * The same rule `requireOwner` enforces, asked as a question. A board that
+   * shows a move control to someone who may not move teaches them their
+   * permission by making them fail, which is what
+   * `contracts/board-contract.md` §4 forbids.
+   *
+   * It does **not** throw and does **not** audit. `requireOwner` records a
+   * refusal because a refusal happened; this is asked on every board load, and
+   * one audit row per page view would bury the refusals that matter. A project
+   * outside the workspace answers `false` rather than raising, so a permission
+   * question cannot turn a board read into a `404`.
+   */
+  async mayMove(ctx: { workspaceId: string; userId: string }, projectId: string): Promise<boolean> {
+    const project = await this.deps.projects.get(ctx.workspaceId, projectId).catch(() => null);
+    if (!project) return false;
+    if (project.ownerUserId === ctx.userId) return true;
+    if (this.deps.grants === null) return false;
+    const active = await this.deps.grants.activeGrants(ctx.workspaceId, { artifactType: 'project', artifactId: project.id });
+    return active.some((g) => g.userId === ctx.userId && g.level === 'edit');
+  }
+
   async requireOwner(ctx: { workspaceId: string; userId: string }, projectId: string, operation: string): Promise<void> {
     const project = await this.deps.projects.get(ctx.workspaceId, projectId).catch(() => null);
     if (!project) throw new NotFoundError('The project does not exist.');

@@ -61,3 +61,10 @@ registerConnectorScope('decomposition.read');
 // live — the finish hook's artifact sync. It is a WRITE scope with no read
 // beside it: a connector credential never reads artifacts back (FR-ART-043).
 registerConnectorScope('artifacts.sync');
+// EPIC-046 T1692 (contracts/tasks-api.md §1): the one write this Epic makes
+// live — the finish hook's task sync after `tasks` and `implement`. A WRITE
+// scope with no read beside it, for the same reason as `artifacts.sync`: the
+// board is a human surface, and a connector proposes but never reads it back
+// (FR-KAN-071). With it the registry is FIFTEEN and no reserved-but-unregistered
+// scope remains — see connector-auth.guard.spec.ts.
+registerConnectorScope('tasks.sync');

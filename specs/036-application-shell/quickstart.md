@@ -63,10 +63,10 @@ different stack answers a different question.
 
 **Proves**: `SC-SHL-001`, `SC-SHL-003`, `FR-SHL-010`–`FR-SHL-013`.
 
-Sign in. Without using browser history or typing a URL, reach each of the **five delivered** and **two partly-delivered** areas
+Sign in. Without using browser history or typing a URL, reach each of the **six delivered** and **two partly-delivered** areas
 from primary navigation: Home, Projects, Specifications, Runs, Workspace & Administration.
 
-**Expected**: all seven reachable — five delivered, two partly delivered; presented in the four groups of PMI-DOC-006 §4.1; no area in two
+**Expected**: all eight reachable — six delivered, two partly delivered; presented in the four groups of PMI-DOC-006 §4.1; no area in two
 groups; the current area marked. **None of the other twelve appears at all** — not disabled, not
 greyed, not a placeholder. That is zero undeclared areas (`UX-0060`) **and** four that are
 declared with no screen built: `Plan & Tasks`, `QA & Releases`, `Architecture & Decisions` and
@@ -82,7 +82,7 @@ declared with no screen built: `Plan & Tasks`, `QA & Releases`, `Architecture & 
 **Proves**: `SC-SHL-004`, `FR-SHL-002`.
 
 Add an area to `frontend/src/shell/areas.ts` with `status: 'delivered'` and an element — or move
-one of the eleven `declared-not-delivered` areas to `delivered`, which is what their owning Epics will
+one of the ten `declared-not-delivered` areas to `delivered`, which is what their owning Epics will
 do. Add the binding that `element` points at in `frontend/src/shell/area-views.tsx`. Change nothing
 else.
 
@@ -167,7 +167,7 @@ announced as groups and the current area as current; zero axe violations in both
 
 **Proves**: Constitution XI Tier 2, and it is **closure evidence**, not a test.
 
-Against the running stack, drive: sign in → Home → each of the five delivered and two partly-delivered areas → back → switch
+Against the running stack, drive: sign in → Home → each of the six delivered and two partly-delivered areas → back → switch
 project → one address naming a declared-but-unbuilt area, observing not-found. Record the verbatim
 transcript to `docs/accessibility/EPIC-036-shell-transcript.md`.
 
@@ -193,4 +193,6 @@ reachability transcript is the precedent and the format.
   owners and no navigable screen; the remainder lands with `EPIC-012`, `EPIC-014`/`015`, `EPIC-016`
   and `EPIC-019`/`021`/`024`.
 
-> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **5 delivered · 2 partly-delivered · 11 declared-not-delivered · 0 undeclared**.
+> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.
+
+> **Updated 2026-09-06 (EPIC-046 `T1737`).** The **Plan & Tasks** area was **delivered**: `/plan` renders the project's Epics with their task progress and `/plan/epics/:epicId` renders one Epic's Task Kanban (`specs/046-task-kanban-governed-status`). It had stood `declared-not-delivered` since `N1` (2026-08-24) recorded that the tasks view was scoped to one specification and `:id` is not an address. `EPIC-012` owed it as `T441p`; that task is **superseded, not abandoned** — the specification-scoped list still works and is still reachable. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.

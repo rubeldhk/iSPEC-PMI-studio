@@ -23,7 +23,17 @@ export type TaskStatus = 'not_started' | 'in_progress' | 'done';
 export interface TaskRecord {
   id: string;
   workspaceId: string;
-  specificationId: string;
+  /**
+   * EPIC-046 `T1746` — **widened to nullable** (`Q1`, 2026-09-06).
+   *
+   * A task parsed from a `tasks.md` belongs to its **Epic**; an Epic whose
+   * `spec.md` has not synced has no specification for its tasks to hang from,
+   * and refusing the sync or inventing a placeholder were both rejected. Rows
+   * this module generates always have one, so nothing here changes — but a
+   * reader must tolerate the absence, which is the cost `R-046-2` recorded as
+   * accepted rather than discovered.
+   */
+  specificationId: string | null;
   description: string;
   status: TaskStatus;
   engineName: string;
@@ -137,7 +147,9 @@ export class InMemoryTaskStore implements TaskStore {
   async listForSpecifications(workspaceId: string, specificationIds: string[]): Promise<TaskRecord[]> {
     const wanted = new Set(specificationIds);
     return [...this.rows.values()].filter(
-      (r) => r.workspaceId === workspaceId && wanted.has(r.specificationId),
+      // A task with no specification belongs to an Epic alone (EPIC-046 Q1) and
+      // is simply not part of a specification-scoped read.
+      (r) => r.workspaceId === workspaceId && r.specificationId !== null && wanted.has(r.specificationId),
     );
   }
 

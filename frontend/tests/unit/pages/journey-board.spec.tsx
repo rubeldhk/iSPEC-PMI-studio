@@ -43,6 +43,8 @@ function api(over: Partial<Record<keyof ApiClient, unknown>> = {}): ApiClient {
     // EPIC-045 T1683: the unbound group reads this. Empty by default; the
     // tests that care about its content supply their own answer.
     getUnboundArtifacts: vi.fn(async () => ({ projectId: 'p1', syncs: [] })),
+    // EPIC-046 T1793: and the task half of the same group.
+    getUnboundTasks: vi.fn(async () => ({ projectId: 'p1', syncs: [] })),
     ...over,
   } as unknown as ApiClient;
 }
@@ -222,5 +224,86 @@ describe('T1682 · the unbound group names the files each sync stored', () => {
             // target Epic, as EPIC-044 wrote it.
     expect(group.textContent).toContain('plan for Epic 99');
     expect(group.textContent).not.toContain('no files synced');
+  });
+});
+
+describe('T1721 · the card links to the task board of its Epic (EPIC-046, FR-KAN-050)', () => {
+  it('offers an `Open tasks` action that names the Epic', async () => {
+    const onOpenTasks = vi.fn();
+    const onOpenEpic = vi.fn();
+    render(
+      <JourneyBoardPage api={api()} projectId="p1" onOpenEpic={onOpenEpic} onOpenTasks={onOpenTasks} onOpenTimeline={vi.fn()} />,
+    );
+    // The board groups Epics by STAGE, so DOM order is not Epic order — the
+    // click is scoped to the card that offers `Open Epic 1`.
+    await screen.findAllByRole('button', { name: 'Open tasks' });
+    const card = screen.getByRole('button', { name: 'Open Epic 1' }).closest('article');
+    expect(card, 'Epic 1 has no card').not.toBeNull();
+    fireEvent.click(within(card as HTMLElement).getByRole('button', { name: 'Open tasks' }));
+    expect(onOpenTasks).toHaveBeenCalledWith('e1');
+    // The two actions are distinct: the Epic detail and the board are different
+    // surfaces, and a reader choosing one must not land on the other.
+    expect(onOpenEpic).not.toHaveBeenCalled();
+  });
+
+  it('renders unchanged when the host has not wired Plan & Tasks', async () => {
+    // The board is EPIC-044's and must not depend on a later Epic being present.
+    render(<JourneyBoardPage api={api()} projectId="p1" onOpenEpic={vi.fn()} onOpenTimeline={vi.fn()} />);
+    await screen.findAllByRole('button', { name: /Open Epic/ });
+    expect(screen.queryByRole('button', { name: 'Open tasks' })).toBeNull();
+  });
+});
+
+
+/**
+ * `T1793` (EPIC-046, `FR-KAN-032`, `quickstart.md` sc. 18) — the tasks nobody
+ * could attach are named here too.
+ *
+ * `EPIC-045` put the unbound executions' FILES in this group for the reason
+ * that no Epic's tree lists them. The same is true of their tasks, and until
+ * the third convergence pass nothing listed those anywhere: the store's read
+ * existed and no production code called it.
+ */
+describe('T1793 · the unbound executions task syncs (FR-KAN-032)', () => {
+  const UNBOUND_TASKS = {
+    projectId: 'p1',
+    syncs: [
+      {
+        syncId: 'ts_1',
+        executionId: 'exec_77',
+        command: 'tasks',
+        tasksDigest: 'abc123def456',
+        syncedAt: '2026-09-07T10:00:00.000Z',
+        counts: { linesConsidered: 3, parsed: 2, refused: 1, duplicates: 0 },
+        taskKeys: ['T9001', 'T9002'],
+      },
+    ],
+  };
+
+  it('names what the stranded run parsed, and what it refused', async () => {
+    const client = api({ getUnboundTasks: vi.fn(async () => UNBOUND_TASKS) });
+    render(<JourneyBoardPage api={client} projectId="p1" onOpenEpic={vi.fn()} onOpenTimeline={vi.fn()} />);
+    const note = await screen.findByTestId('unbound-tasks');
+    expect(note.textContent).toContain('2 tasks parsed');
+    expect(note.textContent).toContain('1 refused');
+    expect(note.textContent).toContain('T9001');
+  });
+
+  it('says nothing for an execution whose task sync stored nothing', async () => {
+    const client = api({ getUnboundTasks: vi.fn(async () => ({ projectId: 'p1', syncs: [] })) });
+    render(<JourneyBoardPage api={client} projectId="p1" onOpenEpic={vi.fn()} onOpenTimeline={vi.fn()} />);
+    await screen.findByRole('region', { name: 'Unbound executions' });
+    expect(screen.queryByTestId('unbound-tasks')).toBeNull();
+  });
+
+  it('leaves the group standing when the task read fails — the executions are still listed', async () => {
+    const client = api({
+      getUnboundTasks: vi.fn(async () => {
+        throw new ApiError('unavailable', 'no', 503);
+      }),
+    });
+    render(<JourneyBoardPage api={client} projectId="p1" onOpenEpic={vi.fn()} onOpenTimeline={vi.fn()} />);
+    const group = await screen.findByRole('region', { name: 'Unbound executions' });
+    expect(group.textContent).toContain('listed, never attached');
   });
 });

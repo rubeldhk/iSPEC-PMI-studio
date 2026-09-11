@@ -38,6 +38,8 @@ import { EpicDetailPage } from '../pages/EpicDetail';
 import { JourneyBoardPage } from '../pages/JourneyBoard';
 import { AccessGrants } from '../components/AccessGrants';
 import { TasksPage } from '../pages/Tasks';
+import { TaskBoardPage } from '../pages/TaskBoard';
+import { PlanLandingPage } from '../pages/PlanLanding';
 import { TraceabilityPage } from '../pages/Traceability';
 import { Home } from './Home';
 import { useShell } from './shell-context';
@@ -359,6 +361,9 @@ export function JourneyBoardView(): ReactElement {
             onOpenEpic={(epicId): void => {
               void navigate(`/requirement-room/epics/${encodeURIComponent(epicId)}`);
             }}
+            onOpenTasks={(epicId: string): void => {
+              void navigate(`/plan/epics/${encodeURIComponent(epicId)}`);
+            }}
             onOpenTimeline={(id): void => {
               void navigate(`/projects/${encodeURIComponent(id)}`);
             }}
@@ -397,6 +402,52 @@ export function EpicListView(): ReactElement {
  * (`?file=&version=`) so a reader can send a colleague a link to the exact
  * version they are looking at (`contracts/viewer-contract.md` §1).
  */
+/**
+ * `T1719` (EPIC-046, `FR-KAN-050`) — one Epic's Task Kanban.
+ *
+ * Addressed by the Epic, not by a specification: a synced task's home is its
+ * Epic (`Q1`), and an Epic may have tasks before it has a specification. That
+ * is also why this is reachable from `/plan` rather than only from a
+ * specification, which is the debt `areas.ts` has carried since `EPIC-036`.
+ */
+/**
+ * `T1735` (EPIC-046, `R-046-11`) — the Plan & Tasks landing, and the first
+ * address this area has ever had. Project-scoped, like the other landings
+ * that need a project.
+ */
+export function PlanLandingView(): ReactElement {
+  const { api, projectId } = useShell();
+  const navigate = useNavigate();
+  if (projectId === null || projectId === undefined) {
+    return (
+      <MainLandmark>
+        <p className="ds-field__hint">Choose a project to see its plan.</p>
+      </MainLandmark>
+    );
+  }
+  return (
+    <MainLandmark>
+      <PlanLandingPage
+        api={api}
+        projectId={projectId}
+        onOpenEpic={(epicId: string): void => {
+          void navigate(`/plan/epics/${encodeURIComponent(epicId)}`);
+        }}
+      />
+    </MainLandmark>
+  );
+}
+
+export function EpicTaskBoardView(): ReactElement {
+  const { api } = useShell();
+  const { epicId = '' } = useParams();
+  return (
+    <MainLandmark>
+      <TaskBoardPage api={api} epicId={epicId} />
+    </MainLandmark>
+  );
+}
+
 export function EpicDetailView(): ReactElement {
   const { api, identity } = useShell();
   const navigate = useNavigate();
@@ -422,6 +473,11 @@ export function EpicDetailView(): ReactElement {
         }}
         onOpenTimeline={(projectId): void => {
           void navigate(`/projects/${encodeURIComponent(projectId)}`);
+        }}
+        // `T1784` (`FR-KAN-050`) — the same address the Journey Board's card and
+        // the Plan & Tasks landing use, so there is one route to one board.
+        onOpenTasks={(id): void => {
+          void navigate(`/plan/epics/${encodeURIComponent(id)}`);
         }}
       />
     </MainLandmark>

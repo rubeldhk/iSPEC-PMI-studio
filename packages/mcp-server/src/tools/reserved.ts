@@ -4,9 +4,14 @@
  * refused by naming the Epic that supplies them. A client can tell *not yet*
  * from *never*, and is validated even while the content is absent.
  *
- * EPIC-045 `T1640` removed `pmi.artifacts.sync` from this list: it is live in
- * `tools/artifacts.ts`. **Two** rows remain — `pmi.execution.sync` (EPIC-037's
- * provisional intake) and `pmi.tasks.sync` (EPIC-046).
+ * EPIC-045 `T1640` removed `pmi.artifacts.sync` from this list, and EPIC-046
+ * `T1709` removed `pmi.tasks.sync`: both are live, in `tools/artifacts.ts` and
+ * `tools/tasks.ts`. **One** row remains — `pmi.execution.sync`, EPIC-037's
+ * provisional intake.
+ *
+ * With it, no reserved tool rides an unregistered connector scope any more,
+ * which is why `connector-auth.guard.spec.ts` had to stop borrowing a future
+ * Epic's name for its "unregistered scope" example (`T1693`).
  */
 import { z, type ZodTypeAny } from 'zod';
 
@@ -28,13 +33,5 @@ export const RESERVED_TOOLS: readonly ReservedToolSpec[] = [
     schema: z.object({ contractVersion: z.string().optional(), batch: z.array(z.record(z.unknown())) }).strict(),
     epic: 'EPIC-037',
     what: 'Reconciliation of provisional executions',
-  },
-  {
-    name: 'pmi.tasks.sync',
-    title: 'Sync tasks',
-    description: 'Parse tasks.md into task rows bound to an execution; returns the diff. Reserved until EPIC-046.',
-    schema: z.object({ contractVersion: z.string().optional(), executionId: z.string().optional(), tasksMarkdown: z.string().optional() }).strict(),
-    epic: 'EPIC-046',
-    what: 'Task sync',
   },
 ];

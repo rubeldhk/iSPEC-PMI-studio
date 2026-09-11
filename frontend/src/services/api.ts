@@ -251,6 +251,8 @@ export interface ProjectProgress {
   done: number;
   inProgress: number;
   notStarted: number;
+  /** `EPIC-046` `T1780` — the board's fourth column, so the two figures match. */
+  blocked: number;
   percentComplete: number;
 }
 
@@ -487,6 +489,191 @@ export interface ArtifactRefusal {
 export interface ArtifactFindings {
   reportedNotSynced: { executionId: string; digest: string }[];
   syncedNotReported: { executionId: string; digest: string }[];
+}
+
+// ---------------------------------------------------------------- EPIC-046
+//
+// `T1719` — the task board. Everything here is DERIVED on read: there is no
+// board entity, and the percentages a later phase adds come from the same
+// aggregate every other surface reads (`FR-KAN-056`).
+
+export type TaskBoardStatus = 'not_started' | 'in_progress' | 'done' | 'blocked';
+
+/** What last moved a card — a parse, an event, a completion or an applied proposal. */
+export type TaskMovedBy = 'parse' | 'event' | 'proposal' | 'engine';
+
+export interface TaskBoardColumn {
+  status: TaskBoardStatus;
+  taskKeys: string[];
+}
+
+export interface TaskBoardCard {
+  id: string;
+  taskKey: string | null;
+  description: string;
+  status: TaskBoardStatus;
+  parallel: boolean;
+  sourceLine: number | null;
+  sourcePaths: string[];
+  movedBy: TaskMovedBy;
+  movedAt: string | null;
+  movedByActorId: string | null;
+  /** Kept and marked, never deleted (`FR-KAN-025`). */
+  notInLatestParse: boolean;
+  /** A proposal that did not apply — awaiting approval, refused or inconsistent. */
+  outstandingProposal: OutstandingProposal | null;
+  /** The file overruled a manual status (`FR-KAN-022`), and what it overruled. */
+  supersededByFile: {
+    proposalId: string;
+    requestedStatus: TaskBoardStatus;
+    verdict: string;
+    proposerId: string;
+    supersedingDigest: string;
+  } | null;
+}
+
+/**
+ * A proposal that left the card where it was (`FR-KAN-014`, `FR-KAN-015`).
+ *
+ * Folded from the proposal's events, never stored as a column: the verdict is
+ * an event and a projection, so a screen reads the same record an auditor does.
+ */
+export interface OutstandingProposal {
+  proposalId: string;
+  expectedCurrentStatus: TaskBoardStatus;
+  requestedStatus: TaskBoardStatus;
+  reason: string;
+  proposerId: string;
+  proposerType: 'user' | 'agent' | 'service';
+  proposedAt: string;
+  verdict: TaskProposalOutcome['verdict'];
+}
+
+export interface TaskBoardParse {
+  syncId: string;
+  executionId: string;
+  digest: string;
+  syncedAt: string;
+  /** The run this parse came from; null when the execution cannot be read. */
+  command: string | null;
+  /** Its outcome, shown BESIDE the cards — a terminal outcome never moves one. */
+  outcome: string | null;
+}
+
+/**
+ * The board is behind the Epic (`FR-KAN-048`).
+ *
+ * A run recorded provisionally syncs nothing, so the Epic can have a newer
+ * execution than its newest parse. Nothing is guessed from such a run; both
+ * times are named so a reader can see the gap rather than take it on trust.
+ */
+export interface TaskBoardStaleness {
+  executionId: string;
+  command: string;
+  executionAt: string;
+  parsedAt: string;
+}
+
+/**
+ * A task-progress reading. Derived on read from the same function for every
+ * surface (`FR-KAN-056`), so the Epic figure and the project figure cannot
+ * disagree about what counts.
+ */
+export interface Progress {
+  total: number;
+  done: number;
+  inProgress: number;
+  notStarted: number;
+  blocked: number;
+  percentComplete: number;
+}
+
+/**
+ * What the board does not know (`FR-KAN-024`).
+ *
+ * Every entry names both sides. Nothing here is resolved — `FR-KAN-020`
+ * requires a disagreement be surfaced, and a list that quietly picked a
+ * winner would be the silent resolution the requirement forbids.
+ */
+export interface TaskDisagreements {
+  aheadOfFile: { taskKey: string; status: TaskBoardStatus }[];
+  notInLatestParse: { taskKey: string }[];
+  unmatchedProgress: UnmatchedProgress[];
+  refusedLines: TaskRefusedLine[];
+  outOfBandEdit: boolean;
+  digestMismatch: { parsed: string; artifact: string } | null;
+  total: number;
+}
+
+/** The verdict on a move. The names are EPIC-030's, borrowed not invented. */
+export interface TaskProposalOutcome {
+  proposalId: string;
+  verdict: 'validated' | 'applied' | 'approval_required' | 'refused' | 'inconsistent' | 'reconciliation_required';
+  /** Supplementary evidence for a person. Never parsed to select behaviour. */
+  reason: string;
+  decidedAt: string;
+}
+
+/** A `progress-reported` event naming an identifier no row carries yet. */
+export interface UnmatchedProgress {
+  executionId: string;
+  taskId: string;
+  occurredAt: string;
+}
+
+export interface TaskBoardCounts {
+  linesConsidered: number;
+  parsed: number;
+  refused: number;
+  duplicates: number;
+}
+
+/** A line the grammar refused — reported, never dropped (`FR-KAN-003`). */
+export interface TaskRefusedLine {
+  line: number;
+  code: string;
+  text: string;
+}
+
+export interface TaskBoard {
+  epicId: string;
+  columns: TaskBoardColumn[];
+  tasks: TaskBoardCard[];
+  /** Null before any sync — distinct from a synced file with no task lines. */
+  latestParse: TaskBoardParse | null;
+  counts: TaskBoardCounts;
+  diff: { added: number; changed: number; unchanged: number; disappeared: number };
+  refusedLines: TaskRefusedLine[];
+  outOfBandEdit: boolean;
+  /** Tasks the latest parse still leaves unchecked (`FR-KAN-044`). */
+  remainingUnchecked: number;
+  unmatchedProgress: UnmatchedProgress[];
+  /** Set when the parse is older than the Epic's latest run (`FR-KAN-048`). */
+  staleness: TaskBoardStaleness | null;
+  /** Whether the reader may move a card (`BR-0003`). False renders read-only. */
+  canMove: boolean;
+}
+
+/**
+ * A task sync nobody could attach to an Epic (`FR-KAN-032`).
+ *
+ * Listed, never attached (`FR-EPB-008`). No Epic's board lists these, so the
+ * Spec Journey Board's unbound group is where they are named or they are lost —
+ * the same argument `EPIC-045` made for the files.
+ */
+export interface UnboundTaskSync {
+  syncId: string;
+  executionId: string;
+  command: string | null;
+  tasksDigest: string;
+  syncedAt: string;
+  counts: TaskBoardCounts;
+  taskKeys: string[];
+}
+
+export interface UnboundTasks {
+  projectId: string;
+  syncs: UnboundTaskSync[];
 }
 
 export interface ArtifactTree {
@@ -1046,9 +1233,62 @@ export class ApiClient {
     return this.request('GET', `/artifacts/${encodeURIComponent(versionId)}`);
   }
 
+  /**
+   * One Epic's task board (`FR-KAN-050`). A **session** read: a connector
+   * credential receives absence here, because `tasks.sync` is a write with no
+   * read beside it (`FR-KAN-071`).
+   */
+  async getEpicTasks(epicId: string): Promise<TaskBoard> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/tasks`);
+  }
+
+  /**
+   * Move a card (`FR-KAN-011` to `FR-KAN-016`).
+   *
+   * One round trip: the proposal is recorded, the event appended and the
+   * verdict returned. A permitted member's own move applies at once; a
+   * project policy can still ask for a second person, and the verdict says so.
+   */
+  async proposeTaskStatus(
+    taskId: string,
+    move: { expectedCurrentStatus: TaskBoardStatus; requestedStatus: TaskBoardStatus; reason: string },
+  ): Promise<TaskProposalOutcome> {
+    return this.request('POST', `/tasks/${encodeURIComponent(taskId)}/status-proposals`, move);
+  }
+
+  /**
+   * A second person answers a waiting proposal (`US4` sc. 3).
+   *
+   * Until this existed `approval_required` was terminal: a project requiring an
+   * approver froze its cards rather than gating them.
+   */
+  async adjudicateProposal(proposalId: string, decision: { approve: boolean; reason?: string }): Promise<TaskProposalOutcome> {
+    return this.request('POST', `/status-proposals/${encodeURIComponent(proposalId)}/adjudication`, decision);
+  }
+
+  /** What the board does not know (`FR-KAN-024`). */
+  async getTaskDisagreements(epicId: string): Promise<TaskDisagreements> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/tasks/disagreements`);
+  }
+
+  /** One Epic's task progress (`FR-KAN-055`). */
+  async getEpicTaskProgress(epicId: string): Promise<Progress> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/tasks/progress`);
+  }
+
+  /** The project's, over the same rows and the same derivation (`FR-KAN-057`). */
+  async getProjectTaskProgress(projectId: string): Promise<Progress> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/tasks/progress`);
+  }
+
   /** Syncs whose execution named no Epic of this project (`FR-ART-007`). */
   async getUnboundArtifacts(projectId: string): Promise<UnboundArtifacts> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/artifacts/unbound`);
+  }
+
+  /** The project's task syncs that found no Epic (`FR-KAN-032`). */
+  async getUnboundTasks(projectId: string): Promise<UnboundTasks> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/tasks/unbound`);
   }
 
   async getRunReview(runId: string): Promise<ReviewSession> {

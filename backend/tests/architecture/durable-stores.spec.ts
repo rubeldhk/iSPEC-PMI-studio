@@ -63,6 +63,13 @@ const BINDINGS: readonly Binding[] = [
   // survives a restart is the whole point of the sync — an in-memory binding
   // under DATABASE_URL would lose every Epic's files silently (R-045-1).
   { module: 'artifacts/artifacts.module.ts', token: 'ARTIFACT_STORE', prisma: 'PrismaArtifactStore', inMemory: 'InMemoryArtifactStore' },
+  // EPIC-046 T1688: parsed tasks, their manifests and the status proposals. The
+  // board is a mirror of `tasks.md`, but the proposals and their verdicts exist
+  // NOWHERE else — an in-memory binding under DATABASE_URL would lose the only
+  // record that a person ever moved a card, which is the audit `FR-KAN-072`
+  // requires. The `T1330` lesson applies to the factory too: `DATABASE_URL` is
+  // read in the factory body, not hidden behind a `configured()` helper.
+  { module: 'task-sync/task-sync.module.ts', token: 'TASK_SYNC_STORE', prisma: 'PrismaTaskSyncStore', inMemory: 'InMemoryTaskSyncStore' },
 ];
 
 function stripComments(source: string): string {

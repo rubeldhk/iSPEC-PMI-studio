@@ -14,14 +14,21 @@
  * checkout so the server runs from source (`PMI_MCP_SERVER_COMMAND`).
  */
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const UI = process.env['E2E_BASE_URL'] ?? 'http://localhost:5173';
 const API = process.env['E2E_API_URL'] ?? 'http://localhost:3000';
-const REPO = resolve(__dirname, '../..');
+// `EPIC-046` `T1767` — ESM. `e2e/package.json` declares `"type": "module"` so
+// Playwright compiles these specs as ES modules, which is what lets them import
+// `@pmi/workspace-bundle` (itself ESM, resolved to raw TypeScript). Under the
+// previous CommonJS emit that import failed with *exports is not defined*, and
+// every harness importing the shipped hooks was uncollectable. `__dirname` is a
+// CommonJS global, so it is derived here the ESM way.
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const TRANSCRIPT = join(REPO, 'docs', 'uat', 'EPIC-043-m1-transcript.md');
 const STACK = process.env['E2E_STACK'] ?? 'reference local';
 

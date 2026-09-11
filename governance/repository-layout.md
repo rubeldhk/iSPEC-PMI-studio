@@ -186,6 +186,7 @@ path added or removed without updating this document fails the build.
 - `specs/042-pmi-spec-kit-extension/`
 - `specs/044-epic-model-journey-board/`
 - `specs/045-artifact-sync-markdown-viewer/`
+- `specs/046-task-kanban-governed-status/`
 - `packages/epic-stage/` — the SHARED stage derivation (`EPIC-044` `T1550`, PMI-DOC-007 `R-06`): the
   configuration document (mirrored as `governance/epic-stage.config.json`, `G-44-01`), the
   contiguity rule, readiness and the two evidence adapters. Imported by `tests/governance/epic-stage/`
@@ -224,6 +225,26 @@ path added or removed without updating this document fails the build.
   content survives a restart. The module depends on Epics, executions and specifications and
   none of them depends back; the specification entity is reached through a **port** the
   specifications module implements, so nothing here touches a specification table (`R-045-4`)
+- `backend/src/modules/task-sync/` — `EPIC-046`'s module (`T1690`). Registered in
+  `backend/src/app.module.ts` and read by `durable-stores.spec.ts`. Four things read or write these
+  rows — the connector's sync, the board, the proposal path and the execution-event listener — so
+  the module owns them and depends on Epics, executions and tasks without any of them depending
+  back. Two files in it are **pure**: `task-grammar.ts` and `task-reconcile.ts` have no I/O and no
+  clock, because they are the two things that must be testable as tables and mutable by a test
+  (`PMI-DOC-007` §10 — *the parser is small; the rules are the work*). `EPIC-012`'s progress
+  aggregate is reached through a port, so `FR-KAN-056`'s *one derivation* is structural
+- `frontend/src/pages/TaskBoard.tsx` — `EPIC-046`'s board (`T1740`), the Kanban of an Epic's parsed
+  tasks. It has no control that edits `tasks.md`: the only move it offers is a **proposal**, which
+  is adjudicated and recorded and never written back to the file (`FR-KAN-010`, `SC-KAN-004`)
+- `frontend/src/pages/PlanLanding.tsx` — the Plan & Tasks landing (`T1737`). It exists because the
+  area moved from `declared-not-delivered` to delivered in `frontend/src/shell/areas.ts`, and an
+  area that claims delivery owes a screen
+- `frontend/src/components/TaskMoveDialog.tsx` — the move form (`T1745`). It collects the reason
+  `FR-KAN-011` requires before a proposal exists, and states the verdict it got back verbatim
+  rather than translating it into a success message
+- `backend/tests/fixtures/task-grammar/` — the corpus `task-grammar.spec.ts` parses (`T1696`,
+  `T1776`): the shapes a real `tasks.md` carries and the ones it must refuse. The suite reads the
+  directory, so a new case is covered by adding a file; deleting one deletes a proof
 > **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
 > disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
 > rather than left implied: the four older contract packages — `engine-contract`,

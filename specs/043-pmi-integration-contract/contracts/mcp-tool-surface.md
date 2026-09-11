@@ -72,12 +72,27 @@ returns the stored answer with `201` and writes nothing (`R-045-8`). Per-file re
 `digest_mismatch`, `path_not_in_artifact_set`, `path_escapes_epic`, `not_utf8`, `too_large`,
 `credential_shape`, `too_many_files` — `detail` never carries content or a matched credential.
 
+**Made live by `EPIC-046`** (`specs/046-task-kanban-governed-status/contracts/tasks-api.md` §1):
+
+| Tool | Route | Scope | Result (`structuredContent`) |
+|---|---|---|---|
+| `pmi.tasks.sync` | `POST /v1/projects/me/tasks/sync` | `tasks.sync` | `{ syncId, epicId: string \| null, tasksDigest, counts, diff, refusedLines, markers, outOfBandEdit }` — `201`; mutating |
+
+`pmi.tasks.sync` arguments: `{ executionId, tasksMarkdown }` — **no idempotency key**, because the
+shipped finish hook sends none and is not edited (`FR-KAN-061`). The key is derived as
+`tasks-sync:<executionId>:<sha256 of the normalised markdown>`, so a replay of an unchanged file
+returns the stored answer and writes nothing, while `implement` can still sync twice on one
+execution because the content differs (`R-046-8`). `epicNumber` is **accepted and dropped**, for the
+same reason as above. Per-line refusal codes: `malformed_identifier`, `identifier_not_matched`,
+`missing_description`, `description_too_long`, `duplicate_identifier`, `credential_in_description`;
+whole-file codes that refuse the **entire** sync: `file_too_large`, `too_many_task_lines`,
+`not_utf8_text`. A credential-bearing line is never quoted, in the manifest or in the answer.
+
 ## 3. Reserved — listed, schema-validated, refusing by name (`FR-PIC-002`, `FR-PIC-045`)
 
 | Tool | Refusal | Owner |
 |---|---|---|
 | `pmi.execution.sync` | `not_available_until { epic: 'EPIC-037' }` | `EPIC-037` |
-| `pmi.tasks.sync` | `not_available_until { epic: 'EPIC-046' }` | `EPIC-046` |
 
 Their argument schemas are the ones PMI-DOC-007 §4.1 describes; an argument that fails the schema
 is refused as a schema error **before** the `not_available_until` refusal, so a client is
@@ -87,6 +102,17 @@ validated even while the content is absent.
 **live** as of `EPIC-045` and has moved out of this section into §2 above. **Two** reserved tools
 remain. The tool surface is unchanged at fourteen — one tool moved sides, none was added or lost —
 and the finish hook that has been calling it since `EPIC-042` is not edited (`FR-ART-046`).*
+
+*Amended 2026-09-06 (`EPIC-046` `T1761`, `FR-KAN-060`, `FR-KAN-065`): `pmi.tasks.sync` is **live**
+as of `EPIC-046` and has moved out of this section into §2 above. **One** reserved tool remains —
+`pmi.execution.sync`, `EPIC-037`'s provisional intake. The tool surface is unchanged at fifteen; two
+tools have now moved sides and none was added or lost, and the finish hook that has been calling
+this one after every `tasks` and `implement` since `EPIC-042` is not edited (`FR-KAN-061`).*
+
+*One consequence worth recording, because it removes a habit: with both syncs live, **no reserved
+tool rides an unregistered connector scope any more**. `connector-auth.guard.spec.ts` had borrowed
+each Epic's not-yet-registered scope in turn as its example of an unregistered one; there is nothing
+left to borrow, so `T1693` moved it to a synthetic name that will never be registered.*
 
 ## 4. Refusal codes a client must handle
 

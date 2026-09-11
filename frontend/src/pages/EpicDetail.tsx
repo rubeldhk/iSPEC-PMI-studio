@@ -29,6 +29,13 @@ export interface EpicDetailPageProps {
   readonly currentUserId?: string | undefined;
   /** Opens the project's executions timeline (the project screen). */
   readonly onOpenTimeline: (projectId: string) => void;
+  /**
+   * `EPIC-046` `T1784` — opens this Epic's task board (`FR-KAN-050`).
+   *
+   * Optional so a host that has not routed Plan &amp; Tasks renders no control
+   * rather than a dead one; the shell supplies it.
+   */
+  readonly onOpenTasks?: ((epicId: string) => void) | undefined;
   /** EPIC-045: the file and version the address names (`?file=&version=`). */
   readonly selectedFile?: string | undefined;
   readonly selectedVersion?: string | undefined;
@@ -36,7 +43,7 @@ export interface EpicDetailPageProps {
   readonly onSelectFile?: ((selection: { file: string | null; version: string | null }) => void) | undefined;
 }
 
-export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline, selectedFile, selectedVersion, onSelectFile }: EpicDetailPageProps): ReactElement {
+export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline, onOpenTasks, selectedFile, selectedVersion, onSelectFile }: EpicDetailPageProps): ReactElement {
   const [epic, setEpic] = useState<EpicDetail | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [stage, setStage] = useState<EpicStage | null>(null);
@@ -192,6 +199,25 @@ export function EpicDetailPage({ api, epicId, currentUserId, onOpenTimeline, sel
               </>
             )}
           </section>
+
+          {/*
+            `EPIC-046` `T1784` (`FR-KAN-050`) — the board is reachable from the
+            Epic. It was reachable from the Spec Journey Board's card and from
+            the Plan & Tasks landing, and from the Epic itself it was not, which
+            is the one place a reader is already looking at this Epic.
+          */}
+          {onOpenTasks !== undefined && (
+            <section aria-label="Tasks" className="ds-stack">
+              <h3>Tasks</h3>
+              <p className="ds-field__hint">
+                The tasks parsed from this Epic&apos;s <code>tasks.md</code>, as a board. The project directory stays
+                authoritative for what is done; a move there is a proposal about the record, never an edit of the file.
+              </p>
+              <Button type="button" variant="ghost" onClick={(): void => onOpenTasks(epic.id)}>
+                Open the task board
+              </Button>
+            </section>
+          )}
 
           {/* EPIC-045 T1653 — the Epic's synced files, below Stage. Its own
               loading and error states, so a failure of the artifacts read

@@ -14,6 +14,7 @@ import type { ComponentType } from 'react';
 import {
   GovernanceArea,
   HomeArea,
+  PlanLandingView,
   RequirementRoomIndexView,
   ProjectsArea,
   RunsArea,
@@ -196,18 +197,20 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'delivery',
     label: 'Plan & Tasks',
     path: '/plan',
-    epic: 'EPIC-012',
-    status: 'declared-not-delivered',
-    // N1 (analysis.md, 2026-08-24). EPIC-012 IS complete and `Tasks.tsx` IS
-    // delivered — but it is scoped to one specification, and its only address
-    // is `/specifications/:id/tasks`. Navigation renders a link to
-    // `Area.path`, and `:id` is not an address, so this area cannot be a
-    // primary-navigation destination as it stands. The project-level plan
-    // PMI-DOC-006 §4.1 describes has no entry point, and building one here is
-    // area content `FR-SHL-003` forbids. The tasks view stays reachable as a
-    // sub-view of Specifications; this row is the debt, and EPIC-012 clears it
-    // with a landing view and a one-line edit here (T441p).
-    note: 'Tasks are reached through a specification. A project-level plan view is not built yet.',
+    // EPIC-046 T1737. The debt N1 (analysis.md, 2026-08-24) recorded is
+    // discharged: `/plan` now renders the project's Epics with their task
+    // progress, and `/plan/epics/:epicId` renders one Epic's Kanban.
+    //
+    // It was EPIC-012's to clear (`T441p`), and it is **superseded, not
+    // abandoned** — `Tasks.tsx` still works and is still reachable at
+    // `/specifications/:id/tasks`. What changed is that PMI-DOC-007 §6 put the
+    // Task Kanban in this area, so the landing arrived as part of a requirement
+    // rather than as a screen invented to justify a status. The order was the
+    // one `areas.ts` requires: the landing was built (`T1734`/`T1735`), then
+    // `element` was set, then the status followed.
+    epic: 'EPIC-046',
+    status: 'delivered',
+    element: PlanLandingView,
   },
   {
     id: 'engineering-experts',
