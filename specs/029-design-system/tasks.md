@@ -1,0 +1,419 @@
+---
+
+description: "Task list for EPIC-029 — Design System"
+---
+
+# Tasks: Design System
+
+**Epic**: `EPIC-029` | **Module**: cross-cutting | **Tasks**: counted in this file, never restated elsewhere (`T686`, PP-002)
+
+**Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Contracts**: [contracts/](./contracts/)
+
+> ▶ **PROCEEDING** — authorised 2026-08-20 by `D-41`. Implements `PMI-DOC-005` (`UI-0001`–`UI-0042`).
+
+**Session label**: `EPIC-029 Design System` (Constitution VIII).
+⚠️ **This Epic must be implemented in a separate clone or worktree.** Another session is working
+EPIC-008/011 on this checkout, and `plan.md` Complexity Tracking records the deviation. The
+document phases (spec, plan, tasks) were document-only; **implementation is not.**
+
+**Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a
+paired unit-test task, written to fail first. Tasks producing **configuration or documents** —
+tokens, themes, the lint rule, the accessibility record — carry an **executable conformance check**
+instead, and each such check is mutation-verified: a check that cannot fail is decoration.
+
+**Task IDs**: `T865`–`T904`, plus `T866a`, `T888a` added by the analyse pass of 2026-08-20; `T886a`, `T899a`, `T900a`, `T900b`, `T901a` added by the re-plan of 2026-08-20; and `T900c` added by the second analyse pass to close finding `F3` (corpus max was `T864`; the `a`-suffix convention keeps a later addition adjacent to what it pairs with — the `T549a`/`T576a` precedent). **48 tasks.**
+
+> **Superseded 2026-08-25 by `EPIC-026` `FR-ESK-025` (`T864j`).** The sentence above is **left as
+> written** — it was true when written, and it records what this Epic actually did. What changed is
+> the rule, not the history.
+>
+> **A trailing letter is now a shape, and carries no adjacency claim.** It no longer means *"a later
+> addition adjacent to what it pairs with"*. The meaning was retired because it had already stopped
+> being true: `EPIC-014` allocated `T150a`–`T153h` and `EPIC-036` allocated `T442a`–`T442v` as
+> **ordinary blocks**, adjacent to nothing — the convention described something two Epics no longer
+> did.
+>
+> It was also the reason the corpus felt full. `EPIC-036` `T441n` put it exactly: *"The identifier
+> space is not exhausted… the block `T436`–`T442` alone held 182 unused ones. **The prefix-block
+> convention is.**"* The letters were always there; the meaning attached to them is what made using
+> them feel wrong.
+>
+> The rule now lives in `governance/epic-stage.config.json` as `taskIdentifierPattern`, which also
+> widened to four-or-more digits. Nothing here becomes invalid: every identifier on this line still
+> matches.
+
+**Re-planned 2026-08-20** against **constitution v1.5.0** and the now-settled `D-42`. Principle XI (the reachability gate) is new and **changes this Epic's exit conditions**; the original 42 tasks were never checked against it because it did not exist. Five tasks were added:
+
+| Task | Why it did not exist before |
+|---|---|
+| `T886a` | `T886` gained a native-element assertion (`D-42`), and a newly written check has never been observed failing |
+| `T899a` | **XI Tier 1** — `T866a` reads `main.tsx` for an import line; `T883` renders pages directly. Neither mounts the app at its root, so neither would catch a real render failure |
+| `T900a` | **XI Tier 2** — `V5` was a person looking at a screen; XI requires a run-generated transcript |
+| `T900b` | `T900a` produces a document, so Constitution V requires a conformance check that can fail |
+| `T901a` | Phase Z confirms Constitution V (`T901`); XI now needs the same treatment at closure |
+| `T900c` | **Second analyse pass, finding `F3`** — `SC-DS-006` ("a new page can be built without introducing a visual value that is not already a token") was cited by three artifacts that each tested something else, and nothing built a new page. Token *sufficiency* was untested |
+
+**Amended 2026-08-20** by `/speckit-analyze`, which found one Constitution V violation and five further issues — see [analysis.md](./analysis.md). Fixes are marked inline: `T866a` (the stylesheet import had no check), `T879` (its backlog was empty by construction), `T888a` (`FR-DS-042` had no task), `T890` (moved ahead of the tests it shapes), `T884` (own file), and ID citations across seven tasks.
+
+**Both original gates are discharged** (`spec.md` Exit Criteria):
+
+- ~~`PMI-DOC-005` is **v0.1 Draft**~~ — **approved v1.0 on 2026-08-20**.
+- ~~Decision **`D-42`** gates Phase 5 onward~~ — **decided 2026-08-20**: components are built on
+  native HTML elements, no library dependency. Nothing in this Epic waits on a decision.
+
+**A new gate replaced them, at the other end.** Constitution XI (v1.5.0) means this Epic cannot
+*close* until the restyled application has been exercised through its real entry point and against
+a running instance — `T899a`, `T900a`, `T900b`, confirmed by `T901a`. Phases 1–4 remain the
+recommended MVP; the new gate binds at closure, not at start.
+
+**Before starting**: sync from GitHub; confirm no other session is on this checkout (if one is,
+work in a separate clone).
+
+**Before finishing**: close with a report — what was done (artifacts by path, plus anything in
+scope that was not done and why) and the recommended next task as a concrete Spec Kit command
+(Constitution IX). If the work changed anything the Delivery Board displays, refresh it or declare
+it stale and name what changed (Constitution IX, v1.4.0).
+
+---
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: make the design system buildable and its checks runnable. No visual decision here.
+
+- [X] T865 Add `axe-core` as a dev dependency of `frontend/` and record the resolved version in `frontend/package.json`, per `plan.md` Complexity Tracking (the one new dependency this Epic takes)
+- [X] T866 Create the directory structure `frontend/src/design/` with `tokens.css`, `themes.css` and `components/`, and import the stylesheets once at the application root in `frontend/src/main.tsx` — one import point, so no page can forget it (conformance check: T866a)
+- [X] T866a [P] Write the conformance check asserting `frontend/src/main.tsx` imports **both** `design/tokens.css` and `design/themes.css`, in `frontend/tests/unit/design/stylesheet-installed.spec.tsx`, and **mutation-verify it** by removing an import. Per analysis `D1`: without this, dropping the import renders every page unstyled while every component test still passes, because components are tested in isolation — the sixth built-tested-called-by-nothing in this programme. `T662`'s `main.ts` source assertion is the precedent
+- [X] T867 [P] Register a `design` test area in the existing `frontend` Vitest project so `frontend/tests/unit/design/**` and `frontend/tests/unit/a11y/**` are collected, and assert the glob matches at least one file (the `T537` anti-vacuity precedent — a project that collects nothing passes silently)
+
+**Checkpoint**: `pnpm --filter frontend build` succeeds with the stylesheets imported and empty.
+
+---
+
+## Phase 2: Foundational — the token layer (BLOCKING)
+
+**Purpose**: the single definition every later phase consumes. **Nothing else may start until this
+is complete**, because a component written before tokens exist will contain literals.
+
+**⚠️ CRITICAL**: this phase blocks Phases 3–6.
+
+- [X] T868 [P] Write the failing conformance check for the token layer in `tests/governance/design-tokens.spec.ts`: every token declared **exactly once** (`FR-DS-002`); category and naming shape per [contracts/tokens.md](./contracts/tokens.md); the `space` scale is a fixed ratio (`FR-DS-003`); the `type` scale has **at most seven** steps, each with size, line height and weight (`FR-DS-004`)
+- [X] T869 Define the token set in `frontend/src/design/tokens.css` — colour roles (never hues), space, type, radius, elevation, motion — as a **neutral system palette** this Epic derives, making no brand claim (`FR-DS-005`; conformance check: T868)
+- [X] T870 Extend `tests/governance/design-tokens.spec.ts` to assert **theme completeness**: every themed token has a value in light AND dark, failing with the token name (`FR-DS-010`). Confirm it fails before T871 by omitting one token from dark
+- [X] T871 Define light and dark theme values in `frontend/src/design/themes.css`, with `prefers-color-scheme` as the default and a persistent explicit override (`FR-DS-011`, `SC-DS-005`; conformance check: T870)
+- [X] T872 Extend `tests/governance/design-tokens.spec.ts` to **compute WCAG 2.2 AA contrast from the token values** for every declared text-on-surface pair, in both themes, failing with the pair and its computed ratio (`SC-DS-007`). Per research `R-029-3` this is computed, **not** asked of axe — jsdom has no layout, so axe's `color-contrast` rule returns *incomplete*, never pass or fail
+- [X] T873 [P] Write the failing unit test for theme selection in `frontend/tests/unit/design/theme.spec.tsx`: OS preference followed by default, explicit override wins and persists, clearing the override returns to the OS (`FR-DS-011`)
+- [X] T874 Implement theme selection and persistence in `frontend/src/design/theme.ts` (unit test: T873)
+- [X] T875 [P] Assert `prefers-reduced-motion: reduce` resolves motion durations to zero **without changing layout**, in `frontend/tests/unit/design/motion.spec.tsx` (spec Edge Cases)
+
+**Checkpoint**: `pnpm vitest run --project governance tests/governance/design-tokens.spec.ts` passes — quickstart **V1**. Both themes complete, contrast proven, no component written yet.
+
+---
+
+## Phase 3: User Story 2 - Every screen looks like the same product (Priority: P1) 🎯 MVP
+
+**Goal**: make "no literal visual values" mechanical rather than a matter of review.
+
+**Independent Test**: quickstart **V2** — `pnpm lint` is clean, and adding `color: #ff0000` to any
+component makes it fail, naming the file and the value.
+
+**Why this story is the MVP**: it is the guarantee every other Epic consumes. Without the rule,
+`FR-DS-052` ("each Epic styles its own work") is a promise; with it, it is enforced.
+
+### Tests for User Story 2 (MANDATORY - Constitution V) ⚠️
+
+- [X] T876 [P] [US2] Write failing tests for the literal-value rule in `tests/governance/eslint-design-tokens.spec.ts`: it flags hex colours, `rgb()`/`hsl()`, and length units outside the allowlist (`0`, `1px`, `100%`, `100vh`, `auto`, `currentColor`), in stylesheets **and** inline `style=` props, and does **not** flag `tokens.css`/`themes.css` — per `FR-DS-001`, `FR-DS-051`, `SC-DS-003` and research `R-029-5`
+- [X] T877 [P] [US2] Write the **mutation test** for the rule: a fixture containing a literal MUST produce a violation. The rule is itself a check, and a check that cannot fail is decoration (Constitution V)
+
+### Implementation for User Story 2
+
+- [X] T878 [US2] Implement the literal-value ESLint rule in `eslint.config.js`, following the dependency-boundary rule precedent (`T541`) (unit tests: T876, T877)
+- [X] T879 [US2] Derive the Phase 6 restyling backlog from the **component inventory each delivered page needs** — which components, which states — and record it in this file under Phase 6. Per analysis `U1`: the four pages and two components contain **zero styles and zero literals** (verified in source: no `className`, no `style=`, no hex, no px), so a lint run yields an empty list. The work is *adding* styling where none exists, not *replacing* literals (`FR-DS-050`, `SC-DS-003`)
+
+**Checkpoint**: quickstart **V2** passes; the rule is proven able to fail.
+
+---
+
+## Phase 4: User Story 1 - Operable by keyboard and screen reader (Priority: P1)
+
+**Goal**: the accessibility bar becomes a check that runs, not a claim.
+
+**Independent Test**: quickstart **V3** (automated) and **V4** (the manual pass, recorded).
+
+**⚠️ The trap this phase exists to avoid** (research `R-029-2`, verified against current axe-core
+documentation): there is **no aggregate WCAG tag**, and `wcag22aa` contains exactly one rule —
+`target-size` — which ships **disabled**. The intuitive `runOnly: ['wcag22aa']` runs zero checks
+and reports green: a suite claiming conformance to a standard it never tested. That is
+`DEF-028-003` and `DEF-001-004` in a third costume.
+
+### Tests for User Story 1 (MANDATORY - Constitution V) ⚠️
+
+- [X] T880 [P] [US1] Write the accessibility harness in `frontend/tests/unit/a11y/axe.ts`, configured for `FR-DS-030` with **all five tags** — `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa` — and `axe.configure()` **explicitly enabling `target-size`**, without which the WCAG 2.2 delta is untested (research `R-029-2`)
+- [X] T881 [US1] Write the **meta-test** proving the harness detects a known violation — an unlabelled input — in `frontend/tests/unit/a11y/harness.spec.tsx`. Without this the harness can silently stop working and every suite below it stays green (test: T880)
+
+### Implementation for User Story 1
+
+- [X] T882 [P] [US1] Add a focus-visible treatment driven by tokens in `frontend/src/design/tokens.css` and assert its contrast meets AA against every surface, in `tests/governance/design-tokens.spec.ts` (`FR-DS-033`)
+- [X] T883 [US1] Run the harness over each delivered page in `frontend/tests/unit/a11y/pages.spec.tsx` — SignIn, Projects, Requirements, Traceability — asserting zero violations (`FR-DS-030`, `FR-DS-031`, `SC-DS-001`; test harness: T880)
+- [ ] T884 [P] [US1] Write the conformance check for the manual accessibility record in `tests/governance/accessibility-record.spec.ts` (its own file — analysis `I1`: a check about a markdown transcript does not belong in a file named for tokens): `docs/accessibility/EPIC-029-manual-pass.md` exists and names a **screen reader, its version, and at least one journey**. A file saying only "passed" MUST fail — that is the difference between a transcript and a tick (`FR-DS-034`, `SC-DS-008`)
+- [ ] T885 [US1] **MANUAL** — walk sign-in → create project → capture requirement using only a keyboard and a screen reader; commit the transcript to `docs/accessibility/EPIC-029-manual-pass.md` naming tool, version and journeys (`FR-DS-032`; conformance check: T884). Automation cannot see focus *order* or whether an announcement is *meaningful*, which is why this task exists and cannot be delegated to CI
+
+**Checkpoint**: quickstart **V3** and **V4** pass. `SC-DS-001` and `SC-DS-002` are evidenced.
+
+---
+
+## Phase 5: User Story 3 - Every asynchronous surface explains itself (Priority: P2)
+
+**Goal**: the fifteen components of [contracts/components.md](./contracts/components.md), each with
+every state its row declares.
+
+**⚠️ GATED ON DECISION `D-42`** — build vs adopt (`PMI-DOC-005` `RULE-05`). Research `R-029-6` has
+the inputs. If a library is adopted, `PP-008` requires security review **before** T887.
+
+**Independent Test**: quickstart **V3** — one assertion per declared state, for all fifteen.
+
+### Decision first (analysis `O1`)
+
+- [X] T890 [US3] Record decision **`D-42`** (build vs adopt) in `specs/_shared/decisions/D-42-component-library-build-vs-adopt.md`, with security review recorded if a dependency is adopted (`PP-008`, `PMI-DOC-005` `RULE-05`). **Moved to the head of this phase**: it is a decision record, not implementation, and writing the component tests before it risks reworking their APIs if a library is adopted
+
+### Tests for User Story 3 (MANDATORY - Constitution V) ⚠️
+
+- [X] T886 [P] [US3] Write the **state-and-element coverage check** in `frontend/tests/unit/design/state-coverage.spec.tsx`: read the tables from `contracts/components.md` and assert (a) every component has a test for every state its row declares (`FR-DS-020`, `FR-DS-023`, `SC-DS-004`), and (b) **every component renders the native element its row names** (`D-42`). This is the check that makes a *missing* state a failure rather than an omission nobody notices — and (b) is the only thing standing between `D-42` and a div-based reimplementation, which every other check in this Epic passes happily (mutation check: T886a)
+- [X] T886a [P] [US3] **Mutation-verify T886 on both dimensions** in `frontend/tests/unit/design/state-coverage.spec.tsx`: a component missing a declared state MUST fail it, and a component rendering `<div>` where its row names `<button>` MUST fail it. Two fixtures, two failures observed. Per Constitution V a check that cannot fail is decoration — and (b) is newly written, so it has never been seen to fail at all
+- [X] T887 [P] [US3] Write failing component tests for the form family — Button, TextInput, Select, Checkbox, Radio, FormField — covering each declared state, in `frontend/tests/unit/design/forms.spec.tsx`
+- [X] T888a [P] [US3] Assert the **testable half of `FR-DS-042`**: every control's label states what happens, and its confirmation states what happened — a `Save` button pairs with a `Saved` confirmation, not a generic `Success` — in `frontend/tests/unit/design/microcopy.spec.tsx`. Per analysis `C1`. The other half ("name things as users recognise them") is **not mechanically testable**, so it moves to `PMI-DOC-005` as a standing convention rather than a requirement this Epic claims to satisfy — review does not satisfy Constitution V
+- [X] T888 [P] [US3] Write failing component tests for the feedback family — EmptyState, ErrorState, LoadingIndicator, Toast — asserting an empty state explains **why** it is empty and an error says what to do next without exposing internal detail (`FR-DS-021`, `FR-DS-022`), in `frontend/tests/unit/design/feedback.spec.tsx`
+- [X] T889 [P] [US3] Write failing component tests for the structure family — Table, Modal, Navigation, PageHeader, StatusPill — asserting the Table offers filtering (`FR-DS-041`), the Modal traps and restores focus and closes on Escape, and StatusPill carries status by text or icon as well as colour (`FR-DS-012`), in `frontend/tests/unit/design/structure.spec.tsx`
+
+### Implementation for User Story 3
+
+- [X] T891 [P] [US3] Implement the form family in `frontend/src/design/components/` (unit tests: T887)
+- [X] T892 [P] [US3] Implement the feedback family in `frontend/src/design/components/` (unit tests: T888)
+- [X] T893 [P] [US3] Implement the structure family in `frontend/src/design/components/` (unit tests: T889)
+- [X] T894 [US3] Run the accessibility harness over every component in `frontend/tests/unit/a11y/components.spec.tsx` (harness: T880)
+
+**Checkpoint**: fifteen components, every declared state asserted, zero axe violations.
+
+---
+
+## Phase 6: Restyle what exists today
+
+**Purpose**: `FR-DS-050` — and **only** what exists (`FR-DS-052`). Every future Epic styles its own
+work, which T878's rule now enforces automatically.
+
+### Restyling backlog (T879, recorded 2026-08-21)
+
+Derived from the component inventory each delivered page needs — which components, which states.
+Verified in source before restyling: the six files below contain **zero** `className`, `style=`,
+hex or px literals; the work is *adding* styling where none exists, not replacing literals, so a
+lint run over them yields an empty list by construction (analysis `U1`).
+
+| Surface | Components it composes | States it exercises |
+|---|---|---|
+| `SignIn.tsx` | PageHeader, FormField ×2, TextInput ×2, Button (submit) | default, focus, disabled+loading (busy submit), error (`role="alert"`) |
+| `Projects.tsx` | PageHeader, Table/list of projects, FormField+TextInput (create), Button ×5, EmptyState, LoadingIndicator, ErrorState | default, hover/focus on rows and buttons, loading, empty (no projects), error |
+| `Requirements.tsx` | PageHeader, Table (with filtering, `FR-DS-041`), Select ×3, FormField, Button, StatusPill (status column), EmptyState, LoadingIndicator | default, hover/focus, loading, empty, error |
+| `Traceability.tsx` | PageHeader (h2/h3 hierarchy), TextInput ×2 (filters), Button ×2, link lists, StatusPill (link status), EmptyState | default, focus, empty (no links), error |
+| `EngineSelector.tsx` | FormField, Select, LoadingIndicator, ErrorState | default, focus, disabled, loading, error |
+| `RequirementEditor.tsx` | FormField ×3, TextInput/textarea, Select ×2, Button (Save → "Saved" confirmation, `FR-DS-042`), ErrorState | default, focus, disabled, loading (saving), error |
+
+Every component above is in the Phase 1 fifteen; no surface needs one that is not — which is the
+inventory doing its job. Toast, Modal and Navigation are in the inventory for the Epics next in
+the dependency order; nothing delivered today mounts them, so no restyle task consumes them.
+
+- [X] T895 [P] Restyle `frontend/src/pages/SignIn.tsx` onto tokens and components (accessibility conformance check: T883)
+- [X] T896 [P] Restyle `frontend/src/pages/Projects.tsx` onto tokens and components (accessibility conformance check: T883)
+- [X] T897 [P] Restyle `frontend/src/pages/Requirements.tsx` onto tokens and components (accessibility conformance check: T883)
+- [X] T898 [P] Restyle `frontend/src/pages/Traceability.tsx` onto tokens and components (accessibility conformance check: T883)
+- [X] T899 [P] Restyle `frontend/src/components/EngineSelector.tsx` and `frontend/src/components/RequirementEditor.tsx` onto tokens and components (accessibility conformance check: T894)
+- [X] T899a **Constitution XI Tier 1** — write the real-entry-point test in `frontend/tests/unit/design/app-root.spec.tsx`: **mount the application at its root** (the composed tree `main.tsx` builds, not a page component in isolation) and assert a delivered page renders with token-derived styling resolved. **Mutation-verify by removing a stylesheet import** — the test MUST fail. `T866a` asserts the import *line exists* by reading the source; this asserts the app *actually renders styled*, which is the difference Principle XI was written for. Neither `T866a` nor `T883` drives the real entry point (unit test: this task is itself the test)
+- [X] T900 Verify the restyled pages at the **minimum viewport (360×640)** and at **200% text zoom** with no clipping or overflow, and record the result in [quickstart.md](./quickstart.md) `V5` (`FR-DS-006`, `FR-DS-040`, research `R-029-4`)
+- [X] T900a **Constitution XI Tier 2** — drive the restyled journey against the **running application** (sign-in → projects → requirements, both themes, 360×640 and 200% zoom) and emit a **run-generated transcript** to `docs/accessibility/EPIC-029-reachability-transcript.md`. The transcript MUST be produced by the run and name what was exercised; **hand-writing or editing it is a constitution violation**, the rule `G-28-02` enforced against `T709`'s first attempt. The local stack is up and verified as of 2026-08-20, so this needs no new environment (conformance check: T900b)
+- [X] T900b [P] Write the conformance check for the reachability transcript in `tests/governance/reachability-transcript.spec.ts`: the file exists, names each page exercised and both themes, and carries evidence it was machine-generated. **A file saying only "passed" MUST fail** — the same standard `T884` holds the manual accessibility record to (`SC-DS-005`, Constitution XI Tier 2)
+- [X] T900c Build a **new page from tokens and components only** — a fixture at `frontend/tests/unit/design/fixtures/NewPage.tsx` composing a page header, a form field, a table, a status pill and an empty state — and assert in `frontend/tests/unit/design/token-sufficiency.spec.tsx` that (a) the literal-value rule reports **zero violations** on it — run **programmatically via the ESLint API**, the same way `T876`/`T877` drive the rule, because the rule's file scope is `frontend/src/**` and this fixture deliberately sits outside it, (b) it declares **no new custom property**, and (c) **every `var(--…)` it references resolves to a token defined in `tokens.css`** — an unresolved reference fails, naming it. **Mutation-verify** by referencing `var(--color-does-not-exist)`: the check MUST fail. This is the only task that proves `SC-DS-006` — *a new page can be built without introducing a visual value that is not already a token*. Per analysis `F3`: `SC-DS-006` had been cited by three artifacts that each tested something else, and **nothing built a new page**, so token *sufficiency* — as distinct from token *correctness*, which `T868` covers — was never tested at all
+
+**Checkpoint**: quickstart **V5** — every delivered page renders from tokens alone, in both themes,
+**proven against the running application** rather than asserted — and **V6**, that a *new* page
+needs no visual value the token set does not already carry.
+
+---
+
+## Phase Z: Epic Closure (MANDATORY - Constitution IV, V, VI, IX)
+
+- [ ] T901 Confirm every implementation task has a passing unit test, and every configuration or document task a passing conformance check that was **observed failing first** (Constitution V)
+- [X] T901a Confirm **Constitution XI** is satisfied on both tiers: Tier 1 — `T899a` mounts the application at its root and was observed failing with a stylesheet import removed; Tier 2 — `T900a`'s transcript exists, is machine-generated, and passes `T900b`. This Epic restyles the four pages a user actually sees, so it is the worst possible candidate for a reachability waiver
+- [X] T902 Confirm `PMI-DOC-005` has been **approved** and the clarification-sourced requirements back-filled — **done 2026-08-20 at approval**: v1.0 carries `UI-0005` (palette), `UI-0006` (browser floor), `UI-0035` (accessibility evidence) and `RULE-04` (restyle ownership). Back-filling at approval rather than at closure means the approved document is the complete one (Constitution II)
+- [X] T903 Run `/speckit-converge`; append and complete any remaining unbuilt work — **run 2026-08-24 (third convergence run)**. Two findings, both created by Phase 9 and both the same shape: the shell `T923` added is a delivered surface no accessibility check reached. Appended as Phase 10 (`T930`, `T931`) and **both completed in the same session**. Four further gaps were assessed and deliberately produced no task, each with its reason recorded in Phase 10's table. A confirming re-run is the natural next step once `T885` closes
+- [ ] T904 Triage `specs/029-design-system/defects/`; close every record or defer to a named Epic, then publish the Epic closing report — work completed, work deferred, recommended next command (Constitution IX)
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: no dependencies
+- **Foundational (Phase 2)**: needs Setup — **BLOCKS everything else**. A component written before tokens exist contains literals by necessity
+- **US2 (Phase 3)**: needs Phase 2 — the rule needs a token file to exempt
+- **US1 (Phase 4)**: needs Phase 2; independent of US2 and runs in parallel with it
+- **US3 (Phase 5)**: needs Phase 2. (`D-42` was a gate here; it is **decided** and no longer one)
+- **Restyle (Phase 6)**: needs Phase 5. `T899a` and `T900a` need the restyles finished — they prove the *restyled* app renders, so running them earlier proves nothing
+- **Phase Z**: needs all, plus `PMI-DOC-005` approval (done, `T902`)
+
+### `D-42` — decided, blocking nothing
+
+**Decided 2026-08-20**: components are **built on native HTML elements**, no library dependency
+([`D-42`](../_shared/decisions/D-42-component-library-build-vs-adopt.md)). `PP-008` is not
+triggered.
+
+The layering above was chosen so an open decision gated roughly half the Epic rather than all of
+it. That hedge has paid out and is now simply the dependency order — **all 47 tasks are runnable**.
+What the decision leaves behind is an obligation, not a block: every component is built on the
+native element its row names, and `T886`(b) is the only check that can see a violation.
+
+### Parallel Opportunities
+
+- `T867` runs alongside `T865`/`T866`
+- `T868` and `T873`/`T875` are independent within Phase 2
+- **US1 (Phase 4) and US2 (Phase 3) run fully in parallel** once Phase 2 lands
+- `T887`–`T889` are three independent test files; `T891`–`T893` likewise
+- `T886a` runs alongside `T886`'s siblings — its fixtures touch no shared state
+- The six restyles `T895`–`T899` are all `[P]` — six files, no shared state
+- **`T899a`, `T900` and `T900a` are NOT `[P]`** — each needs every restyle finished, and `T900a` additionally needs a running stack, which is one shared resource. `T900b` is `[P]`: it is a check about a file, not a run
+
+---
+
+## Implementation Strategy
+
+### MVP (Phases 1–4)
+
+1. Setup, then the token layer with both themes and proven contrast
+2. The literal-value lint rule, mutation-verified
+3. The accessibility harness with all five tags, `target-size` enabled, and its meta-test
+4. **STOP and VALIDATE**: quickstarts V1, V2, V3, V4 all pass
+
+At that point the platform has a design system, an enforced rule, and a real accessibility gate —
+while every UI Epic that follows is automatically held to it. That is a genuine increment on its
+own, which is why the Epic was layered this way while `D-42` was still open.
+
+### Then
+
+5. Build the components on native elements per `D-42` (Phase 5)
+6. Restyle what exists, then **prove it against the running application** — `T899a` at the app
+   root, `T900a` against the live stack (Phase 6)
+7. Close (Phase Z), including the `T901a` reachability confirmation
+
+**Note on step 6**: it is not optional polish. Constitution XI makes it the gate this Epic closes
+through, and every one of the six defects that principle exists to catch was found by a person
+opening a browser *after* an Epic had been declared done.
+
+---
+
+## Notes
+
+- Tokens are configuration: their tasks pair with conformance checks, not unit tests (Constitution V)
+- Every check in this Epic is mutation-verified — `T877` and `T881` exist solely to prove two checks
+  can fail, because three defects this week were checks that could not
+- `[P]` = different files, no dependency
+- Never edit code outside a Spec Kit command (Constitution I); defects become new tasks
+- Implementation happens in a **separate clone** — see the session-label warning at the top
+
+---
+
+## Phase 7: Convergence
+
+*Appended by `/speckit-converge`, 2026-08-21. One finding produced a task; the other remaining gap
+— the manual keyboard and screen-reader record (`FR-DS-032`/`FR-DS-034`, `SC-DS-002`/`SC-DS-008`)
+— is already tracked by open tasks `T884`/`T885` and is human work `/speckit-implement` cannot
+perform, so no duplicate task is appended for it.*
+
+- [X] T913 Wire the theme override into the running application per FR-DS-011 (partial): call `initTheme()` at the application root in `frontend/src/main.tsx`, add a visible theme control — light / dark / follow-system, driven by `setTheme`/`clearTheme` and composed from existing inventory components — reachable from every delivered page, and extend `frontend/tests/unit/design/app-root.spec.tsx` to observe the COMPOSED app applying a stored preference on load. Today `frontend/src/design/theme.ts` is built and unit-tested (T873/T874) but called by nothing: no code invokes `initTheme`, no control invokes `setTheme`, so a user of the running application cannot set — let alone persist — the override the requirement grants them. This is the built-but-never-wired shape Constitution XI names, and it slipped past T899a because the OS-default path is pure CSS and renders correctly with zero JavaScript
+
+---
+
+## Phase 8: Convergence
+
+*Appended by `/speckit-converge`, 2026-08-21 (second run, after `T913`). Four findings; **one**
+produces a task. The other three are recorded here and deliberately produce none — converge appends
+remaining work, and work owned elsewhere or requiring human judgement is not this Epic's to append.*
+
+- [X] T914 Restyle the shell's own controls onto the component layer per `SC-DS-003` (partial): the "Traceability" button at `frontend/src/main.tsx:100` and "Back to project" at `:124` carry no class and render browser-default on two delivered surfaces, beside components that are fully styled. `FR-DS-050` named four pages and two components and **`main.tsx` was owned by no restyle task** — the shell is where nobody's job collects, the same shape as `T913`. Note the lint rule provably cannot catch this: **an absence of styling contains no literal value** (`DEF-029-003`; unit test: `T883`, whose page-level assertions were extended to the shell in `frontend/tests/unit/a11y/shell.spec.tsx`)
+
+### Findings that produced no task, and why
+
+| Finding | Source | Why no task here |
+|---|---|---|
+| Register does not refetch after save, so a **wrong** empty state is announced | `FR-DS-021`, `DEF-029-005` | **EPIC-011 behaviour, not this Epic's.** The restyle made it worse — a confident empty state misleads harder than a bare paragraph — but appending a fix here would take on another Epic's defect. `T904` triage defers it to a named Epic |
+| "Type" and "Priority" reachable twice per tab cycle with identical accessible names | `FR-DS-030`, `DEF-029-004` | Whether duplicate names are **confusing when heard** is exactly the judgement `T885` exists for. Appending a fix would pre-empt the human pass and risk changing correct markup on a guess |
+| The manual keyboard and screen-reader record does not exist | `FR-DS-032`, `SC-DS-008` | **Already `T885`.** No agent can perform it and none has pretended to; `T884`'s check is red for that reason and should stay red until a person does the work |
+
+---
+
+## Phase 9: Prototype parity
+
+*Appended by `/speckit-implement`, 2026-08-23, on the instruction to **follow the prototype for
+components and functionality**. The reference artifact —
+[`docs/design/PMI-Studio-V2-Application-Prototype.html`](../../docs/design/PMI-Studio-V2-Application-Prototype.html),
+filed under `PMI-DOC-004A` Amendment G — reached `main` after this branch diverged and has never
+been read against the component layer. It is now merged in.*
+
+**Scope is a contract, not a judgement call.** The prototype's own header rules its token values
+illustrative and states it is not a build target; `PMI-DOC-005` `RULE-03` and `PMI-DOC-006`
+`UX-0060` keep unowned screens out of this Epic. [`contracts/prototype-parity.md`](./contracts/prototype-parity.md)
+records the resulting split — **ten adopted patterns, eight declined with reasons** — and
+`T924`'s check reads that table, so a declined row cannot be quietly adopted later and an adopted
+row cannot be quietly dropped.
+
+**IDs `T915`–`T929`** (corpus max was `T914`). **15 tasks.**
+
+### Tests first (MANDATORY — Constitution V)
+
+- [X] T924 [P] Write the **parity check** in `frontend/tests/unit/design/prototype-parity.spec.tsx`: read the adopted table of `contracts/prototype-parity.md` and assert each row's artifact is present — the token exists, the class is declared in `components.css`, the component exposes the prop, the shell renders the region. **Mutation-verify**: a row whose artifact is removed MUST fail, naming the row. Without this the whole phase is a set of edits nobody can prove stayed made, which is the shape Constitution V exists to reject
+- [X] T925 [P] Extend `tests/governance/design-tokens.spec.ts` with the new surfaces **before they exist**: text-on-`--color-canvas` for every text role, and each `--color-<tone>-subtle` against the tone that sits on it, plus `--color-focus` at 3:1 on canvas and on `--color-accent-subtle`. Observe it failing with *token missing* before `T915`
+
+### Implementation
+
+- [X] T915 Add the surface and tint tokens the prototype's card language needs — `--color-canvas` and `--color-accent-subtle`, `--color-success-subtle`, `--color-warning-subtle`, `--color-danger-subtle` — to `frontend/src/design/tokens.css` and all three blocks of `themes.css`. Values are **this Epic's neutral palette** (`FR-DS-005`, `UI-0005`), not the prototype's hexes, which its header rules illustrative (conformance check: T925)
+- [X] T916 Add the **card surface** as a layout class `.ds-card` in `frontend/src/design/components/components.css`, and put the page on `--color-canvas` so a surface reads as raised against it. Not a sixteenth component: `T886` fixes the inventory at fifteen and the prototype's `.card` is a container, not a control (parity row 3 — unit test: `T924`, which asserts `.ds-card` in `frontend/tests/unit/design/prototype-parity.spec.tsx`)
+- [X] T917 [P] `PageHeader` gains **`description`** — the prototype's `.pagehead` is a title, a sentence saying what the page is for, and actions to the right (parity row 4; unit test: T889's structure suite)
+- [X] T918 [P] `Table`: move the filter into a **tools bar** (`.ds-table__tools`) above the grid and give column headers the prototype's small, uppercase, muted treatment on a raised ground. Filtering itself is unchanged — it is already `FR-DS-041` (parity row 5; unit test: T889)
+- [X] T919 [P] `StatusPill` tones become **tinted grounds** rather than outlines, on the `T915` tint tokens (parity row 6; unit test: T889)
+- [X] T920 [P] `Button` gains **`secondary`** — the prototype's default weight, a bordered surface control — and `ghost` becomes genuinely borderless. `primary` stays the accent-filled one (parity row 7; unit test: T887)
+- [X] T921 [P] `Modal` gains **`actions`** and moves its close affordance into the header, per the prototype's head / body / foot (parity row 8; unit test: T889)
+- [X] T922 [P] `Navigation` gains **`orientation`** (`horizontal` | `vertical`) and a per-item **`count`**, the sidebar's grouped destinations reduced to the two properties that are not screen content (parity row 9; unit test: T889)
+- [X] T923 Give the shell in `frontend/src/main.tsx` the prototype's **frame** — a sticky top bar carrying location and the global actions, above a bounded content column — composed from inventory components only, and **restyle the two unstyled controls `T914` names** in the same pass. Extends `frontend/tests/unit/design/app-root.spec.tsx` (parity row 10; closes `T914` and `DEF-029-003`)
+- [X] T926 Fix `DEF-029-006` in `frontend/tests/unit/a11y/pages.spec.tsx`: the Traceability mock returns a coverage object of the wrong shape, so `TraceabilityPage` throws while rendering its coverage section and **axe never sees it** — a `T883` assertion that has been passing over a page half of which never rendered. The mock is cast `as unknown as ApiClient`, so the compiler cannot see it either
+
+### Reachability — Phase 9 changed the surfaces the XI Tier 2 evidence measured
+
+- [X] T927 Re-drive the **Constitution XI Tier 2** run against the restyled build and append the verbatim records to `docs/accessibility/EPIC-029-reachability-transcript.md` (`DEF-029-007`). The 2026-08-21 transcript records `bodyBackground: rgb(255, 255, 255)`; the page now sits on `--color-canvas`, so that run describes a build that no longer exists. **Done in two sittings**: SignIn and the shell on 2026-08-23; **Projects and Requirements on 2026-08-24**, signed in as the committed local UAT fixture, with a project created and a requirement captured through the rendered UI so the register had a row to render. **No horizontal overflow on the document in any of the eight conditions**; the tinted StatusPill and the uppercase column headers observed resolving live from the Phase 9 tokens. `DEF-029-007` closed
+- [X] T928 Close the gap in the check that let `T927` happen: extend `tests/governance/reachability-transcript.spec.ts` so the transcript must carry the `--color-canvas` and `--color-surface` values `themes.css` **currently** declares, in both themes, failing with the token name and "re-run T900a". `T900b` tested that the file was evidence and never that it was evidence of *this* build — so it stayed green for two days after the palette moved under it. **Mutation-verified** against the literal miss: a transcript saying `rgb(255, 255, 255)` against a canvas of `#f6f7f9`. A hand cannot satisfy this without running the application
+
+### Found by the T927 run
+
+- [X] T929 Record `DEF-029-008` — **the `Table` component is called by no delivered page**. Five importers, every one a test; `Requirements.tsx` uses a plain `<table className="ds-table">` for a documented and correct reason (its filtering is a database query, not a client-side sieve), and the other two delivered pages render no table. So `T918`'s tools bar reaches nobody, though its CSS header treatment does. The seventh built-tested-called-by-nothing in this programme and the third in this Epic. **Recorded, not fixed**: both defensible resolutions — give `Table` a server-filter mode, or accept it serves future screens — are decisions about screens this Epic does not own (`PMI-DOC-005` `RULE-03`), so the disposition is `T904`'s and the choice belongs to EPIC-010 or EPIC-011
+
+**Checkpoint**: `pnpm lint` clean, the parity check green and observed failing on a removed row,
+and every existing suite still passing — the prototype's form, this Epic's values.
+
+---
+
+## Phase 10: Convergence
+
+*Appended by `/speckit-converge`, 2026-08-24 (third run, after Phase 9). Two findings, both the
+same shape and both created by Phase 9 itself: **the shell it added is a delivered surface no
+accessibility check reaches.** Four further gaps were assessed and produce no task — see below.*
+
+- [X] T930 Run the accessibility harness over the **composed application shell** in `frontend/tests/unit/a11y/shell.spec.tsx`: mount `App` at its root (the tree `main.tsx` builds) and assert zero violations on the signed-out surface, in **both themes** per `FR-DS-031` and `SC-DS-001` (missing). Since `T923` the shell renders a `banner` landmark, a breadcrumb and the theme control **on every page**, and no rule has ever examined it: `T883` renders page components in isolation inside its own `<main>` host, and `app-root.spec.tsx` and `prototype-parity.spec.tsx` — the only files that mount `App` — import no axe harness. `T914` anticipated exactly this ("extend `T883`'s page-level assertions to the shell") and Phase 9 delivered the shell without delivering the extension. **Mutation-verify** by adding a second `<header>` landmark or an unlabelled control to the bar: the check MUST fail
+- [X] T931 Extend `frontend/tests/unit/a11y/components.spec.tsx` to the **Phase 9 configurations** per `FR-DS-031` (partial): `Modal` with `actions` (header and footer both populated), `Navigation` `orientation="vertical"` with a `count` — which puts `.ds-visually-hidden` text inside a button, a real assistive-technology construct scanned by nothing today — and `PageHeader` with a `description`. `T894` scans each component in its **minimal** usage and was written before these regions existed, so every one of them is markup the harness has never seen
+
+### Findings that produced no task, and why
+
+| Finding | Source | Why no task here |
+|---|---|---|
+| `Table` is imported only by tests — no delivered page uses it (`DEF-029-008`) | `T927` run | `FR-DS-023` requires the inventory to **exist**, and it does; no requirement is unmet. Both candidate resolutions are decisions about screens this Epic does not own (`PMI-DOC-005` `RULE-03`). Recorded, and the disposition is `T904`'s — appending a task would restate an open decision as though it were settled work |
+| The manual keyboard and screen-reader record (`FR-DS-032`/`FR-DS-034`, `SC-DS-002`/`SC-DS-008`) | spec | Already tracked by open `T884`/`T885`, and it is human work `/speckit-implement` cannot perform. Same reasoning Phase 7 recorded; converge does not duplicate an open task |
+| Two controls share one accessible name (`DEF-029-004`) | `T885` machine half | Whether duplicate names are *ambiguous when heard* is the `T885` judgement, not a mechanical result. It stays with the record it belongs to |
+| A captured requirement does not reach the register until a filter moves (`DEF-029-005`) | `T927` run | Not an EPIC-029 requirement — the register's fetch behaviour belongs to EPIC-011, and the record already proposes that deferral |
+
+**Checkpoint**: the shell a user actually looks at is covered by the same gate every page and
+component already passes — which is what `FR-DS-031` said all along, before there was a shell.

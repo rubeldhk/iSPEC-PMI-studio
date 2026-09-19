@@ -1,0 +1,122 @@
+---
+
+description: "Task list for EPIC-024 — Artifact Access Control"
+---
+
+# Tasks: Artifact Access Control
+
+**Epic**: `EPIC-024` | **Module**: M-13 Security & Governance | **Tasks**: 28
+
+**Parent design**: [../002-team-review-access-storage/](../002-team-review-access-storage/) — requirements, clarifications, SRS traceability and the principle register live there
+**Shared design**: [../_shared/](../_shared/)
+
+> ⏸ **HELD** under decision D-10, pending `PMI-DOC-004` and approved business scope. Held is not cancelled — these tasks await an input, not more design.
+
+**Requirements owned**: FR-ACC-021 – FR-ACC-028, **FR-ACC-028a**
+
+**Added 2026-08-19**: `T811`–`T816` for **FR-ACC-028a**. The parent's third clarification session found that FR-ACC-028's run snapshot and the edge case hiding restricted questions from a reviewer implied two different access sets without ever saying which governed what. They are now separated: the snapshot governs the **run**, current grants govern the **reviewer**.
+
+**Session label**: `EPIC-024 Artifact Access Control` (Constitution VIII).
+
+**Tests**: MANDATORY (Constitution V). Every task producing or changing application code has a paired unit-test task, written to fail first.
+
+**Task IDs are invariant** — unchanged by the D-19 split of EPIC-002. A `(unit test: T0nn)` reference may point at a task in a sibling epic; that is expected.
+
+**Before finishing**: close with a Work Completed + Recommended Next Task report (Constitution IX).
+
+---
+
+## F-02.5 · Artifact access control
+
+- [X] T372 [P] [US4] Unit tests asserting read and edit grants permit exactly their level and no more, in `backend/tests/unit/access/grants.spec.ts`
+- [X] T373 [P] [US4] Unit tests asserting an ungranted artifact is HIDDEN from listings, not shown as inaccessible, and that every refused attempt reaches the audit record (**SC-007**, **SC-013**), in `backend/tests/unit/access/refusal.spec.ts`
+- [X] T374 [P] [US4] Unit tests asserting a derived artifact is at least as restricted as **every** source it derives from — most-restrictive-wins, so a specification generated from one open and one restricted requirement is hidden from anyone lacking a grant on the restricted one, and derivation cannot be used to read a restricted source indirectly (**FR-ACC-025**, clarified 2026-08-08), in `backend/tests/unit/access/inheritance.spec.ts`
+- [X] T375 [P] [US4] Unit tests asserting no artifact can reach a state with no user holding edit access, in `backend/tests/unit/access/last-editor.spec.ts`
+- [X] T376 [US4] Define `AccessGrant` and `AccessAttemptRecord` models in `backend/prisma/schema.prisma` (unit tests: T372, T373)
+- [X] T826 [P] [US4] Unit tests asserting **every grant and every revocation** is written to the audit record with the actor, the change and the time, in the same transaction as the change itself — `T373` covers the refusal half of the trail, nothing covered this half (**FR-ACC-026**, **SC-013**), in `backend/tests/unit/access/grant-audit.spec.ts`
+- [X] T377 [US4] Implement grant and revoke, each written to the audit record with actor, change and time in `backend/src/modules/access/access-grant.service.ts` (FR-ACC-021, FR-ACC-022, FR-ACC-026, **SC-013**; unit tests: T372, T826)
+- [X] T378 [US4] Implement the enforcement path — refuse, hide, record — in `backend/src/modules/access/access-enforcement.service.ts` (FR-ACC-023, FR-ACC-024; unit test: T373)
+- [X] T379 [US4] Implement derived-artifact restriction inheritance in `backend/src/modules/access/access-inheritance.service.ts` (FR-ACC-025; unit test: T374)
+- [X] T380 [US4] Implement the last-editor guarantee in `backend/src/modules/access/access-grant.service.ts` (FR-ACC-027; unit test: T375)
+- [X] T381 [US4] Implement run-time access snapshotting so a long run cannot half-apply a permission change in `backend/src/modules/access/access-snapshot.service.ts` (FR-ACC-028; unit test: T811)
+- [X] T418 [P] [US4] Write failing unit tests for the access controller with mocked services, asserting a grant request on an artifact the caller cannot edit returns **absence, not forbidden**, in `backend/tests/unit/access/access.controller.spec.ts`
+- [X] T419 [P] [US4] Contract tests for grant, revoke and access-attempt endpoints against `contracts/platform-api-epic-002.md` in `backend/tests/contract/access.spec.ts`
+- [X] T420 [US4] Implement the access controller in `backend/src/modules/access/access.controller.ts` (unit test: T418; contract test: T419)
+- [X] T427 [P] [US4] Integration test against a **real** PostgreSQL via Testcontainers asserting an ungranted artifact is **absent from listings** and returns 404 directly, and that the refusal is recorded in the same transaction — a mocked repository passes while the real query leaks (SC-007) — in `backend/tests/integration/access-enforcement.spec.ts`
+- [X] T428 [P] [US4] Integration test asserting the last-editor invariant holds under **concurrent** revocation, enforced inside the revoke transaction rather than by a pre-check (FR-ACC-027, SC-008), in `backend/tests/integration/last-editor.spec.ts`
+
+## F-024.6 · Reviewer visibility uses current grants
+
+*FR-ACC-028a, SC-018. `T381` snapshots access when a run starts so a long run cannot half-apply a
+permission change — a consistency concern measured in minutes. A review session sits open for days.
+Reusing the snapshot there would turn it into a read capability that outlives a revoke, which is
+exactly what FR-ACC-023 forbids. The snapshot is therefore narrowed to the run, and session content is
+evaluated against the grants held at the moment the session is opened.*
+
+- [X] T811 [P] [US4] Unit tests asserting the run access snapshot governs only what a run may read and produce, and is **not** consulted when deciding what a reviewer may see, in `backend/tests/unit/access/snapshot-scope.spec.ts`
+- [X] T812 [P] [US4] Unit tests asserting review session content is evaluated against the grants held **at open time**, so a revocation takes effect on the reviewer's next open of an already-open session (FR-ACC-028a, SC-018), in `backend/tests/unit/access/session-visibility.spec.ts`
+- [X] T813 [US4] Narrow the snapshot to run-time evaluation and separate it from open-time evaluation in `backend/src/modules/access/access-snapshot.service.ts` (FR-ACC-028, FR-ACC-028a; unit test: T811) — narrows `T381`, which currently serves both
+- [X] T814 [US4] Implement open-time grant evaluation for review session content in `backend/src/modules/access/access-evaluation.service.ts` (FR-ACC-028a; unit test: T812)
+- [X] T815 [P] [US4] Integration test against a **real** PostgreSQL via Testcontainers asserting a reviewer whose grant is revoked while a session is open sees the affected questions as restricted on next open, and that the run's snapshot does not re-admit them (SC-018) — a mocked repository passes here while the real query leaks, the same reason `T427` exists (G-02.5), in `backend/tests/integration/session-visibility.spec.ts`
+- [X] T816 [US4] Surface a restricted review question **as restricted rather than omitting it silently**, in `backend/src/modules/access/access-enforcement.service.ts` (FR-ACC-028a; unit test: T812) — deliberately unlike `T378`/FR-ACC-024, which hides an inaccessible **artifact** from listings entirely; a reviewer must be able to tell that a question exists they cannot act on, or a session looks complete when it is not
+
+## F-024.UI · Interface
+
+*Satisfies **FR-ACC-024**. Recorded by `T687` — `traceability-convention.md` makes the
+Feature → requirement link mandatory, carried in this framing note.*
+
+- [X] T399 [P] [US4] Component unit tests for access grant management in `frontend/tests/unit/components/AccessGrants.spec.tsx`
+- [X] T400 [P] [US4] Implement the access grant control in `frontend/src/components/AccessGrants.tsx` (unit test: T399)
+
+## F-024.Z · Epic closure
+
+- [X] T435 Confirm every implementation task in this epic has a passing unit test (Constitution V); record in `specs/024-artifact-access-control/closure.md`
+- [X] T436 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/024-artifact-access-control/closure.md`
+- [X] T437 Triage `specs/024-artifact-access-control/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/024-artifact-access-control/closure.md`
+- [X] T438 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the closing report in `specs/024-artifact-access-control/closure.md`
+
+---
+
+## Depends on
+
+- EPIC-004 — tenancy and audit, which these grants extend
+- EPIC-008 — artifacts to grant access on
+
+## User stories owned
+
+- US4 — control who can see and change each artifact
+
+---
+
+## Phase C2D — durable grants (reopened 2026-08-27)
+
+*Authorised by the project owner's Step C2D instruction. `X13`: this Epic already shipped
+`PrismaAccessStore` and never composed it, so grants lived in memory. Combined with this Epic's
+"unrestricted until granted" rule, a restart turned a governed artifact back into an ungoverned
+one — access widened silently.*
+
+- [X] T1119 Bind `PrismaAccessStore` to `ACCESS_GRANT_STORE` and `ACCESS_ATTEMPT_STORE` in `access.module.ts` *(test: `backend/tests/integration/access/grant-durability.spec.ts` — a grant reaches PostgreSQL; the artifact **stays governed** across a restart; a revocation survives a restart; refusals are audited durably; an unreadable grant store **fails closed** rather than reading as "no grants", which would open the artifact)*
+
+**Reported, not implemented.** Routing the "no artifact-specific grants" fallback through *"EPIC-024's
+authoritative workspace-role check"* is not possible: this Epic has **no role or membership model**
+— `User.workspaceId` is the only workspace binding, and `directlyEditable` returns `true` for any
+caller when an artifact has no grants. Building one is a **new authorization model**, which Step
+C2D names as a stop condition. See `specs/030-governed-engineering-loop/analysis.md`, finding
+`X19`.
+
+## Phase C2E · governed artifact ownership bootstrap *(added 2026-08-27)*
+
+*Closes `X19`. Authorised by the Project Owner's Step C2E instruction, under the hybrid ownership
+model: EPIC-024 owns the workspace boundary and grant semantics. **No workspace-role model** — the
+boundary reads `User.workspaceId`, which is identity, not a role.*
+
+- [X] T1126 Implement the workspace boundary in `backend/src/modules/access/workspace-boundary.service.ts` — authoritative actor identity, tenant match, fail-closed on malformed or unreadable state, and a distinct operational error for an unreadable directory *(tests: `backend/tests/unit/access/workspace-boundary.spec.ts`, 11 cases including the caller-supplied-workspace case that `X19` turned on)*
+- [X] T1127 Invert the zero-grant rule in `backend/src/modules/access/access-inheritance.service.ts` and enforce the boundary ahead of grants in `backend/src/modules/access/access-enforcement.service.ts` — zero active grants now refuse *(tests: `backend/tests/unit/access/refusal.spec.ts` and `backend/tests/unit/access/inheritance.spec.ts`, both rewritten so the old assertion is kept and pointed the other way)*
+- [X] T1131 Additive owner-grant backfill in `backend/prisma/migrations/20260827000000_epic024_owner_grant_backfill/migration.sql` — resolves the creator only where they are a real user in the same workspace, invents nothing, records both outcomes and is idempotent *(tests: `backend/tests/integration/access/owner-grant-backfill.spec.ts`, exercised against pre-C2E rows because the development database holds none)*
+
+## Phase C3B · principal authorization and scoped delegation *(added 2026-08-27)*
+
+- [X] T1139 Implement `backend/src/modules/access/principal-delegation.service.ts` and `delegation.store.ts` — scoped, versioned, expiring delegation with approval and application permanently undelegable *(tests: `backend/tests/unit/access/principal-delegation.spec.ts`, 18 cases)*
+- [X] T1140 Generalise actor resolution in `backend/src/modules/access/workspace-boundary.service.ts` — `CompositePrincipalDirectory` over humans and EPIC-028's public registry, with suspended and revoked principals refused at the boundary *(tests: `backend/tests/integration/agents/principal-identity.spec.ts`, `backend/tests/unit/access/workspace-boundary.spec.ts`)*
+- [X] T1141 Compose the composite directory and delegation service in `backend/src/modules/access/access.module.ts`, consuming EPIC-028's public service rather than its tables *(test: `backend/tests/integration/agents/principal-identity.spec.ts`)*
+- [X] T1144 `Y1` — promote `ownership_backfill_records` to authoritative evidence and attach immutability *(test: `backend/tests/integration/access/owner-grant-backfill.spec.ts`, proven under a non-superuser, non-owner role that also cannot disable the trigger)*
