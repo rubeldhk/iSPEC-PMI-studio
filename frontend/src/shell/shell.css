@@ -13,15 +13,16 @@
 
 .shell {
   display: grid;
-  grid-template-columns: minmax(12rem, 16rem) 1fr;
-  grid-template-areas: 'sidebar main';
+  grid-template-columns: var(--layout-shell-columns);
+  grid-template-areas: var(--layout-shell-areas);
   min-height: 100%;
 }
 
 .shell__sidebar {
   grid-area: sidebar;
   padding: var(--space-3);
-  border-right: 1px solid var(--color-border);
+  border-right: var(--layout-sidebar-edge-right);
+  border-bottom: var(--layout-sidebar-edge-bottom);
   background: var(--color-surface);
 }
 
@@ -74,23 +75,12 @@
 }
 
 /*
- * `FR-SHL-054` — below the narrow breakpoint the sidebar becomes a drawer.
- * The grid collapses to one column so the drawer's control sits in the flow
- * rather than over the content.
+ * `FR-SHL-054` — below the narrow breakpoint the sidebar becomes a drawer and
+ * the grid collapses to one column so the drawer's control sits in the flow
+ * rather than over the content. The breakpoint itself is stated ONCE, in
+ * `design/tokens.css` (the `layout` tokens, 2026-09-19): it switches the
+ * `--layout-shell-*` tokens this file consumes, so no literal lives here.
  */
-@media (max-width: 767px) {
-  .shell {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'sidebar'
-      'main';
-  }
-
-  .shell__sidebar {
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-  }
-}
 
 .shell-drawer {
   grid-area: sidebar;

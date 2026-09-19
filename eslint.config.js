@@ -125,6 +125,13 @@ export default [
       // cannot be written without an engine on the worker's side of the
       // queue. Scoped to the single FILE, deliberately.
       'backend/tests/integration/generation-persists-through-route.spec.ts',
+      // T572 (EPIC-023) — the same exception, for the same reason, on the
+      // default-engine axis. `engine-default.spec.ts` proves engine → agent →
+      // environment composes end to end, which cannot be written without
+      // the worker's three composition roots. It predates the EPIC-041 rule
+      // and was the one file the rule caught that no exception named.
+      // Scoped to the single FILE, deliberately.
+      'backend/tests/integration/engine-default.spec.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',

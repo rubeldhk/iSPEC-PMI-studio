@@ -264,7 +264,6 @@ suite('T1702 · a governed `tasks` completion parses the file (quickstart 1, SC-
 
   it('stores every parsed line with its source line, digest and paths', async () => {
     const { executionId } = await governedTasks(CONTENT);
-    const api = started.app.getHttpServer();
 
     const tasks = await tasksInDb(epic3);
     const first = tasks.find((t) => t.taskKey === 'T9201');

@@ -90,7 +90,7 @@ describe('T1566 · the board read', () => {
   });
 
   it('binds 7a to the child through the parent and the suffix', async () => {
-    const { service, store } = await harness([row('7a', 'specify', 'completed')]);
+    const { store } = await harness([row('7a', 'specify', 'completed')]);
     const base = { workspaceId: 'ws_a', projectId: 'p_a', description: '', createdById: 'u_owner', closedAt: null, lastDecisionCommentId: null };
     await store.update('e2', { status: 'split', updatedAt: new Date() });
     // e2 is number 2; make it the parent numbered 7 by creating the tree afresh.

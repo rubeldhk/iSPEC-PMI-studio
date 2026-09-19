@@ -42,7 +42,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { startAuthenticatedApp, type AuthenticatedApp } from '../helpers/authenticated-app.js';
-import { LoopModule } from '../../src/modules/loop/loop.module.js';
 import { LoopService } from '../../src/modules/loop/loop.service.js';
 
 /** Mirrors `main.ts`. See the note above on why this is duplicated. */

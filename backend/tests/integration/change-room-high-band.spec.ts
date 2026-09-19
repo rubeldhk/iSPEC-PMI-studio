@@ -29,7 +29,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { Client } from 'pg';
-import { InMemoryChangeRoomStore } from '../../src/modules/change-room/change-room.store.js';
 import { storeWithImpactView } from '../helpers/change-room-fixtures.js';
 import {
   DecisionService,

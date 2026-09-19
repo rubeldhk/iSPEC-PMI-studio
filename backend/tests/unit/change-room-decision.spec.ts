@@ -22,7 +22,6 @@
  * call site, exactly like the thing working.
  */
 import { describe, expect, it } from 'vitest';
-import { InMemoryChangeRoomStore } from '../../src/modules/change-room/change-room.store.js';
 import { storeWithImpactView } from '../helpers/change-room-fixtures.js';
 import {
   DecisionService,

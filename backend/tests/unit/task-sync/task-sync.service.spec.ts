@@ -13,7 +13,7 @@
  * Written to FAIL before `T1704`.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { NotFoundError, ValidationFailedError } from '../../../src/core/errors.js';
+import { NotFoundError } from '../../../src/core/errors.js';
 import { DEFAULT_TASK_GRAMMAR } from '../../../src/modules/task-sync/task-grammar.js';
 import {
   TaskSyncService,

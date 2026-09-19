@@ -22,7 +22,7 @@
  *
  * Written to FAIL before `T1752`.
  */
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { TaskBoardService } from '../../../src/modules/task-sync/task-board.service.js';
 import {
   InMemoryTaskSyncStore,

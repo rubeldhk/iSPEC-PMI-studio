@@ -190,9 +190,6 @@ suite('T1111 · a proposal travels the governed path and comes back applied', ()
     const { LIFECYCLE_TRANSITION_REPOSITORY } = await import(
       '../../../src/modules/specifications/specifications.module.js'
     );
-    const { AccessGrantService } = await import(
-      '../../../src/modules/access/access-grant.service.js'
-    );
 
     app = await NestFactory.create(AppModule, { logger: false });
     await app.init();

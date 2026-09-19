@@ -40,7 +40,7 @@ import { fileURLToPath } from 'node:url';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PROJECT, renderAt, stubApi } from './harness';
-import type { ApiClient, Project } from '../../../src/services/api';
+import type { Project } from '../../../src/services/api';
 
 afterEach(cleanup);
 
