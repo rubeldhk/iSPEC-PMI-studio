@@ -37,12 +37,3 @@ Thumbs.db
 # Claude Code local settings — machine-specific, not shared
 .claude/settings.local.json
 .claude/settings.local.json.tmp.*
-# Project document artifacts — kept on disk, out of git.
-# Anchored with a leading slash so only the repo-root directories match;
-# nested source directories of the same name (e.g. tests/governance,
-# backend/src/modules/governance) are source and stay tracked.
-/docs/
-/SRS/
-/specs/
-/adr/
-/governance/
