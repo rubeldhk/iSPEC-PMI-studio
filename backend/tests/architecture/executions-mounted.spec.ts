@@ -78,7 +78,16 @@ live('T1418 · live — every route answers an absent credential with the one re
     process.env['DATABASE_URL'] ??= 'postgresql://unused:unused@127.0.0.1:1/unused';
     const { NestFactory } = await import('@nestjs/core');
     const { AppModule } = await import('../../src/app.module.js');
+    // 2026-09-19 — the filter `main.ts` installs. The guard's refusal is a
+    // `PlatformError`; only `ErrorFilter` turns it into the 401 and the body
+    // this half asserts, and without it Nest answers 500 for every route,
+    // including the control. The half was never seen to fail because the
+    // engine-registration load used to abort composition against the
+    // unreachable database above and the worker died before a test ran; the
+    // load became non-fatal and these nine ran for the first time on CI.
+    const { ErrorFilter } = await import('../../src/core/error.filter.js');
     app = await NestFactory.create(AppModule, { logger: false });
+    app.useGlobalFilters(new ErrorFilter());
     app.setGlobalPrefix('v1');
     await app.listen(0);
     base = await app.getUrl();
