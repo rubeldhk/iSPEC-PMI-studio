@@ -114,7 +114,11 @@ export function stubApi({ signedIn = true, runs = [RUN], projects = [PROJECT] }:
     getArtifactVersion: vi.fn(async () => ({ versionId: 'v1', path: 'specs/001-intake/spec.md', kind: 'spec', digest: 'a'.repeat(64), sizeBytes: 3, content: '# Intake\n', firstSyncedAt: '', deliveredBy: [] })),
     listEngines: vi.fn(async () => []),
     listSpecifications: vi.fn(async () => ({ items: [], total: 0 })),
-    getSpecification: vi.fn(async () => ({ id: 's1', title: 'Spec', body: '', version: 1 })),
+    // A full record: the specification page hands `lifecycleState` to
+    // LifecycleControls, which indexes its transition table by it — an
+    // undefined state threw inside React and surfaced as an unhandled error
+    // that failed CI's unit step (2026-09-19), not as a test failure.
+    getSpecification: vi.fn(async () => ({ id: 's1', workspaceId: 'ws_a', projectId: PROJECT.id, title: 'Spec', lifecycleState: 'draft', currentVersionId: null, engineName: 'fixture', engineVersion: '1.0.0', generatedAt: '2026-09-01T00:00:00Z', isOutOfDate: false, createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z' })),
     listTasks: vi.fn(async () => []),
     getProjectProgress: vi.fn(async () => ({ total: 0, done: 0 })),
     listRuns: vi.fn(async (): Promise<Run[]> => runs),
