@@ -96,7 +96,11 @@ suite('T1500 · a plan round trip through the hooks', () => {
       const finished = await runFinish(m.client, projectDir, 'specs/007-intake');
       expect(finished.outcome).toBe('completed');
       expect(finished.added).toEqual(['specs/007-intake/plan.md']);
-      expect(finished.lines).toContain('PMI · sync not available until EPIC-045');
+      // 2026-09-19 — `pmi.artifacts.sync` is live (EPIC-045), so the finish
+      // hook no longer reports the reservation this line used to expect; it
+      // syncs and says nothing. What the title still promises is that the sync
+      // step does not block completion: no unavailability, no refusal.
+      expect(finished.lines.filter((l) => /PMI · (sync not available|refused)/.test(l))).toEqual([]);
       expect(finished.lines.at(-1)).toBe(`PMI · completed ${begun.executionId} (completed)`);
       expect(readLastExecution(projectDir)).toBeNull();
 

@@ -136,7 +136,10 @@ suite('T1492 · the connector reads the render and the plan — this project onl
   it('pmi.project.decompose: first run, the policy, the bundle; nothing to decompose for an empty project', async () => {
     const api = started.app.getHttpServer();
     const rest = await request(api).get(`/v1/projects/${projectA}/decomposition`).set({ Authorization: `Bearer ${tokenA}`, ...VERSION }).expect(200);
-    expect(rest.body).toMatchObject({ firstRun: true, nothingToDecompose: false, policy: { taskCeiling: 40, offlineMode: 'strict' }, epics: [], epicSource: 'unavailable-until-EPIC-044' });
+    // 2026-09-19 — `epicSource` is `epic.entity` since EPIC-044 wired the Epic
+    // store into the connector's project context; the placeholder this line
+    // named was the pre-044 state (`decomposition-read.spec.ts` asserts the same).
+    expect(rest.body).toMatchObject({ firstRun: true, nothingToDecompose: false, policy: { taskCeiling: 40, offlineMode: 'strict' }, epics: [], epicSource: 'epic.entity' });
     expect(rest.body.unassigned.map((r: { reference: string }) => r.reference)).toEqual(['REQ-001']);
     const empty = await request(api).get(`/v1/projects/${projectB}/decomposition`).set({ Authorization: `Bearer ${tokenB}`, ...VERSION }).expect(200);
     expect(empty.body).toMatchObject({ firstRun: true, nothingToDecompose: true, epics: [], unassigned: [] });

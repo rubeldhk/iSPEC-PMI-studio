@@ -120,11 +120,16 @@ suite('T1446 · Scenario 9 — the reads, this project only', () => {
   it('the reserved tools refuse not_available_until after validating arguments; the EPIC-042 reads are live (T1492)', async () => {
     const m = await mcp(tokenA);
     try {
+      // 2026-09-19 — `pmi.artifacts.sync` is live (EPIC-045 T1640), so a
+      // malformed call is refused by its input schema before any platform
+      // call: an error naming the fault, not the reservation's structured
+      // `invalid_arguments`. `server.spec.ts` asserts the same shape.
       const bad = await m.client.callTool({ name: 'pmi.artifacts.sync', arguments: { epicNumber: 'x' } });
       expect(bad.isError).toBe(true);
-      expect((bad.structuredContent as { code: string }).code).toBe('invalid_arguments');
+      expect(JSON.stringify(bad.structuredContent ?? bad.content)).toMatch(/invalid|expected|schema/i);
+      // The one reservation left is EPIC-037's provisional intake (`reserved.ts`).
       const reserved = await m.client.callTool({ name: 'pmi.execution.sync', arguments: { batch: [] } });
-      expect(reserved.structuredContent).toMatchObject({ code: 'not_available_until', epic: 'EPIC-046' });
+      expect(reserved.structuredContent).toMatchObject({ code: 'not_available_until', epic: 'EPIC-037' });
       // EPIC-042 made these two live: content, not a reservation.
       const constitution = await m.client.callTool({ name: 'pmi.constitution.get', arguments: {} });
       if (constitution.isError) console.log('CONSTITUTION BODY', JSON.stringify(constitution.structuredContent));
