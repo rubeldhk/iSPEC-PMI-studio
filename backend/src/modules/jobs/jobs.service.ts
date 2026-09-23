@@ -12,7 +12,12 @@ import { createHash } from 'node:crypto';
 import { ValidationFailedError } from '../../core/errors.js';
 import { FAILURE_MESSAGES } from '../../core/failure-taxonomy.js';
 
-export type JobKind = 'generate_specification' | 'generate_tasks' | 'validate_specification';
+export type JobKind =
+  | 'generate_specification'
+  | 'generate_tasks'
+  | 'validate_specification'
+  // EPIC-041 T1342 — the worker's initialise step for a local workspace (R-041-1).
+  | 'initialise_workspace';
 
 export interface JobRequest {
   workspaceId: string;
@@ -22,7 +27,18 @@ export interface JobRequest {
   engineName: string;
   engineVersion: string;
   correlationId: string;
-  inputRefs: { requirementIds?: string[]; specificationId?: string };
+  inputRefs: {
+    requirementIds?: string[];
+    specificationId?: string;
+    // EPIC-041 — what the initialise step needs and nothing else (data-model.md §6).
+    workspace?: {
+      writePath: string;
+      agentIntegration: string;
+      scriptType: 'sh' | 'ps';
+      engineTag: string;
+      bundleVersion: string;
+    };
+  };
 }
 
 export interface JobRow {

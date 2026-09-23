@@ -19,11 +19,19 @@ import type { ReactElement } from 'react';
 import { Route, Routes } from 'react-router';
 import { AppShell } from './AppShell';
 import { NotFound } from './NotFound';
-import { deliveredAreas } from './areas';
+import { reachableAreas } from './areas';
 import {
+  ChangeRoomView,
+  DefectRoomView,
+  EpicDetailView,
+  EpicListView,
+  JourneyBoardView,
   ProjectDetailView,
+  RequirementIntakeView,
+  RequirementRoomView,
   ReviewSessionView,
   SpecificationDetailView,
+  EpicTaskBoardView,
   TasksView,
   TraceabilityView,
 } from './area-views';
@@ -36,9 +44,36 @@ import {
 export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[] = Object.freeze([
   { path: '/projects/:projectId', element: ProjectDetailView },
   { path: '/traceability', element: TraceabilityView },
+  // EPIC-044 `T1587` — the Spec Journey Board lives in Specifications (`FR-EPB-040`);
+  // before the `:specificationId` route so the literal segment is not read as an id.
+  { path: '/specifications/board', element: JourneyBoardView },
   { path: '/specifications/:specificationId', element: SpecificationDetailView },
   { path: '/specifications/:specificationId/tasks', element: TasksView },
+  // EPIC-046 `T1719` — one Epic's Task Kanban (`FR-KAN-050`). It hangs off
+  // Plan & Tasks rather than a specification, because a synced task's home is
+  // its Epic and an Epic may have tasks before it has a specification (`Q1`).
+  // EPIC-046 `T1737` — `/plan` itself is NOT here: it is the area's own path
+  // and the registry routes it from `areas.ts` (`element: PlanLandingView`).
+  // Listing it in both places is what `routes.spec.tsx` forbids, and rightly:
+  // two owners of one address is how they drift apart.
+  { path: '/plan/epics/:epicId', element: EpicTaskBoardView },
   { path: '/runs/:runId', element: ReviewSessionView },
+  // `T1169` — before the `:roomObjectId` route, so the literal segment is not
+  // read as a room id.
+  { path: '/requirement-room/intake', element: RequirementIntakeView },
+  // EPIC-044 `T1587` — Epics live in the Requirement Room (`FR-EPB-041`); before the
+  // `:roomObjectId` route for the same reason `intake` is.
+  { path: '/requirement-room/epics', element: EpicListView },
+  { path: '/requirement-room/epics/:epicId', element: EpicDetailView },
+  { path: '/requirement-room/:roomObjectId', element: RequirementRoomView },
+  // `T994s` - the Change Room. Its area is still `declared-not-delivered`
+  // (no index yet), and `routes.spec.tsx` only forbids routing an
+  // undelivered area's OWN path - which this is not.
+  { path: '/change-room/:changeRequestId', element: ChangeRoomView },
+  // `T998z` — the Defect Room. Same posture as the Change Room above: the
+  // area has no index yet, and `routes.spec.tsx` only forbids routing an
+  // undelivered area's OWN path, which this is not.
+  { path: '/defect-room/:defectId', element: DefectRoomView },
 ]);
 
 /**
@@ -54,7 +89,7 @@ export function ShellRoutes(): ReactElement {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        {deliveredAreas().map((area) => {
+        {reachableAreas().map((area) => {
           const Element = area.element!;
           return <Route key={area.id} path={area.path} element={<Element />} />;
         })}

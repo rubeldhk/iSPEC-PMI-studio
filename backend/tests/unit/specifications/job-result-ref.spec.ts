@@ -29,6 +29,7 @@ import {
   type SpecificationDelegates,
 } from '../../../src/modules/specifications/specifications-read.service.js';
 import { OUTPUT, PROJECT, StubEngine, WS, selection } from './helpers.js';
+import { ownershipFor } from '../../support/ownership.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const schema = readFileSync(resolve(here, '../../../prisma/schema.prisma'), 'utf8');
@@ -188,6 +189,10 @@ describe('the Prisma path writes it inside the SAME transaction', () => {
         },
       },
       traceabilityLink: { createMany: async () => undefined, findMany: async () => [] },
+      // `X19` — the owner grant is written in this transaction, so a fake
+      // that omits it is a fake of a store that cannot create anything.
+      user: { findUnique: async () => ({ id: 'u1', workspaceId: WS }) },
+      accessGrant: { create: async () => ({ id: 'g1' }), findFirst: async () => null },
     } as unknown as SpecificationDelegates;
 
     const store = new PrismaSpecificationStore(delegates, async (fn) => fn(delegates));
@@ -218,6 +223,7 @@ describe('the Prisma path writes it inside the SAME transaction', () => {
       },
       links: [],
       job: { id: 'job_1', state: 'succeeded', resultRef: 'spec_1' },
+      ownership: ownershipFor('u1'),
     });
 
     expect(written).toHaveLength(1);

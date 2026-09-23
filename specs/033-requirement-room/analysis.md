@@ -126,3 +126,174 @@ Recorded separately from the findings table so `DOR-09` reads open findings, not
   requirement on the test, implementation on the test's id — is deliberate and consistent across four
   Epics. Writing the convention down once costs a sentence and stops four future analyses
   rediscovering it.
+
+---
+
+# Reconsideration: EPIC-033 slices S1 and S4, after EPIC-037 Band A
+
+**Session**: 2026-08-27
+**Authorised by**: the Project Owner, *"AUTHORIZE REQUIREMENT ROOM S1/S4 RECONSIDERATION"*
+**Scope**: reconsider whether S1 and S4 remain the right next delivery slice, and in what form,
+given what Band A built and what its closure revealed. Analysis and recommendation only — no
+production change, and no decision record, since the delivery decision is the owner's.
+
+## Why this reconsideration was scheduled where it was
+
+The A–G delivery order places Requirement Room S1 and S4 **between** EPIC-037's thin foundation and
+its connectors, and `tasks.md` records the reason in one sentence: *"building every connector first
+would repeat the mistake this whole remediation corrected — internal completeness ahead of
+user-reachable product."*
+
+The question this reconsideration must answer is therefore narrow and concrete: **after Band A, what
+is the shortest path to a user-reachable Requirement Room?**
+
+## What was found
+
+The premise the ordering assumed — that S1 and S4 are unbuilt work to be scheduled — is **wrong**.
+
+### S1 and S4 are already implemented
+
+| Slice | Phase | Tasks | Status |
+|---|---|---|---|
+| **S1** — raw intent to immutable baseline | Phase 3 | `T338a`–`T338l`, `T338u`, `T338v` (14) | **all complete** |
+| **S4** — options, trade-offs, recorded decisions | Phase 6 | `T339m`–`T339s` (7) | **all complete** |
+
+Intake, normalization, the register binding, baseline creation, in-place edit refusal with Change
+Request handoff, supersession, conflict detection, option generation, decision recording and Decision
+Inbox surfacing are all built, wired into a mounted controller, and covered by tests.
+
+EPIC-033's 34 open tasks are **not** in S1 or S4. They are Phase 8 (US6, visual parity, 11),
+Phase N (polish, 10) and Phase Z (closure, 13).
+
+### But their central guarantees are unenforced
+
+Probing the mounted routes the way `DEF-037-001` was found:
+
+```
+POST /v1/rooms/requirement/intake     (no session)   ->  201 Created, row written
+```
+
+The workspace came from the request body. Following that thread through the services produced
+[`DEF-033-001`](./defects/DEF-033-001-the-approver-and-the-actor-kind-are-caller-supplied.md):
+
+- **S1 acceptance scenario 2** — *"the baseline … carries its approver"*. `approvedBy` is a required
+  **string**, never resolved against `users`, never checked for workspace membership or approval
+  authority.
+- **S4's premise** — *"after an authorized human decides"*. The AI-decision refusal is
+  `input.actor?.kind !== 'human'`, backed by a `CHECK` constraint over the stored value. Both read
+  the same caller-supplied field. An agent sending `{"actor":{"kind":"human"}}` satisfies both.
+
+The immutability, the supersession chain and the constraint are all real and all correct. That is
+what makes this the serious version of the problem rather than the trivial one: the platform
+durably and unalterably records an attribution nothing verified.
+
+## The reconsideration
+
+**S1 and S4 do not need building. They need binding.**
+
+The gap is not features; it is that the Room's identity claims were built before there was anything
+to bind them to. When S1 and S4 were written there was no way to resolve a non-human principal —
+that was finding `Y2`, which stopped EPIC-037 Band A at C3A. A body-supplied `actor.kind` was, at
+the time, the only thing available.
+
+C3B changed that, and C3C proved it works:
+
+- `TrustedPrincipalFactory` (EPIC-028) mints an unforgeable principal context and refuses unknown,
+  foreign, suspended and revoked principals;
+- `CompositePrincipalDirectory` (EPIC-024) resolves humans against `users` and non-humans against
+  the principal registry — so `kind` becomes **resolved** rather than **declared**;
+- `PrincipalDelegationService` carries `NEVER_DELEGABLE`, which is where *approve a baseline* and
+  *take a requirement decision* belong;
+- `principal-reactivation.spec.ts` proves suspension invalidates delegations and reactivation
+  requires new ones.
+
+Every part the Room needs now exists, is tested, and is reachable from `AccessModule` and
+`AgentsModule`. The Room imports neither.
+
+## What this changes about the delivery order
+
+The order itself is **still right**, and for the reason it was written: user-reachable product
+before internal completeness. What changes is the content of the slice.
+
+- The slice is **not** "implement S1 and S4".
+- The slice is **"make S1 and S4's existing guarantees true"** — bind the Room to the identity that
+  now exists, and only then judge whether anything is missing for a user.
+- This is *smaller* than the slice the order anticipated, and it is a precondition for the rest.
+  Handing a user a Room whose baselines record unverified approvers is worse than not shipping it,
+  because baselines are immutable: the wrong attribution cannot later be corrected in place, only
+  superseded.
+
+The five-controller survey in `DEF-033-001` shows the Room is an outlier — fourteen of nineteen
+controllers already resolve the caller through `requireAuth`, and `projects` additionally strips
+caller-supplied scope from the body. The pattern to copy is in the repository and is normal here.
+
+## Recommended next slice
+
+**"Bind the Requirement Room to authenticated identity."** Concretely:
+
+1. Take `workspaceId`, the approver, the decider and `actor.kind` from the session context, not the
+   body; strip caller-supplied scope as `projects` does.
+2. Resolve the actor through `CompositePrincipalDirectory` so `kind` is a resolved property, and
+   refuse the request when no context is present.
+3. Keep the service check and the `CHECK` constraint exactly as they are — they become the second
+   line they were always meant to be.
+4. Add the test that was missing: not *"does the service refuse an agent?"* but *"can a caller
+   claiming to be human be recorded as one?"*, driven over HTTP against the composed application.
+5. Only then re-evaluate S1/S4 for user-reachability, and size Phase 8 (US6) accordingly.
+
+`EPIC-024`'s and `EPIC-028`'s public services are consumed, not re-implemented, consistent with the
+standing constraint.
+
+## Deliberately not recommended
+
+- **Do not create a new epic.** This is EPIC-033 work consuming EPIC-024/028.
+- **Do not extend the fix to `loop` in the same slice.** `POST /v1/loop/objects/:id/transitions` is
+  in the same five and needs its own assessment (recorded in `DEF-033-001`); its probe returned
+  `500` and no unauthenticated write was demonstrated, so its severity is unestablished. Bundling an
+  unassessed endpoint into a scoped remediation is how the C2B stop became necessary.
+- **Do not begin `T1060`–`T1079`.** Unchanged and untouched.
+
+## Findings
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| R1 ✅ | Security / correctness | **HIGH** | `requirement-room.controller.ts`, `baseline.service.ts`, `decision.service.ts` | Baseline approver, decision maker and `actor.kind` are caller-supplied strings on mounted, unauthenticated routes; an unauthenticated intake write returned `201` | `DEF-033-001` raised. Bind to session context and `CompositePrincipalDirectory` — the recommended next slice |
+| R2 ✅ | Planning | MEDIUM | A–G delivery order, `specs/037-…/tasks.md` | The order schedules S1 and S4 as work to be built; both are already implemented (21 tasks complete). The remaining EPIC-033 work is US6, polish and closure | Restate the slice as *bind*, not *build*; it is smaller than anticipated and is a precondition for the rest |
+| R3 ✅ | Test design | MEDIUM | `requirement-room-no-ai-decision.spec.ts` | A careful suite that proves the constraint refuses an `agent` row, but every test supplies the kind directly. It cannot detect an agent that declares itself human | Add an HTTP-level test that attacks the provenance of `actor.kind`, not its handling |
+| R4 ✅ | Scope | LOW | `loop.controller.ts` | Same unguarded shape on EPIC-030's transition endpoint; probe reached the handler unauthenticated but produced no write | **Assessed 2026-08-28** and routed to its owning Epic as [`DEF-030-003`](../030-governed-engineering-loop/defects/DEF-030-003-the-caller-supplies-its-own-authorities.md) — latent, not live. Closed here; tracked there |
+
+## Metrics
+
+- S1 tasks: **14 of 14 complete** · S4 tasks: **7 of 7 complete**
+- EPIC-033 open: **34** — Phase 8 (11), Phase N (10), Phase Z (13). None in S1 or S4
+- Controllers resolving the caller authoritatively: **14 of 19**
+- Findings: **1 HIGH, 2 MEDIUM, 1 LOW**
+- Production code changed by this reconsideration: **none**
+
+## Resolution — the binding slice, 2026-08-28
+
+`R1`, `R2` and `R3` are marked resolved above (`✅`, the convention `DOR-09` reads). The Project
+Owner authorised the binding slice; it is recorded as **Phase R**, `T1148`–`T1155`, and closed
+[`DEF-033-001`](./defects/DEF-033-001-the-approver-and-the-actor-kind-are-caller-supplied.md).
+
+- `R1` — identity is resolved in `RequirementRoomService` against `EPIC-024`'s
+  `WorkspaceBoundaryService`, before any body validation. Proven over real HTTP by
+  `backend/tests/integration/requirement-room-identity-binding.spec.ts` (19 tests).
+- `R2` — the slice was *bind*, not *build*, as recommended. No new Room capability was added.
+- `R3` — the missing test exists: it attacks the provenance of `actor.kind` rather than its
+  handling, and its own first draft was refused by the options rule instead of the actor rule, which
+  is why it now sends a fully valid decision.
+
+**`R4` is closed here and tracked in its owning Epic.** The assessment ran on 2026-08-28 under
+separate authorisation and produced
+[`DEF-030-003`](../030-governed-engineering-loop/defects/DEF-030-003-the-caller-supplies-its-own-authorities.md).
+
+The answer differs from this Epic's in the way that matters. `loop.controller.ts` accepts
+`actorAuthorities` **from the request body** — a caller asserting an authorisation rather than an
+identity, which is a category beyond `DEF-033-001` — but the loop module is inert as wired: no
+workflow type can be declared, the store is in-memory by documented design, and the `AuthorityMap`
+defaults to `{}`, which refuses every transition before the caller's list is read. So it is **latent
+at MEDIUM**, not live at HIGH, and no containment was proposed.
+
+Declining to fold it into the binding slice was right for the reason given at the time — its severity
+was unestablished — and the assessment confirms the severities genuinely differ.

@@ -147,6 +147,15 @@ describe('T440h · FR-SHL-051 — no minimum viewport above 360px', () => {
   it('uses its narrow breakpoint as a max-width, so 360px is inside it', () => {
     // A breakpoint is not a floor: `max-width` narrows the layout, `min-width`
     // would exclude the device. `G-UX-03` is about the second.
-    expect(CSS).toMatch(/@media\s*\(max-width:\s*767px\)/);
+    //
+    // 2026-09-19: the breakpoint moved from shell.css into design/tokens.css
+    // (the `layout` tokens — a breakpoint cannot be a var() inside a media
+    // query, so the query lives in the one file literals may live in, and
+    // switches the tokens the shell consumes). shell.css itself now carries
+    // no literal; it must consume the layout tokens the query switches.
+    const tokens = readFileSync(join(SHELL, '..', 'design', 'tokens.css'), 'utf8');
+    expect(tokens).toMatch(/@media\s*\(max-width:\s*767px\)\s*\{\s*:root\s*\{[^}]*--layout-shell-columns/);
+    expect(CSS).toMatch(/grid-template-columns:\s*var\(--layout-shell-columns\)/);
+    expect(CSS).not.toMatch(/@media/);
   });
 });

@@ -139,3 +139,75 @@ describe('T452 · README.md covers the documented setup', () => {
     }
   });
 });
+
+describe('T1382 · README.md names the six local-workspace variables (EPIC-041)', () => {
+  // `R-041-2`: the projects root is mounted, the public URL is written into
+  // every project's `.pmi/project.json`, and the worker host needs `uv`. A
+  // README that leaves one of the six out sends an operator to the source.
+  const VARIABLES = [
+    'PMI_PROJECTS_ROOT',
+    'PMI_PROJECTS_ROOT_HOST',
+    'PMI_PUBLIC_URL',
+    'PMI_ENGINE_TAG',
+    'PMI_MCP_SERVER_VERSION',
+    'PMI_INITIALISE_WAIT_MS',
+  ];
+
+  it.each(VARIABLES)('documents %s', (variable) => {
+    expect(readme, `README.md does not mention ${variable}`).toContain(variable);
+  });
+
+  it('tells the operator that uv must be on the worker host, and what happens without it', () => {
+    expect(readme).toMatch(/\buv\b/);
+    expect(readme).toMatch(/initialisation pending/i);
+  });
+});
+
+/**
+ * `T1669` (EPIC-045) — the two artifact variables are documented where an
+ * operator will look, and the example file carries them.
+ *
+ * A variable that exists in code and nowhere in prose is a variable nobody sets
+ * until something breaks. `PMI_ARTIFACT_MAX_BYTES` and `PMI_ARTIFACT_MAX_FILES`
+ * both change what a governed command's finish hook is told, so their absence
+ * from the README is a support ticket waiting to be filed.
+ */
+describe('T1669 · the artifact limits are documented (EPIC-045)', () => {
+  const ENV_EXAMPLE = resolve(ROOT, '.env.example');
+  const envExample = existsSync(ENV_EXAMPLE) ? readFileSync(ENV_EXAMPLE, 'utf8') : '';
+
+  it.each(['PMI_ARTIFACT_MAX_BYTES', 'PMI_ARTIFACT_MAX_FILES', 'PMI_ARTIFACT_SYNC_BODY_BYTES'])('README §Setup names %s', (name) => {
+    const setup = readme.split(/^## Setup$/m)[1]?.split(/^## (?!#)/m)[0] ?? '';
+    expect(setup, `README §Setup does not name ${name}`).toContain(name);
+  });
+
+  it.each(['PMI_ARTIFACT_MAX_BYTES', 'PMI_ARTIFACT_MAX_FILES', 'PMI_ARTIFACT_SYNC_BODY_BYTES'])('.env.example carries %s with a default', (name) => {
+    // A line of the form `NAME=<something>`: the variable is not merely
+    // mentioned in a comment, it has a value an operator can copy.
+    const assigned = envExample.split(/\r?\n/).find((line) => line.startsWith(`${name}=`));
+    expect(assigned, `.env.example does not carry ${name} with a value`).toBeDefined();
+    expect((assigned ?? '').slice(name.length + 1).trim().length, `${name} has no default`).toBeGreaterThan(0);
+  });
+
+  it('the README states the defaults the code actually uses', () => {
+    // A documented default that disagrees with the code is worse than none.
+    expect(readme).toContain('1048576');
+    expect(readme).toMatch(/PMI_ARTIFACT_MAX_FILES[^|]*\|\s*`?200`?/);
+  });
+
+  it('the README says a refusal is per file, since that is the behaviour operators get wrong', () => {
+    const setup = readme.split(/^## Setup$/m)[1]?.split(/^## (?!#)/m)[0] ?? '';
+    expect(setup).toMatch(/per file/i);
+    expect(setup).toContain('too_large');
+    expect(setup).toContain('too_many_files');
+  });
+
+  it('the operator guide covers the migration, the derived key and what a refusal looks like', () => {
+    const guide = readFileSync(resolve(ROOT, 'docs', 'operator-setup.md'), 'utf8');
+    expect(guide).toContain('20260906090000_epic045_artifacts');
+    expect(guide).toContain('PMI_ARTIFACT_MAX_BYTES');
+    expect(guide).toContain('PMI_ARTIFACT_MAX_FILES');
+    expect(guide, 'the guide does not describe the derived idempotency key').toMatch(/artifacts:<executionId>/);
+    expect(guide, 'the guide does not say what a refused file looks like').toContain('credential_shape');
+  });
+});

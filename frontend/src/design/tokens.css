@@ -85,6 +85,34 @@
   --motion-fast: 100ms;
   --motion-base: 200ms;
   --motion-slow: 400ms;
+
+  /* -- layout — the shell's grid, and the ONE breakpoint (FR-SHL-054) ----
+   * Added 2026-09-19 (contracts/tokens.md, dated note). The sidebar's width
+   * band and the narrow breakpoint are design decisions; before this they
+   * were literals in shell.css, which the literal-value rule rightly refused.
+   * A breakpoint cannot be a var() inside a media query, so that query lives
+   * HERE — the one file literals may live in — and switches the tokens the
+   * shell consumes. Never themed. */
+  --layout-sidebar-min: 12rem;
+  --layout-sidebar-max: 16rem;
+  --layout-shell-columns: minmax(var(--layout-sidebar-min), var(--layout-sidebar-max)) 1fr;
+  --layout-shell-areas: 'sidebar main';
+  --layout-sidebar-edge-right: 1px solid var(--color-border);
+  --layout-sidebar-edge-bottom: none;
+}
+
+/*
+ * FR-SHL-054 — below the narrow breakpoint the shell collapses to one column
+ * and the sidebar becomes a drawer with its control in the flow. The
+ * breakpoint is stated once, here.
+ */
+@media (max-width: 767px) {
+  :root {
+    --layout-shell-columns: 1fr;
+    --layout-shell-areas: 'sidebar' 'main';
+    --layout-sidebar-edge-right: none;
+    --layout-sidebar-edge-bottom: 1px solid var(--color-border);
+  }
 }
 
 /*

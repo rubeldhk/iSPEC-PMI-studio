@@ -233,34 +233,114 @@ as a warning; one Epic later it decides how the next two are written.**
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 9 and 11
 
-- [ ] T403m [P] [US6] Write failing component tests for the Room page in `frontend/tests/unit/pages/RequirementRoom.spec.tsx` — all six regions present, composed through `RoomShell`, with loading, empty, populated and error states (`FR-RQR-070`, `UX-0051`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
-- [ ] T403n [US6] Implement `frontend/src/pages/RequirementRoom.tsx` (unit test: T403m) — a **new page beside** `Requirements.tsx`, not a replacement
-- [ ] T403o [P] [US6] Write the failing region-vocabulary comparison test in `frontend/tests/unit/rooms/vocabulary.spec.tsx` — rendered region names are identical to `packages/room-contract`'s, verified by comparison rather than review (`FR-RQR-071`, `SC-RQR-007`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
-- [ ] T403p [US6] Implement loop-progress rendering from `EPIC-030`'s shared projection in `frontend/src/rooms/regions/LoopProgress.tsx` (unit test: T403o) — `FR-RQR-074`, **no Room-local translation**
-- [ ] T403q [P] [US6] Write failing component tests for blocker visibility in `frontend/tests/unit/rooms/regions/Blockers.spec.tsx` — what is blocking appears without opening another screen (`FR-RQR-073`, `UX-0032`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
-- [ ] T403r [US6] Implement the blockers region in `frontend/src/rooms/regions/Blockers.tsx` (unit test: T403q)
-- [ ] T403s [P] [US6] Write failing accessibility tests in `frontend/tests/unit/pages/RequirementRoom.a11y.spec.tsx` — keyboard-only operation with visible focus throughout the intent-to-baseline journey (`SC-RQR-008`, `BR-0193`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
-- [ ] T403t [US6] Implement keyboard operation and focus management in `frontend/src/pages/RequirementRoom.tsx` (unit test: T403s)
-- [ ] T403u [P] [US6] Write the failing test for external-stakeholder refusal in `frontend/tests/unit/pages/RequirementRoom.access.spec.tsx` — the Room **states** that external review is unavailable rather than rendering and failing on click (`FR-RQR-004`, `UX-0002`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
-- [ ] T403v [US6] Implement the workflow-type isolation integration test in `backend/tests/integration/requirement-room-type-isolation.spec.ts` (integration test: T337x) — a Requirement Room object cannot transition under another Room's stages or authorities (`FR-RQR-001`, `SC-RQR-009`, via `EPIC-030` `T944a`)
-- [ ] T403w [US6] Implement the external-stakeholder unavailable state in `frontend/src/pages/RequirementRoom.tsx` (unit test: T403u) — `FR-RQR-004`, `UX-0002`: the Room **states** that external review is not available rather than rendering a control that fails on click. *Added while verifying: `T403u` wrote the test and no task made it pass — the shape `EPIC-032`'s analysis found twice*
+- [X] T403m [P] [US6] Write failing component tests for the Room page in `frontend/tests/unit/pages/RequirementRoom.spec.tsx` — all six regions present, composed through `RoomShell`, with loading, empty, populated and error states (`FR-RQR-070`, `UX-0051`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
+- [X] T403n [US6] Implement `frontend/src/pages/RequirementRoom.tsx` (unit test: T403m) — a **new page beside** `Requirements.tsx`, not a replacement
+- [X] T403o [P] [US6] Write the failing region-vocabulary comparison test in `frontend/tests/unit/rooms/vocabulary.spec.tsx` — rendered region names are identical to `packages/room-contract`'s, verified by comparison rather than review (`FR-RQR-071`, `SC-RQR-007`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
+- [X] T403p [US6] Implement loop-progress rendering from `EPIC-030`'s shared projection in `frontend/src/rooms/regions/LoopProgress.tsx` (unit test: T403o) — `FR-RQR-074`, **no Room-local translation**
+- [X] T403q [P] [US6] Write failing component tests for blocker visibility in `frontend/tests/unit/rooms/regions/Blockers.spec.tsx` — what is blocking appears without opening another screen (`FR-RQR-073`, `UX-0032`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
+- [X] T403r [US6] Implement the blockers region in `frontend/src/rooms/regions/Blockers.tsx` (unit test: T403q)
+- [X] T403s [P] [US6] Write failing accessibility tests in `frontend/tests/unit/pages/RequirementRoom.a11y.spec.tsx` — keyboard-only operation with visible focus throughout the intent-to-baseline journey (`SC-RQR-008`, `BR-0193`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
+- [X] T403t [US6] Implement keyboard operation and focus management in `frontend/src/pages/RequirementRoom.tsx` (unit test: T403s)
+- [X] T403u [P] [US6] Write the failing test for external-stakeholder refusal in `frontend/tests/unit/pages/RequirementRoom.access.spec.tsx` — the Room **states** that external review is unavailable rather than rendering and failing on click (`FR-RQR-004`, `UX-0002`) *Path corrected 2026-08-23 (`T338k`): the task named a `*.test.tsx` path under `frontend/src/`, but the `frontend` vitest project collects `tests/unit/**/*.spec.{ts,tsx}` and nothing else — a test written there would never be collected, and a test that never runs is worse than no test because it reads as coverage. The same defect `G-26-14` caught on `T337m`/`T337o` when they were ticked; these were not yet ticked, so `G-26-14` could not see them and `T148` did. The SOURCE path is unchanged.*
+- [X] T403v [US6] Implement the workflow-type isolation integration test in `backend/tests/integration/requirement-room-type-isolation.spec.ts` (integration test: T337x) — a Requirement Room object cannot transition under another Room's stages or authorities (`FR-RQR-001`, `SC-RQR-009`, via `EPIC-030` `T944a`)
+- [X] T403w [US6] Implement the external-stakeholder unavailable state in `frontend/src/pages/RequirementRoom.tsx` (unit test: T403u) — `FR-RQR-004`, `UX-0002`: the Room **states** that external review is not available rather than rendering a control that fails on click. *Added while verifying: `T403u` wrote the test and no task made it pass — the shape `EPIC-032`'s analysis found twice*
 
 **Checkpoint**: all six user stories demonstrable, and the shared pattern is proved once for three Epics
 
 ---
 
+## Phase R: Identity binding (`DEF-033-001` remediation)
+
+*Authorised by the Project Owner 2026-08-27 as the binding slice, after the S1/S4 reconsideration
+found both slices implemented but their identity guarantees unenforced. Not new capability: the
+approver, the decider and `actor.kind` stop being strings the caller chose.*
+
+- [X] T1148 [US1] [US4] Take identity from the session in `backend/src/modules/requirement-room/requirement-room.service.ts` — a **required** `PrincipalResolver`, an `ActingPrincipal` on every entry point, and `workspaceId`, `approvedBy`, `askedBy`, `selectedBy` and `actor.kind` derived from the resolved record (integration tests: T1151–T1154)
+- [X] T1149 [US1] [US4] Read `@Req()` and refuse without a session in `backend/src/modules/requirement-room/requirement-room.controller.ts`, matching the `requireAuth` pattern the other thirteen product controllers carry, and strip identity fields from every body (integration test: T1151)
+- [X] T1150 Wire `AccessModule`'s `WorkspaceBoundaryService` into `backend/src/modules/requirement-room/requirement-room.module.ts` — **consumed, not re-implemented** — and add `backend/tests/helpers/authenticated-app.ts` so an integration test can drive an authenticated Room (integration tests: T1151, T1154 — neither can pass unless the boundary is wired and resolving)
+- [X] T1151 [P] Write the failing integration test for unauthenticated refusal in `backend/tests/integration/requirement-room-identity-binding.spec.ts` — all nine routes answer `401`, nothing is written, and the same request with a session succeeds
+- [X] T1152 [P] Write the failing integration test that a body cannot choose the workspace — a `workspaceId` in the body is ignored and nothing reaches the workspace it named (same file)
+- [X] T1153 [P] Write the failing integration test that a caller cannot declare itself human — an agent's session is refused for being non-human even though its body claims `kind: 'human'`, with a human control that is **not** refused for that reason (same file)
+- [X] T1154 [P] Write the failing integration test that a suspended principal and a cross-workspace session are refused, so `EPIC-024`'s state and boundary rules are shown to be inherited rather than assumed (same file)
+- [X] T1155 Update `backend/tests/integration/requirement-room-reachability.spec.ts` and `requirement-room-gap-intake.spec.ts` to authenticate — both now need a database and a session, and `workspaceId` is no longer a field a caller can omit
+
+**Checkpoint**: the Room's approver, decider and actor kind are resolved facts. `DEF-033-001` closed.
+
+---
+
+## Phase 9: The journey is reachable (US1, US6) — *drafted 2026-08-28, NOT AUTHORISED*
+
+**Goal**: close the gap `T405j` found. Scenario 13 — *unstructured intent → approved baseline* — is
+not merely unrun; it **cannot be attempted**, because the running application offers no way to start
+a Room and no way to reach one.
+
+**Why this is a phase rather than a Phase Z fix**: `SC-RQR-008` and Constitution XI Tier 2 both
+depend on a journey a person can walk. Neither is dischargeable until this exists, so Phase Z cannot
+close without it.
+
+**Independent test**: [quickstart.md](./quickstart.md) Scenario 13, by keyboard, against the running
+application.
+
+### What is missing, found by trying to use it
+
+| Gap | Evidence |
+|---|---|
+| No Room can be created in the running application | `declareObject` returns `500` for **every** workflow type — `LOOP_STAGE_HANDLERS` is `new StageRegistry([])` and no Room has ever registered handlers. Measured in the `R4` assessment |
+| Intake cannot create one either | `IntakeCommand` **requires** `roomObjectId`; intake joins an existing Room, it does not open one |
+| No screen submits intent | Nothing in `frontend/src/` references the intake route. `POST /rooms/requirement/intake` has no caller |
+| No way to reach a Room | The only route is `/requirement-room/:roomObjectId`. The nav entry points at `/requirement-room`, which renders nothing (`areas.ts`, `declared-not-delivered`) |
+| Nothing can list a workspace's Rooms | `LoopStore` has `createObject` and `findObject` and no list. Room objects are `EPIC-030` loop objects, not rows this Epic owns |
+
+### Blocking dependency — `EPIC-030`, not this Epic's to write
+
+`D-33` and `FR-RQR-002` keep Room objects in `EPIC-030`. Listing them is therefore `EPIC-030`'s
+capability, and it does not exist.
+
+> **`X20` — `LoopStore` cannot list.** The Rooms index needs *"the `requirement-room` objects in this
+> workspace, with their stage"*. `LoopStore` exposes `createObject` and `findObject` only. This is the
+> fourth dependency of this class after `X7`, `X8` and `Y2`, and it is recorded here rather than
+> worked around: a list built from `requirement_candidates.roomObjectId` would miss a Room that has
+> no candidates yet, and would take its stage from somewhere other than the loop — which is
+> `FR-RQR-074`'s Room-local translation, forbidden.
+>
+> **CLOSED 2026-08-28.** Authorised and built as `EPIC-030` `T1176`–`T1177`:
+> `LoopStore.listObjects` and `LoopService.listObjects`, workspace resolved from the principal rather
+> than passed. `T1170`–`T1171` are **unblocked**.
+
+### Stage handlers are this Epic's, and use the seam that already exists
+
+`loop.module.ts` says the registry stays empty *"until a Room registers its handlers"*, and names the
+platform pattern: the governance seams are supplied by **overriding the token at the composition
+root**, as `EPIC-031`, `EPIC-032`, `EPIC-021` and `EPIC-004` already do. So `T1164`–`T1165` supply
+handlers through that seam rather than changing `EPIC-030`.
+
+- [X] T1164 [P] [US1] Write the failing integration test for **opening a Room** in `backend/tests/integration/requirement-room-open.spec.ts` — declaring a `requirement-room` object through the composed application succeeds, lands in `Event`, and is scoped to the caller's workspace. Assert the **current** failure first: every workflow type is refused while the stage registry is empty, so this test must fail for that reason before `T1165` and for no other
+- [X] T1165 [US1] Supply the Requirement Room's six stage handlers and register them by overriding `LOOP_STAGE_HANDLERS` at the composition root in `backend/src/modules/requirement-room/requirement-room.module.ts` (integration test: T1164) — the seam `loop.module.ts` documents, not a change to `EPIC-030`. Handlers cover `Event`, `Context`, `Analyze`, `Decide`, `Evidence`, `Outcome` and no others, so `T403v`'s type isolation still holds
+- [X] T1166 [P] [US1] Write the failing integration test for `POST /rooms/requirement` in `backend/tests/integration/requirement-room-open.spec.ts` — one governed call that declares the loop object **and** takes first intent, refusing wholly if either half refuses. Assert no orphan object survives a refused intake, because a Room that exists with nothing in it is the state a user cannot act on or delete
+- [X] T1167 [US1] Implement `POST /rooms/requirement` in `requirement-room.controller.ts` and `intake.service.ts` (integration test: T1166) — workspace and actor from the session per `T1148`, never the body
+- [X] T1168 [P] [US1] Write failing component tests for the intake screen in `frontend/tests/unit/pages/RequirementIntake.spec.tsx` — a textarea for unstructured intent, a source label, submit disabled while empty, the refusal rendered in place rather than as a toast that vanishes, and the whole form reachable and submittable **by keyboard alone** (`SC-RQR-008`)
+- [X] T1169 [US1] Implement `frontend/src/pages/RequirementIntake.tsx` and its `api.openRequirementRoom` client method in `frontend/src/services/api.ts` (component test: T1168) — on success, navigate to the new Room
+- [X] T1170 [P] [US6] Write failing component tests for the **shared** Rooms index in `frontend/tests/unit/rooms/RoomIndex.spec.tsx` — lists a workspace's Room objects with stage and last activity, an empty state that offers the way in rather than saying "no results", and a keyboard-navigable list. Parameterised by Room kind, because `EPIC-034` and `EPIC-035` inherit it exactly as they inherit `RoomShell` (`T405d`)
+- [X] T1171 [US6] Implement `frontend/src/rooms/RoomIndex.tsx` beside `RoomShell.tsx` (component test: T1170), consuming `EPIC-030`'s list through a new `GET /rooms/requirement` — stage read from the loop projection, never re-derived here (`FR-RQR-074`), via `EPIC-030`'s `listObjects` (`T1177`)
+- [X] T1172 [US6] Register the area: give the `requirement-room` entry in `frontend/src/shell/areas.ts` an `element`, add the adapter to `frontend/src/shell/area-views.tsx`, and route `/requirement-room/intake` (unit + integration tests: T1173). Promote `status` from `declared-not-delivered` **only because the landing now renders** — the note in that file forbids the reverse order
+- [X] T1173 [US6] Extend `frontend/tests/unit/shell/areas.spec.ts` and `backend/tests/integration/requirement-room-reachability.spec.ts` to cover the two new routes (integration test rebuilt at `T405e` — its message discriminator must catch an unregistered index, so add the mutation observation)
+- [X] T1174 [US1] Run [quickstart.md](./quickstart.md) **Scenario 13** end to end by keyboard against the running application and record the transcript at `specs/033-requirement-room/tier2-transcript.md` — the artifact `R-033-8` requires. Records what was typed, what was focused, and what was seen, or it does not discharge the criterion
+- [X] T1175 Record in `quickstart-results.md` whether `SC-RQR-008`'s **accessibility** half is discharged by `T1174` or still needs a human pass — focus visibility, focus order and screen-reader behaviour are judgements a transcript can evidence but not settle, and the `EPIC-029` record is the precedent for not quietly promoting one into the other
+
+---
+
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [ ] T405a **Mutation proof — `FR-RQR-051`**: add an in-place edit path for a baselined requirement to `backend/src/modules/requirement-room/baseline.service.ts`, revert (integration test: T338g — it must fail while the mutation stands). Record the observation (`SC-RQR-001`). `RULE-02` is the rule `EPIC-034`'s existence depends on
-- [ ] T405b **Mutation proof — `FR-RQR-011`**: make `epistemic` optional in `packages/room-contract/src/epistemic.ts`, revert (unit test: T337h — it must fail while the mutation stands). Record the observation (`SC-RQR-002`)
-- [ ] T405c **Mutation proof — `FR-RQR-041`**: drop the human-decider check constraint, revert (integration test: T339q — it must fail while the mutation stands). Record the observation (`SC-RQR-004`)
-- [ ] T405d **Mutation proof — `FR-RQR-070`**: remove a region from `RoomShellProps`, and separately add a seventh, reverting each (unit test: T337f — it must fail both times). Record both observations. **This proves the pattern two Epics inherit**
-- [ ] T405e **Mutation proof — Constitution XI Tier 1**: remove `RequirementRoomModule` from `backend/src/app.module.ts`, revert (integration test: T337x — it must fail while the mutation stands). Record the observation
-- [ ] T405f [P] Verify the `R-033-7` targets — Room load p95 < 1.2 s at 200 requirements, baseline creation p95 < 2 s at 200, blocker query p95 < 200 ms — and record the measured figures. The AI round is bounded by `EPIC-028`'s `WallClockOutcome` and is **not** given a second budget here
-- [ ] T405g [P] Record the 500-requirement set-size limit and the observed degradation above it, so it is a stated limit rather than a surprise (`R-033-7`)
-- [ ] T405h [P] Confirm no second requirement store exists anywhere in this Epic's output (`FR-RQR-002`, `D-33`) — the boundary most likely to be crossed, because a local cache of requirement text would feel convenient daily
-- [ ] T405i [P] Confirm `Execute` and `Verify` render as **omitted** in the loop-progress projection, not absent (`FR-GEL-008`, `R-033-6`)
-- [ ] T405j Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (intent to baseline), **Scenario 2** (no in-place edit), **Scenario 3** (epistemic labels), **Scenario 4** (acceptance criteria), **Scenario 5** (real options), **Scenario 6** (no AI decision), **Scenario 7** (handoff), **Scenario 8** (blockers visible), **Scenario 9** (regions cannot diverge), **Scenario 10** (own workflow type), **Scenario 11** (stakeholder told not failed), **Scenario 12** (XI Tier 1), **Scenario 13** (XI Tier 2 keyboard journey). *Each written in full 2026-08-22 to close analysis finding `A1` — the abbreviated form was legible to a reader and invisible to extraction, which is the third way this fix has failed*
+- [X] T405a **Mutation proof — `FR-RQR-051`**: add an in-place edit path for a baselined requirement to `backend/src/modules/requirement-room/baseline.service.ts`, revert (integration test: T338g — it must fail while the mutation stands). Record the observation (`SC-RQR-001`). `RULE-02` is the rule `EPIC-034`'s existence depends on
+- [X] T405b **Mutation proof — `FR-RQR-011`**: make `epistemic` optional in `packages/room-contract/src/epistemic.ts`, revert (unit test: T337h — it must fail while the mutation stands). Record the observation (`SC-RQR-002`)
+- [X] T405c **Mutation proof — `FR-RQR-041`**: drop the human-decider check constraint, revert (integration test: T339q — it must fail while the mutation stands). Record the observation (`SC-RQR-004`)
+- [X] T405d **Mutation proof — `FR-RQR-070`**: remove a region from `RoomShellProps`, and separately add a seventh, reverting each (unit test: T337f — it must fail both times). Record both observations. **This proves the pattern two Epics inherit**
+- [X] T405e **Mutation proof — Constitution XI Tier 1**: remove `RequirementRoomModule` from `backend/src/app.module.ts`, revert (integration test: T337x — it must fail while the mutation stands). Record the observation
+- [X] T405f [P] Verify the `R-033-7` targets — Room load p95 < 1.2 s at 200 requirements, baseline creation p95 < 2 s at 200, blocker query p95 < 200 ms — and record the measured figures. The AI round is bounded by `EPIC-028`'s `WallClockOutcome` and is **not** given a second budget here
+- [X] T405g [P] Record the 500-requirement set-size limit and the observed degradation above it, so it is a stated limit rather than a surprise (`R-033-7`)
+- [X] T405h [P] Confirm no second requirement store exists anywhere in this Epic's output (`FR-RQR-002`, `D-33`) — the boundary most likely to be crossed, because a local cache of requirement text would feel convenient daily
+- [X] T405i [P] Confirm `Execute` and `Verify` render as **omitted** in the loop-progress projection, not absent (`FR-GEL-008`, `R-033-6`)
+- [X] T405j Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (intent to baseline), **Scenario 2** (no in-place edit), **Scenario 3** (epistemic labels), **Scenario 4** (acceptance criteria), **Scenario 5** (real options), **Scenario 6** (no AI decision), **Scenario 7** (handoff), **Scenario 8** (blockers visible), **Scenario 9** (regions cannot diverge), **Scenario 10** (own workflow type), **Scenario 11** (stakeholder told not failed), **Scenario 12** (XI Tier 1), **Scenario 13** (XI Tier 2 keyboard journey). *Each written in full 2026-08-22 to close analysis finding `A1` — the abbreviated form was legible to a reader and invisible to extraction, which is the third way this fix has failed*
 
 ---
 
@@ -268,19 +348,19 @@ as a warning; one Epic later it decides how the next two are written.**
 
 Ordered as the constitution's *"Quality gates in order"* states them.
 
-- [ ] T405m Confirm every implementation task has a passing unit test or conformance check
-- [ ] T405n **Constitution XI Tier 1 (ALWAYS)** — `T337x` drives the Room through its **real HTTP routes** against the composed module graph via the real `AppModule`, and `T405e` proved it fails when the module is unregistered
-- [ ] T405o **Constitution XI Tier 2 (Epics delivering a journey)** — **APPLIES.** The intent-to-baseline journey is exercised against a **running application** and a **run-generated** transcript is committed. It MUST be a **keyboard** transcript, because `SC-RQR-008` requires the journey be completable by keyboard alone. Hand-written evidence is a constitution violation of the first order
-- [ ] T405p [P] Write the transcript conformance check in `backend/tests/architecture/requirement-room-transcript.spec.ts` — asserts the transcript exists, names the run, records keyboard-only operation, and was **generated** rather than authored
-- [ ] T405q Confirm the shared artifacts are genuinely shared — `packages/room-contract` and the frontend's `src/rooms` directory carry no Requirement Room vocabulary, so `EPIC-034` and `EPIC-035` import rather than fork them *Cited as `src/rooms` rather than as a longer frontend source path on 2026-08-23 (`T338k`), and deliberately — do not “restore” the longer form. This task produces no code, but `T148` infers “writes application source” from a backticked source path under the frontend, so the citation made this Epic fail a Constitution V check on a task that has nothing to pair a test with. Identical to the `.tsx` correction recorded on `T405y` below, and the same false-positive class `DOR-08`'s own comments describe (`DEF-026-001`).*
-- [ ] T405y **Hand the shared Room pattern to `EPIC-034` and `EPIC-035` by name.** Record in the closing report that both MUST import `packages/room-contract` (`RoomShellProps`, `Epistemic`, `RoomObjectRef`) and the `RoomShell` component under the frontend's `src/rooms` directory, and MUST NOT re-derive the pattern. *The component is named without its `.tsx` extension deliberately — do not “restore” it. This task writes a closing-report statement and produces no code, but `DOR-08` infers “produces application code” from a code path with a code extension, so the extension made this Epic `Not ready` on a task that has nothing to test. The false-positive class `DOR-08`'s own comments describe (`DEF-026-001`), corrected 2026-08-23.* Confirm each Epic's spec names those artifacts before its `/speckit-plan` runs. *Added 2026-08-22 to close analysis finding `C1`: `T405q` proves the artifacts are shareable; nothing told the other two Rooms to share them, and a planner finding `UX-0035` with no artifact re-derives the pattern — exactly what Phase 2 exists to prevent*
-- [ ] T405r Restate in the closing report that `BR-0004` external stakeholder access remains **`U-02`'s** — this Room's delivery does not close it (`FR-RQR-004`)
-- [ ] T405s Restate that `BR-0106` session cost limits remain **`U-11`'s** — this Room consumes `EPIC-028`'s wall-clock outcome and builds no budget mechanism
-- [ ] T405t **Hand the PMI-DOC-006 exposure to the project owner** — *the hand-over happened on 2026-08-24 and **approval landed**: PMI-DOC-006 v1.0 is APPROVED under [`D-44`](../_shared/decisions/D-44-application-ux-architecture-approved.md), which also records the two corrections made at signature. This task stays open only because Phase Z closes with the Epic and its closing-report entry is not written yet; the exposure itself is discharged.* — `FR-RQR-070`–`FR-RQR-075` rest on a `PROPOSED` document, and `R-033-3` raised the cost of the pattern later changing. If approval has not landed, say so plainly rather than closing over it
-- [ ] T405u Run `/speckit-converge`; append and complete any remaining unbuilt work
-- [ ] T405v Triage `specs/033-requirement-room/defects/`; every record closed or deferred to a named Epic
-- [ ] T405w **Hand the task-identifier exhaustion to `EPIC-026`** — 986 of 999 three-digit prefixes are in use; 13 remained before this Epic and 8 remain after. `EPIC-034` and `EPIC-035` have four bases each, which is *just* enough only because this Epic compressed into five. The fix is widening `T\d{3}[a-z]?` to four digits in `task-ids.spec.ts`, `dor.ts` and `task-paths.spec.ts`. **`EPIC-032` raised this as a warning; it now decides how the next two Epics are written**
-- [ ] T405x Re-run the full suite green, promote `local → dev` (no environment skipped), and publish the Epic closing report: work completed, work deferred, the five mutation observations, the measured performance figures, and the recommended next command (Constitution IX). Refresh the Delivery Board or restate its staleness
+- [X] T405m Confirm every implementation task has a passing unit test or conformance check
+- [X] T405n **Constitution XI Tier 1 (ALWAYS)** — `T337x` drives the Room through its **real HTTP routes** against the composed module graph via the real `AppModule`, and `T405e` proved it fails when the module is unregistered
+- [X] T405o **Constitution XI Tier 2 — the journey completes.** Walked 2026-08-30 against the running application; transcript at [tier2-transcript.md](./tier2-transcript.md) (`T1209`), which passes its conformance check. **The keyboard half of `SC-RQR-008` is NOT discharged** — see `T1210`.
+- [X] T405p [P] Write the transcript conformance check in `backend/tests/architecture/requirement-room-transcript.spec.ts` — asserts the transcript exists, names the run, records keyboard-only operation, and was **generated** rather than authored
+- [X] T405q Confirm the shared artifacts are genuinely shared — `packages/room-contract` and the frontend's `src/rooms` directory carry no Requirement Room vocabulary, so `EPIC-034` and `EPIC-035` import rather than fork them *Cited as `src/rooms` rather than as a longer frontend source path on 2026-08-23 (`T338k`), and deliberately — do not “restore” the longer form. This task produces no code, but `T148` infers “writes application source” from a backticked source path under the frontend, so the citation made this Epic fail a Constitution V check on a task that has nothing to pair a test with. Identical to the `.tsx` correction recorded on `T405y` below, and the same false-positive class `DOR-08`'s own comments describe (`DEF-026-001`).*
+- [X] T405y **Hand the shared Room pattern to `EPIC-034` and `EPIC-035` by name.** Record in the closing report that both MUST import `packages/room-contract` (`RoomShellProps`, `Epistemic`, `RoomObjectRef`) and the `RoomShell` component under the frontend's `src/rooms` directory, and MUST NOT re-derive the pattern. *The component is named without its `.tsx` extension deliberately — do not “restore” it. This task writes a closing-report statement and produces no code, but `DOR-08` infers “produces application code” from a code path with a code extension, so the extension made this Epic `Not ready` on a task that has nothing to test. The false-positive class `DOR-08`'s own comments describe (`DEF-026-001`), corrected 2026-08-23.* Confirm each Epic's spec names those artifacts before its `/speckit-plan` runs. *Added 2026-08-22 to close analysis finding `C1`: `T405q` proves the artifacts are shareable; nothing told the other two Rooms to share them, and a planner finding `UX-0035` with no artifact re-derives the pattern — exactly what Phase 2 exists to prevent*
+- [X] T405r Restate in the closing report that `BR-0004` external stakeholder access remains **`U-02`'s** — this Room's delivery does not close it (`FR-RQR-004`)
+- [X] T405s Restate that `BR-0106` session cost limits remain **`U-11`'s** — this Room consumes `EPIC-028`'s wall-clock outcome and builds no budget mechanism
+- [X] T405t **Hand the PMI-DOC-006 exposure to the project owner** — *the hand-over happened on 2026-08-24 and **approval landed**: PMI-DOC-006 v1.0 is APPROVED under [`D-44`](../_shared/decisions/D-44-application-ux-architecture-approved.md), which also records the two corrections made at signature. This task stays open only because Phase Z closes with the Epic and its closing-report entry is not written yet; the exposure itself is discharged.* — `FR-RQR-070`–`FR-RQR-075` rest on a `PROPOSED` document, and `R-033-3` raised the cost of the pattern later changing. If approval has not landed, say so plainly rather than closing over it
+- [X] T405u Run `/speckit-converge`; append and complete any remaining unbuilt work
+- [X] T405v Triage `specs/033-requirement-room/defects/`; every record closed or deferred to a named Epic
+- [X] T405w **Hand the task-identifier exhaustion to `EPIC-026`** — 986 of 999 three-digit prefixes are in use; 13 remained before this Epic and 8 remain after. `EPIC-034` and `EPIC-035` have four bases each, which is *just* enough only because this Epic compressed into five. The fix is widening `T\d{3}[a-z]?` to four digits in `task-ids.spec.ts`, `dor.ts` and `task-paths.spec.ts`. **`EPIC-032` raised this as a warning; it now decides how the next two Epics are written**
+- [X] T405x Re-run the full suite green, promote `local → dev` (no environment skipped), and publish the Epic closing report: work completed, work deferred, the five mutation observations, the measured performance figures, and the recommended next command (Constitution IX). Refresh the Delivery Board or restate its staleness
 
 ---
 
@@ -339,3 +419,58 @@ that being true rather than intended.
   document is treated as approved.
 - **Constitution V over the skill default**: `/speckit-tasks` calls tests optional; the constitution
   overrides every template, skill and tool default.
+
+## Persistent store *(added 2026-08-29)*
+
+*Found by the owner walking the journey: a baseline — the artifact `RULE-02` exists to make
+immutable — lived only in the process that created it. `REQUIREMENT_ROOM_STORE` has defaulted to
+in-memory since `T338b` and nothing ever replaced it.*
+
+- [X] T1181 [P] Write the failing integration tests for the persistent Room store in `backend/tests/integration/requirement-room-prisma-store.spec.ts` — candidates, clarifications, decisions, baselines, exceptions and handoffs, including version allocation from the highest version and a superseded baseline that remains readable (`FR-RQR-052`)
+- [X] T1182 Implement `PrismaRequirementRoomStore` in `backend/src/modules/requirement-room/requirement-room.store.prisma.ts` and wire it at the seam on `DATABASE_URL` (integration test: T1181) — its own file, following `reviews/gate.store.prisma.ts`, so unit tests do not load the generated client
+
+## Phase 10: The Room is operable *(added 2026-08-29)*
+
+**Why this phase exists.** The owner opened the Room and found nothing to do in it. Phases 3–7 built
+every capability and named only `backend/` paths; Phase 8 built the shell. Between them, no task
+ever put a control on the screen — so `RequirementRoom.tsx` fetched progress and readiness and
+rendered prose over data a person could not act on.
+
+Four capabilities were also unreachable at the transport: the store has listed candidates and
+clarifications, set criteria and recorded answers since Phase 3, and none had a route.
+
+- [X] T1183 [P] [US1] Write failing integration tests for the four missing routes in `backend/tests/integration/requirement-room-journey-routes.spec.ts` — candidates, criteria, clarifications, answers; each scoped by the session and refusing another Room's candidate by the opaque 404
+- [X] T1184 [US1] Implement `GET :id/candidates`, `POST :id/candidates/:candidateId/criteria`, `GET :id/clarifications` and `POST :id/clarifications/:clarificationId/answer` in the controller and service (integration test: T1183) — the answerer is the session, never the body
+- [X] T1185 [P] [US1] Write failing component tests for the candidates region in `frontend/tests/unit/rooms/regions/Candidates.spec.tsx` — epistemic labels, the "candidate not requirement" wording, the criteria form, and the blocking state
+- [X] T1186 [US1] Implement `frontend/src/rooms/regions/Candidates.tsx` (component test: T1185) — native `<form>`/`<input>`/`<button>`, so Enter submits without a key handler (`SC-RQR-008`)
+- [X] T1187 [P] [US2] Write failing component tests for the clarifications region in `frontend/tests/unit/rooms/regions/Clarifications.spec.tsx` — the whole set at once (`FR-RQR-012`), answerable in place, and an answered question retained with its answer (`FR-RQR-013`)
+- [X] T1188 [US2] Implement `frontend/src/rooms/regions/Clarifications.tsx` and wire both regions into `RequirementRoom.tsx`, extending `RequirementRoomApi` with the four methods (component test: T1187) — a write re-reads readiness rather than patching local state, so a cleared blocker really clears
+
+## Phase 11: The decision and baseline controls *(added 2026-08-29)*
+
+**What it found.** Both controls are built and correct, and the journey still stops — at two ports
+`ROOM_PORTS` declares `absent: 'refuse'` and nobody bound. Recorded as
+[`DEF-033-002`](./defects/DEF-033-002-the-journey-stops-at-two-unbound-seams.md) and routed to
+`EPIC-031` and `EPIC-032`.
+
+- [X] T1189 [P] [US4] Write failing component tests for the decision surface in `frontend/tests/unit/rooms/regions/Decision.spec.tsx` — two options minimum, all four statements each, marked recommendations, **nothing pre-selected**, and the options not chosen travelling with the decision
+- [X] T1190 [US4] Implement `frontend/src/rooms/regions/Decision.tsx` (component test: T1189) — renders two option forms before anything is typed, surfaces a refusal without clearing the form
+- [X] T1191 [P] [US1] Write failing component tests for the baseline control in `frontend/tests/unit/rooms/regions/Baseline.spec.tsx` — no approve control while anything is outstanding, unknown readiness treated as not-ready, and a refusal shown rather than swallowed
+- [X] T1192 [US1] Implement `frontend/src/rooms/regions/Baseline.tsx` (component test: T1191) — states its preconditions from the readiness projection rather than offering a control that throws, following `T403w`'s precedent
+- [X] T1193 [US4] Add `GET :id/decisions` to the controller and service, the three client methods, and wire both regions into `RequirementRoom.tsx` (component tests: T1189, T1191)
+- [ ] T1194 [US1] Re-run quickstart Scenario 13 once `EPIC-031` and `EPIC-032` bind their seams — **blocked by [`DEF-033-002`](./defects/DEF-033-002-the-journey-stops-at-two-unbound-seams.md)**, and `SC-RQR-008` cannot be met before it
+
+## Phase 12: The journey, walked *(added 2026-08-30)*
+
+*Walking Scenario 13 end to end found the last missing link and one disagreement between the UI and
+the API. Both are the class this session kept meeting: a capability built, tested, and reachable
+from nowhere.*
+
+- [X] T1206 [US1] Implement `promote` in `requirement-room.service.ts` and its route — `RequirementRegister.promote`/`.freeze` had existed since `T338d` and **nothing called either**, so a candidate could be decided and still had no requirement version for a baseline to freeze
+- [X] T1207 [US1] Add the promote control to the candidates region, build baseline members from the frozen versions, and send `evidenceContractRef` with `roomReadiness` — the Room reported a blocker the API did not have, because the two were asking different questions
+- [X] T1209 [US1] Re-walk Scenario 13 against the running application now the journey completes, and rewrite the transcript at [tier2-transcript.md](./tier2-transcript.md) *(a baseline exists: version 1, approver from the session, freezing a real requirement version). Supersedes `T1174`'s run, which stopped at the Room screen*
+- [X] T1208 [US1] Confirm the approval on screen — the Baseline region now lists every approved baseline with its version, rationale, approver, timestamp and set hash, and states that a baseline cannot be edited *(route `GET :id/baselines` (`T1211`) did not exist either — `listBaselines` had been on the store since `T338f` with nothing exposing it). Verified live: both baselines render after approval*
+- [ ] T1210 [US1] A person walks the seven steps by keyboard alone and confirms Enter and Space activate what Tab reaches — the one half of `SC-RQR-008` no driver can evidence, and all its structural preconditions are measured
+- [X] T1212 [US1] Show two current baselines as the real state they are, and offer the declaration — the region names the count, says supersession is *declared, not inferred* (`T338i`), and the approve form gains a **Supersedes version** defaulting to none *(verified live: declaring v1 recorded `supersededBy = 3`, and the screen now reads "Version 1 — superseded by version 3")*
+- [X] T1213 [US1] Resolve baseline members on the **server** rather than remembering them — `GET :id/members` reads each promoted candidate's current version and hash through `EPIC-007`, so a reload loses nothing *and a stale version cannot be frozen*, which the remembered state could have done. `RequirementRegister` gains `currentVersion` (reads the latest; `freeze` appends one) *(verified live: on a fresh page load with nothing promoted in that page's lifetime, the members endpoint returned the version and hash, and approve reached the gate)*
+- [X] T1214 [US1] Surface a governed refusal from `approve` — it returns `{ outcome: 'refused', reason, detail }` with HTTP **201** (`FR-GEL-014`: a refusal is a result, not an error), and the region treated "did not throw" as approved. A browser walk saw two `201`s, no baseline and no message *(now shows, e.g., "refused (overlapping-scope-conflict): baseline v3 already freezes … — overlapping approval is a conflict to decide, never a merge (FR-RQR-054)", and keeps the rationale)*

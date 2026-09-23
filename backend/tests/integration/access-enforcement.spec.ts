@@ -11,6 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { Client } from 'pg';
 import { PrismaClient } from '@prisma/client';
 import { NotFoundError } from '../../src/core/errors.js';
@@ -21,6 +22,7 @@ import {
   InMemoryDerivationGraph,
 } from '../../src/modules/access/access-inheritance.service.js';
 import { PrismaAccessStore, type AccessDb } from '../../src/modules/access/access.store.js';
+import { boundaryFor } from '../support/ownership.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = resolve(here, '../../prisma/migrations');
@@ -42,7 +44,7 @@ suite('T427 · SC-007 — enforcement against a real PostgreSQL', () => {
   let grantService: AccessGrantService;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();
@@ -56,9 +58,20 @@ suite('T427 · SC-007 — enforcement against a real PostgreSQL', () => {
     store = new PrismaAccessStore(prisma as unknown as AccessDb);
     grantService = new AccessGrantService(store);
     const inheritance = new AccessInheritanceService(store, new InMemoryDerivationGraph());
-    enforcement = new AccessEnforcementService(inheritance, store);
+    enforcement = new AccessEnforcementService(
+      inheritance,
+      store,
+      boundaryFor([
+        { id: ADMIN, workspaceId: WS },
+        { id: BOB, workspaceId: WS },
+      ]),
+    );
 
     await grantService.grant(WS, SPEC, { userId: ADMIN, level: 'edit', grantedById: ADMIN });
+    // `X19` — nothing is reachable without a grant now, so the artifact this
+    // suite uses as its "visible" control needs one. The contrast it draws is
+    // still the real one: what BOB was granted against what he was not.
+    await grantService.grant(WS, OPEN, { userId: BOB, level: 'read', grantedById: ADMIN });
   }, 180_000);
 
   afterAll(async () => {

@@ -26,16 +26,64 @@ export interface ProjectProgress {
   done: number;
   inProgress: number;
   notStarted: number;
+  /**
+   * `EPIC-046` `T1780`. The board has four columns, and a project figure that
+   * reports three of them is a different figure — a blocked task would silently
+   * read as *not started* to anyone adding the numbers up.
+   */
+  blocked: number;
   /** Whole percent of done tasks; 0 for an empty project, never NaN. */
   percentComplete: number;
 }
 
+/**
+ * `EPIC-046` `T1780` (`FR-KAN-056`, `SC-KAN-009`) — the ONE derivation.
+ *
+ * This service used to count for itself, through the project's specifications.
+ * `EPIC-046` widened what a task is — a synced task's home is its Epic and its
+ * specification is optional (`Q1`) — so that query stopped seeing whole Epics,
+ * and the percentage on `/tasks` drifted from the one on `/plan`. Both were
+ * rendered. Nothing said so.
+ *
+ * The fix is not a second query that agrees. It is **one function**, reached
+ * through this port: `TaskProgressService.forProject`, whose counting is the
+ * pure `computeProgress` every other surface calls. What the port abstracts is
+ * *which rows*; how they are counted is not negotiable and not duplicated.
+ *
+ * It is **required**, deliberately. An optional port with a local fallback is
+ * exactly the second derivation this exists to remove — it would agree in the
+ * unit suite and disagree in production, which is the worst of both.
+ */
+export interface ProjectProgressSource {
+  forProject(workspaceId: string, projectId: string): Promise<ProjectProgress>;
+}
+
+/**
+ * `EPIC-046` `T1746` (`FR-KAN-017`, `Q3`) — whether a task was parsed from a
+ * `tasks.md`.
+ *
+ * Proposal gating applies to **synced** tasks only. The reason a move must be
+ * a proposal is that a file elsewhere is authoritative; a task generated for a
+ * specification has no such file, and gating it would stop a working path to
+ * protect nothing. So this port answers one question, and `EPIC-012`'s direct
+ * update keeps working for everything it answers *no* about.
+ */
+export interface SyncedTaskGuard {
+  isSynced(workspaceId: string, taskId: string): Promise<boolean>;
+}
+
 export interface TasksServiceOptions {
   onRefused?: (record: RefusalRecord) => void;
+  /** Absent means nothing is synced — the database-less and pre-EPIC-046 posture. */
+  syncedTasks?: SyncedTaskGuard | undefined;
+  /** The one derivation (`T1780`). Required by `progressForProject`. */
+  progress?: ProjectProgressSource | undefined;
 }
 
 export class TasksService {
   private readonly onRefused: ((record: RefusalRecord) => void) | undefined;
+  private readonly syncedTasks: SyncedTaskGuard | undefined;
+  private readonly progress: ProjectProgressSource | undefined;
 
   constructor(
     private readonly store: TaskStore,
@@ -43,6 +91,8 @@ export class TasksService {
     options: TasksServiceOptions = {},
   ) {
     this.onRefused = options.onRefused;
+    this.syncedTasks = options.syncedTasks;
+    this.progress = options.progress;
   }
 
   async listForSpecification(workspaceId: string, specificationId: string): Promise<TaskRecord[]> {
@@ -61,23 +111,37 @@ export class TasksService {
       targetType: 'task',
       ...(this.onRefused ? { onRefused: this.onRefused } : {}),
     });
+    // EPIC-046 T1746 (FR-KAN-017). A task parsed from a `tasks.md` is moved
+    // through a PROPOSAL, because the file is authoritative for what is done
+    // and this route would overwrite the mirror without recording who or why.
+    // A task with no file behind it is unaffected: `Q3` scoped the gate to
+    // synced tasks precisely so this path keeps working.
+    if (await this.syncedTasks?.isSynced(workspaceId, id)) {
+      throw new ValidationFailedError(
+        'This task was parsed from a tasks.md and is moved through a status proposal, not edited here.',
+        {
+          code: 'task_is_proposal_gated',
+          fields: [{ field: 'status', reason: 'propose the move at POST /v1/tasks/{taskId}/status-proposals' }],
+        },
+      );
+    }
     return this.store.updateStatus(workspaceId, id, status);
   }
 
   /** US4 scenario 3 — aggregate progress across the project. */
+  /**
+   * The project's progress, from the one derivation (`FR-KAN-056`, `T1780`).
+   *
+   * It counts nothing here. Reproducing the arithmetic — even correctly —
+   * would put a second copy of `SC-KAN-009`'s guarantee in a second file, and
+   * the two would drift the first time either changed.
+   */
   async progressForProject(workspaceId: string, projectId: string): Promise<ProjectProgress> {
-    const specIds = await this.specifications.listSpecificationIds(workspaceId, projectId);
-    const tasks =
-      specIds.length > 0 ? await this.store.listForSpecifications(workspaceId, specIds) : [];
-
-    const done = tasks.filter((t) => t.status === 'done').length;
-    const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
-    return {
-      total: tasks.length,
-      done,
-      inProgress,
-      notStarted: tasks.length - done - inProgress,
-      percentComplete: tasks.length === 0 ? 0 : Math.round((done / tasks.length) * 100),
-    };
+    if (this.progress === undefined) {
+      // Loud rather than wrong. A missing port is a wiring fault, and answering
+      // with a locally-computed number would hide it behind a plausible figure.
+      throw new Error('Project progress requires the task-progress port; TasksModule wires it from TaskSyncModule.');
+    }
+    return this.progress.forProject(workspaceId, projectId);
   }
 }

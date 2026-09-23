@@ -440,3 +440,14 @@ the delivered state — the audit trail lagging the code it audits (Constitution
 
 **Checkpoint**: the epic's record agrees with the epic's code. Then Constitution IV's exit gate is
 met and promotion `local → dev` is unblocked (Constitution VII).
+
+## Phase C3B · non-human principal identity *(added 2026-08-27)*
+
+*Closes `Y2`. EPIC-028 owns identity; nothing here defines authorisation.*
+
+- [X] T1133 Define the public identity contract in `packages/agent-contract/src/principal.ts` — principal kinds and states, connector registration, `NonHumanPrincipal`, `PrincipalIdentitySnapshot`, and the registry and snapshot ports, kept deliberately separate from `AgentDescriptor` *(tests: `backend/tests/unit/agents/trusted-principal.spec.ts` and `backend/tests/integration/agents/principal-identity.spec.ts`)*
+- [X] T1134 Additive migration `backend/prisma/migrations/20260827120000_epic028_principal_registry/` — `connector_registrations`, `principals`, append-only `principal_state_events` and `principal_identity_snapshots`, plus EPIC-024's `principal_delegations`; sponsor and registrar are foreign keys to `users` *(tests: `backend/tests/integration/agents/principal-identity.spec.ts`, `backend/tests/unit/core/universal-columns.spec.ts`)*
+- [X] T1135 Implement `backend/src/modules/agents/principal-registry.service.ts` — registration refusals, state changes that bump the identity version and record why, and server-minted frozen snapshots *(tests: `backend/tests/integration/agents/principal-identity.spec.ts`)*
+- [X] T1136 Implement `backend/src/modules/agents/trusted-principal.ts` — an unforgeable context behind an unexported brand and a private constructor, minted only after authoritative resolution *(tests: `backend/tests/unit/agents/trusted-principal.spec.ts`, 13 cases including a structurally identical look-alike)*
+- [X] T1137 Compose `backend/src/modules/agents/agents.module.ts` and register it in `app.module.ts` *(test: `backend/tests/integration/agents/principal-identity.spec.ts`, which resolves every service from the real graph)*
+- [X] T1138 Prove the identity chain end to end through the real `AppModule` and PostgreSQL, across two restarts *(test: `backend/tests/integration/agents/principal-identity.spec.ts`, 14 cases)*

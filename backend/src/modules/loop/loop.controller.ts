@@ -11,16 +11,54 @@
  * read the refusal rather than infer it*. Mapping them onto one status would
  * make *"you may not"* and *"you were second"* the same event to every client.
  */
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
-import { ConflictError, ForbiddenError } from '../../core/errors.js';
-import { LoopService, type DeclareObjectInput, type TransitionInput } from './loop.service.js';
+import { Body, Controller, Get, Inject, Param, Post, Req } from '@nestjs/common';
+import { ConflictError, ForbiddenError, UnauthenticatedError } from '../../core/errors.js';
+import type { WorkspaceContext } from '../../core/workspace.guard.js';
+import {
+  LoopService,
+  type DeclareObjectInput,
+  type LoopPrincipal,
+  type TransitionInput,
+} from './loop.service.js';
 
-/** The transition body, without the id the route already carries. */
+/**
+ * A product endpoint with no session is 401 — the same local helper the other
+ * product controllers carry.
+ */
+function requireAuth(ctx: WorkspaceContext | undefined | null): LoopPrincipal {
+  if (!ctx?.workspaceId || !ctx.userId) throw new UnauthenticatedError('No valid session.');
+  return { workspaceId: ctx.workspaceId, userId: ctx.userId };
+}
+
+/**
+ * Identity and authority a body may not smuggle in (`T1157`).
+ *
+ * The service overwrites each from the resolved session, so this changes no
+ * outcome. It is a second statement of the rule at the boundary a reader looks
+ * at first — and `actorAuthorities` in particular deserves to be visibly taken
+ * away, because it was accepted here for long enough to be in `DEF-030-003`.
+ */
+function strip<T>(body: unknown): T {
+  const {
+    workspaceId: _ws,
+    actorId: _actorId,
+    actor: _actor,
+    actorAuthorities: _authorities,
+    ...safe
+  } = (body ?? {}) as Record<string, unknown>;
+  return safe as T;
+}
+
+/**
+ * The transition body, without the id the route already carries.
+ *
+ * `actor` and `actorAuthorities` are **gone** (`DEF-030-003`). They were the
+ * whole defect: the caller declared who it was and what it was allowed to do,
+ * and `evaluateAuthority` decided on the second. Both are resolved now.
+ */
 export interface TransitionBody {
   readonly toStage: TransitionInput['toStage'];
   readonly expectedVersion: number;
-  readonly actor: TransitionInput['actor'];
-  readonly actorAuthorities?: readonly string[];
   readonly trigger?: { readonly ruleId: string; readonly eventId: string };
 }
 
@@ -33,13 +71,23 @@ export class LoopController {
   ) {}
 
   @Post('objects')
-  declareObject(@Body() body: DeclareObjectInput): Promise<unknown> {
-    return this.loop.declareObject(body);
+  declareObject(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Body() body: DeclareObjectInput,
+  ): Promise<unknown> {
+    return this.loop.declareObject(requireAuth(ctx), strip<DeclareObjectInput>(body));
   }
 
   @Post('objects/:id/transitions')
-  async transition(@Param('id') id: string, @Body() body: TransitionBody): Promise<unknown> {
-    const result = await this.loop.transition({ ...body, objectId: id });
+  async transition(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: TransitionBody,
+  ): Promise<unknown> {
+    const result = await this.loop.transition(requireAuth(ctx), {
+      ...strip<TransitionBody>(body),
+      objectId: id,
+    });
 
     // A governed refusal is a RESULT from the service (FR-GEL-014) and a status
     // at the transport. Translating here rather than in the service keeps the
@@ -60,17 +108,17 @@ export class LoopController {
   }
 
   @Get('objects/:id/history')
-  history(@Param('id') id: string): Promise<unknown> {
-    return this.loop.history(id);
+  history(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string): Promise<unknown> {
+    return this.loop.history(requireAuth(ctx), id);
   }
 
   @Get('objects/:id/progress')
-  progress(@Param('id') id: string): Promise<unknown> {
-    return this.loop.progressOf(id);
+  progress(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string): Promise<unknown> {
+    return this.loop.progressOf(requireAuth(ctx), id);
   }
 
   @Get('objects/:id/exceptions')
-  exceptions(@Param('id') id: string): Promise<unknown> {
-    return this.loop.exceptions(id);
+  exceptions(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string): Promise<unknown> {
+    return this.loop.exceptions(requireAuth(ctx), id);
   }
 }

@@ -7,7 +7,7 @@
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16  # EPIC-038 T1221 — pgvector >= 0.8.0 (R-038-2)
     container_name: pmi-postgres
     environment:
       POSTGRES_USER: pmi
@@ -74,8 +74,27 @@ services:
       # same as an absent one to the shell, but it is to the engine: the
       # sandbox refuses to start either way.
       AI_PROVIDER_TOKEN: ${AI_PROVIDER_TOKEN:-}
+      # T1311 (EPIC-041 F-041.1) — the projects root, in both of its names
+      # (`R-041-2`). The API writes under PMI_PROJECTS_ROOT, which is the mount
+      # below; PMI_PROJECTS_ROOT_HOST is the same directory as the developer's
+      # machine sees it, and is what a project's rootPath stores and every
+      # screen shows. A container cannot infer either the host path or the
+      # address the host reaches it at, so both are supplied, never guessed.
+      PMI_PROJECTS_ROOT: /projects
+      PMI_PROJECTS_ROOT_HOST: ${PMI_PROJECTS_ROOT_HOST:?set PMI_PROJECTS_ROOT_HOST to the directory your projects live in}
+      PMI_PUBLIC_URL: ${PMI_PUBLIC_URL:-http://localhost:${PMI_APP_PORT:-3000}}
+      PMI_ENGINE_TAG: ${PMI_ENGINE_TAG:-v0.16.4}
+      PMI_MCP_SERVER_VERSION: ${PMI_MCP_SERVER_VERSION:-0.1.0}
+      PMI_INITIALISE_WAIT_MS: ${PMI_INITIALISE_WAIT_MS:-30000}
+      PMI_DEFAULT_AGENT_INTEGRATION: ${PMI_DEFAULT_AGENT_INTEGRATION:-}
+      PMI_DEFAULT_SCRIPT_TYPE: ${PMI_DEFAULT_SCRIPT_TYPE:-sh}
     ports:
       - '${PMI_APP_PORT:-3000}:3000'
+    volumes:
+      # The one line that lets the containerised stack write a directory the
+      # user can open (`FR-LPW-001`). Required, not defaulted: a default such as
+      # `./projects` would silently create directories inside the checkout.
+      - '${PMI_PROJECTS_ROOT_HOST:?set PMI_PROJECTS_ROOT_HOST to the directory your projects live in}:/projects'
 
 volumes:
   pmi-postgres-data:

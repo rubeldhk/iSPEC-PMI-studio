@@ -13,7 +13,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { deliveredAreas } from '../../../src/shell/areas';
+import { reachableAreas } from '../../../src/shell/areas';
 import { navigationModel } from '../../../src/shell/navigation-model';
 import { clickByName, renderAt } from './harness';
 
@@ -65,7 +65,7 @@ describe('T440a · the drawer at a narrow width', () => {
       }
       // Inside the wait, not after it: the groups can be present a render
       // before their buttons are.
-      for (const area of deliveredAreas()) {
+      for (const area of reachableAreas()) {
         expect(navLabels(), `${area.label} is unreachable at this width`).toContain(area.label);
       }
     });

@@ -85,3 +85,38 @@ Feature → requirement link mandatory, carried in this framing note.*
 ## User stories owned
 
 - US4 — control who can see and change each artifact
+
+---
+
+## Phase C2D — durable grants (reopened 2026-08-27)
+
+*Authorised by the project owner's Step C2D instruction. `X13`: this Epic already shipped
+`PrismaAccessStore` and never composed it, so grants lived in memory. Combined with this Epic's
+"unrestricted until granted" rule, a restart turned a governed artifact back into an ungoverned
+one — access widened silently.*
+
+- [X] T1119 Bind `PrismaAccessStore` to `ACCESS_GRANT_STORE` and `ACCESS_ATTEMPT_STORE` in `access.module.ts` *(test: `backend/tests/integration/access/grant-durability.spec.ts` — a grant reaches PostgreSQL; the artifact **stays governed** across a restart; a revocation survives a restart; refusals are audited durably; an unreadable grant store **fails closed** rather than reading as "no grants", which would open the artifact)*
+
+**Reported, not implemented.** Routing the "no artifact-specific grants" fallback through *"EPIC-024's
+authoritative workspace-role check"* is not possible: this Epic has **no role or membership model**
+— `User.workspaceId` is the only workspace binding, and `directlyEditable` returns `true` for any
+caller when an artifact has no grants. Building one is a **new authorization model**, which Step
+C2D names as a stop condition. See `specs/030-governed-engineering-loop/analysis.md`, finding
+`X19`.
+
+## Phase C2E · governed artifact ownership bootstrap *(added 2026-08-27)*
+
+*Closes `X19`. Authorised by the Project Owner's Step C2E instruction, under the hybrid ownership
+model: EPIC-024 owns the workspace boundary and grant semantics. **No workspace-role model** — the
+boundary reads `User.workspaceId`, which is identity, not a role.*
+
+- [X] T1126 Implement the workspace boundary in `backend/src/modules/access/workspace-boundary.service.ts` — authoritative actor identity, tenant match, fail-closed on malformed or unreadable state, and a distinct operational error for an unreadable directory *(tests: `backend/tests/unit/access/workspace-boundary.spec.ts`, 11 cases including the caller-supplied-workspace case that `X19` turned on)*
+- [X] T1127 Invert the zero-grant rule in `backend/src/modules/access/access-inheritance.service.ts` and enforce the boundary ahead of grants in `backend/src/modules/access/access-enforcement.service.ts` — zero active grants now refuse *(tests: `backend/tests/unit/access/refusal.spec.ts` and `backend/tests/unit/access/inheritance.spec.ts`, both rewritten so the old assertion is kept and pointed the other way)*
+- [X] T1131 Additive owner-grant backfill in `backend/prisma/migrations/20260827000000_epic024_owner_grant_backfill/migration.sql` — resolves the creator only where they are a real user in the same workspace, invents nothing, records both outcomes and is idempotent *(tests: `backend/tests/integration/access/owner-grant-backfill.spec.ts`, exercised against pre-C2E rows because the development database holds none)*
+
+## Phase C3B · principal authorization and scoped delegation *(added 2026-08-27)*
+
+- [X] T1139 Implement `backend/src/modules/access/principal-delegation.service.ts` and `delegation.store.ts` — scoped, versioned, expiring delegation with approval and application permanently undelegable *(tests: `backend/tests/unit/access/principal-delegation.spec.ts`, 18 cases)*
+- [X] T1140 Generalise actor resolution in `backend/src/modules/access/workspace-boundary.service.ts` — `CompositePrincipalDirectory` over humans and EPIC-028's public registry, with suspended and revoked principals refused at the boundary *(tests: `backend/tests/integration/agents/principal-identity.spec.ts`, `backend/tests/unit/access/workspace-boundary.spec.ts`)*
+- [X] T1141 Compose the composite directory and delegation service in `backend/src/modules/access/access.module.ts`, consuming EPIC-028's public service rather than its tables *(test: `backend/tests/integration/agents/principal-identity.spec.ts`)*
+- [X] T1144 `Y1` — promote `ownership_backfill_records` to authoritative evidence and attach immutability *(test: `backend/tests/integration/access/owner-grant-backfill.spec.ts`, proven under a non-superuser, non-owner role that also cannot disable the trigger)*

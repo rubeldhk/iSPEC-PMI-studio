@@ -37,6 +37,7 @@ import { FixtureAgent } from '@pmi/agent-adapter-fixture';
  */
 const ENV_DESCRIPTOR = {
   provider: 'fake',
+  kind: 'managed-isolated',
   supportedLifecycles: ['ephemeral'],
   supportsPersistentState: false,
   supportsNetworkPolicy: true,

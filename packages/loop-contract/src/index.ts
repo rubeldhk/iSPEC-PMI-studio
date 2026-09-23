@@ -50,3 +50,38 @@ export {
   type TransitionOutcome,
   type TransitionResult,
 } from './types.js';
+
+/**
+ * Specification status-transition adjudication (`T1083`, EPIC-030 Phase C2A).
+ *
+ * This is the surface `EPIC-037` consumes. It is here, in the contract package,
+ * for the reason the rest of this file exists: a connector or registry service
+ * must be able to *propose* a transition and *read* the verdict without
+ * importing a backend module — and therefore without being able to apply
+ * lifecycle policy itself.
+ */
+export {
+  ADJUDICATION_VERDICTS,
+  RECONCILIATION_CAUSES,
+  REFUSAL_EVENT_OF,
+  REFUSAL_REASON_CODES,
+  REFUSAL_STAGE_OF,
+  isAdjudicationVerdict,
+  isRefusalReasonCode,
+  refusalEventFor,
+  type AdjudicationProposal,
+  type AdjudicationVerdict,
+  type AdjudicationVerdictBase,
+  type AdjudicationVerdictName,
+  type ApprovalAttempt,
+  type LifecycleApplicationOutcome,
+  type LifecycleApplicationPort,
+  type ObservedStateMismatch,
+  type ProposalAdjudicator,
+  type ProposerType,
+  type ReconciliationCause,
+  type ReconciliationDetail,
+  type RefusalReasonCode,
+  type RefusalStage,
+  type SpecificationStatus,
+} from './adjudication.js';

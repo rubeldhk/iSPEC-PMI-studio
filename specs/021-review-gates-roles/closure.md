@@ -96,3 +96,61 @@ optional `reviewSpecification`, widened `EngineCapability`), the R-02 re-score, 
 EPIC-011 is delivered, so decide whether product traceability folds into it or stands alone
 before building. If the ruling should wait, `/speckit-implement EPIC-023` starts the
 team-review family instead.
+
+---
+
+# Reopening record — C2C dependency remediation (2026-08-26)
+
+**The closure above stands.** No task recorded there is reopened, and its judgement that the Epic
+was release-eligible on its own terms is not disturbed.
+
+## What the closure deferred, and what it turned out to mean
+
+The closure recorded: *"gate endpoints + wiring gates into the lifecycle transition path → the
+composition root (**EPIC-014 F-11.2**), where the transition endpoints EPIC-009 built meet the
+arbitration verdict."*
+
+`EPIC-030` then tried to consume a gate outcome and found (`X7`) that the Epic had **services but
+no producer**:
+
+- `backend/src/modules/reviews/` had no Nest module and was imported by nothing, so none of it ran;
+- the only `GateOutcomeStore` was in-memory, and **nothing wrote `ReviewGate` or `GateOutcome`**;
+- there was no query for "the outcomes applying to this transition".
+
+**EPIC-014 F-11.2 contained no task for any of it.** The deferral had a named owner and no schedule.
+
+A second gap surfaced while wiring against it (`X11`): a gate outcome was bound to workspace,
+specification and gate — but **not to the target version**, and the model had no notion of
+**staleness**. An outcome that survived a change to the thing it examined could authorise the wrong
+transition.
+
+## What this reopening delivered
+
+Per the owner's C2C decision — **EPIC-021 owns gate configuration, evaluation, outcome persistence,
+human-decision recording, target binding and staleness rules**:
+
+- `T1107` — `gate_final_outcomes`, append-only with its trigger attached, carrying target version,
+  gate-set version, frozen evaluator and decider identities, and correlation/causation.
+- `T1108` — `GateProductionService`: applicable-gate resolution for a `from->to` transition,
+  authoritative decision recording, and the typed disposition EPIC-030 consumes.
+- `T1109` — Prisma stores for gate configuration and final outcomes.
+- `T1110` — `ReviewsModule`, the module this Epic never had.
+
+## Two decisions worth recording
+
+**`gate_outcomes` was left exactly as it is.** It is a legitimate two-phase working record —
+`fillDecision` writes the human decision after the roles have run — and that is a workflow object,
+not an authoritative answer. Rather than make it immutable and break its own workflow, the
+authoritative decision became a **separate append-only table**. A correction appends with
+`supersedesId`; nothing is overwritten.
+
+**"No applicable gates" resolves to `passed`, from approved policy — not invented here.**
+`FR-ENH-012` makes gates *configurable* on transitions, and `SC-ENH-004` scopes the human-decision
+requirement to *"**gated** lifecycle transitions"*. A transition nobody gated is therefore ungated,
+and gates impose no constraint on it. Treating it as unavailable would block every ungated
+transition in the product; treating it as failure would block them permanently.
+
+## Readiness
+
+This Epic returns to **reopened-remediation** state until `T1107`–`T1110` are confirmed with the
+rest of C2C.

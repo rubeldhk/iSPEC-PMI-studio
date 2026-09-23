@@ -32,6 +32,11 @@ export const PROJECT: Project = {
   engineName: null,
   ownerUserId: 'u1',
   archivedAt: null,
+  rootPath: null,
+  agentIntegration: null,
+  scriptType: null,
+  provisioningState: 'not_provisioned',
+  provisionedAt: null,
   createdAt: '2026-08-20T00:00:00Z',
   updatedAt: '2026-08-20T00:00:00Z',
 };
@@ -96,9 +101,24 @@ export function stubApi({ signedIn = true, runs = [RUN], projects = [PROJECT] }:
     getProject: vi.fn(async (): Promise<Project> => PROJECT),
     updateProject: vi.fn(async (): Promise<Project> => PROJECT),
     listRequirements: vi.fn(async () => []),
+    // EPIC-044 T1586 — the Epic list, detail and the board answer on mount.
+    listEpics: vi.fn(async () => ({ epics: [], unassigned: [] })),
+    getBoard: vi.fn(async () => ({ epics: [], unbound: [], packageVersion: '0.1.0', profile: 'product', columns: ['Not started'] })),
+    getEpic: vi.fn(async () => ({ id: 'e1', projectId: PROJECT.id, number: 1, slug: 'intake', title: 'Intake', description: '', status: 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 0, specificationCount: 0, requirements: [], specifications: [], parent: null, children: [], decisions: { createdBy: null, lastProcessed: null, decidedBy: null }, findings: [] })),
+    getEpicStage: vi.fn(async () => ({ epicId: 'e1', number: 1, slug: 'intake', title: 'Intake', status: 'active', stage: 'Not started', missing: [], unrecognised: [], last: null, next: '/speckit-specify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' })),
+    // EPIC-045 T1653/T1683 — the Epic detail's Files section and the board's
+    // unbound group read these on mount. Empty: reachability is about the
+    // route resolving, not about what the Epic happens to have synced.
+    getEpicArtifacts: vi.fn(async () => ({ epicId: 'e1', files: [], refusals: [], findings: { reportedNotSynced: [], syncedNotReported: [] } })),
+    getUnboundArtifacts: vi.fn(async () => ({ projectId: PROJECT.id, syncs: [] })),
+    getArtifactVersion: vi.fn(async () => ({ versionId: 'v1', path: 'specs/001-intake/spec.md', kind: 'spec', digest: 'a'.repeat(64), sizeBytes: 3, content: '# Intake\n', firstSyncedAt: '', deliveredBy: [] })),
     listEngines: vi.fn(async () => []),
     listSpecifications: vi.fn(async () => ({ items: [], total: 0 })),
-    getSpecification: vi.fn(async () => ({ id: 's1', title: 'Spec', body: '', version: 1 })),
+    // A full record: the specification page hands `lifecycleState` to
+    // LifecycleControls, which indexes its transition table by it — an
+    // undefined state threw inside React and surfaced as an unhandled error
+    // that failed CI's unit step (2026-09-19), not as a test failure.
+    getSpecification: vi.fn(async () => ({ id: 's1', workspaceId: 'ws_a', projectId: PROJECT.id, title: 'Spec', lifecycleState: 'draft', currentVersionId: null, engineName: 'fixture', engineVersion: '1.0.0', generatedAt: '2026-09-01T00:00:00Z', isOutOfDate: false, createdAt: '2026-09-01T00:00:00Z', updatedAt: '2026-09-01T00:00:00Z' })),
     listTasks: vi.fn(async () => []),
     getProjectProgress: vi.fn(async () => ({ total: 0, done: 0 })),
     listRuns: vi.fn(async (): Promise<Run[]> => runs),

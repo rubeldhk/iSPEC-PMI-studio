@@ -22,12 +22,13 @@ import type { ReactElement } from 'react';
 import { Link, useLocation } from 'react-router';
 import { EmptyState } from '../design/components/EmptyState';
 import { PageHeader } from '../design/components/PageHeader';
+import { isReachable } from './areas';
 import { areaForPathname } from './shell-context';
 
 export function NotFound(): ReactElement {
   const { pathname } = useLocation();
   const area = areaForPathname(pathname);
-  const specified = area !== undefined && area.status !== 'delivered';
+  const specified = area !== undefined && !isReachable(area.status);
 
   return (
     <main>

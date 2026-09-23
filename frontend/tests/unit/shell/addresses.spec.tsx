@@ -20,7 +20,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { App } from '../../../src/main';
-import { AREAS, deliveredAreas } from '../../../src/shell/areas';
+import { AREAS, isReachable, reachableAreas } from '../../../src/shell/areas';
 import { renderAt, stubApi } from './harness';
 
 afterEach(() => {
@@ -33,7 +33,7 @@ function crumb(): string {
 }
 
 describe('T437l · every delivered area resolves from its own address', () => {
-  it.each(deliveredAreas().map((area) => [area.path, area.label] as const))(
+  it.each(reachableAreas().map((area) => [area.path, area.label] as const))(
     '%s resolves to %s',
     async (path, label) => {
       renderAt(path);
@@ -77,14 +77,24 @@ describe('T437l · every delivered area resolves from its own address', () => {
 });
 
 describe('T437n · an address the shell does not host answers not found', () => {
-  const notDelivered = AREAS.filter((area) => area.status !== 'delivered');
+  const notDelivered = AREAS.filter((area) => !isReachable(area.status));
 
   it('covers both non-delivered states, or it is not the assertion it claims', () => {
     // Anti-vacuity with teeth: if the registry ever held only one kind of
     // non-delivered area, the `it.each` below would silently stop testing the
     // distinction this Epic exists to draw.
+    // T1016 — after Constitution XII Step B, `undeclared` is deliberately
+    // EMPTY: every area names its Epic. The unreachable set is therefore one
+    // state, not two, and requiring two would force a false `undeclared` entry
+    // to satisfy the assertion. What still needs teeth is that the set is not
+    // empty and that `undeclared`, if it ever gains a member, is covered here.
     const states = new Set(notDelivered.map((area) => area.status));
-    expect([...states].sort()).toEqual(['declared-not-delivered', 'undeclared']);
+    expect(notDelivered.length, 'no unreachable areas to check').toBeGreaterThan(0);
+    expect([...states].sort()).toEqual(['declared-not-delivered']);
+    expect(
+      AREAS.filter((area) => area.status === 'undeclared'),
+      'an area is undeclared and therefore untested here',
+    ).toEqual([]);
   });
 
   it.each(notDelivered.map((area) => [area.path, area.label] as const))(
@@ -102,12 +112,12 @@ describe('T437n · an address the shell does not host answers not found', () => 
   });
 
   it('tells a specified-but-unbuilt area apart from a typo, and names its owner', async () => {
-    // `/governance` is `declared-not-delivered`. "No such page" would be false
-    // — it IS part of the product — and an empty Governance area would be
+    // `/reports` is `declared-not-delivered` (Governance was delivered by EPIC-042). "No such page" would be false
+    // — it IS part of the product — and an empty Reports area would be
     // worse: a screen that looks like it works and shows nothing.
-    renderAt('/governance');
-    await waitFor(() => expect(screen.getByText(/Governance is not available yet/)).toBeDefined());
-    expect(screen.getByText(/EPIC-019/)).toBeDefined();
+    renderAt('/reports');
+    await waitFor(() => expect(screen.getByText(/Reports is not available yet/)).toBeDefined());
+    expect(screen.getByText(/EPIC-040/)).toBeDefined();
   });
 
   it('still frames the answer — a not-found is a page, not a blank document', async () => {

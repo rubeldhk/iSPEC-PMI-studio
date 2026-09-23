@@ -74,6 +74,14 @@ export interface RequirementRegister {
   ): Promise<PromotedRequirement>;
   /** The requirement as it stands, as an immutable `EPIC-007` version row. */
   freeze(ctx: ActingContext, requirementId: string): Promise<FrozenRequirement>;
+  /**
+   * `T1213` — the requirement's **current** frozen version, read not appended.
+   *
+   * `freeze` appends a version; this reads the latest one. A screen rebuilding
+   * baseline members after a reload must not append a version every time
+   * somebody opens the page.
+   */
+  currentVersion(ctx: ActingContext, requirementId: string): Promise<FrozenRequirement | null>;
 }
 
 /**
@@ -122,6 +130,25 @@ export class EpicSevenRequirementRegister implements RequirementRegister {
       ...(input.reference === undefined ? {} : { reference: input.reference }),
     });
     return { requirementId: created.id, contentHash: created.contentHash };
+  }
+
+  async currentVersion(
+    ctx: ActingContext,
+    requirementId: string,
+  ): Promise<FrozenRequirement | null> {
+    // `get` applies `EPIC-007`'s tenancy guard, so a cross-workspace read is
+    // refused there and comes back opaque. Same posture as `freeze`.
+    const current = await this.requirements.get(ctx.workspaceId, requirementId);
+    const versions = await this.versions.listForRequirement(ctx.workspaceId, requirementId);
+    const latest = versions[versions.length - 1];
+    if (latest === undefined) return null;
+    return {
+      requirementVersionId: latest.id,
+      requirementId: current.id,
+      // The hash lives on the requirement; the id on its latest version. A
+      // member is made of both.
+      contentHash: current.contentHash,
+    };
   }
 
   async freeze(ctx: ActingContext, requirementId: string): Promise<FrozenRequirement> {

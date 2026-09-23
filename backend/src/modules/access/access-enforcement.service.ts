@@ -18,6 +18,11 @@
 import { NotFoundError } from '../../core/errors.js';
 import type { ArtifactRef } from './access-grant.service.js';
 import type { AccessInheritanceService } from './access-inheritance.service.js';
+import {
+  ActorDirectoryUnavailable,
+  WorkspaceBoundaryViolation,
+  type WorkspaceBoundaryService,
+} from './workspace-boundary.service.js';
 
 const OPAQUE = 'Not found.';
 
@@ -49,6 +54,11 @@ export class AccessEnforcementService {
   constructor(
     private readonly inheritance: AccessInheritanceService,
     private readonly attempts: AttemptStore,
+    /**
+     * `X19`, C2E. Checked **before** grants: a grant lookup scoped by a
+     * workspace id nobody validated is scoped by whatever the caller typed.
+     */
+    private readonly boundary: WorkspaceBoundaryService,
   ) {}
 
   /**
@@ -81,6 +91,7 @@ export class AccessEnforcementService {
     action = 'read',
     at?: Date,
   ): Promise<void> {
+    await this.enforceBoundary(workspaceId, userId, artifact, action, at);
     if (await this.inheritance.effectivelyReadable(workspaceId, userId, artifact)) return;
     await this.refuse(workspaceId, userId, artifact, action, 'No grant covers this artifact.', at);
   }
@@ -92,6 +103,7 @@ export class AccessEnforcementService {
     action = 'edit',
     at?: Date,
   ): Promise<void> {
+    await this.enforceBoundary(workspaceId, userId, artifact, action, at);
     if (await this.inheritance.effectivelyEditable(workspaceId, userId, artifact)) return;
     await this.refuse(workspaceId, userId, artifact, action, 'No edit grant covers this artifact.', at);
   }
@@ -117,15 +129,45 @@ export class AccessEnforcementService {
     return this.attempts.listForArtifact(workspaceId, artifact);
   }
 
-  private async refuse(
+  /**
+   * Step 2 of the authorisation order: tenant boundary, before grants.
+   *
+   * A boundary refusal is opaque, like every other refusal here. A directory
+   * that could not be *read* is re-thrown as itself — an operator told "no
+   * grant covers this" when the identity database was down would look in
+   * entirely the wrong place. Both record the attempt: the audit evidence is
+   * owed whichever way it failed.
+   */
+  private async enforceBoundary(
+    workspaceId: string,
+    userId: string,
+    artifact: ArtifactRef,
+    action: string,
+    at?: Date,
+  ): Promise<void> {
+    try {
+      await this.boundary.requireWithinWorkspace(workspaceId, userId);
+      return;
+    } catch (error) {
+      if (error instanceof ActorDirectoryUnavailable) {
+        await this.record(workspaceId, userId, artifact, action, error.message, at);
+        throw error;
+      }
+      const detail =
+        error instanceof WorkspaceBoundaryViolation ? error.detail : 'identity check failed';
+      await this.record(workspaceId, userId, artifact, action, `Workspace boundary: ${detail}.`, at);
+      throw new NotFoundError(OPAQUE);
+    }
+  }
+
+  private async record(
     workspaceId: string,
     userId: string,
     artifact: ArtifactRef,
     action: string,
     reason: string,
     at?: Date,
-  ): Promise<never> {
-    // The record and the refusal are one operation — never one without the other.
+  ): Promise<void> {
     await this.attempts.record({
       workspaceId,
       userId,
@@ -135,6 +177,18 @@ export class AccessEnforcementService {
       reason,
       attemptedAt: at ?? new Date(),
     });
+  }
+
+  private async refuse(
+    workspaceId: string,
+    userId: string,
+    artifact: ArtifactRef,
+    action: string,
+    reason: string,
+    at?: Date,
+  ): Promise<never> {
+    // The record and the refusal are one operation — never one without the other.
+    await this.record(workspaceId, userId, artifact, action, reason, at);
     throw new NotFoundError(OPAQUE);
   }
 }

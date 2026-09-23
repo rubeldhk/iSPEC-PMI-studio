@@ -35,6 +35,7 @@ function fakeEnvironment(): ProjectExecutionEnvironment & { requests: ExecutionR
     requests,
     descriptor: {
       provider: 'fake',
+      kind: 'managed-isolated',
       supportedLifecycles: ['ephemeral'],
       supportsPersistentState: false,
       supportsNetworkPolicy: true,

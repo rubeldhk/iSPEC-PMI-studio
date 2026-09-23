@@ -14,7 +14,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import { expectNoViolations } from '../a11y/axe';
-import { AREAS, GROUP_LABELS, deliveredAreas } from '../../../src/shell/areas';
+import { AREAS, GROUP_LABELS, reachableAreas } from '../../../src/shell/areas';
 import { navigationModel } from '../../../src/shell/navigation-model';
 import { clickByName, renderAt } from './harness';
 
@@ -49,13 +49,13 @@ describe('T440e · exactly one main landmark, at every address', () => {
   // Nesting two and having none are both faults, and only a check over every
   // address can tell which one a given screen has.
   const addresses = [
-    ...deliveredAreas().map((area) => area.path),
+    ...reachableAreas().map((area) => area.path),
     '/projects/p1',
     '/specifications/s1',
     '/specifications/s1/tasks',
     '/runs/run_1',
     '/traceability',
-    '/governance',
+    '/reports',
     '/no-such-place',
   ];
 
@@ -109,7 +109,7 @@ describe('T440c · focus order follows visible order', () => {
       .getAllByRole('navigation')
       .flatMap((nav) => within(nav).queryAllByRole('button'));
     expect(buttons.map((button) => button.textContent?.trim())).toEqual(
-      deliveredAreas().map((area) => area.label),
+      reachableAreas().map((area) => area.label),
     );
     for (const button of buttons) {
       const tabindex = button.getAttribute('tabindex');
@@ -124,7 +124,7 @@ describe('T440c · focus order follows visible order', () => {
       .getAllByRole('navigation')
       .flatMap((nav) => within(nav).queryAllByRole('button'))
       .filter((button) => !button.hasAttribute('disabled'));
-    expect(reachable).toHaveLength(deliveredAreas().length);
+    expect(reachable).toHaveLength(reachableAreas().length);
   });
 });
 
@@ -141,7 +141,7 @@ describe('T440i · SC-SHL-007 — every area reachable by keyboard at 360px', ()
         .getAllByRole('navigation')
         .flatMap((nav) => within(nav).queryAllByRole('button'))
         .map((button) => button.textContent?.trim());
-      for (const area of deliveredAreas()) {
+      for (const area of reachableAreas()) {
         expect(inDrawer, `${area.label} is unreachable at 360px`).toContain(area.label);
       }
     });
@@ -158,7 +158,7 @@ describe('T440i · SC-SHL-007 — every area reachable by keyboard at 360px', ()
 });
 
 describe('T440g · SC-SHL-008 — zero axe violations on the shell', () => {
-  it.each(['/', '/projects', '/runs', '/governance', '/no-such-place'])(
+  it.each(['/', '/projects', '/runs', '/reports', '/no-such-place'])(
     '%s passes the WCAG 2.2 AA harness',
     async (path) => {
       renderAt(path);

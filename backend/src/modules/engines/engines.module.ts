@@ -15,8 +15,10 @@
  * this module provides starts EMPTY on the API side, which is correct — the API
  * resolves and records engines, it never runs them.
  */
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { EngineRegistryService } from './engine-registry.service.js';
+import { loadRegisteredEngines } from './registered-engines.js';
+import { prismaClient } from '../../persistence/prisma.js';
 import { EnginesController } from './engines.controller.js';
 import {
   EngineResolverService,
@@ -47,7 +49,30 @@ export class InheritDefaultEngineSelection implements ProjectEngineSelectionPort
   providers: [
     {
       provide: EngineRegistryService,
-      useFactory: (): EngineRegistryService => new EngineRegistryService(),
+      // EPIC-041 T1321 (FR-LPW-042) — descriptor-only engines from what the
+      // worker recorded, when a database is configured. The API resolves and
+      // records engines and never runs one; a DescriptorOnlyEngine refuses to.
+      useFactory: async (): Promise<EngineRegistryService> => {
+        const registry = new EngineRegistryService();
+        if (process.env['DATABASE_URL']) {
+          // 2026-09-19 — the load must not decide whether the application
+          // composes. With the database unreachable at boot this `await`
+          // threw inside composition, Nest's `abortOnError` default exited the
+          // process, and `composition.spec.ts` (T832) — whose premise is that
+          // composing the graph opens no connection — died as a Vitest worker
+          // exit that failed CI's unit step. A registry that could not load is
+          // the pre-EPIC-041 state: empty, and every submission refuses
+          // `engine_unavailable` by name. The warning says why, once.
+          try {
+            await loadRegisteredEngines(registry, prismaClient().engineRegistration);
+          } catch (err) {
+            new Logger('EnginesModule').warn(
+              `Registered engines could not be loaded at boot; the registry starts empty and submissions will refuse engine_unavailable until the database is reachable and the API restarts. ${err instanceof Error ? err.name : 'error'}`,
+            );
+          }
+        }
+        return registry;
+      },
     },
     {
       provide: PROJECT_ENGINE_SELECTION,

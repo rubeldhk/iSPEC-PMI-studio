@@ -16,6 +16,9 @@
  * carries it; nothing here can read it, which is the point.
  */
 
+import type { LoopProgress } from '@pmi/loop-contract';
+import type { Readiness } from '../rooms/regions/Blockers';
+
 export interface WhoAmI {
   user: { id: string; email: string; displayName: string };
   workspace: { id: string };
@@ -30,8 +33,69 @@ export interface Project {
   engineName: string | null;
   ownerUserId: string;
   archivedAt: string | null;
+  // EPIC-041 (FR-LPW-001, FR-LPW-051) — the local workspace.
+  rootPath: string | null;
+  agentIntegration: string | null;
+  scriptType: 'sh' | 'ps' | null;
+  provisioningState: ProvisioningState;
+  provisionedAt: string | null;
+  /** `GET /projects/:id` and the create response carry the latest record. */
+  latestProvisioning?: ProvisioningRecord | null;
+  /** Present ONLY in the create response of a provisioned project; the value in it exactly once (FR-LPW-020). */
+  connectorCredential?: MintedConnectorCredential | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type ProvisioningState = 'not_provisioned' | 'prepared' | 'initialisation_pending' | 'provisioned' | 'failed';
+
+/** specs/041-local-project-workspace/contracts/provisioning-api.md — append-only, newest first. */
+export interface ProvisioningRecord {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+  actorId: string;
+  correlationId: string;
+  startedAt: string;
+  endedAt: string | null;
+  outcome: 'succeeded' | 'failed' | 'refused' | 'no_change' | 'pending';
+  stepsCompleted: string[];
+  failedStep: string | null;
+  failureReason: string | null;
+  engineTag: string | null;
+  bundleVersion: string | null;
+  filesWritten: string[];
+}
+
+export interface ProvisionInput {
+  rootPath: string;
+  agentIntegration?: string;
+  scriptType?: 'sh' | 'ps';
+}
+
+/** Never carries `value` or `tokenHash` (FR-LPW-053). */
+export interface ConnectorCredential {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+  principalId: string;
+  tokenPrefix: string;
+  label: string;
+  createdById: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
+  revokedById: string | null;
+}
+
+/** The mint response: the value, exactly once (FR-LPW-021). */
+export interface MintedConnectorCredential extends ConnectorCredential {
+  value: string;
+}
+
+export interface CredentialFilters {
+  revoked?: boolean;
+  label?: string;
 }
 
 export interface Requirement {
@@ -47,6 +111,10 @@ export interface Requirement {
   retiredAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** EPIC-044 (FR-EPB-023): the Epic this requirement belongs to, or null for *unassigned*. */
+  epicId?: string | null;
+  epicNumber?: number | null;
+  epicTitle?: string | null;
 }
 
 export interface RequirementVersion {
@@ -112,6 +180,19 @@ export interface Specification {
   /** EPIC-020 (FR-ENH-006): one field, wider trigger than isOutOfDate. */
   currencyStatus?: 'current' | 'stale';
   staleReason?: string | null;
+  /** EPIC-044 (FR-EPB-025, FR-EPB-050): the Epic that owns this specification, or null for *no Epic*. */
+  epicId?: string | null;
+  epicNumber?: number | null;
+  epicTitle?: string | null;
+  /**
+   * EPIC-045 (`FR-ART-019`, `FR-ART-030`): the synced path whose versions feed
+   * this specification, or null for one created any other way. Present means
+   * *an agent wrote this file and a governed command synced it* — which the
+   * detail says in words rather than presenting it as authored here.
+   */
+  sourcePath?: string | null;
+  /** The detail read carries the current version, so its content can be rendered. */
+  currentVersion?: { id: string; versionNumber: number; contentRaw: string; authoredById: string; authoredAt: string } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -170,6 +251,8 @@ export interface ProjectProgress {
   done: number;
   inProgress: number;
   notStarted: number;
+  /** `EPIC-046` `T1780` — the board's fourth column, so the two figures match. */
+  blocked: number;
   percentComplete: number;
 }
 
@@ -224,6 +307,440 @@ export interface Run {
   outcomeReason: string | null;
   startedAt: string;
   endedAt: string | null;
+}
+
+// ---- execution timeline (EPIC-043 US1, FR-PIC-050–054) ----
+
+export interface ExecutionTimelineEntry {
+  executionId: string;
+  command: string;
+  surface: string;
+  assurance: string;
+  state: string;
+  governanceState?: string;
+  initiator: { principalId: string; kind: string; label?: string };
+  sponsorUserId: string | null;
+  registeredAt: string;
+  completedAt: string | null;
+  proposal: { id: string; proposedState: string; state: 'proposed' | 'approved' | 'refused'; decidedBy: string | null } | null;
+}
+
+export interface ExecutionTimelinePage {
+  items: ExecutionTimelineEntry[];
+  nextCursor: string | null;
+}
+
+export interface ExecutionTimelineEvent {
+  sequence: number;
+  type: string;
+  category: string;
+  actorId: string | null;
+  occurredAt: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ExecutionTimelineFilters {
+  surface?: string;
+  state?: string;
+  initiator?: string;
+  after?: string;
+  limit?: number;
+}
+
+/** EPIC-043 US5 (FR-PIC-053) — when a workstation last spoke for this project. */
+export interface WorkstationConnection {
+  credentialId: string;
+  label: string;
+  credentialState: 'active' | 'revoked';
+  firstSeenAt: string;
+  lastSeenAt: string;
+  extensionVersion: string | null;
+  toolkitVersion: string | null;
+  contractVersion: string;
+  serverVersion: string | null;
+  /** EPIC-042 (`FR-EXT-067`): what the workstation last reported about its constitution file. */
+  constitutionDigest?: string | null;
+  constitutionState?: ConstitutionState | null;
+  constitutionReportedAt?: string | null;
+  /** T1542: the render version a `stale` file last matched; null for `drift` or when nothing was reported. */
+  constitutionRenderVersion?: number | null;
+}
+
+// EPIC-042 — constraints, the policy and the render (`contracts/governance-api.md`).
+
+export type ConstraintKind = 'principle' | 'constraint' | 'non_goal';
+export type ConstitutionState = 'current' | 'stale' | 'drift' | 'missing';
+
+// ---- EPIC-044 — Epics and the derived stage (specs/044-epic-model-journey-board/contracts/epics-api.md) ----
+
+export type EpicStatus = 'active' | 'split' | 'closed';
+
+export interface Epic {
+  id: string;
+  projectId: string;
+  /** Allocated by the platform, unique per project, never reused. */
+  number: number;
+  slug: string;
+  title: string;
+  description: string;
+  status: EpicStatus;
+  parentEpicId: string | null;
+  splitSuffix: string | null;
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+  requirementCount: number;
+  specificationCount: number;
+}
+
+export interface EpicRequirementRef {
+  id: string;
+  reference: string;
+  status: string;
+  epicId: string | null;
+}
+
+export interface EpicList {
+  epics: Epic[];
+  /** Requirements with no Epic — listed, never omitted (FR-EPB-024). */
+  unassigned: EpicRequirementRef[];
+}
+
+export interface EpicDetail extends Epic {
+  requirements: EpicRequirementRef[];
+  specifications: { id: string; projectId: string; epicId: string | null }[];
+  parent: Omit<Epic, 'requirementCount' | 'specificationCount'> | null;
+  children: Omit<Epic, 'requirementCount' | 'specificationCount'>[];
+  /** The decision that created it, the last one processed for it, and who decided (FR-EPB-063). */
+  decisions: { createdBy: string | null; lastProcessed: string | null; decidedBy: string | null };
+  /** Findings about this Epic derived on read — today a slug collision the split resolved (T1618). */
+  findings: string[];
+}
+
+/** A projection, never stored: derived from the Epic's governed executions (FR-EPB-001). */
+export interface EpicStage {
+  epicId: string;
+  number: number;
+  slug: string;
+  title: string;
+  status: string;
+  stage: string;
+  missing: string[];
+  /** Commands of its executions the stage configuration does not list — shown, never a wrong stage (T1617). */
+  unrecognised: string[];
+  last: { executionId: string; command: string; outcome: string; at: string } | null;
+  next: string | null;
+  readiness: { verdict: 'Ready' | 'Not ready' | 'n/a'; note?: string; failing: string[] };
+  running: { executionId: string; since: string } | null;
+  derivedFrom: 'executions';
+}
+
+export interface BoardRead {
+  epics: EpicStage[];
+  unbound: { executionId: string; command: string; targetId: string; registeredAt: string }[];
+  packageVersion: string;
+  profile: 'product';
+  /** Not started, then the product profile in order — the columns of the board. */
+  columns: string[];
+}
+
+/**
+ * Artifacts (EPIC-045) — a synced markdown file, its versions, and which
+ * execution delivered each. Projections over the manifest, never stored
+ * (`specs/045-artifact-sync-markdown-viewer/data-model.md` §5).
+ */
+export interface ArtifactDelivery {
+  executionId: string;
+  command: string;
+  outcome: string;
+  at: string;
+  syncId: string;
+}
+
+export interface ArtifactVersionSummary {
+  versionId: string;
+  digest: string;
+  sizeBytes: number;
+  firstSyncedAt: string;
+  /** Every execution whose sync delivered this digest — an unchanged file has several. */
+  deliveredBy: ArtifactDelivery[];
+}
+
+export interface ArtifactTreeEntry {
+  path: string;
+  kind: string;
+  /** The version of the newest sync that included this path. */
+  current: { versionId: string; digest: string; sizeBytes: number; sync: ArtifactDelivery } | null;
+  /** The Epic's newest sync did not include this path (`FR-ART-014`). */
+  notInLatestSync: boolean;
+  /** Newest first. */
+  versions: ArtifactVersionSummary[];
+}
+
+export interface ArtifactRefusal {
+  path: string;
+  code: string;
+  detail: string | null;
+  executionId: string;
+  at: string;
+}
+
+/** What the completion CLAIMED against what the sync STORED — reported, never repaired. */
+export interface ArtifactFindings {
+  reportedNotSynced: { executionId: string; digest: string }[];
+  syncedNotReported: { executionId: string; digest: string }[];
+}
+
+// ---------------------------------------------------------------- EPIC-046
+//
+// `T1719` — the task board. Everything here is DERIVED on read: there is no
+// board entity, and the percentages a later phase adds come from the same
+// aggregate every other surface reads (`FR-KAN-056`).
+
+export type TaskBoardStatus = 'not_started' | 'in_progress' | 'done' | 'blocked';
+
+/** What last moved a card — a parse, an event, a completion or an applied proposal. */
+export type TaskMovedBy = 'parse' | 'event' | 'proposal' | 'engine';
+
+export interface TaskBoardColumn {
+  status: TaskBoardStatus;
+  taskKeys: string[];
+}
+
+export interface TaskBoardCard {
+  id: string;
+  taskKey: string | null;
+  description: string;
+  status: TaskBoardStatus;
+  parallel: boolean;
+  sourceLine: number | null;
+  sourcePaths: string[];
+  movedBy: TaskMovedBy;
+  movedAt: string | null;
+  movedByActorId: string | null;
+  /** Kept and marked, never deleted (`FR-KAN-025`). */
+  notInLatestParse: boolean;
+  /** A proposal that did not apply — awaiting approval, refused or inconsistent. */
+  outstandingProposal: OutstandingProposal | null;
+  /** The file overruled a manual status (`FR-KAN-022`), and what it overruled. */
+  supersededByFile: {
+    proposalId: string;
+    requestedStatus: TaskBoardStatus;
+    verdict: string;
+    proposerId: string;
+    supersedingDigest: string;
+  } | null;
+}
+
+/**
+ * A proposal that left the card where it was (`FR-KAN-014`, `FR-KAN-015`).
+ *
+ * Folded from the proposal's events, never stored as a column: the verdict is
+ * an event and a projection, so a screen reads the same record an auditor does.
+ */
+export interface OutstandingProposal {
+  proposalId: string;
+  expectedCurrentStatus: TaskBoardStatus;
+  requestedStatus: TaskBoardStatus;
+  reason: string;
+  proposerId: string;
+  proposerType: 'user' | 'agent' | 'service';
+  proposedAt: string;
+  verdict: TaskProposalOutcome['verdict'];
+}
+
+export interface TaskBoardParse {
+  syncId: string;
+  executionId: string;
+  digest: string;
+  syncedAt: string;
+  /** The run this parse came from; null when the execution cannot be read. */
+  command: string | null;
+  /** Its outcome, shown BESIDE the cards — a terminal outcome never moves one. */
+  outcome: string | null;
+}
+
+/**
+ * The board is behind the Epic (`FR-KAN-048`).
+ *
+ * A run recorded provisionally syncs nothing, so the Epic can have a newer
+ * execution than its newest parse. Nothing is guessed from such a run; both
+ * times are named so a reader can see the gap rather than take it on trust.
+ */
+export interface TaskBoardStaleness {
+  executionId: string;
+  command: string;
+  executionAt: string;
+  parsedAt: string;
+}
+
+/**
+ * A task-progress reading. Derived on read from the same function for every
+ * surface (`FR-KAN-056`), so the Epic figure and the project figure cannot
+ * disagree about what counts.
+ */
+export interface Progress {
+  total: number;
+  done: number;
+  inProgress: number;
+  notStarted: number;
+  blocked: number;
+  percentComplete: number;
+}
+
+/**
+ * What the board does not know (`FR-KAN-024`).
+ *
+ * Every entry names both sides. Nothing here is resolved — `FR-KAN-020`
+ * requires a disagreement be surfaced, and a list that quietly picked a
+ * winner would be the silent resolution the requirement forbids.
+ */
+export interface TaskDisagreements {
+  aheadOfFile: { taskKey: string; status: TaskBoardStatus }[];
+  notInLatestParse: { taskKey: string }[];
+  unmatchedProgress: UnmatchedProgress[];
+  refusedLines: TaskRefusedLine[];
+  outOfBandEdit: boolean;
+  digestMismatch: { parsed: string; artifact: string } | null;
+  total: number;
+}
+
+/** The verdict on a move. The names are EPIC-030's, borrowed not invented. */
+export interface TaskProposalOutcome {
+  proposalId: string;
+  verdict: 'validated' | 'applied' | 'approval_required' | 'refused' | 'inconsistent' | 'reconciliation_required';
+  /** Supplementary evidence for a person. Never parsed to select behaviour. */
+  reason: string;
+  decidedAt: string;
+}
+
+/** A `progress-reported` event naming an identifier no row carries yet. */
+export interface UnmatchedProgress {
+  executionId: string;
+  taskId: string;
+  occurredAt: string;
+}
+
+export interface TaskBoardCounts {
+  linesConsidered: number;
+  parsed: number;
+  refused: number;
+  duplicates: number;
+}
+
+/** A line the grammar refused — reported, never dropped (`FR-KAN-003`). */
+export interface TaskRefusedLine {
+  line: number;
+  code: string;
+  text: string;
+}
+
+export interface TaskBoard {
+  epicId: string;
+  columns: TaskBoardColumn[];
+  tasks: TaskBoardCard[];
+  /** Null before any sync — distinct from a synced file with no task lines. */
+  latestParse: TaskBoardParse | null;
+  counts: TaskBoardCounts;
+  diff: { added: number; changed: number; unchanged: number; disappeared: number };
+  refusedLines: TaskRefusedLine[];
+  outOfBandEdit: boolean;
+  /** Tasks the latest parse still leaves unchecked (`FR-KAN-044`). */
+  remainingUnchecked: number;
+  unmatchedProgress: UnmatchedProgress[];
+  /** Set when the parse is older than the Epic's latest run (`FR-KAN-048`). */
+  staleness: TaskBoardStaleness | null;
+  /** Whether the reader may move a card (`BR-0003`). False renders read-only. */
+  canMove: boolean;
+}
+
+/**
+ * A task sync nobody could attach to an Epic (`FR-KAN-032`).
+ *
+ * Listed, never attached (`FR-EPB-008`). No Epic's board lists these, so the
+ * Spec Journey Board's unbound group is where they are named or they are lost —
+ * the same argument `EPIC-045` made for the files.
+ */
+export interface UnboundTaskSync {
+  syncId: string;
+  executionId: string;
+  command: string | null;
+  tasksDigest: string;
+  syncedAt: string;
+  counts: TaskBoardCounts;
+  taskKeys: string[];
+}
+
+export interface UnboundTasks {
+  projectId: string;
+  syncs: UnboundTaskSync[];
+}
+
+export interface ArtifactTree {
+  epicId: string;
+  files: ArtifactTreeEntry[];
+  refusals: ArtifactRefusal[];
+  findings: ArtifactFindings;
+}
+
+/** The only read that carries content. */
+export interface ArtifactVersion {
+  versionId: string;
+  path: string;
+  kind: string;
+  digest: string;
+  sizeBytes: number;
+  content: string;
+  firstSyncedAt: string;
+  deliveredBy: ArtifactDelivery[];
+}
+
+export interface UnboundArtifactSync {
+  syncId: string;
+  executionId: string;
+  command: string;
+  outcome: string;
+  at: string;
+  created: number;
+  reused: number;
+  refused: number;
+  files: { path: string; digest: string; outcome: string; versionId: string | null; refusalCode: string | null }[];
+}
+
+export interface UnboundArtifacts {
+  projectId: string;
+  syncs: UnboundArtifactSync[];
+}
+
+export interface ProjectConstraint {
+  id: string;
+  workspaceId: string;
+  projectId: string;
+  kind: ConstraintKind;
+  title: string;
+  body: string;
+  order: number;
+  version: number;
+  status: 'active' | 'retired';
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DecompositionPolicy {
+  oneSpecPerEpic: boolean;
+  taskCeiling: number;
+  splitRequiresConfirmation: boolean;
+  offlineMode: 'strict' | 'provisional';
+  version: number;
+}
+
+export interface ConstitutionRender {
+  version: number;
+  digest: string;
+  renderedAt: string;
+  content: string;
+  inputs: Record<string, unknown>;
 }
 
 export interface ReviewSession {
@@ -322,6 +839,71 @@ export interface ApiClientOptions {
   onSessionExpired?: () => void;
 }
 
+/** One Room as the index renders it. Mirrors `EPIC-030`'s row. */
+export interface RoomSummary {
+  readonly id: string;
+  readonly subjectId: string;
+  readonly projectId: string;
+  readonly currentStage: string;
+  readonly createdAt: string;
+}
+
+
+import type { Epistemic } from '@pmi/room-contract';
+
+/** `T1213` — a baseline member, resolved by the server. */
+export interface BaselineMember {
+  readonly requirementVersionId: string;
+  readonly contentHash: string;
+  readonly candidateId: string;
+}
+
+/** `T1211` — an approved baseline as the wire carries it. */
+export interface ApprovedBaseline {
+  readonly id: string;
+  readonly version: number;
+  readonly approvedBy: string;
+  readonly approvedAt: string;
+  readonly rationale: string;
+  readonly setHash: string;
+  readonly memberVersionIds: readonly string[];
+  readonly supersededBy: number | null;
+}
+
+/** `T1193` — a decision as the wire carries it. */
+export interface RecordedRoomDecision {
+  readonly id: string;
+  readonly roomObjectId: string;
+  readonly decidedBy: string;
+  readonly chosenOption: string;
+  readonly declinedOptions: readonly string[];
+  readonly rationale: string;
+}
+
+/** `T1185` — a Room candidate as the wire carries it. */
+export interface RoomCandidate {
+  readonly id: string;
+  readonly roomObjectId: string;
+  readonly sourceRef: string;
+  readonly normalizedText: string;
+  /** The contract's union, not a restatement — `EPISTEMIC_KINDS` is authoritative. */
+  readonly epistemic: Epistemic;
+  readonly promotedTo: string | null;
+  readonly acceptanceCriteria: readonly string[] | null;
+  readonly intendedForImplementation: boolean;
+}
+
+/** `T1187` — a clarification, answered or not. */
+export interface RoomClarification {
+  readonly id: string;
+  readonly roomObjectId: string;
+  readonly candidateId: string | null;
+  readonly question: string;
+  readonly answer: string | null;
+  readonly answeredBy: string | null;
+  readonly blocksBaseline: boolean;
+}
+
 export class ApiClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -353,8 +935,47 @@ export class ApiClient {
     return this.request('GET', '/projects');
   }
 
-  async createProject(input: { name?: string; description?: string }): Promise<Project> {
+  async createProject(input: { name?: string; description?: string } & Partial<ProvisionInput>): Promise<Project> {
     return this.request('POST', '/projects', input);
+  }
+
+  // ---- provisioning (EPIC-041 US1/US5 · contracts/provisioning-api.md) ----
+
+  async provisionProject(id: string, input: ProvisionInput): Promise<{ project: Project; record: ProvisioningRecord }> {
+    return this.request('POST', `/projects/${encodeURIComponent(id)}/provision`, input);
+  }
+
+  async listProvisioning(id: string): Promise<ProvisioningRecord[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(id)}/provisioning`);
+  }
+
+  // ---- connector credentials (EPIC-041 US2/US5) ----
+
+  async listConnectorCredentials(projectId: string, filters: CredentialFilters = {}): Promise<ConnectorCredential[]> {
+    const query = new URLSearchParams();
+    if (filters.revoked !== undefined) query.set('revoked', String(filters.revoked));
+    if (filters.label !== undefined && filters.label !== '') query.set('label', filters.label);
+    const encoded = query.toString();
+    const suffix = encoded === '' ? '' : `?${encoded}`;
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/connector-credentials${suffix}`);
+  }
+
+  async mintConnectorCredential(projectId: string, label: string): Promise<MintedConnectorCredential> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/connector-credentials`, { label });
+  }
+
+  async revokeConnectorCredential(id: string): Promise<ConnectorCredential> {
+    return this.request('POST', `/connector-credentials/${encodeURIComponent(id)}/revoke`);
+  }
+
+  // ---- generation from the project screen (EPIC-041 US4 · FR-LPW-041, FR-LPW-042) ----
+
+  async generateSpecification(projectId: string, requirementIds: string[]): Promise<Job> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/jobs/generate-specification`, { requirementIds });
+  }
+
+  async startRun(projectId: string, input: { mode?: string; stopRange?: string }): Promise<Run> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/runs`, input);
   }
 
   async getProject(id: string): Promise<Project> {
@@ -504,6 +1125,172 @@ export class ApiClient {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/runs`);
   }
 
+  // ---- execution timeline (EPIC-043) ----
+
+  async listExecutions(projectId: string, filters: ExecutionTimelineFilters = {}): Promise<ExecutionTimelinePage> {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== '') query.set(key, String(value));
+    }
+    const suffix = query.toString();
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/executions${suffix ? `?${suffix}` : ''}`);
+  }
+
+  async getExecutionEvents(projectId: string, executionId: string): Promise<ExecutionTimelineEvent[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/executions/${encodeURIComponent(executionId)}/events`);
+  }
+
+  async listWorkstationConnections(projectId: string): Promise<WorkstationConnection[]> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/workstation-connections`);
+  }
+
+  // EPIC-042 T1514 (`contracts/governance-api.md` §1) — the Constraints screen.
+
+  async listConstraints(projectId: string, filters: { kind?: ConstraintKind; status?: 'active' | 'retired' } = {}): Promise<ProjectConstraint[]> {
+    const query = new URLSearchParams();
+    if (filters.kind) query.set('kind', filters.kind);
+    if (filters.status) query.set('status', filters.status);
+    const qs = query.toString();
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/constraints${qs ? `?${qs}` : ''}`);
+  }
+
+  async createConstraint(projectId: string, input: { kind: ConstraintKind; title: string; body: string; order?: number }): Promise<ProjectConstraint> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/constraints`, input);
+  }
+
+  async updateConstraint(projectId: string, constraintId: string, patch: { title?: string; body?: string; order?: number }): Promise<ProjectConstraint> {
+    return this.request('PATCH', `/projects/${encodeURIComponent(projectId)}/constraints/${encodeURIComponent(constraintId)}`, patch);
+  }
+
+  async reorderConstraint(projectId: string, constraintId: string, order: number): Promise<ProjectConstraint> {
+    return this.updateConstraint(projectId, constraintId, { order });
+  }
+
+  async retireConstraint(projectId: string, constraintId: string): Promise<ProjectConstraint> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/constraints/${encodeURIComponent(constraintId)}/retire`);
+  }
+
+  async getPolicy(projectId: string): Promise<DecompositionPolicy> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/policy`);
+  }
+
+  async putPolicy(projectId: string, policy: Omit<DecompositionPolicy, 'version'>): Promise<DecompositionPolicy> {
+    return this.request('PUT', `/projects/${encodeURIComponent(projectId)}/policy`, policy);
+  }
+
+  async getConstitution(projectId: string): Promise<ConstitutionRender> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/constitution`);
+  }
+
+  // ---- epics and the Spec Journey Board (EPIC-044) ----
+
+  async listEpics(projectId: string, status?: EpicStatus): Promise<EpicList> {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/epics${query}`);
+  }
+
+  async createEpic(projectId: string, input: { title: string; description?: string }): Promise<Epic> {
+    return this.request('POST', `/projects/${encodeURIComponent(projectId)}/epics`, input);
+  }
+
+  async getEpic(epicId: string): Promise<EpicDetail> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}`);
+  }
+
+  async updateEpic(epicId: string, input: { title?: string; description?: string }): Promise<Epic> {
+    return this.request('PATCH', `/epics/${encodeURIComponent(epicId)}`, input);
+  }
+
+  async closeEpic(epicId: string): Promise<Epic> {
+    return this.request('POST', `/epics/${encodeURIComponent(epicId)}/close`);
+  }
+
+  async assignRequirementEpic(requirementId: string, epicId: string | null): Promise<{ id: string; epicId: string | null }> {
+    return this.request('PUT', `/requirements/${encodeURIComponent(requirementId)}/epic`, { epicId });
+  }
+
+  async assignSpecificationEpic(specificationId: string, epicId: string | null): Promise<{ id: string; epicId: string | null }> {
+    return this.request('PUT', `/specifications/${encodeURIComponent(specificationId)}/epic`, { epicId });
+  }
+
+  async getEpicStage(epicId: string): Promise<EpicStage> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/stage`);
+  }
+
+  async getBoard(projectId: string): Promise<BoardRead> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/epics/stages`);
+  }
+
+  // ---- artifacts (EPIC-045) ----
+
+  /** The Epic's synced files as a tree. Carries no content (`SC-ART-006`). */
+  async getEpicArtifacts(epicId: string): Promise<ArtifactTree> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/artifacts`);
+  }
+
+  /** One version, content included — fetched only when a reader opens a file. */
+  async getArtifactVersion(versionId: string): Promise<ArtifactVersion> {
+    return this.request('GET', `/artifacts/${encodeURIComponent(versionId)}`);
+  }
+
+  /**
+   * One Epic's task board (`FR-KAN-050`). A **session** read: a connector
+   * credential receives absence here, because `tasks.sync` is a write with no
+   * read beside it (`FR-KAN-071`).
+   */
+  async getEpicTasks(epicId: string): Promise<TaskBoard> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/tasks`);
+  }
+
+  /**
+   * Move a card (`FR-KAN-011` to `FR-KAN-016`).
+   *
+   * One round trip: the proposal is recorded, the event appended and the
+   * verdict returned. A permitted member's own move applies at once; a
+   * project policy can still ask for a second person, and the verdict says so.
+   */
+  async proposeTaskStatus(
+    taskId: string,
+    move: { expectedCurrentStatus: TaskBoardStatus; requestedStatus: TaskBoardStatus; reason: string },
+  ): Promise<TaskProposalOutcome> {
+    return this.request('POST', `/tasks/${encodeURIComponent(taskId)}/status-proposals`, move);
+  }
+
+  /**
+   * A second person answers a waiting proposal (`US4` sc. 3).
+   *
+   * Until this existed `approval_required` was terminal: a project requiring an
+   * approver froze its cards rather than gating them.
+   */
+  async adjudicateProposal(proposalId: string, decision: { approve: boolean; reason?: string }): Promise<TaskProposalOutcome> {
+    return this.request('POST', `/status-proposals/${encodeURIComponent(proposalId)}/adjudication`, decision);
+  }
+
+  /** What the board does not know (`FR-KAN-024`). */
+  async getTaskDisagreements(epicId: string): Promise<TaskDisagreements> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/tasks/disagreements`);
+  }
+
+  /** One Epic's task progress (`FR-KAN-055`). */
+  async getEpicTaskProgress(epicId: string): Promise<Progress> {
+    return this.request('GET', `/epics/${encodeURIComponent(epicId)}/tasks/progress`);
+  }
+
+  /** The project's, over the same rows and the same derivation (`FR-KAN-057`). */
+  async getProjectTaskProgress(projectId: string): Promise<Progress> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/tasks/progress`);
+  }
+
+  /** Syncs whose execution named no Epic of this project (`FR-ART-007`). */
+  async getUnboundArtifacts(projectId: string): Promise<UnboundArtifacts> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/artifacts/unbound`);
+  }
+
+  /** The project's task syncs that found no Epic (`FR-KAN-032`). */
+  async getUnboundTasks(projectId: string): Promise<UnboundTasks> {
+    return this.request('GET', `/projects/${encodeURIComponent(projectId)}/tasks/unbound`);
+  }
+
   async getRunReview(runId: string): Promise<ReviewSession> {
     return this.request('GET', `/runs/${encodeURIComponent(runId)}/review`);
   }
@@ -615,6 +1402,202 @@ export class ApiClient {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/publishes/preview`);
   }
 
+  // ---- requirement room (EPIC-033 US6) ----
+
+  /**
+   * `T403n` — the two projections the Room renders.
+   *
+   * Both are **reads of somebody else's derivation**: loop progress is
+   * `EPIC-030`'s, readiness is the Requirement Room backend's. The client adds
+   * no shaping, so a Room cannot end up displaying a fourth status or a
+   * differently-computed `ready` (`FR-RQR-074`).
+   *
+   * `workspaceId` is deliberately not a parameter — since `T1148` the server
+   * takes it from the session, and passing one would be a caller naming its own
+   * tenant.
+   */
+  async loopProgress(roomObjectId: string): Promise<LoopProgress[]> {
+    return this.request('GET', `/loop/objects/${encodeURIComponent(roomObjectId)}/progress`);
+  }
+
+  /**
+   * `T1169` — open a Requirement Room and take its first intent in one call.
+   *
+   * `workspaceId` is deliberately not a parameter, for the reason `loopProgress`
+   * gives: since `T1148` the server takes it from the session, and passing one
+   * would be a caller naming its own tenant.
+   */
+  /**
+   * `T1185` — the candidates a Room holds, with their epistemic labels.
+   *
+   * `RoomCandidate` deliberately has no `description`, `type` or `priority`:
+   * `FR-RQR-002` and `D-33` keep requirement text in `EPIC-007`'s register, and
+   * a client type carrying those fields is how a local cache starts.
+   */
+  async roomCandidates(roomObjectId: string): Promise<RoomCandidate[]> {
+    return this.request('GET', `/rooms/requirement/${encodeURIComponent(roomObjectId)}/candidates`);
+  }
+
+  /** `T1185` — `FR-RQR-030`. `null` clears, and clearing blocks baseline again. */
+  async setCandidateCriteria(
+    roomObjectId: string,
+    candidateId: string,
+    input: { acceptanceCriteria: readonly string[] | null; intendedForImplementation: boolean },
+  ): Promise<RoomCandidate> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/candidates/${encodeURIComponent(candidateId)}/criteria`,
+      input,
+    );
+  }
+
+  /**
+   * `T1193` — record a decision. Options and the choice travel together.
+   *
+   * `FR-RQR-023` keeps the options **not** chosen, and the service derives them
+   * from the difference — so all of them are sent, not just the winner.
+   */
+  async decideRoom(
+    roomObjectId: string,
+    input: {
+      options: readonly unknown[];
+      chosenOptionId: string;
+      rationale: string;
+      objectVersion?: number;
+    },
+  ): Promise<RecordedRoomDecision> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/decide`,
+      input,
+    );
+  }
+
+  /**
+   * `T1213` — the members this Room can freeze right now.
+   *
+   * Asked of the server rather than remembered, so a reload does not lose them
+   * and a stale version cannot be frozen.
+   */
+  async roomMembers(roomObjectId: string): Promise<BaselineMember[]> {
+    return this.request('GET', `/rooms/requirement/${encodeURIComponent(roomObjectId)}/members`);
+  }
+
+  /** `T1211` — the baselines approved for a project, superseded ones included. */
+  async roomBaselines(roomObjectId: string, projectId: string): Promise<ApprovedBaseline[]> {
+    const query = new URLSearchParams({ projectId }).toString();
+    return this.request(
+      'GET',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/baselines?${query}`,
+    );
+  }
+
+  /** `T1193` — the decisions recorded for a Room. */
+  async roomDecisions(roomObjectId: string): Promise<RecordedRoomDecision[]> {
+    return this.request('GET', `/rooms/requirement/${encodeURIComponent(roomObjectId)}/decisions`);
+  }
+
+  /**
+   * `T1193` — approve the set.
+   *
+   * Refuses until `EPIC-032` binds an `EvidenceContractSource` (`FR-RQR-053`),
+   * and the refusal is surfaced rather than swallowed.
+   */
+  async approveBaseline(
+    roomObjectId: string,
+    input: {
+      projectId: string;
+      rationale: string;
+      decisionId: string;
+      members: readonly { requirementVersionId: string; contentHash: string; candidateId: string }[];
+      evidenceContractRef: string;
+      /** `T1212` — the version this baseline declares it replaces. */
+      supersedes?: number;
+    },
+  ): Promise<unknown> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/baseline`,
+      input,
+    );
+  }
+
+  /**
+   * `T1207` — promote a candidate into `EPIC-007`'s register and freeze it.
+   *
+   * Returns the frozen version and its hash, which is exactly what a baseline
+   * member is made of.
+   */
+  async promoteCandidate(
+    roomObjectId: string,
+    candidateId: string,
+  ): Promise<{ requirementId: string; requirementVersionId: string; contentHash: string }> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/candidates/${encodeURIComponent(candidateId)}/promote`,
+      {},
+    );
+  }
+
+  /** `T1187` — the questions raised for a Room, answered or not. */
+  async roomClarifications(roomObjectId: string): Promise<RoomClarification[]> {
+    return this.request(
+      'GET',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/clarifications`,
+    );
+  }
+
+  /** `T1187` — answered in place. Who answered comes from the session. */
+  async answerClarification(
+    roomObjectId: string,
+    clarificationId: string,
+    answer: string,
+  ): Promise<RoomClarification> {
+    return this.request(
+      'POST',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/clarifications/${encodeURIComponent(clarificationId)}/answer`,
+      { answer },
+    );
+  }
+
+  async openRequirementRoom(input: {
+    projectId: string;
+    text: string;
+    sourceRef?: string;
+  }): Promise<{ roomObjectId: string }> {
+    return this.request('POST', '/rooms/requirement', input);
+  }
+
+  /**
+   * `T1171` — the workspace's Requirement Rooms, for the index.
+   *
+   * No `workspaceId` parameter, for the same reason as `openRequirementRoom`
+   * above: `EPIC-030` resolves it from the principal (`T1177`), so a caller
+   * cannot ask for another workspace's Rooms even by mistake.
+   */
+  async listRequirementRooms(): Promise<readonly RoomSummary[]> {
+    return this.request('GET', '/rooms/requirement');
+  }
+
+  async roomReadiness(
+    roomObjectId: string,
+    projectId: string,
+    evidenceContractRef?: string,
+  ): Promise<Readiness> {
+    // `T1207` — the Contract ref travels with the question. Without it the
+    // server cannot evaluate the Contract and answers "unevaluated", so the Room
+    // showed a blocker the API did not have. The UI and the API must be asking
+    // the same question or one of them is lying.
+    const query = new URLSearchParams({
+      projectId,
+      ...(evidenceContractRef === undefined ? {} : { evidenceContractRef }),
+    }).toString();
+    return this.request(
+      'GET',
+      `/rooms/requirement/${encodeURIComponent(roomObjectId)}/readiness?${query}`,
+    );
+  }
+
   // ---- engines (US8) ----
 
   async listEngines(): Promise<Engine[]> {
@@ -656,4 +1639,237 @@ export class ApiClient {
     if (error.isSessionExpiry()) this.onSessionExpired?.();
     return error;
   }
+
+  /**
+   * `T994s` (EPIC-034) - the Change Room's reads.
+   *
+   * Each returns `null` where the backend answers 404, because "not decided
+   * yet" and "not found" are the same HTTP status and different facts to a
+   * screen. The page renders the difference; a thrown error would darken the
+   * region instead, which would say the Room was broken rather than that the
+   * change is open.
+   *
+   * `changeRequest` does NOT swallow 404: a Room addressed by an id that does
+   * not resolve has nothing to render, and pretending otherwise would show an
+   * empty Room rather than saying the address is wrong.
+   */
+  async changeRequest(changeRequestId: string): Promise<ChangeRequestSummary> {
+    return this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}`);
+  }
+
+  /** `FR-CHR-040` - a POST, because it invokes a provider. */
+  async changeOptions(changeRequestId: string): Promise<ChangeOptionsShape> {
+    return this.request(
+      'POST',
+      `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/options`,
+    );
+  }
+
+  async changeImpact(changeRequestId: string): Promise<ChangeImpactSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/impact`),
+    );
+  }
+
+  async changeDecision(changeRequestId: string): Promise<ChangeDecisionSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/decision`),
+    );
+  }
+
+  async changeClosure(changeRequestId: string): Promise<ChangeClosureSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/change/requests/${encodeURIComponent(changeRequestId)}/closure`),
+    );
+  }
+
+  /**
+   * `T998z` — what the Defect Room page reads.
+   *
+   * Three reads for six regions, and the names match the page's `DefectRoomApi`
+   * exactly, so the shell passes this client straight through. `FR-SHL-003`
+   * forbids the shell reaching a domain endpoint, and an adapter renaming these
+   * in `area-views.tsx` would be that with an extra step — which is what
+   * `T996s` caught in `EPIC-034`.
+   *
+   * `workspaceId` is deliberately not a parameter, for the reason
+   * `loopProgress` gives.
+   */
+  async defect(defectId: string): Promise<DefectSummary> {
+    return this.request('GET', `/rooms/defect/${encodeURIComponent(defectId)}`);
+  }
+
+  /**
+   * `null` when nothing has been classified — not a 404.
+   *
+   * "This defect does not exist" and "nobody has judged it yet" are different
+   * answers, and the Room shows the second as a state rather than an error.
+   */
+  async defectClassification(defectId: string): Promise<DefectClassificationSummary | null> {
+    return this.absentAsNull(
+      this.request('GET', `/rooms/defect/${encodeURIComponent(defectId)}/classification`),
+    );
+  }
+
+  async defectEvidence(defectId: string): Promise<DefectEvidenceSummary> {
+    return this.request('GET', `/rooms/defect/${encodeURIComponent(defectId)}/evidence`);
+  }
+
+  /**
+   * A 404 becomes `null`; every other failure still throws.
+   *
+   * Narrow on purpose. Swallowing all errors here would turn an unreachable
+   * backend into an empty Room, and the whole point of the Room's error
+   * handling is that a person can tell those apart.
+   */
+  private async absentAsNull<T>(pending: Promise<T>): Promise<T | null> {
+    try {
+      return await pending;
+    } catch (error) {
+      const status = (error as { status?: number })?.status;
+      if (status === 404) return null;
+      throw error;
+    }
+  }
+}
+
+/** `T994s` - what the Change Room page reads. Carries no requirement text. */
+export interface ChangeRequestSummary {
+  id: string;
+  projectId: string;
+  targetBaselineId: string;
+  targetBaselineVersion: number;
+  requestedOutcome: string;
+  reason: string;
+  requester: string;
+  urgency: string;
+  state: string;
+  openQuestions: { id: string; question: string; answer: string | null }[];
+  rebasedFrom: number | null;
+}
+
+/** `FR-CHR-041` - one dimension's answer. `stated: false` is not-applicable. */
+export interface TradeOffShape {
+  readonly stated: boolean;
+  readonly detail: string;
+}
+
+/** `FR-CHR-042` - always a recommendation, computed server-side. */
+export interface ChangeOptionShape {
+  readonly optionId: string;
+  readonly summary: string;
+  readonly reasoning: string;
+  readonly tradeOffs: Readonly<Record<string, TradeOffShape>>;
+  readonly epistemic: 'recommendation';
+}
+
+/**
+ * What `POST .../options` answers. Mirrors `OptionsResult` on the server.
+ *
+ * `options` is `null` rather than `[]` when none were produced: "no options
+ * exist" and "none could be produced" are different claims, and the tuple on
+ * the server makes one option unrepresentable.
+ */
+export interface ChangeOptionsShape {
+  readonly available: boolean;
+  readonly options: readonly ChangeOptionShape[] | null;
+  readonly degradedReason: string | null;
+  readonly degradedKind: string | null;
+  readonly rejected: readonly { index: number; reason: string }[];
+}
+
+/** `T994s` - the impact view as the Room reads it. Carries no requirement text. */
+export interface ChangeImpactSummary {
+  areas: Record<
+    string,
+    { area: string; state: string; detail: string; itemCount: number | null }
+  >;
+  architecture: {
+    decisions: { reference: string; title: string }[] | null;
+    detail: string;
+    /** `FR-CHR-034` - one value, and there is no `passed` to receive. */
+    violationCheck: { status: string; because: string };
+  };
+}
+
+/** `FR-CHR-043` - what a decision retained, including what it declined. */
+export interface ChangeDecisionSummary {
+  decidedBy: string;
+  authorityBasis: string;
+  rationale: string;
+  chosenOption: { optionId: string; summary: string };
+  declinedOptions: { optionId: string; summary: string }[];
+}
+
+/** `BR-0048`'s four questions, as stored. */
+export interface ChangeClosureSummary {
+  whatChanged: string;
+  why: string;
+  evidenceRefs: string[];
+  supersedingBaselineId: string;
+  supersedingBaselineVersion: number;
+}
+
+/** `T998z` — what the Defect Room page reads. Carries no requirement text. */
+export interface DefectSummary {
+  id: string;
+  projectId: string;
+  epicId: string | null;
+  state: string;
+  origin: string;
+  originDetail?: string | null;
+  contestedArtifactRef: string;
+  /** `FR-DFR-024` — the version REPORTED, never silently re-targeted. */
+  contestedArtifactVersion: string;
+  severity: string;
+  reportedBy: string;
+  reportedAt: string;
+}
+
+/** `FR-DFR-022`, `FR-DFR-077` — one of three outcomes, and where it goes. */
+export interface DefectClassificationSummary {
+  id: string;
+  outcome: string;
+  destination: string;
+  approvedBehaviourRef: string | null;
+  /** `FR-DFR-021` — the absence is a finding, not a blank. */
+  absenceRecorded: boolean;
+  classifiedBy: string;
+  classifiedByKind: string;
+  /** `FR-DFR-023` — an agent may propose; the confirming actor must be human. */
+  proposedByAgent: boolean;
+  rationale: string;
+  /** `FR-DFR-024` — `null` means the version reported on the defect. */
+  evaluatedAgainstVersion: string | null;
+}
+
+/**
+ * What has been established about a defect: references, never content.
+ *
+ * Attestation payloads live in `EPIC-032` under the access rules of the
+ * artifact they concern (`FR-DFR-033`), and nothing here carries one.
+ */
+export interface DefectEvidenceSummary {
+  tests: {
+    id: string;
+    testRef: string;
+    contestedBehaviourRef: string;
+    firstObservedFailingAt: string;
+    lastRunOutcome: string;
+    lastRunEvidenceRef: string | null;
+  }[];
+  reproductions: {
+    id: string;
+    reproducible: string;
+    environment: string;
+    evidenceRefs: string[];
+    affectedBehaviourRef: string;
+    notAutomatableReason: string | null;
+  }[];
+  evidenceChecks: {
+    id: string;
+    path: string;
+    resolvedBy: string;
+    rationale: string;
+  }[];
 }

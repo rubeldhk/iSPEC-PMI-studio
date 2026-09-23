@@ -40,7 +40,7 @@ import { fileURLToPath } from 'node:url';
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PROJECT, renderAt, stubApi } from './harness';
-import type { ApiClient, Project } from '../../../src/services/api';
+import type { Project } from '../../../src/services/api';
 
 afterEach(cleanup);
 
@@ -236,7 +236,7 @@ const SHELL_SURFACES: readonly Surface[] = [
       {
         name: 'specified but not delivered — names the Epic that owes it',
         drive: async () => {
-          renderAt('/governance');
+          renderAt('/reports');
           await waitForIn(MAIN, /not available yet/i);
           return signature(MAIN);
         },

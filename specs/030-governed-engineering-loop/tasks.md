@@ -212,6 +212,51 @@ drive an object through every declared stage, and assert `git diff --stat backen
 
 ---
 
+## Phase R: Authority binding (`DEF-030-003` remediation)
+
+*Authorised by the Project Owner 2026-08-28, after the `R4` assessment found the transition path
+reading the actor's authorities from the request body while the adjudication path in the same module
+resolved them through `AuthorityPolicyPort`. Latent rather than live — the `AuthorityMap` is `{}` and
+refuses every transition — but it becomes live the moment the loop is configured.*
+
+- [X] T1156 [US1] Resolve the actor and their authorities in `backend/src/modules/loop/loop.service.ts` — an `ActingPrincipal` on all five entry points, `actor`/`actorAuthorities` removed from `TransitionInput` as `?: never`, `workspaceId` from the session, and `assertSameWorkspace` on every read (integration tests: T1160–T1162)
+- [X] T1157 [US1] Read `@Req()` and refuse without a session in `backend/src/modules/loop/loop.controller.ts`; drop `actor` and `actorAuthorities` from `TransitionBody` and strip identity fields from every body (integration test: T1163)
+- [X] T1158 Wire `WorkspaceBoundaryService` and `ADJUDICATION_AUTHORITY_POLICY` into `LoopService` in `backend/src/modules/loop/loop.module.ts` — **consumed, not re-implemented** — and add `backend/tests/helpers/loop-principals.ts` so a test describes a directory rather than a request (integration tests: T1160, T1162 — neither can pass unless both resolvers are wired)
+- [X] T1159 Update `backend/tests/integration/loop-reachability.spec.ts`, `loop-history-rebuild.spec.ts`, `loop-new-workflow-type.spec.ts` and `loop-performance.spec.ts` — a session and a directory where they used to send authorities per call
+- [X] T1160 [P] Write the failing integration test that the authority gate reads the policy in `backend/tests/integration/loop-authority-binding.spec.ts` — a configured workflow so the gate is actually reached, a refusal, a permitted control, a smuggled `actorAuthorities` that gains nothing, and the recorded actor and kind taken from the directory
+- [X] T1161 [P] Write the failing integration test that an unresolvable caller is refused — no principal, no directory wired, and an actor the directory does not know (same file)
+- [X] T1162 [P] Write the failing integration test that an object belongs to a workspace — cross-workspace read and transition refused with the opaque 404, the owner unaffected, and a declaration landing in the session's workspace (same file)
+- [X] T1163 [P] Write the failing integration test over HTTP — all five routes answer `401` unauthenticated, a session reaches the handler, and `TransitionBody` names neither `actor` nor `actorAuthorities` (same file)
+
+**Checkpoint**: both halves of this module resolve authorities from the same place. `DEF-030-003`
+closed. The `AuthorityMap` is still `{}` and still refuses every transition — this removed the
+escalation path, it did not configure the loop.
+
+---
+
+## Phase X20: `LoopStore` can list (consumer-driven, 2026-08-28)
+
+**Why**: `EPIC-033`'s Rooms index needs *"the `requirement-room` objects in this workspace, with
+their stage"*. `LoopStore` had `createObject` and `findObject` and nothing else, so the only way to
+reach an object was to already know its id. Recorded as `X20` when `EPIC-033` Phase 9 was drafted,
+authorised separately, and built here because the capability is this Epic's.
+
+The fourth dependency found this way, after `X7`, `X8` and `Y2` — each surfaced by a consumer trying
+to use something that had never existed, and each belonging to an Epic that closed without it.
+
+- [X] T1176 [P] Write the failing tests for workspace-scoped listing in `backend/tests/integration/loop-list-objects.spec.ts` — filters by type, **never returns another workspace's objects**, refuses an unknown type and an unresolvable principal, newest first
+- [X] T1177 Implement `LoopStore.listObjects` and `LoopService.listObjects` (integration test: T1176) — the workspace filter lives in the store's `where`, and the service takes **no workspace parameter**: it is resolved from the principal, so the call cannot be made wrongly
+
+**Mutation-proved**: dropping the workspace filter — the shape a *"filter it in the caller"* refactor
+would leave — fails the cross-workspace test with
+`expected [ 'sub_mine', 'sub_theirs' ] to deeply equal [ 'sub_mine' ]`.
+
+A list is the one read where a forgotten scope filter returns **more rows instead of failing**, so
+it looks like it works. `DEF-030-003` found three read routes that took an object id and no
+workspace; this one was written so the mistake is not available.
+
+---
+
 ## Phase N: Polish & Cross-Cutting Concerns
 
 **Purpose**: the measurements and mutation proofs the Epic is judged on
@@ -321,3 +366,122 @@ told you nothing, and this Epic's whole value to five other Epics is that its gu
   because an implementer should make the edit.
 - `T993a` comes first for a reason. The plan records the concurrent-session gate as **FAIL**, and
   every task after it writes application code into a checkout that cannot be asserted exclusive.
+
+## Phase C2A: Specification status-transition adjudication *(appended 2026-08-25)*
+
+**Why this phase exists.** `EPIC-037` Band A stopped before writing a line of code: `T1058` required
+consuming this Epic's adjudication and **there was nothing to consume**. This Epic evaluated loop
+stages (`Event`…`Outcome`) and exposed no specification-lifecycle proposal intake — 0 matches for
+`proposal` or `adjudicat` across the module. The two amendments Rev 3 §04 assigned here were never
+scheduled. This phase is the minimum that unblocks Band A, and nothing more.
+
+**Boundary**: no UI, no Decision Inbox, no Requirement Room, no `EPIC-037` work, and no unrelated
+open task of this Epic. `T988` and `T992` stay untouched.
+
+- [X] T1082 [P] Write failing contract tests in `packages/loop-contract/tests/adjudication.spec.ts` for the proposal-adjudication contract, per `FR-GEL-063`, `FR-GEL-064`, `FR-GEL-068` — the full intake field set, the **closed six-verdict** union, and that `SpecLifecycleState` and `LoopStage` are **distinct types with no conversion between them** (covers T1083)
+- [X] T1083 Define the adjudication contract in `packages/loop-contract/src/adjudication.ts` — `AdjudicationProposal`, `AdjudicationVerdict` (six variants), and the `LifecycleApplicationPort` this Epic calls (contract test: T1082). **No transport, no data access, no `backend/src` import**: `EPIC-037` must consume it without reaching this Epic's internals (`FR-GEL-073`)
+- [X] T1084 [P] Write failing unit tests in `backend/tests/unit/loop/separation-of-duties.spec.ts` per `FR-GEL-067` — an AI agent cannot approve its own proposal **under any policy**; a human proposer cannot when policy requires a distinct approver; identity is read from the **frozen** snapshot, not mutable display metadata (covers T1085)
+- [X] T1085 Implement separation-of-duties evaluation in `backend/src/modules/loop/separation-of-duties.ts`, defaulting to **distinct approver required** (unit test: T1084)
+- [X] T1086 [P] Write failing unit tests in `backend/tests/unit/loop/adjudicator.spec.ts` covering all six verdicts and their semantics per `FR-GEL-068`–`FR-GEL-070` — `validated` means valid **and not applied**; `approval_required` and `refused` both mean **no transition applied**; `inconsistent` means observed state contradicts the expectation; `reconciliation_required` means automated application is prohibited pending governed resolution (covers T1087)
+- [X] T1087 Implement `backend/src/modules/loop/adjudicator.service.ts` — intake, lifecycle validation delegated to `EPIC-009`, authority and gate evaluation reusing this Epic's existing `evaluateAuthority` and `evaluateGates`, separation of duties, approval routing, and verdict construction (unit test: T1086). **Hold no table of permitted transitions** (`FR-GEL-065`)
+- [X] T1088 [P] Write failing integration tests in `backend/tests/integration/loop/adjudication-application.spec.ts` per `FR-GEL-069` — a valid no-approval proposal is applied through `EPIC-009`; **an `EPIC-009` failure cannot yield `applied`**; an unknown outcome yields `reconciliation_required` (covers T1089)
+- [X] T1089 Implement the `EPIC-009` application step in `backend/src/modules/loop/lifecycle-application.adapter.ts` — a durable intent recorded **before** the call, `applied` returned **only** on confirmation, and `reconciliation_required` on timeout or unknown outcome (integration test: T1088). **`EPIC-009` exposes no shared transaction boundary**, so this is the explicit orchestration model the authorisation permits rather than a claimed atomicity that does not exist
+- [X] T1090 [P] Write failing integration tests in `backend/tests/integration/loop/adjudication-concurrency.spec.ts` per `FR-GEL-070`, `FR-GEL-071` — stale expected state yields `inconsistent` with nothing applied; an idempotent retry returns the **original** verdict without duplicating an approval or a transition; concurrent proposals cannot silently overwrite one another (covers T1091)
+- [X] T1091 Implement optimistic concurrency and idempotent adjudication keyed on proposal and idempotency key (integration test: T1090)
+- [X] T1092 [P] Write failing tests in `backend/tests/integration/loop/adjudication-evidence.spec.ts` per `FR-GEL-072` — intake, evaluation, approval, refusal and application each produce immutable evidence linking proposal, verdict and applied transition, and redaction does not break the chain (covers T1093)
+- [X] T1093 Additive migration creating `adjudication_records` with the existing `reject_mutation()` trigger **attached** — the function is reused, the trigger is new and grants nothing until this statement runs (integration test: T1092)
+- [X] T1094 [P] Write the failing architecture test in `backend/tests/architecture/adjudication-boundary.spec.ts` per `FR-GEL-073` — no consumer of `@pmi/loop-contract`'s adjudication types imports `backend/src/modules/loop/**`, and **no connector path invokes `EPIC-009`'s lifecycle service directly** to bypass adjudication
+- [X] T1095 Reuse `EPIC-024` authorisation at intake — tenant and workspace isolation, actor authority checked at **adjudication time** (unit test: T1086). **Create no independent authorisation model** (`FR-GEL-066`)
+
+---
+
+## Phase C2A-Closure — resolving `X1` and `X6` (authorised 2026-08-25)
+
+**Why this phase exists.** The C2A analyze session recorded two HIGH findings, and the project
+owner ruled that neither needs a product-scope decision: `X1` is a typed-contract correction
+required for deterministic event mapping, and `X6` is completion of the already-authorised minimum
+production capability — *"a decision engine constructed only by tests is not an exposed
+capability."*
+
+Every task below is paired with the test that proves it. `T1102` is the one that could not have
+been written before: unit tests could not catch `X6` because they **were** the manual construction.
+
+- [X] T1096 [P] Correct the refusal contract in `packages/loop-contract/src/adjudication.ts` — `refusalStage` (`validation` \| `approval` \| `transition`) selects the `EPIC-037` event; `refusalReasonCode` (eight codes) says why and never selects an event; `REFUSAL_STAGE_OF` derives one from the other so they cannot disagree *(tests: `packages/loop-contract/tests/refusal-mapping.spec.ts` — totality, determinism, distinctness; `backend/tests/integration/loop/adjudication-persistence.spec.ts` — the same vocabulary enforced in PostgreSQL)*
+- [X] T1097 Make `AdjudicationVerdict` a **closed discriminated union** in which invalid combinations cannot be constructed — `applied` requires `appliedTransitionId`, `refused` requires stage and code, `approval_required` requires a role, `inconsistent` requires a structured mismatch, `reconciliation_required` requires a structured cause, and every non-applied variant carries `appliedTransitionId?: never`; serialise both ways in `backend/src/modules/loop/adjudication-evidence.ts`; enforce the same invariants as CHECK constraints in `20260825120000_epic030_adjudication_refusal` *(tests: `backend/tests/integration/loop/adjudication-persistence.spec.ts` — all six round-trip, nine constraint refusals, and one positive control proving the constraints are not blanket refusals)*
+- [X] T1098 Implement the `EPIC-009` validity adapter `EpicNineLifecycleValidation` in `backend/src/modules/loop/adjudication.adapters.ts`, taking `permittedFrom` as an injected function so no transition table is duplicated *(tests: `backend/tests/unit/loop/adjudication-adapters.spec.ts` — swapping the injected function changes the answer, and an empty table permits nothing)*
+- [X] T1099 Implement the `EPIC-009` application adapter `EpicNineTransitionAdapter`, reporting a **null transition identity** rather than passing off the specification id, and resolving that to `application_transition_unidentified` *(tests: `adjudication-adapters.spec.ts` — the specification id is never forwarded; the outcome is reconciliation, never applied)*
+- [X] T1100 Implement `UnconfiguredGateOutcomes` for `EPIC-021`, reporting `unavailable` — distinct from `passed: false` — because EPIC-021 supplies no gate-outcome service *(tests: `adjudication-adapters.spec.ts` — refused/`validation`/`gate_outcomes_unavailable` end to end, and application is never reached)*
+- [X] T1101 Implement `AccessIntakeAuthorization` over `EPIC-024`'s `AccessEnforcementService`, plus `ConfiguredAuthorityPolicy` defaulting `autoApply` to **false** for any transition no rule names *(tests: `adjudication-adapters.spec.ts` — the exact artifact ref handed to EPIC-024, refusal propagates unsoftened, and an unconfigured transition auto-applies nothing)*
+- [X] T1102 Register every adapter and `ProposalAdjudicatorService` in the Nest graph (`loop.module.ts`), exporting **only** `PROPOSAL_ADJUDICATOR` *(test: `backend/tests/integration/loop/adjudication-composition.spec.ts` — boots the real `AppModule` with no overrides, resolves the adjudicator from DI, asserts all seven ports resolve to their real adapter classes, asserts the bypass-capable tokens are **not** exported, and observes EPIC-024 refusing an ungranted proposal and EPIC-009 being reached once a grant exists)*
+
+**Not closed by this phase, and reported rather than worked around:**
+
+- **`EPIC-021` supplies no gate-outcome service.** `backend/src/modules/reviews/` has no Nest module,
+  is imported by nothing, ships only `InMemoryGateOutcomeStore`, exposes no per-specification query,
+  and nothing writes `gate_outcomes`. The adapter therefore refuses. Until EPIC-021 ships one, **no
+  proposal can reach `applied` in production** — it is refused at the gate step.
+- **`EPIC-009` does not surface the transition it records.** `transition()` returns the
+  specification, `TRANSITION_RECORDER` is bound to an in-memory recorder, and there is no read
+  surface — so `appliedTransitionId` cannot be bound to an authoritative row.
+
+Both are dependency gaps in other Epics. Reproducing either Epic's policy inside EPIC-030 is what
+the authorisation forbids, so neither was filled here.
+
+
+---
+
+## Phase C2B — EPIC-021 / EPIC-009 dependency remediation (authorised 2026-08-26)
+
+**Only the self-contained correction was executed.** The definition-and-ownership check found that
+the remaining C2B work is owned elsewhere — see `analysis.md`, C2B session, findings `X9`–`X11`.
+
+- [X] T1103 Correct gate-unavailability semantics per `FR-GEL-074` — `GateOutcomePort` returns a typed `GateDisposition` (`passed` \| `failed` \| `pending` \| `unavailable` \| `stale`) bound to the requested transition; only `failed` refuses; the other three route to `reconciliation_required` with a structured cause; `gate_outcomes_unavailable` is removed from the refusal vocabulary in the contract **and** in the database (`20260826000000_epic030_gate_unavailability`) *(tests: `packages/loop-contract/tests/refusal-mapping.spec.ts` — unavailability is not a refusal code; `backend/tests/unit/loop/adjudication-adapters.spec.ts` — the full disposition matrix, failed vs unreadable; `backend/tests/integration/loop/adjudication-persistence.spec.ts` — the database refuses each gate cause as a refusal reason and accepts it as a reconciliation cause)*
+
+**Not executed — blocked on an epic-ownership decision:**
+
+- **X7 / EPIC-021 production gate-outcome capability** — the producer and the Prisma-backed stores
+  are deferred by `specs/021-review-gates-roles/closure.md` to **EPIC-014 F-11.2**.
+- **X8 / EPIC-009 durable transition identity** — the Prisma-backed recorder is deferred by
+  `specs/009-spec-lifecycle-versioning/closure.md` to **EPIC-014 F-11.2**, *"the same deferral every
+  closed epic carries"*.
+- **EPIC-014 F-11.2 contains no task for either.** Its tasks (`T151`–`T156`) confirm closure
+  records and run reviews, quickstarts and promotion. The work has a named owner and no schedule.
+
+---
+
+## Phase C2C — EPIC-030 integration (2026-08-26)
+
+*The consumption side of the owners' remediation. EPIC-030 changed no policy: it now reads answers
+that previously did not exist.*
+
+- [X] T1111 Consume the production capabilities — `EpicNinePersistentValidation` (state read from the rows the transition writes), `EpicTwentyOneGateOutcomes` (target-bound dispositions from EPIC-021), and `EpicNineTransactionalApplication` (`appliedTransitionId` taken **only** from EPIC-009's committed result). `LifecycleApplicationPort` now carries correlation, causation and idempotency so the transition can be traced to the proposal *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — the applied path plus failed, pending, stale, ungated, drift, unauthorised, retry, concurrency and immutability cases)*
+
+**One policy default was reversed, deliberately** — `ConfiguredAuthorityPolicy.autoApplyPermitted`
+now defaults to `true`. C2A set it to `false` on the reasoning that forgetting a rule should not
+authorise automatic application. With gates real and a human decision mandatory, that default made
+the governed path **unreachable**: no proposal could ever reach `applied`, and the C2C end-to-end
+proof failed on a policy default rather than on anything the remediation concerned. A default that
+makes the governed path unreachable is an off switch, not a safe default. `validated` is now the
+**configured exception**. `requiredAuthorities` still defaults to `[]`, unchanged.
+
+---
+
+## Phase C2D — security and source-of-truth closure (2026-08-27)
+
+- [X] T1117 Additive migration `20260827000000_epic030_application_policy` — `application_policies`, append-only with its trigger attached, versioned per `(workspace, artifact type, transition)`, with a CHECK refusing a permissive policy that names no approver *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — the policy record cannot be edited or deleted; auto-application with no approver is refused)*
+- [X] T1118 Implement `backend/src/modules/loop/application-policy.service.ts` — explicit, versioned, auditable policy. **`autoApplyPermitted` restored to `false`** (`X15`); "effective" is derived from the **latest version**, because an append-only table cannot flip an earlier row to disabled *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — no policy yields `validated`; a disabled policy applies nothing and the history is kept)*
+- [X] T1120 Bind `DurableApplicationPolicy` in `loop.module.ts` and make `AuthorityPolicyPort` tenant-scoped — the workspace is a **parameter**, not instance state, because the adjudicator is a singleton and a stashed workspace would be read by whichever request arrived next *(tests: `backend/tests/unit/loop/adjudication-adapters.spec.ts`, `backend/tests/integration/loop/adjudication-composition.spec.ts`)*
+
+## Phase C3B · frozen principal identity *(added 2026-08-27)*
+
+- [X] T1143 Consume resolved frozen identities in `backend/src/modules/loop/separation-of-duties.ts` — the sponsoring human counts on the proposer side, and no non-human principal may approve; adds `sponsor_cannot_approve_sponsored_proposal` to the refusal vocabulary in the contract and the database *(tests: `backend/tests/unit/loop/separation-of-duties.spec.ts`, including the case that passes every id comparison and must still refuse)*
+
+## Persistent store *(added 2026-08-29)*
+
+*`T1178` measured the cost of the in-memory default across the application: thirteen modules, none
+overridden at the composition root. `LOOP_STORE` was one, so a Room opened through the running
+application vanished on restart. `loop.module.ts` always said the composition root overrides this;
+no composition root ever did.*
+
+- [X] T1179 [P] Write the failing integration tests for the persistent loop store in `backend/tests/integration/loop-prisma-store.spec.ts` — creation, listing, conditional advance under twenty concurrent writers, real rollback, and survival across a new client
+- [X] T1180 Implement `PrismaLoopStore` in `backend/src/modules/loop/loop.store.ts` and wire it at the seam in `loop.module.ts` on `DATABASE_URL` (integration test: T1179) — `advanceObject` is one `updateMany`, never read-then-write; mutation-proved both ways

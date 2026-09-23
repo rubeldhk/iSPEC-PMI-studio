@@ -16,6 +16,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { Client } from 'pg';
 import { PrismaClient } from '@prisma/client';
 import {
@@ -55,7 +56,7 @@ suite('T147 · SC-009 — p95 under 1s with 500 specifications in one project', 
   let store: PrismaSpecificationStore;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
 
     const db = new Client({ connectionString: url });

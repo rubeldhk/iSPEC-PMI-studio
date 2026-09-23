@@ -1,0 +1,530 @@
+/**
+ * `T996i` (EPIC-034) — `POST /rooms/change/requests`, against the wiring
+ * production actually runs.
+ *
+ * Two things are proven here that no unit test can prove, and that the bare
+ * composed app in `change-room-reachability.spec.ts` cannot either:
+ *
+ * **The status codes are the real ones.** That harness composes `AppModule`
+ * without `ErrorFilter`, so every product controller reports 500 there. This
+ * one installs what `main.ts` installs.
+ *
+ * **The change request survives the process.** `T1178` is the reason: thirteen
+ * stores defaulted to in-memory, every test passed, and a human opened the
+ * application and found that nothing persisted. Here the row is written through
+ * the endpoint and read back through a *different* request, so an in-memory
+ * store bound by mistake would fail this file rather than a later human.
+ */
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import request from 'supertest';
+import { Client } from 'pg';
+import type { INestApplication } from '@nestjs/common';
+import { startAuthenticatedApp, type AuthenticatedApp } from '../helpers/authenticated-app.js';
+
+const PREFIX = 'v1';
+const WS = 'ws_change';
+const USER = 'u_change';
+const PROJECT = 'pr_change';
+const BASELINE = 'b_change_1';
+
+const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
+const suite = noRuntime ? describe.skip : describe;
+
+let harness: AuthenticatedApp;
+let app: INestApplication;
+
+beforeAll(async () => {
+  if (noRuntime) return;
+  harness = await startAuthenticatedApp({
+    prefix: PREFIX,
+    workspaceId: WS,
+    userId: USER,
+    async seed(db, ids) {
+      await db.query(
+        `INSERT INTO "projects" ("id","workspaceId","name","ownerUserId","updatedAt")
+         VALUES ($1,$2,'Change',$3,now())`,
+        [PROJECT, ids.workspaceId, ids.userId],
+      );
+    },
+  });
+  app = harness.app;
+}, 300_000);
+
+afterAll(async () => {
+  await harness?.close();
+}, 120_000);
+
+const body = (over: Record<string, unknown> = {}) => ({
+  projectId: PROJECT,
+  roomObjectId: 'ro_change_1',
+  targetBaselineId: BASELINE,
+  targetBaselineVersion: 2,
+  requestedOutcome: 'require notification within one hour',
+  reason: 'the regulator shortened the window',
+  ...over,
+});
+
+suite('T996i · the route RULE-02 leads to', () => {
+  it('refuses a request with no session', async () => {
+    // `DEF-037-001` began as an unauthenticated GET that returned 200 with real
+    // data. 401, and nothing written.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .send(body());
+    expect(res.status).toBe(401);
+  });
+
+  it('records one for a signed-in caller', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body());
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.targetBaselineId).toBe(BASELINE);
+    expect(res.body.targetBaselineVersion).toBe(2);
+    expect(res.body.state).toBe('open');
+  });
+
+  it('takes the requester and the workspace from the session, not the body', async () => {
+    // `T1148`, `DEF-033-001`. A body that looks authoritative because nothing
+    // visibly takes it away is how a caller writes into a workspace it cannot
+    // see.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ requester: 'u_someone_else', workspaceId: 'ws_elsewhere' }));
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.requester).toBe(USER);
+    expect(res.body.workspaceId).toBe(WS);
+  });
+
+  it('refuses one with no baseline', async () => {
+    // `FR-CHR-010` at the boundary, not only in the service.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: undefined, targetBaselineVersion: undefined }));
+
+    expect(res.status).toBe(400);
+  });
+});
+
+suite('T996i · and it is visible afterwards', () => {
+  it('reads back what a previous request wrote', async () => {
+    // The persistence proof. A different HTTP request, so nothing in the
+    // service's own memory can satisfy it.
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests`)
+      .query({ baselineId: BASELINE })
+      .set('Cookie', harness.cookie);
+
+    expect(res.status).toBeLessThan(300);
+    expect(Array.isArray(res.body)).toBe(true);
+    // Three were raised above; the two that succeeded are open against this
+    // baseline. `SC-CHR-001` — visible as traceable change control.
+    expect(res.body.length).toBeGreaterThanOrEqual(2);
+    expect(res.body.every((row: { requester: string }) => row.requester === USER)).toBe(true);
+  });
+
+  it('and the row is in PostgreSQL, not in a process', async () => {
+    // The assertion the round-trip above does NOT make. Both requests hit the
+    // same running application, so a store bound in-memory by mistake would
+    // satisfy it perfectly — and that is precisely the mistake `T1178` found,
+    // after every test passed and a human restarted the application.
+    //
+    // Reading the table directly is the only version of this proof that an
+    // in-memory store cannot pass.
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const rows = await db.query(
+        'SELECT "requester", "state", "targetBaselineVersion" FROM "change_requests" WHERE "workspaceId" = $1 AND "targetBaselineId" = $2',
+        [WS, BASELINE],
+      );
+      expect(rows.rowCount).toBeGreaterThanOrEqual(2);
+      expect(rows.rows[0]?.requester).toBe(USER);
+      expect(rows.rows[0]?.state).toBe('open');
+    } finally {
+      await db.end();
+    }
+  });
+
+  it('requires the baseline to be named', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(400);
+  });
+
+  it('refuses to list without a session', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests`)
+      .query({ baselineId: BASELINE });
+    expect(res.status).toBe(401);
+  });
+});
+
+suite('T996q · the blast radius, before the decision', () => {
+  let requestId = '';
+
+  it('has nothing to show before anything is computed', async () => {
+    // 404 rather than an empty view. Eight areas with nothing in them would
+    // report a clean blast radius nobody computed — `FR-CHR-032`'s confusion,
+    // arriving one level up.
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_impact' }));
+    requestId = String(raised.body.id);
+
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(404);
+  });
+
+  it('computes a view spanning all eight areas', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.status).toBeLessThan(300);
+    expect(Object.keys(res.body.areas).sort()).toEqual(
+      ['architecture', 'code', 'operations', 'release', 'requirements', 'specifications', 'tasks', 'tests'],
+    );
+  });
+
+  it('and every area is unknown, because no impact source is bound here', async () => {
+    // `FR-CHR-032` in the running application. The three seams are deliberately
+    // unfilled (`EPIC-020`, `EPIC-011`, `EPIC-016` owe them), and the honest
+    // rendering of that is eight `unknown` rows with a reason — never eight
+    // clean ones.
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    const areas = Object.values(res.body.areas) as { state: string; detail: string; itemCount: number | null }[];
+    expect(areas).toHaveLength(8);
+    expect(areas.every((a) => a.state === 'unknown')).toBe(true);
+    expect(areas.every((a) => a.itemCount === null)).toBe(true);
+    expect(areas.every((a) => a.detail.includes('EPIC-020'))).toBe(true);
+  });
+
+  it('states that the architecture-violation check has not run', async () => {
+    // `FR-CHR-034`. The panel a reviewer would otherwise read as clean.
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.body.architecture.violationCheck.status).toBe('not-run');
+    expect(res.body.architecture.violationCheck.because).toContain('BR-0073');
+    expect(res.body.architecture.decisions).toBeNull();
+  });
+
+  it('recomputing retains the earlier snapshot rather than replacing it', async () => {
+    // `FR-CHR-035`. The row count is the assertion: an overwrite would keep it
+    // at one, and a decision could no longer be read against what was known.
+    const first = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+
+    const again = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${requestId}/impact`)
+      .set('Cookie', harness.cookie);
+    expect(again.status).toBeLessThan(300);
+    expect(again.body.id).not.toBe(first.body.id);
+
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const views = await db.query(
+        'SELECT "id" FROM "change_impact_views" WHERE "changeRequestId" = $1',
+        [requestId],
+      );
+      expect(views.rowCount).toBe(2);
+      // Eight area rows per view, written individually so the database CHECK
+      // can enforce FR-CHR-032 on each.
+      const areas = await db.query(
+        'SELECT "state", "unknownReason" FROM "change_impact_areas" WHERE "impactViewId" = $1',
+        [first.body.id],
+      );
+      expect(areas.rowCount).toBe(8);
+      // `change_impact_areas_unknown_states_say_why` would have rejected the
+      // insert otherwise — this asserts the constraint was satisfied, not
+      // bypassed.
+      expect(areas.rows.every((r: { unknownReason: string | null }) => r.unknownReason)).toBe(true);
+    } finally {
+      await db.end();
+    }
+  });
+
+  it('refuses a change request in another workspace as absent', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/cr_not_ours/impact`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(404);
+  });
+
+  it('refuses both routes without a session', async () => {
+    const read = await request(app.getHttpServer()).get(
+      `/${PREFIX}/rooms/change/requests/${requestId}/impact`,
+    );
+    const write = await request(app.getHttpServer()).post(
+      `/${PREFIX}/rooms/change/requests/${requestId}/impact`,
+    );
+    expect(read.status).toBe(401);
+    expect(write.status).toBe(401);
+  });
+});
+
+suite('T996x · two or more options, or a stated reason', () => {
+  let optionsRequestId = '';
+
+  beforeAll(async () => {
+    if (noRuntime) return;
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_options' }));
+    optionsRequestId = String(raised.body.id);
+  }, 120_000);
+
+  it('answers 200 with no options, because no provider is bound', async () => {
+    // The degraded response is a success, not an error. A 502 would say the
+    // request failed; what happened is that no options were produced, which is
+    // a fact the caller can act on.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${optionsRequestId}/options`)
+      .set('Cookie', harness.cookie);
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.available).toBe(false);
+    expect(res.body.degradedKind).toBe('gateway-unbound');
+    expect(res.body.degradedReason).toContain('EPIC-028');
+  });
+
+  it('and options are null, never a pair invented to fill the field', async () => {
+    // `FR-CHR-040` unmet is reported as unmet. A synthesised alternative would
+    // be a decision presenting itself as a choice (`BR-0023`).
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${optionsRequestId}/options`)
+      .set('Cookie', harness.cookie);
+    expect(res.body.options).toBeNull();
+  });
+
+  it('a change request in another workspace is absent', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/cr_not_ours/options`)
+      .set('Cookie', harness.cookie);
+    expect(res.status).toBe(404);
+  });
+
+  it('and no session is refused', async () => {
+    const res = await request(app.getHttpServer()).post(
+      `/${PREFIX}/rooms/change/requests/${optionsRequestId}/options`,
+    );
+    expect(res.status).toBe(401);
+  });
+});
+
+suite('T994q · the four commands', () => {
+  let commandRequestId = '';
+
+  beforeAll(async () => {
+    if (noRuntime) return;
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_commands' }));
+    commandRequestId = String(raised.body.id);
+  }, 120_000);
+
+  it('mounts all four', async () => {
+    // Tier 1. Four routes that exist in a controller and are reachable from
+    // nowhere is the defect this repository has recorded seven times.
+    for (const verb of ['decide', 'rebase', 'apply', 'close']) {
+      const res = await request(app.getHttpServer())
+        .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/${verb}`)
+        .set('Cookie', harness.cookie)
+        .send({});
+      expect(res.status, `${verb} is not mounted`).not.toBe(404);
+    }
+  });
+
+  it('refuses all four without a session', async () => {
+    for (const verb of ['decide', 'rebase', 'apply', 'close']) {
+      const res = await request(app.getHttpServer()).post(
+        `/${PREFIX}/rooms/change/requests/${commandRequestId}/${verb}`,
+      );
+      expect(res.status, `${verb} answered without a session`).toBe(401);
+    }
+  });
+
+  it('decide refuses while EPIC-031 is unbound, rather than deciding', async () => {
+    // The honest state of this deployment. A permissive default would be an
+    // unauthorised approval that looked exactly like an authorised one.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/decide`)
+      .set('Cookie', harness.cookie)
+      .send({
+        decisionId: 'dec_x',
+        impactViewId: 'iv_x',
+        objectVersion: 1,
+        options: [],
+        chosenOptionId: 'a',
+        rationale: 'because',
+      });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(JSON.stringify(res.body)).toMatch(/EPIC-031|not among the options/);
+  });
+
+  it('close refuses while EPIC-032 is unbound, rather than closing', async () => {
+    // `SC-CHR-005` — zero changes close with an unmet contract, and an unbound
+    // source cannot say the contract is met.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/close`)
+      .set('Cookie', harness.cookie)
+      .send({
+        evidenceContractRef: 'ec_1',
+        whatChanged: 'the window shortened',
+        why: 'the regulator asked',
+        validatedBy: ['ev_1'],
+        supersedingBaselineId: 'b_2',
+        supersedingBaselineVersion: 2,
+      });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(JSON.stringify(res.body)).toContain('EPIC-032');
+  });
+
+  it('rebase names the baseline it moves onto, or is refused', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${commandRequestId}/rebase`)
+      .set('Cookie', harness.cookie)
+      .send({ toBaselineId: 'b_next' });
+    expect(res.status).toBe(400);
+  });
+
+  it('and every command is absent for a change in another workspace', async () => {
+    for (const verb of ['decide', 'rebase', 'apply', 'close']) {
+      const res = await request(app.getHttpServer())
+        .post(`/${PREFIX}/rooms/change/requests/cr_not_ours/${verb}`)
+        .set('Cookie', harness.cookie)
+        .send({});
+      expect(res.status, `${verb} leaked existence`).toBe(404);
+    }
+  });
+});
+
+suite('T1215-T1218 · the paths convergence found unreachable', () => {
+  let cid = '';
+
+  beforeAll(async () => {
+    if (noRuntime) return;
+    const raised = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_converge', questions: ['which currencies?'] }));
+    cid = String(raised.body.id);
+  }, 120_000);
+
+  it('all four are mounted', async () => {
+    // `/speckit-converge` found each of these built, tested and reachable from
+    // nowhere. A test that only proved the service works would have passed
+    // throughout — which is how they got here.
+    //
+    // Against a throwaway request, because probing `/withdraw` **withdraws**.
+    // The first draft used the shared fixture and the later withdrawal case
+    // then failed with "this one is withdrawn" — a mount probe with a side
+    // effect, which is its own small lesson about what "just checking it is
+    // there" costs on a POST.
+    const probe = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests`)
+      .set('Cookie', harness.cookie)
+      .send(body({ targetBaselineId: 'b_probe' }));
+    const probeId = String(probe.body.id);
+
+    const paths = [
+      `rooms/change/requests/${probeId}/questions/q_1/answer`,
+      `rooms/change/requests/${probeId}/withdraw`,
+      `rooms/change/requests/${probeId}/replan`,
+      `rooms/change/requests/${probeId}/trace`,
+    ];
+    for (const path of paths) {
+      const res = await request(app.getHttpServer())
+        .post(`/${PREFIX}/${path}`)
+        .set('Cookie', harness.cookie)
+        .send({});
+      expect(res.status, `${path} is not mounted`).not.toBe(404);
+    }
+  });
+
+  it('and none of them answers without a session', async () => {
+    for (const path of [`${cid}/withdraw`, `${cid}/replan`, `${cid}/trace`]) {
+      const res = await request(app.getHttpServer()).post(
+        `/${PREFIX}/rooms/change/requests/${path}`,
+      );
+      expect(res.status, `${path} answered unauthenticated`).toBe(401);
+    }
+  });
+
+  it('answering a question that exists records the answer', async () => {
+    const before = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${cid}`)
+      .set('Cookie', harness.cookie);
+    const questionId = before.body.openQuestions?.[0]?.id;
+    expect(questionId, 'the fixture carries no open question').toBeTruthy();
+
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/questions/${questionId}/answer`)
+      .set('Cookie', harness.cookie)
+      .send({ answer: 'Sterling only.' });
+
+    expect(res.status).toBeLessThan(300);
+    expect(res.body.openQuestions[0].answer).toBe('Sterling only.');
+    // From the session, never the body.
+    expect(res.body.openQuestions[0].answeredBy).toBe(USER);
+  });
+
+  it('a re-plan obligation is refused before the change is decided', async () => {
+    // It belongs to a decision. Recorded without one it would name work arising
+    // from a change nobody approved.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/replan`)
+      .set('Cookie', harness.cookie)
+      .send({ affectedSpecificationId: 'spec_1', whatMustChange: 'x', why: 'y' });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/decided change/i);
+  });
+
+  it('tracing refuses while EPIC-011’s link writer is unbound', async () => {
+    // Rather than recording locally. A trace nobody else can traverse is not a
+    // trace, and a local table for it is the second link store T994n forbids.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/trace`)
+      .set('Cookie', harness.cookie)
+      .send({ artifacts: [{ type: 'specification', id: 'spec_1' }] });
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toContain('EPIC-011');
+  });
+
+  it('withdrawal is a state change, and the analysis survives it', async () => {
+    // Last, because it closes the request the cases above use.
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/change/requests/${cid}/withdraw`)
+      .set('Cookie', harness.cookie)
+      .send({});
+
+    expect(res.status, JSON.stringify(res.body)).toBeLessThan(300);
+    expect(res.body.state).toBe('withdrawn');
+    expect(res.body.openQuestions[0].answer).toBe('Sterling only.');
+
+    // Retained, not deleted: still readable after withdrawal.
+    const reread = await request(app.getHttpServer())
+      .get(`/${PREFIX}/rooms/change/requests/${cid}`)
+      .set('Cookie', harness.cookie);
+    expect(reread.status).toBeLessThan(300);
+    expect(reread.body.state).toBe('withdrawn');
+  });
+});

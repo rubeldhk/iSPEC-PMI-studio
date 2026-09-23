@@ -78,3 +78,48 @@ generation worker seam; frontend lifecycle surface → EPIC-010.
 ### Recommended Next Task
 
 `/speckit-implement EPIC-010 EPIC-012` — the surface wave; both need this epic and it now exists.
+
+---
+
+# Reopening record — C2C dependency remediation (2026-08-26)
+
+**The closure above stands.** Nothing in it is amended, and no task recorded there is reopened.
+This Epic was reopened for **one** gap that its own closure named and assigned elsewhere.
+
+## What the closure deferred, and what happened to it
+
+The closure recorded: *"The one recorded seam is the platform-wide composition root (Prisma-backed
+stores + recorder), the same deferral every closed epic carries — owner **EPIC-014 F-11.2**."*
+
+`EPIC-037` then tried to consume a governed lifecycle transition and could not, because the
+consequence of that deferral was sharper than the wording suggested:
+
+- `SpecificationLifecycleService.transition()` returned the **specification**, discarding the
+  `TransitionRecord` the machine had just produced — so no caller could name the transition it had
+  caused (`X8`).
+- `TRANSITION_RECORDER` was bound to `InMemoryTransitionRecorder`, so the id identified nothing
+  durable even once exposed.
+- State and evidence were two writes in two stores with **no shared transaction**, so a failure
+  between them could leave a silent state change or evidence for a change that never landed.
+
+**EPIC-014 F-11.2 contained no task for any of it** — its tasks confirm closure records and run
+reviews, quickstarts and promotion. The work had a named owner and no schedule.
+
+The project owner's C2C ownership decision resolved this: **EPIC-009 owns lifecycle persistence,
+atomic state-and-transition recording and durable transition identity.** EPIC-014 F-11.2 owns
+composition-root wiring and activation only.
+
+## What this reopening delivered
+
+- `T1104` — additive migration binding causal and version identity to `lifecycle_transitions`.
+- `T1105` — `PrismaLifecycleTransitionRepository`, an EPIC-009-owned **unit of work**: the state
+  change and the transition record share one transaction, or neither commits.
+- `T1106` — the seven proofs, against real PostgreSQL.
+
+**Scope**: the lifecycle path only. `SPECIFICATION_STORE` remains bound to the in-memory store —
+the wider store swap is still EPIC-014's, and was deliberately not taken here.
+
+## Readiness
+
+This Epic returns to **reopened-remediation** state until `T1104`–`T1106` are confirmed with the
+rest of C2C. Previously completed tasks remain completed; the new tasks determine the new state.

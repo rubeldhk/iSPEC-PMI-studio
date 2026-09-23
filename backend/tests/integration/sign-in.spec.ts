@@ -19,6 +19,7 @@
  */
 import 'reflect-metadata';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,7 +44,7 @@ suite('T830 · DEF-005-001 · the composed application can be signed into (BR-00
   let base = '';
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
 
     // The same migration sequence `prisma migrate deploy` runs (T457 precedent).
     const db = new Client({ connectionString: container.getConnectionUri() });

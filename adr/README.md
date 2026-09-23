@@ -36,14 +36,14 @@ does not depend on its own product to govern itself.
 | [ADR-0007](./ADR-0007-spec-kit-embedded-engine.md) | Spec Kit as an embedded engine, not an application dependency | Accepted | 2026-08-17 |
 | [ADR-0008](./ADR-0008-project-execution-environment-abstraction.md) | ProjectExecutionEnvironment abstraction | Accepted | 2026-08-17 |
 | [ADR-0009](./ADR-0009-persistent-project-state-vs-ephemeral-execution.md) | Persistent project state versus ephemeral agent execution | Accepted | 2026-08-17 |
-| [ADR-0010](./ADR-0010-pmi-studio-mcp-architecture.md) | PMI Studio MCP architecture | Open | 2026-08-17 |
+| [ADR-0010](./ADR-0010-pmi-studio-mcp-architecture.md) | PMI Studio MCP architecture | Accepted — closed as delivered by `EPIC-043` | 2026-09-04 |
 | [ADR-0011](./ADR-0011-agent-context-authorization.md) | Agent context authorization | Open | 2026-08-17 |
 | [ADR-0012](./ADR-0012-agent-credential-isolation.md) | Agent credential isolation | Accepted | 2026-08-17 |
 | [ADR-0013](./ADR-0013-controlled-network-egress.md) | Controlled network egress | Accepted | 2026-08-17 |
 | [ADR-0014](./ADR-0014-source-of-truth-boundaries.md) | Source-of-truth boundaries between PostgreSQL, Git, Spec Kit and the agent workspace | Accepted | 2026-08-17 |
 | [ADR-0015](./ADR-0015-requirement-change-defect-governance-authority.md) | Requirement, Change and Defect governance authority | Accepted | 2026-08-17 |
 | [ADR-0016](./ADR-0016-tdd-defect-execution-policy.md) | TDD defect execution policy | Open | 2026-08-17 |
-| [ADR-0017](./ADR-0017-interactive-workspace-vs-autonomous-sandbox.md) | Interactive developer workspace versus autonomous agent sandbox | Open | 2026-08-17 |
+| [ADR-0017](./ADR-0017-interactive-workspace-vs-autonomous-sandbox.md) | Interactive developer workspace versus autonomous agent sandbox | Accepted | 2026-09-04 |
 | [ADR-0018](./ADR-0018-governed-engineering-loops.md) | Governed Engineering Loops as a shared workflow abstraction | Open | 2026-08-17 |
 | [ADR-0019](./ADR-0019-context-engine-composition.md) | Context Engine composition — four capabilities, not one store | Open | 2026-08-17 |
 | [ADR-0020](./ADR-0020-engineering-expert-model.md) | Engineering Expert model for registered agents | Accepted | 2026-08-17 |
@@ -56,6 +56,7 @@ does not depend on its own product to govern itself.
 | [ADR-0027](./ADR-0027-durable-agent-session.md) | Durable Agent Session independent of the execution provider | Accepted | 2026-08-21 |
 | [ADR-0028](./ADR-0028-application-ux-architecture.md) | Application UX architecture as a document separate from the design system | Accepted | 2026-08-21 |
 | [ADR-0029](./ADR-0029-target-product-versus-release-scope.md) | Target-product scope versus release scope versus declared Epic scope | Accepted | 2026-08-21 |
+| [ADR-0030](./ADR-0030-local-first-execution-and-integration-contract.md) | Local-first execution and the PMI integration contract | Accepted | 2026-09-03 |
 
 > **ADR-0006 to ADR-0022 added 2026-08-17** by EPIC-027 (`T627`, `T659`) under decision `D-35`.
 > Native §27 names twelve subjects and Cosmos §9 names five more; all seventeen are recorded now,
@@ -83,3 +84,12 @@ does not depend on its own product to govern itself.
 >
 > `ADR-0002` remains extended — never superseded — by `ADR-0013` and now also by `ADR-0024`
 > (Workspace Fabric adds execution modes beside the container sandbox, not beneath it).
+
+> **ADR-0030 added 2026-09-03** by `EPIC-041` `/speckit-plan` under decision `D-47` (PMI-DOC-007
+> v1.0, the local-first replan). It records the inversion the replan makes: controlled-local is the
+> default execution mode, the project directory is the durable substrate for content, and agents
+> reach PMI Studio only through a credentialed integration contract. Two records are **amended in
+> place, dated** — `ADR-0009` (its *"volumes are cache only"* rule is scoped to managed mode) and
+> `ADR-0024` (the default flips; its open assurance item closes with one field). `ADR-0017` gains an
+> owner and moves to Accepted at `EPIC-041`'s closure; `ADR-0010` closes with `EPIC-043`.
+> `ADR-0002` is still extended, never superseded — the sandbox stays as an optional mode.

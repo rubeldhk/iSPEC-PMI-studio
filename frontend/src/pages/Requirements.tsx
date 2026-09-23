@@ -13,7 +13,7 @@
  * FR-DS-012), an empty result that explains itself (FR-DS-021).
  */
 import { useEffect, useState, type ReactElement } from 'react';
-import { ApiError, type ApiClient, type Requirement, type RequirementFilters } from '../services/api';
+import { ApiError, type ApiClient, type Epic, type Requirement, type RequirementFilters } from '../services/api';
 import { Button } from '../design/components/Button';
 import { EmptyState } from '../design/components/EmptyState';
 import { FormField } from '../design/components/FormField';
@@ -27,18 +27,34 @@ export interface RequirementsPageProps {
   projectId: string;
   /** Optional hook so a shell can open the editor for a row. */
   onEdit?: (requirement: Requirement) => void;
+  /** The signed-in user; when they own the project, each row offers the Epic assignment (FR-EPB-023, T1614). */
+  currentUserId?: string | undefined;
 }
 
 const TYPES = ['business', 'functional', 'non_functional', 'constraint'];
 const PRIORITIES = ['p1', 'p2', 'p3'];
 const STATUSES = ['active', 'retired'];
 
-export function RequirementsPage({ api, projectId, onEdit }: RequirementsPageProps): ReactElement {
+export function RequirementsPage({ api, projectId, onEdit, currentUserId }: RequirementsPageProps): ReactElement {
   const [rows, setRows] = useState<Requirement[] | null>(null);
   const [type, setType] = useState('');
   const [priority, setPriority] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [epics, setEpics] = useState<Epic[]>([]);
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+
+  // EPIC-044 T1614 (FR-EPB-023): the Epics and the owner are read beside the register; if either
+  // read fails the rows still list, and the assignment control simply does not appear.
+  useEffect(() => {
+    if (currentUserId === undefined) return;
+    void (async (): Promise<void> => {
+      const [e, p] = await Promise.allSettled([api.listEpics(projectId), api.getProject(projectId)]);
+      if (e.status === 'fulfilled') setEpics(e.value.epics);
+      if (p.status === 'fulfilled') setOwnerUserId(p.value.ownerUserId);
+    })();
+  }, [api, projectId, currentUserId]);
 
   useEffect(() => {
     const filters: RequirementFilters = {
@@ -53,7 +69,10 @@ export function RequirementsPage({ api, projectId, onEdit }: RequirementsPagePro
         setError(err instanceof ApiError ? err.message : 'Could not load requirements.');
       }
     })();
-  }, [api, projectId, type, priority, status]);
+  }, [api, projectId, type, priority, status, reload]);
+
+  const canAssign = currentUserId !== undefined && ownerUserId !== null && currentUserId === ownerUserId;
+  const assignable = epics.filter((e) => e.status === 'active');
 
   return (
     <section className="ds-stack">
@@ -112,6 +131,8 @@ export function RequirementsPage({ api, projectId, onEdit }: RequirementsPagePro
                 <th scope="col">Type</th>
                 <th scope="col">Priority</th>
                 <th scope="col">Status</th>
+                {/* EPIC-044 T1581 (FR-EPB-023, FR-EPB-024): the Epic, or unassigned — never blank. */}
+                <th scope="col">Epic</th>
               </tr>
             </thead>
             <tbody>
@@ -135,6 +156,35 @@ export function RequirementsPage({ api, projectId, onEdit }: RequirementsPagePro
                       <StatusPill tone="warning">retired</StatusPill>
                     ) : (
                       <StatusPill tone="success">active</StatusPill>
+                    )}
+                  </td>
+                  <td>
+                    {requirement.epicNumber != null ? `Epic ${requirement.epicNumber} · ${requirement.epicTitle ?? ''}` : 'unassigned'}
+                    {canAssign && (
+                      <>
+                        {' '}
+                        <select
+                          aria-label={`Assign ${requirement.reference} to an Epic`}
+                          value={requirement.epicId ?? ''}
+                          onChange={(ev): void => {
+                            const epicId = ev.target.value === '' ? null : ev.target.value;
+                            void api.assignRequirementEpic(requirement.id, epicId).then(() => setReload((n) => n + 1));
+                          }}
+                        >
+                          <option value="">unassigned</option>
+                          {assignable.map((e) => (
+                            <option key={e.id} value={e.id}>
+                              Epic {e.number} · {e.title}
+                            </option>
+                          ))}
+                          {/* A row on a closed or split Epic keeps naming it, though it cannot be chosen anew. */}
+                          {requirement.epicId && !assignable.some((e) => e.id === requirement.epicId) && (
+                            <option value={requirement.epicId}>
+                              Epic {requirement.epicNumber} · {requirement.epicTitle ?? ''}
+                            </option>
+                          )}
+                        </select>
+                      </>
                     )}
                   </td>
                 </tr>

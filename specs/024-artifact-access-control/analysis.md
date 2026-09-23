@@ -96,3 +96,22 @@ correct for the 21-task state that preceded the 2026-08-19 clarification and tas
 ---
 
 **Resolution markers applied 2026-08-21** (session: EPIC-029 readiness pass). The findings the 2026-08-19 remediation pass closed — C1–C5, C8 — now carry the `✅` resolved marker the gate reads (DEF-026-008), applied only after implementation verified every closure: T374's most-restrictive-wins assertion, T826's grant-audit test, T811–T816 and the spec/plan edits all landed and pass (see `closure.md`, suites green 2026-08-21). Severities are as found. C6 and C7 remain open and unmarked — neither blocks `DOR-09`.
+
+---
+
+# Analysis: EPIC-024 — C2D reopening
+
+**Session**: 2026-08-27 · **Scope**: grant durability (`X13`) and what closing it exposed.
+
+## Findings
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| A1 ✅ | Coverage Gap | HIGH | `access.module.ts` | **Closed.** `PrismaAccessStore` was written by this Epic and never composed, so grants, revocations and refusal records lived in memory. Combined with "unrestricted until granted", a restart turned a governed artifact back into an ungoverned one | Verified: grants and revocations survive a restart, refusals are durably audited, an unreadable store fails closed |
+| A2 ✅ | Underspecification | HIGH | `access-inheritance.service.ts`; `access-enforcement.service.ts` | **CLOSED in C2E (`T1126`, `T1127`, `T1131`).** Zero active grants now refuse instead of opening the artifact, and a workspace boundary reading authoritative `User.workspaceId` runs ahead of grants so a caller-supplied `workspaceId` no longer scopes the lookup. Existing artifacts are backfilled where an owner resolves unambiguously and left inaccessible where none does. | Done — no workspace-role model was introduced, per the Project Owner's C2E ownership decision |
+
+## Notes
+
+`A2` is not a regression — it is the behaviour this Epic always had, and `A1` is what made it
+visible: once grants stopped vanishing, the question of what happens when there are *none* stopped
+being masked by the question of what happens when they *disappear*.

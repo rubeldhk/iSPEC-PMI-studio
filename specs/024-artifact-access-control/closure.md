@@ -71,3 +71,95 @@ wiring choice, not unbuilt scope.
 
 `/speckit-implement EPIC-025` — External Storage Publishing, the last of the three D-19
 children.
+
+---
+
+# Reopening record — C2D grant durability (2026-08-27)
+
+**The closure above stands.** No task recorded there is reopened.
+
+This Epic was reopened for one gap: `PrismaAccessStore` — which this Epic **wrote** — was never
+composed, so `ACCESS_GRANT_STORE` and `ACCESS_ATTEMPT_STORE` resolved to in-memory implementations.
+
+The harm was not "grants are lost". It is that this Epic's rule is **"unrestricted until granted"**:
+an artifact with no grants is editable by anyone in the workspace. Combined with a volatile store,
+**a restart turned a governed artifact back into an ungoverned one** — access widened silently, and
+the refusal record that would have shown it was volatile too.
+
+`T1119` binds the store. Grants, revocations and refusal records are now durable, an unreadable
+store fails closed rather than reading as "no grants", and a restart cannot broaden access.
+
+**One sub-item was reported rather than built.** Step C2D asked that the no-grant fallback be
+preserved *"only through EPIC-024's authoritative workspace-role check"*. This Epic has no role or
+membership model — `User.workspaceId` is the only workspace binding — so there is no such check to
+route through, and building one is a **new authorization model**, which C2D names as a stop
+condition. Recorded as `X19`.
+
+## Readiness
+
+Returns to **reopened-remediation** state until `T1119` is confirmed with the rest of C2D.
+
+---
+
+# Reopening record — C2E ownership bootstrap (2026-08-27)
+
+**Both closure records above stand.** No task recorded in either is reopened, and nothing previously
+delivered is re-described as undelivered.
+
+This Epic was reopened a second time for `X19`, the finding the C2D record above reported rather
+than built. The Project Owner's Step C2E instruction settled the ownership question and forbade the
+option that would have been easiest:
+
+> *"Do not build a workspace-role model during this dependency remediation."*
+
+## What changed
+
+**The zero-grant rule is inverted.** `directlyReadable` and `directlyEditable` returned `true` when
+an artifact had no active grants. The header comment said so plainly — *"an artifact with NO active
+grant rows is OPEN — restriction begins the moment the first grant is created"* — so this was a
+documented, deliberate model rather than an oversight. It was also wrong: a governed artifact
+nobody had restricted was readable and editable by anyone able to name the workspace, and a newly
+created specification had no grants at all.
+
+**A workspace boundary now runs ahead of grants.** `workspaceId` arrived from the caller and nothing
+checked it, so a grant lookup was scoped by whatever the request said. `WorkspaceBoundaryService`
+resolves the actor against `User.workspaceId` — authoritative identity, not a role — and refuses
+before any grant is consulted.
+
+**Existing artifacts are backfilled where an owner resolves, and only there.** `T1131` grants the
+creator when they are a real user in the same workspace, records the ones it cannot resolve, and
+invents nothing. Artifacts with no resolvable human owner stay inaccessible by design.
+
+## What this record does not claim
+
+The C2D record's statement stands unaltered: `X19` was **reported and not built** at that time,
+correctly, because building it then would have meant inventing an authorisation model the owner had
+not chosen. C2E built it after that decision was made, not before.
+
+`FR-ACC-027` was not weakened. A revocation that would leave an artifact with no human editor is
+still refused, and one C2E test had to grant a second holder before it could revoke — which is the
+requirement working, not an obstacle to route around.
+
+---
+
+# Reopening record — C3B principal authorization (2026-08-27)
+
+**All three closure records above stand.**
+
+Reopened a third time, narrowly: to authorise a **second kind of principal**. Actor resolution now
+runs through a directory that answers for humans and non-humans alike, and scoped delegation lets a
+sponsoring human grant an agent exactly what it needs on exactly which artifact.
+
+**No parallel authorization system was created.** The directory answers one question — *does this
+identity exist here, and may it act?* — and everything after it is the same grant evaluation that
+already existed. The workspace boundary, deny-by-default, durable grants, fail-closed behaviour and
+audited attempts are unchanged.
+
+**Delegation is deliberately not the grant model.** `AccessGrant.level` is `read` or `edit`, which
+cannot express `transition.propose` without overloading it into ambiguity. The C3B instruction
+permits a narrow extension where the existing model cannot represent this unambiguously, and that is
+what `principal_delegations` is.
+
+`Y1` is also resolved here: `ownership_backfill_records` was reviewed and found to be **authoritative
+security evidence**, not a rebuildable projection, and is now append-only. It was raised LOW; it was
+promoted on the review rather than left alone because of where it started.

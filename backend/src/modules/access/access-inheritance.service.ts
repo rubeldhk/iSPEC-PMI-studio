@@ -8,9 +8,18 @@
  * Derivation never widens access, which is what stops a multi-source
  * artifact laundering it.
  *
- * The restriction model: an artifact with NO active grant rows is OPEN —
- * restriction begins the moment the first grant is created. FR-ACC-024's
- * "no grant → absent" applies to restricted artifacts.
+ * The restriction model, **inverted in C2E (`X19`)**: an artifact with no
+ * active grant rows is **CLOSED**, not open. It previously read "restriction
+ * begins the moment the first grant is created", which meant a governed
+ * artifact was readable and editable by anyone able to name the workspace
+ * until somebody remembered to restrict it — and a newly created
+ * specification had no grants at all.
+ *
+ * Deny-by-default is the whole point: `FR-ACC-024`'s "no grant → absent" now
+ * applies to **every** artifact rather than only to ones already restricted.
+ * Artifacts are given an owner grant at creation (`T1128`), so "no grants"
+ * should be unreachable for anything governed — and where it is reached, it is
+ * refused rather than waved through.
  */
 import type { ArtifactRef, GrantStore } from './access-grant.service.js';
 
@@ -32,15 +41,15 @@ export class AccessInheritanceService {
   /** Direct check on ONE artifact, ignoring derivation. */
   async directlyReadable(workspaceId: string, userId: string, artifact: ArtifactRef): Promise<boolean> {
     const active = await this.grants.activeForArtifact(workspaceId, artifact);
-    // Open artifact — no grants means no restriction yet.
-    if (active.length === 0) return true;
+    // No grants means nobody has been given access — not that everybody has.
+    if (active.length === 0) return false;
     // edit satisfies read.
     return active.some((g) => g.userId === userId);
   }
 
   async directlyEditable(workspaceId: string, userId: string, artifact: ArtifactRef): Promise<boolean> {
     const active = await this.grants.activeForArtifact(workspaceId, artifact);
-    if (active.length === 0) return true;
+    if (active.length === 0) return false;
     return active.some((g) => g.userId === userId && g.level === 'edit');
   }
 

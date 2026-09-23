@@ -31,6 +31,7 @@ import { proxyContainerNameFor, proxyUrlFor } from './proxy-config.js';
 
 export const DOCKER_DESCRIPTOR: ExecutionEnvironmentDescriptor = {
   provider: 'docker',
+  kind: 'managed-isolated',
   /** Persistent bindings are a later epic's; this provider refuses them. */
   supportedLifecycles: ['ephemeral'],
   supportsPersistentState: false,

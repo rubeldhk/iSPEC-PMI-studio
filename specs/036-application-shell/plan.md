@@ -47,12 +47,12 @@ that fails under suite load and passes alone, and an unscoped target inherits th
 
 **Constraints**: 360px floor · WCAG 2.2 AA via PMI-DOC-005 · no second authorization model
 (`FR-SHL-003`, `FR-SHL-014` deferred) · no Home store and no shell-only aggregation endpoint
-(`FR-SHL-034`) · **five delivered areas in scope**; the nine undeclared (`UX-0060`) and the four
+(`FR-SHL-034`) · **six delivered and two partly-delivered areas in scope**; the zero undeclared (`UX-0060`) and the four
 declared-but-unbuilt MUST NOT appear
 
-**Scale/Scope**: 18 areas specified, **5 delivered and in scope**; 4 navigation groups; 1 new area
+**Scale/Scope**: 18 areas specified, **6 delivered and 2 partly delivered**; 4 navigation groups; 1 new area
 built here (Home); 4 existing areas re-hosted. **4 areas are declared and unbuilt** —
-`Plan & Tasks`, `QA & Releases`, `Architecture & Decisions`, `Governance` — and 9 are undeclared.
+`Plan & Tasks`, `QA & Releases`, `Architecture & Decisions`, `Governance` — and 0 are undeclared.
 Revised from 9-in-scope by [analysis.md](./analysis.md) `C1`, then from 6 to 5 by `N1` and
 `T442s`
 
@@ -169,3 +169,7 @@ Re-evaluated after Phase 1 (`data-model.md`, `contracts/shell-contract.md`, `qui
   `quickstart.md` §7 is the Tier 2 transcript.
 - **No new violations.** The four in Complexity Tracking are unchanged; none was introduced by the
   design, and each has an owner or a stated reason.
+
+> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.
+
+> **Updated 2026-09-06 (EPIC-046 `T1737`).** The **Plan & Tasks** area was **delivered**: `/plan` renders the project's Epics with their task progress and `/plan/epics/:epicId` renders one Epic's Task Kanban (`specs/046-task-kanban-governed-status`). It had stood `declared-not-delivered` since `N1` (2026-08-24) recorded that the tasks view was scoped to one specification and `:id` is not an address. `EPIC-012` owed it as `T441p`; that task is **superseded, not abandoned** — the specification-scoped list still works and is still reachable. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.

@@ -7,7 +7,7 @@
  * would produce an empty heading.
  */
 import { describe, expect, it } from 'vitest';
-import { AREAS, AREA_GROUPS, type Area } from '../../../src/shell/areas';
+import { AREAS, AREA_GROUPS, isReachable, type Area } from '../../../src/shell/areas';
 import { navigableAreas, navigationModel } from '../../../src/shell/navigation-model';
 
 function area(overrides: Partial<Area> & Pick<Area, 'id' | 'group' | 'status'>): Area {
@@ -16,7 +16,7 @@ function area(overrides: Partial<Area> & Pick<Area, 'id' | 'group' | 'status'>):
     path: `/${overrides.id}`,
     epic: 'EPIC-000',
     ...overrides,
-    ...(overrides.status === 'delivered' ? { element: (): null => null } : {}),
+    ...(isReachable(overrides.status) ? { element: (): null => null } : {}),
   } as Area;
 }
 
@@ -24,8 +24,8 @@ describe('T436h · navigation is derived from the registry', () => {
   it('carries only delivered areas', () => {
     const shown = navigableAreas();
     expect(shown.length, 'no areas reached navigation at all').toBeGreaterThan(0);
-    expect(shown.every((entry) => entry.status === 'delivered')).toBe(true);
-    expect(shown).toHaveLength(AREAS.filter((entry) => entry.status === 'delivered').length);
+    expect(shown.every((entry) => isReachable(entry.status))).toBe(true);
+    expect(shown).toHaveLength(AREAS.filter((entry) => isReachable(entry.status)).length);
   });
 
   it('presents groups in PMI-DOC-006 §4.1 order', () => {
@@ -36,7 +36,7 @@ describe('T436h · navigation is derived from the registry', () => {
   it('keeps areas in registry order within a group', () => {
     for (const entry of navigationModel()) {
       const expected = AREAS.filter(
-        (candidate) => candidate.group === entry.group && candidate.status === 'delivered',
+        (candidate) => candidate.group === entry.group && isReachable(candidate.status),
       ).map((candidate) => candidate.id);
       expect(entry.areas.map((candidate) => candidate.id)).toEqual(expected);
     }

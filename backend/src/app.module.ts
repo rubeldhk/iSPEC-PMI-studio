@@ -10,6 +10,11 @@ import { DecisionsModule } from './modules/decisions/decisions.module.js';
 import { EnginesModule } from './modules/engines/engines.module.js';
 import { JobsModule } from './modules/jobs/jobs.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
+import { ConnectorModule } from './modules/connector/connector.module.js';
+import { GovernanceModule } from './modules/governance/governance.module.js';
+import { EpicsModule } from './modules/epics/epics.module.js';
+import { ArtifactsModule } from './modules/artifacts/artifacts.module.js';
+import { TaskSyncModule } from './modules/task-sync/task-sync.module.js';
 import { RequirementsModule } from './modules/requirements/requirements.module.js';
 import { SpecificationsModule } from './modules/specifications/specifications.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
@@ -18,9 +23,15 @@ import { DependenciesModule } from './modules/dependencies/dependencies.module.j
 import { TraceabilityModule } from './modules/traceability/traceability.module.js';
 import { RunsModule } from './modules/runs/runs.module.js';
 import { ReviewModule } from './modules/review/review.module.js';
+import { ReviewsModule } from './modules/reviews/reviews.module.js';
 import { AccessModule } from './modules/access/access.module.js';
+import { AgentsModule } from './modules/agents/agents.module.js';
+import { ExecutionsModule } from './modules/executions/executions.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
-import { LoopModule } from './modules/loop/loop.module.js';
+import { GOVERNED_LOOP } from './composition/governed-loop.js';
+import { ChangeRoomModule } from './modules/change-room/change-room.module.js';
+import { DefectRoomModule } from './modules/defect-room/defect-room.module.js';
+import { ContextModule } from './modules/context/context.module.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
 
 /**
@@ -63,10 +74,22 @@ function clientBuildPath(): string {
           : new UnconfiguredUserDirectory(),
     }),
     AuditModule,
+    // EPIC-044 DEF-044-001 — registered before every module that pulls ConnectorModule in, so the
+    // session route for `projects/:projectId/requirements` owns the path and dispatches bearer callers.
+    RequirementsModule,
     EnginesModule,
     JobsModule,
     ProjectsModule,
-    RequirementsModule,
+    // EPIC-041 T1362 — connector credentials and the guard (R-041-3).
+    ConnectorModule,
+    // EPIC-042 T1488 — constraints, policy, renders; the Constraints screen and the two connector reads.
+    GovernanceModule,
+    // EPIC-044 T1571 — Epics: the entity, assignment, the derived stage and the board reads.
+    EpicsModule,
+    // EPIC-045 T1638 — the artifact sync and the three reads. After EpicsModule:
+    // it resolves an execution's Epic through the same store the board uses.
+    ArtifactsModule,
+    TaskSyncModule,
     SpecificationsModule,
     TasksModule,
     SteeringModule,
@@ -75,14 +98,26 @@ function clientBuildPath(): string {
     DecisionsModule,
     RunsModule,
     ReviewModule,
+    // EPIC-021's production gate capability (C2C, T1110). Registered here
+    // because the Epic closed with services and no module at all.
+    ReviewsModule,
     AccessModule,
+    AgentsModule,
+    ExecutionsModule,
     StorageModule,
     // T936 — EPIC-030. The wiring T934 exists to prove: a module built,
     // tested and never registered is the defect class DEF-005-001 shipped
     // with 15/15 tasks green.
-    LoopModule,
+    //
+    // `T1165` — the CONFIGURED loop. `ExecutionsModule` imports the same
+    // constant, so there is one instance and one store.
+    GOVERNED_LOOP,
     // T337y — EPIC-033. The wiring T337x exists to prove.
     RequirementRoomModule,
+    // T406w — EPIC-034. The wiring T406u exists to prove.
+    ChangeRoomModule,
+    DefectRoomModule,
+    ContextModule,
     // T150g — EPIC-014 F-11.3. The API serves the built web client, so the
     // containerised stack is ONE origin and the client's `/v1` assumption holds
     // without the client changing (`R-014-1`).

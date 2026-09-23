@@ -1,11 +1,14 @@
 {
   "name": "e2e",
   "private": true,
+  "type": "module",
   "description": "End-to-end journey measurements (SC-001). Requires a running stack — see tests/sc-001-journey.spec.ts for the exact run steps.",
   "scripts": {
     "test": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.0"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@playwright/test": "^1.49.0",
+    "@pmi/workspace-bundle": "workspace:*"
   }
 }

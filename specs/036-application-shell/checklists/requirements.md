@@ -71,7 +71,10 @@ What changed underneath the unchanged boxes:
 
 ### On scope — the boundary that took the most care
 
-Eighteen areas are specified; **five are delivered and in scope**. `FR-SHL-003` forbids the shell
+Eighteen areas are specified; **six are delivered**, two are **partly delivered**, and all five are in scope. *(Updated 2026-08-28, `T1172`: the Requirement Room area was delivered — `/requirement-room` renders the shared `RoomIndex`. The registry moved first; these follow it.)*
+
+> **Corrected 2026-08-25 (Constitution XII Step B, `T1015`).** This said *five delivered*. The registry now reads **3 delivered · 2 partly-delivered · 13 declared-not-delivered · 0 undeclared** across eighteen areas; across the **seventeen V2 prototype screens** it is **2 / 2 / 13 / 0**. Both denominators are stated wherever a count appears — a figure that does not say what it counts is how two published counts came to disagree.
+ `FR-SHL-003` forbids the shell
 implementing an area's content, and `UX-0060` forbids an undeclared area appearing at all. The
 Assumptions state which six, so the boundary is a list rather than a judgement at plan time.
 
@@ -103,3 +106,7 @@ The spec requires areas to be **addressable** (`FR-SHL-017`) and deliberately do
 `specs/_shared/dependencies.md` makes a new runtime dependency a plan change rather than a task
 decision. Whether that is a routing library or hand-rolled belongs to `/speckit-plan`. The product
 has no URL routing at all today, so it is new work either way.
+
+> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.
+
+> **Updated 2026-09-06 (EPIC-046 `T1737`).** The **Plan & Tasks** area was **delivered**: `/plan` renders the project's Epics with their task progress and `/plan/epics/:epicId` renders one Epic's Task Kanban (`specs/046-task-kanban-governed-status`). It had stood `declared-not-delivered` since `N1` (2026-08-24) recorded that the tasks view was scoped to one specification and `:id` is not an address. `EPIC-012` owed it as `T441p`; that task is **superseded, not abandoned** — the specification-scoped list still works and is still reachable. The registry moved first and these figures follow it — **6 delivered · 2 partly-delivered · 10 declared-not-delivered · 0 undeclared**.
