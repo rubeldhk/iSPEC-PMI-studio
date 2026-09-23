@@ -331,12 +331,13 @@ the file and then compares against what it replaced.
 
 ## Known-red checks
 
-Two checks fail on purpose. Each is red because work is genuinely outstanding, and neither should be
+Three checks fail on purpose. Each is red because work is genuinely outstanding, and none should be
 skipped or deleted to get a green run:
 
 | Check | Why |
 |---|---|
 | `T884` — `tests/governance/accessibility-record.spec.ts` | Waits on `T885`, a manual keyboard and screen-reader pass. An agent cannot hear a screen reader, and a record claiming otherwise would fabricate the evidence the check exists to test for |
+| `T999u` — `backend/tests/architecture/defect-room-transcript.spec.ts` | Waits on `T999t`, the EPIC-035 Tier 2 journey. It is keyboard-only against a running application, and two of its seven steps refuse in this deployment because `RepairTaskPort` and `TestExecution` are unbound — so the transcript cannot be produced by an agent, and typing one is the fabrication the check tests for. Added to this table on 2026-09-23: it had been red since EPIC-035 while the table said anything else red was a real failure |
 | `tests/integration/scale.spec.ts` | Load-sensitive, not broken — see above |
 
 Anything else red is a real failure.
