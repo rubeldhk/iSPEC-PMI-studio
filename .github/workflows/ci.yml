@@ -77,8 +77,13 @@ jobs:
         run: pnpm test:unit
 
       # FR-017 / PC-1 — a violation fails the build, not a review.
+      #
+      # `:gated` excludes the architecture check that is red by design (`T999u`).
+      # It is not skipped: the Known-red step below runs it and fails the build
+      # if it is NOT red. `governance/known-red.json` is the list, and the README
+      # §Known-red checks explains the arrangement.
       - name: Architecture tests
-        run: pnpm test:arch
+        run: pnpm test:arch:gated
 
       - name: Contract tests
         run: pnpm test:contract
@@ -118,7 +123,30 @@ jobs:
       # The checks live outside every workspace package, so `pnpm -r typecheck` does not
       # reach them. Typechecking them explicitly is the same rule they assert of everything
       # else — see steering/technology-stack.md TS-004.
+      # `:gated` excludes the governance check that is red by design (`T884`),
+      # on the same terms as the architecture step above.
       - name: Governance checks
         run: |
           pnpm typecheck:governance
-          pnpm test:governance
+          pnpm test:governance:gated
+
+      # The two checks the steps above leave out, run on their own and asserted
+      # to be STILL RED (2026-10-01).
+      #
+      # `T884` waits on a human screen-reader pass and `T999u` on a keyboard-only
+      # Tier 2 journey. Both sat in the steps above, so the job stopped at the
+      # first of them and the Contract, Integration and Governance steps never
+      # ran — three suites unexecuted on every push to keep two obligations
+      # visible. A regression in tenancy isolation or audit immutability would
+      # have reached the default branch unexamined, which is the trade the step
+      # ordering was quietly making.
+      #
+      # This keeps the obligation asserted rather than merely documented: the
+      # gate's exit code is INVERTED, so it fails the build the day one of them
+      # passes and tells you to retire the entry. It is not `continue-on-error`,
+      # and it must not become it — that would turn the gate back into a comment.
+      #
+      # LAST on purpose: the day it legitimately fails, everything it unblocked
+      # has already run and reported.
+      - name: Known-red checks
+        run: pnpm test:known-red

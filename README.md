@@ -332,7 +332,19 @@ the file and then compares against what it replaced.
 ## Known-red checks
 
 Three checks fail on purpose. Each is red because work is genuinely outstanding, and none should be
-skipped or deleted to get a green run:
+skipped or deleted to get a green run.
+
+Two of them are **gated** (2026-10-01). They are declared in `governance/known-red.json`, excluded
+from the steps that gate a merge (`test:arch:gated`, `test:governance:gated`), and run instead by
+CI's own **Known-red checks** step, which asserts they are **still red** and fails the build if one
+of them passes. They were previously inside the Architecture and Governance steps, so the job stopped
+at the first of them and the Contract, Integration and Governance steps never ran at all — three
+suites unexecuted on every push in order to keep two obligations visible.
+
+So a green CI run does **not** mean nothing is owed. It means the two obligations below are still
+outstanding and still being checked. The day either one is met, CI goes red and names the entry to
+retire; the check then returns to the suite that gates merges, where a malformed record fails it
+again. `pnpm test:arch` and `pnpm test:governance` remain ungated, and run everything.
 
 | Check | Why |
 |---|---|
