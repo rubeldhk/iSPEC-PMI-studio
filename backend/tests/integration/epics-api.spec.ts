@@ -57,20 +57,46 @@ afterAll(async () => {
 
 suite('T1572 · Epics through the composed application', () => {
   const epics: Record<string, string> = {};
+  /**
+   * The number each Epic actually received, recorded rather than assumed.
+   *
+   * 2026-10-01 — the first test creates two Epics **in parallel on purpose**
+   * (`FR-EPB-021`: concurrent creates receive distinct numbers), so which of
+   * them gets 2 and which gets 3 is decided by the race. Every later assertion
+   * hardcoded `Review` as 2 and `Reports` as 3, which held only while `Review`
+   * happened to win. When `Reports` won, the requirement counts came back
+   * `[[1,1],[2,0],[3,1]]`, the close assertion missed, and the fourth Epic was
+   * never created — so the owner-gate test failed too, on a cascade.
+   *
+   * It read as load sensitivity (it fails in a full run and passes alone, which
+   * is `DEF-030-002`'s shape) and it is not: the premise is nondeterministic and
+   * the expectation was fixed. Load only changes how often the race goes the
+   * other way. The first CI run ever to reach the Integration step failed on it.
+   *
+   * What the Epic requires is that the two numbers are distinct and that the
+   * list is ordered by number — both still asserted, neither dependent on who
+   * won.
+   */
+  const numberOf: Record<string, number> = {};
 
   it('creates three Epics numbered 1, 2, 3 with derived slugs; two parallel creates receive distinct numbers', async () => {
     const api = started.app.getHttpServer();
     const a = await request(api).post(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).send({ title: 'Intake & Triage', description: 'First.' }).expect(201);
     expect(a.body).toMatchObject({ number: 1, slug: 'intake-triage', status: 'active' });
     epics['a'] = a.body.id;
+    numberOf['a'] = a.body.number;
     const [b, c] = await Promise.all([
       request(api).post(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).send({ title: 'Review' }),
       request(api).post(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).send({ title: 'Reports' }),
     ]);
     expect([b.status, c.status]).toEqual([201, 201]);
     expect([b.body.number, c.body.number].sort()).toEqual([2, 3]);
-    epics['b'] = b.body.title === 'Review' ? b.body.id : c.body.id;
-    epics['c'] = b.body.title === 'Reports' ? b.body.id : c.body.id;
+    const review = b.body.title === 'Review' ? b.body : c.body;
+    const reports = b.body.title === 'Reports' ? b.body : c.body;
+    epics['b'] = review.id;
+    epics['c'] = reports.id;
+    numberOf['b'] = review.number;
+    numberOf['c'] = reports.number;
   });
 
   it('assigns, moves and unassigns a requirement; the requirement list carries the Epic; unassigned are listed', async () => {
@@ -79,11 +105,19 @@ suite('T1572 · Epics through the composed application', () => {
     await request(api).put(`/v1/requirements/${refs['REQ-002']}/epic`).set('Cookie', started.cookie).send({ epicId: epics['a'] }).expect(200);
     await request(api).put(`/v1/requirements/${refs['REQ-002']}/epic`).set('Cookie', started.cookie).send({ epicId: epics['b'] }).expect(200);
     const list = await request(api).get(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).expect(200);
-    expect(list.body.epics.map((e: { number: number; requirementCount: number }) => [e.number, e.requirementCount])).toEqual([[1, 1], [2, 1], [3, 0]]);
+    // Ordered by number, and one requirement on `a`, one on `b`, none on `c` —
+    // whichever of the two raced creates took which number.
+    expect(list.body.epics.map((e: { number: number }) => e.number)).toEqual([1, 2, 3]);
+    const counts = Object.fromEntries(
+      (list.body.epics as { number: number; requirementCount: number }[]).map((e) => [e.number, e.requirementCount]),
+    ) as Record<number, number>;
+    expect(counts[numberOf['a']!]).toBe(1);
+    expect(counts[numberOf['b']!]).toBe(1);
+    expect(counts[numberOf['c']!]).toBe(0);
     expect(list.body.unassigned.map((r: { reference: string }) => r.reference)).toEqual(['REQ-003', 'REQ-004']);
     const requirements = await request(api).get(`/v1/projects/${projectId}/requirements`).set('Cookie', started.cookie).expect(200);
     const byRef = Object.fromEntries((requirements.body as { reference: string; epicId: string | null; epicNumber: number | null; epicTitle: string | null }[]).map((r) => [r.reference, r]));
-    expect(byRef['REQ-002']).toMatchObject({ epicId: epics['b'], epicNumber: 2, epicTitle: 'Review' });
+    expect(byRef['REQ-002']).toMatchObject({ epicId: epics['b'], epicNumber: numberOf['b'], epicTitle: 'Review' });
     expect(byRef['REQ-003']).toMatchObject({ epicId: null, epicNumber: null, epicTitle: null });
     await request(api).put(`/v1/requirements/${refs['REQ-001']}/epic`).set('Cookie', started.cookie).send({ epicId: null }).expect(200);
     const detail = await request(api).get(`/v1/epics/${epics['a']}`).set('Cookie', started.cookie).expect(200);
@@ -93,14 +127,14 @@ suite('T1572 · Epics through the composed application', () => {
   it('a closed Epic keeps its number, refuses assignment with epic_not_active, and the next number is 4', async () => {
     const api = started.app.getHttpServer();
     const closed = await request(api).post(`/v1/epics/${epics['c']}/close`).set('Cookie', started.cookie).expect(200);
-    expect(closed.body).toMatchObject({ number: 3, status: 'closed' });
+    expect(closed.body).toMatchObject({ number: numberOf['c'], status: 'closed' });
     expect(closed.body.closedAt).toBeTruthy();
     const refused = await request(api).put(`/v1/requirements/${refs['REQ-003']}/epic`).set('Cookie', started.cookie).send({ epicId: epics['c'] }).expect(409);
     expect(refused.body.error.details.code).toBe('epic_not_active');
     const d = await request(api).post(`/v1/projects/${projectId}/epics`).set('Cookie', started.cookie).send({ title: 'Later' }).expect(201);
     expect(d.body.number).toBe(4);
     const filtered = await request(api).get(`/v1/projects/${projectId}/epics?status=closed`).set('Cookie', started.cookie).expect(200);
-    expect(filtered.body.epics.map((e: { number: number }) => e.number)).toEqual([3]);
+    expect(filtered.body.epics.map((e: { number: number }) => e.number)).toEqual([numberOf['c']]);
   });
 
   it('a member without the grant reads everything and is refused every write with owner_grant_required', async () => {
