@@ -21,6 +21,7 @@ import type { WorkspaceFileSystem } from '../../src/workspace.js';
  */
 const ENV_DESCRIPTOR = {
   provider: 'fake',
+  kind: 'managed-isolated',
   supportedLifecycles: ['ephemeral'],
   supportsPersistentState: false,
   supportsNetworkPolicy: true,

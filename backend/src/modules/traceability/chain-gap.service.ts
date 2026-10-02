@@ -6,7 +6,11 @@
  * silently shortened result. The gap is the segment nearest the start whose
  * up-chain link is absent.
  */
-import { CHAIN_STAGES, type TraceArtifactType } from './link-writer.service.js';
+import {
+  CHAIN_STAGES,
+  isChainStage,
+  type TraceArtifactType,
+} from './link-writer.service.js';
 import type { ChainLinkShape, ChainNode } from './chain-traversal.service.js';
 
 export interface ChainGapReport {
@@ -17,7 +21,15 @@ export interface ChainGapReport {
   reachedStage: TraceArtifactType;
 }
 
+/**
+ * `null` for the first stage, and for anything that is not a chain stage at all.
+ *
+ * `change` (EPIC-034, `FR-CHR-064`) is an artifact type with no position in the
+ * derivation chain, so it has no parent stage — and asking for one is a
+ * question with no correct answer rather than an error.
+ */
 function parentStage(stage: TraceArtifactType): TraceArtifactType | null {
+  if (!isChainStage(stage)) return null;
   const index = CHAIN_STAGES.indexOf(stage);
   return index > 0 ? (CHAIN_STAGES[index - 1] as TraceArtifactType) : null;
 }
@@ -39,7 +51,15 @@ export function findChainGap(links: readonly ChainLinkShape[], start: ChainNode)
   while (frontier.length > 0) {
     const next: ChainNode[] = [];
     for (const node of frontier) {
-      if (CHAIN_STAGES.indexOf(node.artifactType) < CHAIN_STAGES.indexOf(reached)) {
+      // A node outside the chain has no position to compare, so it cannot
+      // become the broadest stage reached. Skipped explicitly: relying on
+      // `indexOf` returning `-1` would give the same result today and a
+      // different one the moment somebody sorted the stages differently.
+      if (
+        isChainStage(node.artifactType) &&
+        isChainStage(reached) &&
+        CHAIN_STAGES.indexOf(node.artifactType) < CHAIN_STAGES.indexOf(reached)
+      ) {
         reached = node.artifactType;
       }
       if (node.artifactType === 'vision') continue; // the root — nothing above

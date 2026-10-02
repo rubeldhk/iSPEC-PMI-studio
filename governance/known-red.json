@@ -1,0 +1,35 @@
+{
+  "comment": [
+    "The checks that fail on purpose, declared once. Read by scripts/known-red.mjs (which asserts",
+    "they are STILL red and exits non-zero the day one passes), by the gated test scripts in",
+    "package.json (which exclude them from the steps that gate a merge), and by",
+    "tests/governance/known-red-gate.spec.ts (which holds all four consumers to this list).",
+    "",
+    "Adding an entry here is not a way to silence a failing check. The only checks that belong are",
+    "ones whose evidence cannot be produced by an agent at all, and whose absence is itself the",
+    "record that the work is owed. Everything else red is a real failure.",
+    "",
+    "Retiring an entry is not optional: the gate fails the build the moment its check passes, so",
+    "the check goes back into the suite that gates merges and a later malformed record fails again."
+  ],
+  "checks": [
+    {
+      "id": "T884",
+      "file": "tests/governance/accessibility-record.spec.ts",
+      "project": "governance",
+      "gatedScript": "test:governance:gated",
+      "evidence": "docs/accessibility/EPIC-029-manual-pass.md",
+      "owes": "T885 (EPIC-029) — a manual keyboard and screen-reader pass, recorded as a transcript naming the reader, its version, a journey and a date",
+      "why": "An agent cannot hear a screen reader or see whether focus order and announcements are meaningful. A record claiming otherwise would fabricate the evidence the check exists to test for."
+    },
+    {
+      "id": "T999u",
+      "file": "backend/tests/architecture/defect-room-transcript.spec.ts",
+      "project": "architecture",
+      "gatedScript": "test:arch:gated",
+      "evidence": "specs/035-defect-room/tier2-transcript.md",
+      "owes": "T999t (EPIC-035) — the Tier 2 defect-room journey, all seven steps: report, triage, reproduce, failing test, repair tasks, verify, close",
+      "why": "The journey is keyboard-only against a running application, and two of its seven steps refuse in this deployment because RepairTaskPort and TestExecution are unbound. Typing the transcript is the fabrication the check exists to test for."
+    }
+  ]
+}

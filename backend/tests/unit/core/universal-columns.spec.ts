@@ -65,8 +65,16 @@ function migrationSql(): string {
 /** Table name → the body of its CREATE TABLE statement. */
 function createdTables(sql: string): Map<string, string> {
   const tables = new Map<string, string>();
-  for (const match of sql.matchAll(/CREATE TABLE\s+"?(\w+)"?\s*\(([\s\S]*?)\n\);/g)) {
-    const [, name, body] = match;
+  // The body ends at ITS OWN closing paren — `\n);` for a plain table, or
+  // `\n) PARTITION BY …` for a partitioned one, which is then skipped as the
+  // comment on the expected list explains. (EPIC-041 T1319: the previous lazy
+  // `[\s\S]*?\n\);` had no terminator for the partitioned form, so it ran from
+  // EPIC-038's `context_index_entries` forward across file boundaries to the
+  // first `\n);` in whatever migration came next, swallowing that table's DDL
+  // and reporting the partitioned one as a plain table.)
+  for (const match of sql.matchAll(/CREATE TABLE\s+"?(\w+)"?\s*\(([\s\S]*?)\n\)(;| PARTITION BY)/g)) {
+    const [, name, body, terminator] = match;
+    if (terminator !== ';') continue;
     if (name && body) tables.set(name, body);
   }
   return tables;
@@ -96,18 +104,94 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // approval overrides, and the review sessions with their answers.
     // access_grants + access_attempt_records arrived with EPIC-024 T376 —
     // layer 2 of the two-layer authorisation rule and its refusal record.
+    // adjudication_records arrived with EPIC-030 T1093 — the immutable
+    // evidence of every specification status-transition adjudication.
+    // application_intents arrived with EPIC-030 T1097 — the durable record,
+    // written before EPIC-009 is asked, that an application was attempted.
+    // The five principal tables arrived with EPIC-028 T1134 / EPIC-024 T1139 —
+    // The ten execution tables arrived with EPIC-037 T1026 — the governed
+    // execution registry: six authoritative append-only tables, two rebuildable
+    // projections, the root record and the connector outbox.
+    // authoritative identity for agents and services, the evidence of their
+    // state changes, their frozen snapshots, and scoped delegation.
+    // gate_final_outcomes arrived with EPIC-021 T1107 — the append-only
+    // authoritative gate decision, separate from the mutable working record.
+    // application_policies arrived with EPIC-030 T1117 — explicit, versioned,
+    // append-only authorisation for automatic application (X15).
     expect([...tables.keys()].sort()).toEqual([
       'access_attempt_records',
       'access_grants',
+      'adjudication_records',
       'adr_specification_links',
+      'agent_identity_snapshots',
       'answers',
+      'application_intents',
+      'application_policies',
       'architecture_decision_records',
+      // EPIC-045 T1621 — artifact sync: content once per digest, one row per
+      // sync, and the manifest of what that sync said about each path.
+      'artifact_sync_files',
+      'artifact_syncs',
+      'artifact_versions',
       'audit_entries',
       'baseline_exceptions',
       'baselines',
+      'change_baseline_deltas',
+      'change_closures',
+      'change_decisions',
+      'change_impact_areas',
+      'change_impact_views',
+      'change_replan_obligations',
+      'change_requests',
       'clarifications',
+      // EPIC-041 T1319 — the local workspace: a project-scoped credential held
+      // as a digest, and the append-only record of each provisioning attempt.
+      'connector_credentials',
+      'connector_registrations',
+    // EPIC-038 Engineering Context (T1231).
+    //
+    // `context_index_entries` and `context_index_entries_default` are absent
+    // deliberately: `createdTables` above matches a body terminated by a
+    // newline then `);`, and a `PARTITION BY LIST (...)` table ends
+    // `) PARTITION BY ...` while a `PARTITION OF` child has no parenthesised
+    // body at all. Neither is therefore visible to this check.
+    //
+    // **That is a gap in the checker, not a licence.** Both carry `workspaceId`,
+    // an index on it and a creation timestamp, asserted instead by
+    // `context-partitioning.spec.ts` (T1232) — which reads the live catalogue
+    // rather than the DDL text and so sees what this parser cannot.
+    // EPIC-042 T1480 — a render is appended per governance write; the
+    // constraint and policy tables are the inputs it is rendered from.
+    'constitution_renders',
+    'context_exclusions',
+    'context_items',
+    'context_packages',
+    'context_reusable_authorisations',
+    'context_source_classes',
+    'decomposition_policies',
+    'defect_classifications',
+    'defect_escape_records',
+    'defect_evidence_checks',
+    'defect_records',
+    'defect_repair_links',
+    'defect_reproductions',
+    'defect_routings',
+    'defect_tests',
       'dependency_edges',
       'engine_registrations',
+      // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
+      'epics',
+      'evidence_contract_items',
+      'evidence_contracts',
+      'evidence_items',
+      'execution_artifacts',
+      'execution_comments',
+      'execution_events',
+      'execution_outbox',
+      'execution_state',
+      'execution_target_bindings',
+      'executions',
+      'gate_final_outcomes',
       'gate_outcomes',
       'generation_jobs',
       'handoffs',
@@ -116,9 +200,15 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'loop_objects',
       'loop_transitions',
       'organizations',
+      'principal_delegations',
+      'principal_identity_snapshots',
+      'principal_state_events',
+      'principals',
+      'project_constraints',
       'projects',
       'provisional_approval_overrides',
       'provisional_markings',
+      'provisioning_records',
       'publish_records',
       'published_file_references',
       'recorded_questions',
@@ -133,16 +223,27 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'runs',
       'specification_versions',
       'specifications',
+      'status_transition_proposals',
+      'status_transition_state',
       'steering_applications',
       'steering_documents',
       'steering_scopes',
       'storage_connections',
       'structure_definitions',
+      // EPIC-046 T1687 — the task sync. All three carry a plain `createdAt`, so
+      // none needs an alias in the map below: `syncedAt` and `proposedAt` are
+      // domain facts that sit BESIDE the row's creation time rather than
+      // standing in for it (the T012a lesson, learned again).
+      'task_status_proposals',
+      'task_sync_lines',
+      'task_syncs',
       'tasks',
       'traceability_links',
       'users',
       'validation_findings',
       'workspaces',
+      // EPIC-043 T1409 — one row per credential, touched by pmi.health.
+      'workstation_connections',
     ]);
   });
 
@@ -189,6 +290,17 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       // is *recorded* — in each case the timestamp IS the record (FR-RUN-005b,
       // FR-RUN-020, SC-006), not bookkeeping about the row.
       provisional_approval_overrides: 'approvedAt',
+      // EPIC-041 T1319: a provisioning attempt *starts* — the timestamp is the
+      // record's own first fact (data-model.md §2), not bookkeeping about the row.
+      provisioning_records: 'startedAt',
+      // EPIC-042 T1480: a constitution is *rendered* — the timestamp is the
+      // render's own fact (data-model.md §3), not bookkeeping about the row.
+      constitution_renders: 'renderedAt',
+      // EPIC-045 T1621: a version is *first synced* and a sync *happens* — in
+      // both cases the timestamp IS the record, not bookkeeping about the row.
+      // The manifest row carries a plain `createdAt`, so it needs no exception.
+      artifact_versions: 'firstSyncedAt',
+      artifact_syncs: 'syncedAt',
       review_sessions: 'openedAt',
       answers: 'recordedAt',
       // EPIC-024: a grant is *granted*, an attempt is *attempted* — the

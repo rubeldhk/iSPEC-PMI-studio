@@ -16,6 +16,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { enumerateEpics } from './derive';
 import { completedTaskIdentifierOf } from './task-id-format';
@@ -85,6 +86,49 @@ describe('G-26-14 · a ticked task names a file that exists (DEF-001-003)', () =
       missing,
       missing.map((m) => `${m.epic} ${m.task} → ${m.path}`).join('\n'),
     ).toEqual([]);
+  });
+
+  /**
+   * The same claim, resolved the way CI's filesystem resolves it (2026-10-01).
+   *
+   * `existsSync` is **case-insensitive on Windows and case-sensitive on Linux**,
+   * so the assertion above is a different check depending on who runs it. Two
+   * ticked EPIC-044 tasks named `frontend/tests/unit/pages/requirements.spec.tsx`
+   * while the file is `Requirements.spec.tsx`. Every local run was green; the
+   * first CI run ever to reach the Governance step was red.
+   *
+   * Git records the exact case, so comparing against its index is the one
+   * resolution that agrees on both platforms — `G-27-09`'s precedent for a check
+   * that consults git rather than the working tree.
+   *
+   * It flags **only** case mismatches: a path is reported when the working tree
+   * finds it, the index does not, and the index holds the same path under a
+   * different case. An untracked-but-present file is not a case mismatch and is
+   * left to the assertion above.
+   */
+  it('names each path in the case git recorded, so Windows and Linux agree', () => {
+    const tracked = new Set(
+      execFileSync('git', ['ls-files', '-z'], { cwd: process.cwd(), encoding: 'utf8' })
+        .split('\0')
+        .filter((entry) => entry !== ''),
+    );
+    expect(tracked.size, 'git listed no files — the comparison would prove nothing').toBeGreaterThan(100);
+
+    const directories = new Set<string>();
+    for (const file of tracked) {
+      const segments = file.split('/');
+      for (let i = 1; i < segments.length; i++) directories.add(segments.slice(0, i).join('/'));
+    }
+    const lowered = new Map<string, string>();
+    for (const known of [...tracked, ...directories]) lowered.set(known.toLowerCase(), known);
+
+    const wrongCase = NAMED.filter(({ path }) => {
+      if (tracked.has(path) || directories.has(path)) return false;
+      if (!existsSync(join(process.cwd(), path))) return false;
+      return lowered.has(path.toLowerCase());
+    }).map((named) => `${named.epic} ${named.task} → ${named.path} (git has ${lowered.get(named.path.toLowerCase())})`);
+
+    expect(wrongCase, wrongCase.join('\n')).toEqual([]);
   });
 
   it('excludes spec-relative paths, which resolve from the Epic directory', () => {

@@ -68,7 +68,26 @@ an architecture test per invariant per mode, or it degrades quietly into "identi
 the mode we test".
 
 **Open** — how evidence assurance level is represented when it varies by execution mode. `ADR-0022`
-does not model assurance tiers, and this ADR does not add them.
+does not model assurance tiers, and this ADR does not add them. *(Closed by the amendment below.)*
+
+## Amendment 2026-09-03 — the default flips, and assurance gets a field (`ADR-0030`, `EPIC-041`, `D-47`)
+
+Two changes, both made by `ADR-0030` and carried out by `EPIC-041`:
+
+| | Before | After |
+|---|---|---|
+| Default mode | **Managed isolated** is the default and the only mode core workflows assume; controlled local is `MAY`, opt-in per tenant | **Controlled local is the default** for a project with a root directory (`FR-LPW-035`). Managed isolated remains available, unchanged, and is the mode unattended runs (`EPIC-023`) and CI use |
+| Assurance | *Open* | Every execution carries `assurance: managed \| local`, derived from its surface at registration and never supplied by the caller (`FR-LPW-034`). One field, two values (PMI-DOC-007 `D-9`). Customer cloud gets a value when it gets an owner |
+
+What does **not** change: *the governance contract is mode-independent*. Identity, permissions,
+context assembly, policy evaluation, audit, evidence capture and completion rules apply identically
+(`BR-0133`, `FR-LPW-031`). Assurance is the honest label on the evidence, not a switch that relaxes
+a rule; a later Epic may let tenant policy weigh it, and nothing in `EPIC-041` does.
+
+The negative recorded above — a developer machine is the weakest link in every invariant — is not
+withdrawn. It is accepted for the target user (PMI-DOC-007 §2.4), and the mitigations are the
+project-scoped connector credential, the assurance label, Constitution XII.6 and secret refusal at
+intake.
 
 ## Traceability
 

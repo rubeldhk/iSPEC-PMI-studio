@@ -76,6 +76,21 @@ export function TasksPage({ api, specificationId, projectId }: TasksPageProps): 
         <p>
           <span>{progress.done} done</span> · <span>{progress.inProgress} in progress</span> ·{' '}
           <span>{progress.notStarted} not started</span>
+          {progress.blocked > 0 && (
+            <>
+              {' '}
+              · <span>{progress.blocked} blocked</span>
+            </>
+          )}
+        </p>
+        {/*
+          `EPIC-046` `T1780`/`T1786`. This figure and the one on Plan &amp; Tasks are
+          the SAME derivation, and a denominator that silently drops rows is worse
+          than one that explains itself (`FR-KAN-058`).
+        */}
+        <p className="ds-field__hint" data-testid="progress-basis">
+          The same figure as Plan &amp; Tasks, from one derivation. It counts every task of the project&apos;s Epics plus
+          any generated for a specification, and excludes tasks the latest <code>tasks.md</code> parse no longer contains.
         </p>
       </section>
       {tasks.length === 0 ? (

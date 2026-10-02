@@ -1,6 +1,6 @@
 # ADR-0010 — PMI Studio MCP architecture
 
-**Status**: Open
+**Status**: Accepted (2026-09-04) — **closed as delivered by `EPIC-043`**; `R-AI-014` resolved as project-scoped connector credentials (see *Closure* below)
 **Date**: 2026-08-17
 **Deciders**: Tech lead (architecture) · project owner (open items)
 **Awaits**: `R-AI-014` (MCP least-privilege authorization model)
@@ -43,3 +43,29 @@ through the middle of one protocol.
 ## Traceability
 
 C-25 · C-07 · D-26 · R-AI-014 · PC-1 · EPIC-013 · M-09
+
+## Closure — 2026-09-04, `EPIC-043` `/speckit-plan` (`FR-PIC-060`)
+
+**`R-AI-014` is resolved.** The least-privilege authorisation model for the agent-facing MCP
+surface is the **project-scoped connector credential** `EPIC-041` built: minted once, stored as a
+digest, resolved on every call to a `connector` Principal, scoped to exactly one project, and
+permitted only the operations registered in the connector scope registry (eleven scopes —
+`specs/043-pmi-integration-contract/data-model.md` §8). A credential cannot read a Room, approve a
+transition or administer a workspace, because no route with those effects carries a registered
+scope.
+
+**The agent-facing surface ships as the stdio server `pmi-studio`** (`packages/mcp-server`), a
+REST client of the mounted `EPIC-037` registry and of three reads — health, project context,
+requirements — per `specs/043-pmi-integration-contract/contracts/mcp-tool-surface.md`. The nine
+capabilities this record named (`getAllowedContext` … `proposeChangeRequest`) map onto that
+surface as follows: context and requirement reads are delivered here; specification, task and
+traceability reads, implementation results, test evidence, defects and change requests arrive
+through the same server as `EPIC-045`, `EPIC-046`, `EPIC-032`, `EPIC-035` and `EPIC-034` bind
+their operations to it — each a tool added to one server, not a second server.
+
+**`PC-1` holds as decided**: the server is a transport over existing services and contains no
+business logic (`FR-PIC-011`, enforced by `mcp-server-boundary.spec.ts`). **`ADR-0023`** stands:
+MCP sits at the adapter layer. Third-party server registration and the marketplace remain at M-09
+Phase 3 (`EPIC-039`), unchanged by this closure.
+
+Traceability added: `EPIC-041` · `EPIC-043` · `FR-PIC-020`–`FR-PIC-027` · `ADR-0030`

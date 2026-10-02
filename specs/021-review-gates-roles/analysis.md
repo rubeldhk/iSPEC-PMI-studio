@@ -58,3 +58,25 @@ Findings from this session were acted on the same day by EPIC-026 `T686` and `T6
 
 The findings above are left as recorded. They state what the pass returned on the day it ran; a
 later fix does not change what was found.
+
+---
+
+# Analysis: EPIC-021 — C2C reopening
+
+**Session**: 2026-08-26 · **Scope**: the production gate capability delivered under the C2C
+ownership decision (`T1107`–`T1110`). See [closure.md](./closure.md) — Reopening record.
+
+## Findings
+
+| ID | Category | Severity | Location(s) | Summary | Recommendation |
+|----|----------|----------|-------------|---------|----------------|
+| G1 ✅ | Coverage Gap | HIGH | `backend/src/modules/reviews/` | **Closed.** The Epic had services and no producer — no module, imported by nothing, in-memory store only, nothing writing `ReviewGate` or `GateOutcome`. It now has `ReviewsModule`, Prisma-backed configuration, an append-only authoritative decision table, and a public typed-disposition query | Verified end to end through the real `AppModule` |
+| G2 | Constitution Alignment | MEDIUM | `gate_final_outcomes`; `GateProductionService` | **Target-version binding and staleness have no SRS source.** `FR-ENH-012`–`016` cover configurability, findings, the human decision, outcome recording and role failure. They say nothing about binding an outcome to the version it examined, or about an outcome ceasing to authorise when its inputs change. The rule was implemented because `X11` showed an unbound outcome could authorise the wrong transition — but Constitution II requires a requirement to originate in the SRS | Back-fill `SRS/enhancement_module/` (or `PMI-DOC-004`) and add the requirement with a citation, **or** rule that this is an implementation constraint rather than a requirement. Recorded now so it is not discovered later as unsourced |
+| G3 | Underspecification | LOW | `gate_outcomes` | The mutable two-phase working record remains, and is now **not** what authorises a transition. Nothing reads it on the governed path | Retire it, or document it as the review-workflow projection it has become. Not urgent; it misleads only a reader who assumes it is authoritative |
+
+## Notes
+
+`G2` is the one that matters. The behaviour is right — an outcome that survives a change to the
+thing it examined is dangerous — but "right" is not the same as "sourced", and this repository's
+Constitution II exists precisely because those two get conflated. The rule ships; its provenance is
+open.

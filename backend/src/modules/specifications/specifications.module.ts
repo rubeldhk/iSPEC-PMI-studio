@@ -17,9 +17,12 @@
  * the Prisma-backed store at the composition root (EPIC-014 F-11.2).
  */
 import { Module } from '@nestjs/common';
+import { EpicStoresModule } from '../epics/epic-stores.module.js';
 import { EnginesModule } from '../engines/engines.module.js';
 import { EngineResolverService } from '../engines/engine-resolver.service.js';
-import { JobsService } from '../jobs/jobs.service.js';
+import { JobsService, type JobQueue, type JobStore } from '../jobs/jobs.service.js';
+import { JOB_QUEUE, JobsModule } from '../jobs/jobs.module.js';
+import { PrismaGenerationJobLedger } from './generation-job.ledger.prisma.js';
 import { REQUIREMENT_STORE, RequirementsModule } from '../requirements/requirements.module.js';
 import type { RequirementStore } from '../requirements/requirements.service.js';
 import {
@@ -48,14 +51,26 @@ import {
   SpecificationsController,
 } from './specifications.controller.js';
 import {
-  InMemorySpecificationStore,
+  PrismaSpecificationStore,
+  type SpecificationDelegates,
   SpecificationsReadService,
   type SpecificationRecord,
   type SpecificationStore,
 } from './specifications-read.service.js';
 
 export const SPECIFICATION_STORE = Symbol('SPECIFICATION_STORE');
-export const GENERATION_JOB_LEDGER = Symbol('GENERATION_JOB_LEDGER');
+
+
+/**
+ * EPIC-009's transactional lifecycle repository (`T1105`, C2C).
+ *
+ * Bound to **real Prisma**, unlike `SPECIFICATION_STORE` above, which remains
+ * in-memory pending EPIC-014's wider composition. The asymmetry is deliberate
+ * and narrow: `X8` required the lifecycle state and its transition evidence to
+ * share one committed transaction, and that is impossible against an in-memory
+ * store. Only the lifecycle path was moved, not the whole store.
+ */
+export const LIFECYCLE_TRANSITION_REPOSITORY = Symbol('LIFECYCLE_TRANSITION_REPOSITORY');export const GENERATION_JOB_LEDGER = Symbol('GENERATION_JOB_LEDGER');
 export const REQUIREMENT_SELECTION = Symbol('REQUIREMENT_SELECTION');
 
 /**
@@ -111,22 +126,59 @@ export class JobsValidationSubmission implements ValidationSubmissionPort {
   }
 }
 
+import {
+  PrismaLifecycleTransitionRepository,
+  type LifecycleTx,
+} from './lifecycle-transition.repository.js';
+import { prismaClient } from '../../persistence/prisma.js';
+
 @Module({
-  imports: [EnginesModule, RequirementsModule],
+  // EPIC-044 T1598 — specification rows name their Epic through the stores-only module (R-044-7).
+  imports: [EnginesModule, RequirementsModule, JobsModule, EpicStoresModule],
   controllers: [SpecificationsController, SpecificationLifecycleController],
   providers: [
     {
       provide: SPECIFICATION_STORE,
-      useFactory: (): SpecificationStore => new InMemorySpecificationStore(),
+      // X16 (C2D) — one source of truth. `commitGeneration` wrote to memory
+      // while lifecycle validation and application read PostgreSQL, so a
+      // specification the product had created was invisible to the services
+      // that govern it. Bound to the PrismaSpecificationStore this Epic already
+      // shipped and never composed.
+      useFactory: (): SpecificationStore => {
+        const db = prismaClient() as unknown as SpecificationDelegates;
+        return new PrismaSpecificationStore(db, (fn) =>
+          prismaClient().$transaction((tx) => fn(tx as unknown as SpecificationDelegates)),
+        );
+      },
+    },
+    {
+      provide: LIFECYCLE_TRANSITION_REPOSITORY,
+      // Lazily reached: prismaClient() reads DATABASE_URL at construction.
+      useFactory: (): PrismaLifecycleTransitionRepository =>
+        new PrismaLifecycleTransitionRepository(
+          (fn) => prismaClient().$transaction((tx) => fn(tx as unknown as LifecycleTx)),
+          prismaClient() as unknown as LifecycleTx,
+        ),
     },
     {
       provide: GENERATION_JOB_LEDGER,
-      useFactory: (): InMemoryGenerationJobLedger => new InMemoryGenerationJobLedger(),
+      // EPIC-041 T1329 (FR-LPW-041, R-041-7) — the real `generation_jobs` rows
+      // when a database is configured; the in-memory ledger is the
+      // database-less posture unit suites run under, never the default of a
+      // deployment that has one. Asserted by tests/architecture/durable-stores.spec.ts.
+      useFactory: (): JobStore & GenerationJobLedger =>
+        process.env['DATABASE_URL']
+          ? new PrismaGenerationJobLedger(prismaClient().generationJob)
+          : new InMemoryGenerationJobLedger(),
     },
     {
       provide: GENERATION_JOBS_SERVICE,
-      inject: [GENERATION_JOB_LEDGER],
-      useFactory: (ledger: InMemoryGenerationJobLedger): JobsService => new JobsService(ledger),
+      // EPIC-041 T1321 — the SAME queue JobsModule dispatches on. Before this
+      // the generation API's JobsService had no queue at all, so a submission
+      // created a row no worker was ever told about (PMI-DOC-004B §2.1).
+      inject: [GENERATION_JOB_LEDGER, JOB_QUEUE],
+      useFactory: (ledger: JobStore & GenerationJobLedger, queue: JobQueue): JobsService =>
+        new JobsService(ledger, queue),
     },
     {
       // T843 — the scope check reads the LIVE requirement register, not a copy.
@@ -227,6 +279,7 @@ export class JobsValidationSubmission implements ValidationSubmissionPort {
     GENERATION_JOBS_SERVICE,
     TRANSITION_RECORDER,
     SPEC_FINDING_STORE,
+    LIFECYCLE_TRANSITION_REPOSITORY,
   ],
 })
 export class SpecificationsModule {}

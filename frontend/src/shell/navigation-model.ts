@@ -11,7 +11,14 @@
  *
  * Unit tests: `frontend/tests/unit/shell/navigation-model.spec.ts` (T436h).
  */
-import { AREAS, AREA_GROUPS, GROUP_LABELS, type Area, type AreaGroup } from './areas';
+import {
+  AREAS,
+  AREA_GROUPS,
+  GROUP_LABELS,
+  isReachable,
+  type Area,
+  type AreaGroup,
+} from './areas';
 
 export interface NavigationGroup {
   readonly group: AreaGroup;
@@ -38,7 +45,7 @@ export function navigationModel(areas: readonly Area[] = AREAS): readonly Naviga
   return AREA_GROUPS.map((group) => ({
     group,
     label: GROUP_LABELS[group],
-    areas: areas.filter((area) => area.group === group && area.status === 'delivered'),
+    areas: areas.filter((area) => area.group === group && isReachable(area.status)),
   })).filter((entry) => entry.areas.length > 0);
 }
 

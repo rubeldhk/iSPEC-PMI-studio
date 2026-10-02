@@ -158,3 +158,44 @@ describe('ApiClient · surfaces', () => {
     expect(url).toContain('status=active');
   });
 });
+
+/**
+ * `T1648` (EPIC-045, `contracts/artifacts-api.md` §2) — the three artifact
+ * reads. Each is a GET to one route with its identifier escaped; there is no
+ * artifact WRITE method on this client at all, because there is no artifact
+ * write route (`FR-ART-010`).
+ */
+describe('ApiClient · artifacts (T1648)', () => {
+  it('getEpicArtifacts reads the Epic\'s tree', async () => {
+    const { client, fetchMock } = clientWith(jsonResponse(200, { epicId: 'e1', files: [], refusals: [], findings: { reportedNotSynced: [], syncedNotReported: [] } }));
+    const tree = await client.getEpicArtifacts('e1');
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/v1/epics/e1/artifacts');
+    expect(tree.epicId).toBe('e1');
+  });
+
+  it('getArtifactVersion reads one version, content included', async () => {
+    const { client, fetchMock } = clientWith(jsonResponse(200, { versionId: 'v1', path: 'specs/003-reports/spec.md', kind: 'spec', digest: 'a', sizeBytes: 3, content: '# R\n', firstSyncedAt: 'now', deliveredBy: [] }));
+    const version = await client.getArtifactVersion('v1');
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/v1/artifacts/v1');
+    expect(version.content).toBe('# R\n');
+  });
+
+  it('getUnboundArtifacts reads the project\'s unbound syncs', async () => {
+    const { client, fetchMock } = clientWith(jsonResponse(200, { projectId: 'p1', syncs: [] }));
+    const unbound = await client.getUnboundArtifacts('p1');
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/v1/projects/p1/artifacts/unbound');
+    expect(unbound.projectId).toBe('p1');
+  });
+
+  it('escapes an identifier rather than interpolating it raw', async () => {
+    const { client, fetchMock } = clientWith(jsonResponse(200, { epicId: 'x', files: [], refusals: [], findings: { reportedNotSynced: [], syncedNotReported: [] } }));
+    await client.getEpicArtifacts('e/1?x=2');
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('/v1/epics/e%2F1%3Fx%3D2/artifacts');
+  });
+
+  it('reads only — the client offers no artifact write (FR-ART-010)', () => {
+    const surface = Object.getOwnPropertyNames(ApiClient.prototype);
+    const artifactMethods = surface.filter((n) => /artifact/i.test(n));
+    expect(artifactMethods.sort()).toEqual(['getArtifactVersion', 'getEpicArtifacts', 'getUnboundArtifacts']);
+  });
+});

@@ -18,6 +18,7 @@ import { requirementContentHash } from '../../../src/modules/requirements/requir
 import { OutOfDateService } from '../../../src/modules/specifications/out-of-date.service.js';
 import { InMemorySpecificationStore } from '../../../src/modules/specifications/specifications-read.service.js';
 import { OTHER_WS, PROJECT, WS } from './helpers.js';
+import { ownershipFor } from '../../support/ownership.js';
 
 let seq = 0;
 
@@ -63,6 +64,7 @@ async function seed(
       relationship: 'generated_from' as const,
     })),
     job: { id: `job_${id}`, state: 'succeeded', resultRef: id },
+    ownership: ownershipFor('u1'),
   });
   return id;
 }

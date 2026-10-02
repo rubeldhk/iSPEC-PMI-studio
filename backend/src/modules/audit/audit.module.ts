@@ -26,6 +26,8 @@
 import { Module } from '@nestjs/common';
 import { AuditController, type AuditReader } from './audit.controller.js';
 import { AuditService, type AuditWriter } from './audit.service.js';
+import { PrismaAuditReader, PrismaAuditWriter, type AuditEntryDelegate } from './audit.store.prisma.js';
+import { prismaClient } from '../../persistence/prisma.js';
 import { AUDIT_READER, AUDIT_WRITER } from './audit.tokens.js';
 
 export { AUDIT_READER, AUDIT_WRITER } from './audit.tokens.js';
@@ -67,11 +69,20 @@ export class UnconfiguredAuditReader implements AuditReader {
   providers: [
     {
       provide: AUDIT_WRITER,
-      useFactory: (): AuditWriter => new UnconfiguredAuditWriter(),
+      // T1351 (EPIC-041): the seam every durable store uses — DATABASE_URL
+      // decides. Until this, no composition root ever replaced the refusing
+      // default, so every audited action under a database answered 500.
+      useFactory: (): AuditWriter =>
+        process.env['DATABASE_URL']
+          ? new PrismaAuditWriter(prismaClient().auditEntry as unknown as AuditEntryDelegate)
+          : new UnconfiguredAuditWriter(),
     },
     {
       provide: AUDIT_READER,
-      useFactory: (): AuditReader => new UnconfiguredAuditReader(),
+      useFactory: (): AuditReader =>
+        process.env['DATABASE_URL']
+          ? new PrismaAuditReader(prismaClient().auditEntry as unknown as AuditEntryDelegate)
+          : new UnconfiguredAuditReader(),
     },
     {
       provide: AuditService,

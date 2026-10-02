@@ -186,7 +186,10 @@ export function projectIdFromPathname(pathname: string): string | null {
  * one of them wrong. `T442d` asserts this list against the route table.
  */
 export const ADDRESS_SCOPED_PATTERNS: readonly RegExp[] = Object.freeze([
-  /^\/specifications\/[^/]+$/,
+  // EPIC-044 `T1587`: `/specifications/board` is the Spec Journey Board — a
+  // project-scoped sub-view under the same area — so the literal segment is
+  // excluded here the way `intake` sits beside `:roomObjectId` in the routes.
+  /^\/specifications\/(?!board$)[^/]+$/,
   /^\/runs\/[^/]+$/,
 ]);
 

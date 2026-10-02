@@ -5,7 +5,7 @@ description: "Task list for EPIC-026 — Epic Stage Register & Definition of Rea
 
 # Tasks: Epic Stage Register & Definition of Ready
 
-**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 105 (T466–T536, T851–T854, T864a–T864l)
+**Epic**: `EPIC-026` | **Process, not product** | **Tasks**: 114 (T466–T536, T851–T854, T864a–T864l, T1000–T1008)
 
 > **Counted, not quoted.** This number is recomputed by `/speckit-analyze`; the phase and function sections below are its composition. It drifted before because two documents restated it and neither was derived — EPIC-018 read 31 here, 32 in the index and 34 in its task list, and by the time `T529` came to reconcile them the real figures were 31 / 37 / 38. **The remediation went stale before it ran.** Corrected by `T686`.
 
@@ -339,8 +339,8 @@ posture or task counts, and links to the register.
 - [X] T520 [US5] Add the same three artifacts plus the check group to the governance index in `governance/README.md`, each with its purpose, path, version and Constitution I status (FR-RGP-009; check: existing `G-05b`)
 
   > **A regex that could not match, and printed as though it could.** `T518`'s guard was written
-  > through a python heredoc where `` is a **backspace character**, not a word boundary. So
-  > `/CLOSED/` became `/␈CLOSED␈/` — seven invisible control characters across five patterns.
+  > through a python heredoc where `\b` is a **backspace character**, not a word boundary. So
+  > `/\bCLOSED\b/` became `/␈CLOSED␈/` — seven invisible control characters across five patterns.
   > `String(pattern)` printed `/CLOSED/`, the array had five entries, the function was entered with
   > `value = "CLOSED"`, and `pattern.test(value)` returned **false**.
   >
@@ -386,7 +386,7 @@ failing.
   >
   > ```text
   > render.ts contains a control character at offset 2782 — U+0008.
-  > A  written through a shell heredoc becomes a BACKSPACE, and the regex silently matches nothing.
+  > A \b written through a shell heredoc becomes a BACKSPACE, and the regex silently matches nothing.
   > ```
   >
   > Four rounds of diagnostics the first time; one line of output now. That is the difference
@@ -855,3 +855,56 @@ and is **deliberately not settled here** — these two are fixed individually un
 - [X] T910 Reimplement `DOR-06` in `tests/governance/epic-stage/dor.ts` to read the **status cell** — last cell of the row, decoration stripped, first word taken — and fail when that word is `FAIL`, whatever precedes it. Scoped to the actual defect: **a FAIL is a FAIL however it is marked**. Statuses outside any vocabulary keep today's behaviour pending `D-43`, so this fix changes no Epic's readiness except where a genuine FAIL was being hidden (`DEF-026-009`; unit test: T908)
 - [X] T911 Sweep every `specs/*/plan.md` Constitution Check for FAIL rows the gate has been ignoring and for statuses outside the new vocabulary — EPIC-029's plan alone carries `⚠️ PARTIAL` and `⚠️ CONDITIONAL` — and record the result in `DEF-026-009` before closing it (`DEF-026-009`; conformance check: T908)
 - [X] T912 Close `DEF-026-008` and `DEF-026-009` with Resolution sections naming the resolving tasks, then re-run `pnpm register:update` and report which Epics changed readiness as a result. An Epic that silently moves out of `Ready` because a gate started working is the finding, not a side effect (Constitution VI, IX)
+
+## Phase 6: Convergence — F-26.9 *(appended 2026-08-24 by `/speckit-converge`)*
+
+**The rule works; it is not yet the only rule.** `V26-9` passes exactly as written, both mutations
+were observed, and **1,610 identifiers across 34 Epics are recognised**. But `SC-ESK-015` asks for
+**zero** inline identifier patterns, and **five hand-written ones remain across three files** — two
+of them still the old three-digit-only shape, which cannot see the four-digit ids this Epic exists
+to permit.
+
+**Identifier block: `T1000`–`T1002` — the first four-digit identifiers in this corpus.** They are
+legal because `T864a`–`T864l` made them legal, and allocating them here is the shortest available
+proof that `FR-ESK-025` did what it claimed. `T864` was the last three-digit prefix; this is what
+comes after it.
+
+*A correction, recorded rather than quietly amended: the first draft of this section stated that
+the three consumers plus the module were the complete set of task-identifier parsers. **That was
+wrong.** It rested on a `grep` whose escaping was broken badly enough that it could not match even
+the file already known to contain the pattern — so it returned nothing and was read as "nothing is
+there". A search that cannot fail is not evidence, which is the same fault this Epic keeps finding
+in checks; finding it in the search **used to survey for it** is worth the ink.*
+
+- [x] T1000 Compose both line parsers in `tests/governance/epic-stage/task-id-format.ts` from configuration instead of hardcoding the shape, per `FR-ESK-025`, `SC-ESK-015` (partial) — **the module whose whole purpose is that the shape is defined once writes it twice**: line 81 (`completedTaskIdentifierOf`) and line 93 (`taskIdentifierOf`) both hardcode `T\d+[a-z]*` rather than composing from `taskIdentifierRecogniser()`. **The hazard is the original one through a different door**: `unrecognisedIdentifiers` extracts the id with the **hardcoded** parser and only then tests it against the **config** recogniser, so widening the config alone would leave tokens dropped at the parse step, before the recogniser ever saw them — silently unchecked again, which `T441n` called *"worse than a collision"*. Compose both from the recogniser, keeping the `[xX]` / `[xX ]` distinction, which is load-bearing for `G-26-14` (conformance: T1001)
+- [x] T1001 [P] Derive `T864a`'s file set instead of listing it, in `tests/governance/epic-stage/task-id-format.spec.ts`, per `Constitution V` (partial) — covers T1000 and T1002. `CONSUMERS` is a **hand-listed array of three files**; it omits `task-id-format.ts` itself, which is why T1000's finding went unseen, and it omits everything outside `tests/governance/`, which is why T1002's did. **This is the same shape `EPIC-014` `T153f` fixed three passes ago**: a derived check whose own inputs were hand-maintained, with the real gap sitting in exactly the files the list did not name. Search the whole repository for an inline identifier shape rather than a curated directory, and assert the detector's self-exemption from both sides so it cannot widen unnoticed
+- [x] T1002 Remove the two three-digit-only patterns from `frontend/tests/unit/shell/registry-documented.spec.ts`, per `FR-ESK-025`, `SC-ESK-015` (partial) — lines 231 and 239 hardcode `T\d{3}[a-z]?`, **the pre-widening shape**. This is `EPIC-036`'s own check, and `EPIC-036` is one of the Epics with **no free three-digit prefixes left**, so its next convergence task must be four-digit — and line 231 would exclude that id from `defined` while `OWN_BLOCK` excluded it from `examined`, leaving it **skipped rather than reported**. That is precisely the warning `T441n` wrote, still unfixed in the file `T441n` lives in. Also `backend/tests/unit/core/test-completeness.spec.ts:28`, which is digit-agnostic (`T\d+`) and so blind to nothing today, but is a fifth hand-written copy. **Name the import constraint before assuming it**: both files are in vitest projects (`frontend`, `backend-unit`) separate from `governance`, so establish whether they can import the shared module, and if they cannot, say so in the file rather than leaving a copy that looks like a choice
+
+## Phase 7: Convergence — F-26.9 *(appended 2026-08-25 by `/speckit-converge`)*
+
+**The rule now holds in code; the Epic's own records of it do not.** `T864a` derives its file set
+and catches a reintroduced shape by file and line, four hardcoded copies are gone, and the corpus
+of 1,610 identifiers across 34 Epics is recognised. Both findings are artifacts that describe a
+solution the code has outgrown — and one of them is the gate that certified the fault.
+
+- [x] T1003 Rewrite `V26-9` step 2 in `specs/026-epic-stage-kanban/quickstart.md` to run the derived check rather than a hand-scoped grep, per `FR-ESK-025`, `SC-ESK-015` (partial) — **this is the command that certified the fault `T1000` fixed.** It reads `grep -rn 'T..d{3' tests/governance/epic-stage/*.ts` and expects *"zero inline patterns across the three check files"*. Both halves are stale: the scope is the curated three-file set `T1001` replaced with a whole-repository walk, and the pattern matches only the **three-digit** form, so the `T\d+[a-z]*` copies that actually existed were invisible to it. Demonstrated, not inferred — run against the pre-`T1000` file it prints no matches while three shapes are present, which is exactly why the first convergence pass reported that file clean. Replace it with the real check (`vitest run --project governance tests/governance/epic-stage/task-id-format.spec.ts`) and state the expected count, so the documented gate and the executable gate are the same gate (conformance: T1004)
+- [x] T1004 [P] Correct §1 of `specs/026-epic-stage-kanban/contracts/task-identifier-format.md` to describe the arrangement that now exists, per `FR-ESK-025` (partial) — covers T1003. It is titled *"One definition, three consumers"*, tables three, and asserts *"None of the three writes a pattern of its own"*. There are **five** consumers plus the defining module, and the claim was false of the module itself when written. Record the two things the Epic learned and stored nowhere: that `frontend/tests/unit/shell/registry-documented.spec.ts` and `backend/tests/unit/core/test-completeness.spec.ts` **cannot import** the module — each package's tsconfig sets `rootDir` to the package directory, so a repository-root `.ts` import fails `tsc` with TS6059 even though vitest resolves it — and that they therefore read `governance/epic-stage.config.json` directly, which keeps the **shape** single-sourced while repeating only the anchor-stripping. State that limit plainly so the next reader does not rediscover it by compiling, and note that relocating the module to a shared workspace package would remove it
+
+## Phase 8: Convergence — F-26.9 *(appended 2026-08-25 by `/speckit-converge`)*
+
+**The code is settled; the records of it are one document behind.** `T1004` corrected the contract
+and stopped there, so the same retired claim still stands in the plan's own exit gate and in the
+research decision that justified it.
+
+- [x] T1005 Correct the three-consumer claim in `specs/026-epic-stage-kanban/plan.md` and `specs/026-epic-stage-kanban/research.md`, per `FR-ESK-025`, `plan: Constitution Check` (partial) — **this one is a gate, not a document.** `plan.md` line 320 states the exit condition for `FR-ESK-025` as *"the pattern is configuration read by **all three checks** with zero inline copies"*, which instructs a reader to verify the retired three-file scope — and that is not hypothetical, it is what the first convergence pass did. Line 132 repeats it in the technical-context table, and `research.md` line 267 asserts *"The three check files import it; none writes a pattern of its own"*, now false twice: there are **five** consumers plus the defining module, and two of them **cannot** import it (TS6059, recorded in `contracts/task-identifier-format.md` §1). Restate all three against the derived scope — the whole repository — not a count. **Leave `closure.md` alone**: its "three consumers" lines are past-tense records of what was true when written, and rewriting history to match the present is the opposite of a record (conformance: T1006)
+- [x] T1006 [P] Extend the `T1003` conformance block in `tests/governance/epic-stage/task-id-format.spec.ts` to every scenario and to the consumer-count claim, per `Constitution V` (partial) — covers T1005. It parses commands from `## V26-9` alone: **3 of 18 commands across 9 scenarios**, which is the curated scope it was written to eliminate, one level up. Extending it is **not** mechanical, and the audit that found this also found why: (a) the three greps in `V26-5`/`V26-8` assert a **positive** — they can fail, and are legitimate; the banned pattern is a grep proving a **negative** over a bounded scope, which passes by finding nothing and so cannot be distinguished from a grep that could never find anything; (b) `V26-3` names a scratch-epic spec under `099-scratch-epic` which it **creates and deletes itself**, so a naive existence check false-positives on a correct scenario. *(This line originally wrote that scratch path in full, and `G-26-14` correctly failed the moment this task was ticked — a completed task naming a file that is not there. The rule cannot distinguish a deliberately-absent path from a broken reference, and should not try; the reference was reworded rather than the check weakened.)* Then add the assertion covering T1005: no Epic artifact may state a consumer count that contradicts the derived set. **Expect to need `liveProse()`-style handling** — `quickstart.md` and `contracts/task-identifier-format.md` both quote the retired wording on purpose, and a check that cannot tell a quotation from a claim will report the very notes that record the fix
+
+## Phase 9: Convergence — F-26.9 *(appended 2026-08-25 by `/speckit-converge`)*
+
+**The Epic's subject has been settled since `T1002`.** Both findings are in the checking apparatus
+built since, and both are the same error: a rule written as the one instance in front of the author
+rather than as the fault. That error was diagnosed and corrected for greps inside `T1006`, then
+committed again for counts a few functions later in the same file.
+
+- [x] T1007 State the count rule as the fault rather than as the word "three", in `tests/governance/epic-stage/task-id-format.spec.ts`, per `Constitution V`, `T1005` conformance (partial) — the check is named *"no Epic artifact claims a consumer count"* and **does not detect a consumer count**. Its predicate matches the literal word `three`, so it cannot see any other number, and it never derives the consumer set its own task text named. **Proven, not argued**: injecting *"The pattern is read by all five checks."* into `plan.md` leaves the suite at 34/34 green. **Five is the count that is true today**, which makes it the number most likely to be written down next and the one the check is blindest to. Derive the consumer set — sources importing the module, plus sources reading the `taskIdentifier*` keys from configuration — and report any artifact asserting a numeric count of them at all, since a number is wrong the day after it is typed. Add a positive control listing several counts in several phrasings, so the predicate cannot be narrowed back to one literal without failing (conformance: T1008)
+- [x] T1008 [P] Derive the artifact set instead of naming `contracts/` by hand, in `tests/governance/epic-stage/task-id-format.spec.ts`, per `Constitution V` (partial) — covers T1007. `ARTIFACTS` reads the Epic's top level plus **one hand-named subdirectory**, so `checklists/` and `defects/` — **ten files** — are never scanned. Nothing false sits in them today; the gap is that nothing would notice if it did. Walk the Epic directory recursively. **Keep `RECORDS` hand-listed and keep its load-bearing guard**: which documents are append-only records is a judgement about their purpose, not a fact derivable from the filesystem, and pretending otherwise would swap an honest list for a guess. Widening the walk makes that list matter more, so state each entry's reason where it is declared

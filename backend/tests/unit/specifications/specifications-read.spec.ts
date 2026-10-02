@@ -16,6 +16,7 @@ import {
   SpecificationsReadService,
 } from '../../../src/modules/specifications/specifications-read.service.js';
 import { CTX, OTHER_WS, PROJECT, WS } from './helpers.js';
+import { ownershipFor } from '../../support/ownership.js';
 
 const OTHER_PROJECT = 'proj_2';
 
@@ -61,6 +62,7 @@ async function seed(
       },
     ],
     job: { id: `job_${specificationId}`, state: 'succeeded', resultRef: specificationId },
+    ownership: ownershipFor('u1'),
   });
   return specificationId;
 }

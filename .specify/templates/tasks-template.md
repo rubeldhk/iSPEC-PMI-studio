@@ -190,7 +190,7 @@ Each task below is complete only when its paired unit test passes.
 
 ---
 
-## Phase Z: Epic Closure (MANDATORY - Constitution IV, VI, VII, IX, XI)
+## Phase Z: Epic Closure (MANDATORY - Constitution IV, VI, VII, IX, XI, XII)
 
 **Purpose**: Gate the Epic before it may be promoted out of `local`
 
@@ -209,6 +209,13 @@ empty → promote.
       its conformance check. Hand-written evidence is a constitution violation of the first order.
       Not applicable to libraries, contracts, governance and infrastructure Epics — record which
       applies
+- [ ] TXXX **Constitution XII** — every governed Spec Kit command run for this Epic has an
+      **execution record in PMI Studio**, whatever surface originated it. Confirm the records
+      exist, that their history is **append-only immutable events** rather than mutable updates,
+      that each binds **input identity at registration and output identity at completion**, and
+      that no status transition was applied by a connector rather than adjudicated by the
+      platform. An Epic that caused no governed execution records that here rather than deleting
+      the task
 - [ ] TXXX Run `/speckit-converge`; append and complete any remaining unbuilt work
 - [ ] TXXX Triage `specs/[epic-id]/defects/`; every record closed or deferred to a named Epic
 - [ ] TXXX Re-run full test suite green after defect fixes

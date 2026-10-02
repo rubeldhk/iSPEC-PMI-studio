@@ -1,7 +1,7 @@
 # DEF-001-006 — the error filter reports every framework exception as a server error
 
 **Epic**: `EPIC-001` (owns `backend/src/core/`) · affects **every route in the API**
-**Raised**: 2026-08-21 | **Status**: **OPEN**
+**Raised**: 2026-08-21 | **Status**: **CLOSED — FIXED 2026-08-25** (`T1009`–`T1011`)
 **Found by**: investigating `DEF-007-001` (project-scoped lists return 200 for an unknown project) —
 this was the control test, not the target
 **Severity**: **HIGH** — every mistyped URL is reported as a server error, and real 404s are
@@ -68,6 +68,50 @@ an error the platform did not itself raise.
 - Sweep for handlers that already throw Nest exceptions expecting them to survive the filter.
 - **No code was changed by the session that found this.** The fix re-enters as tasks
   (Constitution VI).
+
+---
+
+## Resolution — 2026-08-25 (`T1009`–`T1011`)
+
+Reopened by the EPIC-014 release gate, which found this record still `OPEN` and **unmentioned in
+EPIC-001's closure** (`specs/_shared/release-readiness-report.md`, finding `R-2`).
+
+**The proposed remedy above was corrected before it was implemented.** *"Map `HttpException` to its
+own status in `toHttpStatus`"* would have put a framework type into `backend/src/core/errors.ts`,
+whose header states *"Framework-free by design (PC-1) … Nothing here imports an HTTP type"* and
+which `backend/tests/architecture/transport-independence.spec.ts` enforces. That trades a status bug
+for a PC-1 violation. The fix went into the **transport half**, `backend/src/core/error.filter.ts`,
+which already imports `@nestjs/common` because translating to HTTP is its job. `errors.ts` is
+unchanged, and `toHttpStatus` still answers 500 for anything that is not a `PlatformError`.
+
+| Task | What it did |
+|---|---|
+| `T1009` | `backend/tests/unit/core/error-filter.spec.ts` — **observed failing first**: `expected 500 to be 404` and `expected 500 to be 400`, the reproduction exactly |
+| `T1010` | The filter recognises `HttpException`, takes its status, and emits a **message of ours chosen by status** — never the exception's own text |
+| `T1011` | The sweep — see below |
+
+**Trust the status, never the text.** `toErrorBody`'s refusal to echo unrecognised error text
+*"because it may carry a connection string, a token, or engine output"* survives untouched, and
+`T1009` asserts it from both sides: a thrown `Error` carrying a Postgres connection string does not
+appear in the response, and neither does an `HttpException` carrying one. An `HttpException`'s text
+is author-supplied and the platform did not raise it, so it is exactly the text the platform cannot
+vouch for.
+
+### `T1011` — the sweep found **zero**, and that is the finding
+
+`backend/src/` contains **0** throws of any Nest `*Exception` class and **118** throws of
+`PlatformError` subclasses. The only `@nestjs/common` exception import in the entire source tree is
+the one `T1010` added to the filter.
+
+**This is why the defect survived four months of tests.** Every *deliberate* error path used
+`PlatformError`, which the filter mapped correctly, so every test of an intended failure passed.
+Only exceptions the framework raises by itself — an unmatched route, a bad method, an unsupported
+media type — took the broken branch, and nothing exercised those. The bug lived precisely in the
+gap between "errors we throw" and "errors that happen to us".
+
+No workarounds were found to remove: there were none, because nobody had hit the case.
+
+**Verification**: `error-filter.spec.ts` 7/7; architecture suite 84/84 with PC-1 intact.
 
 ## Links
 

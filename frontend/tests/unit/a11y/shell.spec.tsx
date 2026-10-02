@@ -44,6 +44,11 @@ const project = {
   engineName: null,
   ownerUserId: 'u1',
   archivedAt: null,
+  rootPath: null,
+  agentIntegration: null,
+  scriptType: null,
+  provisioningState: 'not_provisioned',
+  provisionedAt: null,
   createdAt: '2026-08-20T00:00:00Z',
   updatedAt: '2026-08-20T00:00:00Z',
 } as Project;

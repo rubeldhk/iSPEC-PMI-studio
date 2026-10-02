@@ -27,6 +27,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { Client } from 'pg';
 import { projectScoped, scoped, type QueryLike } from '../../src/core/workspace-scope.js';
 import { assertSameWorkspace } from '../../src/core/workspace.guard.js';
@@ -71,7 +72,7 @@ suite('T052 · cross-workspace access returns not-found and is audited (FR-002, 
   }
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     db = new Client({ connectionString: container.getConnectionUri() });
     await db.connect();
     await db.query(readFileSync(MIGRATION, 'utf8'));

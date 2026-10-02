@@ -26,6 +26,8 @@
     "@pmi/execution-contract": "workspace:*",
     "@pmi/execution-provider-docker": "workspace:*",
     "@pmi/agent-adapter-fixture": "workspace:*",
-    "@pmi/agent-adapter-claude": "workspace:*"
+    "@pmi/agent-adapter-claude": "workspace:*",
+    "@pmi/backend": "workspace:*",
+    "@pmi/workspace-bundle": "workspace:*"
   }
 }

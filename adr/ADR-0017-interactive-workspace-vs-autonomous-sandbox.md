@@ -1,9 +1,12 @@
 # ADR-0017 — Interactive developer workspace versus autonomous agent sandbox
 
-**Status**: Open
+**Status**: Accepted (2026-09-04) — **owned since 2026-09-03 by `EPIC-041` Local Project Workspace** (`D-47`, `ADR-0030`). The interactive developer workspace is the controlled-local mode `ADR-0030` defines (a directory the user's own agent works in, provisioned by `EPIC-041`); the autonomous agent sandbox stays managed-isolated. Both modes share one governance contract and differ only in their recorded assurance.
 **Date**: 2026-08-17
 **Deciders**: Tech lead (architecture) · project owner (open items)
-**Awaits**: the interactive workspace epic, which does not yet exist
+**Awaits**: ~~the interactive workspace epic, which does not yet exist~~ **`EPIC-041`'s closure.**
+The epic now exists; this record moves to Accepted when it closes, with the decision that the
+interactive workspace is the developer's own provisioned directory (`ADR-0030`), not a platform
+surface.
 
 > Created by **EPIC-027 `T627`/`T659`** under decision `D-35`: all seventeen ADR subjects
 > named by Native §27 and Cosmos §9 are recorded now, each either decided or explicitly

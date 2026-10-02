@@ -553,6 +553,15 @@ PMI Studio SHALL NOT position itself primarily as a replacement for:
 
 These systems may act as engineering execution interfaces.
 
+> **Clarification — 2026-08-25 (Constitution XII, BRS §6.22).** This prohibition stands unchanged
+> and is not weakened. It bars PMI Studio from *becoming* or *replacing* a coding environment; it
+> does not bar PMI Studio from *recording* what those environments do. Where a system above acts as
+> an engineering execution interface, it does so **behind an approved connector**, and every
+> governed Spec Kit command it runs for a managed project **SHALL** be registered in PMI Studio
+> (`BR-0196`). Registering an IDE-originated execution is control-plane functionality, not IDE
+> functionality. Independence from any one tool is a requirement on adapters — it is never
+> permission for untracked execution.
+
 PMI Studio's differentiated responsibility is the engineering operating system surrounding those execution environments.
 
 ---

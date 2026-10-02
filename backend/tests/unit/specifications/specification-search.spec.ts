@@ -14,6 +14,7 @@ import { ValidationFailedError } from '../../../src/core/errors.js';
 import { SpecificationSearchService } from '../../../src/modules/specifications/specification-search.service.js';
 import { InMemorySpecificationStore } from '../../../src/modules/specifications/specifications-read.service.js';
 import { OTHER_WS, PROJECT, WS } from './helpers.js';
+import { ownershipFor } from '../../support/ownership.js';
 
 const OTHER_PROJECT = 'proj_2';
 
@@ -69,6 +70,7 @@ async function seed(
       },
     ],
     job: { id: `job_${id}`, state: 'succeeded', resultRef: id },
+    ownership: ownershipFor('u1'),
   });
   if (fields.updatedAt) await store.touch(id, fields.updatedAt);
   return id;

@@ -241,3 +241,4 @@ startup, naming it (FR-021).
 | `404` | Not found **or** in another workspace — deliberately indistinguishable |
 | `409` | Lifecycle conflict, or a concurrent edit |
 | `422` | Well-formed but semantically refused (e.g. tasks from an unapproved specification) |
+| `503` | A declared **governance seam** is unbound — no implementation is registered for a port the platform requires, so the request is **refused rather than defaulted**. The message names the seam and the Epic that supplies it. Added 2026-08-29 for `DEF-033-002` |

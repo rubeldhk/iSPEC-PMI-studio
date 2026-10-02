@@ -37,6 +37,7 @@ import {
  */
 const ENV_DESCRIPTOR = {
   provider: 'fake',
+  kind: 'managed-isolated',
   supportedLifecycles: ['ephemeral'],
   supportsPersistentState: false,
   supportsNetworkPolicy: true,

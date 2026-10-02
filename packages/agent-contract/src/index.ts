@@ -279,3 +279,28 @@ export function assertContextFits(descriptor: AgentDescriptor, estimatedTokens: 
     );
   }
 }
+
+/**
+ * T1133 (EPIC-028, C3B) — authoritative identity for non-human principals.
+ *
+ * Separate from {@link AgentDescriptor} on purpose: a descriptor says what a
+ * kind of agent can do, a principal says who a particular one is and who is
+ * accountable for it. See `principal.ts` for why the two must not merge.
+ */
+export {
+  CONNECTOR_KINDS,
+  PRINCIPAL_KINDS,
+  PRINCIPAL_STATES,
+  isPrincipalKind,
+  isPrincipalState,
+  type ConnectorKind,
+  type ConnectorRegistration,
+  type IdentitySnapshotPort,
+  type NonHumanPrincipal,
+  type PrincipalCheck,
+  type PrincipalIdentitySnapshot,
+  type PrincipalKind,
+  type PrincipalRefusalReason,
+  type PrincipalRegistryPort,
+  type PrincipalState,
+} from './principal.js';

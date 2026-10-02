@@ -50,7 +50,7 @@ epic's `closure.md` record — it does not repeat the per-epic checks.
 
 - [ ] T151 Confirm a `closure.md` exists for **all 15 epics** and each records every implementation task in that epic passing its unit test (Constitution V); consolidate into `specs/_shared/release-readiness-report.md` — do not re-run the per-epic checks
 - [ ] T151a Review the Principle Conformance & Deferrals **baseline** register in `specs/_shared/platform-spec.md`: confirm all 20 principles are still correctly declared and every deferral retains a valid owner and discharging module (decision D-6); record in `specs/_shared/release-readiness-report.md`. Per-epic deltas are confirmed in each epic's own closure task
-- [ ] T152 Run `pnpm test:arch` and confirm engine-independence (PC-1 transport separation and PC-2 engine independence) is intact; record in `specs/_shared/release-readiness-report.md`
+- [x] T152 Run `pnpm test:arch` and confirm engine-independence (PC-1 transport separation and PC-2 engine independence) is intact; record in `specs/_shared/release-readiness-report.md`
 - [ ] T152a Hold and record an **architecture review** against `specs/_shared/system-design.md`, the ADRs, and constraints PC-1 to PC-3 (MPS Volume 6 §8 quality gate; PMI-TASK-001 T-306) in `specs/_shared/release-readiness-report.md`
 - [ ] T152b Hold and record a **security review** covering sandbox isolation, workspace scoping, credential handling, and audit immutability (MPS Volume 6 §8 quality gate) in `specs/_shared/release-readiness-report.md`
 - [ ] T153 Execute quickstart V1–V12, **V11a**, **V14** and **V15** and record outcomes in `specs/_shared/release-readiness-report.md` (the SC-001 timing run is owned by EPIC-010 T124a; confirm its result here rather than re-running it). *Scope corrected 2026-08-25 by `T153a`: **`V11a` was never run** — a lettered scenario is not inside a numeric `V1–V12` range, and it had been missing since `EPIC-011` added it, which `T153c` found on its first run. **`V15`** is the containerised stack, without which the gate promotes a platform it has never started.*
@@ -59,6 +59,45 @@ epic's `closure.md` record — it does not repeat the per-epic checks.
 - [ ] T155a Confirm SRS back-fill completed for FR-024 and FR-025 (job cancellation and timeout), which have no SRS source (Constitution II); record in `specs/_shared/release-readiness-report.md`
 - [ ] T156 Promote `local → dev` (then dev → stage → prod; no environment skipped)
 
+### F-11.2 · Composition-root wiring *(added 2026-08-26, Step C2C)*
+
+**Why these did not exist.** EPIC-009's and EPIC-021's closure records both deferred production
+composition to *"EPIC-014 F-11.2"*, and F-11.2 contained no task for it — its tasks **confirm**
+closure records and run reviews, quickstarts and promotion. The deferral had a named owner and no
+schedule, which is how work with an owner quietly becomes work nobody does.
+
+The project owner's C2C decision scoped this precisely: **EPIC-014 owns composition-root wiring,
+activation and integrated release verification only.** Domain persistence belongs to EPIC-009 and
+EPIC-021, and none of it is implemented here.
+
+**Bounded to the dependencies EPIC-037 requires.** These tasks do not replace every in-memory
+adapter in every closed epic; that remains the wider deferral.
+
+- [X] T1112 Register EPIC-009's production lifecycle persistence — `LIFECYCLE_TRANSITION_REPOSITORY`, provided and exported by `SpecificationsModule` *(test: `backend/tests/integration/loop/adjudication-composition.spec.ts`)*
+- [X] T1113 Register EPIC-021's production gate services and persistence — `ReviewsModule` in `app.module.ts` *(test: `adjudication-composition.spec.ts`)*
+- [X] T1114 Replace the relevant unconfigured production bindings in `loop.module.ts` — validation and application to EPIC-009's repository, gates to EPIC-021's service *(test: `adjudication-composition.spec.ts` — each port asserted against its named adapter class)*
+- [X] T1115 Verify boot-time dependency resolution and that **no** production provider resolves to an in-memory, unconfigured, null, fake or stub implementation *(test: `adjudication-composition.spec.ts` — "binds NO production port to an in-memory or unconfigured double")*
+- [X] T1116 Run the end-to-end adjudication/application scenario against the real `AppModule` and real PostgreSQL, including persistence across an application restart *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts`)*
+
+
+**`T1178` added 2026-08-29, and the wider deferral is now measured.** The note above says these
+tasks *"do not replace every in-memory adapter in every closed epic; that remains the wider
+deferral."* A human walking the Requirement Room found what that deferral costs: `GET /v1/projects`
+returned rows while `SELECT count(*) FROM projects` returned **0**. Nothing a user created survived
+a restart.
+
+Measured across the application: **thirteen** modules default to an in-memory store — `decisions`,
+`dependencies`, `loop`, `projects`, `requirement-room`, `requirements`, `review`, `runs`,
+`specifications`, `steering`, `storage`, `tasks`, `traceability` — and **none** was overridden at the
+composition root. Only **three** of those thirteen have a `Prisma*Store` written for the interface
+they default: `PrismaProjectStore`, `PrismaRequirementStore`, `PrismaRequirementVersionStore`. Every
+table exists in the schema; the adapters do not.
+
+`T1178` wires the three that exist, which is composition-root work and therefore this Epic's. **The
+other ten are domain persistence and remain their own Epics' work** under the C2C decision recorded
+above — this task does not widen that boundary, it measures it.
+
+- [X] T1178 Wire the three existing Prisma stores at the composition seam — `PROJECT_STORE`, `REQUIREMENT_STORE`, `REQUIREMENT_VERSION_STORE`, each deciding on `DATABASE_URL` exactly as `AuthModule.register` decides its directory, so the in-memory store remains the unit-test default *(verified: a project created through the API is present in `pmi_studio.projects` and survives `docker compose restart app`)*
 ## F-11.3 · Containerised local deployment
 
 *Added 2026-08-24 by [`D-45`](./decisions/D-45-containerised-local-deployment-lands-in-epic-014.md).
@@ -229,3 +268,10 @@ as quoted history**, not live claims.
 **Identifier: `T153h`.** `T864` remains untouched after six convergence phases.
 
 - [X] T153h Delete the two live check-counts from `specs/014-devops-release/plan.md` and extend `T153d`'s no-restated-count assertion past the Definition of done, per `plan: Constitution Check Gate V` (contradicts) — **the gate's own summary line contradicts the gate's own table, two lines above it.** Line 126, Gate V's status cell, reads *"**Four checks, four pieces of fail-first evidence** — see the table below"*; the table below lists **nine**. Line 220, the Build order, reads *"the three checks"* — wrong since the plan was written and never touched since. **This is the fourth correction of this exact fault in this exact document**: the table (`T150y`, `C-2`), the Definition of done (`T153d`, `C-4`), and now the row introducing the table and the diagram summarising it. Correcting two more strings would be the fourth correction and would invite a fifth. **`T153d`'s `it('the Definition of done does not restate the count')` reads only the DoD bullet** — so the derivation covers the table's *membership* while the prose that introduces it drifts freely. Widen it to the whole `#### Gate V in full` section **and** the Build order block, and delete the numbers rather than updating them: the table is the inventory, and prose beside an inventory should point at it, never count it. **Leave lines 135–136 and 151 alone** — those quote what the document *used to* say, inside dated correction notes, and rewriting quoted history to stay green is the failure `flat()` guards against in `EPIC-036`'s `registry-documented.spec.ts` (conformance: T153d, extended)
+
+- [X] T1122 Register EPIC-024's durable access store; replace the in-memory grant and attempt bindings *(test: `backend/tests/integration/access/grant-durability.spec.ts`)*
+- [X] T1123 Register EPIC-009's production specification store as `SPECIFICATION_STORE` *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts`)*
+- [X] T1124 Cap `backend-integration` parallelism in `vitest.workspace.ts` — every file starts a PostgreSQL container and several boot the whole `AppModule`, so the default one-worker-per-core exhausted the host and suites failed in `beforeAll` while passing individually *(test: the integration project itself, which now passes 38/40 files with only the known load-sensitive `scale.spec.ts` failing)*
+- [X] T1129 Compose EPIC-024's actor directory and workspace boundary in `backend/src/modules/access/access.module.ts` — `PrismaActorDirectory` over the authoritative `users` table, reached lazily *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts`, which resolves the real graph)*
+- [X] T1130 Verify the governed path end to end with ownership issued at creation and no manual grant on the success path *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts`, 18 cases; the restart step now asserts the owner grant SURVIVED rather than re-issuing it)*
+- [X] T1145 Register `AgentsModule` at the composition root and wire EPIC-024's principal directory to EPIC-028's public registry *(test: `backend/tests/integration/agents/principal-identity.spec.ts`)*

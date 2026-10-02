@@ -17,6 +17,7 @@ import {
 import { InMemoryTransitionRecorder } from '../../src/modules/specifications/lifecycle.machine.js';
 import { InMemorySpecificationStore } from '../../src/modules/specifications/specifications-read.service.js';
 import { toErrorBody, toHttpStatus } from '../../src/core/errors.js';
+import { ownershipFor } from '../support/ownership.js';
 
 const PATH = 'path';
 const METHOD = 'method';
@@ -86,6 +87,7 @@ describe('contract · findings behaviour (FR-023)', () => {
       },
       links: [],
       job: { id: 'job_val', state: 'succeeded', resultRef: 'spec:s_val' },
+      ownership: ownershipFor('u1'),
     });
     const findings = new InMemoryFindingStore();
     const service = new SpecificationLifecycleService(

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "workflowType": "defect-room",
+  "stages": ["Event", "Context", "Analyze", "Decide", "Execute", "Verify", "Evidence", "Outcome"],
+  "transitions": [
+    {
+      "from": "Event",
+      "to": "Context",
+      "requiredGates": [],
+      "trigger": {
+        "ruleId": "defect-room.defect-reported",
+        "description": "A defect names the artifact VERSION whose behaviour it contests. Automated, and it names the rule that fires it — FR-GEL-031, FR-DFR-024."
+      }
+    },
+    {
+      "from": "Context",
+      "to": "Analyze",
+      "requiredGates": [],
+      "trigger": null
+    },
+    {
+      "from": "Analyze",
+      "to": "Decide",
+      "requiredGates": ["defect-room.behaviour-established"],
+      "trigger": null
+    },
+    {
+      "from": "Decide",
+      "to": "Execute",
+      "requiredGates": ["defect-room.human-classification", "defect-room.failing-test-on-record"],
+      "trigger": null
+    },
+    {
+      "from": "Decide",
+      "to": "Outcome",
+      "requiredGates": ["defect-room.routing-accepted"],
+      "trigger": null
+    },
+    {
+      "from": "Execute",
+      "to": "Verify",
+      "requiredGates": [],
+      "trigger": null
+    },
+    {
+      "from": "Verify",
+      "to": "Evidence",
+      "requiredGates": ["defect-room.repair-verified"],
+      "trigger": null
+    },
+    {
+      "from": "Evidence",
+      "to": "Outcome",
+      "requiredGates": ["defect-room.evidence-complete"],
+      "trigger": null
+    }
+  ],
+  "approvedBy": "epic-035",
+  "approvalRef": "specs/035-defect-room/tasks.md#T997w"
+}

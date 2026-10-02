@@ -36,7 +36,9 @@
 import { randomUUID } from 'node:crypto';
 import type { ActorRef, PolicyProvider } from '@pmi/loop-contract';
 import type { Labelled } from '@pmi/room-contract';
-import { ForbiddenError, ValidationFailedError } from '../../core/errors.js';
+import { ForbiddenError, ValidationFailedError,
+  GovernanceSeamUnboundError,
+} from '../../core/errors.js';
 import type { PresentedOption } from './options.service.js';
 import type { DecisionRow, RequirementRoomStore } from './requirement-room.store.js';
 
@@ -59,11 +61,15 @@ export interface RecordDecisionInput {
 /**
  * `ROOM_PORTS` declares `refuse` for `PolicyProvider`, and this is that
  * refusal. Not a `PlatformError`, for the reason `RegisterUnavailableError`
- * records: no documented status code means *"a governance seam is unbound"*,
- * and `DEF-008-001` is what happens when an Epic that does not own
- * `platform-api.md` invents one.
+ * records: no documented status code means *"a governance seam is unbound"*.
+ *
+ * **`T1195` closed that gap.** `EPIC-001` added `governance_seam_unbound` (503)
+ * to `platform-api.md` and to `core/errors.ts`, so this now extends a
+ * `PlatformError` and the message reaches the caller instead of being flattened
+ * to *"An unexpected error occurred."* The original judgment stands — the code
+ * was added by the Epic that owns the contract, not invented here.
  */
-export class PolicyUnavailableError extends Error {
+export class PolicyUnavailableError extends GovernanceSeamUnboundError {
   constructor() {
     super(
       'the PolicyProvider seam is unbound — EPIC-031 supplies it, and FR-GEL-062 will not treat ' +

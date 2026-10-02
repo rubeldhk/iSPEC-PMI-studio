@@ -16,6 +16,7 @@ import {
   InMemoryDerivationGraph,
 } from '../../../src/modules/access/access-inheritance.service.js';
 import { AccessSnapshotService } from '../../../src/modules/access/access-snapshot.service.js';
+import { boundaryFor } from '../../support/ownership.js';
 
 export const WS = 'ws_a';
 export const OTHER_WS = 'ws_b';
@@ -44,7 +45,17 @@ export function accessHarness(): AccessHarness {
   const derivations = new InMemoryDerivationGraph();
   const grantService = new AccessGrantService(grants);
   const inheritance = new AccessInheritanceService(grants, derivations);
-  const enforcement = new AccessEnforcementService(inheritance, attempts);
+  const enforcement = new AccessEnforcementService(
+    inheritance,
+    attempts,
+    // Vouches for this workspace's actors and nobody else, so a
+    // cross-workspace case in these suites still refuses for the right reason.
+    boundaryFor([
+      { id: ADMIN, workspaceId: WS },
+      { id: ALICE, workspaceId: WS },
+      { id: BOB, workspaceId: WS },
+    ]),
+  );
   const snapshot = new AccessSnapshotService(grants);
   const evaluation = new AccessEvaluationService(enforcement);
   return { grants, attempts, derivations, grantService, inheritance, enforcement, snapshot, evaluation };

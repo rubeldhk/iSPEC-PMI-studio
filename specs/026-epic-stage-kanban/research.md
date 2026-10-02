@@ -264,12 +264,22 @@ knows, declare only what it cannot.*
 *Added 2026-08-25 by the clarification session, for `FR-ESK-025`.*
 
 **Decision**: one entry — `taskIdentifierPattern` — in `governance/epic-stage.config.json`, holding
-**`^T\d{3,}[a-z]?$`**. The three check files import it; none writes a pattern of its own.
+**`^T\d{3,}[a-z]?$`**. **No source in the repository writes a pattern of its own** — asserted
+across the whole tree, not against a list of files.
+
+> *Corrected by `T1005`. This read "The three check files import it; none writes a pattern of its
+> own", which became false in two ways at once. There are **five** consumers plus the defining
+> module — and the module itself was writing the pattern by hand when that sentence was written,
+> which no three-file scope could see. Two of the five, `frontend/tests/unit/shell/registry-documented.spec.ts`
+> and `backend/tests/unit/core/test-completeness.spec.ts`, **cannot import** the module at all:
+> each package sets `rootDir` to its own directory, so a repository-root `.ts` import fails `tsc`
+> with TS6059 even though vitest resolves it. They read the configuration directly instead. See
+> `contracts/task-identifier-format.md` §1.*
 
 **Rationale**: the config file already holds `epicDirectoryPattern` (`^\d{3}-`), so a pattern as
 configuration is the established shape here, not a new idea. Its own `_comment` states the reason in
 general terms — *"a stage sequence hard-coded in a check is a process rule nobody can find"* — and a
-task-identifier rule hard-coded in three checks is the same fault with a different noun.
+task-identifier rule hard-coded in checks is the same fault with a different noun.
 
 **The count matters.** `T\d{3}[a-z]?` appears **literally six times across three files**:
 

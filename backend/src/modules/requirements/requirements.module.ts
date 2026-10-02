@@ -7,34 +7,47 @@
  * `REQUIREMENT_STORE` / `REQUIREMENT_VERSION_STORE` with the Prisma-backed
  * stores at the composition root.
  */
+import { prismaClient } from '../../persistence/prisma.js';
 import { Module } from '@nestjs/common';
+import { EpicStoresModule } from '../epics/epic-stores.module.js';
 import { EditAuthorityRegistry } from './edit-authority.js';
 import { RequirementRetireService } from './requirement-retire.service.js';
 import {
   InMemoryRequirementVersionStore,
   RequirementVersionService,
   type RequirementVersionStore,
+  PrismaRequirementVersionStore,
 } from './requirement-version.service.js';
 import { RequirementsController } from './requirements.controller.js';
 import {
   InMemoryRequirementStore,
   RequirementsService,
   type RequirementStore,
+  PrismaRequirementStore,
 } from './requirements.service.js';
 
 export const REQUIREMENT_STORE = Symbol('REQUIREMENT_STORE');
 export const REQUIREMENT_VERSION_STORE = Symbol('REQUIREMENT_VERSION_STORE');
 
 @Module({
+  // EPIC-044 T1573 — the requirement rows name their Epic through the stores-only module (R-044-7).
+  imports: [EpicStoresModule],
   controllers: [RequirementsController],
   providers: [
     {
       provide: REQUIREMENT_STORE,
-      useFactory: (): RequirementStore => new InMemoryRequirementStore(),
+      // `T1178` — same seam, same decider as `projects.module.ts`.
+      useFactory: (): RequirementStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaRequirementStore(prismaClient().requirement)
+          : new InMemoryRequirementStore(),
     },
     {
       provide: REQUIREMENT_VERSION_STORE,
-      useFactory: (): RequirementVersionStore => new InMemoryRequirementVersionStore(),
+      useFactory: (): RequirementVersionStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaRequirementVersionStore(prismaClient().requirementVersion)
+          : new InMemoryRequirementVersionStore(),
     },
     {
       provide: RequirementVersionService,

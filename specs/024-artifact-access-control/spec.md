@@ -93,3 +93,46 @@ epic records only where it **differs** or is the place a principle is satisfied:
 - [ ] Epic closure recorded in `closure.md` (Phase Z); this epic is **release-eligible**
 - [ ] Platform promotion `local → dev → stage → prod` is gated separately by [EPIC-014 F-11.2](../014-devops-release/tasks.md) — it is **not** this epic's to discharge
 - [ ] A closing report was published (Constitution IX)
+
+---
+
+## Principal authorization and scoped delegation *(added 2026-08-27, Step C3B)*
+
+*EPIC-024 authorises **both** kinds of principal. It does not define identity — EPIC-028 does — and
+it does not read EPIC-028's tables.*
+
+> **Provenance.** Sourced to
+> [`D-46`](../_shared/decisions/D-46-non-human-principal-identity-ownership.md) — the
+> Project Owner's C3B hybrid identity-ownership decision, recorded through the repository's
+> decision mechanism. **Not** `D-45`, which authorises EPIC-021's gate target-binding and is a
+> different subject. The `BR-` back-fill obligation stands and is tracked separately.
+
+- **FR-ACC-029**: Actor resolution MUST be generalised behind a principal directory: a **human**
+  resolves against the authoritative user record, a **non-human** through EPIC-028's public
+  registry. EPIC-024 MUST NOT access EPIC-028's persistence directly.
+- **FR-ACC-030**: A `suspended` or `revoked` principal MUST be refused at the workspace boundary,
+  before grants are consulted.
+- **FR-ACC-031**: A sponsoring human's artifact ownership MUST NOT confer access on the principals
+  they sponsor. Delegation MUST be **explicit**.
+- **FR-ACC-032**: A delegation MUST bind tenant and workspace, the principal, the sponsoring human,
+  an artifact scope, an allowed action set, an identity version, effective and expiry times, and
+  revocation and correlation evidence.
+- **FR-ACC-033**: A delegation MUST carry only `execution.register`, `execution.report`,
+  `execution.attach-evidence` and `transition.propose`. `transition.approve`, `transition.apply`,
+  `policy.configure` and grant administration MUST NOT be delegable — enforced at the **database**,
+  not by convention.
+- **FR-ACC-034**: A delegation MUST fail closed when revoked, expired, not yet effective, scoped to
+  a different artifact, or pinned to a superseded identity version. An unreadable delegation store
+  MUST fail closed with a **distinct operational reason**.
+
+### Success criteria owned *(C3B)*
+
+- **SC-019**: **Zero** non-human principals obtain access through a sponsor's ownership alone; every
+  one requires an explicit, scoped, unexpired delegation.
+- **SC-020**: **Zero** delegations carrying approval or application can be written, verified by
+  attempting each forbidden action against the real constraint.
+
+> Preserved unchanged by this addition: the workspace boundary, deny-by-default on zero grants,
+> durable grants and revocations, fail-closed behaviour, and audited access attempts. **No parallel
+> authorization system for agents exists** — this answers the same question for a second kind of
+> actor and then runs the same grant evaluation.

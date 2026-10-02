@@ -126,3 +126,27 @@ is recorded. Quickstart **V17-7** and **V17-8**.
   reducing spend.
 - Never edit code outside a Spec Kit command (Constitution I); defects become new tasks (Constitution VI).
 - Every command run ends with a closing report (Constitution IX).
+
+---
+
+## Phase C2C — production gate capability (reopened 2026-08-26)
+
+*Authorised by the project owner's Step C2C ownership decision. See [closure.md](./closure.md) —
+Reopening record.*
+
+- [X] T1107 Additive migration `20260826020000_epic021_gate_production` creating `gate_final_outcomes` — append-only with `reject_mutation()` **attached**, bound to target version and gate-set version, with a CHECK enforcing `FR-ENH-014` (a `passed` outcome requires a recorded human decider) *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — the finalized decision cannot be edited or deleted; a pass with no decider is refused)*
+- [X] T1108 Implement `backend/src/modules/reviews/gate-production.service.ts` — applicable-gate resolution for a `fromStatus->toStatus` transition, authoritative decision recording, and the typed disposition (`passed` \| `failed` \| `pending` \| `unavailable` \| `stale`) EPIC-030 consumes. The applicable-gate **set** is the configuration version, because `GateStore` was already append-only *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — pending, stale-by-gate-set, failed and ungated cases)*
+- [X] T1109 Implement `backend/src/modules/reviews/gate.store.prisma.ts` — Prisma-backed gate configuration and the append-only final-outcome store, written against narrow delegates *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts`, which exercises both through DI)*
+- [X] T1110 Implement `backend/src/modules/reviews/reviews.module.ts` and register it in `app.module.ts` — the module this Epic never had, bound to **real Prisma** rather than defaulted to in-memory *(test: `backend/tests/integration/loop/adjudication-composition.spec.ts` — EPIC-021's production service resolves from the real graph, and no production port resolves to an in-memory or unconfigured double)*
+
+**X11 — target binding and staleness** are delivered by `T1107`/`T1108`: an outcome carries the
+target version and the gate-set version it was decided against, and any mismatch yields the typed
+`stale` disposition rather than authorising anything.
+
+## Phase C2D — G2 normative requirements (2026-08-27)
+
+- [X] T1125 Record target binding and staleness as **normative requirements** — `FR-ENH-025`–`FR-ENH-030` and `SC-ENH-006`/`SC-ENH-007` in [spec.md](./spec.md), with their SRS-unsourced provenance and back-fill obligation stated rather than implied *(tests: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — staleness proven by changing the **gate set** and, separately, the **specification version**; both yield `reconciliation_required` / `gate_outcomes_stale` and authorise nothing)*
+
+## Phase C2E · G2 provenance *(added 2026-08-27)*
+
+- [X] T1132 Record `D-45` in `specs/_shared/decisions/D-45-gate-outcome-target-binding-and-staleness.md` and cite it from `FR-ENH-025`–`FR-ENH-030`, replacing the "SRS-unsourced" note — a recorded owner decision is a source; the `BR-` back-fill obligation stands and is stated next to the requirements *(test: `tests/governance/epic-stage/register.spec.ts` reads the register these requirements feed; the decision itself is a governance artifact, not code)*

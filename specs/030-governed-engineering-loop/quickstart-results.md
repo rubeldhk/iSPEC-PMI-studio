@@ -64,3 +64,35 @@ suite.
 when a Room renders it (`EPIC-033`–`035`), and each of those Epics carries its own Tier 2 obligation.
 Recorded here rather than omitted, per gate XI's own wording: *"an Epic with no user-facing
 capability records that, rather than omitting the row."*
+
+
+## Addendum — `T981`'s mutation changed shape on 2026-08-28 (`T1165`)
+
+`EPIC-033` needed stage handlers, and `LoopModule` had no way to receive them:
+`LOOP_STAGE_HANDLERS` was provided inside the module and consumed by
+`LOOP_CONFIG_SOURCE` in the same scope, so nothing outside could replace it. It
+gained `LoopModule.register()`, and `backend/src/composition/governed-loop.ts`
+now holds the single call — single because Nest keys a dynamic module by its
+metadata, so two `register` calls would be two modules with two
+`InMemoryLoopStore`s.
+
+Two consequences for this record, both found by re-running the mutation rather
+than assumed:
+
+**`T981`'s one-line mutation no longer fails.** Commenting `GOVERNED_LOOP` out of
+`app.module.ts` leaves all 9 `loop-reachability` tests passing, because
+`RequirementRoomModule` also imports the constant and `AppModule` imports that.
+The loop is still in the graph by a second path.
+
+This is a **strengthening, not a weakening**. Removing the loop from both places
+does not produce a failing test — it produces a **compile error**, because
+`RequirementRoomService` injects `LoopService` for `openRoom`. The loop is now
+load-bearing for a Room, so it can no longer be silently unregistered at all;
+the mutation this proof was written for has become unrepresentable.
+
+**`T934`'s assertion had to change.** `app.select(LoopModule)` asks for a module
+token the graph no longer contains — a dynamic module is keyed by its metadata —
+so it threw whether or not the loop was registered. It now selects the
+`GOVERNED_LOOP` constant, which is the same object the composition root imports,
+and fails if that object is not in the graph.
+

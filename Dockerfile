@@ -31,7 +31,9 @@ FROM node:22-bookworm-slim AS base
 # the first build did not act on it; the stack came up, the migration failed,
 # and the API correctly refused to start (which is `R-014-5` working).
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  # git: EPIC-041 FR-LPW-013 — provisioning initialises a repository where none
+  # exists, and the containerised stack is where provisioning runs.
+  && apt-get install -y --no-install-recommends openssl ca-certificates git \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PNPM_HOME=/pnpm

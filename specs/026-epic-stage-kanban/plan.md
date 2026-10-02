@@ -129,7 +129,7 @@ skill files · 1 existing document to de-duplicate.
 
 | | Decision | Where |
 |---|---|---|
-| Home | one `taskIdentifierPattern` entry in `governance/epic-stage.config.json`, read by three checks; **`epicDirectoryPattern` is already held there**, so this is the established shape, not a new one | `R-026-8` |
+| Home | one `taskIdentifierPattern` entry in `governance/epic-stage.config.json`, and **no source anywhere writes a copy of it**; **`epicDirectoryPattern` is already held there**, so this is the established shape, not a new one | `R-026-8` |
 | Shape | **`^T\d{3,}[a-z]?$`** — four-or-more digits, no upper bound. A cap is a second exhaustion date, and the corpus consumed 999 in about a year | `R-026-8` |
 | The letter | keeps its **shape**, loses its **meaning**. Dropping `[a-z]?` would invalidate every existing sub-lettered id at once — 48 in `EPIC-029` alone | `R-026-9` |
 | Unrecognised ids | a **second, broader recogniser** `^T\d+[a-z]*$` runs beside the pattern; a token matching broad-but-not-narrow **fails**. A single narrow pattern cannot report what it does not match | `R-026-10` |
@@ -317,10 +317,17 @@ have to work out whether the omission was a decision or an oversight.
 - [ ] Zero `specs/README.md` content restates stage or posture (`SC-ESK-008`, PP-002)
 - [ ] Every journey step leaves evidence that it ran (`SC-ESK-012`)
 - [ ] Zero unowned, unexpiring, or multi-condition waivers (`SC-ESK-014`)
-- [ ] **`FR-ESK-025`**: the pattern is configuration read by all three checks with **zero inline
-      copies**; `T1000` is accepted; a malformed id **fails as unrecognised** rather than being
-      skipped; both `V26-9` mutations observed failing; `specs/029-design-system/tasks.md` is
-      annotated and not rewritten
+- [ ] **`FR-ESK-025`**: the pattern is configuration and **no source in the repository writes a
+      copy of it** — asserted across the whole tree by `T864a`, never against a list of checks;
+      `T1000` is accepted; a malformed id **fails as unrecognised** rather than being skipped;
+      both `V26-9` mutations observed failing; `specs/029-design-system/tasks.md` is annotated
+      and not rewritten
+
+      > *This item used to read "read by all three checks" (`T1005`). That was the retired
+      > three-file scope written into the gate itself, so running the gate as stated verified
+      > the wrong thing — which is exactly what the first convergence pass did, certifying a
+      > file that held two inline copies. **A gate must name the scope the check derives, not a
+      > count somebody maintained by hand.***
 - [ ] `/speckit-converge` reports no unbuilt work
 - [ ] `defects/` has no open records
 

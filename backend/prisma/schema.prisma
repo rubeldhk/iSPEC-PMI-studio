@@ -49,6 +49,18 @@ model Workspace {
 
   users                 User[]
   projects              Project[]
+  provisioningRecords   ProvisioningRecord[]
+  projectConstraints    ProjectConstraint[]
+  decompositionPolicies DecompositionPolicy[]
+  constitutionRenders   ConstitutionRender[]
+  epics                 Epic[]
+  artifactVersions      ArtifactVersion[]
+  artifactSyncs         ArtifactSync[]
+  artifactSyncFiles     ArtifactSyncFile[]
+  taskSyncs             TaskSync[]
+  taskStatusProposals   TaskStatusProposal[]
+  connectorCredentials  ConnectorCredential[]
+  workstationConnections WorkstationConnection[]
   generationJobs        GenerationJob[]
   auditEntries          AuditEntry[]
   requirements          Requirement[]
@@ -84,6 +96,18 @@ model Workspace {
   requirementCandidates RequirementCandidate[]
   requirementDecisions  RequirementDecision[]
   baselines             Baseline[]
+  adjudicationRecords AdjudicationRecord[]
+  applicationIntents  ApplicationIntent[]
+  connectorRegistrations ConnectorRegistration[]
+  principals             Principal[]
+  principalStateEvents   PrincipalStateEvent[]
+  principalSnapshots     PrincipalIdentitySnapshot[]
+  principalDelegations   PrincipalDelegation[]
+  executions             Execution[]
+  executionEvents        ExecutionEvent[]
+  gateFinalOutcomes   GateFinalOutcome[]
+  applicationPolicies ApplicationPolicy[]
+
 
   @@map("workspaces")
 }
@@ -132,6 +156,17 @@ model Project {
   engineName  String?
   ownerUserId String
   // FR-001: archive is a status, never a delete. Content is preserved intact.
+  // EPIC-041 (T1319) — the local workspace (FR-LPW-001, R-041-2). rootPath is the
+  // directory AS THE USER'S MACHINE SEES IT; the API writes under PMI_PROJECTS_ROOT.
+  rootPath          String?
+  agentIntegration  String?
+  scriptType        String?
+  provisioningState ProvisioningState @default(not_provisioned)
+  provisionedAt     DateTime?
+  /// EPIC-046 (T1687, R-046-6) — when true, a task move waits for a second
+  /// person instead of applying immediately. Configuration, not a fork: the
+  /// proposal, its reason and its verdict are recorded either way.
+  taskMoveRequiresApproval Boolean @default(false)
   archivedAt  DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -142,8 +177,20 @@ model Project {
   specifications  Specification[]
   decisionRecords ArchitectureDecisionRecord[]
   runs            Run[]
+  provisioningRecords  ProvisioningRecord[]
+  connectorCredentials ConnectorCredential[]
+  workstationConnections WorkstationConnection[]
+  projectConstraints     ProjectConstraint[]
+  decompositionPolicy    DecompositionPolicy?
+  constitutionRenders    ConstitutionRender[]
+  epics                  Epic[]
+  artifactVersions       ArtifactVersion[]
+  artifactSyncs          ArtifactSync[]
+  taskSyncs              TaskSync[]
 
   @@unique([workspaceId, name])
+  // One directory, one project (data-model.md §1).
+  @@unique([workspaceId, rootPath])
   @@index([workspaceId])
   @@index([workspaceId, status])
   @@map("projects")
@@ -197,12 +244,16 @@ model Requirement {
   workspace Workspace            @relation(fields: [workspaceId], references: [id])
   project   Project              @relation(fields: [projectId], references: [id])
   versions  RequirementVersion[]
+  // EPIC-044 T1555 (FR-EPB-023): at most one Epic; null is "unassigned", never omitted.
+  epicId    String?
+  epic      Epic?                @relation(fields: [epicId], references: [id])
 
   @@unique([projectId, reference])
   @@index([workspaceId])
   @@index([projectId, type])
   @@index([projectId, priority])
   @@index([projectId, status])
+  @@index([projectId, epicId])
   @@map("requirements")
 }
 
@@ -295,11 +346,21 @@ model Specification {
   validationFindings   ValidationFinding[]
   adrLinks             AdrSpecificationLink[]
   tasks                Task[]
+  // EPIC-044 T1555 (FR-EPB-025): the Epic that owns this specification, or null.
+  epicId               String?
+  epic                 Epic?                  @relation(fields: [epicId], references: [id])
+  // EPIC-045 T1621 (FR-ART-030, data-model §4): the synced path whose versions
+  // feed this specification. Null for every specification created another way —
+  // a generation job, or a person. Unique with the Epic, so one `spec.md` per
+  // Epic is one specification however many commands sync it.
+  sourcePath           String?
 
+  @@unique([epicId, sourcePath])
   @@index([workspaceId])
   // SC-009's 1-second p95 applies to listing views, and the list is filtered by
   // lifecycle state — so the filtered read is indexed, not scanned.
   @@index([projectId, lifecycleState])
+  @@index([projectId, epicId])
   @@map("specifications")
 }
 
@@ -348,12 +409,21 @@ model LifecycleTransition {
   toState         SpecLifecycleState
   actorId         String
   occurredAt      DateTime           @default(now())
+  // C2C (T1104) -- the causal and version identity that lets this row close the
+  // proposal -> verdict -> transition chain. Nullable: history predates them.
+  correlationId      String?
+  causationId        String?
+  idempotencyKey     String?
+  actorSnapshotId    String?
+  previousVersionId  String?
+  resultingVersionId String?
 
   workspace     Workspace     @relation(fields: [workspaceId], references: [id])
   specification Specification @relation(fields: [specificationId], references: [id])
 
   @@index([workspaceId])
   @@index([specificationId, occurredAt(sort: Desc)])
+  @@index([workspaceId, correlationId])
   @@map("lifecycle_transitions")
 }
 
@@ -399,24 +469,60 @@ enum TaskStatus {
   not_started
   in_progress
   done
+  // EPIC-046 (T1687, FR-KAN-051) — the fourth column. Reachable ONLY through an
+  // applied proposal (FR-KAN-041): the tasks.md grammar has two checkbox states
+  // and no third, so no parse and no event can ever produce this value.
+  blocked
 }
 
 model Task {
   id              String     @id @default(uuid())
   workspaceId     String
-  specificationId String
+  /// EPIC-046 (T1687, Q1 of 2026-09-06) — WIDENED to nullable. A synced task's
+  /// home is its Epic; an Epic whose `tasks.md` synced before any `spec.md` has
+  /// no specification to hang from, and refusing the sync or inventing a
+  /// placeholder were both rejected. Every reader tolerates the absence.
+  specificationId String?
   description     String
   status          TaskStatus @default(not_started)
   engineName      String
   engineVersion   String
+  // ---------------------------------------------------------------- EPIC-046
+  // The parse columns (data-model.md §2). All nullable: an engine-generated task
+  // has none of them, and that absence is exactly what FR-KAN-017 distinguishes
+  // it by — a task with no file behind it keeps EPIC-012's direct status update.
+  /// The Epic this task belongs to, from the EXECUTION's binding, never a path.
+  epicId          String?
+  /// The identifier as written in the file (`T1620`). Identity within the Epic.
+  taskKey         String?
+  sourceLine      Int?
+  /// The sha256 of the `tasks.md` this row was last parsed from (FR-KAN-035).
+  sourceDigest    String?
+  parallel        Boolean    @default(false)
+  /// Repository paths the description names (DS-1, FR-KAN-005). Empty is a fact.
+  sourcePaths     String[]   @default([])
+  /// False once a later parse of the same Epic omits the key. Never deleted.
+  presentInLatestParse Boolean @default(true)
+  /// parse | event | proposal | engine — what the reconciliation rule needs.
+  statusSource         String  @default("engine")
+  lastParsedExecutionId String?
+  lastMovedAt           DateTime?
+  lastMovedBy           String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  workspace     Workspace     @relation(fields: [workspaceId], references: [id])
-  specification Specification @relation(fields: [specificationId], references: [id])
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
+  specification Specification? @relation(fields: [specificationId], references: [id])
+  epic          Epic?          @relation(fields: [epicId], references: [id])
+  statusProposals TaskStatusProposal[]
 
   @@index([workspaceId])
   @@index([specificationId, status])
+  // FR-KAN-031: one row per identifier per Epic, under retry and concurrency.
+  // PARTIAL, so engine-generated rows (both columns null) are untouched by it.
+  @@unique([epicId, taskKey])
+  @@index([epicId, status])
+  @@index([workspaceId, epicId])
   @@map("tasks")
 }
 
@@ -545,6 +651,8 @@ enum JobKind {
   generate_specification
   generate_tasks
   validate_specification
+  // EPIC-041 (T1319) — the worker's initialise step for a local workspace (R-041-1).
+  initialise_workspace
 }
 
 enum JobState {
@@ -1010,6 +1118,66 @@ enum ReviewSessionState {
 enum AnswerState {
   draft
   committed
+}
+
+/// T1107 -- the authoritative, append-only gate decision (EPIC-021).
+/// `GateOutcome` remains the mutable two-phase working record; this is the
+/// immutable answer EPIC-030 consumes. A correction links via `supersedesId`.
+model GateFinalOutcome {
+  id                  String    @id @default(uuid())
+  workspaceId         String
+  specificationId     String
+  fromStatus          String
+  toStatus            String
+  targetVersionId     String?
+  gateSetVersion      String
+  gateId              String
+  disposition         String
+  reason              String
+  evaluatorId         String
+  evaluatorSnapshotId String?
+  decidedById         String?
+  decidedBySnapshotId String?
+  decidedAt           DateTime?
+  evidenceRefs        String[]  @default([])
+  correlationId       String
+  causationId         String
+  supersedesId        String?
+  createdAt           DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, specificationId, fromStatus, toStatus])
+  @@index([workspaceId, gateId])
+  @@map("gate_final_outcomes")
+}
+
+/// T1117 -- explicit auto-application policy (EPIC-030). Append-only and
+/// versioned: a change appends a new version rather than rewriting the row an
+/// earlier adjudication was decided under.
+model ApplicationPolicy {
+  id                   String   @id @default(uuid())
+  workspaceId          String
+  targetArtifactType   String
+  fromStatus           String
+  toStatus             String
+  requiredAuthorities  String[] @default([])
+  autoApplyPermitted   Boolean
+  policyVersion        Int
+  state                String
+  createdById          String
+  createdBySnapshotId  String?
+  approvedById         String?
+  approvedBySnapshotId String?
+  effectiveFrom        DateTime @default(now())
+  correlationId        String
+  supersedesId         String?
+  createdAt            DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, targetArtifactType, fromStatus, toStatus])
+  @@map("application_policies")
 }
 
 model ReviewSession {
@@ -1563,4 +1731,1468 @@ model Handoff {
   @@index([workspaceId])
   @@index([baselineId])
   @@map("handoffs")
+}
+
+/// T1093 (EPIC-030 Phase C2A) — immutable adjudication evidence (FR-GEL-072).
+///
+/// Append-only, enforced by a trigger this Epic's migration ATTACHES. The
+/// reject_mutation() function already existed; a function protects nothing
+/// until a trigger binds it to a table.
+///
+/// `(workspaceId, proposalId, idempotencyKey)` is unique: it is what makes a
+/// retry return the original verdict instead of adjudicating twice
+/// (FR-GEL-071).
+model AdjudicationRecord {
+  id                  String   @id @default(uuid())
+  workspaceId         String
+  proposalId          String
+  executionId         String
+  specificationId     String
+  idempotencyKey      String
+  expectedStatus      String
+  requestedStatus     String
+  verdict             String
+  reason              String
+  proposerId          String
+  proposerType        String
+  proposerSnapshotId  String
+  approverId          String?
+  approverSnapshotId  String?
+  appliedTransitionId String?
+  // X1 -- verdict-specific columns. CHECK constraints in
+  // 20260825120000_epic030_adjudication_refusal make each one required by
+  // exactly one verdict and forbidden on the other five.
+  refusalStage         String?
+  refusalReasonCode    String?
+  requiredApproverRole String?
+  observedStatus       String?
+  reconciliationCause  String?
+  reconciliationDetail String?
+  correlationId       String
+  causationId         String
+  decidedAt           DateTime @default(now())
+  createdAt           DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, proposalId, idempotencyKey])
+  @@index([workspaceId, specificationId])
+  @@index([executionId])
+  @@map("adjudication_records")
+}
+
+/// T1097 -- the durable intent recorded BEFORE EPIC-009 is asked to apply a
+/// transition. Append-only: `settle` appends a 'settled' row rather than
+/// updating the 'opened' one, so an outcome nobody observed cannot erase the
+/// record that the attempt was made.
+/// T1131 (C2E) -- evidence of the owner-grant backfill, including the artifacts
+/// whose creator could NOT be resolved. Those stay inaccessible on purpose:
+/// inventing an owner is the defect this migration exists to close.
+/// T1026 (EPIC-037 Band A) -- stable root identity for a governed execution.
+/// `governanceState` is PROJECTED from the event stream, never written by a
+/// connector.
+model Execution {
+  id                String   @id @default(uuid())
+  correlationId     String
+  causationId       String?
+  idempotencyKey    String
+  workspaceId       String
+  projectId         String?
+  command           String
+  argsSanitized     Json
+  initiatorType     String
+  initiatorId       String
+  surface           String
+  environment       String?
+  // EPIC-041 (T1319) — derived from surface at registration, never supplied (FR-LPW-034).
+  assurance         String
+  governanceState   String   @default("provisional")
+  parentExecutionId String?
+  contractVersion   String
+  registeredAt      DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace Workspace   @relation(fields: [workspaceId], references: [id])
+  parent    Execution?  @relation("ExecutionRerun", fields: [parentExecutionId], references: [id])
+  reruns    Execution[] @relation("ExecutionRerun")
+
+  events          ExecutionEvent[]
+  state           ExecutionState?
+  agentIdentities AgentIdentitySnapshot[]
+  bindings        ExecutionTargetBinding[]
+  artifacts       ExecutionArtifact[]
+  comments        ExecutionComment[]
+  proposals       StatusTransitionProposal[]
+  outbox          ExecutionOutbox[]
+  // EPIC-045 T1621: the files this execution's finish hook synced, and the
+  // versions it was the first to deliver.
+  artifactSyncs           ArtifactSync[]
+  firstArtifactVersions   ArtifactVersion[]
+  taskSyncs               TaskSync[]
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, correlationId])
+  @@index([parentExecutionId])
+  // EPIC-043 T1409 (R-043-7): the per-project timeline, newest first.
+  @@index([workspaceId, projectId, registeredAt(sort: Desc)])
+  @@map("executions")
+}
+
+/// THE authority. Append-only; `sequence` is server-assigned and gapless per
+/// execution -- deliberately not a database sequence, which is global and gaps
+/// on rollback.
+model ExecutionEvent {
+  id             String   @id @default(uuid())
+  workspaceId    String
+  executionId    String
+  sequence       Int
+  localSequence  Int?
+  class          String
+  type           String
+  payload        Json
+  occurredAt     DateTime
+  recordedAt     DateTime @default(now())
+  emittedBy      String
+  idempotencyKey String
+  integrityHash  String
+  createdAt      DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@unique([executionId, sequence])
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, executionId])
+  @@map("execution_events")
+}
+
+/// PROJECTION. Rebuildable, therefore mutable -- attaching immutability here
+/// would make the rebuild impossible.
+model ExecutionState {
+  executionId              String   @id
+  workspaceId              String
+  lifecycleState           String
+  governanceState          String
+  projectedThroughSequence Int      @default(0)
+  updatedAt                DateTime @updatedAt
+  createdAt                DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId])
+  @@map("execution_state")
+}
+
+/// Frozen agent identity. Renaming a descriptor later must not rewrite history.
+model AgentIdentitySnapshot {
+  id                  String   @id @default(uuid())
+  workspaceId         String
+  executionId         String
+  descriptorRef       String
+  principalSnapshotId String
+  provider            String
+  model               String
+  adapter             String
+  agentVersion        String?
+  capabilities        String[]
+  createdAt           DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("agent_identity_snapshots")
+}
+
+/// Phase-aware traceability: input at registration, output at successful
+/// completion. A failed execution legitimately has no output row.
+model ExecutionTargetBinding {
+  id             String   @id @default(uuid())
+  workspaceId    String
+  executionId    String
+  phase          String
+  targetType     String
+  targetId       String
+  targetVersion  Int?
+  baselineId     String?
+  repositoryId   String?
+  branch         String?
+  worktree       String?
+  commitSha      String?
+  artifactDigest String?
+  createdAt      DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@unique([executionId, phase])
+  @@index([workspaceId])
+  @@map("execution_target_bindings")
+}
+
+model ExecutionArtifact {
+  id          String   @id @default(uuid())
+  workspaceId String
+  executionId String
+  role        String
+  reference   String
+  digest      String?
+  evidenceId  String?
+  createdAt   DateTime @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("execution_artifacts")
+}
+
+/// Append-only thread. A correction is a NEW comment; a redaction is an event
+/// plus a flag on a new row -- the body is never overwritten in place.
+model ExecutionComment {
+  id                      String    @id @default(uuid())
+  workspaceId             String
+  executionId             String
+  authorId                String
+  authorType              String
+  agentIdentitySnapshotId String?
+  commentType             String
+  body                    String
+  parentCommentId         String?
+  visibilityScope         String    @default("workspace")
+  mentions                String[]
+  attachments             String[]
+  evidenceRefs            String[]
+  actionRequired          Boolean   @default(false)
+  decisionRequired        Boolean   @default(false)
+  supersedesCommentId     String?
+  integrityHash           String
+  redactionState          String    @default("visible")
+  redactedBy              String?
+  redactedAt              DateTime?
+  redactionReason         String?
+  createdAt               DateTime  @default(now())
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("execution_comments")
+}
+
+/// The REQUEST. There is deliberately no adjudication column anywhere in this
+/// model -- a mutable verdict field would become the audit authority by
+/// accident, and the verdict belongs to EPIC-030's stream.
+model StatusTransitionProposal {
+  id                    String   @id @default(uuid())
+  workspaceId           String
+  executionId           String
+  targetRef             String
+  targetVersion         Int
+  expectedCurrentStatus String
+  proposedState         String
+  rationale             String
+  proposedBy            String
+  proposerSnapshotId    String
+  correlationId         String
+  idempotencyKey        String
+  proposedAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
+
+  execution Execution              @relation(fields: [executionId], references: [id])
+  state     StatusTransitionState?
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([workspaceId, executionId])
+  @@map("status_transition_proposals")
+}
+
+/// PROJECTION of EPIC-030's verdict stream. Rebuildable, therefore mutable.
+model StatusTransitionState {
+  proposalId               String   @id
+  workspaceId              String
+  state                    String
+  projectedThroughSequence Int      @default(0)
+  updatedAt                DateTime @updatedAt
+  createdAt                DateTime @default(now())
+
+  proposal StatusTransitionProposal @relation(fields: [proposalId], references: [id])
+
+  @@index([workspaceId])
+  @@map("status_transition_state")
+}
+
+/// Connector-side, mirrored server-side for reconciliation reporting. Mutable
+/// by design: attempts and lastError change as a retry proceeds.
+model ExecutionOutbox {
+  id            String    @id @default(uuid())
+  workspaceId   String
+  executionId   String
+  payload       Json
+  localSequence Int
+  occurredAt    DateTime
+  attempts      Int       @default(0)
+  lastError     String?
+  syncedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  execution Execution @relation(fields: [executionId], references: [id])
+
+  @@index([workspaceId, executionId])
+  @@map("execution_outbox")
+}
+
+model OwnershipBackfillRecord {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  artifactType    String
+  artifactId      String
+  outcome         String
+  reason          String
+  resolvedOwnerId String?
+  createdAt       DateTime @default(now())
+
+  @@unique([workspaceId, artifactType, artifactId])
+  @@map("ownership_backfill_records")
+}
+
+/// T1134 (EPIC-028, C3B) -- a registered execution surface. NOT an actor: the
+/// same agent can act through several connectors, and a connector proposes
+/// nothing on its own.
+model ConnectorRegistration {
+  id                 String   @id @default(uuid())
+  workspaceId        String
+  kind               String
+  registeredByUserId String
+  state              String   @default("active")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id])
+  principals Principal[]
+
+  @@index([workspaceId])
+  @@map("connector_registrations")
+}
+
+/// T1134 -- an agent or service principal. Humans are NOT here: a human
+/// principal is a `User`, and a second answer to "who is this person" is
+/// exactly the ambiguity this registry exists to remove.
+model Principal {
+  id                      String   @id @default(uuid())
+  workspaceId             String
+  kind                    String
+  descriptorRef           String
+  sponsorUserId           String
+  registeredByUserId      String
+  state                   String   @default("active")
+  identityVersion         Int      @default(1)
+  connectorRegistrationId String?
+  correlationId           String
+  causationId             String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  workspace   Workspace              @relation(fields: [workspaceId], references: [id])
+  connector   ConnectorRegistration? @relation(fields: [connectorRegistrationId], references: [id])
+  stateEvents PrincipalStateEvent[]
+  delegations PrincipalDelegation[]
+  connectorCredentials ConnectorCredential[]
+
+  @@index([workspaceId])
+  @@index([sponsorUserId])
+  @@map("principals")
+}
+
+/// T1134 -- why a principal's state changed. Append-only.
+model PrincipalStateEvent {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  principalId     String
+  fromState       String?
+  toState         String
+  identityVersion Int
+  actorUserId     String
+  reason          String
+  correlationId   String
+  causationId     String
+  occurredAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  principal Principal @relation(fields: [principalId], references: [id])
+
+  @@index([workspaceId, principalId])
+  @@map("principal_state_events")
+}
+
+/// T1135 -- frozen identity. What separation of duties compares, and why a
+/// revocation cannot rewrite who acted last week. Append-only.
+model PrincipalIdentitySnapshot {
+  id                      String   @id @default(uuid())
+  workspaceId             String
+  principalId             String
+  kind                    String
+  sponsorUserId           String?
+  identityVersion         Int
+  connectorRegistrationId String?
+  capturedAt              DateTime @default(now())
+  createdAt               DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, principalId])
+  @@map("principal_identity_snapshots")
+}
+
+/// T1139 (EPIC-024, C3B) -- scoped, expiring delegation from a sponsoring human
+/// to one non-human principal. A sponsor's ownership does NOT flow to every
+/// agent they sponsor; approval and application can never be delegated.
+model PrincipalDelegation {
+  id              String    @id @default(uuid())
+  workspaceId     String
+  principalId     String
+  sponsorUserId   String
+  artifactType    String
+  artifactId      String
+  actions         String[]
+  identityVersion Int
+  effectiveFrom   DateTime  @default(now())
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  revokedById     String?
+  correlationId   String
+  createdAt       DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  principal Principal @relation(fields: [principalId], references: [id])
+
+  @@index([workspaceId, principalId, artifactType, artifactId])
+  @@map("principal_delegations")
+}
+
+model ApplicationIntent {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  intentId        String
+  phase           String
+  specificationId String
+  expectedStatus  String
+  requestedStatus String
+  actorId         String
+  outcome         String?
+  createdAt       DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, intentId])
+  @@index([workspaceId, specificationId])
+  @@map("application_intents")
+}
+
+/// EPIC-032 (scoped) T1203 — Evidence Contracts and typed evidence.
+/// The seam DEF-033-002 found unbound between the Room and an approved baseline.
+model EvidenceContract {
+  id                    String                 @id @default(uuid())
+  workspaceId           String
+  projectId             String
+  /// FR-EVS-023 — work is judged against the version it began under.
+  version               Int                    @default(1)
+  /// FR-EVS-026 — only policy may declare a work class needs no evidence.
+  declaredEmptyByPolicy Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  items                 EvidenceContractItem[]
+
+  @@index([workspaceId])
+  @@map("evidence_contracts")
+}
+
+model EvidenceContractItem {
+  id            String           @id @default(uuid())
+  /// FR-002 — tenant-scoped tables carry their workspace; a join is not isolation.
+  workspaceId   String
+  contractId    String
+  description   String
+  /// FR-EVS-025 — an item states which evidence types satisfy it.
+  acceptedTypes String[]
+  createdAt     DateTime         @default(now())
+  contract      EvidenceContract @relation(fields: [contractId], references: [id])
+  evidence      EvidenceItem[]
+
+  @@index([contractId])
+  @@index([workspaceId])
+  @@map("evidence_contract_items")
+}
+
+model EvidenceItem {
+  id                     String               @id @default(uuid())
+  workspaceId            String
+  /// FR-EVS-003 — typed by what it proves, not by which tool produced it.
+  type                   String
+  satisfiesItemId        String
+  attestsArtifactId      String
+  /// FR-EVS-011 — the version, so FR-EVS-012 can refuse superseded evidence.
+  attestsArtifactVersion Int
+  source                 String
+  producedAt             DateTime
+  /// FR-EVS-034 — presence is not validity. Defaults to NOT valid.
+  integrityValid         Boolean              @default(false)
+  /// FR-EVS-014 — a referenced target that still resolves.
+  resolvable             Boolean              @default(true)
+  createdAt              DateTime             @default(now())
+  item                   EvidenceContractItem @relation(fields: [satisfiesItemId], references: [id])
+
+  @@index([satisfiesItemId])
+  @@index([workspaceId])
+  @@index([workspaceId, attestsArtifactId, attestsArtifactVersion])
+  @@map("evidence_items")
+}
+
+/// EPIC-034 T406r — the Change Room. RULE-02's gate: no approved baseline
+/// changes without passing through here.
+model ChangeRequest {
+  id                    String              @id @default(uuid())
+  workspaceId           String
+  projectId             String
+  roomObjectId          String
+  targetBaselineId      String
+  /// FR-CHR-010 — a change is always AGAINST a baseline.
+  targetBaselineVersion Int
+  requestedOutcome      String
+  reason                String
+  requester             String
+  /// FR-CHR-021 — recorded, never a gate bypass.
+  urgency               String              @default("normal")
+  openQuestions         Json                @default("[]")
+  origin                String              @default("direct")
+  originDefectRef       String?
+  /// FR-CHR-012, R-034-6 — ids into EPIC-032 and EPIC-035, never copies.
+  transferredEvidenceRefs Json              @default("[]")
+  transferredContextRefs  Json              @default("[]")
+  state                 String              @default("open")
+  rebasedFrom           Int?
+  createdAt             DateTime            @default(now())
+  impactViews           ChangeImpactView[]
+  decisions             ChangeDecision[]
+  closures              ChangeClosure[]
+
+  @@index([workspaceId])
+  @@index([roomObjectId])
+  @@map("change_requests")
+}
+
+model ChangeImpactView {
+  id                  String              @id @default(uuid())
+  workspaceId         String
+  changeRequestId     String
+  computedAt          DateTime
+  /// Adopted from EPIC-020's DEFAULT_IMPACT_DEPTH; never chosen here.
+  traversalDepth      Int
+  retainedForDecision Boolean             @default(false)
+  /// FR-CHR-033 — NULL is undeterminable; [] is read-and-none-reached.
+  architectureDecisions Json?
+  architectureDetail    String
+  /// FR-CHR-034 — one value, CHECKed. BR-0073 is U-17 and unowned.
+  violationCheckStatus  String
+  violationCheckBecause String
+  createdAt           DateTime            @default(now())
+  request             ChangeRequest       @relation(fields: [changeRequestId], references: [id])
+  areas               ChangeImpactArea[]
+  decisions           ChangeDecision[]
+
+  @@index([workspaceId])
+  @@index([changeRequestId])
+  @@map("change_impact_views")
+}
+
+model ChangeImpactArea {
+  id            String           @id @default(uuid())
+  workspaceId   String
+  impactViewId  String
+  area          String
+  state         String
+  detail        String
+  /// NULL when nobody counted. Zero is a count; NULL is the absence of one.
+  itemCount     Int?
+  /// Required exactly when the state is `unknown`.
+  unknownReason String?
+  createdAt     DateTime         @default(now())
+  view          ChangeImpactView @relation(fields: [impactViewId], references: [id])
+
+  @@index([workspaceId])
+  @@index([impactViewId])
+  @@map("change_impact_areas")
+}
+
+model ChangeDecision {
+  id              String                   @id @default(uuid())
+  workspaceId     String
+  changeRequestId String
+  decidedBy       String
+  /// The belt beside EPIC-031's braces — baseline change is permanently high band.
+  decidedByKind   String
+  authorityBasis  String
+  objectVersion   Int
+  decidedAt       DateTime
+  decisionId      String
+  chosenOption    String
+  /// FR-CHR-043 — what was NOT chosen travels with the decision.
+  declinedOptions Json
+  rationale       String
+  /// FR-CHR-035 — the snapshot the decision was made against.
+  impactViewId    String
+  createdAt       DateTime                 @default(now())
+  request         ChangeRequest            @relation(fields: [changeRequestId], references: [id])
+  impactView      ChangeImpactView         @relation(fields: [impactViewId], references: [id])
+  deltas          ChangeBaselineDelta[]
+  obligations     ChangeReplanObligation[]
+
+  @@index([workspaceId])
+  @@index([changeRequestId])
+  @@map("change_decisions")
+}
+
+model ChangeBaselineDelta {
+  id                  String         @id @default(uuid())
+  workspaceId         String
+  changeDecisionId    String
+  fromBaselineVersion Int
+  toBaselineVersion   Int
+  /// R-034-4 — member requirement VERSION ids, never requirement text.
+  added               Json           @default("[]")
+  removed             Json           @default("[]")
+  versionChanged      Json           @default("[]")
+  createdAt           DateTime       @default(now())
+  decision            ChangeDecision @relation(fields: [changeDecisionId], references: [id])
+
+  @@index([workspaceId])
+  @@map("change_baseline_deltas")
+}
+
+model ChangeReplanObligation {
+  id                      String         @id @default(uuid())
+  workspaceId             String
+  changeDecisionId        String
+  affectedSpecificationId String
+  whatMustChange          String
+  why                     String
+  /// R-034-2 — recorded, never executed. U-12 discharges it.
+  state                   String         @default("recorded")
+  createdAt               DateTime       @default(now())
+  decision                ChangeDecision @relation(fields: [changeDecisionId], references: [id])
+
+  @@index([workspaceId])
+  @@map("change_replan_obligations")
+}
+
+model ChangeClosure {
+  id              String        @id @default(uuid())
+  workspaceId     String
+  changeRequestId String
+  /// BR-0048 — what changed, why, and what proves it.
+  whatChanged     String
+  why             String
+  evidenceRefs    Json          @default("[]")
+  /// BR-0048's fourth question — which baseline supersedes the old state.
+  supersedingBaselineId      String
+  supersedingBaselineVersion Int
+  closedBy        String
+  closedAt        DateTime
+  createdAt       DateTime      @default(now())
+  request         ChangeRequest @relation(fields: [changeRequestId], references: [id])
+
+  @@index([workspaceId])
+  @@map("change_closures")
+}
+
+// ─────────────────────────────────────────────────────── EPIC-035 Defect Room
+// T997s. Eight tables per specs/035-defect-room/data-model.md §1–§8.
+//
+// Two CHECK constraints live in the hand-edited migration rather than here,
+// because Prisma's schema language cannot express CHECK: a fix cannot be
+// accepted for an automatable defect with no failing test (FR-DFR-041), and a
+// Classification cannot exist without the destination its outcome maps to
+// (FR-DFR-077).
+
+model DefectRecord {
+  id                       String           @id @default(uuid())
+  workspaceId              String
+  projectId                String
+  /// FR-DFR-012 — nullable, and that is not laxity: an unlinkable defect is
+  /// HELD FOR TRIAGE rather than filed against an Epic somebody guessed.
+  epicId                   String?
+  state                    String           @default("held-for-triage")
+  origin                   String
+  originDetail             String?
+  contestedArtifactRef     String
+  /// FR-DFR-024, PP-012 — a defect is against a VERSION. Without this the
+  /// report silently re-targets whatever is current.
+  contestedArtifactVersion String
+  severity                 String
+  reportedBy               String
+  reportedAt               DateTime         @default(now())
+  withdrawnAt              DateTime?
+  withdrawnReason          String?
+  createdAt                DateTime         @default(now())
+  classifications          Classification[]
+  reproductions            Reproduction[]
+  tests                    DefectTest[]
+  evidenceChecks           EvidenceCheck[]
+  repairLinks              RepairLink[]
+  routings                 Routing[]
+  escapeRecord             EscapeRecord?
+
+  @@index([workspaceId])
+  @@index([projectId])
+  @@map("defect_records")
+}
+
+model Classification {
+  id                           String       @id @default(uuid())
+  workspaceId                  String
+  defectId                     String
+  /// FR-DFR-022 — three outcomes, never two.
+  outcome                      String
+  /// FR-DFR-077 — NOT NULL, and CHECKed against the outcome's mapped value.
+  destination                  String
+  /// Nullable only when outcome = 'requirement-gap' — CHECKed.
+  approvedBehaviourRef         String?
+  /// FR-DFR-021 — the absence is recorded rather than left blank.
+  absenceRecorded              Boolean      @default(false)
+  classifiedBy                 String
+  classifiedByKind             String
+  /// FR-DFR-023 — an agent may propose; the confirming actor must be human.
+  proposedByAgent              Boolean      @default(false)
+  supersededByClassificationId String?
+  reclassifiedAt               DateTime?
+  /// FR-DFR-024 — NULL means the version reported on the defect. A value means
+  /// this classification deliberately judged a later one, which is the only
+  /// place that fact lives.
+  evaluatedAgainstVersion      String?
+  rationale                    String
+  createdAt                    DateTime     @default(now())
+  defect                       DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_classifications")
+}
+
+model Reproduction {
+  id                   String       @id @default(uuid())
+  workspaceId          String
+  defectId             String
+  /// FR-DFR-031 — intermittent is a member, not a flag beside a boolean.
+  reproducible         String
+  environment          String
+  steps                String
+  /// FR-DFR-032 — references into EPIC-032. No payload is stored here.
+  evidenceRefs         Json         @default("[]")
+  /// FR-DFR-043 — required when reproducible = 'not-automatable', CHECKed, so
+  /// the exception is enumerable rather than invisible.
+  notAutomatableReason String?
+  affectedBehaviour    String
+  observedAt           DateTime     @default(now())
+  createdAt            DateTime     @default(now())
+  defect               DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_reproductions")
+}
+
+model DefectTest {
+  id                     String          @id @default(uuid())
+  workspaceId            String
+  defectId               String
+  testRef                String
+  /// FR-DFR-042 — linked to the behaviour, not only to the defect.
+  contestedBehaviourRef  String
+  /// FR-DFR-040 — NOT NULL. A test never seen to fail proves the code does
+  /// what it does.
+  firstObservedFailingAt DateTime
+  lastRunOutcome         String          @default("not-run")
+  lastRunEvidenceRef     String?
+  createdAt              DateTime        @default(now())
+  defect                 DefectRecord    @relation(fields: [defectId], references: [id])
+  evidenceChecks         EvidenceCheck[]
+  repairLinks            RepairLink[]
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_tests")
+}
+
+model EvidenceCheck {
+  id           String       @id @default(uuid())
+  workspaceId  String
+  defectId     String
+  defectTestId String
+  /// R-035-6 — required, no default. A path taken by omission is a decision
+  /// nobody made.
+  path         String
+  resolvedBy   String
+  resolvedAt   DateTime     @default(now())
+  rationale    String
+  createdAt    DateTime     @default(now())
+  defect       DefectRecord @relation(fields: [defectId], references: [id])
+  test         DefectTest   @relation(fields: [defectTestId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_evidence_checks")
+}
+
+model RepairLink {
+  id                         String       @id @default(uuid())
+  workspaceId                String
+  defectId                   String
+  defectTestId               String
+  /// R-035-3 — EPIC-012's TaskRecord is NOT modified. The link lives here.
+  taskId                     String
+  /// Set when the defect is reclassified after tasks exist, so the tasks and
+  /// the reclassification are both visible rather than one erasing the other.
+  orphanedByClassificationId String?
+  createdAt                  DateTime     @default(now())
+  defect                     DefectRecord @relation(fields: [defectId], references: [id])
+  test                       DefectTest   @relation(fields: [defectTestId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_repair_links")
+}
+
+model Routing {
+  id                  String       @id @default(uuid())
+  workspaceId         String
+  defectId            String
+  classificationId    String
+  /// 'repair' needs no routing row — it stays here.
+  destination         String
+  /// FR-DFR-072, UX-0034 — NOT NULL. "An unexplained transfer button is a
+  /// reclassification nobody decided."
+  offeredReason       String
+  state               String       @default("offered")
+  declinedAt          DateTime?
+  declinedReason      String?
+  /// FR-DFR-074 — an item the destination refuses returns carrying the refusal.
+  refusalDetail       String?
+  /// FR-DFR-071, FR-DFR-076 — references, never copies.
+  carriedEvidenceRefs Json         @default("[]")
+  targetRef           String?
+  createdAt           DateTime     @default(now())
+  defect              DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@index([defectId])
+  @@map("defect_routings")
+}
+
+model EscapeRecord {
+  id                        String       @id @default(uuid())
+  workspaceId               String
+  defectId                  String       @unique
+  origin                    String
+  /// Nullable — but the ROW is not. FR-DFR-082: written at intake, so the
+  /// first quarter of data is not lost waiting for closure.
+  escapePoint               String?
+  severity                  String
+  affectedRequirementRef    String?
+  affectedSpecificationRef  String?
+  resolutionEvidenceRef     String?
+  /// The DOMAIN fact — when the escape data was taken (FR-DFR-082, at intake).
+  capturedAt                DateTime     @default(now())
+  /// The ROW's own, required of every table by FR-002. They coincide today.
+  createdAt                 DateTime     @default(now())
+  defect                    DefectRecord @relation(fields: [defectId], references: [id])
+
+  @@index([workspaceId])
+  @@map("defect_escape_records")
+}
+
+// ─── EPIC-038 Engineering Context (T1231, T1235) ────────────────────────────
+
+model ContextPackage {
+  id               String            @id @default(uuid())
+  workspaceId      String
+  projectId        String
+  /// FR-CTX-062 — the execution this fed. Null only while assembly is in flight.
+  executionId      String?
+  /// FR-CTX-032 — what it was assembled for, in the requester's own words.
+  objective        String
+  actorId          String
+  actorRole        String
+  budgetTokens     Int
+  budgetCost       Decimal           @db.Decimal(12, 4)
+  state            String
+  /// FR-CTX-065 — required when refused, CHECKed. A refusal is a row.
+  refusalReason    String?
+  /// R-038-4 — which model ranked these candidates.
+  embeddingModelId String
+  assembledAt      DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  items            ContextItem[]
+  exclusions       ContextExclusion[]
+
+  @@index([workspaceId])
+  @@index([executionId])
+  @@map("context_packages")
+}
+
+model ContextItem {
+  id                  String         @id @default(uuid())
+  /// FR-002 — denormalised from the package so isolation is a predicate rather
+  /// than a join somebody must remember.
+  workspaceId         String
+  packageId           String
+  /// FR-CTX-041 — a reference. There is deliberately no content column.
+  sourceType          String
+  sourceId            String
+  sourceVersion       String
+  /// FR-CTX-042 — required, no default; CHECKed against three values.
+  authoritativeStatus String
+  supersededBy        String?
+  undeterminedReason  String?
+  /// FR-CTX-064, PP-016 — the objective term or rule that selected it.
+  inclusionReason     String
+  /// FR-CTX-014 — the score that ranked it.
+  relevanceScore      Float
+  crossBoundary       Boolean        @default(false)
+  authorisationRef    String?
+  createdAt           DateTime       @default(now())
+  package             ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([packageId])
+  @@map("context_items")
+}
+
+model ContextExclusion {
+  id           String         @id @default(uuid())
+  /// FR-002, as above.
+  workspaceId  String
+  packageId    String
+  sourceType   String
+  sourceId     String
+  /// Five, closed, no default — a reason by omission cannot be explained.
+  reason       String
+  detail       String
+  /// FR-CTX-039 — so the refusal it caused is explainable after the fact.
+  wasEssential Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  package      ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([packageId])
+  @@map("context_exclusions")
+}
+
+model ContextSourceClass {
+  id                     String   @id @default(uuid())
+  workspaceId            String
+  sourceType             String
+  securityClassification String
+  /// FR-CTX-034 — defaults to false. An unclassified source is excluded.
+  indexable              Boolean  @default(false)
+  createdAt              DateTime @default(now())
+
+  @@unique([workspaceId, sourceType])
+  @@index([workspaceId])
+  @@map("context_source_classes")
+}
+
+model ContextReusableAuthorisation {
+  id              String   @id @default(uuid())
+  sourceType      String
+  sourceId        String
+  /// FR-002 — the row belongs to the workspace that grants the crossing.
+  /// Directional: A may read B's handbook does not imply the reverse.
+  workspaceId     String
+  toWorkspaceId   String
+  authorisedBy    String
+  authorisedAt    DateTime @default(now())
+  rationale       String
+  createdAt       DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("context_reusable_authorisations")
+}
+
+/// R-038-2 — PARTITIONED BY LIST (workspaceId) in the migration, which Prisma
+/// Schema Language cannot express. The `embedding vector` column is likewise
+/// absent here and written through raw SQL: Prisma has no vector type, and
+/// modelling it as Unsupported would put a column in the client that no query
+/// may safely select.
+model ContextIndexEntry {
+  id               String   @id @default(uuid())
+  workspaceId      String
+  sourceType       String
+  sourceId         String
+  /// FR-CTX-016 — staleness is a version comparison, never a timestamp.
+  sourceVersion    String
+  embeddingModelId String
+  dimension        Int
+  indexedAt        DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([workspaceId, sourceType, sourceId])
+  @@index([embeddingModelId])
+  @@map("context_index_entries")
+}
+
+// ---------------------------------------------------------------- local workspace (EPIC-041)
+
+// data-model.md §1.1. `prepared` and `initialisation_pending` are DIFFERENT facts:
+// one says wait for the worker, the other says run the setup skill.
+enum ProvisioningState {
+  not_provisioned
+  prepared
+  initialisation_pending
+  provisioned
+  failed
+}
+
+// data-model.md §2 — one provisioning attempt. Append-only: the migration
+// attaches reject_mutation(), so a failed run cannot be edited into a success.
+// The project's provisioningState is a projection of the latest record.
+model ProvisioningRecord {
+  id             String    @id @default(uuid())
+  workspaceId    String
+  projectId      String
+  actorId        String
+  correlationId  String
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  // succeeded | no_change | pending | failed — CHECKed in the migration.
+  outcome        String
+  // Ordered step names from the fixed vocabulary (data-model.md §2.1).
+  stepsCompleted Json
+  // Required when outcome = 'failed' — CHECKed in the migration.
+  failedStep     String?
+  // Sanitised: never a path outside the root, never a credential.
+  failureReason  String?
+  engineTag      String?      @map("specKitTag")
+  bundleVersion  String?
+  // Relative paths, so a partial run is inspectable (US1 scenario 5).
+  filesWritten   Json
+  // EPIC-042 T1474 (R-042-8): provisioning wrote .pmi/first-run.
+  firstRunMarkerWritten Boolean @default(false)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([projectId, startedAt])
+  @@index([workspaceId])
+  @@map("provisioning_records")
+}
+
+// data-model.md §3 — a project-scoped credential, stored as a digest. There is
+// NO value column and NO expiresAt (FR-LPW-021, FR-LPW-028): the only place the
+// value exists after minting is the response that minted it, and the only thing
+// that ends a credential is revokedAt.
+model ConnectorCredential {
+  id          String    @id @default(uuid())
+  workspaceId String
+  projectId   String
+  principalId String
+  tokenPrefix String
+  tokenHash   String
+  label       String
+  createdById String
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  revokedById String?
+  // EPIC-043 T1409 (R-043-3): the identity snapshot captured at mint; null on
+  // a credential minted before EPIC-043 until its first guarded call completes it.
+  snapshotId  String?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  principal Principal @relation(fields: [principalId], references: [id])
+  workstationConnection WorkstationConnection?
+
+  @@index([tokenPrefix])
+  @@index([projectId])
+  @@index([workspaceId])
+  @@map("connector_credentials")
+}
+
+/// EPIC-043 T1409 (R-043-8) -- one row per credential, created or touched by
+/// pmi.health: when a workstation last spoke for this project, with which versions.
+/// Never deleted; revocation of the credential leaves the row.
+model WorkstationConnection {
+  id               String   @id @default(uuid())
+  workspaceId      String
+  projectId        String
+  credentialId     String   @unique
+  firstSeenAt      DateTime @default(now())
+  lastSeenAt       DateTime @default(now())
+  extensionVersion String?
+  toolkitVersion   String?
+  contractVersion  String
+  serverVersion    String?
+  // EPIC-042 T1474 (R-042-5): what the workstation last reported about its constitution file.
+  constitutionDigest     String?
+  constitutionState      String?
+  constitutionReportedAt DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workspace  Workspace           @relation(fields: [workspaceId], references: [id])
+  project    Project             @relation(fields: [projectId], references: [id])
+  credential ConnectorCredential @relation(fields: [credentialId], references: [id])
+
+  @@index([workspaceId, projectId])
+  @@map("workstation_connections")
+}
+
+// EPIC-042 T1474 — extension, setup skill and constitution sync
+// (specs/042-pmi-spec-kit-extension/data-model.md §1–§3). Vocabularies are
+// TEXT + CHECK in the migration, as every EPIC-041/043 record does.
+
+// §1 · owner-authored entries the constitution is rendered from (R-042-4).
+model ProjectConstraint {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  // principle | constraint | non_goal — CHECKed in the migration.
+  kind        String
+  title       String
+  body        String
+  order       Int
+  version     Int      @default(1)
+  // active | retired — CHECKed in the migration. Retired is never deleted.
+  status      String   @default("active")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([workspaceId, projectId, kind, order])
+  @@index([projectId, status])
+  @@map("project_constraints")
+}
+
+// §2 · one policy per project: D-4 defaults; offline mode strict by default (BR-0202).
+model DecompositionPolicy {
+  id                        String   @id @default(uuid())
+  workspaceId               String
+  projectId                 String   @unique
+  oneSpecPerEpic            Boolean  @default(true)
+  taskCeiling               Int      @default(50)
+  splitRequiresConfirmation Boolean  @default(true)
+  // strict | provisional — CHECKed in the migration.
+  offlineMode               String   @default("strict")
+  version                   Int      @default(1)
+  updatedById               String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@index([workspaceId, projectId])
+  @@map("decomposition_policies")
+}
+
+// §3 · append-only renders; a file on disk is matched to the render that produced it (R-042-5).
+model ConstitutionRender {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  projectId    String
+  version      Int
+  digest       String
+  content      String
+  inputs       Json
+  renderedById String?
+  renderedAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+
+  @@unique([projectId, digest])
+  @@index([projectId, version(sort: Desc)])
+  @@index([workspaceId, projectId])
+  @@map("constitution_renders")
+}
+
+// ---------------------------------------------------------------------------
+// EPIC-044 T1555 — Epic as a product entity (specs/044-epic-model-journey-board/data-model.md §1)
+// ---------------------------------------------------------------------------
+
+/// A project's Epic: groups requirements and owns specifications (LR-03). Its
+/// NUMBER is allocated by the platform and never reused; its STAGE is not here —
+/// it is derived from the executions bound to it, never stored (FR-EPB-001).
+model Epic {
+  id                    String    @id @default(uuid())
+  workspaceId           String
+  projectId             String
+  number                Int
+  slug                  String
+  title                 String
+  description           String    @default("")
+  /// active | split | closed — TEXT + CHECK in the migration.
+  status                String    @default("active")
+  /// Set on a child created from a decomposition decision (R-044-5).
+  parentEpicId          String?
+  /// The letter the decision recorded; with the parent's number it resolves the hook's `7a` (R-044-3).
+  splitSuffix           String?
+  /// The decomposition-decision comment that created this child; unique with splitSuffix (idempotence).
+  decisionCommentId     String?
+  /// On a parent: the last decision processed for it (confirmed, edited or rejected).
+  lastDecisionCommentId String?
+  createdById           String
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  closedAt              DateTime?
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  project        Project         @relation(fields: [projectId], references: [id])
+  parent         Epic?           @relation("EpicSplit", fields: [parentEpicId], references: [id])
+  children       Epic[]          @relation("EpicSplit")
+  requirements   Requirement[]
+  specifications Specification[]
+  tasks          Task[]
+  taskSyncs      TaskSync[]
+  artifactSyncs  ArtifactSync[]
+
+  @@unique([projectId, number])
+  @@unique([decisionCommentId, splitSuffix])
+  @@index([workspaceId])
+  @@index([projectId, status])
+  @@index([parentEpicId])
+  @@map("epics")
+}
+
+// ---------------------------------------------------------------- artifacts
+//
+// T1621 (EPIC-045) — the Epic's markdown set, synced by the finish hook of
+// every governed command (specs/045-artifact-sync-markdown-viewer/data-model.md
+// §1-§3). The project directory stays authoritative for content; these tables
+// are its mirror and the record of WHICH EXECUTION wrote what.
+//
+// Three tables, not one. PMI-DOC-007 §3 sketched a single `ArtifactFile` row
+// per synced version; that duplicates unchanged content on every command and
+// still cannot answer "what did execution X deliver" when nothing changed.
+// Content lives once per digest (`artifact_versions`); the per-execution
+// history is the manifest (`artifact_syncs` x `artifact_sync_files`).
+//
+// Nothing here is ever updated or deleted through a route, tool or screen
+// (FR-ART-001): no service exposes such a method, and the store's surface is
+// asserted by `tests/unit/artifacts/artifact.store.spec.ts`.
+
+/// Content, once per digest. The unique `(projectId, path, digest)` index is
+/// the arbiter under concurrency (FR-ART-006): a second insert of the same
+/// content loses the race and reads the existing row back, which is why two
+/// simultaneous syncs leave exactly one version (DEF-044-003's rule).
+model ArtifactVersion {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  /// Relative to the project directory, e.g. `specs/003-reports/spec.md` (R-045-9).
+  path        String
+  /// spec | plan | tasks | research | data-model | analysis | quickstart | contract | checklist — TEXT + CHECK in the migration.
+  kind        String
+  /// SHA-256 hex of `content`, recomputed by the platform and never trusted from the sync (FR-ART-004).
+  digest      String
+  /// UTF-8 byte length.
+  sizeBytes   Int
+  /// The file, verbatim.
+  content     String
+  /// The execution whose sync first delivered this content; a reuse never rewrites it.
+  firstExecutionId String
+  firstSyncedAt    DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  execution Execution @relation(fields: [firstExecutionId], references: [id])
+  syncFiles ArtifactSyncFile[]
+
+  @@unique([projectId, path, digest])
+  @@index([workspaceId])
+  @@index([projectId, path])
+  @@map("artifact_versions")
+}
+
+/// One row per sync. The unique `(workspaceId, idempotencyKey)` index makes a
+/// replay return the stored answer and write nothing (R-045-8); the key is the
+/// hook's, or derived as `artifacts:<executionId>:<sha256 of sorted path=digest>`.
+model ArtifactSync {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  /// The sync names it; the platform verifies it is this project's (404 otherwise).
+  executionId String
+  /// Resolved from the execution's input binding (R-045-2); null = unbound (FR-ART-007).
+  epicId      String?
+  /// The connector credential that synced.
+  credentialId   String
+  idempotencyKey String
+  /// The answer, kept — so a replay can return it without recomputing.
+  createdCount Int @default(0)
+  reusedCount  Int @default(0)
+  refusedCount Int @default(0)
+  syncedAt     DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  execution Execution @relation(fields: [executionId], references: [id])
+  epic      Epic?     @relation(fields: [epicId], references: [id])
+  files     ArtifactSyncFile[]
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([epicId, syncedAt(sort: Desc)])
+  @@index([executionId])
+  @@index([workspaceId, projectId])
+  @@map("artifact_syncs")
+}
+
+/// The manifest: what one sync said about one path. A refused row carries a
+/// code and no version; an accepted row is the converse. `refusalDetail` is
+/// safe text — never the content and never a matched credential (FR-ART-053).
+model ArtifactSyncFile {
+  id      String @id @default(uuid())
+  /// Derived from the sync, and carried anyway: a tenancy that exists only as a
+  /// join cannot be enforced by row-level security later without moving data
+  /// (`FR-002`, `T012a`).
+  workspaceId String
+  syncId  String
+  /// As sent.
+  path    String
+  /// As sent — compared against the recomputed one.
+  digest  String
+  /// created | reused | refused — TEXT + CHECK in the migration.
+  outcome String
+  versionId     String?
+  /// digest_mismatch | path_not_in_artifact_set | path_escapes_epic | not_utf8 | too_large | credential_shape | too_many_files.
+  refusalCode   String?
+  refusalDetail String?
+  createdAt     DateTime @default(now())
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  sync      ArtifactSync     @relation(fields: [syncId], references: [id])
+  version   ArtifactVersion? @relation(fields: [versionId], references: [id])
+
+  @@unique([syncId, path])
+  @@index([versionId])
+  @@index([workspaceId])
+  @@map("artifact_sync_files")
+}
+
+// ------------------------------------------------------------------ EPIC-046
+//
+// T1687 — the task sync (specs/046-task-kanban-governed-status/data-model.md
+// §3–§5). `tasks.md` becomes rows; the manifest records what each execution
+// SAW, which row state alone cannot answer once a later sync has moved on.
+
+/// One row per sync, kept even when nothing changed — that is the point of it
+/// (FR-KAN-034). The unique `(workspaceId, idempotencyKey)` index makes a replay
+/// return the stored answer and write nothing; the key is DERIVED, because the
+/// shipped finish hook sends none and is not edited (R-046-8, FR-KAN-061).
+model TaskSync {
+  id          String   @id @default(uuid())
+  workspaceId String
+  projectId   String
+  /// Resolved from the execution's input binding (FR-KAN-030); null = unbound.
+  epicId      String?
+  executionId String
+  /// The connector principal that synced; null for a session-originated sync.
+  actorId     String?
+  idempotencyKey String
+  /// The sha256 of the markdown parsed — cross-checked against EPIC-045's
+  /// `tasks.md` artifact version of the same execution (FR-KAN-036).
+  tasksDigest String
+  linesConsidered Int @default(0)
+  parsed          Int @default(0)
+  refused         Int @default(0)
+  duplicates      Int @default(0)
+  added        Int @default(0)
+  changed      Int @default(0)
+  unchanged    Int @default(0)
+  disappeared  Int @default(0)
+  /// The digest differed from the previous sync's with no governed execution of
+  /// this Epic between them (FR-KAN-023, R-05). Accepted, and said out loud.
+  outOfBandEdit Boolean @default(false)
+  /// When the sync OBSERVED the file.
+  syncedAt      DateTime @default(now())
+  /// When the row was written (`T012a` — every table records one).
+  createdAt     DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  project   Project   @relation(fields: [projectId], references: [id])
+  execution Execution @relation(fields: [executionId], references: [id])
+  epic      Epic?     @relation(fields: [epicId], references: [id])
+  lines     TaskSyncLine[]
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([epicId, syncedAt(sort: Desc)])
+  @@index([executionId])
+  @@index([workspaceId, projectId])
+  @@map("task_syncs")
+}
+
+/// The manifest: one row per CONSIDERED line. A line the file contains that is
+/// not a task-list item is neither stored nor counted (FR-KAN-001) — only lines
+/// that opened as one and then passed or failed the grammar appear here.
+model TaskSyncLine {
+  id          String @id @default(uuid())
+  /// Carried, not joined: a tenancy that exists only as a join cannot be
+  /// enforced by row-level security later without moving data (EPIC-045 T012a).
+  workspaceId String
+  syncId      String
+  lineNumber  Int
+  rawText     String
+  /// parsed | refused | duplicate — TEXT + CHECK in the migration.
+  outcome     String
+  refusalCode String?
+  taskKey     String?
+  /// added | description-changed | checkbox-changed | unchanged
+  changeKind     String?
+  previousStatus String?
+  newStatus      String?
+  /// aheadOfFile | supersededByFile — the disagreement this line surfaced.
+  marker         String?
+  createdAt      DateTime @default(now())
+
+  sync TaskSync @relation(fields: [syncId], references: [id], onDelete: Cascade)
+
+  @@unique([syncId, lineNumber])
+  @@index([workspaceId])
+  @@index([syncId, outcome])
+  @@map("task_sync_lines")
+}
+
+/// The immutable REQUEST. There is no verdict column, deliberately (R-037-5):
+/// a mutable verdict field becomes the audit authority the first time somebody
+/// reads it instead of the event stream, and can then disagree with it.
+model TaskStatusProposal {
+  id          String @id @default(uuid())
+  workspaceId String
+  taskId      String
+  expectedCurrentStatus String
+  requestedStatus       String
+  /// Required and non-empty (FR-KAN-011). A move without a reason is refused
+  /// before a row exists.
+  reason      String
+  proposerId  String
+  /// user | agent | service. An agent NEVER approves its own (Constitution XII.6).
+  proposerType String
+  /// The execution the `status-transition-proposed` event was appended to.
+  executionId String?
+  eventId     String?
+  idempotencyKey String
+  /// When the person asked.
+  proposedAt  DateTime @default(now())
+  /// When the row was written (`T012a`).
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  task      Task      @relation(fields: [taskId], references: [id])
+
+  @@unique([workspaceId, idempotencyKey])
+  @@index([taskId, proposedAt(sort: Desc)])
+  @@index([workspaceId])
+  @@map("task_status_proposals")
 }

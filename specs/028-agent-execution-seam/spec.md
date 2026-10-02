@@ -342,3 +342,65 @@ load-bearing rather than tidy.
 - [ ] `specs/028-agent-execution-seam/defects/` contains no open defect records
 - [ ] A closing report was published (Constitution IX)
 - [ ] Epic closure recorded in `closure.md`
+
+---
+
+## Non-human principal identity *(added 2026-08-27, Step C3B)*
+
+*Authorised by the Project Owner's C3B identity-ownership decision. EPIC-028 owns registration and
+authoritative identity of agents, service principals and connectors; EPIC-024 authorises them;
+EPIC-030 consumes frozen identities; EPIC-037 records references and defines nothing.*
+
+
+> **Provenance.** Sourced to
+> [`D-46`](../_shared/decisions/D-46-non-human-principal-identity-ownership.md) — the
+> Project Owner's C3B hybrid identity-ownership decision, recorded through the repository's
+> decision mechanism. **Not** `D-45`, which authorises EPIC-021's gate target-binding and is a
+> different subject. The `BR-` back-fill obligation stands and is tracked separately.
+
+**The distinction the whole group turns on.** An `AgentDescriptor` says what a *kind* of agent can
+do — provider, model, capabilities. A principal says *who a particular one is* and *who answers for
+it*. Two agents on the same model are one descriptor and two principals. Adding `workspaceId` to a
+descriptor was the cheap move and is ruled out: it would still be capability metadata, now carrying
+a field that invites it to be mistaken for identity.
+
+- **FR-AGT-014**: The platform MUST hold authoritative identity for **agent** and **service**
+  principals separately from human users. A human principal remains a `User`; a non-human principal
+  MUST NOT be represented as one.
+- **FR-AGT-015**: Every non-human principal MUST carry a stable identifier, kind, tenant and
+  workspace, a descriptor reference, a **sponsoring human**, the registering human, state, an
+  identity version, an optional connector association, and correlation and causation identifiers.
+- **FR-AGT-016**: A sponsoring human MUST exist in the **same workspace**. A principal MUST NOT
+  sponsor itself, and an agent MUST NOT be its own sponsor.
+- **FR-AGT-017**: A **connector registration** MUST be a distinct concept from a principal. A
+  connector is an execution surface; it proposes nothing, approves nothing, and MUST NOT be
+  substituted for a proposer or approver.
+- **FR-AGT-018**: A principal MUST be `active`, `suspended` or `revoked`. Suspension and revocation
+  MUST prevent **new** executions and proposals, and MUST NOT alter any historical record.
+- **FR-AGT-019**: Every state change MUST produce **immutable** evidence naming the prior state, the
+  new state, the identity version, the acting human and a reason.
+- **FR-AGT-020**: A production service MUST mint **frozen identity snapshots** capturing the facts
+  authorisation and separation of duties depend on: principal, kind, workspace, sponsor and identity
+  version. The **service** mints snapshot identifiers; a caller MUST NOT supply one.
+- **FR-AGT-021**: A caller MUST NOT be able to submit a snapshot belonging to another principal,
+  workspace or historical context. Snapshot identity MUST be resolved and checked, never trusted
+  because it parsed.
+- **FR-AGT-022**: Snapshots MUST be immutable and MUST survive suspension, revocation and restart.
+- **FR-AGT-023**: Mutable display name, model name or provider metadata MUST NOT alter historical
+  identity, and MUST NOT change an identity comparison.
+- **FR-AGT-024**: Tenant and workspace MUST NOT be authoritative from caller input. They MUST be
+  read from the authoritative record.
+- **FR-AGT-025**: A trusted principal context MUST be constructible only by backend composition
+  after an authoritative resolution, and MUST NOT be constructible or forgeable by connector-facing
+  packages.
+
+### Success criteria owned *(C3B)*
+
+- **SC-AGT-009**: **Zero** non-human principals exist without a sponsoring human in the same
+  workspace — enforced at the database, not only in code.
+- **SC-AGT-010**: **100%** of identity snapshots survive suspension, revocation and application
+  restart unchanged; **zero** can be updated or deleted, proven under the **real application role**.
+- **SC-AGT-011**: **Zero** connector-facing packages can reach identity persistence or construct a
+  trusted context, verified by an architecture check that is proven able to fail.
+- **SC-AGT-012**: A structurally identical hand-built principal context is rejected in **100%** of
+  attempts.

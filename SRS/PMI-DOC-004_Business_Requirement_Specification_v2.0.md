@@ -81,7 +81,7 @@ vendor-neutral Capability Hub (`ADR-0023`).
 The product differentiator is **specification compliance with trusted context, governed decisions
 and auditable evidence** (`ADR-0022`).
 
-This document states **123 business requirements** (`BR-xxxx`) under **ten business goals**
+This document states **131 business requirements** (`BR-xxxx`) under **ten business goals**
 (`BG-01`–`BG-10`), and rules what PMI Studio owns, what it integrates, and what may ship later.
 
 ---
@@ -332,12 +332,14 @@ requirement is in target scope with no declared Epic, which §13 records as a ga
 
 ## 6.11 Engineering Experts and agent sessions · BG-02, BG-04
 
-- **BR-0101** — **Expert registry.** AI engineering roles MUST be registered as governed Engineering Experts. → no owner
+- **BR-0101** — **Expert registry.** AI engineering roles MUST be registered as governed Engineering Experts. → owner **EPIC-028** *(assigned 2026-08-25)*
 - **BR-0102** — **Expert contract.** Each Expert MUST define role and purpose, preferred and fallback models, allowed tools and capabilities, context policy, workspace requirements, permissions, prohibited actions, risk class, budget, memory policy, expected outputs and Evidence Contract. → no owner
 - **BR-0103** — **Provider independence.** The same governed role SHOULD be executable through multiple compatible providers and agents without changing business workflow semantics. → `EPIC-028`
 - **BR-0104** — **Session record.** Every Engineering Expert run MUST create a durable session record linking inputs, context version, provider, model, actions, outputs, evidence and outcome — and MUST remain a platform record even when code execution happens inside an external provider. → `EPIC-028`
-- **BR-0105** — **Delegation.** A governed Expert MAY delegate to sub-agents or other Experts where policy permits; each delegated session remains individually attributable and traceable. → no owner
+- **BR-0105** — **Delegation.** A governed Expert MAY delegate to sub-agents or other Experts where policy permits; each delegated session remains individually attributable and traceable. → owner **EPIC-028** *(assigned 2026-08-25)*
 - **BR-0061** *(v1.0, broadened)* — **Unattended execution.** AI agents MUST be able to run unattended within governed bounds; the resulting work enters verification and team review rather than bypassing release controls. → `EPIC-023`
+
+  > *Ownership confirmed 2026-08-25: **EPIC-023** retains `BR-0061`. Engineering Experts (`BR-0101`–`BR-0106`, **EPIC-028**) carries a cross-epic traceability link to EPIC-023 wherever an Expert session runs unattended.*
 - **BR-0106** — **Cost and time limits.** Sessions MUST support enforceable time, resource, token and cost limits where the underlying provider exposes them. → no owner
 
 ## 6.12 Governed learning and knowledge · BG-05, BG-07
@@ -368,8 +370,8 @@ requirement is in target scope with no declared Epic, which §13 records as a ga
 
 - **BR-0110** *(v1.0, broadened)* — **Managed isolated execution.** AI execution MUST occur inside an isolated disposable environment whose network egress permits exactly the destinations policy names. → `EPIC-003`, `EPIC-028`
 - **BR-0131** — **Customer-cloud execution.** The architecture MUST support policy-controlled execution in customer-owned cloud environments. → no owner
-- **BR-0132** — **Controlled local connector.** The platform MAY support developer-machine execution where tenant policy explicitly permits it. → no owner
-- **BR-0133** — **Uniform governance.** Identity, permissions, context, policy, audit, evidence and completion rules MUST apply consistently across every execution mode. → no owner
+- **BR-0132** — **Controlled local connector.** The platform **SHALL** provide a controlled developer-machine connector enabling governed Spec Kit execution from a local IDE, terminal or CLI where tenant policy permits. The connector **SHALL** register every governed execution through the universal execution contract (`FR-EXR-001`) and **SHALL NOT** permit a governed command to complete unregistered except under the provisional-offline provisions of `FR-EXR-010`. Tenant policy governs whether the connector is *enabled*; it never governs whether registration applies. → owner **EPIC-037** *(MAY→SHALL, owner assigned 2026-08-25)*
+- **BR-0133** — **Uniform governance.** Identity, permissions, context, policy, audit, evidence and completion rules **SHALL** apply consistently across every execution mode. No execution surface is privileged, and provider or IDE independence **SHALL NOT** be interpreted as permission for untracked execution. → owner **EPIC-037** *(MAY→SHALL 2026-08-25; the requirement Constitution XII enforces)*
 - **BR-0134** — **Network and resource policy.** Managed execution MUST enforce resource ceilings and explicit network and tool permissions. → `EPIC-003`, `EPIC-028`
 - **BR-0135** — **Credential isolation.** An execution environment MUST NOT receive platform or database credentials its task does not require. → `EPIC-028`
 
@@ -443,6 +445,58 @@ with owning Epics, and removing them would orphan `EPIC-018` and `EPIC-026`.
 
 - **BR-0112** *(v1.0)* — **Repository navigability.** The repository and its governance MUST be navigable by a newcomer from a single index. → `EPIC-018`
 - **BR-0113** *(v1.0)* — **Derived readiness.** Epic readiness MUST be derived from artifacts on disk and visible on a stage register, never declared by hand. → `EPIC-026`
+
+
+## 6.22 Governed execution registration · BG-02, BG-05, BG-08
+
+*Added 2026-08-25 by the project owner's authoritative product decision, ratified as Constitution
+Principle XII. PMI Studio is the control plane of record for governed Spec Kit execution, wherever
+that execution happens. The operating principle is: **execute anywhere through an approved
+integration; govern, record and trace everything in PMI Studio.***
+
+> **This section does not weaken the IDE boundary.** PMI-DOC-001 keeps source-code IDE replacement
+> out of scope; the Plan Amendment §14 prohibition stands; the Native Spec-Kit architecture's rule
+> that no provider, agent, IDE or engine may become inseparable stands. Registering an execution
+> that originated in an IDE is control-plane functionality, not IDE functionality. What is now
+> forbidden is the inference that independence permits *untracked* execution.
+
+- **BR-0196** — **Universal execution registration.** Every governed Spec Kit command executed for a
+  managed project **SHALL** have an execution record in PMI Studio, regardless of originating agent,
+  IDE, connector, sandbox, terminal or automation environment. → owner **EPIC-037**
+- **BR-0197** — **Immutable execution history.** Execution history **SHALL** be an append-only
+  sequence of immutable events; current state **SHALL** be a derived projection and never the
+  authoritative record. A terminal *lifecycle* event ends command execution and **SHALL NOT** close
+  governance, approval, comment, redaction or reconciliation. → owner **EPIC-037**
+- **BR-0198** — **Phase-aware version binding.** An execution **SHALL** bind its **input** identity
+  at registration and its **output** identity at completion. Registration **SHALL NOT** require
+  output identity that cannot yet exist. → owner **EPIC-037**
+- **BR-0199** — **Platform-held status authority.** An agent or connector **SHALL** submit a
+  *requested* transition; the governed workflow engine **SHALL** adjudicate it. Connectors **SHALL
+  NOT** interpret lifecycle-transition policy, and a successful validation **SHALL NOT** imply
+  application. → owner **EPIC-030**
+- **BR-0200** — **Separation of duties.** An AI agent **SHALL NEVER** approve its own approval-gated
+  transition. Human self-approval **SHALL** be governed by tenant or project policy. Every approval
+  and refusal **SHALL** be recorded with actor, basis and reason. → owner **EPIC-030**
+- **BR-0201** — **Integration contract, not the database.** Agents and connectors **SHALL NOT** write
+  to platform tables and **SHALL** use an authenticated, authorized, versioned integration contract
+  with idempotency and correlation controls. → owner **EPIC-037**
+- **BR-0202** — **Strict and provisional execution.** Where the control plane is unreachable,
+  strict-governance mode **SHALL** block the governed command; permitted offline mode **SHALL**
+  create a durable provisional record before execution, mark it `pending_sync` by an immutable
+  `execution-sync-queued` event, and present it as **not yet governed** until reconciled. An
+  unregistered execution **SHALL NEVER** be presented as governed. → owner **EPIC-037**
+- **BR-0203** — **Execution comments and activity history.** Agent completion comments and
+  subsequent human replies **SHALL** form an append-only thread. Corrections **SHALL** use a
+  superseding comment; authorized redaction **SHALL** conceal content while preserving an immutable
+  audit tombstone and a verifiable integrity chain. → owner **EPIC-037**
+
+**Traceability**: `FR-EXR-001`–`FR-EXR-015` (EPIC-037), `FR-AGT-014` (EPIC-028), and the proposal
+adjudication and separation-of-duties requirements added to EPIC-030 implement this section.
+`BR-0132` is one connector conforming to it, not the contract itself.
+
+**Identifier note**: this block was allocated at `BR-0196`–`BR-0203` because `BR-0134`–`BR-0141`
+were already in use (network policy, credential isolation, evidence types and provenance). Reusing
+them would have broken `RULE-16` — *identifiers are corpus-wide and never re-mean*.
 
 ---
 
@@ -563,7 +617,7 @@ exactly the kind of error review misses, and the identifier collision in the cir
 **Status: passing.** 8 tests, green as part of the 829-test governance suite on 2026-08-22.
 
 The checks read the document rather than a maintained list of answers — a check carrying its own
-copy of the answer only proves the copy agrees with itself. Current values: **123 requirements, 25
+copy of the answer only proves the copy agrees with itself. Current values: **131 requirements, 25
 carried v1.0 identifiers, 8 reserved identifiers, zero duplicates, zero unresolved citations.**
 Ownership split: **52 requirements with an owning Epic, 71 without** (§13).
 
@@ -592,7 +646,7 @@ failed the suite, and deleting `BR-0063` additionally tripped `G-BRS-03` on the 
 Until these run in CI they are recorded here as required, not as satisfied by CI. All three were run
 against this document on 2026-08-21 and **pass**:
 
-- `G-BRS-01` — 123 distinct `BR-` identifiers in §6, matching the count in §1.
+- `G-BRS-01` — 131 distinct `BR-` identifiers in §6, matching the count in §1.
 - `G-BRS-02` — zero duplicates; all 25 v1.0 identifiers present and each annotated `(v1.0)`.
 - `G-BRS-03` — every `BR-` cited across `specs/`, `governance/`, `adr/` and `docs/` resolves in §6;
   zero unresolved citations. The reserved identifiers of §14 are excluded by definition — a document
@@ -610,7 +664,7 @@ closes. Review had not caught it; the check did.
 ## 13. Ownership Gaps
 
 Under §3.5 an in-scope requirement without a declared Epic is a **recorded gap**, not an absence.
-**71 of the 123 requirements have no owning Epic; 52 have one.** They are not blocked by this document — they are
+**67 of the 131 requirements have no owning Epic; 64 have one.** They are not blocked by this document — they are
 blocked on Epic declaration, which is a separate act through the `/speckit-specify` flow and the
 stage register.
 

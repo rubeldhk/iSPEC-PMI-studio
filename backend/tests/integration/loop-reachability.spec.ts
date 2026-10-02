@@ -39,43 +39,60 @@
  */
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { NestFactory } from '@nestjs/core';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../../src/app.module.js';
-import { ErrorFilter } from '../../src/core/error.filter.js';
-import { LoopModule } from '../../src/modules/loop/loop.module.js';
+import { startAuthenticatedApp, type AuthenticatedApp } from '../helpers/authenticated-app.js';
 import { LoopService } from '../../src/modules/loop/loop.service.js';
 
 /** Mirrors `main.ts`. See the note above on why this is duplicated. */
 const PREFIX = 'v1';
 
-describe('T934 · the loop is reachable through the composed application (Constitution XI Tier 1)', () => {
+/**
+ * `T1159` — this suite needs a database and a session.
+ *
+ * Both follow from `DEF-030-003`. The loop resolves its caller against
+ * `EPIC-024`'s directory, which reads `users`; and "reachable" now means
+ * *reachable by someone*. The reachability property itself is unchanged.
+ */
+const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
+const suite = noRuntime ? describe.skip : describe;
+
+suite('T934 · the loop is reachable through the composed application (Constitution XI Tier 1)', () => {
+  let harness: AuthenticatedApp;
   let app: INestApplication;
+  let cookie = '';
 
   beforeAll(async () => {
-    app = await NestFactory.create(AppModule, { logger: false });
-    app.useGlobalFilters(new ErrorFilter());
-    app.setGlobalPrefix(PREFIX);
-    await app.init();
-  }, 60_000);
+    harness = await startAuthenticatedApp({ prefix: PREFIX, workspaceId: 'ws_t934' });
+    app = harness.app;
+    cookie = harness.cookie;
+  }, 300_000);
 
   afterAll(async () => {
-    await app?.close();
-  });
+    await harness?.close();
+  }, 120_000);
 
   it('composes the whole application, not a hand-assembled subgraph', () => {
-    // If AppModule itself failed to compile, every assertion below would fail
-    // for a reason that has nothing to do with the loop. Asserted first so the
-    // report says which.
+    // `startAuthenticatedApp` calls `NestFactory.create(AppModule)` — the same
+    // thing `main.ts` does, moved into the helper when this suite gained a
+    // session (`T1159`). If AppModule itself failed to compile, every assertion
+    // below would fail for a reason that has nothing to do with the loop.
+    // Asserted first so the report says which.
     expect(app).toBeDefined();
   });
 
-  it('registers LoopModule in the composition root', () => {
+  it('registers the configured LoopModule in the composition root', async () => {
     // The mutation proof's target. `select` throws if the module is not part of
     // the compiled graph — an import never added to app.module.ts cannot
     // satisfy this.
-    expect(() => app.select(LoopModule)).not.toThrow();
+    //
+    // Selected by the CONSTANT, not by the class. Since `T1165` the loop is a
+    // dynamic module, and Nest keys those by their metadata: `select(LoopModule)`
+    // asks for a module token the graph does not contain, and throws whether or
+    // not the loop is registered — which would make this assertion fail for a
+    // reason unrelated to what it tests.
+    const { GOVERNED_LOOP } = await import('../../src/composition/governed-loop.js');
+    expect(() => app.select(GOVERNED_LOOP)).not.toThrow();
   });
 
   it('resolves LoopService from the graph the application actually builds', () => {
@@ -90,7 +107,7 @@ describe('T934 · the loop is reachable through the composed application (Consti
     ['get', `/${PREFIX}/loop/objects/probe/progress`],
     ['get', `/${PREFIX}/loop/objects/probe/exceptions`],
   ] as const)('routes %s %s — the real entry point answers', async (method, route) => {
-    const response = await request(app.getHttpServer())[method](route).send({});
+    const response = await request(app.getHttpServer())[method](route).set('Cookie', cookie).send({});
     const code = (response.body as { error?: { code?: string } })?.error?.code;
 
     // Deliberately NOT asserting success. This is a reachability test, and what
@@ -115,29 +132,28 @@ describe('T934 · the loop is reachable through the composed application (Consti
     // Anti-vacuity. If the application answered every path the same way, the
     // assertion above would pass over a completely unwired module.
     //
-    // This should assert 404 and cannot: `DEF-030-001`. `ErrorFilter` is a bare
-    // `@Catch()`, so NestJS's own `NotFoundException` reaches `toHttpStatus`,
-    // which maps anything that is not a `PlatformError` to `internal_error` —
-    // and every unmatched path in the application returns 500. Found by this
-    // assertion on its first run, in `EPIC-001`'s file, which `FR-GEL-002` puts
-    // outside this Epic.
-    //
-    // So the weaker property, stated honestly: an unowned path is
-    // DISTINGUISHABLE from an owned one. **Tighten this back to 404 when
-    // DEF-030-001 is fixed** — leaving it loose after the cause is gone would
-    // keep a real guarantee weak for no reason.
-    const unowned = await request(app.getHttpServer()).get(
-      `/${PREFIX}/loop/objects/probe/not-a-real-sub-resource`,
-    );
+    // TIGHTENED 2026-08-25 (`T1017`). This asserted 500 and said so:
+    // `DEF-030-001` made 404 impossible, because `ErrorFilter` was a bare
+    // `@Catch()` and NestJS's own `NotFoundException` reached `toHttpStatus`,
+    // which mapped anything that is not a `PlatformError` to `internal_error`.
+    // `DEF-001-006` fixed that in `EPIC-001` — the filter now recognises
+    // `HttpException` and keeps its status — so the weaker property is retired
+    // and the real guarantee is asserted: **an unmatched route is 404**.
+    const unowned = await request(app.getHttpServer())
+      .get(`/${PREFIX}/loop/objects/probe/not-a-real-sub-resource`)
+      .set('Cookie', cookie);
     // An OWNED route with a bad body: real validation, a documented platform
     // code, a 400. That is the distinction, and it is behaviour rather than a
     // stub — `declareObject` genuinely refuses a request missing workspaceId.
     const owned = await request(app.getHttpServer())
       .post(`/${PREFIX}/loop/objects`)
+      .set('Cookie', cookie)
+      // `projectId` is the omission now: `workspaceId` is no longer a field a
+      // caller supplies, so it can no longer be the one left out (`T1157`).
       .send({ workflowType: 'example-workflow' });
 
     expect(owned.status).toBe(400);
-    expect(unowned.status).toBe(500);
+    expect(unowned.status, "an unmatched route must be 404 (DEF-001-006)").toBe(404);
     expect(unowned.status).not.toBe(owned.status);
   });
 });

@@ -1,0 +1,43 @@
+# The project-side registry fragment provisioning and /setup-PMIStudio merge into
+# .specify/extensions.yml (EPIC-042 T1495, contracts/extension-and-hooks.md §2).
+# Merge rule: add pmi to `installed` once; append an entry per event only when
+# no { extension: pmi, command } entry exists for it; never touch another
+# extension's entries; never remove anything. optional: false is load-bearing.
+installed: [pmi]
+hooks:
+  before_specify:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio (first run: decompose)" }
+  after_specify:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete and sync" }
+  before_clarify:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_clarify:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete and sync" }
+  before_checklist:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_checklist:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete and sync" }
+  before_plan:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_plan:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete and sync" }
+  before_tasks:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_tasks:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete, sync artifacts and tasks" }
+  before_analyze:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_analyze:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete and sync" }
+  before_implement:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_implement:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Progress events, then complete (partially-completed if tasks remain)" }
+  before_converge:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_converge:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete and sync" }
+  before_constitution:
+    - { extension: pmi, command: speckit.pmi.begin, enabled: true, optional: false, description: "Register with PMI Studio" }
+  after_constitution:
+    - { extension: pmi, command: speckit.pmi.finish, enabled: true, optional: false, description: "Complete and sync" }

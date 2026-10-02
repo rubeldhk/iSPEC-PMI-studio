@@ -12,7 +12,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
-import { AREAS, GROUP_LABELS, deliveredAreas } from '../../../src/shell/areas';
+import { AREAS, GROUP_LABELS, isReachable, reachableAreas } from '../../../src/shell/areas';
 import { navigationModel } from '../../../src/shell/navigation-model';
 import { renderAt } from './harness';
 
@@ -62,10 +62,10 @@ describe('T437k · SC-SHL-002 — nothing that is not delivered appears', () => 
   it('shows exactly the delivered areas and no others', async () => {
     renderAt('/');
     await waitFor(() => expect(labels().length).toBeGreaterThan(0));
-    expect(labels().sort()).toEqual(deliveredAreas().map((area) => area.label).sort());
+    expect(labels().sort()).toEqual(reachableAreas().map((area) => area.label).sort());
   });
 
-  it.each(AREAS.filter((area) => area.status !== 'delivered').map((a) => [a.label, a.status]))(
+  it.each(AREAS.filter((area) => !isReachable(area.status)).map((a) => [a.label, a.status]))(
     'does not offer %s (%s) — not disabled, not greyed, not a placeholder',
     async (label) => {
       renderAt('/');
@@ -80,10 +80,20 @@ describe('T437k · SC-SHL-002 — nothing that is not delivered appears', () => 
     },
   );
 
-  it('offers twelve fewer destinations than the product specifies', async () => {
+  it('offers ten fewer destinations than the product specifies', async () => {
+    // The arithmetic, stated so it cannot drift silently again: navigation
+    // carries the REACHABLE areas — `delivered` plus `partly-delivered` — and
+    // eighteen are specified.
+    //
+    // It was `5` until `T1172`, when the Requirement Room area was delivered.
+    // The title said *twelve* throughout, and was wrong until `T1514`: with five
+    // destinations the gap was thirteen. EPIC-042 made it twelve and EPIC-046
+    // `T1737` makes it TEN — the gap shrinks only when an area is really
+    // delivered, which is the whole point of counting it here.
     renderAt('/');
     await waitFor(() => expect(labels().length).toBeGreaterThan(0));
     expect(AREAS).toHaveLength(18);
-    expect(labels()).toHaveLength(5);
+    expect(labels()).toHaveLength(8);
+    expect(AREAS.length - labels().length, 'the title and the arithmetic disagree').toBe(10);
   });
 });

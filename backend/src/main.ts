@@ -1,7 +1,9 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { ErrorFilter } from './core/error.filter.js';
+import { configureBodyParsing } from './core/http-body.js';
 import { buildObservability, newCorrelationId, NullMetricSink } from '@pmi/observability';
 import { HttpObservabilityInterceptor } from './modules/observability/http-observability.interceptor.js';
 
@@ -25,7 +27,10 @@ async function bootstrap(): Promise<void> {
   // (system-design.md), so the default sink is inert rather than absent.
   const observability = buildObservability({ service: 'api', sink: new NullMetricSink() });
 
-  const app = await NestFactory.create(AppModule);
+  // EPIC-045 DEF-045-001: the body limit is configuration, installed here and in
+  // the test helper alike (core/http-body.ts).
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
+  configureBodyParsing(app);
   app.useGlobalFilters(new ErrorFilter());
   // T663 / DEF-001-002: startup telemetry is not request telemetry. Without
   // this, `requestFinished` and `correlationFor` have no call site and an

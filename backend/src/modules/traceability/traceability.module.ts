@@ -9,6 +9,8 @@
  * which is visible, not silently wrong.
  */
 import { Module } from '@nestjs/common';
+import { prismaClient } from '../../persistence/prisma.js';
+import { PrismaTraceabilityLinkStore } from './traceability-link.store.prisma.js';
 import { REQUIREMENT_STORE, RequirementsModule } from '../requirements/requirements.module.js';
 import type { RequirementStore } from '../requirements/requirements.service.js';
 import { LookupArtifactIdSource } from './coverage.service.js';
@@ -60,7 +62,14 @@ export class EmptyArtifactIdSource implements ArtifactIdSource {
   providers: [
     {
       provide: TRACEABILITY_LINK_STORE,
-      useFactory: (): TraceabilityLinkStore => new InMemoryTraceabilityLinkStore(),
+      // EPIC-041 T1325 (FR-LPW-041, R-041-7) — the real traceability_links rows
+      // when a database is configured. Found by T1383: commitGeneration wrote
+      // links the trace could not see, because this was in memory. Asserted by
+      // tests/architecture/durable-stores.spec.ts.
+      useFactory: (): TraceabilityLinkStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaTraceabilityLinkStore(prismaClient().traceabilityLink)
+          : new InMemoryTraceabilityLinkStore(),
     },
     {
       // T862 — the requirement half reads the live register, so SC-010's

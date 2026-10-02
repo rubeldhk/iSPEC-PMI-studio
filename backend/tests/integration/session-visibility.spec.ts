@@ -10,6 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
 import { Client } from 'pg';
 import { PrismaClient } from '@prisma/client';
 import { AccessEnforcementService } from '../../src/modules/access/access-enforcement.service.js';
@@ -21,6 +22,7 @@ import {
 } from '../../src/modules/access/access-inheritance.service.js';
 import { AccessSnapshotService } from '../../src/modules/access/access-snapshot.service.js';
 import { PrismaAccessStore, type AccessDb } from '../../src/modules/access/access.store.js';
+import { boundaryFor } from '../support/ownership.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = resolve(here, '../../prisma/migrations');
@@ -47,7 +49,7 @@ suite('T815 · SC-018 — open-time visibility against a real PostgreSQL', () =>
   let store: PrismaAccessStore;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine').start();
+    container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
     const url = container.getConnectionUri();
     const db = new Client({ connectionString: url });
     await db.connect();
@@ -61,7 +63,16 @@ suite('T815 · SC-018 — open-time visibility against a real PostgreSQL', () =>
     store = new PrismaAccessStore(prisma as unknown as AccessDb);
     grants = new AccessGrantService(store);
     const inheritance = new AccessInheritanceService(store, new InMemoryDerivationGraph());
-    evaluation = new AccessEvaluationService(new AccessEnforcementService(inheritance, store));
+    evaluation = new AccessEvaluationService(
+      new AccessEnforcementService(
+        inheritance,
+        store,
+        boundaryFor([
+          { id: ADMIN, workspaceId: WS },
+          { id: REVIEWER, workspaceId: WS },
+        ]),
+      ),
+    );
     snapshots = new AccessSnapshotService(store);
   }, 180_000);
 
@@ -71,6 +82,9 @@ suite('T815 · SC-018 — open-time visibility against a real PostgreSQL', () =>
   });
 
   it('revoked mid-session → restricted on next open; the run snapshot does not re-admit', async () => {
+    // `X19` — q_open is unrestricted because REVIEWER was granted on what it
+    // concerns, not because nobody restricted it.
+    await grants.grant(WS, OPEN, { userId: REVIEWER, level: 'read', grantedById: ADMIN });
     await grants.grant(WS, SPEC, { userId: ADMIN, level: 'edit', grantedById: ADMIN });
     const reviewers = await grants.grant(WS, SPEC, {
       userId: REVIEWER,

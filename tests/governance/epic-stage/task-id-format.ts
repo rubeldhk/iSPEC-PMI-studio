@@ -56,6 +56,11 @@ export function taskIdentifierRecogniser(): RegExp {
   return new RegExp(config().taskIdentifierRecogniser);
 }
 
+/** Strip the anchors so a pattern can be composed into a larger one. */
+function unanchored(pattern: string): string {
+  return pattern.replace(/^\^/, '').replace(/\$$/, '');
+}
+
 /**
  * The identifier shape **without anchors**, for composing into a larger regex.
  *
@@ -66,7 +71,34 @@ export function taskIdentifierRecogniser(): RegExp {
  * keeps its own idea of what an identifier looks like.
  */
 export function taskIdentifierFragment(): string {
-  return config().taskIdentifierPattern.replace(/^\^/, '').replace(/\$$/, '');
+  return unanchored(config().taskIdentifierPattern);
+}
+
+/**
+ * The **recogniser** shape without anchors — what the line parsers below use.
+ *
+ * `T1000`. Distinct from {@link taskIdentifierFragment}, and the distinction is
+ * the whole point: a parser built from the *valid* pattern could never extract
+ * `T99`, so {@link unrecognisedIdentifiers} could never report it. **Reporting
+ * a malformed identifier requires first matching it** — the narrow pattern
+ * classifies, the broad one parses, and swapping them silently restores the
+ * skip this module exists to end.
+ */
+export function taskIdentifierRecogniserFragment(): string {
+  return unanchored(config().taskIdentifierRecogniser);
+}
+
+/**
+ * A task-line parser for one checkbox shape, composed from the recogniser.
+ *
+ * `T1000`. The checkbox class is the only thing that legitimately differs
+ * between the two exported parsers; the identifier shape is the thing that
+ * must not differ from anything. Before this, both wrote `T\d+[a-z]*` out by
+ * hand — a third and fourth copy of the very shape this module exists to hold
+ * once, inside the module holding it.
+ */
+function taskLineParser(checkbox: string): RegExp {
+  return new RegExp(`^\\s*-\\s*\\[${checkbox}\\]\\s*(${taskIdentifierRecogniserFragment()})\\b`);
 }
 
 /**
@@ -78,7 +110,7 @@ export function taskIdentifierFragment(): string {
  * naming a file it has not written yet is correct rather than a violation.
  */
 export function completedTaskIdentifierOf(line: string): string | null {
-  const match = /^\s*-\s*\[[xX]\]\s*(T\d+[a-z]*)\b/.exec(line);
+  const match = taskLineParser('[xX]').exec(line);
   if (match === null) return null;
   return match[1]!;
 }
@@ -86,11 +118,12 @@ export function completedTaskIdentifierOf(line: string): string | null {
 /**
  * The identifier a task line declares, or `null` when the line declares none.
  *
- * Replaces the hand-written `/^\s*- \[[xX ]\]\s*(T\d{3}[a-z]?)\b/` that each
- * consumer carried its own copy of.
+ * Replaces the hand-written line parser that each consumer carried its own
+ * copy of, and — since `T1000` — composes its identifier shape from
+ * configuration rather than restating it.
  */
 export function taskIdentifierOf(line: string): string | null {
-  const match = /^\s*-\s*\[[xX ]\]\s*(T\d+[a-z]*)\b/.exec(line);
+  const match = taskLineParser('[xX ]').exec(line);
   if (match === null) return null;
   return match[1]!;
 }

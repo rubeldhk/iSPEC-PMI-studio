@@ -83,3 +83,31 @@ NOT part of this phase.*
 - [X] T194 Run `/speckit-converge` for this epic; append and complete any remaining unbuilt work, then record the clean result in `specs/009-spec-lifecycle-versioning/closure.md`
 - [X] T195 Triage `specs/009-spec-lifecycle-versioning/defects/`; close every record or defer it to a named epic, and record the outcome in `specs/009-spec-lifecycle-versioning/closure.md`
 - [X] T196 Confirm this epic's principle deltas still hold and every deferral retains a valid owner (decision D-6), then publish the epic closing report — work completed, work deferred, recommended next task (Constitution IX) — in `specs/009-spec-lifecycle-versioning/closure.md`
+
+---
+
+## Phase C2C — durable transition identity (reopened 2026-08-26)
+
+*Authorised by the project owner's Step C2C ownership decision: **EPIC-009 owns lifecycle
+persistence, atomic state-and-transition recording and durable transition identity.** See
+[closure.md](./closure.md) — Reopening record.*
+
+- [X] T1104 Additive migration `20260826010000_epic009_transition_identity` binding `correlationId`, `causationId`, `idempotencyKey`, `actorSnapshotId` and previous/resulting version to `lifecycle_transitions`, with a **partial** unique index on `(workspaceId, specificationId, idempotencyKey)` so history written before the migration cannot collide on NULL *(test: `backend/tests/integration/specifications/lifecycle-transition-atomicity.spec.ts`)*
+- [X] T1105 Implement `backend/src/modules/specifications/lifecycle-transition.repository.ts` — an EPIC-009-owned transactional unit of work. The expected status is part of the UPDATE's `WHERE`, so the concurrency check and the write are one statement; the transition insert shares that transaction *(test: `backend/tests/integration/specifications/lifecycle-transition-atomicity.spec.ts`)*
+- [X] T1106 Prove the seven properties against real PostgreSQL: rollback leaves neither half; no state change commits without evidence; no evidence commits for a rolled-back change; the same idempotency key returns the original committed result; two concurrent applications from one expected state produce at most one commit; the transition survives a restart; the application's own role cannot UPDATE or DELETE the evidence *(implementation: T1104, T1105)*
+
+**Deliberately not taken**: `SPECIFICATION_STORE` is still bound to `InMemorySpecificationStore`.
+The wider store swap remains EPIC-014 F-11.2's, and only the lifecycle path was moved — because
+only the lifecycle path was what `X8` required.
+
+## Phase C2D — one specification source of truth (2026-08-27)
+
+- [X] T1121 Bind `PrismaSpecificationStore` as `SPECIFICATION_STORE`, closing `X16` — `commitGeneration` wrote to memory while lifecycle validation, gates and application read PostgreSQL, so a specification the product created was invisible to the services governing it. Also corrects `commitGeneration`'s write order: it created the **version** first, which violates the immediate `specification_versions_specificationId_fkey`; only `specifications_currentVersionId_fkey` is deferrable. The claim that "the FK is DEFERRABLE either way" went unchallenged because this store had never been bound *(test: `backend/tests/integration/loop/adjudication-end-to-end.spec.ts` — the specification is created through production persistence, with no direct SQL on the success path)*
+
+## Phase C2E · the owner is created with the artifact *(added 2026-08-27)*
+
+*Closes the EPIC-009 half of `X19`. Deny-by-default alone would make every new specification
+unreachable; this is what stops "no grants" being reachable at all for anything created through
+production persistence.*
+
+- [X] T1128 Require `OwnershipBootstrap` on `GenerationCommit` and write the owner grant inside the creation transaction in `backend/src/modules/specifications/specifications-read.service.ts` — a human owner always, a mandatory and distinct human sponsor when an agent or service initiates, and the sponsor's workspace verified inside the transaction so a refusal rolls everything back *(tests: `backend/tests/integration/specifications/ownership-bootstrap.spec.ts`, 8 cases including a genuine partial-write rollback)*

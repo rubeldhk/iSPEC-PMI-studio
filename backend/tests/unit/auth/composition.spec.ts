@@ -42,6 +42,10 @@ afterEach(async () => {
   else process.env['DATABASE_URL'] = savedUrl;
 });
 
+// 2026-09-19 — composing the whole AppModule takes seconds on a loaded runner; the
+// default 5 s per-test budget timed out on CI. The graph, not the clock, is under test.
+const COMPOSE_TIMEOUT = 60_000;
+
 describe('T832 · DEF-005-001 · USER_DIRECTORY is wired, not defaulted', () => {
   it('resolves PrismaUserDirectory when a database is configured', async () => {
     const graph = await compose('postgresql://composition-probe:unused@localhost:5432/unused');
@@ -53,7 +57,7 @@ describe('T832 · DEF-005-001 · USER_DIRECTORY is wired, not defaulted', () => 
         'the real directory, which is DEF-005-001 shipping a second time',
     ).toBeInstanceOf(PrismaUserDirectory);
     expect(directory).not.toBeInstanceOf(UnconfiguredUserDirectory);
-  });
+  }, COMPOSE_TIMEOUT);
 
   it('keeps the refusing default when no database is configured', async () => {
     // The refusal is a feature: an unconfigured environment must name its
@@ -61,7 +65,7 @@ describe('T832 · DEF-005-001 · USER_DIRECTORY is wired, not defaulted', () => 
     const graph = await compose(undefined);
 
     expect(graph.get(USER_DIRECTORY)).toBeInstanceOf(UnconfiguredUserDirectory);
-  });
+  }, COMPOSE_TIMEOUT);
 });
 
 describe('T832 · the injection sites that type-metadata cannot serve', () => {
@@ -79,7 +83,7 @@ describe('T832 · the injection sites that type-metadata cannot serve', () => {
       'AuthController.sessions is undefined: its @Inject(SessionService) was dropped, and under ' +
         'tsx/esbuild a bare type annotation injects nothing',
     ).toBeInstanceOf(SessionService);
-  });
+  }, COMPOSE_TIMEOUT);
 
   it('the module (which builds the session middleware) holds one too', async () => {
     const graph = await compose(undefined);
@@ -87,5 +91,5 @@ describe('T832 · the injection sites that type-metadata cannot serve', () => {
     const { AuthModule } = await import('../../../src/modules/auth/auth.module.js');
     const module = graph.get(AuthModule);
     expect((module as unknown as { sessions: unknown }).sessions).toBeInstanceOf(SessionService);
-  });
+  }, COMPOSE_TIMEOUT);
 });

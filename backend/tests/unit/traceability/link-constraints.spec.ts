@@ -22,7 +22,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const schema = readFileSync(resolve(here, '../../../prisma/schema.prisma'), 'utf8');
 
 describe('the permitted edges (FR-029 + FR-ENH-021, widened by EPIC-022 T302)', () => {
-  it('are exactly the two Phase 1 edges plus the ten chain-adjacent pairs', () => {
+  it('are exactly the two Phase 1 edges, the ten chain-adjacent pairs, the three change edges, the two defect edges and the Epic edge', () => {
     expect(PERMITTED_EDGES.map((e) => `${e.sourceType}->${e.targetType}`).sort()).toEqual(
       [
         'specification->requirement',
@@ -37,6 +37,22 @@ describe('the permitted edges (FR-029 + FR-ENH-021, widened by EPIC-022 T302)', 
         'test->code',
         'release->test',
         'operation->release',
+        // `EPIC-034` `FR-CHR-064` — work arising from an approved change traces
+        // back to it. Enumerated here rather than counted, so a fourteenth edge
+        // has to be named before it can exist.
+        'specification->change',
+        'task->change',
+        'test->change',
+        // `EPIC-035` `FR-DFR-050` — repair work traces back to the defect it
+        // fixes, and the failing test to the defect it proved. Named here for
+        // the same reason: an edge nobody enumerated is an edge nobody decided.
+        'task->defect',
+        'test->defect',
+        // `EPIC-046` `T1783` — a synced task's home is its Epic and its
+        // specification is optional (`Q1`), so a task with no specification
+        // resolves back to the Epic instead of to nothing. Named for the same
+        // reason as the two above.
+        'task->epic',
       ].sort(),
     );
   });

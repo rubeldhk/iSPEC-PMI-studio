@@ -18,6 +18,20 @@ export type ErrorCode =
   | 'specification_not_approved'
   | 'engine_unavailable'
   | 'provider_unavailable'
+  | 'governance_seam_unbound'
+  // EPIC-041 T1334 — the platform exists and cannot currently write a project directory (503).
+  | 'projects_root_unavailable'
+  // EPIC-043 T1421 (R-043-5) — the connector-facing refusals, one vocabulary
+  // with the MCP binding (`REGISTRY_REFUSALS` in @pmi/execution-registry-contract).
+  | 'invalid_connector_credential'
+  | 'scope_required'
+  | 'identity_not_accepted'
+  | 'surface_not_accepted'
+  | 'unsupported_contract_version'
+  | 'not_available_until'
+  // EPIC-045 DEF-045-001 — a request body above the configured limit (413), reported as a code
+  // rather than escaping the body parser as a 500.
+  | 'payload_too_large'
   | 'internal_error';
 
 export interface ErrorBody {
@@ -70,6 +84,59 @@ export class ConflictError extends PlatformError {
  */
 export class ForbiddenError extends PlatformError {
   readonly code = 'forbidden' as const;
+}
+
+// ---------------------------------------------------------------- EPIC-043
+
+/**
+ * The ONE refusal for every credential failure — absent, malformed, unknown,
+ * revoked, another project's (`FR-PIC-021`). 401. The message is fixed and
+ * compared verbatim by the tests; nothing about the reason is disclosed.
+ */
+export class InvalidConnectorCredentialError extends PlatformError {
+  readonly code = 'invalid_connector_credential' as const;
+  constructor() {
+    super('Invalid connector credential.');
+  }
+}
+
+/** 403 — a valid credential reaching an operation outside its scopes; names the scope required. */
+export class ScopeRequiredError extends PlatformError {
+  readonly code = 'scope_required' as const;
+  constructor(scope: string) {
+    super(`This operation requires the connector scope "${scope}".`, { scope });
+  }
+}
+
+/** 400 — a body asserted something the platform derives (`FR-PIC-024`, `R-043-4`). */
+export class IdentityNotAcceptedError extends PlatformError {
+  readonly code = 'identity_not_accepted' as const;
+  constructor(field: string) {
+    super(`The request may not carry "${field}"; the platform derives it from the credential.`, { field });
+  }
+}
+
+export class SurfaceNotAcceptedError extends PlatformError {
+  readonly code = 'surface_not_accepted' as const;
+  constructor(field: string) {
+    super(`The request may not carry "${field}"; the platform derives it from the transport.`, { field });
+  }
+}
+
+/** 400 — the contract version negotiated, never best-guessed (`R-043-6`). */
+export class UnsupportedContractVersionError extends PlatformError {
+  readonly code = 'unsupported_contract_version' as const;
+  constructor(supported: string, received: string | null) {
+    super(`Contract version ${received ?? '(none)'} is not supported; this platform speaks ${supported}.`, { supported, received });
+  }
+}
+
+/** 501 — a reserved operation whose content a later Epic supplies (`FR-PIC-002`, `FR-PIC-034`). */
+export class NotAvailableUntilError extends PlatformError {
+  readonly code = 'not_available_until' as const;
+  constructor(epic: string, what: string) {
+    super(`${what} is not available until ${epic} is delivered.`, { epic });
+  }
 }
 
 /** FR-RUN-014: submission is refused naming the unanswered questions. */
@@ -138,6 +205,34 @@ export class ProviderUnavailableError extends PlatformError {
   readonly code = 'provider_unavailable' as const;
 }
 
+/**
+ * `T1195` (EPIC-001) — a **declared** governance seam has no implementation
+ * bound, so the request is refused rather than defaulted.
+ *
+ * Added because `DEF-033-002` found two of them reaching users as
+ * *"An unexpected error occurred."* — `EPIC-031`'s `PolicyProvider` and
+ * `EPIC-032`'s `EvidenceContractSource`, both declared `absent: 'refuse'` by
+ * `ROOM_PORTS`.
+ *
+ * **The consuming Epics were right not to invent this.** `PolicyUnavailableError`
+ * records the reasoning: no documented status meant *"a seam is unbound"*, and
+ * `DEF-008-001` is what happens when an Epic that does not own
+ * `platform-api.md` invents one. So it is added here, by the owning Epic, with
+ * the status table amended in the same change.
+ *
+ * **Why 503 and not 422 or 502.** Not 422: the request is well formed and the
+ * refusal is not about its content, so a caller correcting the body would learn
+ * nothing. Not 502: that is `provider_unavailable`, documented for an
+ * unreachable **storage** provider (`EPIC-025`), and a seam that was never
+ * configured is a different fact from one that cannot be reached.
+ *
+ * **The message must name the seam.** A 503 saying nothing is the same defect
+ * with a better number.
+ */
+export class GovernanceSeamUnboundError extends PlatformError {
+  readonly code = 'governance_seam_unbound' as const;
+}
+
 const STATUS: Record<ErrorCode, number> = {
   validation_failed: 400,
   unauthenticated: 401,
@@ -153,6 +248,16 @@ const STATUS: Record<ErrorCode, number> = {
   // that does not own `platform-api.md` is the mistake DEF-008-001 records.
   engine_unavailable: 422,
   provider_unavailable: 502,
+  governance_seam_unbound: 503,
+  projects_root_unavailable: 503,
+  // EPIC-043 (contracts/mounted-registry-api.md, data-model.md §7).
+  invalid_connector_credential: 401,
+  scope_required: 403,
+  identity_not_accepted: 400,
+  surface_not_accepted: 400,
+  unsupported_contract_version: 400,
+  not_available_until: 501,
+  payload_too_large: 413,
   internal_error: 500,
 };
 
@@ -165,10 +270,42 @@ export function toHttpStatus(err: unknown): number {
  * fixed message — its own text is never exposed, because it may carry a
  * connection string, a token, or engine output.
  */
+/**
+ * EPIC-043 T1440 (`FR-PIC-026`, `SC-PIC-003`) — the shapes that are credentials
+ * wherever they appear: this platform's connector credential, and the common
+ * API-key forms. A refusal that echoed one would put a secret in a log, a
+ * screen and an agent transcript at once.
+ */
+const CREDENTIAL_SHAPES: readonly RegExp[] = [
+  // The bearer form first, so "Bearer pmi_ct_…" collapses to one placeholder.
+  /\bBearer\s+[A-Za-z0-9._~+/=-]{16,}/g,
+  /pmi_ct_[A-Za-z0-9_-]{20,}/g,
+  /\bsk-ant-[A-Za-z0-9-]{16,}\b/g,
+  /\bsk-[A-Za-z0-9-]{16,}\b/g,
+];
+
+export function scrubCredentials(text: string): string {
+  let out = text;
+  for (const shape of CREDENTIAL_SHAPES) out = out.replace(shape, '<credential>');
+  return out;
+}
+
+/** The same scrub, applied to every string at any depth of a value. */
+export function scrubCredentialsDeep<T>(value: T): T {
+  if (typeof value === 'string') return scrubCredentials(value) as unknown as T;
+  if (Array.isArray(value)) return value.map((v) => scrubCredentialsDeep(v)) as unknown as T;
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = scrubCredentialsDeep(v);
+    return out as T;
+  }
+  return value;
+}
+
 export function toErrorBody(err: unknown): ErrorBody {
   if (err instanceof PlatformError) {
-    const body: ErrorBody = { error: { code: err.code, message: err.message } };
-    if (err.details !== undefined) body.error.details = err.details;
+    const body: ErrorBody = { error: { code: err.code, message: scrubCredentials(err.message) } };
+    if (err.details !== undefined) body.error.details = scrubCredentialsDeep(err.details);
     return body;
   }
   return { error: { code: 'internal_error', message: 'An unexpected error occurred.' } };

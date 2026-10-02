@@ -16,7 +16,7 @@
  * (`T441p`).
  */
 import { describe, expect, it } from 'vitest';
-import { AREAS, AREA_GROUPS, type Area } from '../../../src/shell/areas';
+import { AREAS, AREA_GROUPS, isReachable, type Area } from '../../../src/shell/areas';
 import { navigableAreas, navigationModel } from '../../../src/shell/navigation-model';
 
 function synthetic(id: string, group: Area['group'], status: Area['status']): Area {
@@ -27,7 +27,7 @@ function synthetic(id: string, group: Area['group'], status: Area['status']): Ar
     path: `/${id}`,
     epic: 'EPIC-999',
     status,
-    ...(status === 'delivered' ? { element: (): null => null } : {}),
+    ...(isReachable(status) ? { element: (): null => null } : {}),
   } as Area;
 }
 
@@ -52,16 +52,16 @@ describe('T437q · SC-SHL-004 — a delivered area reaches navigation from the r
   });
 
   it('moves an owed area into navigation on a status change alone', () => {
-    // What `EPIC-016` will do: one field, no other edit. Governance is the
+    // What `EPIC-016` will do: one field, no other edit. Reports is the
     // live case — the `declared-not-delivered` row exists precisely so this
     // is the whole of its future change.
-    const owed = AREAS.find((area) => area.id === 'governance')!;
-    expect(navigableAreas().map((area) => area.id)).not.toContain('governance');
+    const owed = AREAS.find((area) => area.id === 'reports')!;
+    expect(navigableAreas().map((area) => area.id)).not.toContain('reports');
 
     const promoted: Area[] = AREAS.map((area) =>
-      area.id === 'governance' ? ({ ...owed, status: 'delivered', element: (): null => null } as Area) : area,
+      area.id === 'reports' ? ({ ...owed, status: 'delivered', element: (): null => null } as Area) : area,
     );
-    expect(navigableAreas(promoted).map((area) => area.id)).toContain('governance');
+    expect(navigableAreas(promoted).map((area) => area.id)).toContain('reports');
   });
 
   it('brings back a whole group that had nothing delivered in it', () => {

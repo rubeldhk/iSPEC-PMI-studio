@@ -370,6 +370,64 @@ type and assert it returns done/current/pending across the same stage vocabulary
 - **Gate Outcome**: the result of a required gate on a transition — satisfied, refused, exception, or violation. Never "passed by omission".
 - **Trigger Rule**: the visible, versioned rule an automated transition cites. A transition with no rule does not exist.
 
+### Specification status-transition adjudication *(added 2026-08-25 — Step C2A)*
+
+*Authorised by the project owner's Step C2A instruction, discharging the two amendments Rev 3 §04
+assigned to this Epic and never scheduled. **`EPIC-037` found the gap by trying to consume the
+capability and stopping**: this Epic evaluates Governed Engineering Loop stages and exposed no
+specification-lifecycle proposal intake at all.*
+
+> **This is not a second lifecycle engine.** `EPIC-009` remains the authoritative validator and
+> executor of specification lifecycle transitions. This Epic **adjudicates** a proposal — authority,
+> gates, separation of duties, approval routing — and, only where application is authorised,
+> **invokes `EPIC-009`** through an explicit port. Gate *outcomes* on specifications remain
+> `EPIC-021`'s; authorisation remains `EPIC-024`'s.
+
+- **FR-GEL-063**: The loop MUST accept a **specification status-transition proposal** as governed
+  intake, carrying proposal and execution identity, target and target version or baseline, the
+  **expected current** lifecycle status, the requested status, proposer and frozen agent identity,
+  originating connector identity, evidence and reason references, correlation and causation
+  identifiers, an idempotency key and a proposal timestamp.
+- **FR-GEL-064**: Adjudication MUST use **specification lifecycle** types. A specification status
+  MUST NOT be passed into an API typed as `LoopStage`, and no implicit mapping between the two
+  vocabularies may exist. *The eight loop stages and the specification lifecycle are different
+  vocabularies for different objects; conflating them would make one meaningless.*
+- **FR-GEL-065**: Adjudication MUST validate the requested transition against **`EPIC-009`'s**
+  authoritative lifecycle. This Epic MUST NOT hold its own table of permitted transitions.
+- **FR-GEL-066**: Adjudication MUST evaluate **actor authority** and **declared gates**, consuming
+  gate outcomes from the `GateProvider` port that `EPIC-021` supplies. This Epic MUST NOT re-run
+  review roles or re-decide a gate a human has already decided.
+- **FR-GEL-067**: Adjudication MUST enforce **separation of duties**. An AI agent or connector MUST
+  NEVER approve its own proposal. Whether a **human** proposer may approve their own is tenant or
+  project policy, defaulting to **a distinct approver required**. Identity MUST be evaluated from
+  **frozen authoritative identity**, never from mutable display metadata.
+- **FR-GEL-068**: Adjudication MUST return exactly one verdict from a **closed** set —
+  `validated`, `applied`, `approval_required`, `refused`, `inconsistent`, `reconciliation_required`
+  — and MUST NOT express an outcome as an ambiguous boolean.
+- **FR-GEL-069**: A verdict of `applied` MUST NOT be returned until **`EPIC-009` has confirmed** the
+  authoritative transition. Where the application outcome is unknown — timeout, crash, lost
+  response — the verdict MUST be `reconciliation_required`, never `applied` and never `refused`.
+- **FR-GEL-070**: Adjudication MUST use **optimistic concurrency** against the expected lifecycle
+  state. Where observed state differs from the proposal's expectation, the verdict MUST be
+  `inconsistent`, and no transition may be applied.
+- **FR-GEL-071**: Adjudication MUST be **idempotent** per proposal and idempotency key. A retry MUST
+  return the original verdict and MUST NOT produce a duplicate approval or a duplicate transition.
+- **FR-GEL-072**: Every intake, evaluation, approval, refusal and application MUST produce
+  **immutable adjudication evidence** linking proposal, verdict and — where applied — the resulting
+  authoritative transition. Redaction MUST NOT destroy the adjudication chain.
+- **FR-GEL-073**: The adjudication contract MUST be consumable **without importing this Epic's
+  internals**, and no connector may invoke `EPIC-009` directly to bypass adjudication.
+
+- **FR-GEL-074**: Adjudication MUST distinguish a **gate decision** from the **absence of one**.
+  Only an authoritative evaluation that failed may produce `refused` /
+  `gate_failed`. A required gate outcome that is unavailable, stale, or not yet complete MUST
+  produce `reconciliation_required` carrying a structured cause — `gate_outcomes_unavailable`,
+  `gate_outcomes_stale` or `gate_evaluation_incomplete` — and MUST NOT be reported as a refusal.
+  *Infrastructure or evidence unavailability must never be represented as though a gate made a
+  negative decision. `FR-ENH-016` (EPIC-021) is the distinct case where the gate **ran** and a role
+  could not answer: that failure is authoritative and remains `gate_failed`.* *(added 2026-08-26,
+  Step C2B)*
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
@@ -385,6 +443,31 @@ type and assert it returns done/current/pending across the same stage vocabulary
 - **SC-GEL-009**: When the audit store is unavailable, **100%** of transitions are refused and **zero** proceed unrecorded *(clarified 2026-08-22)*.
 - **SC-GEL-010**: **Zero** loop configuration changes take effect without authorized human approval, under any tenant policy — verified by enumerating the tenant configuration surface rather than by inspecting defaults *(clarified 2026-08-22)*.
 - **SC-GEL-011**: In a concurrent transition race, **zero** pairs both succeed; the loser is refused with a recorded conflict in **100%** of cases *(clarified 2026-08-22)*.
+
+*Added 2026-08-25 (Step C2A) — measurable outcomes for specification status-transition
+adjudication (`FR-GEL-063`–`FR-GEL-073`).*
+
+- **SC-GEL-012**: Every proposal resolves to **exactly one** verdict from the closed set; **zero**
+  resolve to an ambiguous boolean, to no verdict, or to a value outside the set — verified by
+  exhausting the set in tests rather than by review.
+- **SC-GEL-013**: **100%** of `applied` verdicts are matched by a confirmed authoritative
+  transition recorded by `EPIC-009`; **zero** `applied` verdicts exist without one.
+- **SC-GEL-014**: An application outcome that was never observed resolves to reconciliation in
+  **100%** of cases; **zero** resolve to `applied` or `refused`, since both would assert something
+  nobody witnessed.
+- **SC-GEL-015**: A retried proposal returns the **original** verdict in **100%** of attempts, and
+  produces **zero** duplicate approvals and **zero** duplicate transitions.
+- **SC-GEL-016**: **Zero** AI agents or connectors approve their own proposal, under any tenant
+  policy — the refusal is absolute and is not reachable by configuration.
+- **SC-GEL-017**: **100%** of adjudications leave immutable evidence; **zero** adjudication records
+  can be updated or deleted once written, enforced by the **database** rather than by application
+  code, and verified against a database built from the committed migration.
+- **SC-GEL-018**: Every refusal maps to **exactly one** `EPIC-037` event, selected from a typed
+  stage rather than from prose; **zero** refusals are unmappable, and **zero** require a consumer
+  to read the human-readable reason to choose *(added 2026-08-25, C2A closure `X1`)*.
+- **SC-GEL-019**: **Zero** adjudications report an unobtainable, stale or incomplete gate outcome
+  as a refusal; **100%** route to reconciliation with a structured cause. Enforced by the database,
+  not only by the type *(added 2026-08-26, Step C2B)*.
 
 ## Assumptions
 
@@ -415,3 +498,32 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] `/speckit-converge` reports no unbuilt work, or all remainder is deferred to a named Epic
 - [ ] `specs/030-governed-engineering-loop/defects/` contains no open defect records
 - [ ] A closing report was published: work completed, work deferred, and the recommended next task named as a concrete Spec Kit command (Constitution IX)
+
+---
+
+## Frozen principal identity in adjudication *(added 2026-08-27, Step C3B)*
+
+*EPIC-030 consumes the public frozen-principal contract. Lifecycle, gate and application ownership
+are unchanged.*
+
+> **Provenance.** Sourced to
+> [`D-46`](../_shared/decisions/D-46-non-human-principal-identity-ownership.md) — the
+> Project Owner's C3B hybrid identity-ownership decision, recorded through the repository's
+> decision mechanism. **Not** `D-45`, which authorises EPIC-021's gate target-binding and is a
+> different subject. The `BR-` back-fill obligation stands and is tracked separately.
+
+- **FR-GEL-075**: Separation of duties MUST evaluate **resolved, frozen** principal identity, not
+  identifiers supplied on the request.
+- **FR-GEL-076**: The sponsoring human of a non-human proposer MUST be treated as part of the
+  **proposer side** where policy requires a distinct approver. Otherwise "an agent may not approve
+  its own proposal" is satisfied by the agent handing the approval to the one person accountable for
+  it.
+- **FR-GEL-077**: An agent, service or connector principal MUST NEVER approve a transition.
+  Reporting and proposing are permitted; approval is a human act.
+- **FR-GEL-078**: Historical adjudication MUST retain the identity frozen at the time. Suspension or
+  revocation MUST NOT alter a past decision, and a retry MUST use the same governed identity rather
+  than substituting another snapshot.
+
+- **SC-GEL-020**: **Zero** proposals are approved by their proposer's sponsoring human where a
+  distinct approver is required.
+- **SC-GEL-021**: **Zero** non-human principals record an approval, under any tenant policy.

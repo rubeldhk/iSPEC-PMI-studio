@@ -48,6 +48,11 @@ function stubApi(): ApiClient {
     listProjects: vi.fn(async () => [PROJECT]),
     getProject: vi.fn(async () => PROJECT),
     listRequirements: vi.fn(async () => []),
+    // EPIC-044: the requirement register reads the Epics beside its rows; a
+    // stub without them threw on mount and Vitest counted the rejection as an
+    // unhandled error that failed CI's unit step (2026-09-19).
+    listEpics: vi.fn(async () => ({ epics: [], unassigned: [] })),
+    getBoard: vi.fn(async () => ({ epics: [], unbound: [], packageVersion: '0.1.0', profile: 'product', columns: ['Not started'] })),
     listEngines: vi.fn(async () => []),
     getRequirementTrace: vi.fn(async () => ({ requirementId: 'r1', specifications: [] })),
     getTaskTrace: vi.fn(async () => ({ taskId: 't1', specifications: [] })),

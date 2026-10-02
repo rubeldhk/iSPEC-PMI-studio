@@ -10,8 +10,10 @@
  * surface as the opaque `NotFoundError`.
  */
 import { randomUUID } from 'node:crypto';
+import type { ExecutionEnvironmentKind } from '@pmi/execution-contract';
 import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import { assertSameWorkspace, type RefusalRecord } from '../../core/workspace.guard.js';
+import type { ProvisioningState } from './provisioning.types.js';
 
 export type ProjectStatus = 'active' | 'archived';
 
@@ -25,9 +27,33 @@ export interface ProjectRecord {
   engineName: string | null;
   ownerUserId: string;
   archivedAt: Date | null;
+  // EPIC-041 T1350 — the local workspace (FR-LPW-001). rootPath is the directory
+  // AS THE USER'S MACHINE SEES IT; the API writes under PMI_PROJECTS_ROOT.
+  rootPath: string | null;
+  agentIntegration: string | null;
+  scriptType: 'sh' | 'ps' | null;
+  provisioningState: ProvisioningState;
+  provisionedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
+/** The columns a caller may patch. Provisioning fields are written by the provisioning service only. */
+export type ProjectPatch = Partial<
+  Pick<
+    ProjectRecord,
+    | 'name'
+    | 'description'
+    | 'engineName'
+    | 'status'
+    | 'archivedAt'
+    | 'rootPath'
+    | 'agentIntegration'
+    | 'scriptType'
+    | 'provisioningState'
+    | 'provisionedAt'
+  >
+>;
 
 export interface ActingContext {
   workspaceId: string;
@@ -60,12 +86,14 @@ export interface ProjectStore {
    */
   findById(id: string): Promise<ProjectRecord | null>;
   findByName(workspaceId: string, name: string): Promise<ProjectRecord | null>;
+  /** EPIC-041 FR-LPW-007 — one directory, one project. */
+  findByRootPath(workspaceId: string, rootPath: string): Promise<ProjectRecord | null>;
   list(workspaceId: string): Promise<ProjectRecord[]>;
   create(data: Omit<ProjectRecord, 'createdAt' | 'updatedAt'>): Promise<ProjectRecord>;
   update(
     workspaceId: string,
     id: string,
-    data: Partial<Pick<ProjectRecord, 'name' | 'description' | 'engineName' | 'status' | 'archivedAt'>>,
+    data: ProjectPatch,
   ): Promise<ProjectRecord>;
   /** Unscoped by design: the engine resolver holds only a project id. */
   findEngineName(projectId: string): Promise<string | null>;
@@ -122,11 +150,24 @@ export class ProjectsService {
       engineName: input.engineName ?? null,
       ownerUserId: ctx.userId,
       archivedAt: null,
+      rootPath: null,
+      agentIntegration: null,
+      scriptType: null,
+      provisioningState: 'not_provisioned',
+      provisionedAt: null,
     });
   }
 
   async list(workspaceId: string): Promise<ProjectRecord[]> {
     return this.store.list(workspaceId);
+  }
+
+  /**
+   * EPIC-041 T1372 (`FR-LPW-035`) — the default execution mode is a project
+   * attribute, read from the record, not a platform-wide setting.
+   */
+  async defaultExecutionKind(workspaceId: string, id: string): Promise<ExecutionEnvironmentKind> {
+    return defaultExecutionKind(await this.get(workspaceId, id));
   }
 
   async get(workspaceId: string, id: string): Promise<ProjectRecord> {
@@ -212,6 +253,10 @@ export class PrismaProjectStore implements ProjectStore {
     return this.project.findFirst({ where: { workspaceId, name } });
   }
 
+  async findByRootPath(workspaceId: string, rootPath: string): Promise<ProjectRecord | null> {
+    return this.project.findFirst({ where: { workspaceId, rootPath } });
+  }
+
   async list(workspaceId: string): Promise<ProjectRecord[]> {
     return this.project.findMany({ where: { workspaceId }, orderBy: { createdAt: 'asc' } });
   }
@@ -223,7 +268,7 @@ export class PrismaProjectStore implements ProjectStore {
   async update(
     workspaceId: string,
     id: string,
-    data: Partial<Pick<ProjectRecord, 'name' | 'description' | 'engineName' | 'status' | 'archivedAt'>>,
+    data: ProjectPatch,
   ): Promise<ProjectRecord> {
     // updateMany so the workspace filter participates in the WRITE — a plain
     // update({ where: { id } }) would trust the id's provenance, which is
@@ -260,6 +305,13 @@ export class InMemoryProjectStore implements ProjectStore {
     return null;
   }
 
+  async findByRootPath(workspaceId: string, rootPath: string): Promise<ProjectRecord | null> {
+    for (const row of this.rows.values()) {
+      if (row.workspaceId === workspaceId && row.rootPath === rootPath) return row;
+    }
+    return null;
+  }
+
   async list(workspaceId: string): Promise<ProjectRecord[]> {
     return [...this.rows.values()].filter((r) => r.workspaceId === workspaceId);
   }
@@ -273,7 +325,7 @@ export class InMemoryProjectStore implements ProjectStore {
   async update(
     workspaceId: string,
     id: string,
-    data: Partial<Pick<ProjectRecord, 'name' | 'description' | 'engineName' | 'status' | 'archivedAt'>>,
+    data: ProjectPatch,
   ): Promise<ProjectRecord> {
     const row = await this.findById(id);
     if (row === null || row.workspaceId !== workspaceId) throw new NotFoundError(OPAQUE);
@@ -285,4 +337,13 @@ export class InMemoryProjectStore implements ProjectStore {
   async findEngineName(projectId: string): Promise<string | null> {
     return this.rows.get(projectId)?.engineName ?? null;
   }
+}
+
+/**
+ * EPIC-041 T1372 (`FR-LPW-035`, ADR-0024 as amended by PMI-DOC-007 §9.2):
+ * controlled-local is the default for a project with a root path; managed
+ * isolated remains the default — and available, unchanged — without one.
+ */
+export function defaultExecutionKind(project: Pick<ProjectRecord, 'rootPath'>): ExecutionEnvironmentKind {
+  return project.rootPath !== null && project.rootPath !== undefined ? 'controlled-local' : 'managed-isolated';
 }

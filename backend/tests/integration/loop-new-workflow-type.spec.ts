@@ -25,6 +25,7 @@ import { describe, expect, it } from 'vitest';
 import { LOOP_STAGES, type StageHandler } from '@pmi/loop-contract';
 import { LoopService } from '../../src/modules/loop/loop.service.js';
 import { InMemoryLoopStore } from '../../src/modules/loop/loop.store.js';
+import { authoritiesOf, directoryOf } from '../helpers/loop-principals.js';
 import { StageRegistry } from '../../src/modules/loop/stage-registry.js';
 import { LoopConfigRegistry } from '../../src/modules/loop/config-registry.js';
 import { loadLoopConfig } from '../../src/modules/loop/loop-config.loader.js';
@@ -69,7 +70,16 @@ function walk(dir: string): string[] {
 describe('T946 · Scenario 1 — a type the engine does not name runs by configuration alone', () => {
   const stages = new StageRegistry(LOOP_STAGES.map(handler));
   const config = loadLoopConfig(INVENTED_CONFIG, { registeredStages: stages.registeredStages });
-  const service = new LoopService(new InMemoryLoopStore(), new LoopConfigRegistry([config]));
+  const ACTORS = { u_1: { workspaceId: 'ws_1', authorities: [] } } as const;
+  const ACTING = { workspaceId: 'ws_1', userId: 'u_1' };
+  const service = new LoopService(
+    new InMemoryLoopStore(),
+    new LoopConfigRegistry([config]),
+    {},
+    undefined,
+    directoryOf(ACTORS),
+    authoritiesOf(ACTORS),
+  );
 
   it('loads a configuration written entirely in a file', () => {
     expect(config.workflowType).toBe(INVENTED_TYPE);
@@ -89,13 +99,11 @@ describe('T946 · Scenario 1 — a type the engine does not name runs by configu
   });
 
   it('declares a governed object of that type, at Event (FR-GEL-006)', async () => {
-    const ref = await service.declareObject({
-      workspaceId: 'ws_1',
+    const ref = await service.declareObject(ACTING, {
       projectId: 'p_1',
       workflowType: INVENTED_TYPE,
       subjectType: 'purchase-order',
       subjectId: 'po_42',
-      actorId: 'u_1',
     });
     expect(ref.workflowType).toBe(INVENTED_TYPE);
     expect(ref.objectId).toMatch(/[0-9a-f-]{36}/);
@@ -118,13 +126,11 @@ describe('T946 · Scenario 1 — a type the engine does not name runs by configu
 
   it('refuses a type nobody configured, rather than improvising one', async () => {
     await expect(
-      service.declareObject({
-        workspaceId: 'ws_1',
+      service.declareObject(ACTING, {
         projectId: 'p_1',
         workflowType: 'not-configured',
         subjectType: 'x',
         subjectId: 'y',
-        actorId: 'u_1',
       }),
     ).rejects.toThrow(/not-configured/);
   });

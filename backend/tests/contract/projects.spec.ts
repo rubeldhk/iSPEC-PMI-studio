@@ -15,6 +15,7 @@ import {
   ProjectsService,
 } from '../../src/modules/projects/projects.service.js';
 import { toErrorBody, toHttpStatus } from '../../src/core/errors.js';
+import { ProvisioningService } from '../../src/modules/projects/provisioning.service.js';
 
 const PATH = 'path';
 const METHOD = 'method';
@@ -30,7 +31,8 @@ function route(handler: string): { path: string; method: RequestMethod } {
 const CTX = { workspaceId: 'ws_a', userId: 'u1' };
 
 function controller(): ProjectsController {
-  return new ProjectsController(new ProjectsService(new InMemoryProjectStore()));
+  // The route-surface test never provisions; an empty provisioner keeps the constructor honest.
+  return new ProjectsController(new ProjectsService(new InMemoryProjectStore()), {} as ProvisioningService);
 }
 
 describe('contract · Projects route surface (US1)', () => {

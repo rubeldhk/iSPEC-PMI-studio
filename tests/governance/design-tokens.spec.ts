@@ -69,7 +69,10 @@ const baseDecls = declarations(tokensBase);
 const baseNames = baseDecls.map(([name]) => name);
 const baseValues = new Map(baseDecls);
 
-const CATEGORIES = ['color', 'space', 'type', 'radius', 'elevation', 'motion'] as const;
+// `layout` added 2026-09-19 (contracts/tokens.md, dated note): the shell's grid
+// band and the one breakpoint, moved out of shell.css where the literal-value
+// rule had been refusing them since EPIC-036.
+const CATEGORIES = ['color', 'space', 'type', 'radius', 'elevation', 'motion', 'layout'] as const;
 /** Themed categories per contracts/tokens.md: color always, elevation for dark shadows. */
 const themedTokens = baseNames.filter((n) => n.startsWith('--color-') || n.startsWith('--elevation-'));
 
@@ -109,6 +112,7 @@ describe('T868 · every token is declared exactly once, in contract shape', () =
       radius: /^--radius-(sm|md|lg|full)$/,
       elevation: /^--elevation-[0-3]$/,
       motion: /^--motion-(fast|base|slow)$/,
+      layout: /^--layout-[a-z]+(-[a-z]+)*$/,
     };
     const misshapen = baseNames.filter((n) => {
       const category = CATEGORIES.find((c) => n.startsWith(`--${c}-`));

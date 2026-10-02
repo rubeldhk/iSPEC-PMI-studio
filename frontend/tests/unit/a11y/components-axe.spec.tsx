@@ -39,6 +39,12 @@ const SPEC: Specification = {
 
 const api = {
   listSpecifications: vi.fn(async () => ({ rows: [SPEC], total: 1, page: 1, pageSize: 20 })),
+  // EPIC-044/045: the list reads the board, the Epics and the project beside
+  // the rows; absent here they threw before allSettled could catch them, and
+  // Vitest counted the rejection as an unhandled error (CI, 2026-09-19).
+  getBoard: vi.fn(async () => ({ epics: [], unbound: [], packageVersion: '0.1.0', profile: 'product', columns: ['Not started'] })),
+  listEpics: vi.fn(async () => ({ epics: [], unassigned: [] })),
+  getProject: vi.fn(async () => ({ id: 'p1', ownerUserId: 'u_owner' })),
   getSpecification: vi.fn(async () => SPEC),
   listSpecificationVersions: vi.fn(async () => [
     { id: 'sv1', versionNumber: 1, lifecycleStateAtCreation: 'draft', authoredById: 'u1', authoredAt: '2026-08-20T10:00:00Z' },

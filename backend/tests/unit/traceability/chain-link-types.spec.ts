@@ -14,6 +14,7 @@ import {
   CHAIN_LINK_TYPES,
   CHAIN_STAGES,
   PERMITTED_EDGES,
+  isChainStage,
   assertPermittedEdge,
   stageIndex,
 } from '../../../src/modules/traceability/link-writer.service.js';
@@ -62,10 +63,31 @@ describe('T300 · the twelve chain link types', () => {
   });
 
   it('every chain edge points from a LATER stage to an EARLIER one — acyclic by construction', () => {
-    for (const edge of PERMITTED_EDGES) {
+    // Scoped to edges whose BOTH ends are chain stages. `EPIC-034`'s
+    // `FR-CHR-064` added `specification|task|test → change`, and `change` has
+    // no position in the derivation chain by design — asking whether it points
+    // up-chain is a question with no correct answer, not an acyclicity
+    // violation. The next case asserts what constrains those edges instead.
+    const chainEdges = PERMITTED_EDGES.filter(
+      (edge) => isChainStage(edge.sourceType) && isChainStage(edge.targetType),
+    );
+    expect(chainEdges.length).toBeGreaterThanOrEqual(12);
+    for (const edge of chainEdges) {
       expect(
         stageIndex(edge.sourceType) > stageIndex(edge.targetType),
         `${edge.sourceType}->${edge.targetType} does not point up-chain`,
+      ).toBe(true);
+    }
+  });
+
+  it('and a non-chain edge never points AWAY from the chain', () => {
+    // What replaces the ordering check for `change`: it may only be a TARGET.
+    // An edge with `change` as its source would make a change request derive
+    // from the work it caused, which is the chain by the back door.
+    for (const edge of PERMITTED_EDGES) {
+      expect(
+        isChainStage(edge.sourceType),
+        `${edge.sourceType}->${edge.targetType} has a non-chain SOURCE`,
       ).toBe(true);
     }
   });

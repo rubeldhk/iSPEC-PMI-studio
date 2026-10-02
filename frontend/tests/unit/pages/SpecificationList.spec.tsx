@@ -3,7 +3,7 @@
  * Written to FAIL before T083d exists (Constitution V).
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SpecificationList } from '../../../src/pages/SpecificationList';
 import type { ApiClient, Specification } from '../../../src/services/api';
 
@@ -28,6 +28,10 @@ function spec(overrides: Partial<Specification> = {}): Specification {
 function api(rows: Specification[]): ApiClient {
   return {
     listSpecifications: vi.fn(async () => ({ rows, total: rows.length, page: 1, pageSize: 20 })),
+    // EPIC-044: the list also reads the board and the Epics for its two new columns.
+    getBoard: vi.fn(async () => ({ columns: ['Not started'], epics: [], unbound: [], packageVersion: '0.1.0', profile: 'product' })),
+    listEpics: vi.fn(async () => ({ epics: [], unassigned: [] })),
+    getProject: vi.fn(async () => ({ id: 'p1', ownerUserId: 'u_owner' })),
   } as unknown as ApiClient;
 }
 
@@ -65,5 +69,68 @@ describe('SpecificationList (FR-012)', () => {
   it('an empty project says so instead of rendering a blank page', async () => {
     render(<SpecificationList api={api([])} projectId="p1" onOpen={vi.fn()} />);
     expect(await screen.findByText(/no specifications/i)).toBeDefined();
+  });
+});
+
+describe('T1599 · Epic and Stage columns (EPIC-044, FR-EPB-050)', () => {
+  const BOARD = { columns: ['Not started', 'Specified'], epics: [{ epicId: 'e2', number: 2, slug: 'review', title: 'Review', status: 'active', stage: 'Specified', missing: [], unrecognised: [], last: null, next: '/speckit-clarify', readiness: { verdict: 'n/a', failing: [] }, running: null, derivedFrom: 'executions' }], unbound: [], packageVersion: '0.1.0', profile: 'product' };
+  const EPICS = { epics: [{ id: 'e2', projectId: 'p1', number: 2, slug: 'review', title: 'Review', description: '', status: 'active', parentEpicId: null, splitSuffix: null, createdAt: '', updatedAt: '', closedAt: null, requirementCount: 0, specificationCount: 1 }], unassigned: [] };
+  function richApi(rows: Specification[], over: Record<string, unknown> = {}): ApiClient {
+    return {
+      listSpecifications: vi.fn(async () => ({ rows, total: rows.length, page: 1, pageSize: 20 })),
+      getBoard: vi.fn(async () => BOARD),
+      listEpics: vi.fn(async () => EPICS),
+      assignSpecificationEpic: vi.fn(async () => ({ id: 's1', epicId: 'e2' })),
+      getProject: vi.fn(async () => ({ id: 'p1', ownerUserId: 'u_owner' })),
+      ...over,
+    } as unknown as ApiClient;
+  }
+
+  it('shows the Epic and its stage for a bound specification, and "no Epic" with an empty stage for an unbound one', async () => {
+    render(<SpecificationList api={richApi([spec({ epicId: 'e2', epicNumber: 2, epicTitle: 'Review' }), spec({ id: 's2', title: 'Auth spec', epicId: null, epicNumber: null, epicTitle: null })])} projectId="p1" onOpen={vi.fn()} currentUserId="u_owner" />);
+    const bound = (await screen.findByText('Payments spec')).closest('li')!;
+    expect(bound.textContent).toContain('Epic 2 · Review');
+    expect(bound.textContent).toContain('Specified');
+    const unbound = screen.getByText('Auth spec').closest('li')!;
+    expect(unbound.textContent).toContain('no Epic');
+    expect(unbound.textContent).not.toContain('Specified');
+  });
+
+  it('filters by Epic', async () => {
+    render(<SpecificationList api={richApi([spec({ epicId: 'e2', epicNumber: 2, epicTitle: 'Review' }), spec({ id: 's2', title: 'Auth spec', epicId: null })])} projectId="p1" onOpen={vi.fn()} currentUserId="u_owner" />);
+    await screen.findByText('Payments spec');
+    fireEvent.change(screen.getByLabelText('Filter by Epic'), { target: { value: 'e2' } });
+    expect(screen.queryByText('Auth spec')).toBeNull();
+    expect(screen.getByText('Payments spec')).toBeDefined();
+  });
+
+  it('an owner assigns an unbound specification to an Epic from its row', async () => {
+    const api = richApi([spec({ epicId: null })]);
+    render(<SpecificationList api={api} projectId="p1" onOpen={vi.fn()} currentUserId="u_owner" />);
+    await screen.findByText('Payments spec');
+    fireEvent.change(screen.getByLabelText('Assign Payments spec to an Epic'), { target: { value: 'e2' } });
+    await waitFor(() => expect(api.assignSpecificationEpic).toHaveBeenCalledWith('s1', 'e2'));
+  });
+
+  it('filters by stage: a stage matches the rows whose Epic is at it; "no Epic" rows match only the empty filter (T1615)', async () => {
+    render(<SpecificationList api={richApi([spec({ epicId: 'e2', epicNumber: 2, epicTitle: 'Review' }), spec({ id: 's2', title: 'Auth spec', epicId: null })])} projectId="p1" onOpen={vi.fn()} currentUserId="u_owner" />);
+    await screen.findByText('Payments spec');
+    const filter = screen.getByLabelText('Filter by stage') as HTMLSelectElement;
+    expect([...filter.options].map((o) => o.textContent)).toEqual(['all', 'Not started', 'Specified']);
+    fireEvent.change(filter, { target: { value: 'Specified' } });
+    expect(screen.queryByText('Auth spec')).toBeNull();
+    expect(screen.getByText('Payments spec')).toBeDefined();
+    fireEvent.change(filter, { target: { value: 'Not started' } });
+    expect(screen.queryByText('Payments spec')).toBeNull();
+    expect(screen.queryByText('Auth spec')).toBeNull();
+    fireEvent.change(filter, { target: { value: '' } });
+    expect(screen.getByText('Auth spec')).toBeDefined();
+  });
+
+  it('a member without the grant sees the columns but no assignment control', async () => {
+    render(<SpecificationList api={richApi([spec({ epicId: null })])} projectId="p1" onOpen={vi.fn()} currentUserId="u_member" />);
+    await screen.findByText('Payments spec');
+    expect(screen.queryByLabelText('Assign Payments spec to an Epic')).toBeNull();
+    expect(screen.getByText('Payments spec').closest('li')!.textContent).toContain('no Epic');
   });
 });

@@ -104,3 +104,11 @@ describe('T571 · a persistent binding is refused', () => {
     expect(d.calls).toEqual([]);
   });
 });
+
+describe('T1368 · the Docker provider conforms to the managed-isolated expectation (FR-LPW-033)', () => {
+  it('passes the contract\'s descriptor conformance — the refusal of persistent bindings is now the suite\'s expectation of it', async () => {
+    const { assertDescriptorConformance } = await import('@pmi/execution-contract');
+    expect(() => assertDescriptorConformance(DOCKER_DESCRIPTOR)).not.toThrow();
+    expect(DOCKER_DESCRIPTOR.kind).toBe('managed-isolated');
+  });
+});

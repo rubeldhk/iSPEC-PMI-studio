@@ -9,19 +9,31 @@ import {
 } from './helpers.js';
 
 describe('T374 · derived-artifact restriction inheritance', () => {
-  it('one open + one restricted source: hidden without a grant on the restricted one', async () => {
+  // **Rewritten in C2E.** Every case here used to lean on an artifact with no
+  // grants being readable by everyone. `X19` inverted that, so each artifact in
+  // play is now granted explicitly. What the suite is *about* is unchanged:
+  // most-restrictive-wins across the ancestry.
+
+  it('a widely granted + a narrowly granted source: hidden without a grant on the narrow one', async () => {
     const h = accessHarness();
-    // The specification derives from an open requirement and a restricted one.
     h.derivations.derive(SPEC, [REQ_OPEN, REQ_RESTRICTED]);
+    await restrict(h, REQ_OPEN, [
+      { userId: ALICE, level: 'read' },
+      { userId: BOB, level: 'read' },
+    ]);
+    await restrict(h, SPEC, [
+      { userId: ALICE, level: 'read' },
+      { userId: BOB, level: 'read' },
+    ]);
     await restrict(h, REQ_RESTRICTED, [
       { userId: ADMIN, level: 'edit' },
       { userId: ALICE, level: 'read' },
     ]);
 
-    // ALICE holds a grant on the restricted source → the derived spec reads.
     expect(await h.inheritance.effectivelyReadable(WS, ALICE, SPEC)).toBe(true);
-    // BOB reads the open source but NOT the restricted one → the spec is hidden.
     expect(await h.inheritance.effectivelyReadable(WS, BOB, REQ_OPEN)).toBe(true);
+    // BOB may read the derived artifact directly AND the wide source, and is
+    // still refused. The narrow source in its ancestry is what decides.
     expect(await h.inheritance.effectivelyReadable(WS, BOB, SPEC)).toBe(false);
   });
 
@@ -29,18 +41,29 @@ describe('T374 · derived-artifact restriction inheritance', () => {
     const h = accessHarness();
     h.derivations.derive(SPEC, [REQ_RESTRICTED]);
     await restrict(h, REQ_RESTRICTED, [{ userId: ADMIN, level: 'edit' }]);
-    // Even though the spec itself carries no grant rows (would be "open"),
-    // its ancestry restricts it: most restrictive wins.
+    // BOB is granted on the derived artifact ITSELF, deliberately. Without
+    // this the assertion would hold under deny-by-default for a reason that
+    // has nothing to do with laundering, and prove nothing.
+    await restrict(h, SPEC, [{ userId: BOB, level: 'read' }]);
     expect(await h.inheritance.effectivelyReadable(WS, BOB, SPEC)).toBe(false);
   });
 
   it('a later restriction on a source propagates — evaluated on read, not copied on write', async () => {
     const h = accessHarness();
     h.derivations.derive(SPEC, [REQ_OPEN]);
-    // At first everything is open.
-    expect(await h.inheritance.effectivelyReadable(WS, BOB, SPEC)).toBe(true);
-    // The source is restricted LATER; the derived artifact follows at once.
+    await restrict(h, SPEC, [{ userId: BOB, level: 'read' }]);
+    // ADMIN keeps an edit grant so revoking BOB's cannot trip FR-ACC-027.
     await restrict(h, REQ_OPEN, [{ userId: ADMIN, level: 'edit' }]);
+    const bobOnSource = await h.grantService.grant(WS, REQ_OPEN, {
+      userId: BOB,
+      level: 'read',
+      grantedById: ADMIN,
+    });
+    expect(await h.inheritance.effectivelyReadable(WS, BOB, SPEC)).toBe(true);
+
+    // The source access is withdrawn LATER; the derived artifact follows at
+    // once, because inheritance is evaluated on read rather than copied.
+    await h.grantService.revoke(WS, bobOnSource.id, ADMIN);
     expect(await h.inheritance.effectivelyReadable(WS, BOB, SPEC)).toBe(false);
   });
 
@@ -50,6 +73,14 @@ describe('T374 · derived-artifact restriction inheritance', () => {
     h.derivations.derive(task, [SPEC]);
     h.derivations.derive(SPEC, [REQ_RESTRICTED]);
     await restrict(h, REQ_RESTRICTED, [{ userId: ALICE, level: 'edit' }]);
+    // Both links in the chain are granted to both actors, so the only thing
+    // separating them is the far end of the ancestry.
+    for (const artifact of [SPEC, task]) {
+      await restrict(h, artifact, [
+        { userId: ALICE, level: 'read' },
+        { userId: BOB, level: 'read' },
+      ]);
+    }
 
     expect(await h.inheritance.effectivelyReadable(WS, ALICE, task)).toBe(true);
     expect(await h.inheritance.effectivelyReadable(WS, BOB, task)).toBe(false);
@@ -63,5 +94,12 @@ describe('T374 · derived-artifact restriction inheritance', () => {
     // BOB edits the spec directly but cannot read its restricted source.
     expect(await h.inheritance.effectivelyEditable(WS, BOB, SPEC)).toBe(false);
     expect(await h.inheritance.effectivelyEditable(WS, ALICE, SPEC)).toBe(false); // no edit grant on SPEC
+  });
+
+  it('an artifact with NO grants is refused, not opened (X19)', async () => {
+    // The inverted rule, asserted directly so it cannot drift back.
+    const h = accessHarness();
+    expect(await h.inheritance.effectivelyReadable(WS, BOB, SPEC)).toBe(false);
+    expect(await h.inheritance.effectivelyEditable(WS, BOB, SPEC)).toBe(false);
   });
 });

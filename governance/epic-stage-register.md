@@ -11,7 +11,7 @@ a person never writes a stage, and a machine never infers intent.
 
 | Epic | Title | Kind | Stage | Posture | Readiness | Next |
 |---|---|---|---|---|---|---|
-| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-001](../specs/001-platform-foundation/) | Platform Foundation | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-002](../specs/002-team-review-access-storage/) | Unattended Runs with Team Review, Artifact Access Control & External Storage Integration | parent-design | Clarified | stalled | n/a | `/speckit-checklist` |
 | [EPIC-003](../specs/003-specification-engine/) | Specification Engine & Sandbox | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-004](../specs/004-workspace-tenancy-audit/) | Workspace Tenancy & Audit | delivery | Ready | — | Ready | `/speckit-implement` |
@@ -47,6 +47,16 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-034](../specs/034-change-room/) | Change Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-035](../specs/035-defect-room/) | Defect Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-036](../specs/036-application-shell/) | Application Shell & Dashboard | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-037](../specs/037-governed-execution-registry/) | Governed Execution Registry | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-038](../specs/038-engineering-context/) | Engineering Context | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-040](../specs/040-metrics-reporting/) | Metrics \& Reporting | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-041](../specs/041-local-project-workspace/) | Local Project Workspace | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-042](../specs/042-pmi-spec-kit-extension/) | PMI Spec Kit Extension, Setup Skill and Constitution Sync | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-043](../specs/043-pmi-integration-contract/) | PMI Integration Contract | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-044](../specs/044-epic-model-journey-board/) | Epic Model and Spec Journey Board | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-045](../specs/045-artifact-sync-markdown-viewer/) | Artifact Sync and Markdown Viewer | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-046](../specs/046-task-kanban-governed-status/) | Task Kanban with Governed Auto-Status | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 
 ## Findings
 
@@ -55,3 +65,6 @@ Reported, never folded into a stage — reaching a stage and passing a gate are 
 | Epic | Finding | Severity |
 |---|---|---|
 | EPIC-002 | Planned evidence present without the stage before it — stage held at Clarified | report |
+
+
+*Stages derived by `@pmi/epic-stage` v0.1.0.*

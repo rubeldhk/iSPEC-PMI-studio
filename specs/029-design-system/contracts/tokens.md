@@ -19,6 +19,7 @@ naming them.
 | `radius` | `--radius-sm` \| `-md` \| `-lg` \| `-full` | |
 | `elevation` | `--elevation-0` … `--elevation-3` | themed — shadows differ on dark surfaces |
 | `motion` | `--motion-fast`, `--motion-base`, `--motion-slow` | durations; suppressed under `prefers-reduced-motion` |
+| `layout` | `--layout-<thing>[-<part>]` | the shell's grid band and the **one** narrow breakpoint (`FR-SHL-054`); never themed. *Added 2026-09-19*: the breakpoint cannot be a `var()` inside `@media`, so its `@media` block lives in `tokens.css` and switches the `--layout-shell-*` tokens the shell consumes — the literals stay in the one file that may hold them |
 
 ## Guarantees
 

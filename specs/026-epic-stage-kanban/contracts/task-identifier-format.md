@@ -7,26 +7,51 @@ fit. Requirement: `FR-ESK-025`. Decisions: [../research.md](../research.md) `R-0
 
 ---
 
-## 1. One definition, three consumers
+## 1. One definition, and everything that reads it
 
 ```jsonc
-// governance/epic-stage.config.json
+// governance/epic-stage.config.json — key order as stored
 {
   "taskIdentifierPattern": "^T\\d{3,}[a-z]?$",
-  "_taskIdentifierNote": "FR-ESK-025. A trailing letter is a SHAPE, not a claim — it does NOT mean 'added adjacent to the task it shares a prefix with'. That meaning is retired: see R-026-9.",
-  "taskIdentifierRecogniser": "^T\\d+[a-z]*$"
+  "taskIdentifierRecogniser": "^T\\d+[a-z]*$",
+  "_taskIdentifierNote": "FR-ESK-025. A trailing letter is a SHAPE, not a claim — it does NOT mean 'added adjacent to the task it shares a prefix with'. That meaning is retired: see R-026-9."
 }
 ```
 
-| Consumer | Reads it for |
-|---|---|
-| `tests/governance/epic-stage/task-ids.spec.ts` | corpus-wide uniqueness (`G-26-15`) |
-| `tests/governance/epic-stage/dor.ts` | pairing (`T148`-style), completion, and `covers` references |
-| `tests/governance/epic-stage/task-paths.spec.ts` | completed tasks naming existing paths (`G-26-14`) |
+| Consumer | Reads it for | How |
+|---|---|---|
+| `tests/governance/epic-stage/task-id-format.ts` | **the definition itself** — both line parsers | direct |
+| `tests/governance/epic-stage/task-ids.spec.ts` | corpus-wide uniqueness (`G-26-15`) | imports the module |
+| `tests/governance/epic-stage/dor.ts` | pairing (`T148`-style), completion, and `covers` references | imports the module |
+| `tests/governance/epic-stage/task-paths.spec.ts` | completed tasks naming existing paths (`G-26-14`) | imports the module |
+| `frontend/tests/unit/shell/registry-documented.spec.ts` | `EPIC-036` task citations resolve (`T442t`) | **reads the config** |
+| `backend/tests/unit/core/test-completeness.spec.ts` | programme-wide test pairing (`T148`) | **reads the config** |
 
-**None of the three writes a pattern of its own.** The rule is one string; three checks read it.
-`epicDirectoryPattern` is already held this way in the same file, so this is the established shape
-rather than a new one — and `FR-ESK-015` now names it.
+### Two things this section previously got wrong
+
+**It said "three consumers", and it omitted the module that defines the shape.** That omission was
+not cosmetic: `task-id-format.ts` hardcoded the shape on two lines for a full convergence pass, and
+the check enforcing this contract inherited the same three-file scope, so nothing could see it
+(`T1000`, `T1001`). A contract that lists where a rule applies becomes the scope of the check that
+enforces it — so an incomplete list here is a blind spot there, not just a stale document.
+
+**The `frontend` and `backend` consumers cannot import the module, and must read the configuration
+directly.**
+`frontend/` and `backend/` each set `rootDir` to their own package directory, so importing a
+repository-root `.ts` file fails `tsc` with **TS6059** — *"not under rootDir"*. Vitest resolves such
+an import happily and the tests run green, so this is only discoverable by compiling; it was
+discovered exactly that way. Those two files therefore read
+`governance/epic-stage.config.json` themselves and strip the `^`/`$` anchors locally.
+
+**The shape stays single-sourced; only the anchor-stripping repeats.** That is the trade being
+made, and it is deliberate rather than accidental. Relocating the module into a shared workspace
+package both projects can depend on would remove the limitation entirely, and is the right fix
+whenever the cost is worth paying.
+
+**No source writes a pattern of its own** — asserted across the **whole repository**, not a curated
+list, by `T864a` in `tests/governance/epic-stage/task-id-format.spec.ts`. `epicDirectoryPattern` is
+already held this way in the same file, so configuration-as-the-definition is the established shape
+rather than a new one, and `FR-ESK-015` names it.
 
 ---
 

@@ -13,8 +13,10 @@
  */
 import { Module } from '@nestjs/common';
 import { JobsService, type JobQueue, type JobStore } from './jobs.service.js';
-import { NullJobStore } from './job.store.js';
-import { NullJobQueue } from './job-queue.js';
+import { NullJobStore, PrismaJobStore, type GenerationJobDelegate } from './job.store.js';
+import { BullJobQueue, NullJobQueue } from './job-queue.js';
+import { Queue } from 'bullmq';
+import { prismaClient } from '../../persistence/prisma.js';
 
 /** Injection tokens for the two replaceable ports. */
 export const JOB_STORE = Symbol('JOB_STORE');
@@ -42,8 +44,24 @@ export const GENERATION_QUEUE_NAME = 'generation';
  */
 @Module({
   providers: [
-    { provide: JOB_STORE, useFactory: (): JobStore => new NullJobStore() },
-    { provide: JOB_QUEUE, useFactory: (): JobQueue => new NullJobQueue() },
+    {
+      provide: JOB_STORE,
+      // EPIC-041 T1321 (FR-LPW-041) — the real generation_jobs rows when a
+      // database is configured. Asserted by tests/architecture/durable-stores.spec.ts.
+      useFactory: (): JobStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaJobStore(prismaClient().generationJob as unknown as GenerationJobDelegate)
+          : new NullJobStore(),
+    },
+    {
+      provide: JOB_QUEUE,
+      // EPIC-041 T1321 — a real BullMQ queue when a broker is configured. The
+      // worker binds to GENERATION_QUEUE_NAME on the same broker (T1383).
+      useFactory: (): JobQueue => {
+        const url = process.env['VALKEY_URL'] ?? process.env['REDIS_URL'];
+        return url ? new BullJobQueue(new Queue(GENERATION_QUEUE_NAME, { connection: { url } })) : new NullJobQueue();
+      },
+    },
     {
       provide: JobsService,
       inject: [JOB_STORE, JOB_QUEUE],

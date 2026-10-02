@@ -177,13 +177,74 @@ path added or removed without updating this document fails the build.
 - `specs/034-change-room/`
 - `specs/035-defect-room/`
 - `specs/036-application-shell/`
+- `specs/037-governed-execution-registry/`
+- `specs/038-engineering-context/`
+- `specs/039-integration-hub/`
+- `specs/040-metrics-reporting/`
+- `specs/041-local-project-workspace/`
+- `specs/043-pmi-integration-contract/`
+- `specs/042-pmi-spec-kit-extension/`
+- `specs/044-epic-model-journey-board/`
+- `specs/045-artifact-sync-markdown-viewer/`
+- `specs/046-task-kanban-governed-status/`
+- `packages/epic-stage/` — the SHARED stage derivation (`EPIC-044` `T1550`, PMI-DOC-007 `R-06`): the
+  configuration document (mirrored as `governance/epic-stage.config.json`, `G-44-01`), the
+  contiguity rule, readiness and the two evidence adapters. Imported by `tests/governance/epic-stage/`
+  (the register) and `backend/src/modules/epics/` (the board); a second copy of a stage rule anywhere
+  is the drift this package exists to remove
 - `packages/room-contract/` — the SHARED Room pattern: `RoomShellProps`, `Epistemic`,
   `RoomObjectRef`. Imported by `EPIC-034` and `EPIC-035`, whose first tasks stop if it is not
   built — breaking this path breaks two Epics that cannot be built without it (EPIC-033 `T337d`)
 - `frontend/src/rooms/` — `RoomShell` and the region primitives; owns the `UX-0041` breakpoints
   and the `UX-0040` 360px floor, so no Room sets its own
+- `frontend/src/design/components/MarkdownViewer.tsx` — `EPIC-045`'s ONE markdown renderer
+  (`T1647`, `FR-ART-061`). Every rendering of untrusted synced content goes through this file, so
+  there is exactly one place to keep safe; `frontend/tests/unit/design/no-raw-html.spec.ts` refuses
+  a second importer of `react-markdown` and any use of `dangerouslySetInnerHTML` under
+  `frontend/src/`
+- `frontend/src/pages/EpicFiles.tsx` — `EPIC-045`'s Files section (`T1651`), hosted by the Epic
+  detail. The tree, the version picker, the refusals and the findings; no control that creates,
+  uploads, renames, edits or deletes, because the project directory is authoritative and this is a
+  mirror (`FR-ART-010`)
+- `frontend/tests/fixtures/hostile-markdown/` — the corpus `markdown-viewer.spec.tsx` renders
+  every one of (`T1662`, `SC-ART-004`): a script element and an inline handler, blocked URL
+  schemes, remote and data-URL images, frames and objects, raw block and inline HTML, unknown
+  fenced languages, and relative links including one to a file no sync produced. Deleting a fixture
+  deletes a proof; the suite reads the directory, so adding one is covered without an edit
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T993f`)
+- `backend/src/modules/change-room/` — `EPIC-034`'s module (`T406c`). Registered in
+  `backend/src/app.module.ts` and asserted by `change-room-independence.spec.ts`, which reads this
+  directory to prove the Room imports the shared contract rather than forking it
+- `backend/src/modules/defect-room/` — `EPIC-035`'s module (`T997b`). Registered in
+  `backend/src/app.module.ts` and asserted by `defect-room-independence.spec.ts`, which reads this
+  directory to prove the Room runs no tests of its own — the boundary this Epic is most likely to
+  cross, because the port it needs is the one nobody built
+- `backend/src/modules/artifacts/` — `EPIC-045`'s module (`T1624`). Registered in
+  `backend/src/app.module.ts` and read by `durable-stores.spec.ts`, which proves the synced
+  content survives a restart. The module depends on Epics, executions and specifications and
+  none of them depends back; the specification entity is reached through a **port** the
+  specifications module implements, so nothing here touches a specification table (`R-045-4`)
+- `backend/src/modules/task-sync/` — `EPIC-046`'s module (`T1690`). Registered in
+  `backend/src/app.module.ts` and read by `durable-stores.spec.ts`. Four things read or write these
+  rows — the connector's sync, the board, the proposal path and the execution-event listener — so
+  the module owns them and depends on Epics, executions and tasks without any of them depending
+  back. Two files in it are **pure**: `task-grammar.ts` and `task-reconcile.ts` have no I/O and no
+  clock, because they are the two things that must be testable as tables and mutable by a test
+  (`PMI-DOC-007` §10 — *the parser is small; the rules are the work*). `EPIC-012`'s progress
+  aggregate is reached through a port, so `FR-KAN-056`'s *one derivation* is structural
+- `frontend/src/pages/TaskBoard.tsx` — `EPIC-046`'s board (`T1740`), the Kanban of an Epic's parsed
+  tasks. It has no control that edits `tasks.md`: the only move it offers is a **proposal**, which
+  is adjudicated and recorded and never written back to the file (`FR-KAN-010`, `SC-KAN-004`)
+- `frontend/src/pages/PlanLanding.tsx` — the Plan & Tasks landing (`T1737`). It exists because the
+  area moved from `declared-not-delivered` to delivered in `frontend/src/shell/areas.ts`, and an
+  area that claims delivery owes a screen
+- `frontend/src/components/TaskMoveDialog.tsx` — the move form (`T1745`). It collects the reason
+  `FR-KAN-011` requires before a proposal exists, and states the verdict it got back verbatim
+  rather than translating it into a success message
+- `backend/tests/fixtures/task-grammar/` — the corpus `task-grammar.spec.ts` parses (`T1696`,
+  `T1776`): the shapes a real `tasks.md` carries and the ones it must refuse. The suite reads the
+  directory, so a new case is covered by adding a file; deleting one deletes a proof
 > **`G-05d` does not check this entry.** The guard compares only `specs/NNN-*` directories against
 > disk, so a `packages/` path is registered here by convention and enforced by nobody. Recorded
 > rather than left implied: the four older contract packages — `engine-contract`,

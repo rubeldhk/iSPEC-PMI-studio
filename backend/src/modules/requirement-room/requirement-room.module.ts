@@ -42,6 +42,8 @@ import { IntakeService } from './intake.service.js';
 import { EpicSevenRequirementRegister } from './register.adapter.js';
 import { RequirementRoomController } from './requirement-room.controller.js';
 import { RequirementRoomService } from './requirement-room.service.js';
+import { AccessModule } from '../access/access.module.js';
+import { WorkspaceBoundaryService } from '../access/workspace-boundary.service.js';
 import {
   InMemoryRequirementRoomStore,
   type RequirementRoomStore,
@@ -51,13 +53,38 @@ import { REQUIREMENT_ROOM_STORE, ROOM_REQUIREMENT_REGISTER } from './requirement
 /** Eagerly constructed so the veto is registered, not merely available. */
 const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
 
+import { GOVERNED_LOOP } from '../../composition/governed-loop.js';
+import { PolicyModule, POLICY_PROVIDER, type LoopPolicyAdapter } from '../policy/policy.module.js';
+import {
+  PrismaEvidenceContractSource,
+  type EvidencePrismaClient,
+} from '../evidence/evidence-contract.source.js';
+import { prismaClient } from '../../persistence/prisma.js';
+import {
+  PrismaRequirementRoomStore,
+  type RoomPrismaClient,
+} from './requirement-room.store.prisma.js';
+import { LoopService } from '../loop/loop.service.js';
+
 @Module({
-  imports: [RequirementsModule],
+  // `AccessModule` for `WorkspaceBoundaryService` — EPIC-024's authoritative
+  // actor directory, consumed rather than re-implemented (`T1148`). It is what
+  // turns `actor.kind` from a claim into a resolved fact.
+  imports: [RequirementsModule, AccessModule, GOVERNED_LOOP, PolicyModule],
   controllers: [RequirementRoomController],
   providers: [
     {
       provide: REQUIREMENT_ROOM_STORE,
-      useFactory: (): RequirementRoomStore => new InMemoryRequirementRoomStore(),
+      // `T1182` — the composition seam. `DATABASE_URL` decides, as it does for
+      // `PROJECT_STORE` and `LOOP_STORE`: unset in unit tests, so the in-memory
+      // store stays their default.
+      //
+      // Until this, a baseline — the artifact `RULE-02` exists to make
+      // immutable — lived only in the process that created it.
+      useFactory: (): RequirementRoomStore =>
+        process.env['DATABASE_URL']
+          ? new PrismaRequirementRoomStore(prismaClient() as unknown as RoomPrismaClient)
+          : new InMemoryRequirementRoomStore(),
     },
     {
       provide: ROOM_REQUIREMENT_REGISTER,
@@ -76,7 +103,17 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
     {
       provide: BaselineService,
       inject: [REQUIREMENT_ROOM_STORE],
-      useFactory: (store: RequirementRoomStore): BaselineService => new BaselineService(store),
+      useFactory: (store: RequirementRoomStore): BaselineService =>
+        // `T1204` — the Evidence Contract seam. `readiness` and `approve` are
+        // separate consumers of it, and binding only the first is how a gate
+        // reports "ready" and then refuses: the Room said nothing was
+        // outstanding while `approve` still threw.
+        new BaselineService(
+          store,
+          process.env['DATABASE_URL']
+            ? new PrismaEvidenceContractSource(prismaClient() as unknown as EvidencePrismaClient)
+            : undefined,
+        ),
     },
     {
       provide: EDIT_VETO_REGISTERED,
@@ -124,13 +161,18 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
     },
     {
       provide: DecisionService,
-      inject: [REQUIREMENT_ROOM_STORE],
-      useFactory: (store: RequirementRoomStore): DecisionService =>
-        // No PolicyProvider. ROOM_PORTS declares `refuse` for that seam, and
-        // EPIC-031 binds it at the composition root. Until it does, `decide`
-        // refuses rather than recording a decision nobody authorised —
-        // FR-GEL-062: an undecided decision is not an approval.
-        new DecisionService(store, undefined),
+      inject: [REQUIREMENT_ROOM_STORE, POLICY_PROVIDER],
+      useFactory: (store: RequirementRoomStore, policy: LoopPolicyAdapter): DecisionService =>
+        // `T1199` — the seam is bound. `EPIC-031`'s banded provider, scoped to
+        // what this path needs: with no classification rules declared every
+        // action is high (`FR-DPE-004`), so automation is refused and an
+        // authenticated human in their own workspace may decide.
+        //
+        // Still not a permissive default: `FR-DPE-012`'s floor holds,
+        // `FR-DPE-013` refuses an unevaluated gate, and `FR-DPE-015` refuses
+        // self-approval. `FR-GEL-062` is satisfied by a policy that ANSWERS,
+        // not by one that says yes.
+        new DecisionService(store, policy as unknown as ConstructorParameters<typeof DecisionService>[1]),
     },
     {
       provide: HandoffService,
@@ -149,6 +191,9 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         HandoffService,
         EDIT_VETO_REGISTERED,
         REQUIREMENT_ROOM_STORE,
+        WorkspaceBoundaryService,
+        LoopService,
+        ROOM_REQUIREMENT_REGISTER,
       ],
       useFactory: (
         intake: IntakeService,
@@ -160,6 +205,9 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
         handoffs: HandoffService,
         _veto: true,
         store: RequirementRoomStore,
+        principals: WorkspaceBoundaryService,
+        loop: LoopService,
+        register: EpicSevenRequirementRegister,
       ): RequirementRoomService =>
         // No EvidenceContractSource: EPIC-032 binds it at the composition root.
         // Until it does, `readiness` reports the Contract as UNEVALUATED, which
@@ -173,7 +221,24 @@ const EDIT_VETO_REGISTERED = Symbol('EDIT_VETO_REGISTERED');
           decisions,
           handoffs,
           store,
-          undefined,
+          principals,
+          // `T1204` — the Evidence Contract seam, bound. `ROOM_PORTS` declares
+          // it `absent: 'refuse'`, and until now nothing supplied it, so
+          // `approve` threw before reading the set (`DEF-033-002`).
+          //
+          // Still refuses by default, and that is `FR-EVS-026`: a Contract with
+          // no items satisfies nothing unless policy declared the work class
+          // needs none. Binding this made the gate *evaluable*, not permissive.
+          process.env['DATABASE_URL']
+            ? new PrismaEvidenceContractSource(
+                prismaClient() as unknown as EvidencePrismaClient,
+              )
+            : undefined,
+          // `T1167` — the governed loop, so `openRoom` can declare the Room's
+          // object. `GOVERNED_LOOP` is the one configured instance.
+          loop,
+          // `T1206` — `EPIC-007`'s register, for promotion.
+          register,
         ),
     },
   ],

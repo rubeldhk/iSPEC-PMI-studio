@@ -39,3 +39,18 @@ export {
   type EphemeralWorkspace,
   type WorkspaceFileSystem,
 } from './workspace.js';
+
+// EPIC-041 T1345 — the local initialiser (R-041-8): Spec Kit on the host, at
+// the pinned tag, in the user's directory. Composed at the worker's root.
+export {
+  LocalSpecKitInitialiser,
+  buildInitCommand,
+  execFileOnHost,
+  SPEC_KIT_REPOSITORY,
+  type Exec,
+  type ExecResult as LocalExecResult,
+  type InitialiseInput,
+  type InitialiseResult,
+  type InitialiseStep,
+  type LocalInitialiser,
+} from './local-init.js';

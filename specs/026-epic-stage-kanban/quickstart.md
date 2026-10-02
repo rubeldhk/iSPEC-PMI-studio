@@ -226,14 +226,23 @@ condition away from ready. It is three.
 # 1. the pattern is configuration, in one place
 python -c "import json;d=json.load(open('governance/epic-stage.config.json'));print(d['taskIdentifierPattern'])"
 
-# 2. no check writes its own copy of it
-grep -rn 'T..d{3' tests/governance/epic-stage/*.ts        # expect: no matches
+# 2. no source in the repository writes its own copy of it
+pnpm vitest run --project governance tests/governance/epic-stage/task-id-format.spec.ts
 
 # 3. the whole corpus is recognised today
 pnpm vitest run --project governance tests/governance/epic-stage/task-ids.spec.ts
 ```
 
-**Expect**: `^T\d{3,}[a-z]?$` printed once; **zero** inline patterns across the three check files;
+> **Step 2 used to be a `grep`, and that is the cautionary tale of this Epic** (`T1003`). It read
+> `grep -rn 'T..d{3' tests/governance/epic-stage/*.ts` and expected *"zero inline patterns across
+> the three check files"*. Both halves were wrong: it searched a **hand-picked three-file
+> directory**, and it matched only the **three-digit** form — so the two `T\d+[a-z]*` copies that
+> actually sat in `task-id-format.ts` were invisible to it. The first convergence pass ran this
+> command, saw no matches, and certified the file clean while the fault was on lines 81 and 93.
+> **A search that cannot fail is not evidence.** Step 2 now runs the real check, which derives its
+> own file set from the repository, so the documented gate and the executable gate are one gate.
+
+**Expect**: `^T\d{3,}[a-z]?$` printed once; **zero** inline patterns anywhere in the repository;
 the suite green against every existing identifier, including `T150a`–`T153h` and `T442a`–`T442v`.
 
 > **Mutation check, required at exit — this is the scenario that matters.** Add a task line with a

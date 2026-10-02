@@ -15,6 +15,9 @@ const QUESTIONS = [
 describe('T812 · open-time grant evaluation', () => {
   it('grants held at open time govern what the reviewer sees', async () => {
     const h = accessHarness();
+    // `REQ_OPEN` needs its own grant now (`X19`): q2 is unrestricted because
+    // ALICE was granted on what it concerns, not because nobody restricted it.
+    await restrict(h, REQ_OPEN, [{ userId: ALICE, level: 'read' }]);
     await restrict(h, SPEC, [
       { userId: ADMIN, level: 'edit' },
       { userId: ALICE, level: 'read' },
@@ -28,6 +31,9 @@ describe('T812 · open-time grant evaluation', () => {
 
   it('a revocation takes effect on the NEXT open of an already-open session (SC-018)', async () => {
     const h = accessHarness();
+    // `REQ_OPEN` needs its own grant now (`X19`): q2 is unrestricted because
+    // ALICE was granted on what it concerns, not because nobody restricted it.
+    await restrict(h, REQ_OPEN, [{ userId: ALICE, level: 'read' }]);
     await restrict(h, SPEC, [
       { userId: ADMIN, level: 'edit' },
       { userId: ALICE, level: 'read' },
@@ -47,6 +53,9 @@ describe('T812 · open-time grant evaluation', () => {
 
   it('the restricted question is MARKED, never dropped — the session shows its true size', async () => {
     const h = accessHarness();
+    // `REQ_OPEN` needs its own grant now (`X19`): q2 is unrestricted because
+    // ALICE was granted on what it concerns, not because nobody restricted it.
+    await restrict(h, REQ_OPEN, [{ userId: ALICE, level: 'read' }]);
     await restrict(h, SPEC, [{ userId: ADMIN, level: 'edit' }]);
     const visibility = await h.evaluation.visibilityAtOpen(WS, ALICE, QUESTIONS);
     // Both questions are present; one is restricted.
@@ -59,8 +68,14 @@ describe('T812 · open-time grant evaluation', () => {
 
   it('a regrant restores visibility on the next open — evaluation is live, both ways', async () => {
     const h = accessHarness();
+    // `REQ_OPEN` needs its own grant now (`X19`): q2 is unrestricted because
+    // ALICE was granted on what it concerns, not because nobody restricted it.
+    await restrict(h, REQ_OPEN, [{ userId: ALICE, level: 'read' }]);
     await restrict(h, SPEC, [{ userId: ADMIN, level: 'edit' }]);
     expect((await h.evaluation.visibilityAtOpen(WS, ALICE, QUESTIONS))[0]!.restricted).toBe(true);
+    // `REQ_OPEN` needs its own grant now (`X19`): q2 is unrestricted because
+    // ALICE was granted on what it concerns, not because nobody restricted it.
+    await restrict(h, REQ_OPEN, [{ userId: ALICE, level: 'read' }]);
     await restrict(h, SPEC, [{ userId: ALICE, level: 'read' }]);
     expect((await h.evaluation.visibilityAtOpen(WS, ALICE, QUESTIONS))[0]!.restricted).toBe(false);
   });
