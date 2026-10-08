@@ -107,7 +107,7 @@ fail, and the four mutation proofs cover the guarantees that matter most.
 | [`DEF-032-004`](./defects/DEF-032-004-failed-test-result-satisfied-items.md) — a FAILED test result met an item | Rule ratified as `FR-EVS-036`; residual DEFERRED to `EPIC-039` |
 | [`DEF-032-005`](./defects/DEF-032-005-contract-digest-required-all-algorithms.md) — digest required all three algorithms | CLOSED |
 | [`DEF-032-006`](./defects/DEF-032-006-loop-consumes-none-of-its-seams.md) — the loop reads none of its seams | DEFERRED to `EPIC-030` |
-| [`DEF-035-002`](../035-defect-room/defects/DEF-035-002-reproduction-write-never-reached-the-schema.md) — raised against `EPIC-035` | OPEN (in `EPIC-035`) |
+| [`DEF-035-002`](../035-defect-room/defects/DEF-035-002-reproduction-write-never-reached-the-schema.md) — raised against `EPIC-035` | CLOSED — fixed on this branch |
 
 ## What this Epic deliberately does not claim (`T863c`, `T863d`)
 
@@ -132,13 +132,13 @@ fail, and the four mutation proofs cover the guarantees that matter most.
 
 ## Convergence — Phase 8 (`T1796`–`T1800`, 2026-10-08)
 
-`/speckit-converge` found five gaps; three are closed, two are blocked on other Epics.
+`/speckit-converge` found five gaps; four are closed, one is blocked on `EPIC-030`.
 
 | Task | Outcome |
 |---|---|
 | `T1798` — attached evidence in the status projection (`FR-EVS-027`, US3/AC1) | **Done.** `GET …/status` now lists each attestation's source, time, attested artifact and version, integrity, resolution, whether it reports failure and whether it is current — never the payload |
 | `T1800` — a missing field fails, not reads blank (`SC-EVS-002`) | **Done.** The mapper refuses a row missing a provenance field; migration `20261008090000` adds the two CHECKs that were missing |
-| `T1797` — the Defect Room's `EvidenceStore` | **Adapter built and tested, binding blocked.** Binding it surfaced [`DEF-035-002`](../035-defect-room/defects/DEF-035-002-reproduction-write-never-reached-the-schema.md): no reproduction can be written to PostgreSQL — the domain has no `steps` and writes `affectedBehaviourRef` into a table whose column is `affectedBehaviour`. The unbound store had been refusing first and hiding it. Binding before the fix would orphan evidence behind every `500`, so the binding was reverted |
+| `T1797` — the Defect Room's `EvidenceStore` | **Done.** Binding it first surfaced [`DEF-035-002`](../035-defect-room/defects/DEF-035-002-reproduction-write-never-reached-the-schema.md) — no reproduction could be written to PostgreSQL (no `steps` in the domain; `affectedBehaviourRef` written into `affectedBehaviour`), hidden because the unbound store refused first. Fixed on this branch, then bound; reproduction evidence now lands in the evidence store. `T999u` stays red on its other two ports |
 | `T1796` — the loop's Evidence seam | **Blocked**, [`DEF-032-006`](./defects/DEF-032-006-loop-consumes-none-of-its-seams.md): `LoopService` consumes none of its seam tokens and records `gates: []`, so every `evidence-complete` gate resolves to `violation`. An adapter on a token nothing reads would be built and called by nothing |
 | `T1799` — ratify or remove the `declaresFailure` rule | **Ratified** 2026-10-08 as `FR-EVS-036`; code unchanged |
 

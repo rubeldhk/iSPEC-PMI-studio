@@ -1,6 +1,6 @@
 # DEF-035-002 — a reproduction cannot be written to PostgreSQL
 
-**Epic**: `EPIC-035` | **Raised**: 2026-10-08 | **Status**: OPEN
+**Epic**: `EPIC-035` | **Raised**: 2026-10-08 | **Status**: CLOSED 2026-10-08
 **Found by**: `EPIC-032` `T1797` (convergence), binding `EvidenceStore` and driving
 `POST /rooms/defect/:id/reproduction` through the composed application
 **Severity**: HIGH — every reproduction recorded through the API answers `500`, and binding the
@@ -48,3 +48,17 @@ write was never reached. A reproduction with no evidence (`not-reproduced`) woul
 2. Map `affectedBehaviourRef` ↔ `affectedBehaviour` in `defect-room.store.prisma.ts`, both ways.
 3. A Prisma-backed test that records a reproduction — with and without evidence — through the route.
 4. Then bind `EvidenceStore` (`EPIC-032` `T1797`).
+
+## Resolution — 2026-10-08, on `epic/032-evidence-store-contracts`
+
+1. **`steps` is optional at the API**, stored as given and empty where the reporter gave none.
+   `FR-DFR-030` requires reproducibility, environment, evidence and affected behaviour — not steps;
+   the Key Entities line names it and the column requires it, so the column was the stricter of
+   the three. Making it a required input would have been a new requirement nobody approved.
+   *Reversible:* making it required is one validation line in `ReproductionService.record`.
+2. **`affectedBehaviourRef` ↔ `affectedBehaviour`** is mapped explicitly, both ways, in
+   `defect-room.store.prisma.ts`.
+3. **Proved through the route against PostgreSQL** — `defect-room-triage-route.spec.ts` now records a
+   reproduction with evidence and one with neither evidence nor steps, and reads both rows back.
+4. **`EvidenceStore` bound** (`EPIC-032` `T1797`). Known-red `T999u` stays red: its journey also
+   needs `TestExecution` and `RepairTaskPort`, both still unbound.

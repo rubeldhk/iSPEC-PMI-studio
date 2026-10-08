@@ -42,7 +42,9 @@ export interface EvidenceContributor {
 
 /** `3`, `v3` or `V3` → 3. Anything else is not a version number, and is not guessed into one. */
 function versionNumber(raw: string): number | null {
-  const match = /^[vV]?(\d+)$/.exec(raw.trim());
+  // `match`, not `RegExp#exec`: this Room runs nothing, and `defect-room-independence.spec.ts`
+  // refuses the token `exec(` anywhere in it rather than guessing which kind it is.
+  const match = raw.trim().match(/^[vV]?(\d+)$/);
   if (match === null) return null;
   const n = Number(match[1]);
   return n >= 1 ? n : null;
