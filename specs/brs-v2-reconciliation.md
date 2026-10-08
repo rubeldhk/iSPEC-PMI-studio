@@ -167,7 +167,7 @@ re-decide those assignments; it connects them to requirement identifiers.
 | U-05 | Defect Room | `BR-0051`–`BR-0058` | new epic | R3 |
 | U-06 | Governed Engineering Loop | `BR-0064` | **UNOWNED in the register** | R3 |
 | U-07 | Risk & policy engine, Decision Inbox | `BR-0066`–`BR-0069`, `BR-0174`, `BR-0192` | new epic — Decision Center, shared by three Rooms | R3 |
-| U-08 | Evidence store & Evidence Contracts | `BR-0140`–`BR-0142`, `BR-0144`, `BR-0146` | new epic, or `EPIC-015` extension | R3 |
+| U-08 | Evidence store & Evidence Contracts | `BR-0140`–`BR-0142`, `BR-0144`, `BR-0146` | **settled — `EPIC-032`**, a new Epic, not an `EPIC-015` extension (clarified 2026-08-22, `R-032-6`; implemented 2026-10-07) | R3 |
 | U-09 | Specification compliance verdict | `BR-0036`, `BR-0143` | **UNOWNED in the register** | R3 |
 | U-10 | Engineering Context | `BR-0091`–`BR-0096` | new epic — Engineering Context Engine | R4 |
 | U-11 | Engineering Experts | `BR-0101`, `BR-0102`, `BR-0105`, `BR-0106` | new epic | R4 |

@@ -72,11 +72,11 @@ rename the entity, which would have put the code out of step with the requiremen
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T855a Create the worktree `git worktree add .claude/worktrees/epic-032-evidence-store-contracts epic/032-evidence-store-contracts` and work there — discharges the plan's one failing Constitution gate, the `EPIC-030` precedent
-- [ ] T855b [P] Scaffold `packages/evidence-contract/package.json` and `packages/evidence-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
-- [ ] T855c [P] Register an `evidence-contract` project in `vitest.workspace.ts` without `passWithNoTests` (`TS-005`)
-- [ ] T855d [P] Add `packages/evidence-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
-- [ ] T855e Confirm `supertest` is present from `EPIC-030` `T993d`/`T993e`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
+- [X] T855a Create the worktree `git worktree add .claude/worktrees/epic-032-evidence-store-contracts epic/032-evidence-store-contracts` and work there — discharges the plan's one failing Constitution gate, the `EPIC-030` precedent
+- [X] T855b [P] Scaffold `packages/evidence-contract/package.json` and `packages/evidence-contract/tsconfig.json` so the package typechecks independently (`TS-004`)
+- [X] T855c [P] Register an `evidence-contract` project in `vitest.workspace.ts` without `passWithNoTests` (`TS-005`)
+- [X] T855d [P] Add `packages/evidence-contract` to the `## Paths that must not break` list in `governance/repository-layout.md` (`G-05d`)
+- [X] T855e Confirm `supertest` is present from `EPIC-030` `T993d`/`T993e`; if that branch has not merged, add it with its `TS-001` register entry in `specs/_shared/dependencies.md`
 
 ---
 
@@ -86,40 +86,40 @@ rename the entity, which would have put the code out of step with the requiremen
 
 ### The attestation envelope — adopted from in-toto, `R-032-1`
 
-- [ ] T856a [P] Write failing unit tests for the Statement types in `packages/evidence-contract/tests/attestation.spec.ts` — asserts `subject` is a **non-empty tuple**, so an attestation with no subject digest is a compile error and not merely a runtime refusal (`FR-EVS-042`)
-- [ ] T856b Implement `Attestation` and `AttestationSubject` in `packages/evidence-contract/src/attestation.ts` (unit test: T856a) — `FR-EVS-011`, `FR-EVS-013`
-- [ ] T856c [P] Write failing unit tests for the predicate registry in `packages/evidence-contract/tests/predicates.spec.ts` — standard in-toto and SLSA URIs are distinguishable from PMI-defined ones, so a future standard predicate can replace a PMI one without the gate changing
-- [ ] T856d Implement the `predicateType` registry in `packages/evidence-contract/src/predicates.ts` (unit test: T856c) — `FR-EVS-003`, covering all nine `BR-0140` kinds
+- [X] T856a [P] Write failing unit tests for the Statement types in `packages/evidence-contract/tests/attestation.spec.ts` — asserts `subject` is a **non-empty tuple**, so an attestation with no subject digest is a compile error and not merely a runtime refusal (`FR-EVS-042`)
+- [X] T856b Implement `Attestation` and `AttestationSubject` in `packages/evidence-contract/src/attestation.ts` (unit test: T856a) — `FR-EVS-011`, `FR-EVS-013`
+- [X] T856c [P] Write failing unit tests for the predicate registry in `packages/evidence-contract/tests/predicates.spec.ts` — standard in-toto and SLSA URIs are distinguishable from PMI-defined ones, so a future standard predicate can replace a PMI one without the gate changing
+- [X] T856d Implement the `predicateType` registry in `packages/evidence-contract/src/predicates.ts` (unit test: T856c) — `FR-EVS-003`, covering all nine `BR-0140` kinds
 
 ### The Evidence Contract and the gate result
 
-- [ ] T856e [P] Write failing unit tests for the Contract types in `packages/evidence-contract/tests/contract.spec.ts` — asserts `ContractItem` has **no `met` field**, `acceptingPredicateTypes` is non-empty, and `zeroItemPolicyRef` is required when `items` is empty (`FR-EVS-025`, `FR-EVS-026`)
-- [ ] T856f Implement `EvidenceContract` and `ContractItem` in `packages/evidence-contract/src/contract.ts` (unit test: T856e) — `FR-EVS-020`
-- [ ] T856g [P] Write failing unit tests for the gate result in `packages/evidence-contract/tests/gate.spec.ts` — asserts `CompletionResult`'s failure branch carries a **non-empty** `unmet` list, and that four `ItemState` members exist with three of them not `met`
-- [ ] T856h Implement `ContractStatus`, `ItemState` and `CompletionResult` in `packages/evidence-contract/src/gate.ts` (unit test: T856g) — `FR-EVS-032`, `FR-EVS-014`, `FR-EVS-034`
-- [ ] T856i [P] Write failing unit tests for the three ports in `packages/evidence-contract/tests/ports.spec.ts` — each declares an absent-behaviour of refuse
-- [ ] T856j Implement `EvidenceStorage`, `AccessPolicy` and `AttestationSource` in `packages/evidence-contract/src/ports.ts` (unit test: T856i) — `FR-EVS-035`, `FR-EVS-015`, `FR-EVS-040`
-- [ ] T856k Implement the export barrel `packages/evidence-contract/src/index.ts` (unit test: T856a)
+- [X] T856e [P] Write failing unit tests for the Contract types in `packages/evidence-contract/tests/contract.spec.ts` — asserts `ContractItem` has **no `met` field**, `acceptingPredicateTypes` is non-empty, and `zeroItemPolicyRef` is required when `items` is empty (`FR-EVS-025`, `FR-EVS-026`)
+- [X] T856f Implement `EvidenceContract` and `ContractItem` in `packages/evidence-contract/src/contract.ts` (unit test: T856e) — `FR-EVS-020`
+- [X] T856g [P] Write failing unit tests for the gate result in `packages/evidence-contract/tests/gate.spec.ts` — asserts `CompletionResult`'s failure branch carries a **non-empty** `unmet` list, and that four `ItemState` members exist with three of them not `met`
+- [X] T856h Implement `ContractStatus`, `ItemState` and `CompletionResult` in `packages/evidence-contract/src/gate.ts` (unit test: T856g) — `FR-EVS-032`, `FR-EVS-014`, `FR-EVS-034`
+- [X] T856i [P] Write failing unit tests for the three ports in `packages/evidence-contract/tests/ports.spec.ts` — each declares an absent-behaviour of refuse
+- [X] T856j Implement `EvidenceStorage`, `AccessPolicy` and `AttestationSource` in `packages/evidence-contract/src/ports.ts` (unit test: T856i) — `FR-EVS-035`, `FR-EVS-015`, `FR-EVS-040`
+- [X] T856k Implement the export barrel `packages/evidence-contract/src/index.ts` (unit test: T856a)
 
 ### Binding to EPIC-025 storage — the adapter EPIC-031 forgot
 
-- [ ] T856l [P] Write failing unit tests for the storage adapter in `backend/tests/unit/evidence-storage-adapter.spec.ts` — binds `EvidenceStorage` to `EPIC-025`'s `StorageProvider`, and maps `StorageFailure.reason` `provider_unavailable` / `destination_missing` onto **unresolvable**, never onto satisfied (`FR-EVS-014`)
-- [ ] T856m Implement `backend/src/modules/evidence/storage.adapter.ts` and register it against the `EvidenceStorage` token (unit test: T856l) — `FR-EVS-005` stored-or-referenced, `R-032-2`. Named explicitly because `EPIC-031`'s analysis found this exact binding missing there (`C2`)
+- [X] T856l [P] Write failing unit tests for the storage adapter in `backend/tests/unit/evidence-storage-adapter.spec.ts` — binds `EvidenceStorage` to `EPIC-025`'s `StorageProvider`, and maps `StorageFailure.reason` `provider_unavailable` / `destination_missing` onto **unresolvable**, never onto satisfied (`FR-EVS-014`)
+- [X] T856m Implement `backend/src/modules/evidence/storage.adapter.ts` and register it against the `EvidenceStorage` token (unit test: T856l) — `FR-EVS-005` stored-or-referenced, `R-032-2`. Named explicitly because `EPIC-031`'s analysis found this exact binding missing there (`C2`)
 
 ### Persistence
 
-- [ ] T856n Add `EvidenceItem`, `EvidenceContract`, `WorkEvidenceBinding` and `CompletionAttempt` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §1–§5
-- [ ] T856o Generate the migration under `backend/prisma/migrations/` including **`subjectDigest NOT NULL`**, the stored/referenced exclusivity constraint, and **`outcome = 'refused' ⇒ unmetItems NOT NULL`** — three fences, not conveniences (`FR-EVS-042`, `FR-EVS-032`)
+- [X] T856n Add `EvidenceItem`, `EvidenceContract`, `WorkEvidenceBinding` and `CompletionAttempt` models to `backend/prisma/schema.prisma` per [data-model.md](./data-model.md) §1–§5
+- [X] T856o Generate the migration under `backend/prisma/migrations/` including **`subjectDigest NOT NULL`**, the stored/referenced exclusivity constraint, and **`outcome = 'refused' ⇒ unmetItems NOT NULL`** — three fences, not conveniences (`FR-EVS-042`, `FR-EVS-032`)
 
 ### Contract definitions and their conformance check — the non-code output
 
-- [ ] T856p [P] Write the failing executable conformance check in `backend/tests/architecture/evidence-contract-conformance.spec.ts` — fails on an item with no accepting `predicateType`, an unknown work class, or a **zero-item Contract with no `zeroItemPolicyRef`** (`R-032-4`)
-- [ ] T856q Author the initial Evidence Contract definitions in `packages/evidence-contract/contracts/` and make them pass (conformance: T856p) — Constitution V for a non-code output
-- [ ] T856r [P] Write the failing architecture test in `backend/tests/architecture/evidence-independence.spec.ts` — no Room vocabulary, no loop stage name, no risk band, and **no compliance-verdict type** (`FR-EVS-051`, `FR-EVS-052`, the `U-09` boundary)
+- [X] T856p [P] Write the failing executable conformance check in `backend/tests/architecture/evidence-contract-conformance.spec.ts` — fails on an item with no accepting `predicateType`, an unknown work class, or a **zero-item Contract with no `zeroItemPolicyRef`** (`R-032-4`)
+- [X] T856q Author the initial Evidence Contract definitions in `packages/evidence-contract/contracts/` and make them pass (conformance: T856p) — Constitution V for a non-code output
+- [X] T856r [P] Write the failing architecture test in `backend/tests/architecture/evidence-independence.spec.ts` — no Room vocabulary, no loop stage name, no risk band, and **no compliance-verdict type** (`FR-EVS-051`, `FR-EVS-052`, the `U-09` boundary)
 
 ### Module skeleton and wiring
 
-- [ ] T856s [P] Write the failing reachability test in `backend/tests/integration/evidence-reachability.spec.ts` importing the real `AppModule` — Constitution XI Tier 1, `R-032-8`
+- [X] T856s [P] Write the failing reachability test in `backend/tests/integration/evidence-reachability.spec.ts` importing the real `AppModule` — Constitution XI Tier 1, `R-032-8`
 
 **Checkpoint**: contract, schema and checks exist and fail for the right reasons
 
@@ -131,14 +131,14 @@ rename the entity, which would have put the code out of step with the requiremen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 1
 
-- [ ] T857a Implement `backend/src/modules/evidence/evidence.module.ts` and `evidence.tokens.ts` (integration test: T856s)
-- [ ] T857b Register `EvidenceModule` in `backend/src/app.module.ts` (integration test: T856s) — the wiring T856s exists to prove
-- [ ] T857c [P] [US1] Write failing unit tests for derived item state in `backend/tests/unit/evidence-contract-status.spec.ts` — met/unmet is **computed from evidence**, and there is no path that sets it (`FR-EVS-030`)
-- [ ] T857d [US1] Implement `backend/src/modules/evidence/contract.status.ts` (unit test: T857c) — `FR-EVS-022`, `FR-EVS-027`
-- [ ] T857e [P] [US1] Write failing unit tests for the completion gate in `backend/tests/unit/evidence-completion-gate.spec.ts` — refuses with a **non-empty** unmet list, returns a `Result` rather than throwing, and records the refusal (`FR-EVS-030`, `FR-EVS-032`, `FR-EVS-033`)
-- [ ] T857f [US1] Implement `backend/src/modules/evidence/completion.gate.ts` (unit test: T857e) — `R-032-2`'s result-not-exception rule
-- [ ] T857g [US1] Implement `POST /evidence/:workRef/complete` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `409` carrying the unmet list
-- [ ] T857h [US1] Implement the **refuse-on-unreachable** branch in `backend/src/modules/evidence/completion.gate.ts` (integration test: T862a) — `FR-EVS-035`, `R-032-5`. An unevaluated Contract is not a satisfied one. *Added 2026-08-22 to close analysis finding `C1`: the requirement had a test, a success criterion and a mutation proof, and nothing that built the behaviour*
+- [X] T857a Implement `backend/src/modules/evidence/evidence.module.ts` and `evidence.tokens.ts` (integration test: T856s)
+- [X] T857b Register `EvidenceModule` in `backend/src/app.module.ts` (integration test: T856s) — the wiring T856s exists to prove
+- [X] T857c [P] [US1] Write failing unit tests for derived item state in `backend/tests/unit/evidence-contract-status.spec.ts` — met/unmet is **computed from evidence**, and there is no path that sets it (`FR-EVS-030`)
+- [X] T857d [US1] Implement `backend/src/modules/evidence/contract.status.ts` (unit test: T857c) — `FR-EVS-022`, `FR-EVS-027`
+- [X] T857e [P] [US1] Write failing unit tests for the completion gate in `backend/tests/unit/evidence-completion-gate.spec.ts` — refuses with a **non-empty** unmet list, returns a `Result` rather than throwing, and records the refusal (`FR-EVS-030`, `FR-EVS-032`, `FR-EVS-033`)
+- [X] T857f [US1] Implement `backend/src/modules/evidence/completion.gate.ts` (unit test: T857e) — `R-032-2`'s result-not-exception rule
+- [X] T857g [US1] Implement `POST /evidence/:workRef/complete` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `409` carrying the unmet list
+- [X] T857h [US1] Implement the **refuse-on-unreachable** branch in `backend/src/modules/evidence/completion.gate.ts` (integration test: T862a) — `FR-EVS-035`, `R-032-5`. An unevaluated Contract is not a satisfied one. *Added 2026-08-22 to close analysis finding `C1`: the requirement had a test, a success criterion and a mutation proof, and nothing that built the behaviour*
 
 **Checkpoint**: US1 demonstrable — "done" refuses, and says what is missing
 
@@ -150,14 +150,14 @@ rename the entity, which would have put the code out of step with the requiremen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 2, 3 and 11
 
-- [ ] T858a [P] [US2] Write failing unit tests for Contract loading in `backend/tests/unit/evidence-contract-loader.spec.ts` — a **weakened** Contract published while work is in flight is refused **at load** (`FR-EVS-024`)
-- [ ] T858b [US2] Implement `backend/src/modules/evidence/contract.loader.ts` (unit test: T858a) — `FR-EVS-020`, `FR-EVS-024`
-- [ ] T858c [P] [US2] Write failing unit tests for binding at creation in `backend/tests/unit/evidence-binding.spec.ts` — the Contract attaches at work creation with every item unmet, and `contractVersion` is fixed then (`FR-EVS-021`, `FR-EVS-023`)
-- [ ] T858d [US2] Implement `WorkEvidenceBinding` creation in `backend/src/modules/evidence/contract.loader.ts` (unit test: T858c)
-- [ ] T858e [P] [US2] Write failing unit tests for zero-item Contracts in `backend/tests/unit/evidence-zero-item.spec.ts` — permitted only with an explicit `zeroItemPolicyRef`, and the emptiness is visible (`FR-EVS-026`)
-- [ ] T858f [US2] Implement zero-item validation in `backend/src/modules/evidence/contract.loader.ts` (unit test: T858e)
-- [ ] T858g [US2] Implement `GET /evidence/:workRef/unmet` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `FR-EVS-022`, `SC-EVS-003`: one query, no opening individual evidence
-- [ ] T858h [US2] Implement re-evaluation on evidence arrival in `backend/src/modules/evidence/completion.gate.ts` (unit test: T857e) — `FR-EVS-031`, a **new** `CompletionAttempt` rather than a mutation of the old
+- [X] T858a [P] [US2] Write failing unit tests for Contract loading in `backend/tests/unit/evidence-contract-loader.spec.ts` — a **weakened** Contract published while work is in flight is refused **at load** (`FR-EVS-024`)
+- [X] T858b [US2] Implement `backend/src/modules/evidence/contract.loader.ts` (unit test: T858a) — `FR-EVS-020`, `FR-EVS-024`
+- [X] T858c [P] [US2] Write failing unit tests for binding at creation in `backend/tests/unit/evidence-binding.spec.ts` — the Contract attaches at work creation with every item unmet, and `contractVersion` is fixed then (`FR-EVS-021`, `FR-EVS-023`)
+- [X] T858d [US2] Implement `WorkEvidenceBinding` creation in `backend/src/modules/evidence/evidence.service.ts` *(as built: `bind()` — the loader decides nothing about bindings)* (unit test: T858c)
+- [X] T858e [P] [US2] Write failing unit tests for zero-item Contracts in `backend/tests/unit/evidence-zero-item.spec.ts` — permitted only with an explicit `zeroItemPolicyRef`, and the emptiness is visible (`FR-EVS-026`)
+- [X] T858f [US2] Implement zero-item validation in `backend/src/modules/evidence/contract.loader.ts` (unit test: T858e)
+- [X] T858g [US2] Implement `GET /evidence/:workRef/unmet` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `FR-EVS-022`, `SC-EVS-003`: one query, no opening individual evidence
+- [X] T858h [US2] Implement re-evaluation on evidence arrival in `backend/src/modules/evidence/completion.gate.ts` (unit test: T857e) — `FR-EVS-031`, a **new** `CompletionAttempt` rather than a mutation of the old
 
 **Checkpoint**: US2 demonstrable — the Contract is a gate, not a closing checklist
 
@@ -169,17 +169,17 @@ rename the entity, which would have put the code out of step with the requiremen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 4, 5 and 10
 
-- [ ] T859a [P] [US3] Write failing unit tests for attestation persistence in `backend/tests/unit/evidence-attestation-store.spec.ts` — source, time, attested artifact and **version** all present; attachable to an artifact, task, decision or outcome; append-only (`FR-EVS-004`, `FR-EVS-010`, `FR-EVS-011`, `SC-EVS-002`)
-- [ ] T859b [US3] Implement `backend/src/modules/evidence/attestation.store.ts` (unit test: T859a)
-- [ ] T859c [P] [US3] Write failing integration test asserting `EvidenceItem` rejects `UPDATE` and `DELETE` in `backend/tests/integration/evidence-append-only.spec.ts` — following the `audit-immutability.spec.ts` precedent
-- [ ] T859d [P] [US3] Write failing unit tests for integrity verification in `backend/tests/unit/evidence-integrity.spec.ts` — a corrupted payload yields **integrity-failed**, which is **not met** (`FR-EVS-013`, `FR-EVS-034`)
-- [ ] T859e [US3] Implement integrity checking in `backend/src/modules/evidence/attestation.store.ts` (unit test: T859d)
-- [ ] T859f [P] [US3] Write failing unit tests for unresolvable references in `backend/tests/unit/evidence-unresolvable.spec.ts` — a removed reference target reads **unresolvable**, never satisfied (`FR-EVS-014`, `SC-EVS-006`)
-- [ ] T859g [US3] Implement reference resolution in `backend/src/modules/evidence/storage.adapter.ts` (unit test: T859f)
-- [ ] T859h [P] [US3] Write failing unit tests for superseded-version evidence in `backend/tests/unit/evidence-superseded.spec.ts` — evidence for `v1` stays readable and is **not** evidence for `v2` (`FR-EVS-012`, `SC-EVS-007`)
-- [ ] T859i [P] [US3] Write failing integration tests for access and isolation in `backend/tests/integration/evidence-access.spec.ts` — reads honour the attested artifact's rules (`FR-EVS-015`, `BR-0062`) and never cross a workspace (`FR-EVS-016`)
-- [ ] T859j [US3] Implement the `AccessPolicy` binding to `EPIC-024` in `backend/src/modules/evidence/evidence.module.ts` (integration test: T859i) — evidence must not become a side channel around artifact access
-- [ ] T859k [US3] Implement **version-scoped item matching** in `backend/src/modules/evidence/contract.status.ts` (unit test: T859h) — `FR-EVS-012`: an attestation satisfies an item only for the artifact version it names, and evidence for a superseded version stays readable without satisfying the current one. *Added 2026-08-22 to close analysis finding `C2`*
+- [X] T859a [P] [US3] Write failing unit tests for attestation persistence in `backend/tests/unit/evidence-attestation-store.spec.ts` — source, time, attested artifact and **version** all present; attachable to an artifact, task, decision or outcome; append-only (`FR-EVS-004`, `FR-EVS-010`, `FR-EVS-011`, `SC-EVS-002`)
+- [X] T859b [US3] Implement attestation persistence in `backend/src/modules/evidence/evidence.repository.ts` *(as built: one append-only repository for attestations, bindings and attempts, in-memory and Prisma)* (unit test: T859a)
+- [X] T859c [P] [US3] Write failing integration test asserting `EvidenceItem` rejects `UPDATE` and `DELETE` in `backend/tests/integration/evidence-append-only.spec.ts` — following the `audit-immutability.spec.ts` precedent
+- [X] T859d [P] [US3] Write failing unit tests for integrity verification in `backend/tests/unit/evidence-integrity.spec.ts` — a corrupted payload yields **integrity-failed**, which is **not met** (`FR-EVS-013`, `FR-EVS-034`)
+- [X] T859e [US3] Implement integrity checking in `backend/src/modules/evidence/integrity.ts` and `backend/src/modules/evidence/contract.status.ts` *(as built: digest at write, re-checked on every read)* (unit test: T859d)
+- [X] T859f [P] [US3] Write failing unit tests for unresolvable references in `backend/tests/unit/evidence-unresolvable.spec.ts` — a removed reference target reads **unresolvable**, never satisfied (`FR-EVS-014`, `SC-EVS-006`)
+- [X] T859g [US3] Implement reference resolution in `backend/src/modules/evidence/storage.adapter.ts` (unit test: T859f)
+- [X] T859h [P] [US3] Write failing unit tests for superseded-version evidence in `backend/tests/unit/evidence-superseded.spec.ts` — evidence for `v1` stays readable and is **not** evidence for `v2` (`FR-EVS-012`, `SC-EVS-007`)
+- [X] T859i [P] [US3] Write failing integration tests for access and isolation in `backend/tests/integration/evidence-access.spec.ts` — reads honour the attested artifact's rules (`FR-EVS-015`, `BR-0062`) and never cross a workspace (`FR-EVS-016`)
+- [X] T859j [US3] Implement the `AccessPolicy` binding to `EPIC-024` in `backend/src/modules/evidence/evidence.module.ts` (integration test: T859i) — evidence must not become a side channel around artifact access
+- [X] T859k [US3] Implement **version-scoped item matching** in `backend/src/modules/evidence/contract.status.ts` (unit test: T859h) — `FR-EVS-012`: an attestation satisfies an item only for the artifact version it names, and evidence for a superseded version stays readable without satisfying the current one. *Added 2026-08-22 to close analysis finding `C2`*
 
 **Checkpoint**: US3 demonstrable — presence is not validity
 
@@ -191,13 +191,13 @@ rename the entity, which would have put the code out of step with the requiremen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenarios 7 and 8
 
-- [ ] T860a [P] [US4] Write failing unit tests for external contribution in `backend/tests/unit/evidence-contribution.spec.ts` — the contributing tool and its version are recorded alongside ordinary provenance (`FR-EVS-041`)
-- [ ] T860b [US4] Implement contribution handling in `backend/src/modules/evidence/attestation.store.ts` (unit test: T860a) — `FR-EVS-040`, through the adapter path, **no bespoke per-tool route**
-- [ ] T860c [P] [US4] Write failing unit tests for version-less refusal in `backend/tests/unit/evidence-no-version.spec.ts` — a contribution naming no artifact version is refused, never attached to whatever is current (`FR-EVS-042`)
-- [ ] T860d [US4] Implement `POST /evidence` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s; unit test: T860c) — `400` on a missing subject digest, `FR-EVS-042`
-- [ ] T860e [P] [US4] Write the `EPIC-015` producer integration test in `backend/tests/integration/evidence-from-qa-suite.spec.ts` — an existing `EPIC-015` validation run lands as a `test-result/v0.1` attestation and satisfies a Contract item, with **nothing re-run by this Epic** (`FR-EVS-050`, `SC-EVS-005`, `R-032-6`)
-- [ ] T860f [P] [US4] Write the no-analysis assertion in `backend/tests/architecture/evidence-no-review-engine.spec.ts` — asserts this Epic performs no scanning, linting or review analysis of its own (`FR-EVS-043`, `ADR-0022`)
-- [ ] T860g [US4] Implement `GET /evidence/rollup` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `FR-EVS-006`, `SC-EVS-008`, the `BG-08` measure computed from the store
+- [X] T860a [P] [US4] Write failing unit tests for external contribution in `backend/tests/unit/evidence-contribution.spec.ts` — the contributing tool and its version are recorded alongside ordinary provenance (`FR-EVS-041`)
+- [X] T860b [US4] Implement contribution handling in `backend/src/modules/evidence/evidence.service.ts` *(as built: `contribute()`)* (unit test: T860a) — `FR-EVS-040`, through the adapter path, **no bespoke per-tool route**
+- [X] T860c [P] [US4] Write failing unit tests for version-less refusal in `backend/tests/unit/evidence-no-version.spec.ts` — a contribution naming no artifact version is refused, never attached to whatever is current (`FR-EVS-042`)
+- [X] T860d [US4] Implement `POST /evidence` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s; unit test: T860c) — `400` on a missing subject digest, `FR-EVS-042`
+- [X] T860e [P] [US4] Write the `EPIC-015` producer integration test in `backend/tests/integration/evidence-from-qa-suite.spec.ts` — an existing `EPIC-015` validation run lands as a `test-result/v0.1` attestation and satisfies a Contract item, with **nothing re-run by this Epic** (`FR-EVS-050`, `SC-EVS-005`, `R-032-6`)
+- [X] T860f [P] [US4] Write the no-analysis assertion in `backend/tests/architecture/evidence-no-review-engine.spec.ts` — asserts this Epic performs no scanning, linting or review analysis of its own (`FR-EVS-043`, `ADR-0022`)
+- [X] T860g [US4] Implement `GET /evidence/rollup` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `FR-EVS-006`, `SC-EVS-008`, the `BG-08` measure computed from the store
 
 **Checkpoint**: US4 demonstrable — the boundary `ADR-0022` decided is honoured and asserted
 
@@ -209,11 +209,11 @@ rename the entity, which would have put the code out of step with the requiremen
 
 **Independent test**: [quickstart.md](./quickstart.md) Scenario 6
 
-- [ ] T861a [P] [US5] Write failing unit tests covering **every** evidence type `BR-0140` names in `backend/tests/unit/evidence-all-types.spec.ts` — each storable or referenceable through the same mechanism (`FR-EVS-001`, `FR-EVS-002`)
-- [ ] T861b [US5] Implement uniform type handling in `backend/src/modules/evidence/attestation.store.ts` (unit test: T861a)
-- [ ] T861c [P] [US5] Write failing unit tests for multi-type Contract items in `backend/tests/unit/evidence-multi-type.spec.ts` — an item accepting two `predicateType`s is met by either; evidence of a non-accepted type leaves it unmet **and says why** (`FR-EVS-025`)
-- [ ] T861d [US5] Implement accepting-type matching in `backend/src/modules/evidence/contract.status.ts` (unit test: T861c)
-- [ ] T861e [US5] Implement `GET /evidence/:workRef/status` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `FR-EVS-027`, the Room Evidence region projection
+- [X] T861a [P] [US5] Write failing unit tests covering **every** evidence type `BR-0140` names in `backend/tests/unit/evidence-all-types.spec.ts` — each storable or referenceable through the same mechanism (`FR-EVS-001`, `FR-EVS-002`)
+- [X] T861b [US5] Implement uniform type handling in `backend/src/modules/evidence/evidence.service.ts` *(as built: one `contribute()` for every kind)* (unit test: T861a)
+- [X] T861c [P] [US5] Write failing unit tests for multi-type Contract items in `backend/tests/unit/evidence-multi-type.spec.ts` — an item accepting two `predicateType`s is met by either; evidence of a non-accepted type leaves it unmet **and says why** (`FR-EVS-025`)
+- [X] T861d [US5] Implement accepting-type matching in `backend/src/modules/evidence/contract.status.ts` (unit test: T861c)
+- [X] T861e [US5] Implement `GET /evidence/:workRef/status` in `backend/src/modules/evidence/evidence.controller.ts` (integration test: T856s) — `FR-EVS-027`, the Room Evidence region projection
 
 **Checkpoint**: all five user stories demonstrable
 
@@ -221,15 +221,15 @@ rename the entity, which would have put the code out of step with the requiremen
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [ ] T862a [P] Write the fail-closed integration test in `backend/tests/integration/evidence-fail-closed.spec.ts` — an unreachable store refuses completion (`SC-EVS-009`, `FR-EVS-035`)
-- [ ] T862b **Mutation proof — `FR-EVS-030`**: add a bypass permitting completion with an unmet Contract to `backend/src/modules/evidence/completion.gate.ts`, revert (unit test: T857e — it must fail while the mutation stands). Record the observation (`SC-EVS-001`)
-- [ ] T862c **Mutation proof — `FR-EVS-024`**: allow a weakened Contract to load in `backend/src/modules/evidence/contract.loader.ts`, revert (unit test: T858a — it must fail while the mutation stands). Record the observation
-- [ ] T862d **Mutation proof — `FR-EVS-035`**: make the gate allow when the store is unreachable in `backend/src/modules/evidence/completion.gate.ts`, revert (integration test: T862a — it must fail while the mutation stands). Record the observation (`SC-EVS-009`)
-- [ ] T862e **Mutation proof — Constitution XI Tier 1**: remove `EvidenceModule` from `backend/src/app.module.ts`, revert (integration test: T856s — it must fail while the mutation stands). Record the observation
-- [ ] T862f [P] Verify the `R-032-7` targets — evidence write p95 < 60 ms, Contract evaluation p95 < 150 ms **at 50 items**, unmet query p95 < 100 ms, rollup p95 < 500 ms **at 10,000 items** — and record the measured figures
+- [X] T862a [P] Write the fail-closed integration test in `backend/tests/integration/evidence-fail-closed.spec.ts` — an unreachable store refuses completion (`SC-EVS-009`, `FR-EVS-035`)
+- [X] T862b **Mutation proof — `FR-EVS-030`**: add a bypass permitting completion with an unmet Contract to `backend/src/modules/evidence/completion.gate.ts`, revert (unit test: T857e — it must fail while the mutation stands). Record the observation (`SC-EVS-001`)
+- [X] T862c **Mutation proof — `FR-EVS-024`**: allow a weakened Contract to load in `backend/src/modules/evidence/contract.loader.ts`, revert (unit test: T858a — it must fail while the mutation stands). Record the observation
+- [X] T862d **Mutation proof — `FR-EVS-035`**: make the gate allow when the store is unreachable in `backend/src/modules/evidence/completion.gate.ts`, revert (integration test: T862a — it must fail while the mutation stands). Record the observation (`SC-EVS-009`)
+- [X] T862e **Mutation proof — Constitution XI Tier 1**: remove `EvidenceModule` from `backend/src/app.module.ts`, revert (integration test: T856s — it must fail while the mutation stands). Record the observation
+- [X] T862f [P] Verify the `R-032-7` targets — evidence write p95 < 60 ms, Contract evaluation p95 < 150 ms **at 50 items**, unmet query p95 < 100 ms, rollup p95 < 500 ms **at 10,000 items** — and record the measured figures
 - [ ] T862g [P] Confirm the gate budget composes with `EPIC-030`'s 150 ms transition and `EPIC-031`'s 120 ms decide, and record the combined measurement
-- [ ] T862h [P] Confirm attestations are never pruned by any retention path (`R-032-7`) — evidence for a superseded version must stay readable
-- [ ] T862i Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (done does not complete), **Scenario 2** (Contract up front), **Scenario 3** (no weakening in flight), **Scenario 4** (provenance), **Scenario 5** (presence is not validity), **Scenario 6** (nine kinds, one mechanism), **Scenario 7** (external tool, zero analysis), **Scenario 8** (`EPIC-015` as producer), **Scenario 9** (unreachable store refuses), **Scenario 10** (not a side channel), **Scenario 11** (empty Contract visible), **Scenario 12** (XI Tier 1). *Enumerated 2026-08-22 to close analysis finding `A1` — the prior wording instructed enumeration rather than enumerating, and `EPIC-031` had already tried that fix once*
+- [X] T862h [P] Confirm attestations are never pruned by any retention path (`R-032-7`) — evidence for a superseded version must stay readable
+- [X] T862i Run and record each [quickstart.md](./quickstart.md) scenario individually: **Scenario 1** (done does not complete), **Scenario 2** (Contract up front), **Scenario 3** (no weakening in flight), **Scenario 4** (provenance), **Scenario 5** (presence is not validity), **Scenario 6** (nine kinds, one mechanism), **Scenario 7** (external tool, zero analysis), **Scenario 8** (`EPIC-015` as producer), **Scenario 9** (unreachable store refuses), **Scenario 10** (not a side channel), **Scenario 11** (empty Contract visible), **Scenario 12** (XI Tier 1). *Enumerated 2026-08-22 to close analysis finding `A1` — the prior wording instructed enumeration rather than enumerating, and `EPIC-031` had already tried that fix once*
 
 ---
 
@@ -237,16 +237,16 @@ rename the entity, which would have put the code out of step with the requiremen
 
 Ordered as the constitution's *"Quality gates in order"* states them.
 
-- [ ] T863a Confirm every implementation task has a passing unit test or conformance check
-- [ ] T863b **Constitution XI Tier 1 (ALWAYS)** — `T856s` drives evidence contribution and the completion gate through their **real HTTP routes** against the composed module graph via the real `AppModule`, and `T862e` proved it fails when the module is unregistered
-- [ ] T863c **Constitution XI Tier 2 (Epics delivering a journey)** — **NOT APPLICABLE, by rule.** The *Evidence & Compliance* area needs the compliance half, which is `U-09` and unowned, and `UX-0060` forbids implementing an area before its Epic is declared. Recorded rather than deleted (`R-032-8`, the `EPIC-029` `F1` precedent)
-- [ ] T863d **`ADR-0022` is NOT reported as converged.** It stays Open awaiting `U-09`, and the closing report says so. *"The differentiator is now owned"* is the overstatement this Epic most invites
-- [ ] T863e Update `specs/brs-v2-reconciliation.md` §4 to record `U-08`'s home as **settled** rather than as an alternative — decided at clarification 2026-08-22, and the register still offers the choice
-- [ ] T863f [P] Confirm every evidence type `BR-0140` names was exercised against one gate (`SC-EVS-004`) — nine types, one mechanism, demonstrated rather than asserted
+- [X] T863a Confirm every implementation task has a passing unit test or conformance check
+- [X] T863b **Constitution XI Tier 1 (ALWAYS)** — `T856s` drives evidence contribution and the completion gate through their **real HTTP routes** against the composed module graph via the real `AppModule`, and `T862e` proved it fails when the module is unregistered
+- [X] T863c **Constitution XI Tier 2 (Epics delivering a journey)** — **NOT APPLICABLE, by rule.** The *Evidence & Compliance* area needs the compliance half, which is `U-09` and unowned, and `UX-0060` forbids implementing an area before its Epic is declared. Recorded rather than deleted (`R-032-8`, the `EPIC-029` `F1` precedent)
+- [X] T863d **`ADR-0022` is NOT reported as converged.** It stays Open awaiting `U-09`, and the closing report says so. *"The differentiator is now owned"* is the overstatement this Epic most invites
+- [X] T863e Update `specs/brs-v2-reconciliation.md` §4 to record `U-08`'s home as **settled** rather than as an alternative — decided at clarification 2026-08-22, and the register still offers the choice
+- [X] T863f [P] Confirm every evidence type `BR-0140` names was exercised against one gate (`SC-EVS-004`) — nine types, one mechanism, demonstrated rather than asserted
 - [ ] T863g Run `/speckit-converge`; append and complete any remaining unbuilt work
-- [ ] T863h Triage `specs/032-evidence-store-contracts/defects/`; every record closed or deferred to a named Epic
+- [X] T863h Triage `specs/032-evidence-store-contracts/defects/`; every record closed or deferred to a named Epic
 - [ ] T863i Re-run the full suite green — `pnpm lint && pnpm typecheck && pnpm test && pnpm test:governance`
-- [ ] T863j **Hand the task-identifier exhaustion to `EPIC-026`** — 977 of 999 three-digit prefixes are in use across the corpus, 22 remain, and `EPIC-033`–`035` cannot each be allocated a flat block. Not this Epic's to fix; its to escalate with the measurement attached
+- [X] T863j **Hand the task-identifier exhaustion to `EPIC-026`** — 977 of 999 three-digit prefixes are in use across the corpus, 22 remain, and `EPIC-033`–`035` cannot each be allocated a flat block. Not this Epic's to fix; its to escalate with the measurement attached *(Discharged 2026-10-07 without an escalation: `EPIC-026` `T864d` (`FR-ESK-025`) had already widened `taskIdentifierPattern` in `governance/epic-stage.config.json` to `^T\d{3,}[a-z]?$` — four or more digits, no upper bound — and every Epic since `EPIC-033` allocates four-digit identifiers.)*
 - [ ] T863k Promote `local → dev` (no environment skipped) and publish the Epic closing report: work completed, work deferred, the four mutation observations, the measured performance figures, and the recommended next command (Constitution IX). Refresh the Delivery Board or restate its staleness
 
 ---
@@ -329,3 +329,15 @@ authoring UI, no re-evaluation on arrival (`FR-EVS-031`), and no per-version Con
 - [X] T1202 Implement `backend/src/modules/evidence/contract-evaluation.ts` (unit test: T1201) — a pure function, so the rules that decide whether a gate opens need no database to exercise
 - [X] T1203 Add `evidence_contracts`, `evidence_contract_items` and `evidence_items` in `backend/prisma/migrations/20260830000000_epic032_evidence_contracts/`, and implement `PrismaEvidenceContractSource` — `integrityValid` defaults to **false**, because a default of `true` would make the unchecked case indistinguishable from the checked one (`FR-EVS-034`)
 - [X] T1204 Bind the source to **both** consumers in `requirement-room.module.ts` (`readiness` and `BaselineService`) *(verified live — an unmet Contract reports "item-tests (Automated tests pass): no evidence attached"; attaching a valid `test-run` gives `ready: true` with zero blockers)*
+
+## Phase 8: Convergence
+
+*Appended by `/speckit-converge` on 2026-10-08. Identifiers start at `T1796`, the first free block
+above the corpus maximum (`T1795`); the block after this Epic's own maximum (`T1205`+) collides
+with another Epic from `T1206`.*
+
+- [ ] T1796 Implement an `EvidenceProvider` adapter over `CompletionGate.evaluate` in `backend/src/modules/evidence/` and bind it to `LOOP_EVIDENCE_PROVIDER` so the loop's Evidence stage can be configured in per plan: EPIC-030 consumes this contract; `packages/loop-contract/src/ports.ts` `EvidenceProvider` (missing) (unit test: an `EvidenceProvider` contract spec beside the adapter, written failing-first once the seam is consumed) *(Blocked 2026-10-08 — [`DEF-032-006`](./defects/DEF-032-006-loop-consumes-none-of-its-seams.md): `LoopService` injects none of `LOOP_POLICY_PROVIDER`, `LOOP_EVIDENCE_PROVIDER` or `LOOP_GATE_PROVIDER` and records every transition with `gates: []`. An adapter bound to a token nothing reads would be built and called by nothing; the seam has to be consumed first, which is `EPIC-030`'s.)*
+- [ ] T1797 Bind `DEFECT_ROOM_PORTS` `EvidenceStore` to `EvidenceService.contribute` through an adapter, resolving the attested version `FR-EVS-042` requires — the port's `contribute()` names none — and retire known-red `T999u`'s `EvidenceStore` half per plan: three Rooms consume this contract; `FR-EVS-042` (missing) (unit test: `backend/tests/unit/defect-room-evidence-store-adapter.spec.ts`) *(Adapter built and tested 2026-10-08 — `backend/src/modules/defect-room/evidence-store.adapter.ts`, 9 tests. **Binding blocked** by [`DEF-035-002`](../035-defect-room/defects/DEF-035-002-reproduction-write-never-reached-the-schema.md): a reproduction cannot be written to PostgreSQL at all, and binding first would orphan evidence in an append-only store behind every `500`.)*
+- [X] T1798 Expose the attached typed evidence for one object — source, time, attested artifact, version and integrity state, read under `FR-EVS-015` — in the projection behind `GET /evidence/:workRef/status` in `backend/src/modules/evidence/evidence.service.ts` per FR-EVS-027, US3/AC1 (partial) (unit test: `backend/tests/unit/evidence-attached-projection.spec.ts`)
+- [X] T1799 Ratify `declaresFailure` as a requirement in `spec.md` through `/speckit-specify`, or remove it from `packages/evidence-contract/src/predicates.ts` and `backend/src/modules/evidence/contract.status.ts` per DEF-032-004 (unrequested) (unit test: `packages/evidence-contract/tests/predicates.spec.ts` and `backend/tests/unit/evidence-contract-status.spec.ts`, kept or removed with the rule) *(Ratified by the Project Owner 2026-10-08: `FR-EVS-036` added to `spec.md`, decision recorded under Clarifications; the code and its tests stand unchanged.)*
+- [X] T1800 Fail on a missing `projectId`, `subjectName` or `attachedToId` rather than defaulting it in `backend/src/modules/evidence/evidence.repository.ts`, and add the matching `NOT VALID` CHECKs in a new migration per SC-EVS-002 (partial) (unit test: `backend/tests/unit/evidence-missing-fields.spec.ts`; integration test: `backend/tests/integration/evidence-append-only.spec.ts`)

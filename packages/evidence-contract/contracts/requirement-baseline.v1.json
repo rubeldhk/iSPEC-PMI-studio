@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "workClass": "requirement-baseline",
+  "contractVersion": 1,
+  "items": [
+    { "itemId": "stakeholder-approval", "description": "An authorized stakeholder approved the requirement set (BR-0025)", "acceptingPredicateTypes": ["https://pmi.studio/attestation/approval/v1"] }
+  ]
+}
