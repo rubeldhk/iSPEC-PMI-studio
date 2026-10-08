@@ -1,0 +1,19 @@
+{
+  "$comment": "EPIC-031 T734. The initial risk-classification steering document: load into a workspace's steering (subject risk-classification). It declares only what is high under every tenant policy (FR-DPE-012). Everything else is unmatched and therefore high too (FR-DPE-004) until a tenant writes a rule lowering it — authoring a low band means auto-executing an action without a human, which is a tenant's decision, not a shipped default. Checked by classification-rules-conformance.spec.ts.",
+  "subject": "risk-classification",
+  "scopeType": "organization",
+  "rules": [
+    {
+      "actionPattern": "requirement-room.baseline",
+      "band": "high"
+    },
+    {
+      "actionPattern": "release.promote",
+      "band": "high"
+    },
+    {
+      "actionPattern": "loop.configuration.change",
+      "band": "high"
+    }
+  ]
+}

@@ -16,6 +16,7 @@
     "@nestjs/serve-static": "^4.0.2",
     "@opentelemetry/api": "^1.9.0",
     "@pmi/agent-contract": "workspace:*",
+    "@pmi/decision-contract": "workspace:*",
     "@pmi/engine-contract": "workspace:*",
     "@pmi/execution-contract": "workspace:*",
     "@pmi/execution-registry-contract": "workspace:*",

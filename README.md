@@ -350,6 +350,7 @@ again. `pnpm test:arch` and `pnpm test:governance` remain ungated, and run every
 |---|---|
 | `T884` — `tests/governance/accessibility-record.spec.ts` | Waits on `T885`, a manual keyboard and screen-reader pass. An agent cannot hear a screen reader, and a record claiming otherwise would fabricate the evidence the check exists to test for |
 | `T999u` — `backend/tests/architecture/defect-room-transcript.spec.ts` | Waits on `T999t`, the EPIC-035 Tier 2 journey. It is keyboard-only against a running application, and two of its seven steps refuse in this deployment because `RepairTaskPort` and `TestExecution` are unbound — so the transcript cannot be produced by an agent, and typing one is the fabrication the check tests for. Added to this table on 2026-09-23: it had been red since EPIC-035 while the table said anything else red was a real failure |
+| `T792` — `backend/tests/architecture/decision-inbox-transcript.spec.ts` | Waits on `T791`, the EPIC-031 Tier 2 Decision Inbox journey. The harness (`e2e/tests/epic-031-inbox.spec.ts`) is authored and writes the transcript itself, but the run needs the reference-local stack and a seeded user's password, which an agent does not hold — typing the transcript is the fabrication the check tests for. Added 2026-10-08 |
 | `tests/integration/scale.spec.ts` | Load-sensitive, not broken — see above |
 
 Anything else red is a real failure.

@@ -32,6 +32,7 @@ import { GOVERNED_LOOP } from './composition/governed-loop.js';
 import { ChangeRoomModule } from './modules/change-room/change-room.module.js';
 import { DefectRoomModule } from './modules/defect-room/defect-room.module.js';
 import { ContextModule } from './modules/context/context.module.js';
+import { DecisionModule } from './modules/decision/decision.module.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
 
 /**
@@ -118,6 +119,8 @@ function clientBuildPath(): string {
     ChangeRoomModule,
     DefectRoomModule,
     ContextModule,
+    // T738 — EPIC-031. The wiring decision-reachability.spec.ts (T736) exists to prove.
+    DecisionModule,
     // T150g — EPIC-014 F-11.3. The API serves the built web client, so the
     // containerised stack is ONE origin and the client's `/v1` assumption holds
     // without the client changing (`R-014-1`).

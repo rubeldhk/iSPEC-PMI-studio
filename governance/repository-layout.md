@@ -213,6 +213,9 @@ path added or removed without updating this document fails the build.
   deletes a proof; the suite reads the directory, so adding one is covered without an edit
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T993f`)
+- `packages/decision-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
+  `backend/src/modules/decision/`; the three risk bands, the decision-authority record published for
+  `U-02`, the decide types and the four ports the Rooms and `EPIC-030` build against (EPIC-031 `T719`)
 - `backend/src/modules/change-room/` — `EPIC-034`'s module (`T406c`). Registered in
   `backend/src/app.module.ts` and asserted by `change-room-independence.spec.ts`, which reads this
   directory to prove the Room imports the shared contract rather than forking it

@@ -68,6 +68,8 @@ const PROJECT_DIRS: Record<string, string> = {
   // registers the project, because EPIC-030 registered loop-contract without
   // mapping it here and T537 caught exactly that.
   'room-contract': 'packages/room-contract/tests',
+  // EPIC-031 T718 — registered, mapped and added to `test:unit` in one change.
+  'decision-contract': 'packages/decision-contract/tests',
   'agent-adapters': 'agent-adapters',
   // EPIC-028 T539 — registered only once T646a gave it tests. `T537` correctly
   // fails on a project that collects nothing, and registering it earlier would

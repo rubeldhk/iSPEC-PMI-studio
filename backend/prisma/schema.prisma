@@ -3196,3 +3196,102 @@ model TaskStatusProposal {
   @@index([workspaceId])
   @@map("task_status_proposals")
 }
+
+/// EPIC-031 T730 — data-model §2. One evaluation, immutable once written. An
+/// approval of a pending decision is a NEW row that resolves it, never an edit.
+model PolicyDecision {
+  id                 String                  @id @default(uuid())
+  workspaceId        String
+  projectId          String
+  actionType         String
+  /// Opaque — no foreign key into any Room (FR-DPE-051).
+  targetType         String
+  targetId           String
+  /// FR-DPE-003 — from policy. `proposedClass` is kept beside it, never merged.
+  effectiveClass     String
+  proposedClass      String?
+  outcome            String
+  decidedBy          String?
+  authorityBasis     String
+  objectVersion      String
+  decidedAt          DateTime?
+  /// FR-DPE-032 — distinguishable without inference.
+  actorKind          String
+  actorId            String
+  requestedBy        String?
+  /// FR-DPE-044 — lineage → version for the rule that contributed.
+  steeringVersions   Json
+  policyVersion      Int
+  requiredGates      Json
+  gateOutcomes       Json
+  /// The pending decision this one resolves (approval, refusal, exception).
+  resolvesDecisionId String?
+  /// FR-DPE-040 — NOT NULL: an unexplained decision is not representable.
+  explanationId      String
+  createdAt          DateTime                @default(now())
+  explanation        DecisionExplanation     @relation(fields: [explanationId], references: [id])
+  exceptions         DecisionGateException[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, outcome])
+  @@index([resolvesDecisionId])
+  @@map("policy_decisions")
+}
+
+/// EPIC-031 T730 — data-model §3. Stored, never recomputed (R-031-8, FR-DPE-044).
+model DecisionExplanation {
+  id                   String           @id @default(uuid())
+  workspaceId          String
+  policyVersion        String
+  /// SQL NULL states no rule matched (FR-DPE-004).
+  matchedRule          Json?
+  riskClass            String
+  precedenceResolution String?
+  authorityApplied     String
+  constraintCited      String?
+  proposalDisagreement String?
+  triggerRule          String?
+  createdAt            DateTime         @default(now())
+  decisions            PolicyDecision[]
+
+  @@index([workspaceId])
+  @@map("decision_explanations")
+}
+
+/// EPIC-031 T730 — data-model §4. An authorized, recorded, expiring departure.
+model DecisionGateException {
+  id           String         @id @default(uuid())
+  workspaceId  String
+  decisionId   String
+  gateId       String
+  authorizedBy String
+  reason       String
+  /// An expiry is a fact, not a grace period.
+  expiresAt    DateTime
+  createdAt    DateTime       @default(now())
+  decision     PolicyDecision @relation(fields: [decisionId], references: [id])
+
+  @@index([workspaceId])
+  @@index([decisionId])
+  @@map("decision_gate_exceptions")
+}
+
+/// EPIC-031 T730 — data-model §5. The tunable half, versioned, append-only.
+model TenantPolicy {
+  id                  String   @id @default(uuid())
+  workspaceId         String
+  version             Int
+  /// Per band: auto-execute / gates-required / human-approval.
+  bandTreatment       Json
+  /// FR-DPE-015 — action patterns where self-approval is permitted. Default none.
+  selfApprovalAllowed Json
+  /// FR-DPE-030, FR-DPE-031 — automated actions and the rule each cites.
+  automatedActions    Json
+  approvedBy          String
+  approvedAt          DateTime
+  createdAt           DateTime @default(now())
+
+  @@unique([workspaceId, version])
+  @@index([workspaceId])
+  @@map("tenant_policies")
+}
