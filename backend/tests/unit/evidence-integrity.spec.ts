@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { predicateTypeFor, type EvidenceContract } from '@pmi/evidence-contract';
-import { assess, deriveStatus } from '../../src/modules/evidence/contract.status.js';
+import { assess, assessForRollup, deriveStatus } from '../../src/modules/evidence/contract.status.js';
 import { digestOf } from '../../src/modules/evidence/integrity.js';
 import type { StoredAttestation } from '../../src/modules/evidence/evidence.types.js';
 
@@ -72,5 +72,35 @@ describe('T859d · FR-EVS-034 — a corrupted payload is integrity-failed, and n
     const status = deriveStatus(contract, evidence, { artifactId: 'a1', version: 1 });
     expect(status.items[0]!.state).toBe('integrity-failed');
     expect(status.satisfied).toBe(false);
+  });
+});
+
+describe('the rollup reads the write-time verdict — a report, not a gate', () => {
+  const row = {
+    id: 'r1',
+    predicateType: TEST,
+    attestedArtifactId: 'a1',
+    attestedVersion: 1,
+    storage: 'stored' as const,
+    reference: null,
+    integrityValid: true,
+    predicateResult: 'PASSED',
+    attachedTo: { type: 'task' as const, id: 'T-1' },
+  };
+
+  it('counts a row whose integrity failed at write as integrity-failed', async () => {
+    const [assessed] = await assessForRollup([{ ...row, integrityValid: false }], null);
+    expect(assessed!.integrity).toBe('failed');
+  });
+
+  it('reads a FAILED test result from the column the database extracted (FR-EVS-036)', async () => {
+    const [assessed] = await assessForRollup([{ ...row, predicateResult: 'FAILED' }], null);
+    expect(assessed!.reportsFailure).toBe(true);
+  });
+
+  it('still resolves a reference live, and reads an unbound store as unresolvable', async () => {
+    const referenced = { ...row, storage: 'referenced' as const, reference: { provider: 'p', location: 'x/y' } };
+    expect((await assessForRollup([referenced], null))[0]!.resolution).toBe('unresolvable');
+    expect((await assessForRollup([referenced], { resolve: async () => ({ resolved: true }) }))[0]!.resolution).toBe('resolved');
   });
 });

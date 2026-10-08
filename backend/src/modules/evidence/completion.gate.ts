@@ -28,9 +28,9 @@ import {
   type EvidenceKind,
   type EvidenceStorage,
 } from '@pmi/evidence-contract';
-import { assess, deriveStatus, type AssessedEvidence } from './contract.status.js';
+import { assess, assessForRollup, deriveStatus, type AssessedEvidence } from './contract.status.js';
 import type { ContractCatalog } from './contract.loader.js';
-import type { EvidenceRepository } from './evidence.repository.js';
+import type { EvidenceRepository, RollupEvidence } from './evidence.repository.js';
 import { refKey } from './evidence.repository.js';
 import type { AttemptTrigger, StoredAttestation, WorkBinding, WorkRef } from './evidence.types.js';
 
@@ -76,6 +76,11 @@ function attachedFrom(
     };
   });
 }
+
+/** One binding's status for the rollup, or why it could not be evaluated. */
+export type RollupStatus =
+  | { readonly evaluated: true; readonly status: ContractStatus }
+  | { readonly evaluated: false; readonly reason: string };
 
 export type Evaluation =
   | {
@@ -141,27 +146,44 @@ export class CompletionGate {
   }
 
   /**
-   * Many current bindings at once, for the rollup: one query for all their
-   * evidence, then the same derivation `evaluate` uses. Never throws; an
-   * unreadable store makes every one unevaluated.
+   * The rollup's statuses (`FR-EVS-006`, `SC-EVS-008`): one light query for
+   * every binding's evidence, then the same `deriveStatus` the gate uses —
+   * assessed by `assessForRollup`, which trusts the write-time integrity verdict
+   * rather than re-hashing every payload. Never throws; an unreadable store
+   * makes every one unevaluated, and the rollup counts those rather than hiding
+   * them.
    */
-  async evaluateMany(workspaceId: string, bindings: readonly WorkBinding[]): Promise<Map<string, Evaluation>> {
-    const out = new Map<string, Evaluation>();
-    let evidence: Map<string, StoredAttestation[]>;
+  async rollupStatuses(workspaceId: string, bindings: readonly WorkBinding[]): Promise<Map<string, RollupStatus>> {
+    const out = new Map<string, RollupStatus>();
+    let evidence: Map<string, RollupEvidence[]>;
     try {
-      evidence = await this.repository.attachedToMany(workspaceId, bindings.map((b) => b.workRef));
+      evidence = await this.repository.rollupEvidence(workspaceId, bindings.map((b) => b.workRef));
     } catch {
       for (const binding of bindings) {
         out.set(refKey(binding.workRef), {
           evaluated: false,
-          binding,
           reason: 'the evidence store could not be reached, so the Contract cannot be evaluated (FR-EVS-035)',
         });
       }
       return out;
     }
     for (const binding of bindings) {
-      out.set(refKey(binding.workRef), await this.evaluateWith(binding, evidence.get(refKey(binding.workRef)) ?? []));
+      const contract = this.catalog.get(binding.workClass, binding.contractVersion);
+      if (contract === null) {
+        out.set(refKey(binding.workRef), {
+          evaluated: false,
+          reason: `Evidence Contract ${binding.workClass} v${binding.contractVersion} is not loaded`,
+        });
+        continue;
+      }
+      const assessed = await assessForRollup(evidence.get(refKey(binding.workRef)) ?? [], this.storage);
+      out.set(refKey(binding.workRef), {
+        evaluated: true,
+        status: deriveStatus(contract, assessed, {
+          artifactId: binding.subjectArtifactId,
+          version: binding.subjectVersion,
+        }),
+      });
     }
     return out;
   }

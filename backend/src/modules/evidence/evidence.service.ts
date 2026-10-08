@@ -360,7 +360,7 @@ export class EvidenceService {
         readable.push(binding);
       }
     }
-    const evaluations = await this.gate.evaluateMany(principal.workspaceId, readable);
+    const evaluations = await this.gate.rollupStatuses(principal.workspaceId, readable);
 
     let inFlight = 0;
     let done = 0;

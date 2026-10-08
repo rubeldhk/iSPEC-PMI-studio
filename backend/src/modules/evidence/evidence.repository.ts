@@ -29,6 +29,23 @@ import type {
   WorkRef,
 } from './evidence.types.js';
 
+/**
+ * What the rollup needs from one attestation — and nothing it does not. No
+ * payload: the predicate's `result` is read by the database (`FR-EVS-036`), and
+ * integrity is the write-time verdict (see `assessForRollup`).
+ */
+export interface RollupEvidence {
+  readonly id: string;
+  readonly predicateType: string;
+  readonly attestedArtifactId: string;
+  readonly attestedVersion: number;
+  readonly storage: 'stored' | 'referenced';
+  readonly reference: EvidenceReference | null;
+  readonly integrityValid: boolean;
+  readonly predicateResult: string | null;
+  readonly attachedTo: WorkRef;
+}
+
 export interface EvidenceRepository {
   appendAttestation(input: NewAttestation): Promise<StoredAttestation>;
   /** Evidence attached to one piece of work, oldest first. */
@@ -39,6 +56,12 @@ export interface EvidenceRepository {
    * 500 ms target (`T862f`).
    */
   attachedToMany(workspaceId: string, refs: readonly WorkRef[]): Promise<Map<string, StoredAttestation[]>>;
+  /**
+   * The rollup's read (`FR-EVS-006`, `SC-EVS-008`): many pieces of work in one
+   * query, carrying only what a status needs. Reading 10,000 full rows and
+   * re-hashing every payload missed the 500 ms target on CI (599 ms).
+   */
+  rollupEvidence(workspaceId: string, refs: readonly WorkRef[]): Promise<Map<string, RollupEvidence[]>>;
   appendBinding(input: NewBinding): Promise<WorkBinding>;
   /** Every binding for one piece of work, oldest first. The last is current. */
   bindings(workspaceId: string, ref: WorkRef): Promise<WorkBinding[]>;
@@ -72,8 +95,8 @@ export function refKey(ref: WorkRef): string {
 }
 
 /** Evidence grouped under each requested ref — type AND id, so `task:1` never collects `outcome:1`. */
-function group(refs: readonly WorkRef[], rows: readonly StoredAttestation[]): Map<string, StoredAttestation[]> {
-  const out = new Map<string, StoredAttestation[]>(refs.map((r) => [refKey(r), []]));
+function group<T extends { attachedTo: WorkRef }>(refs: readonly WorkRef[], rows: readonly T[]): Map<string, T[]> {
+  const out = new Map<string, T[]>(refs.map((r) => [refKey(r), []]));
   for (const row of rows) out.get(refKey(row.attachedTo))?.push(row);
   return out;
 }
@@ -125,6 +148,31 @@ export class InMemoryEvidenceRepository implements EvidenceRepository {
 
   async attachedToMany(workspaceId: string, refs: readonly WorkRef[]): Promise<Map<string, StoredAttestation[]>> {
     return group(refs, await Promise.all(refs.map((ref) => this.attachedTo(workspaceId, ref))).then((r) => r.flat()));
+  }
+
+  async rollupEvidence(workspaceId: string, refs: readonly WorkRef[]): Promise<Map<string, RollupEvidence[]>> {
+    const full = await this.attachedToMany(workspaceId, refs);
+    const out = new Map<string, RollupEvidence[]>();
+    for (const [key, rows] of full) {
+      out.set(
+        key,
+        rows.map((a) => ({
+          id: a.id,
+          predicateType: a.predicateType,
+          attestedArtifactId: a.attestedArtifactId,
+          attestedVersion: a.attestedVersion,
+          storage: a.storage,
+          reference: a.reference,
+          integrityValid: a.integrityValid,
+          predicateResult:
+            typeof a.payload === 'object' && a.payload !== null
+              ? (((a.payload as { predicate?: { result?: unknown } }).predicate?.result as string | undefined) ?? null)
+              : null,
+          attachedTo: a.attachedTo,
+        })),
+      );
+    }
+    return out;
   }
 
   async appendBinding(input: NewBinding): Promise<WorkBinding> {
@@ -357,6 +405,47 @@ export class PrismaEvidenceRepository implements EvidenceRepository {
          AND "attachedToId" = ANY(${[...new Set(refs.map((r) => r.id))]}::text[])
        ORDER BY "createdAt" ASC, "id" ASC`;
     return group(refs, rows.map(toAttestation));
+  }
+
+  async rollupEvidence(workspaceId: string, refs: readonly WorkRef[]): Promise<Map<string, RollupEvidence[]>> {
+    if (refs.length === 0) return new Map();
+    // Only attestation rows (subjectDigest present) — the rows the full read
+    // admits — and only the columns a status is derived from.
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        type: string;
+        attestsArtifactId: string;
+        attestsArtifactVersion: number;
+        storage: string;
+        reference: EvidenceReference | null;
+        integrityValid: boolean;
+        predicateResult: string | null;
+        attachedToType: string;
+        attachedToId: string;
+      }>
+    >`
+      SELECT "id", "type", "attestsArtifactId", "attestsArtifactVersion", "storage", "reference",
+             "integrityValid", ("payload" -> 'predicate' ->> 'result') AS "predicateResult",
+             "attachedToType", "attachedToId"
+        FROM "evidence_items"
+       WHERE "workspaceId" = ${workspaceId}
+         AND "subjectDigest" IS NOT NULL
+         AND "attachedToId" = ANY(${[...new Set(refs.map((r) => r.id))]}::text[])`;
+    return group(
+      refs,
+      rows.map((r) => ({
+        id: r.id,
+        predicateType: r.type,
+        attestedArtifactId: r.attestsArtifactId,
+        attestedVersion: r.attestsArtifactVersion,
+        storage: r.storage === 'referenced' ? ('referenced' as const) : ('stored' as const),
+        reference: r.reference,
+        integrityValid: r.integrityValid,
+        predicateResult: r.predicateResult,
+        attachedTo: { type: r.attachedToType as AttachableKind, id: r.attachedToId },
+      })),
+    );
   }
 
   async appendBinding(input: NewBinding): Promise<WorkBinding> {

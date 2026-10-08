@@ -65,12 +65,19 @@ repository and gate (`evidence-performance.spec.ts`):
 | evidence write | < 60 | **7.0** |
 | Contract evaluation at the gate, 50 items | < 150 | **11.6** |
 | unmet-items query | < 100 | **12.8** |
-| rollup, 10,000 evidence items | < 500 | **408.6** alone · **529.5** beside another suite |
+| rollup, 10,000 evidence items | < 500 | **178.0** *(was 408.6 alone, 529.5 beside another suite, 599 on CI — see below)* |
 
 **The rollup failed first, at 3,820 ms**, because it evaluated each piece of work with its own
 queries. Batching the scope into one evidence query brought it to 1,076 ms, and reading that scope
 with column-selected parameterised SQL instead of the query builder brought it to 409 ms. The margin
 is the thinnest of the four and should be re-measured on CI hardware.
+
+**The rollup was rebuilt after CI measured 599 ms** (PR #3, Auto-fix). Profiled: 309 ms of 470 was
+reading 10,000 full rows, and 118 ms was re-hashing every payload. The rollup now reads only what a
+status needs — the database extracts the predicate's `result` (`FR-EVS-036`) — and uses the
+write-time integrity verdict rather than re-hashing (`assessForRollup`). That is a deliberate split:
+the rollup is a report; the rows are append-only by trigger; and the completion gate and the status
+route, which decide, still re-verify every payload on every read. Measured afterwards: **178 ms**.
 
 ## Found on the way
 

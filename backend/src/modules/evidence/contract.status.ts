@@ -27,6 +27,7 @@ import type {
   ItemStatus,
 } from '@pmi/evidence-contract';
 import { digestOf, sameDigest } from './integrity.js';
+import type { RollupEvidence } from './evidence.repository.js';
 import type { StoredAttestation } from './evidence.types.js';
 
 export interface AssessedEvidence {
@@ -92,6 +93,43 @@ export async function assess(
         resolution,
         integrity,
         reportsFailure: declaresFailure(a.predicateType, predicate),
+      };
+    }),
+  );
+}
+
+/**
+ * The rollup's assessment (`FR-EVS-006`). The same rules as `assess`, with one
+ * deliberate difference: **integrity is the write-time verdict**, not a re-hash
+ * of every payload. The rollup is a report, not a gate: the rows are
+ * append-only (`evidence_items_immutable`), and the completion gate and the
+ * status route — the paths that decide — still re-verify on every read.
+ * Re-hashing 10,000 payloads to produce an aggregate missed the rollup's 500 ms
+ * target on CI. References still resolve live, and `FR-EVS-036` still reads the
+ * result.
+ */
+export async function assessForRollup(
+  rows: readonly RollupEvidence[],
+  storage: EvidenceStorage | null,
+): Promise<AssessedEvidence[]> {
+  return Promise.all(
+    rows.map(async (r): Promise<AssessedEvidence> => {
+      let resolution: 'resolved' | 'unresolvable' = 'resolved';
+      if (r.storage === 'referenced') {
+        if (r.reference === null || storage === null) resolution = 'unresolvable';
+        else {
+          const resolved = await storage.resolve(r.reference).catch(() => null);
+          if (resolved === null || !resolved.resolved) resolution = 'unresolvable';
+        }
+      }
+      return {
+        id: r.id,
+        predicateType: r.predicateType,
+        attestedArtifactId: r.attestedArtifactId,
+        attestedVersion: r.attestedVersion,
+        resolution,
+        integrity: r.integrityValid ? 'valid' : 'failed',
+        reportsFailure: declaresFailure(r.predicateType, { result: r.predicateResult }),
       };
     }),
   );
