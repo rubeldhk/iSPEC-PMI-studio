@@ -309,6 +309,78 @@ export interface Run {
   endedAt: string | null;
 }
 
+// ---- engineering context (EPIC-038, FR-CTX-060–066) ----
+
+/** One retained package, as `GET /context/packages/:id` returns it. */
+export interface ContextInspection {
+  package: {
+    id: string;
+    workspaceId: string;
+    projectId: string;
+    executionId: string | null;
+    objective: string;
+    actorId: string;
+    actorRole: string;
+    budgetTokens: number;
+    budgetCost: number | string;
+    state: 'assembled' | 'refused';
+    refusalReason: string | null;
+    /** `T1820` — null on a refusal made before anything was ranked. */
+    embeddingModelId: string | null;
+    /** `R-038-3` — a difference is a short read, recorded. */
+    retrievalRequested?: number | null;
+    retrievalReturned?: number | null;
+    liveState?: 'not-requested' | 'read' | 'unavailable' | null;
+    liveStateReason?: string | null;
+    executionHistory?: 'available' | 'unavailable' | null;
+    executionHistoryReason?: string | null;
+    assembledAt: string;
+  };
+  items: Array<{
+    id: string;
+    sourceType: string;
+    sourceId: string;
+    sourceVersion: string;
+    authoritativeStatus: 'current' | 'superseded' | 'undetermined';
+    supersededBy?: string | null;
+    undeterminedReason?: string | null;
+    inclusionReason: string;
+    relevanceScore: number;
+    crossBoundary: boolean;
+    authorisationRef?: string | null;
+    /** `T1839` — the workspace that owns the source. */
+    sourceWorkspaceId?: string | null;
+    /** `T1863` — the security classification it was admitted under. */
+    securityClassification?: string | null;
+    drift:
+      | { kind: 'unchanged' }
+      | { kind: 'moved'; currentVersion: string; note: string }
+      | { kind: 'unresolvable'; note: string }
+      | { kind: 'unknown'; note: string };
+  }>;
+  exclusions: Array<{
+    id: string;
+    sourceType: string;
+    sourceId: string;
+    reason: 'permission' | 'classification' | 'budget' | 'boundary' | 'stale';
+    detail: string;
+    wasEssential: boolean;
+  }>;
+  /** `T1833`, `FR-CTX-035` — the budget excluded something. */
+  bounded?: boolean;
+  /** `FR-CTX-021` — as given, each with the instant it was read. */
+  liveState?: Array<{ id: string; kind: string; ref: string; state: string; readAt: string }>;
+  execution: {
+    executionId: string | null;
+    registered: boolean;
+    consequential: boolean | 'undetermined';
+    reason?: string;
+    /** `T1816` — from EPIC-037's lifecycle; `'unknown'` where there is none to read. */
+    ran?: boolean | 'unknown';
+    consumption?: string;
+  };
+}
+
 // ---- execution timeline (EPIC-043 US1, FR-PIC-050–054) ----
 
 export interface ExecutionTimelineEntry {
@@ -1123,6 +1195,17 @@ export class ApiClient {
    */
   async listRuns(projectId: string): Promise<Run[]> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/runs`);
+  }
+
+  // ---- engineering context (EPIC-038) ----
+
+  /** `FR-CTX-062` — `executionId` is required; there is no workspace-wide listing. */
+  async contextPackagesForExecution(executionId: string): Promise<ContextInspection[]> {
+    return this.request('GET', `/context/packages?executionId=${encodeURIComponent(executionId)}`);
+  }
+
+  async contextPackage(packageId: string): Promise<ContextInspection> {
+    return this.request('GET', `/context/packages/${encodeURIComponent(packageId)}`);
   }
 
   // ---- execution timeline (EPIC-043) ----

@@ -28,6 +28,8 @@
  * permission, and requires the item out anyway.
  */
 import { describe, expect, it } from 'vitest';
+import { ForbiddenError, ProviderUnavailableError } from '../../src/core/errors.js';
+import { accessPolicyFromEpic024 } from '../../src/modules/context/access.adapter.js';
 import { AssemblyService } from '../../src/modules/context/assembly.service.js';
 import { InMemoryContextStore } from '../../src/modules/context/context.store.js';
 import {
@@ -88,7 +90,7 @@ describe('T1257 · and an AUTHORISED crossing still needs permission', () => {
     const subject = new AssemblyService(store, {
       retrieval: retrieval([
         {
-          sourceType: 'handbook',
+          sourceType: 'decision',
           sourceId: 'hb_1',
           sourceVersion: 'v1',
           relevanceScore: 0.95,
@@ -96,7 +98,7 @@ describe('T1257 · and an AUTHORISED crossing still needs permission', () => {
         },
       ]),
       access: denyFor('hb_1'),
-      sourceClasses: classes(['handbook']),
+      sourceClasses: classes(['decision']),
       authorisations: authorisedCrossing('hb_1', 'ws_other', 'ws_1'),
     });
 
@@ -113,7 +115,7 @@ describe('T1257 · and an AUTHORISED crossing still needs permission', () => {
     const subject = new AssemblyService(store, {
       retrieval: retrieval([
         {
-          sourceType: 'handbook',
+          sourceType: 'decision',
           sourceId: 'hb_1',
           sourceVersion: 'v1',
           relevanceScore: 0.95,
@@ -121,7 +123,7 @@ describe('T1257 · and an AUTHORISED crossing still needs permission', () => {
         },
       ]),
       access: allow(),
-      sourceClasses: classes(['handbook']),
+      sourceClasses: classes(['decision']),
       authorisations: authorisedCrossing('hb_1', 'ws_other', 'ws_1'),
     });
 
@@ -143,7 +145,7 @@ describe('T1257 · and the boundary refuses even when permission is granted', ()
     const subject = new AssemblyService(store, {
       retrieval: retrieval([
         {
-          sourceType: 'handbook',
+          sourceType: 'decision',
           sourceId: 'hb_1',
           sourceVersion: 'v1',
           relevanceScore: 0.95,
@@ -151,7 +153,7 @@ describe('T1257 · and the boundary refuses even when permission is granted', ()
         },
       ]),
       access: allow(),
-      sourceClasses: classes(['handbook']),
+      sourceClasses: classes(['decision']),
       authorisations: noAuthorisations(),
     });
 
@@ -171,7 +173,7 @@ describe('T1257 · and the boundary refuses even when permission is granted', ()
       new AssemblyService(new InMemoryContextStore(), {
         retrieval: retrieval([
           {
-            sourceType: 'handbook',
+            sourceType: 'decision',
             sourceId: 'hb_1',
             sourceVersion: 'v1',
             relevanceScore: 0.95,
@@ -179,7 +181,7 @@ describe('T1257 · and the boundary refuses even when permission is granted', ()
           },
         ]),
         access,
-        sourceClasses: classes(['handbook']),
+        sourceClasses: classes(['decision']),
         authorisations,
       });
 
@@ -193,5 +195,93 @@ describe('T1257 · and the boundary refuses even when permission is granted', ()
     const noAuthorisation = await build(allow(), noAuthorisations()).assemble(input());
 
     expect([both.itemCount, noPermission.itemCount, noAuthorisation.itemCount]).toEqual([1, 0, 0]);
+  });
+});
+
+/**
+ * `T1258` — the binding to `EPIC-024`, exercised through the adapter the module
+ * composes. The checks above prove the assembler asks; these prove the answer
+ * comes from `EPIC-024`'s two services and from nowhere else.
+ */
+describe('T1258 · AccessPolicy is EPIC-024 adjudicating', () => {
+  const member = { async requireWithinWorkspace(): Promise<unknown> { return {}; } };
+  const outsider = {
+    async requireWithinWorkspace(): Promise<never> {
+      throw new ForbiddenError('Not found.');
+    },
+  };
+  const grants = (readable: readonly string[]) => ({
+    asked: [] as string[],
+    async effectivelyReadable(
+      workspaceId: string,
+      _userId: string,
+      artifact: { artifactType: string; artifactId: string },
+    ): Promise<boolean> {
+      this.asked.push(`${workspaceId}:${artifact.artifactType}:${artifact.artifactId}`);
+      return readable.includes(artifact.artifactId);
+    },
+  });
+  const own = (sourceType: string, sourceId: string) => ({ sourceType, sourceId, workspaceId: 'ws_1' });
+
+  it('a governed type with no grant is refused — no grants means nobody, not everybody', async () => {
+    const policy = accessPolicyFromEpic024(member, grants([]));
+    expect(await policy.mayRead('u_1', own('specification', 'sp_1'), 'ws_1')).toBe(false);
+  });
+
+  it('a governed type with a grant is permitted, asked in the requesting workspace', async () => {
+    const readability = grants(['sp_1']);
+    const policy = accessPolicyFromEpic024(member, readability);
+    expect(await policy.mayRead('u_1', own('specification', 'sp_1'), 'ws_1')).toBe(true);
+    expect(readability.asked).toEqual(['ws_1:specification:sp_1']);
+  });
+
+  it('an actor outside the requesting workspace is refused for every type', async () => {
+    // The membership check runs first, so an ungoverned type is not a way in.
+    const policy = accessPolicyFromEpic024(outsider, grants(['sp_1']));
+    expect(await policy.mayRead('u_x', own('requirement', 'rq_1'), 'ws_1')).toBe(false);
+    expect(await policy.mayRead('u_x', own('specification', 'sp_1'), 'ws_1')).toBe(false);
+  });
+
+  it('an ungoverned type rests on membership, and the grant store is not asked (DEF-038-001)', async () => {
+    const readability = grants([]);
+    const policy = accessPolicyFromEpic024(member, readability);
+    expect(await policy.mayRead('u_1', own('requirement', 'rq_1'), 'ws_1')).toBe(true);
+    expect(readability.asked).toEqual([]);
+  });
+
+  it('an authorised crossing is judged by membership, not by grants in a workspace the actor is not in', async () => {
+    const readability = grants([]);
+    const policy = accessPolicyFromEpic024(member, readability);
+    const foreign = { sourceType: 'specification', sourceId: 'sp_9', workspaceId: 'ws_other' };
+    expect(await policy.mayRead('u_1', foreign, 'ws_1')).toBe(true);
+    expect(readability.asked).toEqual([]);
+  });
+
+  it('an unreadable directory is an outage that propagates, never a permission exclusion', async () => {
+    const down = {
+      async requireWithinWorkspace(): Promise<never> {
+        throw new ProviderUnavailableError('Actor directory unavailable: connection refused');
+      },
+    };
+    const policy = accessPolicyFromEpic024(down, grants([]));
+    await expect(policy.mayRead('u_1', own('requirement', 'rq_1'), 'ws_1')).rejects.toBeInstanceOf(
+      ProviderUnavailableError,
+    );
+  });
+
+  it('composed into assembly: the ungranted specification is excluded as permission', async () => {
+    const store = new InMemoryContextStore();
+    const subject = new AssemblyService(store, {
+      retrieval: retrieval([
+        { sourceType: 'specification', sourceId: 'sp_1', sourceVersion: 'v1', relevanceScore: 0.9, workspaceId: 'ws_1' },
+        { sourceType: 'specification', sourceId: 'sp_2', sourceVersion: 'v1', relevanceScore: 0.8, workspaceId: 'ws_1' },
+      ]),
+      access: accessPolicyFromEpic024(member, grants(['sp_1'])),
+      sourceClasses: classes(['specification']),
+      authorisations: noAuthorisations(),
+    });
+    const result = await subject.assemble(input());
+    expect((await store.itemsFor('ws_1', result.packageId)).map((i) => i.sourceId)).toEqual(['sp_1']);
+    expect((await store.exclusionsFor('ws_1', result.packageId))[0]?.reason).toBe('permission');
   });
 });

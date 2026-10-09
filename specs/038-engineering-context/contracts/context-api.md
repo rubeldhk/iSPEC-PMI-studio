@@ -17,7 +17,9 @@ answerable. **No route degrades**: where this Epic cannot do its job it says so.
 Assemble a package. `FR-CTX-030`–`FR-CTX-039`.
 
 **Body**: `objective`, `projectId`, `budgetTokens`, `budgetCost`, optional
-`essentialSources[]` (`FR-CTX-038`), optional `includeLiveState`.
+`essentialSources[]` (`FR-CTX-038`), optional `includeLiveState`, optional `executionId`
+(`FR-CTX-062`, added by `T1266` — the execution the package feeds; refused with `400` when
+`EPIC-037` has not registered it).
 
 Actor and permissions come from the session and are **not readable from the body** — the pattern
 `EPIC-035` uses so a caller cannot assemble a package in another actor's name.
@@ -30,7 +32,14 @@ Actor and permissions come from the session and are **not readable from the body
 | An **essential** item was excluded | `400` | `FR-CTX-039` — names the item and the reason |
 | No source class is configured for a candidate | included as an **exclusion**, not an error | `FR-CTX-034` — unclassified is excluded, and the package still assembles |
 
-The refusals write a `ContextPackage` row with `state = 'refused'` (`FR-CTX-065`). A refusal that
+The refusals write a `ContextPackage` row with `state = 'refused'` (`FR-CTX-065`) — including
+those made before anything was ranked, which record no model (`T1820`). Every refusal body carries
+`error.details.packageId`, the row that records it, so the refusal can be opened with
+`GET /context/packages/:id` even when no execution was named (`T1835`).
+
+Validation that happens before assembly is attempted — a blank `objective` or `projectId`, a budget
+that is not a whole number of tokens or a non-negative cost (`T1843`) — is a `400` and writes no
+row: there is nothing to have assembled for. A refusal that
 left no trace would make *"no context was assembled"* and *"assembly was never attempted"*
 indistinguishable.
 
@@ -54,6 +63,23 @@ List packages for an execution. `FR-CTX-062`.
 
 `executionId` is required rather than optional. A workspace-wide listing would answer a question
 nobody asked and would become the thing people page through instead of the audit path.
+
+---
+
+## `POST /context/packages/:id/execution`
+
+Bind a package assembled ahead of its execution. `FR-CTX-062`, `FR-CTX-066`. *Added by `T1830`.*
+
+**Body**: `executionId`.
+
+| Outcome | Status |
+|---|---|
+| Bound (or already bound to that same execution) | `200`, with the package as `GET /context/packages/:id` returns it |
+| Package not in this workspace | `404` |
+| Package already bound to a **different** execution | `409` — a package that fed one execution did not feed another |
+| Execution not registered with `EPIC-037` | `400` |
+
+One-time and one-way: the binding is what makes retention follow the execution (`FR-CTX-066`).
 
 ---
 

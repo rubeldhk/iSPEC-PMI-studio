@@ -43,6 +43,7 @@ import { PlanLandingPage } from '../pages/PlanLanding';
 import { TraceabilityPage } from '../pages/Traceability';
 import { Home } from './Home';
 import { useShell } from './shell-context';
+import { ContextPage } from '../pages/Context';
 import type { Requirement } from '../services/api';
 
 /**
@@ -609,4 +610,14 @@ export function DefectRoomView(): ReactElement {
       )}
     </RequireProject>
   );
+}
+
+/**
+ * EPIC-038 `T1269` — the Context inspection screen. Workspace-scoped, and
+ * listed per execution rather than per project: the audit path runs from an
+ * execution to what it was shown (`FR-CTX-062`).
+ */
+export function ContextView(): ReactElement {
+  const { api } = useShell();
+  return <ContextPage api={api} />;
 }

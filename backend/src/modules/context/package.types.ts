@@ -27,6 +27,7 @@
  *
  * Framework-free (PC-1).
  */
+import type { ExecutionHistoryStatus, LiveStateStatus } from './live-state.js';
 
 /** `FR-CTX-042` — the three, and there is no fourth. */
 export const AUTHORITATIVE_STATUSES = Object.freeze([
@@ -47,6 +48,13 @@ interface PackageItemBase {
   readonly sourceType: string;
   readonly sourceId: string;
   readonly sourceVersion: string;
+  /**
+   * `T1839`, `FR-CTX-040` — the workspace that owns the source, which is not the
+   * package's when the item crossed. Absent on rows written before it was kept.
+   */
+  readonly sourceWorkspaceId?: string | null;
+  /** `T1863`, `FR-CTX-031` — the security classification it was admitted under. */
+  readonly securityClassification?: string | null;
   /**
    * `FR-CTX-064`, `PP-016` — the objective term or selection rule that put this
    * item here.
@@ -91,6 +99,7 @@ export type PackageItem =
     });
 
 /** `state` for a package: assembled, or refused with a reason. */
+
 export type PackageState = 'assembled' | 'refused';
 
 export interface ContextPackage {
@@ -108,7 +117,32 @@ export interface ContextPackage {
   readonly state: PackageState;
   /** `FR-CTX-065` — required when refused; a refusal is a row, not an absence. */
   readonly refusalReason: string | null;
-  /** `R-038-4` — which model ranked this package's candidates. */
-  readonly embeddingModelId: string;
+  /**
+   * `R-038-4` — which model ranked this package's candidates. `null` only on a
+   * refusal made before anything was ranked (`T1820`); an assembled package
+   * always names one, and the database CHECKs it.
+   */
+  readonly embeddingModelId: string | null;
+  /**
+   * `R-038-3`, `T1281` — how many candidates retrieval was asked for and how
+   * many it returned. A difference is a short read, recorded rather than
+   * absorbed: an unknown set and an empty set must not behave alike.
+   */
+  readonly retrievalRequested: number | null;
+  readonly retrievalReturned: number | null;
+  /**
+   * `FR-CTX-022` — whether live state was requested, read, or unavailable, and
+   * why. `null` only on rows written before it was recorded.
+   */
+  readonly liveState: LiveStateStatus | null;
+  readonly liveStateReason: string | null;
+  /** `FR-CTX-015`, `R-038-8` — whether execution history could be included, and why not. */
+  readonly executionHistory: ExecutionHistoryStatus | null;
+  readonly executionHistoryReason: string | null;
+  /**
+   * `T1822`, `SC-CTX-009` — items whose staleness nobody could determine. Null
+   * on a refusal that never ranked.
+   */
+  readonly stalenessUnknown: number | null;
   readonly assembledAt: Date;
 }
