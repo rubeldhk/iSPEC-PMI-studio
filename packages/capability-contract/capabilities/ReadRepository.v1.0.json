@@ -1,0 +1,153 @@
+{
+  "name": "ReadRepository",
+  "major": 1,
+  "minor": 0,
+  "scope": "project",
+  "changesState": false,
+  "description": "Read a hosted repository's content at a named revision. The repository is the project's binding, never an input.",
+  "requiredScope": {
+    "access": "read",
+    "resources": [
+      "repository.contents"
+    ]
+  },
+  "errorCategories": [
+    "adapter-fault",
+    "provider-throttled",
+    "provider-unavailable",
+    "credential-rejected",
+    "not-found",
+    "timed-out",
+    "revision-not-found",
+    "content-too-large"
+  ],
+  "limits": {
+    "maxPaths": 50,
+    "maxFileBytes": 1048576,
+    "maxResponseBytes": 5242880
+  },
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "revision",
+      "mode"
+    ],
+    "properties": {
+      "revision": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 255
+      },
+      "paths": {
+        "type": "array",
+        "maxItems": 50,
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "tree",
+          "files"
+        ]
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "revision"
+    ],
+    "properties": {
+      "revision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requested",
+          "resolvedCommit"
+        ],
+        "properties": {
+          "requested": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "resolvedCommit": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+          }
+        }
+      },
+      "entries": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "kind"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "file",
+                "dir"
+              ]
+            },
+            "sizeBytes": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "encoding",
+            "content",
+            "sizeBytes"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "encoding": {
+              "type": "string",
+              "enum": [
+                "utf8",
+                "base64"
+              ]
+            },
+            "content": {
+              "type": "string"
+            },
+            "sizeBytes": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "missing": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

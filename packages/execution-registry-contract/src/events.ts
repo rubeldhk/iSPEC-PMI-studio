@@ -1,5 +1,6 @@
 /**
- * T1023 (EPIC-037 Band A) — the 29-event vocabulary, in four classes.
+ * T1023 (EPIC-037 Band A) — the event vocabulary, in four classes: 29 at
+ * EPIC-037, 30 since EPIC-039 `T2132` added `capability-resolved`.
  *
  * ## Why the classes are not cosmetic
  *
@@ -64,6 +65,12 @@ export const GOVERNANCE_EVENTS = Object.freeze([
   'transition-reconciliation-requested',
   'transition-reconciliation-resolved',
   'transition-reconciliation-refused',
+  // EPIC-039 T2132 (FR-HUB-038, R-039-12) — a Capability Resolver decision made
+  // for a caller acting inside this execution. Governance, so it may follow a
+  // terminal lifecycle event. Payload: { resolutionId, capability,
+  // contractVersion?, outcome, refusalCode?, adapterKey?, adapterVersion?,
+  // provider? } — never a credential, a scope detail, an input or an output.
+  'capability-resolved',
 ] as const);
 
 export type LifecycleEventType = (typeof LIFECYCLE_EVENTS)[number];
@@ -85,7 +92,7 @@ export const EVENT_CLASSES = Object.freeze([
 ] as const);
 export type EventClass = (typeof EVENT_CLASSES)[number];
 
-/** Every type, in declaration order. Exactly 29. */
+/** Every type, in declaration order. Exactly 30 (EPIC-039 added `capability-resolved`). */
 export const ALL_EVENT_TYPES: readonly ExecutionEventType[] = Object.freeze([
   ...LIFECYCLE_EVENTS,
   ...CONTENT_EVENTS,

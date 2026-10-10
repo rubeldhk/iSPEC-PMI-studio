@@ -1,3 +1,4 @@
+import { looksLikeSecret } from '@pmi/capability-contract';
 import { scrubCredentialsDeep } from '../../core/errors.js';
 /**
  * T1043 (EPIC-037 Band A) — arguments are sanitised, and credentials refuse.
@@ -42,17 +43,16 @@ const CREDENTIAL_FIELDS = [
   'credentials',
 ];
 
-/** Shapes that are recognisably secrets wherever they appear. */
-const SECRET_PATTERNS: readonly RegExp[] = [
-  /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
-  /\bgh[pousr]_[A-Za-z0-9]{16,}\b/, // GitHub tokens
-  /\bsk-[A-Za-z0-9-]{16,}\b/, // OpenAI-style
-  /\bsk-ant-[A-Za-z0-9-]{16,}\b/, // Anthropic-style
-  /\bAKIA[0-9A-Z]{16}\b/, // AWS access key id
-  /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/, // Slack
-  /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/, // JWT
-  /\bpostgres(?:ql)?:\/\/[^\s:]+:[^\s@]+@/, // connection string with a password
-];
+/**
+ * Shapes that are recognisably secrets wherever they appear.
+ *
+ * `EPIC-039` `T2122` (`R-039-10`) — **moved, not copied**, into
+ * `@pmi/capability-contract`'s `redaction.ts`, so the execution registry and the
+ * Integration Hub share one list. Re-exported here unchanged for every existing
+ * importer; `packages/capability-contract/tests/redaction.spec.ts` asserts the
+ * two are the same object.
+ */
+export { SECRET_PATTERNS, looksLikeSecret } from '@pmi/capability-contract';
 
 export class CredentialDetectedError extends Error {
   constructor(readonly field: string) {
@@ -68,10 +68,6 @@ export class CredentialDetectedError extends Error {
 function isCredentialField(key: string): boolean {
   const normalised = key.toLowerCase().replace(/[^a-z_]/g, '');
   return CREDENTIAL_FIELDS.some((f) => normalised.includes(f.replace(/[^a-z_]/g, '')));
-}
-
-export function looksLikeSecret(value: string): boolean {
-  return SECRET_PATTERNS.some((p) => p.test(value));
 }
 
 /**

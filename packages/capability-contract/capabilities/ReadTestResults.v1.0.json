@@ -1,0 +1,122 @@
+{
+  "name": "ReadTestResults",
+  "major": 1,
+  "minor": 0,
+  "scope": "project",
+  "changesState": false,
+  "description": "Test results for a full commit id, shaped one-to-one onto the in-toto test-result predicate so intake does no interpretation.",
+  "requiredScope": {
+    "access": "read",
+    "resources": [
+      "ci.artifacts"
+    ]
+  },
+  "errorCategories": [
+    "adapter-fault",
+    "provider-throttled",
+    "provider-unavailable",
+    "credential-rejected",
+    "not-found",
+    "timed-out",
+    "revision-not-found",
+    "results-not-found",
+    "results-malformed",
+    "result-too-large"
+  ],
+  "limits": {
+    "maxTestNames": 20000
+  },
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "revision"
+    ],
+    "properties": {
+      "revision": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "revision",
+      "final",
+      "result",
+      "suites",
+      "passedTests",
+      "failedTests",
+      "skippedTests",
+      "source",
+      "observedAt"
+    ],
+    "properties": {
+      "revision": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+      },
+      "final": {
+        "type": "boolean"
+      },
+      "result": {
+        "type": "string",
+        "enum": [
+          "PASSED",
+          "FAILED",
+          "NONE"
+        ]
+      },
+      "suites": {
+        "type": "integer"
+      },
+      "passedTests": {
+        "type": "array",
+        "maxItems": 20000,
+        "items": {
+          "type": "string"
+        }
+      },
+      "failedTests": {
+        "type": "array",
+        "maxItems": 20000,
+        "items": {
+          "type": "string"
+        }
+      },
+      "skippedTests": {
+        "type": "array",
+        "maxItems": 20000,
+        "items": {
+          "type": "string"
+        }
+      },
+      "source": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "format"
+        ],
+        "properties": {
+          "runUrl": {
+            "type": "string"
+          },
+          "artifactName": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "junit-xml"
+            ]
+          }
+        }
+      },
+      "observedAt": {
+        "type": "string"
+      }
+    }
+  }
+}

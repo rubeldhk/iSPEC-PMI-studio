@@ -22,13 +22,13 @@ import {
   type ExecutionEventType,
 } from '../src/events.js';
 
-describe('T1024 · exactly 29 events in four classes', () => {
-  it('has 9 + 4 + 4 + 12 = 29', () => {
+describe('T1024 · exactly 30 events in four classes (EPIC-039 T2131 added capability-resolved)', () => {
+  it('has 9 + 4 + 4 + 13 = 30', () => {
     expect(LIFECYCLE_EVENTS).toHaveLength(9);
     expect(CONTENT_EVENTS).toHaveLength(4);
     expect(REGISTRATION_EVENTS).toHaveLength(4);
-    expect(GOVERNANCE_EVENTS).toHaveLength(12);
-    expect(ALL_EVENT_TYPES).toHaveLength(29);
+    expect(GOVERNANCE_EVENTS).toHaveLength(13);
+    expect(ALL_EVENT_TYPES).toHaveLength(30);
   });
 
   it('names no event twice', () => {
@@ -44,7 +44,7 @@ describe('T1024 · exactly 29 events in four classes', () => {
     const perClass = EVENT_CLASSES.map(
       (c) => ALL_EVENT_TYPES.filter((t) => classOf(t) === c).length,
     );
-    expect(perClass).toEqual([9, 4, 4, 12]);
+    expect(perClass).toEqual([9, 4, 4, 13]);
   });
 
   it('refuses a name outside the vocabulary', () => {

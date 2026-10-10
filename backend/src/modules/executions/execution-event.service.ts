@@ -142,7 +142,7 @@ export class ExecutionEventService {
     if (!isExecutionEventType(input.type)) {
       throw new RegistryRefusedError(
         'unsupported_contract_version',
-        `"${input.type}" is not in the 29-event vocabulary.`,
+        `"${input.type}" is not in the event vocabulary.`,
       );
     }
 

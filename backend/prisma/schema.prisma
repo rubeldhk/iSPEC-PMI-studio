@@ -3196,3 +3196,230 @@ model TaskStatusProposal {
   @@index([workspaceId])
   @@map("task_status_proposals")
 }
+
+// ---------------------------------------------------------------- integration hub
+//
+// EPIC-039 T2125 (specs/039-integration-hub/data-model.md) — ten tables, one
+// migration `20261009120000_epic039_integration_hub`. The triggers and CHECKs
+// that make four of them append-only and the vocabulary write-once are in the
+// migration SQL, asserted by tests/integration/integrations-constraints.spec.ts.
+// Relations are declared in SQL (foreign keys) and deliberately not mirrored as
+// Prisma relation fields: no read here navigates them, and adding back-relations
+// to Workspace and Project would edit two models other Epics own for nothing.
+
+/// The capability vocabulary — deployment-level, not tenant-scoped (FR-HUB-003).
+model CapabilityContractVersion {
+  id              String    @id @default(uuid())
+  name            String
+  scope           String
+  major           Int
+  minor           Int
+  status          String
+  document        Json
+  inputSchema     Json
+  outputSchema    Json
+  errorCategories String[]
+  requiredScope   Json
+  changesState    Boolean
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdBy       String
+  createdAt       DateTime  @default(now())
+
+  @@unique([name, major, minor])
+  @@map("capability_contract_versions")
+}
+
+model IntegrationRegistryEntry {
+  id           String    @id @default(uuid())
+  workspaceId  String
+  key          String
+  direction    String
+  status       String    @default("active")
+  listedOrder  Int
+  registeredBy String
+  registeredAt DateTime
+  retiredBy    String?
+  retiredAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId, listedOrder])
+  @@map("integration_registry_entries")
+}
+
+model ProjectCapabilityConfiguration {
+  id                    String   @id @default(uuid())
+  workspaceId           String
+  projectId             String
+  capability            String
+  adapters              Json     @default("[]")
+  permitDegraded        Boolean  @default(false)
+  permittedEnvironments String[]
+  onNotNarrowable       String
+  healthIntervalSeconds Int      @default(300)
+  providerBinding       Json     @default("{}")
+  configVersion         Int      @default(1)
+  decisionId            String?
+  updatedBy             String
+  updatedAt             DateTime @updatedAt
+  createdAt             DateTime @default(now())
+
+  @@unique([projectId, capability])
+  @@index([workspaceId])
+  @@map("project_capability_configurations")
+}
+
+/// Ciphertext only. Read with `ciphertext` selected ONLY by credential.vault.ts
+/// through integrations.store.prisma.ts (R-039-10, architecture-tested).
+model IntegrationCredential {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  projectId       String
+  registryEntryId String
+  kind            String
+  ciphertext      Bytes
+  iv              Bytes
+  authTag         Bytes
+  keyId           String
+  setBy           String
+  setAt           DateTime
+  createdAt       DateTime @default(now())
+
+  @@unique([workspaceId, projectId, registryEntryId])
+  @@index([workspaceId])
+  @@map("integration_credentials")
+}
+
+/// Append-only. `unknown` is never written — it is what a stale or missing row reads as.
+model IntegrationHealthCheck {
+  id                String   @id @default(uuid())
+  workspaceId       String
+  projectId         String
+  registryEntryId   String
+  state             String
+  reason            String?
+  detail            String?
+  retryAfterSeconds Int?
+  adapterVersion    String
+  narrowing         String?
+  source            String
+  intervalBucket    BigInt?
+  checkedAt         DateTime
+  durationMs        Int
+  createdAt         DateTime @default(now())
+
+  @@index([projectId, registryEntryId, checkedAt(sort: Desc)])
+  @@index([workspaceId])
+  @@map("integration_health_checks")
+}
+
+/// Append-only. Written before any provider call (FR-HUB-036, FR-HUB-037).
+model CapabilityResolution {
+  id               String   @id @default(uuid())
+  workspaceId      String?
+  scope            String
+  projectId        String?
+  caller           String
+  actorPrincipalId String
+  executionId      String?
+  capability       String
+  requestedMajor   Int
+  contractVersion  String?
+  outcome          String
+  refusalCode      String?
+  registryEntryId  String?
+  adapterKey       String?
+  adapterVersion   String?
+  provider         String?
+  modelIdentity    Json?
+  scopeGranted     Json?
+  reasons          Json
+  decidedAt        DateTime
+  createdAt        DateTime @default(now())
+
+  @@index([projectId, decidedAt(sort: Desc)])
+  @@index([registryEntryId, decidedAt(sort: Desc)])
+  @@index([workspaceId])
+  @@map("capability_resolutions")
+}
+
+/// Append-only. At most one per resolution; none reads as outcome unknown.
+model CapabilityInvocation {
+  resolutionId      String   @id
+  workspaceId       String?
+  projectId         String?
+  outcome           String
+  errorCategory     String?
+  providerRequestId String?
+  retryAfterSeconds Int?
+  durationMs        Int
+  endedAt           DateTime
+  createdAt         DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("capability_invocations")
+}
+
+model EvidenceIntakeAttempt {
+  id               String    @id @default(uuid())
+  workspaceId      String
+  projectId        String
+  workRef          Json
+  contractItemId   String
+  capability       String
+  revision         String?
+  attestedArtifact Json?
+  state            String
+  reason           String?
+  resolutionIds    String[]
+  attestationId    String?
+  attempts         Int       @default(0)
+  nextAttemptAt    DateTime?
+  giveUpAt         DateTime
+  requestedBy      String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([state, nextAttemptAt])
+  @@map("evidence_intake_attempts")
+}
+
+/// Immutable after insert.
+model NotificationDelivery {
+  id                String   @id @default(uuid())
+  workspaceId       String
+  projectId         String
+  cause             Json
+  recipients        String[]
+  resolutionId      String?
+  outcome           String
+  providerMessageId String?
+  failureReason     String?
+  createdAt         DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("notification_deliveries")
+}
+
+/// Analysis I1 — the append-only record of the deployment's Embed binding as
+/// each boot observed it. Deployment-level, not tenant-scoped (FR-HUB-084).
+model DeploymentCapabilityBinding {
+  id              String   @id @default(uuid())
+  capability      String
+  adapterKey      String?
+  providerBinding Json     @default("{}")
+  observedModel   Json?
+  modelId         String?
+  previousModelId String?
+  reindexRequired Boolean  @default(false)
+  health          String
+  reason          String?
+  observedBy      String
+  observedAt      DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([capability, observedAt(sort: Desc)])
+  @@map("deployment_capability_bindings")
+}

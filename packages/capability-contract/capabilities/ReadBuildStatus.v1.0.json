@@ -1,0 +1,104 @@
+{
+  "name": "ReadBuildStatus",
+  "major": 1,
+  "minor": 0,
+  "scope": "project",
+  "changesState": false,
+  "description": "The build outcome for a full commit id. A branch is refused: a status for a moving name attests nothing.",
+  "requiredScope": {
+    "access": "read",
+    "resources": [
+      "ci.checks"
+    ]
+  },
+  "errorCategories": [
+    "adapter-fault",
+    "provider-throttled",
+    "provider-unavailable",
+    "credential-rejected",
+    "not-found",
+    "timed-out",
+    "revision-not-found"
+  ],
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "revision"
+    ],
+    "properties": {
+      "revision": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "revision",
+      "state",
+      "final",
+      "checks",
+      "observedAt"
+    ],
+    "properties": {
+      "revision": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "success",
+          "failure",
+          "neutral",
+          "none"
+        ]
+      },
+      "final": {
+        "type": "boolean"
+      },
+      "checks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "state",
+            "final"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "success",
+                "failure",
+                "neutral"
+              ]
+            },
+            "final": {
+              "type": "boolean"
+            },
+            "url": {
+              "type": "string"
+            },
+            "completedAt": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "observedAt": {
+        "type": "string"
+      }
+    }
+  }
+}
