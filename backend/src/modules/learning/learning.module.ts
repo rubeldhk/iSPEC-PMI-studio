@@ -49,6 +49,7 @@ import { auditPort, executionsPort, principalsPort, projectsPort } from './main-
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
 import { CandidateViewService } from './candidate.view.js';
+import { DecisionRequester } from './decision.requester.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -113,15 +114,23 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
       useFactory: (ports: LearningPorts): LearningPolicyReader => new LearningPolicyReader({ current: (ws) => ports.policy.current(ws) }),
     },
     {
-      provide: SubmissionService,
+      provide: DecisionRequester,
       inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, LearningPolicyReader],
-      useFactory: (store: LearningStore, ports: LearningPorts, policy: LearningPolicyReader): SubmissionService =>
-        new SubmissionService({ store, ports, policy }),
+      useFactory: (store: LearningStore, ports: LearningPorts, policy: LearningPolicyReader): DecisionRequester =>
+        new DecisionRequester({ store, ports, policy }),
+    },
+    {
+      provide: SubmissionService,
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, LearningPolicyReader, DecisionRequester],
+      useFactory: (store: LearningStore, ports: LearningPorts, policy: LearningPolicyReader, requester: DecisionRequester): SubmissionService =>
+        // T2349: every recorded, non-provisional candidate asks EPIC-031 for a decision.
+        new SubmissionService({ store, ports, policy, requestDecision: (candidate) => requester.request(candidate) }),
     },
     {
       provide: CandidateViewService,
-      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN],
-      useFactory: (store: LearningStore, ports: LearningPorts): CandidateViewService => new CandidateViewService({ reads: store, ports }),
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, DecisionRequester],
+      useFactory: (store: LearningStore, ports: LearningPorts, requester: DecisionRequester): CandidateViewService =>
+        new CandidateViewService({ reads: store, ports, eligibilityOf: (candidate) => requester.eligibility(candidate) }),
     },
   ],
   exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService],

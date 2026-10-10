@@ -262,7 +262,7 @@ T2402 and T2405–T2407.
 
   Each failing condition is named in `failedConditions`. With no category opted in, 100% route to review (`FR-LRN-022`, `FR-LRN-026`, `FR-LRN-034`, `SC-LRN-008`; MP-2's target)
 - [X] T2347 [US3] Implement `backend/src/modules/learning/eligibility.ts` (unit test: T2346) — **Done**: `eligibility.ts` — pure `eligibilityOf`, six named conditions; a reconciled provisional execution counts as governed (`FR-LRN-063`).
-- [ ] T2348 [P] [US3] Write failing unit tests `backend/tests/unit/learning-decision-requester.spec.ts`. The `DecisionRequest`:
+- [X] T2348 [P] [US3] Write failing unit tests `backend/tests/unit/learning-decision-requester.spec.ts`. The `DecisionRequest`: — **Done**: 13 cases, red on the missing module.
   - targets `{type: 'learning-candidate', id}`;
   - uses `objectVersion = sha256(canonical core)`;
   - uses `actionType` `learning.approve.<category>` only on the automatic path, else `learning.review.<kind>`;
@@ -273,7 +273,7 @@ T2402 and T2405–T2407.
   - `pending` → `pending-review`;
   - `refused` (incl. automation not permitted, medium without gates) → stays `proposed` with the explanation;
   - an unreachable engine → `proposed` with `decision-path-unavailable` and never approved (`FR-LRN-020`, `FR-LRN-021`, `FR-LRN-024`, `FR-LRN-030`)
-- [ ] T2349 [US3] Implement `backend/src/modules/learning/decision.requester.ts` and call it from `submission.service.ts` (unit test: T2348) — `R-048-5`, `R-048-12`
+- [X] T2349 [US3] Implement `backend/src/modules/learning/decision.requester.ts` and call it from `submission.service.ts` (unit test: T2348) — `R-048-5`, `R-048-12` — **Done**: `decision.requester.ts`: the `DecisionRequest` shape, `actionTypeFor`, outcomes (pending → pending-review; refused/exception → proposed with the explanation; unreachable or unbound → proposed `decision-path-unavailable`; auto-executed → handed to the resolution path), `attempts` = distinct decisions (I1); wired as the submission hook and as the candidate view's eligibility.
 - [ ] T2350 [P] [US3] Write failing unit tests `backend/tests/unit/learning-approver-guard.spec.ts`.
 
   Accepted:
