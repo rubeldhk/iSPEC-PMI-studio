@@ -42,11 +42,11 @@ export interface Area {
 export const AREAS: readonly Area[];
 ```
 
-**Eight areas are `delivered`, two are `partly-delivered`, eight are `declared-not-delivered`, and zero are `undeclared`.**
+**Nine areas are `delivered`, two are `partly-delivered`, seven are `declared-not-delivered`, and zero are `undeclared`.**
 
 > **Corrected 2026-08-25 (Constitution XII Step B, `T1015`).** This said *five delivered*. The registry now reads **3 delivered · 2 partly-delivered · 13 declared-not-delivered · 0 undeclared** across eighteen areas; across the **seventeen V2 prototype screens** it is **2 / 2 / 13 / 0**. Both denominators are stated wherever a count appears — a figure that does not say what it counts is how two published counts came to disagree.
  Only the
-the reachable ones reach navigation and the route tree — eight `delivered` and two `partly-delivered`. The middle four carry their owning Epic's identifier so
+the reachable ones reach navigation and the route tree — nine `delivered` and two `partly-delivered`. The middle four carry their owning Epic's identifier so
 the outstanding obligation has a name rather than disappearing.
 
 > **Corrected 2026-08-24 (`T442s`).** This said six delivered and three awaiting an owner. `C1`'s remediation set those numbers across every artifact; `N1` then moved **Plan & Tasks** to `declared-not-delivered` during the Phase 2 implementation and only `areas.ts`, the handovers and the tests followed. `T442t` is the check that now disagrees when a document and the registry drift.
@@ -89,10 +89,11 @@ PMI-DOC-006 §4.1 are recorded, and how an address naming one is answered *not f
 /plan                          → Plan & Tasks               delivered  (EPIC-046, T1737 — Epics and their task progress)
 /plan/epics/:epicId            → Plan & Tasks               sub-view   (EPIC-046, T1719 — one Epic's Task Kanban)
 /context                       → Context                    delivered  (EPIC-038, T1269 — context inspection, an area not a Room)
+/experts                       → Engineering Experts        delivered  (EPIC-047, T1976 — the view-only Experts registry)
 *                              → not found
 ```
 
-**Eight delivered and two partly-delivered areas are routed, and that is the whole table.**
+**Nine delivered and two partly-delivered areas are routed, and that is the whole table.**
 
 > **Updated 2026-08-28 (`T1172`).** The Requirement Room area was **delivered**: `/requirement-room` renders the shared `RoomIndex`, which lists the workspace's Rooms and offers the way into a new one. It had stood `declared-not-delivered` since `T403n` because the Room screen existed per object while nothing listed the objects. The registry moved first and these figures followed it (superseded by the EPIC-042 note below). *(Updated 2026-08-28, `T1172`: the Requirement Room area was delivered — `/requirement-room` renders the shared `RoomIndex`. The registry moved first; these follow it.)* `/architecture` and `/governance` were listed
 here as declared until the analysis of 2026-08-24 ([../analysis.md](../analysis.md) `I1`); neither
@@ -209,10 +210,12 @@ Asserted by the Epic's own architecture check:
 `EPIC-010` `T200e`'s four buttons on the project view **are superseded** by navigation, and its
 `shell-page-routes.spec.tsx` is replaced by the shell's own. `T200a` is not.
 
-> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **8 delivered · 2 partly-delivered · 8 declared-not-delivered · 0 undeclared**.
+> **Updated 2026-09-05 (EPIC-042 `T1514`).** The Governance area was **delivered**: `/governance` renders the Constraints screen — the project's constraints, decomposition policy and offline mode, and the constitution PMI Studio renders from them (`specs/042-pmi-spec-kit-extension`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **9 delivered · 2 partly-delivered · 7 declared-not-delivered · 0 undeclared**.
 
-> **Updated 2026-09-06 (EPIC-046 `T1737`).** The **Plan & Tasks** area was **delivered**: `/plan` renders the project's Epics with their task progress and `/plan/epics/:epicId` renders one Epic's Task Kanban (`specs/046-task-kanban-governed-status`). It had stood `declared-not-delivered` since `N1` (2026-08-24) recorded that the tasks view was scoped to one specification and `:id` is not an address. `EPIC-012` owed it as `T441p`; that task is **superseded, not abandoned** — the specification-scoped list still works and is still reachable. The registry moved first and these figures follow it — **8 delivered · 2 partly-delivered · 8 declared-not-delivered · 0 undeclared**.
+> **Updated 2026-09-06 (EPIC-046 `T1737`).** The **Plan & Tasks** area was **delivered**: `/plan` renders the project's Epics with their task progress and `/plan/epics/:epicId` renders one Epic's Task Kanban (`specs/046-task-kanban-governed-status`). It had stood `declared-not-delivered` since `N1` (2026-08-24) recorded that the tasks view was scoped to one specification and `:id` is not an address. `EPIC-012` owed it as `T441p`; that task is **superseded, not abandoned** — the specification-scoped list still works and is still reachable. The registry moved first and these figures follow it — **9 delivered · 2 partly-delivered · 7 declared-not-delivered · 0 undeclared**.
 
-> **Updated 2026-10-08 (EPIC-038 `T1269`).** The **Context** area was **delivered**: `/context` renders the Context inspection screen — the project's assembled context packages, read from the real `GET /context/packages` (`specs/038-engineering-context`). It is an area, not a Room (`FR-CTX-070`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **8 delivered · 2 partly-delivered · 8 declared-not-delivered · 0 undeclared**.
+> **Updated 2026-10-08 (EPIC-038 `T1269`).** The **Context** area was **delivered**: `/context` renders the Context inspection screen — the project's assembled context packages, read from the real `GET /context/packages` (`specs/038-engineering-context`). It is an area, not a Room (`FR-CTX-070`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **9 delivered · 2 partly-delivered · 7 declared-not-delivered · 0 undeclared**.
 
-> **Updated 2026-10-08 (EPIC-031 `T759`).** The **Decision Inbox** area was **delivered**: `/decisions` renders the reader's approvals and blocked work, derived on every read from `GET /v1/inbox` (`specs/031-decision-policy-engine`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **8 delivered · 2 partly-delivered · 8 declared-not-delivered · 0 undeclared**.
+> **Updated 2026-10-08 (EPIC-031 `T759`).** The **Decision Inbox** area was **delivered**: `/decisions` renders the reader's approvals and blocked work, derived on every read from `GET /v1/inbox` (`specs/031-decision-policy-engine`). It had stood `declared-not-delivered` since the registry was built. The registry moved first and these figures follow it — **9 delivered · 2 partly-delivered · 7 declared-not-delivered · 0 undeclared**.
+
+> **Updated 2026-10-09 (EPIC-047 `T1976`).** The **Engineering Experts** area was **delivered**: `/experts` renders the view-only Experts registry — the workspace's Engineering Experts, each one's approved contract and versions, and its runs with their delegation trees, read from the real `GET /experts` (`specs/047-engineering-experts`). It is an area, not a Room (`FR-EXP-070`). It had stood `declared-not-delivered` since the registry was built, owed by `EPIC-028`. The registry moved first and these figures follow it — **9 delivered · 2 partly-delivered · 7 declared-not-delivered · 0 undeclared**.
