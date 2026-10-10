@@ -71,3 +71,33 @@ test Q11 asserts the same behaviour end to end and is the second guard.
 ### Reverted
 
 Restored from the copy; the suite returned to **147 passed**.
+
+---
+
+## 3. Phase 9 — the three ports are bound as composed (`T1978`, `T1980`, `T1982`)
+
+Recorded 2026-10-10. Not one of the two the Exit Criteria require; it proves the Constitution XI
+Tier 1 claim that the adapters are wired into the composed application, not only unit-tested.
+
+### The mutation
+
+`backend/src/modules/experts/experts.module.ts` — the three Phase 9 adapters removed from the
+`EXPERT_PORTS` factory, so every port falls back to `refusingPorts()`:
+
+```diff
+-        approvals: decisionApprovals(engine, decisions),
+-        evidence: catalogEvidence(catalog),
+-        context: assemblyContext(assembly),
++        // MUTATION: Phase 9 binding removed
+```
+
+### Observed
+
+`vitest run --project backend-integration tests/integration/experts-reachability.spec.ts` —
+**3 failed | 4 passed (7)**: each of the three `Phase 9 · T1978, T1980, T1982` cases failed, the
+evidence case because the port threw `EvidenceContracts is not bound`, the approvals and context
+cases because the refusal named the unbound port instead of `EPIC-031`'s or `EPIC-038`'s own.
+
+### Reverted
+
+Restored from the copy; the suite returned to **7 passed**.

@@ -1,16 +1,17 @@
 /**
  * `T1906` (EPIC-047) — the ports, and what each absence does.
  *
- * `R-047-13`. Four of these belong to work that is not on `main`:
- * `ContractApprovals` (`EPIC-031`, PR #4), `EvidenceContracts` (`EPIC-032`,
- * PR #3), `ContextAssembler` (`EPIC-038`, PR #5), and `ExpertGateways`, which
- * nothing in the programme provides yet (`R-047-2`). Until each is bound, it
- * **refuses** with a `503` naming itself and the Epic that owes it. A permissive
- * default would make an Expert look governed while nothing governed it — an
- * approval nobody gave, an Evidence Contract nobody checked.
+ * `R-047-13`. Each port with no owner **refuses** with a `503` naming itself and
+ * the Epic that owes it. A permissive default would make an Expert look governed
+ * while nothing governed it — an approval nobody gave, an Evidence Contract
+ * nobody checked.
  *
- * `ActorAccess` (`EPIC-024`) and `ExpertExecutions` (`EPIC-037`) are on `main`
- * and are bound to real adapters in `experts.module.ts`.
+ * Since Phase 9 (2026-10-10) `ContractApprovals` (`EPIC-031`),
+ * `EvidenceContracts` (`EPIC-032`) and `ContextAssembler` (`EPIC-038`) are bound
+ * to adapters under `adapters/`, and `ActorAccess` (`EPIC-024`) was bound from
+ * the start. Two still refuse: `ExpertGateways`, which nothing in the programme
+ * provides yet (`R-047-2`), and `ExpertExecutions`, for want of an execution
+ * identity for a platform-dispatched run (`DEF-047-001`).
  */
 import type { AgentContext, AgentDescriptor, AgentInvocation } from '@pmi/agent-contract';
 import { GovernanceSeamUnboundError } from '../../core/errors.js';
