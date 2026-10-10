@@ -805,6 +805,8 @@ enum SteeringSubject {
   business_rules
   technology_stack
   ai_governance
+  /// EPIC-048 T2316 (A-019-1, R-048-3) — the learning policy document.
+  learning_policy
 }
 
 enum SteeringDocumentStatus {
@@ -3195,4 +3197,208 @@ model TaskStatusProposal {
   @@index([taskId, proposedAt(sort: Desc)])
   @@index([workspaceId])
   @@map("task_status_proposals")
+}
+
+// ─────────────────────────────────────────────────────────────── EPIC-048
+// Governed Learning (T2317). Ten append-only tables, written by
+// `20261010090100_epic048_governed_learning` — hand-completed SQL with CHECKs
+// and triggers this schema cannot express. NEVER `prisma format` these models
+// and never let `migrate dev` plan over them. No `@relation` fields: the foreign
+// keys live in the SQL, so the Workspace and Project models stay untouched.
+// The store reads and writes them with raw SQL (`learning.store.prisma.ts`).
+
+/// An untrusted observation (data-model §1). Never knowledge.
+model LearningCandidate {
+  id                      String   @id
+  workspaceId             String
+  projectId               String
+  kind                    String
+  targetVersionId         String?
+  statement               String
+  category                String
+  subject                 String
+  subjectKey              String
+  sourceKind              String
+  executionId             String?
+  sourcePrincipalId       String
+  expertId                String?
+  expertContractVersionId String?
+  expertContractVersion   Int?
+  confidenceLevel         String
+  confidenceBasis         String
+  claimedScope            Json
+  proposedBand            String?
+  late                    Boolean  @default(false)
+  provisional             Boolean  @default(false)
+  policyVersion           Int
+  objectDigest            String
+  idempotencyKey          String
+  correlationId           String
+  submittedAt             DateTime
+  createdAt               DateTime @default(now())
+
+  @@unique([workspaceId, idempotencyKey], map: "learning_candidates_workspace_idempotency_key")
+  @@index([workspaceId])
+  @@map("learning_candidates")
+}
+
+/// An evidence citation — id and digest only (data-model §2).
+model LearningCandidateEvidence {
+  id              String   @id
+  workspaceId     String
+  candidateId     String
+  corroborationId String?
+  evidenceId      String
+  digestAlgorithm String
+  digest          String
+  createdAt       DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("learning_candidate_evidence")
+}
+
+/// A further source attached to an open candidate (data-model §3).
+model LearningCorroboration {
+  id                      String   @id
+  workspaceId             String
+  candidateId             String
+  sourceKind              String
+  executionId             String?
+  sourcePrincipalId       String
+  expertId                String?
+  expertContractVersionId String?
+  statement               String
+  confidenceLevel         String
+  confidenceBasis         String
+  late                    Boolean  @default(false)
+  idempotencyKey          String
+  correlationId           String
+  submittedAt             DateTime
+  createdAt               DateTime @default(now())
+
+  @@unique([workspaceId, idempotencyKey], map: "learning_corroborations_workspace_idempotency_key")
+  @@index([workspaceId])
+  @@map("learning_corroborations")
+}
+
+/// The lifecycle, by append (data-model §4). Current state = max seq.
+model LearningCandidateTransition {
+  id          String   @id
+  workspaceId String
+  candidateId String
+  seq         Int
+  state       String
+  reason      String?
+  decisionId  String?
+  actorKind   String
+  actorId     String
+  at          DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([candidateId, seq], map: "learning_candidate_transitions_candidate_seq_key")
+  @@index([workspaceId])
+  @@map("learning_candidate_transitions")
+}
+
+/// What the reviewer approved, written before the approval (data-model §5).
+model LearningReviewTerms {
+  id                String   @id
+  workspaceId       String
+  candidateId       String
+  decisionId        String
+  approvedStatement String
+  approvedScope     Json
+  classification    String
+  reviewerId        String
+  at                DateTime
+  createdAt         DateTime @default(now())
+
+  @@unique([candidateId, decisionId], map: "learning_review_terms_candidate_decision_key")
+  @@index([workspaceId])
+  @@map("learning_review_terms")
+}
+
+/// The stable identity of one piece of approved knowledge (data-model §6).
+model KnowledgeEntry {
+  id              String   @id
+  workspaceId     String
+  category        String
+  subjectKey      String
+  originProjectId String
+  createdAt       DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("knowledge_entries")
+}
+
+/// The trusted record — immutable, trigger-fenced (data-model §7).
+model KnowledgeEntryVersion {
+  id                  String   @id
+  workspaceId         String
+  entryId             String
+  version             Int
+  statement           String
+  proposedStatement   String
+  scope               Json
+  proposedScope       Json
+  classification      String
+  candidateId         String   @unique(map: "knowledge_entry_versions_candidate_key")
+  decisionId          String
+  resolvingDecisionId String?
+  approvedByKind      String
+  approvedBy          String
+  approvedAt          DateTime
+  createdAt           DateTime @default(now())
+
+  @@unique([entryId, version], map: "knowledge_entry_versions_entry_version_key")
+  @@index([workspaceId])
+  @@map("knowledge_entry_versions")
+}
+
+/// current / superseded / deprecated, by append (data-model §8).
+model KnowledgeVersionStatusEvent {
+  id                 String   @id
+  workspaceId        String
+  versionId          String
+  status             String
+  successorVersionId String?
+  reason             String?
+  actorId            String
+  decisionId         String?
+  candidateId        String?
+  at                 DateTime
+  createdAt          DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("knowledge_version_status_events")
+}
+
+/// Review flags; a later row clears an earlier one (data-model §9).
+model KnowledgeFlag {
+  id           String   @id
+  workspaceId  String
+  versionId    String?
+  candidateId  String?
+  kind         String
+  detail       String
+  raisedAt     DateTime
+  clearsFlagId String?
+  createdAt    DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("knowledge_flags")
+}
+
+/// Reindex outcomes (data-model §10).
+model KnowledgeRetrievability {
+  id          String   @id
+  workspaceId String
+  versionId   String
+  outcome     String
+  reason      String?
+  attemptedAt DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("knowledge_retrievability")
 }

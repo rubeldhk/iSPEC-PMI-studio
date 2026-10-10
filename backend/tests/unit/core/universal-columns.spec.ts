@@ -181,6 +181,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'engine_registrations',
       // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
       'epics',
+      // EPIC-048 T2317 — Governed Learning: four untrusted candidate tables,
+      // the reviewer's terms, and five trusted knowledge tables. All ten are
+      // append-only and carry a plain `createdAt` beside their domain instants.
       'evidence_contract_items',
       'evidence_contracts',
       'evidence_items',
@@ -195,6 +198,16 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'gate_outcomes',
       'generation_jobs',
       'handoffs',
+      'knowledge_entries',
+      'knowledge_entry_versions',
+      'knowledge_flags',
+      'knowledge_retrievability',
+      'knowledge_version_status_events',
+      'learning_candidate_evidence',
+      'learning_candidate_transitions',
+      'learning_candidates',
+      'learning_corroborations',
+      'learning_review_terms',
       'lifecycle_transitions',
       'loop_instance_configurations',
       'loop_objects',

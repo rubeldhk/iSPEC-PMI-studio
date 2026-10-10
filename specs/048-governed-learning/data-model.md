@@ -118,8 +118,9 @@ Trigger `learning_transitions_guard` (`BEFORE INSERT`) refuses:
 appends `proposed` with reason `decision-not-accepted` or `policy-auto-executed-review`, the
 refused `decisionId`, `actorKind = 'platform'`. It does **not** stay in `pending-review`: its
 `EPIC-031` decision is resolved, so nothing could ever move it again. `learning.request-pending`
-requests a new decision for it, at most three decision attempts per candidate (counted as
-`pending-review` rows). After the third, it stays `proposed` and the review window expires it.
+requests a new decision for it, at most three decision attempts per candidate (counted as the
+distinct `decisionId`s on its transitions — an auto-executed review never reaches `pending-review`,
+so counting those rows would not bound the `RK-5` loop). After the third, it stays `proposed` and the review window expires it.
 
 ## 5. `learning_review_terms` — what the reviewer approved
 
@@ -170,7 +171,6 @@ Immutable (`reject_mutation()`).
 | `approvedByKind` | `human` \| `policy` | CHECKed; there is no `agent` value to write (`FR-LRN-027`) |
 | `approvedBy` | text | The human's user id, or `policy:v<N>` |
 | `approvedAt` | timestamptz | |
-| `attestationId?` | text | `EPIC-032` evidence id of the `approval/v1` attestation (`R-048-19`) |
 
 **Insert trigger `knowledge_versions_require_decision`** (`R-048-4`, `R-048-6`) refuses the row
 unless all of these hold:
@@ -180,6 +180,15 @@ unless all of these hold:
 - `COALESCE(resolvingDecisionId, decisionId)` has outcome `approved` or `auto-executed`, and is
   `approved` with `actorKind = 'human'` whenever `approvedByKind = 'human'`;
 - `approvedBy` is not the candidate's `sourcePrincipalId` or `expertId`.
+
+**Implementation note (2026-10-10, `T2317`)**: the `attestationId` column first listed here is
+**not** on the table. The attestation is contributed **after** the version commits (`R-048-19`),
+and the version is immutable, so the id could only ever be written `NULL`. The attestation is found
+by its `attachedTo` decision in `EPIC-032`; a failed contribution is a visible
+`attestation-missing` flag, cleared by a later flag row when the retry succeeds. The
+source-exclusion half of the insert trigger (`approvedBy` ≠ the candidate's source principal or
+Expert) needs nothing from `EPIC-031`, so it is already in the migration as
+`knowledge_versions_approver_not_source`; the decision half waits for `T2393`.
 
 Then `reject_mutation()` on `UPDATE`/`DELETE` (`FR-LRN-031`, `FR-LRN-039`). The `decisionId` FK makes
 this table depend on `EPIC-031`'s migration — one more reason for the merge order.
@@ -193,6 +202,7 @@ this table depend on `EPIC-031`'s migration — one more reason for the merge or
 | `status` | `current` \| `superseded` \| `deprecated` | |
 | `successorVersionId?` | text | Required when `superseded` (`FR-LRN-032`) |
 | `reason?`, `actorId`, `decisionId?` | | Required when `deprecated` (`FR-LRN-033`) |
+| `candidateId?` | text | The candidate whose approval caused the status — a deprecation writes no version, so this is what `learning_transitions_guard` finds in its transaction (added in `T2317`) |
 | `at` | timestamptz | |
 
 The materialiser writes `current` for a new version and, for a supersession, `superseded` on the
