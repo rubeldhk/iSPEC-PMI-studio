@@ -85,6 +85,8 @@ import { SteeringRulesetSource } from './steering.adapter.js';
         new DecisionService(engine, repository, policies),
     },
   ],
-  exports: [DecisionEngine, DecisionService],
+  // EPIC-047 T1978 — DECISION_REPOSITORY is exported so a consumer that holds a
+  // decision id can read its resolution (`resolutionOf`); EPIC-031 offers no callback.
+  exports: [DecisionEngine, DecisionService, DECISION_REPOSITORY],
 })
 export class DecisionModule {}

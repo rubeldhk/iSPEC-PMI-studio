@@ -13,15 +13,30 @@
  *
  * ## What is bound, and what refuses
  *
- * `ActorAccess` is `EPIC-024`'s, on `main`, and bound for real. The four ports
- * whose owners are open pull requests — or, for gateways, nobody yet — are
- * bound **refusing** (`R-047-13`), each naming itself in its `503`. Phase 9
- * replaces them when `EPIC-031`, `EPIC-032` and `EPIC-038` merge.
+ * `ActorAccess` is `EPIC-024`'s, and bound for real. Phase 9 (`T1978`, `T1980`,
+ * `T1982`) binds three more to their owners: `ContractApprovals` to `EPIC-031`'s
+ * decision engine, `EvidenceContracts` to `EPIC-032`'s catalog and
+ * `ContextAssembler` to `EPIC-038`'s assembly. Two still refuse, each naming
+ * itself in its `503`: `ExpertGateways` (`R-047-2` — nothing selects a gateway
+ * by model yet) and `ExpertExecutions` (`DEF-047-001` — no execution identity
+ * for a platform-dispatched run).
  */
 import { Module } from '@nestjs/common';
+import { AssemblyService } from '../context/assembly.service.js';
+import { ContextModule } from '../context/context.module.js';
+import type { DecisionRepository } from '../decision/decision.repository.js';
+import { DecisionModule } from '../decision/decision.module.js';
+import { DECISION_REPOSITORY } from '../decision/decision.tokens.js';
+import { DecisionEngine } from '../decision/evaluator.js';
+import type { ContractCatalog } from '../evidence/contract.loader.js';
+import { EvidenceModule } from '../evidence/evidence.module.js';
+import { EVIDENCE_CATALOG } from '../evidence/evidence.tokens.js';
 import { prismaClient } from '../../persistence/prisma.js';
 import { AccessInheritanceService } from '../access/access-inheritance.service.js';
 import { AccessModule } from '../access/access.module.js';
+import { assemblyContext } from './adapters/context.adapter.js';
+import { decisionApprovals } from './adapters/decisions.adapter.js';
+import { catalogEvidence } from './adapters/evidence.adapter.js';
 import { AssignmentService } from './assignment.service.js';
 import { Authoring } from './authoring.js';
 import { DispatchService } from './dispatch.service.js';
@@ -49,7 +64,7 @@ export class ExpertsService {
 }
 
 @Module({
-  imports: [AccessModule],
+  imports: [AccessModule, DecisionModule, EvidenceModule, ContextModule],
   controllers: [ExpertsController],
   providers: [
     { provide: ExpertsService, useFactory: (): ExpertsService => new ExpertsService() },
@@ -75,8 +90,23 @@ export class ExpertsService {
       inject: [ACTOR_ACCESS],
       useFactory: (access: ActorAccess): Authoring => new Authoring(access),
     },
-    // R-047-13 — bound refusing; Phase 9 binds EPIC-031/032/038's adapters.
-    { provide: EXPERT_PORTS, useFactory: (): ExpertPorts => refusingPorts() },
+    // R-047-13, Phase 9 — EPIC-031/032/038 bound to their adapters; gateways and
+    // executions still refuse (R-047-2, DEF-047-001).
+    {
+      provide: EXPERT_PORTS,
+      inject: [DecisionEngine, DECISION_REPOSITORY, EVIDENCE_CATALOG, AssemblyService],
+      useFactory: (
+        engine: DecisionEngine,
+        decisions: DecisionRepository,
+        catalog: ContractCatalog,
+        assembly: AssemblyService,
+      ): ExpertPorts => ({
+        ...refusingPorts(),
+        approvals: decisionApprovals(engine, decisions),
+        evidence: catalogEvidence(catalog),
+        context: assemblyContext(assembly),
+      }),
+    },
     {
       provide: RegistryService,
       inject: [EXPERTS_STORE, Authoring, EXPERT_PORTS],

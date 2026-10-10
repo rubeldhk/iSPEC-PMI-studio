@@ -189,14 +189,14 @@ adapters and is blocked until those PRs merge.
 
 ---
 
-## Phase 9: Dependency adapters — **BLOCKED until `EPIC-031`, `EPIC-032` and `EPIC-038` merge**
+## Phase 9: Dependency adapters — unblocked 2026-10-10, when `EPIC-031` (#4), `EPIC-032` (#3) and `EPIC-038` (#5) merged
 
-- [ ] T1977 [P] Write failing unit tests in `backend/tests/unit/expert-adapter-decisions.spec.ts` — submission calls `DecisionEngine.decide` with `actionType: 'expert-contract.approve'`, the version as target and its risk class as `proposedClass`; resolution is read through `resolutionOf`; and an architecture assertion that the local `RiskBand` equals `packages/decision-contract`'s (`R-047-5`, `R-047-6`)
-- [ ] T1978 Implement `backend/src/modules/experts/adapters/decisions.adapter.ts` and bind it in `experts.module.ts` (unit test: T1977)
-- [ ] T1979 [P] Write failing unit tests in `backend/tests/unit/expert-adapter-evidence.spec.ts` — `exists(workClass, contractVersion)` answers through `ContractCatalog.get`; a catalog fault propagates rather than reading as absent (`R-047-11`)
-- [ ] T1980 Implement `backend/src/modules/experts/adapters/evidence.adapter.ts` and bind it (unit test: T1979)
-- [ ] T1981 [P] Write failing unit tests in `backend/tests/unit/expert-adapter-context.spec.ts` — the context policy maps onto `AssembleInput` field for field, and the package is bound with `bindExecution` (`R-047-10`)
-- [ ] T1982 Implement `backend/src/modules/experts/adapters/context.adapter.ts` and bind it (unit test: T1981)
+- [X] T1977 [P] Write failing unit tests in `backend/tests/unit/expert-adapter-decisions.spec.ts` — submission calls `DecisionEngine.decide` with `actionType: 'expert-contract.approve'`, the version as target and its risk class as `proposedClass`; resolution is read through `resolutionOf`; and an architecture assertion that the local `RiskBand` equals `packages/decision-contract`'s (`R-047-5`, `R-047-6`)
+- [X] T1978 Implement `backend/src/modules/experts/adapters/decisions.adapter.ts` and bind it in `experts.module.ts` (unit test: T1977)
+- [X] T1979 [P] Write failing unit tests in `backend/tests/unit/expert-adapter-evidence.spec.ts` — `exists(workClass, contractVersion)` answers through `ContractCatalog.get`; a catalog fault propagates rather than reading as absent (`R-047-11`)
+- [X] T1980 Implement `backend/src/modules/experts/adapters/evidence.adapter.ts` and bind it (unit test: T1979)
+- [X] T1981 [P] Write failing unit tests in `backend/tests/unit/expert-adapter-context.spec.ts` — the context policy maps onto `AssembleInput` field for field, and the package is bound with `bindExecution` (`R-047-10`)
+- [X] T1982 Implement `backend/src/modules/experts/adapters/context.adapter.ts` and bind it (unit test: T1981)
 
 ---
 
