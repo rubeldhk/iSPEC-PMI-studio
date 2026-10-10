@@ -7,6 +7,8 @@
  * person. Every read is scoped to the caller's workspace.
  */
 import {
+  CLOSURE_KINDS,
+  isClosureKind,
   isRiskBand,
   RISK_BANDS,
   type ActorRef,
@@ -120,6 +122,31 @@ export class DecisionService {
     });
     if (result.outcome === 'refused') {
       throw new ForbiddenError('You may not approve this decision.', { decisionId, result });
+    }
+    return result;
+  }
+
+  /**
+   * `POST /decisions/:id/refuse` — `FR-DPE-017` (`A-031-1`). Closes a pending
+   * decision as `rejected` or `withdrawn` (an HTTP caller is a human; `expired`
+   * is the requesting automation's, in process). A closure that was recorded
+   * carries `explanation.closure`; one that was not is an unauthorized attempt
+   * — audited by the engine, the decision left pending — and answers `403`
+   * with the reason, as an unauthorized approval does.
+   */
+  async refuse(principal: Principal, decisionId: string, body: unknown): Promise<DecisionResult> {
+    const input = record(body, 'A closure');
+    const kind = input['kind'];
+    if (!isClosureKind(kind)) throw new ValidationFailedError(`kind is one of ${CLOSURE_KINDS.join(', ')}.`);
+    const result = await this.engine.refuse({
+      workspaceId: principal.workspaceId,
+      decisionId,
+      by: this.actor(principal),
+      kind,
+      reason: text(input['reason'], 'reason'),
+    });
+    if (result.explanation.closure === undefined) {
+      throw new ForbiddenError('You may not close this decision.', { decisionId, result });
     }
     return result;
   }

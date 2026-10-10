@@ -46,6 +46,7 @@ suite('T736 · the decision engine is reachable through the composed application
   it.each([
     ['post', '/decisions'],
     ['post', '/decisions/probe/approve'],
+    ['post', '/decisions/probe/refuse'],
     ['post', '/decisions/probe/exceptions'],
     ['get', '/decisions/probe/explanation'],
     ['get', '/decision-metrics'],
@@ -163,6 +164,67 @@ suite('T736 · the decision engine is reachable through the composed application
       const res = await get('/decision-metrics');
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ decisions: 2, bandDistribution: { high: 2 }, autoExecutionRate: 0 });
+    });
+  });
+
+  describe('T2509 · FR-DPE-017 — closing a pending decision over HTTP', () => {
+    let pendingId = '';
+
+    it('holds a second release pending', async () => {
+      const res = await post('/decisions', {
+        actionType: 'release.promote',
+        target: { type: 'release', id: 'r-2' },
+        projectId: 'p_t736',
+        objectVersion: '2',
+      });
+      expect(res.status, JSON.stringify(res.body)).toBe(201);
+      pendingId = res.body.decisionId;
+    });
+
+    it('refuses a closure with no reason with 400', async () => {
+      const res = await post(`/decisions/${pendingId}/refuse`, { kind: 'withdrawn', reason: ' ' });
+      expect(res.status).toBe(400);
+    });
+
+    it('refuses the requester rejecting their own request with 403, carrying the reason, and leaves it pending', async () => {
+      const res = await post(`/decisions/${pendingId}/refuse`, { kind: 'rejected', reason: 'changed my mind' });
+      expect(res.status).toBe(403);
+      expect(res.body.error.details.result.explanation.authorityApplied).toMatch(/withdraw it instead/);
+      const audit = await get('/audit?targetType=policy_decision');
+      expect(audit.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ targetId: pendingId, outcome: 'refused', detail: expect.objectContaining({ decisionOutcome: 'closure-refused' }) }),
+        ]),
+      );
+      expect((await get(`/decisions/${pendingId}/explanation`)).body.resolvedBy).toBeNull();
+    });
+
+    it('records the requester withdrawing it, as refused with its kind and reason', async () => {
+      const res = await post(`/decisions/${pendingId}/refuse`, { kind: 'withdrawn', reason: 'superseded by r-3' });
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+      expect(res.body).toMatchObject({
+        outcome: 'refused',
+        explanation: { closure: { kind: 'withdrawn', reason: 'superseded by r-3' } },
+      });
+    });
+
+    it('refuses closing it a second time with 409', async () => {
+      const res = await post(`/decisions/${pendingId}/refuse`, { kind: 'withdrawn', reason: 'again' });
+      expect(res.status).toBe(409);
+    });
+
+    it('reads the closure back from the object, and the Inbox does not show it as blocked', async () => {
+      const history = await get('/decision-objects/release/r-2/decisions');
+      expect(history.body.decisions).toEqual([
+        expect.objectContaining({ decisionId: pendingId, outcome: 'pending', resolvedBy: expect.any(String) }),
+        expect.objectContaining({
+          outcome: 'refused',
+          resolves: pendingId,
+          explanation: expect.objectContaining({ closure: { kind: 'withdrawn', reason: 'superseded by r-3' } }),
+        }),
+      ]);
+      const inbox = (await get('/inbox')).body.entries as Array<{ objectRef: { id: string } }>;
+      expect(inbox.filter((e) => e.objectRef.id === 'r-2')).toEqual([]);
     });
   });
 });

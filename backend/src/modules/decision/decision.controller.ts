@@ -6,6 +6,7 @@
  * |---|---|
  * | `POST /decisions` | the Decide seam — `409` when refused, carrying the decision |
  * | `POST /decisions/:id/approve` | `FR-DPE-014`, `FR-DPE-015` — `403` without authority |
+ * | `POST /decisions/:id/refuse` | `FR-DPE-017` — `403` for an unauthorized closure |
  * | `POST /decisions/:id/exceptions` | `FR-DPE-013` |
  * | `GET /decisions/:id/explanation` | `FR-DPE-040`, `FR-DPE-043` |
  * | `GET /decision-metrics` | `FR-DPE-033` — not `/decisions/metrics`, see below |
@@ -65,6 +66,12 @@ export class DecisionController {
   @HttpCode(200)
   approve(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string) {
     return this.decisions.approve(requireAuth(ctx), id);
+  }
+
+  @Post('decisions/:id/refuse')
+  @HttpCode(200)
+  refuse(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string, @Body() body: unknown) {
+    return this.decisions.refuse(requireAuth(ctx), id, strip(body));
   }
 
   @Post('decisions/:id/exceptions')
