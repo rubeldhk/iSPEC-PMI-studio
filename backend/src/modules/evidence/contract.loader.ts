@@ -136,3 +136,42 @@ export class ContractCatalog {
     return [...this.byClass.keys()].sort();
   }
 }
+
+/** The slice of the repository the catalog's load reads. */
+export interface InFlightSource {
+  inFlightContractVersions(): Promise<Set<string>>;
+}
+
+/**
+ * `T1994` — the catalog as the application builds it (`FR-EVS-024`).
+ *
+ * The in-flight set is read first, so a version weakening one that work is in
+ * flight under is refused rather than loaded. If the store cannot say, every
+ * version is treated as in flight: the strict reading. Every refusal is
+ * **reported** — a version its author saw ship, silently left unloaded while
+ * new work keeps binding its predecessor, is a refusal nobody can see.
+ */
+export async function loadCatalog(
+  repository: InFlightSource,
+  options: { directory?: string; report: (message: string) => void },
+): Promise<ContractCatalog> {
+  const everything = ContractCatalog.fromDirectory(options.directory);
+  const inFlight = await repository.inFlightContractVersions().catch(
+    () =>
+      new Set(
+        everything.workClasses().flatMap((c) => {
+          const latest = everything.latest(c)!.contractVersion;
+          return Array.from({ length: latest }, (_, i) => versionKey(c, i + 1));
+        }),
+      ),
+  );
+  const catalog = ContractCatalog.fromDirectory(options.directory, inFlight);
+  for (const refusal of catalog.refusals()) {
+    options.report(
+      `Evidence Contract ${refusal.workClass} v${refusal.contractVersion} refused at load: it weakens ` +
+        `v${refusal.weakens}, which work is in flight under — ${refusal.reasons.join('; ')}. ` +
+        `New work keeps binding v${refusal.weakens} (FR-EVS-024).`,
+    );
+  }
+  return catalog;
+}
