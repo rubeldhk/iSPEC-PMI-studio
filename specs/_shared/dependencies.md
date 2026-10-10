@@ -29,6 +29,8 @@ Every third-party component the platform depends on, why it is here, and what it
 | D-11a | @opentelemetry/sdk-node + auto-instrumentations | 0.5x / 0.5x | Traces and metrics (PP-010, research R-011) | Apache-2.0 | ☐ | Low — vendor-neutral by design |
 | D-11b | pino | 9.x | Structured JSON logging with request/job context | MIT | ☐ | Low |
 | **D-30** | **@nestjs/serve-static** | **4.x** | Serves the built web client from the API on one origin, with the SPA history fallback (`EPIC-014` `R-014-1`) | MIT | ☐ | Low — a thin wrapper over the Express static handler the adapter already ships |
+| **D-33** | **fflate** | **0.8.x** | Unzips the GitHub Actions artifact that carries JUnit XML for `ReadTestResults` — `unzipSync` with a `filter` accepting only `*.xml` entries ≤ 50 MiB expanded (zip-bomb bound). Confined to `@pmi/capability-adapter-github` (`EPIC-039` `R-039-9`, `T2247`). Context7 `/101arrowz/fflate` | MIT | ☐ | Low — pure JS, no native code, no transitive dependencies |
+| **D-34** | **fast-xml-parser** | **5.x** | Parses JUnit XML from untrusted CI artifacts for `ReadTestResults`, with `processEntities: false` so no entity is expanded. Confined to `@pmi/capability-adapter-github` (`EPIC-039` `R-039-9`, `T2247`). Context7 `/naturalintelligence/fast-xml-parser` | MIT | ☐ | Low — pure JS; configured for untrusted input; one transitive dependency (`strnum`) |
 
 ### D-08 in detail — the one that needs a decision
 

@@ -83,6 +83,10 @@ const PROJECT_DIRS: Record<string, string> = {
   // EPIC-005 T056a — the first component tests, registered the day the
   // PMI-DOC-004 hold discharged and the frontend stopped being a scaffold.
   frontend: 'frontend/tests/unit',
+  // EPIC-039 T2103 — the capability contract and its adapters, registered in the
+  // same change in vitest.workspace.ts, test:unit and here (the T537/T539 rule).
+  'capability-contract': 'packages/capability-contract/tests',
+  'capability-adapters': 'packages/capability-adapters',
 };
 
 describe('T537 · every project named by test:unit actually collects tests', () => {
@@ -169,5 +173,20 @@ describe('T867 (EPIC-029) · the design test areas are collected, not assumed', 
     const frontendProject = /name:\s*'frontend'[\s\S]*?include:\s*\[([^\]]*)\]/.exec(vitestConfig);
     expect(frontendProject, 'the frontend project is not in vitest.workspace.ts').not.toBeNull();
     expect(frontendProject![1]).toContain('tests/unit/**/*.spec.{ts,tsx}');
+  });
+});
+
+describe('T2103 (EPIC-039) · the capability projects are registered in all three places', () => {
+  it.each(['capability-contract', 'capability-adapters'])('%s is a vitest project, in test:unit, and collects tests', (project) => {
+    expect(vitestConfig, `${project} is not defined in vitest.workspace.ts`).toMatch(new RegExp(`name:\\s*'${project}'`));
+    expect(unitProjects, `${project} is not in the test:unit script`).toContain(project);
+    expect(hasTestFile(join(ROOT, PROJECT_DIRS[project] as string)), `${project} collects nothing`).toBe(true);
+  });
+
+  it('neither project tolerates an empty run (no passWithNoTests)', () => {
+    for (const project of ['capability-contract', 'capability-adapters']) {
+      const block = new RegExp(`name:\\s*'${project}'[^}]*`).exec(vitestConfig)?.[0] ?? '';
+      expect(block, project).not.toContain('passWithNoTests');
+    }
   });
 });

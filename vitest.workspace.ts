@@ -257,6 +257,28 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-039 T2103 — the capability contract: the vocabulary, the five
+    // contract documents and their conformance check, the resolver's pure
+    // eligibility core. No `passWithNoTests` (TS-005).
+    test: {
+      name: 'capability-contract',
+      root: './packages/capability-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    // EPIC-039 T2103 — the four adapter packages, each running the contract's
+    // exported conformance suite (fixture providers, and real providers over
+    // RECORDED responses — never the network). No `passWithNoTests`.
+    test: {
+      name: 'capability-adapters',
+      root: './packages/capability-adapters',
+      include: ['**/tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     // EPIC-043 T1399 — the pmi-studio server: driven through InMemoryTransport by
     // a real Client; the fixture conformance suite runs against it (R-037-10).
     test: {

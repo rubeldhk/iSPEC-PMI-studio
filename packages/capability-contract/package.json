@@ -1,0 +1,17 @@
+{
+  "name": "@pmi/capability-contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "EPIC-039 — what a platform caller and a capability adapter must agree on: the vocabulary, the contracts, the adapter interface, the resolver's pure eligibility core, and the adapter conformance suite. No Nest, no Prisma, no provider name.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./conformance": "./tests/conformance/capability-conformance.suite.ts",
+    "./capabilities/*": "./capabilities/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
