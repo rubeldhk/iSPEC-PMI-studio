@@ -1,11 +1,11 @@
 /**
  * `T1943` (EPIC-047) — dispatch through its real routes.
  *
- * Constitution XI Tier 1, quickstart Q5–Q7. As composed, dispatch refuses
- * `503` — no runner and no execution identity exist anywhere yet
- * (`DEF-047-001`). The ports are then replaced by **in-test bindings that
- * record every call** (`R-047-13`, analysis finding I1), here, visibly; the
- * module's own defaults stay refusing.
+ * Constitution XI Tier 1, quickstart Q5–Q7. As composed, a dispatch is
+ * registered with `EPIC-037` under the Expert's own identity (`DEF-047-001`)
+ * and then refused `503`, because no agent runtime is composed into the API
+ * (`DEF-047-002`). The ports are then replaced by **in-test bindings that
+ * record every call** (`R-047-13`, analysis finding I1), here, visibly.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
@@ -45,7 +45,13 @@ beforeAll(async () => {
       await db.query(
         `INSERT INTO "access_grants" ("id","workspaceId","artifactType","artifactId","userId","level","grantedById")
          VALUES ('g_reg',$1,'expert-registry',$1,$2,'edit',$2),
-                ('g_spec',$1,'specification','sp_1',$2,'read',$2)`,
+                ('g_spec',$1,'specification','sp_1',$2,'read',$2),
+                ('g_proj',$1,'project','pr_1',$2,'edit',$2)`,
+        [ids.workspaceId, ids.userId],
+      );
+      // DEF-047-001 — a run is registered on its project, which the dispatcher must be able to edit.
+      await db.query(
+        `INSERT INTO "projects" ("id","workspaceId","name","ownerUserId","updatedAt") VALUES ('pr_1',$1,'Dispatch',$2,now())`,
         [ids.workspaceId, ids.userId],
       );
     },
@@ -70,7 +76,7 @@ const dispatchBody = (over: Record<string, unknown> = {}) => ({
 });
 
 suite('T1943 · the dispatch routes', () => {
-  it('as composed, an approved Expert still cannot be dispatched: 503 naming the unbound port', async () => {
+  it('as composed, an approved Expert is registered and then refused 503 at the agent runtime (DEF-047-002)', async () => {
     const ports = app.get<ExpertPorts>(EXPERT_PORTS, { strict: false });
     // Registration and approval need their own in-test bindings first.
     ports.evidence = evidenceKnowing('implementation@1');
@@ -87,7 +93,9 @@ suite('T1943 · the dispatch routes', () => {
 
     const res = await api().post(`/${PREFIX}/experts/${expertId}/dispatch`).set('Cookie', harness.cookie).send(dispatchBody());
     expect(res.status).toBe(503);
-    expect(JSON.stringify(res.body)).toMatch(/ExpertExecutions.*DEF-047-001/);
+    expect(JSON.stringify(res.body)).toMatch(/ExpertGateways is not bound.*DEF-047-002/);
+    // DEF-047-001 — the refusal is on a real EPIC-037 execution, not lost.
+    expect(JSON.stringify(res.body)).toMatch(/"executionId":"[^"]+"/);
   });
 
   it('Q7 — with in-test runner and registry: runs, falling back, and records why', async () => {

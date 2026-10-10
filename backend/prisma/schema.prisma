@@ -3461,6 +3461,41 @@ model TaskAssignment {
   @@map("task_assignments")
 }
 
+/// EPIC-047 T2563, DEF-047-001 — which agent principal acts for an Expert on
+/// behalf of a sponsor: one per workspace, Expert key and sponsoring user,
+/// because EPIC-028 freezes a principal's sponsor. Append-only (trigger); the
+/// foreign keys to principals and users are declared in the migration.
+model ExpertPrincipal {
+  workspaceId   String
+  expertKey     String
+  sponsorUserId String
+  principalId   String
+  createdAt     DateTime @default(now())
+
+  @@id([workspaceId, expertKey, sponsorUserId])
+  @@index([workspaceId])
+  @@map("expert_principals")
+}
+
+/// EPIC-047 T2563, DEF-047-001 — the identity refs an Expert execution
+/// registered with, so every later call acts under them. Append-only (trigger);
+/// the foreign keys to executions and principals are declared in the migration.
+model ExpertExecutionIdentity {
+  executionId               String   @id
+  workspaceId               String
+  projectId                 String
+  principalId               String
+  agentSnapshotId           String
+  connectorRegistrationId   String
+  sponsorUserId             String
+  delegationId              String
+  delegationIdentityVersion Int
+  createdAt                 DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("expert_execution_identities")
+}
+
 /// EPIC-031 T730 — data-model §2. One evaluation, immutable once written. An
 /// approval of a pending decision is a NEW row that resolves it, never an edit.
 model PolicyDecision {

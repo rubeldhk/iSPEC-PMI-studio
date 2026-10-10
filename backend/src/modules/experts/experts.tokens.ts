@@ -9,9 +9,11 @@
  * Since Phase 9 (2026-10-10) `ContractApprovals` (`EPIC-031`),
  * `EvidenceContracts` (`EPIC-032`) and `ContextAssembler` (`EPIC-038`) are bound
  * to adapters under `adapters/`, and `ActorAccess` (`EPIC-024`) was bound from
- * the start. Two still refuse: `ExpertGateways`, which nothing in the programme
- * provides yet (`R-047-2`), and `ExpertExecutions`, for want of an execution
- * identity for a platform-dispatched run (`DEF-047-001`).
+ * the start. Since Phase 15 (`DEF-047-001`) `ExpertExecutions` is bound to
+ * `EPIC-037` under an agent principal minted per Expert and sponsor, and
+ * `ExpertGateways` to a runner over `EPIC-028`'s seam that refuses, naming
+ * `DEF-047-002`, until an agent runtime is composed into the API. The refusing
+ * factories below remain the defaults for tests that compose ports themselves.
  */
 import type { AgentContext, AgentDescriptor, AgentInvocation } from '@pmi/agent-contract';
 import { GovernanceSeamUnboundError } from '../../core/errors.js';

@@ -200,6 +200,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'executions',
       'expert_contract_versions',
       'expert_delegation_policies',
+      // EPIC-047 T2563, DEF-047-001 — an Expert run's execution identity.
+      'expert_execution_identities',
+      'expert_principals',
       'expert_session_limits',
       'expert_sessions',
       'gate_final_outcomes',

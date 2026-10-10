@@ -38,7 +38,7 @@
       "gatedScript": "test:arch:gated",
       "evidence": "specs/047-engineering-experts/tier2-transcript.md",
       "owes": "T1992 (EPIC-047) — the Tier 2 Engineering Experts journey: open /experts, open an Expert, compare versions, open a run with its delegation tree, at 360px",
-      "why": "The journey needs a running application with real Experts and real runs. Registering and approving work since Phase 9 bound EPIC-032 and EPIC-031, but no run can exist because dispatch has no runner and no execution identity (R-047-2, DEF-047-001). Typing the transcript is the fabrication the check exists to test for."
+      "why": "The journey needs a running application with real Experts and real runs. Registering, approving and registering a run with EPIC-037 all work (Phase 9, DEF-047-001), but no run can execute because no agent runtime is composed into the API (DEF-047-002). Typing the transcript is the fabrication the check exists to test for."
     },
     {
       "id": "T1294",
