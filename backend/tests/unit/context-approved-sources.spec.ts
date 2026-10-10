@@ -23,9 +23,11 @@ import { allow, classes, input, noAuthorisations, retrieval } from '../helpers/c
 import { artifacts, fixtureEmbedding } from '../helpers/context-retrieval-fixtures.js';
 
 describe('T1274 · the approved set is exactly FR-CTX-015', () => {
-  it('names governed documents and execution history, and nothing else', () => {
+  // `T2520` (A-038-1, 2026-10-09) — FR-CTX-015 as amended for EPIC-048 adds
+  // `knowledge-entry`. Still a closed set: nothing else joins it.
+  it('names governed documents, execution history and knowledge entries, and nothing else', () => {
     expect([...APPROVED_SOURCE_TYPES].sort()).toEqual(
-      ['baseline', 'decision', 'execution-history', 'requirement', 'specification'].sort(),
+      ['baseline', 'decision', 'execution-history', 'knowledge-entry', 'requirement', 'specification'].sort(),
     );
   });
 });

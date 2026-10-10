@@ -38,18 +38,33 @@ import { embedChecked, embeddingUnbound, type EmbeddingPort } from './embedding.
 import type { VectorIndex } from './vector.index.js';
 
 /**
- * `FR-CTX-015` — governed documents and execution history. Source code and
- * imported external documents are out of scope, and no configuration changes
- * that: classification decides *which approved types* a workspace indexes, not
- * *what counts as approved*.
+ * `knowledge-entry` — approved knowledge (`EPIC-048` Governed Learning).
+ * Admitted to the set by amendment `A-038-1` (2026-10-09). Nothing in the
+ * programme produces one until `EPIC-048` exists, and assembly excludes one
+ * while no admission port judges it (`T2523`).
  */
-export const APPROVED_SOURCE_TYPES: ReadonlySet<string> = new Set([
+export const KNOWLEDGE_ENTRY_SOURCE_TYPE = 'knowledge-entry';
+
+const APPROVED_SOURCE_TYPE_LIST = [
   'specification',
   'requirement',
   'baseline',
   'decision',
   'execution-history',
-]);
+  KNOWLEDGE_ENTRY_SOURCE_TYPE,
+] as const;
+
+/** `FR-CTX-015` (as amended by `A-038-1`) — the closed set, as a type. */
+export type ApprovedSourceType = (typeof APPROVED_SOURCE_TYPE_LIST)[number];
+
+/**
+ * `FR-CTX-015` — governed documents, execution history and, by amendment
+ * `A-038-1`, approved knowledge entries. Source code and imported external
+ * documents are out of scope, and no configuration changes that:
+ * classification decides *which approved types* a workspace indexes, not
+ * *what counts as approved*.
+ */
+export const APPROVED_SOURCE_TYPES: ReadonlySet<string> = new Set<ApprovedSourceType>(APPROVED_SOURCE_TYPE_LIST);
 
 /**
  * `ArtifactSource` — the corpus. `EPIC-033` and `EPIC-032` own the documents;
@@ -100,8 +115,8 @@ export class IndexService {
 
     if (!APPROVED_SOURCE_TYPES.has(sourceType)) {
       throw new ValidationFailedError(
-        `'${sourceType}' is outside the approved source set — governed documents and execution ` +
-          'history only (FR-CTX-015)',
+        `'${sourceType}' is outside the approved source set — governed documents, execution ` +
+          'history and knowledge entries only (FR-CTX-015)',
       );
     }
     const sourceClass = await this.store.classifySource(workspaceId, sourceType);
