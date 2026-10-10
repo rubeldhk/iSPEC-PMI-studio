@@ -88,3 +88,22 @@ describe('T752 · FR-DPE-022, FR-DPE-024 — derived, so decided items leave', (
     expect(inboxFor(human('u_bob'), await decisions(), policy).map((x) => x.decisionId)).not.toContain(blocked.decisionId);
   });
 });
+
+describe('T2505 · FR-DPE-017 — a closed decision leaves, and its closure is not a block', () => {
+  it('drops a rejected approval from every Inbox, and does not show the requester the rejection as blocked work', async () => {
+    const { engine: e, pending, decisions } = await scene();
+    await e.refuse({ workspaceId: 'ws_dpe', decisionId: pending.decisionId, by: human('u_carol'), kind: 'rejected', reason: 'out of scope' });
+    for (const reader of ['u_alice', 'u_bob', 'u_carol']) {
+      const ids = inboxFor(human(reader), await decisions(), policy).map((x) => x.decisionId);
+      expect(ids, reader).not.toContain(pending.decisionId);
+    }
+    expect(inboxFor(human('u_alice'), await decisions(), policy).filter((x) => x.kind === 'blocked')).toEqual([]);
+  });
+
+  it('still shows a refused request that nobody closed as blocked — only closures are exempt', async () => {
+    const { engine: e, pending, blocked, decisions } = await scene();
+    await e.refuse({ workspaceId: 'ws_dpe', decisionId: pending.decisionId, by: human('u_alice'), kind: 'withdrawn', reason: 'no longer needed' });
+    const bob = inboxFor(human('u_bob'), await decisions(), policy);
+    expect(bob).toEqual([expect.objectContaining({ decisionId: blocked.decisionId, kind: 'blocked' })]);
+  });
+});

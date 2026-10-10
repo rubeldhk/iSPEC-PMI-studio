@@ -34,6 +34,14 @@ Three questions, all answered with the recommended option, in a consolidated rou
 - Q: Should this Epic define the `BR-0005` decision-authority record now, given `U-02` is unowned? -> A: **Yes -- as a published contract this Epic owns provisionally** (`FR-DPE-014`), which `U-02` adopts unchanged when declared. The same pattern `EPIC-030` used for its five ports: publish the shape, let the owner fill it. Waiting would block this Epic on an undeclared one; inventing a private record would give `BR-0005` two definitions.
 - Q: Should *changing a loop instance configuration* join the non-configurable high band explicitly? -> A: **Yes** (`FR-DPE-012`). `EPIC-030`'s `FR-GEL-016`, clarified the same day, makes it permanently high band -- but **this Epic is the one that enforces bands**. If `FR-DPE-012` does not name it, nothing does.
 
+### Session 2026-10-09 — amendments for `EPIC-048`, and the Rooms seam
+
+Decided by the Project Owner in chat on 2026-10-09.
+
+- Q: May a pending decision be closed without being approved, so that `EPIC-048` can reject, withdraw or expire a learning candidate through the one approval record (`FR-LRN-021`)? -> A: **Yes — amendment `A-031-1`** (`FR-DPE-017`). Without it the only record of a rejection would live in `EPIC-048`, which is the second approval record `FR-LRN-021` forbids.
+- Q: May other Epics render their own detail view inside the Decision Inbox? -> A: **Yes — amendment `A-031-2`** (`FR-DPE-027`), additive; the default rendering is unchanged.
+- Q: Should the Requirement and Change Rooms decide through this engine now (`FR-DPE-051`, converge finding `T796c`)? -> A: **No — keep the scoped slice and defer.** A high-band baseline would otherwise wait `pending` for a second human, and a one-person workspace could not decide at all. `FR-DPE-051` stays contradicted, recorded as a deferral rather than raised again by every converge.
+
 **Deferred, deliberately.** Engine availability and latency targets (`PP-018`) and the enumeration
 of "consequential" actions are plan-level. The PMI-DOC-006 approval is an act of the project owner,
 not an ambiguity in this specification.
@@ -43,11 +51,11 @@ not an ambiguity in this specification.
 | Source | Section | Covers |
 |--------|---------|--------|
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0066` — Risk classification | FR-DPE-001 to FR-DPE-006 |
-| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0067` — Risk-adaptive approval | FR-DPE-010 to FR-DPE-016 |
+| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0067` — Risk-adaptive approval | FR-DPE-010 to FR-DPE-017 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0068` — Decision Inbox | FR-DPE-020 to FR-DPE-025 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.7 `BR-0069` — Automation triggers | FR-DPE-030 to FR-DPE-033 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.18 `BR-0174` — Policy explainability | FR-DPE-040 to FR-DPE-044 |
-| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.20 `BR-0192` — Decision visibility | FR-DPE-021, FR-DPE-026 |
+| `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §6.20 `BR-0192` — Decision visibility | FR-DPE-021, FR-DPE-026, FR-DPE-027 |
 | `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` | §7 `RULE-03`, `RULE-04`, `RULE-11` | FR-DPE-011, FR-DPE-031, FR-DPE-040 |
 | [`adr/ADR-0025-risk-adaptive-policy-engine.md`](../../adr/ADR-0025-risk-adaptive-policy-engine.md) | Decision — three bands and four binding constraints | FR-DPE-010 to FR-DPE-013, FR-DPE-050 |
 | [`adr/ADR-0015-requirement-change-defect-governance-authority.md`](../../adr/ADR-0015-requirement-change-defect-governance-authority.md) | Decision — approval thresholds and the decision-authority record | FR-DPE-014, FR-DPE-015 |
@@ -333,6 +341,7 @@ an automated action with no citable rule and assert refusal.
 - **FR-DPE-014**: Every approval MUST record actor, authority basis, object version, decision and timestamp, using the `BR-0005` decision-authority contract rather than a second one. **This Epic publishes that contract provisionally**, as a shape `U-02` adopts unchanged when it is declared; it MUST NOT be a private record this Epic keeps to itself *(clarified 2026-08-22)*.
 - **FR-DPE-015**: An approver MUST NOT approve their own request unless policy explicitly permits it for that action class, and that permission MUST appear in the explanation.
 - **FR-DPE-016**: An auto-executed action MUST still produce an audit record and its required evidence (constraint 4).
+- **FR-DPE-017**: A pending decision MUST be closable without approval, as **rejected** (by an authorized human who is not the requester), **withdrawn** (by the requester) or **expired** (by the requesting automation, for its own request only). The closure MUST be an append-only resolving record with outcome `refused`, its kind and reason in the explanation, and the actor recorded under `FR-DPE-014`. An unauthorized attempt MUST be audited and MUST leave the decision pending *(amendment `A-031-1`, Project Owner 2026-10-09, for `EPIC-048`)*.
 
 *Decision Inbox — `BR-0068`, `BR-0192`.*
 
@@ -343,6 +352,7 @@ an automated action with no citable rule and assert refusal.
 - **FR-DPE-024**: A decided item MUST leave the queue, and its decision MUST remain retrievable from the object.
 - **FR-DPE-025**: A blocked entry MUST name what would unblock it — the missing evidence, the pending approver, or the refusing policy — rather than reporting a generic not-ready state.
 - **FR-DPE-026**: The queue MUST be reachable in one action from every screen, and MUST define loading, empty, populated and error states (`UX-0021`, `UX-0051`).
+- **FR-DPE-027**: The Inbox MUST let another Epic register a detail renderer keyed by `objectRef.type`; an entry with no registered renderer MUST render exactly as before. A renderer MUST NOT change queue membership, ordering or the actions offered *(amendment `A-031-2`, Project Owner 2026-10-09, for `EPIC-048`)*.
 
 *Automation triggers — `BR-0069`, `RULE-11`.*
 

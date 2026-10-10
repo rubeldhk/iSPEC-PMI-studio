@@ -6,10 +6,12 @@
  * |---|---|
  * | `POST /decisions` | the Decide seam — `409` when refused, carrying the decision |
  * | `POST /decisions/:id/approve` | `FR-DPE-014`, `FR-DPE-015` — `403` without authority |
+ * | `POST /decisions/:id/refuse` | `FR-DPE-017` — `403` for an unauthorized closure |
  * | `POST /decisions/:id/exceptions` | `FR-DPE-013` |
  * | `GET /decisions/:id/explanation` | `FR-DPE-040`, `FR-DPE-043` |
  * | `GET /decision-metrics` | `FR-DPE-033` — not `/decisions/metrics`, see below |
  * | `GET /inbox` | `FR-DPE-020`–`FR-DPE-026` |
+ * | `GET /decision-objects/:type/:id/decisions` | `FR-DPE-024` — not in the contract; `T796a` |
  * | `GET`/`POST /decision-policies` | `FR-DPE-011` — not in the contract; `DEF-031-003` |
  *
  * **`/decisions` is shared with `EPIC-016`.** Its ADR store already answers
@@ -66,6 +68,12 @@ export class DecisionController {
     return this.decisions.approve(requireAuth(ctx), id);
   }
 
+  @Post('decisions/:id/refuse')
+  @HttpCode(200)
+  refuse(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string, @Body() body: unknown) {
+    return this.decisions.refuse(requireAuth(ctx), id, strip(body));
+  }
+
   @Post('decisions/:id/exceptions')
   @HttpCode(201)
   exception(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string, @Body() body: unknown) {
@@ -80,6 +88,16 @@ export class DecisionController {
   @Get('inbox')
   inbox(@Req() ctx: WorkspaceContext | undefined) {
     return this.decisions.inbox(requireAuth(ctx));
+  }
+
+  /**
+   * `T796a` — the decisions on one object, so a decision stays retrievable from
+   * the object after it leaves the Inbox (`FR-DPE-024`). Under its own prefix
+   * for the reason `decision-metrics` is: `/decisions/*` is `EPIC-016`'s.
+   */
+  @Get('decision-objects/:type/:id/decisions')
+  forObject(@Req() ctx: WorkspaceContext | undefined, @Param('type') type: string, @Param('id') id: string) {
+    return this.decisions.forObject(requireAuth(ctx), type, id);
   }
 
   @Get('decision-policies/current')

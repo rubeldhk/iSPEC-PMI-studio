@@ -48,20 +48,30 @@ This is the concrete type behind `loop-contract`'s `PolicyProvider`, which `EPIC
 ```ts
 export interface DecisionRequest {
   readonly workspaceId: string;
+  readonly projectId: string;
   readonly actionType: string;
   readonly target: { type: string; id: string };   // opaque — no Room vocabulary
+  readonly objectVersion: string;                  // BR-0005 — the version decided against
   readonly actor: ActorRef;
   readonly proposedClass?: RiskBand;               // MAY propose; MUST NOT assign
   readonly requiredGates: readonly string[];
+  readonly requestedBy?: string;                   // FR-DPE-015 — self-approval refused by default
+  readonly triggeredBy?: { ruleId: string; eventId: string };  // FR-DPE-031 — automation's firing rule
 }
 
 export interface DecisionResult {
+  readonly decisionId: string;
   readonly outcome: 'auto-executed' | 'approved' | 'refused' | 'pending' | 'exception';
   readonly effectiveClass: RiskBand;
   readonly explanation: Explanation;               // NOT optional — FR-DPE-040
   readonly gateOutcomes: readonly GateOutcome[];
 }
 ```
+
+*Corrected 2026-10-09 (`T2500`): this section had drifted from `types.ts` — it omitted `projectId`,
+`objectVersion`, `requestedBy`, `triggeredBy` and `decisionId`, all present since Phase 2. The code
+was right; the contract was stale. `objectVersion` matters most: it is the `BR-0005` element an
+approval is recorded against.*
 
 **`explanation` is not optional.** `FR-DPE-040` covers blocked and allowed alike, so a result
 without one is unrepresentable rather than merely discouraged. This is the type-level half of what
@@ -79,13 +89,26 @@ model-assigned class would enter without anyone deciding to allow it.
 ```ts
 export interface Explanation {
   readonly policyVersion: string;
-  readonly matchedRule: SteeringRuleRef;      // lineageId + version
+  readonly matchedRule: SteeringRuleRef | null; // lineageId + version; null STATES no rule matched (FR-DPE-004)
   readonly riskClass: RiskBand;
   readonly precedenceResolution?: string;     // present when scopes conflicted — BR-0071
   readonly authorityApplied: string;
   readonly constraintCited?: string;          // e.g. "high band not configurable" — FR-DPE-012
+  readonly proposalDisagreement?: string;     // FR-DPE-003
+  readonly triggerRule?: string;              // FR-DPE-032
+  readonly closure?: { kind: ClosureKind; reason: string };  // FR-DPE-017 — present only on a closure
 }
+
+export const CLOSURE_KINDS = ['rejected', 'withdrawn', 'expired'] as const;
+export type ClosureKind = (typeof CLOSURE_KINDS)[number];
 ```
+
+`matchedRule` is **required and nullable**: `null` is the statement that no rule matched, so an
+unclassified action's explanation says so instead of omitting the field (corrected 2026-10-09).
+
+**`closure`** (`FR-DPE-017`, amendment `A-031-1`) is on the explanation of the resolving row that
+closes a pending decision without approving it. Its outcome is always `refused`; the kind says why
+and the reason is never empty — the database refuses either half alone.
 
 `precedenceResolution` is populated from `resolveSteering()`'s `SteeringOverride`, so the
 explanation **quotes** the precedence decision rather than reconstructing it (`R-031-1`).
@@ -130,6 +153,7 @@ Constitution XI Tier 1 drives these. Listed because *"the entry point MUST be th
 |---|---|---|
 | `POST` | `/decisions` | request a decision — the Decide seam's HTTP face |
 | `POST` | `/decisions/:id/approve` | `FR-DPE-014`, `FR-DPE-015` |
+| `POST` | `/decisions/:id/refuse` | `FR-DPE-017` — body `{ kind, reason }`; `403` for an unauthorized closure, which leaves the decision pending *(added 2026-10-09, `A-031-1`)* |
 | `GET` | `/decisions/:id/explanation` | `FR-DPE-040` — for blocked **and** allowed |
 | `GET` | `/inbox` | `FR-DPE-020`–`FR-DPE-026`, role-scoped, derived |
 | `GET` | `/decisions/metrics` | `FR-DPE-033` band distribution and auto-execution rate |

@@ -132,3 +132,45 @@ four PostgreSQL round trips (policy read, explanation and decision in one transa
 the tenant policy per request is the obvious first cut, and it is a decision, not a tolerance to loosen.
 
 **Recommended next**: `/speckit-converge EPIC-031`.
+
+---
+
+## Addendum 2026-10-10 — convergence (`T796`) and amendments `A-031-1`, `A-031-2` (`T2515`)
+
+**Convergence, run 2026-10-09.** 31 FRs, 8 SCs, 7 user stories and the edge cases assessed against
+the code. Three findings, appended as Phase 10:
+
+| Task | Finding | Outcome |
+|---|---|---|
+| `T796a` | `FR-DPE-024` partial — a decision was readable only by its own id, not from the object | Built: `GET /decision-objects/:type/:id/decisions` |
+| `T796b` | Edge case partial — a refused `POST /decision-policies` left no trace | Built: every issue attempt is audited as `tenant_policy` `v{n}`, `refused` with the loader's reason or `success` |
+| `T796c` | `FR-DPE-051` contradicted — the Requirement Room decides through the scoped slice's `BandedPolicyProvider`; the Change Room's `PolicyProvider` is unbound | **Deferred by the Project Owner, 2026-10-09** — keep the Rooms' scoped slice (Option A). Routing through this engine would hold every high-band Room decision `pending` for a second human; recorded with both options in `tasks.md` |
+
+The *Not converged* note above is answered by `T796c`.
+
+**Amendments for `EPIC-048`** (`FR-DPE-017`, `FR-DPE-027`, specified in `fbf878e`; Phase 11,
+`T2500`–`T2515`):
+
+- **`A-031-1` — closing a pending decision.** `DecisionEngine.refuse` and `POST /decisions/:id/refuse`:
+  *rejected* by a human who is not the requester, *withdrawn* by the requester, *expired* by the
+  requesting automation for its own request. Each closure is a new resolving row with outcome
+  `refused`, its kind and reason in the explanation (`closureKind`/`closureReason`, migration
+  `20261009120000_epic031_decision_closure`, CHECK: both or neither, known kind, non-empty reason).
+  An unauthorized attempt — self-reject included — is audited as `closure-refused`, answers `403`
+  with the reason, and leaves the decision pending. A closure leaves every Inbox and is not shown as
+  blocked work. The Inbox has a Reject control with a reason field.
+- **`A-031-2` — Inbox detail renderers.** `frontend/src/pages/decision-inbox-renderers.ts`: one
+  renderer per object type, adding detail inside its entry; an unregistered type renders exactly as
+  before.
+- **Not adopted, because `A-031-1` needs neither**: an outcome-read export (`A-031-3`, made by
+  `EPIC-048`'s adapter phase) and a *decided* notification.
+- `contracts/decision-contract.md` corrected while amended: §3 had omitted `projectId`,
+  `objectVersion`, `requestedBy`, `triggeredBy` and `decisionId`; §4's `matchedRule` is nullable.
+
+**Tests, targeted** (no whole-repo run; `T798` remains open): contract package 22 passed; backend
+decision unit suites 121 passed; frontend Inbox suites 22 passed; integration, one file at a time —
+`decision-reachability.spec.ts` 28 of 28, `decision-constraints.spec.ts` 24 of 24. The Tier 1 file
+now holds 28 tests, so `T785`'s "18 of 18 failed" is a count from before these additions.
+
+**Still open**: `T787` (deferred to `EPIC-030`), `T791` (Tier 2 run — needs the stack and a seeded
+password), `T798`, `T799`.

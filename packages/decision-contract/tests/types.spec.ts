@@ -10,6 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  CLOSURE_KINDS,
   DECISION_OUTCOMES,
   GATE_RESULTS,
   type DecisionRequest,
@@ -76,5 +77,26 @@ describe('T725 · the vocabularies', () => {
   it('has the same four gate results as EPIC-030, and no fifth', () => {
     expect(GATE_RESULTS).toEqual(['satisfied', 'refused', 'exception', 'violation']);
     expect(Object.isFrozen(GATE_RESULTS)).toBe(true);
+  });
+});
+
+describe('T2501 · FR-DPE-017 — closing a pending decision without approving it', () => {
+  it('has exactly three closure kinds, frozen', () => {
+    expect(CLOSURE_KINDS).toEqual(['rejected', 'withdrawn', 'expired']);
+    expect(Object.isFrozen(CLOSURE_KINDS)).toBe(true);
+  });
+
+  it('carries a closure on the explanation only as a kind and a reason together', () => {
+    const closed: Explanation = { ...explanation, closure: { kind: 'withdrawn', reason: 'superseded by a newer candidate' } };
+    expect(closed.closure?.kind).toBe('withdrawn');
+    // @ts-expect-error — a closure states its reason.
+    const noReason: Explanation = { ...explanation, closure: { kind: 'rejected' } };
+    // @ts-expect-error — and its kind is one of the three.
+    const unknownKind: Explanation = { ...explanation, closure: { kind: 'cancelled', reason: 'x' } };
+    expect([noReason, unknownKind]).toHaveLength(2);
+  });
+
+  it('leaves closure absent on every explanation that is not a closure', () => {
+    expect(explanation.closure).toBeUndefined();
   });
 });
