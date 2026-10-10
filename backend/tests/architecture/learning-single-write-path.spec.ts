@@ -73,7 +73,7 @@ describe('T2332 · only the materialiser writes knowledge', () => {
     const injections = [...(moduleFile?.code ?? '').matchAll(/provide:\s*([A-Za-z_]+)[\s\S]*?inject:\s*\[([^\]]*)\]/g)]
       .filter((m) => /KNOWLEDGE_WRITER/.test(m[2] ?? ''))
       .map((m) => m[1]);
-    expect(injections.every((p) => p === 'Materialiser')).toBe(true);
+    expect(injections).toEqual(['Materialiser']);
   });
 
   it('the store services receive has no version insert', () => {

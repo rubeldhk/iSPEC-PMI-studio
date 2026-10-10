@@ -43,13 +43,16 @@ import { LearningConnectorController } from './learning-connector.controller.js'
 import { LearningPolicyReader, steeringPolicySource } from './learning-policy.js';
 import { LearningController } from './learning.controller.js';
 import { InMemoryLearningStore, type LearningStore } from './learning.store.js';
-import { PrismaLearningStore, type LearningPrismaClient } from './learning.store.prisma.js';
-import { LEARNING_PORTS, LEARNING_PORTS_TOKEN, LEARNING_STORE, refusingPorts, type LearningPorts } from './learning.tokens.js';
+import { PrismaKnowledgeWriter, PrismaLearningStore, type LearningPrismaClient } from './learning.store.prisma.js';
+import { KNOWLEDGE_WRITER, LEARNING_PORTS, LEARNING_PORTS_TOKEN, LEARNING_STORE, refusingPorts, type AuditPort, type LearningPorts } from './learning.tokens.js';
 import { auditPort, executionsPort, principalsPort, projectsPort } from './main-ports.js';
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
 import { CandidateViewService } from './candidate.view.js';
 import { DecisionRequester } from './decision.requester.js';
+import { ApproverGuard } from './approver.guard.js';
+import { InMemoryKnowledgeWriter, type KnowledgeWriter } from './knowledge.writer.js';
+import { Materialiser } from './materialiser.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -114,10 +117,34 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
       useFactory: (ports: LearningPorts): LearningPolicyReader => new LearningPolicyReader({ current: (ws) => ports.policy.current(ws) }),
     },
     {
+      provide: KNOWLEDGE_WRITER,
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN],
+      useFactory: (store: LearningStore, ports: LearningPorts): KnowledgeWriter => {
+        // Reads `ports.audit` at call time, so the audit binding is the live one.
+        const audit: AuditPort = { record: (entry, tx) => ports.audit.record(entry, tx) };
+        return hasDatabase()
+          ? new PrismaKnowledgeWriter(prismaClient() as unknown as LearningPrismaClient, audit)
+          : new InMemoryKnowledgeWriter(store as InMemoryLearningStore, audit);
+      },
+    },
+    {
+      // R-048-4 fence 1: the writer is injected here and nowhere else (T2332).
+      provide: Materialiser,
+      inject: [LEARNING_STORE, KNOWLEDGE_WRITER, LEARNING_PORTS_TOKEN, LearningPolicyReader],
+      useFactory: (store: LearningStore, writer: KnowledgeWriter, ports: LearningPorts, policy: LearningPolicyReader): Materialiser =>
+        new Materialiser({
+          store,
+          writer,
+          ports,
+          policy,
+          guard: new ApproverGuard({ kindOf: (ws, id) => ports.principals.kindOf(ws, id) }),
+        }),
+    },
+    {
       provide: DecisionRequester,
-      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, LearningPolicyReader],
-      useFactory: (store: LearningStore, ports: LearningPorts, policy: LearningPolicyReader): DecisionRequester =>
-        new DecisionRequester({ store, ports, policy }),
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, LearningPolicyReader, Materialiser],
+      useFactory: (store: LearningStore, ports: LearningPorts, policy: LearningPolicyReader, materialiser: Materialiser): DecisionRequester =>
+        new DecisionRequester({ store, ports, policy, applyResolution: (candidate, resolution) => materialiser.applyResolution(candidate.workspaceId, candidate.id, resolution) }),
     },
     {
       provide: SubmissionService,
@@ -133,6 +160,6 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         new CandidateViewService({ reads: store, ports, eligibilityOf: (candidate) => requester.eligibility(candidate) }),
     },
   ],
-  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService],
+  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService, Materialiser],
 })
 export class LearningModule {}

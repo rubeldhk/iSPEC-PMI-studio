@@ -288,7 +288,7 @@ T2402 and T2405–T2407.
 
   Each refusal transitions the candidate **back to `proposed`** with reason `decision-not-accepted` (or `policy-auto-executed-review`), raises a `knowledge_flags` row naming it, and writes an audit record — never leaving it in `pending-review` with a resolved decision (`FR-LRN-027`, `R-048-6` as amended for analysis finding `I1`; MP-3's target)
 - [X] T2351 [US3] Implement `backend/src/modules/learning/approver.guard.ts` over `Principals` (unit test: T2350) — **Done**: `approver.guard.ts`: `ApproverGuard.judge` over `Principals` — a 'human' approval must resolve to a User and to none of the AI source identities (`aiSourceIdentities`: source agent, Expert, corroborating agents and Experts); `auto-executed` accepted only for `learning.approve.*` by `learning-intake`; `Principals` unbound refuses.
-- [ ] T2352 [P] [US3] Write failing unit tests `backend/tests/unit/learning-materialiser.spec.ts`:
+- [X] T2352 [P] [US3] Write failing unit tests `backend/tests/unit/learning-materialiser.spec.ts`: — **Done**: 20 cases, red on the missing module; includes I1 (back to `proposed`, flag, audit), closures, deprecation without a version, widening, and Audit-unbound writes nothing.
   - writes a version only on an accepted resolution;
   - writes version + `current` status + `approved` transition in one transaction;
   - uses review terms when they exist, else the proposed statement and claimed scope;
@@ -296,7 +296,7 @@ T2402 and T2405–T2407.
   - takes classification from the terms, else the category default, else `undetermined`;
   - a supersession marks the predecessor `superseded` naming the successor in the same transaction;
   - every materialisation, supersession, deprecation and scope change writes an `EPIC-004` audit record through `Audit`, and `Audit` unbound refuses (`FR-LRN-031`, `FR-LRN-032`, `FR-LRN-038`, `FR-LRN-062`; MP-1b's target)
-- [ ] T2353 [US3] Implement `backend/src/modules/learning/materialiser.ts` — the only caller of `KnowledgeWriter` (unit test: T2352)
+- [X] T2353 [US3] Implement `backend/src/modules/learning/materialiser.ts` — the only caller of `KnowledgeWriter` (unit test: T2352) — **Done**: `materialiser.ts`: `applyResolution` for every outcome; the guard's verdict gates `KnowledgeWriter.insertVersion` (the `if (!verdict.accepted)` line MP-1b removes); `target-not-current` on a lost race; post-commit hooks for attestation and reindex; the module injects `KNOWLEDGE_WRITER` into `Materialiser` alone (T2332 now asserts exactly that) and the requester hands auto-executed decisions to it; 195/195 learning units.
 - [ ] T2354 [P] [US3] Write failing unit tests `backend/tests/unit/learning-review.spec.ts`:
   - approve writes terms **before** calling `approve`;
   - the scope must be ⊆ claimed (`400`);
