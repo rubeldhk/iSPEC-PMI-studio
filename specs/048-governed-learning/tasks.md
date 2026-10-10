@@ -76,25 +76,25 @@ Steps 1–3 may land in any order among themselves. Step 4 needs all three; step
 
 ## Phase 2: Foundational (blocking — no user story may start before this completes)
 
-- [ ] T2305 [P] Write failing unit tests `packages/learning-contract/tests/states.spec.ts`:
+- [X] T2305 [P] Write failing unit tests `packages/learning-contract/tests/states.spec.ts`: — **Done**: `states.spec.ts` written red; 17 assertions incl. widening refused.
   - `CANDIDATE_STATES` is exactly the six of `FR-LRN-004`, with four terminal;
   - `APPROVER_KINDS` is exactly `human | policy` (no agent, `FR-LRN-027`);
   - `EVIDENCE_STATES` reserves `retired`;
   - there is no `unknown` member anywhere;
   - `isNarrowerOrEqual` holds for project ⊆ projects ⊆ workspace and refuses widening (`FR-LRN-028`)
-- [ ] T2306 Implement `packages/learning-contract/src/states.ts` and `packages/learning-contract/src/scope.ts` (unit test: T2305)
-- [ ] T2307 [P] Write failing unit tests `packages/learning-contract/tests/submission.spec.ts`:
+- [X] T2306 Implement `packages/learning-contract/src/states.ts` and `packages/learning-contract/src/scope.ts` (unit test: T2305) — **Done**: `states.ts` (+ flag kinds, retrievability outcomes) and `scope.ts` (`parseScope`, `isNarrowerOrEqual`, `isStrictlyWider`, `scopeIncludesProject`); green.
+- [X] T2307 [P] Write failing unit tests `packages/learning-contract/tests/submission.spec.ts`: — **Done**: `submission.spec.ts` written red; every missing element at once, never throws on 8 hostile inputs.
   - `parseSubmission` names **every** missing element of source, evidence, confidence and scope at once (`FR-LRN-010`);
   - it requires ≥ 1 citation, each with a sha256 digest (`FR-LRN-012`);
   - it requires `targetVersionId` for every kind but `new`;
   - `schemaVersion` must be `1`;
   - it never throws
-- [ ] T2308 Implement `packages/learning-contract/src/submission.ts` (unit test: T2307) — `LearningSubmissionV1`, `parseSubmission`
-- [ ] T2309 [P] Write failing unit tests `packages/learning-contract/tests/supply.spec.ts`:
+- [X] T2308 Implement `packages/learning-contract/src/submission.ts` (unit test: T2307) — `LearningSubmissionV1`, `parseSubmission` — **Done**: `submission.ts`; citations keep only id + digest; green.
+- [X] T2309 [P] Write failing unit tests `packages/learning-contract/tests/supply.spec.ts`: — **Done**: `supply.spec.ts` written red.
   - `AdmissionVerdict.reason` is a subset of `EPIC-038`'s exclusion reasons (`boundary | classification | stale | permission`);
   - `LEARNING_EVENT_KINDS` is exactly the six of `R-048-17`;
   - no event payload type carries statement text
-- [ ] T2310 Implement `packages/learning-contract/src/supply.ts` and `packages/learning-contract/src/events.ts` (unit test: T2309) — `KnowledgeSourceReader`, `KnowledgeAdmission`
+- [X] T2310 Implement `packages/learning-contract/src/supply.ts` and `packages/learning-contract/src/events.ts` (unit test: T2309) — `KnowledgeSourceReader`, `KnowledgeAdmission` — **Done**: `supply.ts` (ports, reasons, detail prefixes, the unbound-admission verdict) and `events.ts` (`learningEventPayload` drops any statement); package 55/55 green.
 - [ ] T2311 [P] Write failing unit tests `backend/tests/unit/learning-ports.spec.ts`. Each of the eleven ports in `contracts/learning-contract.md` §5, bound refusing, does what its row says:
   - `EvidenceReads`, `ExpertProvenance`, `LearningDecisions`, `KnowledgeIndex` throw `GovernanceSeamUnboundError` naming themselves;
   - `ReaderAccess` withholds;

@@ -5,3 +5,7 @@
  * (`LearningSubmissionV1`, `parseSubmission`).
  */
 export * from './states.js';
+export * from './scope.js';
+export * from './submission.js';
+export * from './supply.js';
+export * from './events.js';
