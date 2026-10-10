@@ -12,7 +12,7 @@
  *
  * Real: `AppModule`, PostgreSQL, the session, the connector credential, the
  * execution registry (`EPIC-037`), steering (`EPIC-019`), audit, the store. The
- * unmerged `EPIC-032` port (`EvidenceReads`) is first asserted **refusing** —
+ * unmerged `EPIC-047` and `EPIC-032` ports (`ExpertProvenance`, `EvidenceReads`) are first asserted **refusing** —
  * that is Q3 — and only then bound by a recorder, visibly, below. The module
  * default stays refusing. Q26 needs a provisional execution, which nothing on
  * `main` can register yet (`EPIC-037`'s provisional intake is reserved,
@@ -120,8 +120,17 @@ afterAll(async () => {
 }, 120_000);
 
 suite('T2334 · submission through the composed application', () => {
-  describe('before EPIC-032 merges — the default binding', () => {
+  describe('before EPIC-047 and EPIC-032 merge — the default bindings', () => {
+    it('an agent’s submission is refused 503 naming ExpertProvenance — its Expert, if any, cannot be judged (R-048-10)', async () => {
+      const res = await asAgent().send(body({ idempotencyKey: 'no-047' })).expect(503);
+      expect(res.body.error.message).toContain('ExpertProvenance');
+      expect(await count('learning_candidates')).toBe(0);
+    });
+
     it('Q3 · refuses 503 naming EvidenceReads, storing nothing', async () => {
+      // EPIC-047's read, bound visibly to "not an Expert session" for the rest of
+      // this file, so the next unbound port is the one Q3 is about.
+      ports.experts = { async forExecution() { return null; } };
       const res = await asAgent().send(body({ idempotencyKey: 'q3' })).expect(503);
       expect(res.body.error.code).toBe('governance_seam_unbound');
       expect(res.body.error.message).toContain('EvidenceReads');

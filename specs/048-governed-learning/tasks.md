@@ -205,12 +205,12 @@ confidence, claimed scope, corroboration and conflict.
 candidate with no evidence; reconstruct a complete one's source, evidence, confidence and scope from
 the record alone.
 
-- [ ] T2336 [P] [US2] Write failing unit tests `backend/tests/unit/learning-provenance.spec.ts`:
+- [X] T2336 [P] [US2] Write failing unit tests `backend/tests/unit/learning-provenance.spec.ts`: — **Done**: 13 cases, 2 red first (provenance not recorded, unbound port not consulted).
   - an Expert execution records Expert, contract version id and number through `ExpertProvenance` (`FR-LRN-011`);
   - `ExpertProvenance` unbound refuses an Expert-sourced submission `503` and leaves people's submissions unaffected;
   - stated confidence is stored as given and never raised (`FR-LRN-013`);
   - claimed scope is stored as claimed, `projects` requires ≥ 2 projects of the workspace (`FR-LRN-014`, US2-5)
-- [ ] T2337 [US2] Implement provenance capture in `submission.service.ts` (unit test: T2336)
+- [X] T2337 [US2] Implement provenance capture in `submission.service.ts` (unit test: T2336) — **Done**: `source()` asks `ExpertProvenance` for every execution-sourced submission — `503` naming it while unbound, so in the composed app every agent submission is refused until `A-047-2` (as `R-048-10` says); the T2334 route suite now asserts that `503` first and binds the port visibly; 100/100 learning units, 13/13 route.
 - [ ] T2338 [P] [US2] Write failing unit tests `backend/tests/unit/learning-memory-policy.spec.ts`:
   - an Expert whose contract version declares `none` is refused and `memory-policy-refused` is appended;
   - `governed-knowledge` is accepted;

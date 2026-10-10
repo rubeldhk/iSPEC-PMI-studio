@@ -31,7 +31,7 @@ import {
 import { ConflictError, ValidationFailedError } from '../../core/errors.js';
 import type { LearningPolicy, LearningPolicyReader } from './learning-policy.js';
 import { newLearningId, type CandidateRecord, type CitationRecord, type LearningStore } from './learning.store.js';
-import type { LearningPorts } from './learning.tokens.js';
+import type { ExpertFacts, LearningPorts } from './learning.tokens.js';
 import { assertNoSecret } from './secret.screen.js';
 
 export type SubmissionActor =
@@ -220,9 +220,9 @@ export class SubmissionService {
       sourceKind: actor.kind === 'person' ? 'person' : 'execution',
       executionId: s.executionId ?? null,
       sourcePrincipalId,
-      expertId: null,
-      expertContractVersionId: null,
-      expertContractVersion: null,
+      expertId: source.expert?.expertId ?? null,
+      expertContractVersionId: source.expert?.contractVersionId ?? null,
+      expertContractVersion: source.expert?.contractVersion ?? null,
       confidenceLevel: s.confidence.level,
       confidenceBasis: s.confidence.basis,
       claimedScope: s.claimedScope,
@@ -358,8 +358,8 @@ export class SubmissionService {
     projectId: string,
     policy: LearningPolicy,
     _named: string | null,
-  ): Promise<{ late: boolean; provisional: boolean }> {
-    if (actor.kind === 'person') return { late: false, provisional: false };
+  ): Promise<{ late: boolean; provisional: boolean; expert: ExpertFacts | null }> {
+    if (actor.kind === 'person') return { late: false, provisional: false, expert: null };
     const executionId = s.executionId!;
     const facts = await this.deps.ports.executions.describe(ws, executionId);
     if (facts === null) {
@@ -389,7 +389,11 @@ export class SubmissionService {
         { executionId, bound: policy.maxCandidatesPerExecution },
       );
     }
-    return { late, provisional: facts.governanceState !== 'governed' };
+    // FR-LRN-011 (T2337): an Expert session records its Expert and contract
+    // version. 503 naming ExpertProvenance while EPIC-047's read is unbound — an
+    // execution that may be an Expert's cannot be judged, so it is not recorded.
+    const expert = await this.deps.ports.experts.forExecution(ws, executionId);
+    return { late, provisional: facts.governanceState !== 'governed', expert };
   }
 
   private async checkScope(ws: string, s: LearningSubmissionV1, projectId: string): Promise<void> {
