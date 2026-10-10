@@ -42,7 +42,7 @@ import {
 } from './learning.store.js';
 import { assertMaterialisable, type KnowledgeWriter, type Materialisation, type WriteOutcome } from './knowledge.writer.js';
 import type { AuditPort } from './learning.tokens.js';
-import type { CandidateKind, CandidateState } from '@pmi/learning-contract';
+import type { CandidateKind, CandidateState, FlagKind } from '@pmi/learning-contract';
 
 /** The raw surface this adapter uses — a Prisma client or an interactive transaction. */
 export interface RawDb {
@@ -437,6 +437,18 @@ class PrismaLearningReads implements LearningReads {
       workspaceId,
       ref.versionId ?? null,
       ref.candidateId ?? null,
+    );
+    return r.map(toFlag);
+  }
+
+  async openFlags(kind: FlagKind, workspaceId?: string): Promise<FlagRecord[]> {
+    const r = await this.rows(
+      `SELECT f.* FROM "knowledge_flags" f
+        WHERE f."kind" = $1 AND f."clearsFlagId" IS NULL AND ($2::text IS NULL OR f."workspaceId" = $2)
+          AND NOT EXISTS (SELECT 1 FROM "knowledge_flags" c WHERE c."clearsFlagId" = f."id")
+        ORDER BY f."raisedAt", f."id"`,
+      kind,
+      workspaceId ?? null,
     );
     return r.map(toFlag);
   }

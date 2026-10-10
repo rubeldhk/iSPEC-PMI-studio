@@ -304,10 +304,10 @@ T2402 and T2405–T2407.
   - a non-human principal or an AI source identity is refused `403` and audited, and the decision stays pending;
   - a human submitter's self-approval follows `EPIC-031`'s refusal (`FR-LRN-027`, `FR-LRN-028`)
 - [X] T2355 [US3] Implement `backend/src/modules/learning/review.service.ts` (unit test: T2354) — **Done**: `review.service.ts`: 404 / 409 / human-reviewer gate (403 audited, decision left pending; `Principals` unbound 503) / reject needs a reason → `refuse` / approve writes terms (scope ⊆ claimed, identical retry reused) then `approve` → materialiser.
-- [ ] T2356 [P] [US3] Write failing unit tests `backend/tests/unit/learning-attestation.spec.ts`:
+- [X] T2356 [P] [US3] Write failing unit tests `backend/tests/unit/learning-attestation.spec.ts`: — **Done**: 5 cases, red on the missing module.
   - every approval contributes `approval/v1` with `source.uri = 'pmi:learning'`, attached to the decision, attesting the entry and version, with the predicate body of `R-048-19`;
   - a contribution failure flags `attestation-missing` and does not roll back the version (`FR-LRN-025`)
-- [ ] T2357 [US3] Implement `backend/src/modules/learning/attestation.ts` and call it after materialisation (unit test: T2356)
+- [X] T2357 [US3] Implement `backend/src/modules/learning/attestation.ts` and call it after materialisation (unit test: T2356) — **Done**: `attestation.ts`: `approvalAttestation` (post-commit hook; `approval/v1`, source `pmi:learning`, attached to the decision, attesting entry + version, the R-048-19 body and the version digest) flags `attestation-missing` on failure; `retryMissingAttestations` clears it with a new row; store gains `openFlags`; wired into the materialiser.
 - [ ] T2358 [P] [US3] Write failing job tests `backend/tests/integration/learning-resolve-job.spec.ts`, driven through the jobs runner:
   - `learning.resolve-decisions` reads `resolutionOf` for `pending-review` candidates and materialises or rejects;
   - `learning.request-pending` requests decisions after reconciliation and after an outage (`R-048-7`, `FR-LRN-063`);

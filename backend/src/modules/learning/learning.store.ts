@@ -243,6 +243,8 @@ export interface LearningReads {
   statusEvents(workspaceId: string, versionIds: readonly string[]): Promise<StatusEventRecord[]>;
   currentStatus(workspaceId: string, versionId: string): Promise<StatusEventRecord | null>;
   flags(workspaceId: string, ref: { readonly versionId?: string; readonly candidateId?: string }): Promise<FlagRecord[]>;
+  /** Raised flags of `kind` that no later row has cleared — every workspace when none is named (jobs). */
+  openFlags(kind: FlagKind, workspaceId?: string): Promise<FlagRecord[]>;
   latestRetrievability(workspaceId: string, versionId: string): Promise<RetrievabilityRecord | null>;
   /** Versions whose current status is `current` — every workspace when none is named (jobs). */
   currentVersions(workspaceId?: string): Promise<VersionRecord[]>;
@@ -528,6 +530,11 @@ export class InMemoryLearningStore implements LearningStore {
         (ref.versionId === undefined || f.versionId === ref.versionId) &&
         (ref.candidateId === undefined || f.candidateId === ref.candidateId),
     );
+  }
+
+  async openFlags(kind: FlagKind, workspaceId?: string): Promise<FlagRecord[]> {
+    const cleared = new Set(this.tables.flags.map((f) => f.clearsFlagId).filter((id): id is string => id !== null));
+    return this.tables.flags.filter((f) => f.kind === kind && f.clearsFlagId === null && !cleared.has(f.id) && (workspaceId === undefined || f.workspaceId === workspaceId));
   }
 
   async latestRetrievability(workspaceId: string, versionId: string): Promise<RetrievabilityRecord | null> {

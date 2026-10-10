@@ -53,6 +53,7 @@ import { DecisionRequester } from './decision.requester.js';
 import { ApproverGuard } from './approver.guard.js';
 import { InMemoryKnowledgeWriter, type KnowledgeWriter } from './knowledge.writer.js';
 import { Materialiser } from './materialiser.js';
+import { approvalAttestation } from './attestation.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -138,6 +139,8 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
           ports,
           policy,
           guard: new ApproverGuard({ kindOf: (ws, id) => ports.principals.kindOf(ws, id) }),
+          // After the version commits: approval/v1 (T2357). A failure flags, never rolls back.
+          after: [approvalAttestation({ store, ports: { attestations: { contribute: (input) => ports.attestations.contribute(input) } } })],
         }),
     },
     {

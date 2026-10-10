@@ -172,6 +172,12 @@ export interface EvidenceReadsPort {
 /** `EPIC-032` `EvidenceService.contribute` with the `approval/v1` predicate (`R-048-19`). */
 export interface ApprovalAttestationInput {
   readonly workspaceId: string;
+  /** `https://pmi.studio/attestation/approval/v1` — no new predicate type (spec Assumption 4). */
+  readonly predicateType: string;
+  /** The platform-source branch of `EPIC-032`'s contribute. */
+  readonly sourceUri: 'pmi:learning';
+  readonly attachedTo: { readonly type: 'decision'; readonly id: string };
+  readonly attestedArtifact: { readonly id: string; readonly version: number };
   readonly decisionId: string;
   readonly resolvingDecisionId: string | null;
   readonly candidateId: string;
