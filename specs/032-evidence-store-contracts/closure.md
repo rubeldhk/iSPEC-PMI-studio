@@ -3,8 +3,10 @@
 **Tasks**: `T855a`–`T863k`, plus the scoped slice `T1201`–`T1204` · **Session**: 2026-10-07 ·
 **Constitution IX**
 
-**Status**: `Implemented` — **83 of 87 tasks complete; four open, each named under *Work not done***
-(`T862g`, `T863g`, `T863i`, `T863k`). Worked in the dedicated worktree `.claude/worktrees/epic-032-evidence-store-contracts`
+**Status**: `Closed` *(2026-10-10)* — every task complete except **`T862g`** and **`T1796`**, both
+deferred to `EPIC-030` by [`DEF-032-006`](./defects/DEF-032-006-loop-consumes-none-of-its-seams.md)
+and named under *Work not done*. Merged to `main` through PR #3. *(Was, 2026-10-07: 83 of 87 complete;
+`T862g`, `T863g`, `T863i`, `T863k` open.)* Worked in the dedicated worktree `.claude/worktrees/epic-032-evidence-store-contracts`
 (`T855a`), fast-forwarded to `main` at `22d51db` before starting.
 
 ## What the Epic delivered
@@ -129,13 +131,16 @@ fail, and the four mutation proofs cover the guarantees that matter most.
 
 ## Work not done, and why
 
-- **`T862g` — the composed budget.** `EPIC-031`'s 120 ms decide is not built (5 of 97 tasks), so
-  there is nothing to compose with. This Epic's share is measured: the gate evaluates at 11.6 ms p95,
-  leaving the combined budget almost entirely to the other two.
-- **`T863g` — `/speckit-converge`.** The requester's command to run.
-- **`T863i` — the full suite green.** All green except the rollup timing under contention; see *Gates*.
-- **`T863k` — promotion `local → dev`.** Gated on an instruction naming the environment, which has
-  not been given. Nothing was committed or pushed; the work is in the worktree.
+- **`T862g` — the composed budget. Deferred to `EPIC-030`.** `EPIC-031` is now built (PR #4,
+  `POST /v1/decisions` 40.8 ms p95), but the loop calls neither it nor this gate
+  ([`DEF-032-006`](./defects/DEF-032-006-loop-consumes-none-of-its-seams.md)), so no composed path
+  exists to time. Measured separately — transition 0.06 ms, decide 40.8 ms, gate 11.6 ms — the
+  shares sum to about 52 ms against 270 ms. That sum is recorded, not reported as the measurement.
+- **`T1796` — the loop's Evidence seam. Deferred to `EPIC-030`**, same defect: an adapter bound to a
+  token nothing reads would be built and called by nothing.
+
+`T863g`, `T863i` and `T863k` were discharged on 2026-10-09/10 — see *Convergence — second pass*,
+*Gates — 2026-10-09 re-run* and *Promotion*, below.
 
 ## Convergence — Phase 8 (`T1796`–`T1800`, 2026-10-08)
 
@@ -167,6 +172,40 @@ contention, which is what a CI runner provides. Either the rollup gets faster (t
 reading and re-digesting 10,000 payloads) or the target is re-stated for a scope a reader actually
 opens — a decision, not a tolerance to loosen quietly.
 
-**Recommended next**: `/speckit-converge EPIC-032`, then ratify or replace `DEF-032-004`'s interim
-rule; then `EPIC-031` (`/speckit-implement`) — the second item of the gap ranking, which consumes
-Evidence Contracts.
+## Convergence — second pass (`T863g`, Phase 9, 2026-10-09)
+
+Every `FR-EVS-001`–`052`, `SC-EVS-001`–`009`, the US1–US5 acceptance scenarios and the edge cases
+were re-assessed against the code. Two partial, LOW gaps; both closed:
+
+| Task | Outcome |
+|---|---|
+| `T1994` — a weakened Contract refused at load was invisible (`FR-EVS-024`, US2/AC4) | **Done.** `ContractCatalog.refusals()` had no reader outside its own test. `loadCatalog` now reports each refusal, and `EvidenceModule` logs it naming the work class, both versions, the reasons and `FR-EVS-024`. The test failed first, 3 of 3 |
+| `T1995` — a contribution naming a foreign `workspaceId` (`FR-EVS-016`, edge case) | **Test only.** The behaviour already held — the controller strips the field and the service writes under the session's workspace — so the test passed on first run. Shown able to fail by a temporary mutation (service reading the body's `workspaceId`: 1 of 2 failed), reverted. *Refusing* such a body rather than ignoring the field needs a cross-workspace lookup, which is `EPIC-001`/`004`'s boundary; recorded, not built |
+
+## Gates — 2026-10-09 re-run (`T863i`)
+
+`pnpm lint && pnpm typecheck && pnpm test && pnpm test:governance`, run while four other agents ran
+suites on the same machine: **7,998 passed, 7 failed, 20 files failed** of 784.
+
+- **Two files are the declared known-reds**: `T999u` (architecture, one test) and `T884` (governance, two tests).
+- **The other 18 files are integration**, failing at Testcontainers setup or on timing. **Each was
+  re-run on its own, one file at a time: 17 pass outright** — 306 tests — plus
+  `evidence-reachability` (13) and `evidence-access` (5) re-run after the converge change.
+- **`evidence-performance.spec.ts` failed 2 of 4 on its first solo run, while another agent's
+  suites were still running, and passed 4 of 4 when re-run**: write **15.0 ms**, 50-item evaluation
+  **13.9 ms**, unmet **12.0 ms**, 10,000-item rollup **138.4 ms** p95, against 60 / 150 / 100 / 500.
+
+The 2026-10-07 open question — rollup met alone, missed under contention — is closed by the
+2026-10-08 rebuild (*Measured performance*): 138 ms leaves 3.6× headroom. `T863i` is discharged.
+
+## Promotion (`T863k`)
+
+There is no `dev` environment in this repository — `.github/workflows/` holds `ci.yml` and the
+nightly engine job, and nothing deploys. **Promotion here is the merge to `main`**, through PR #3,
+on the Project Owner's instruction of 2026-10-09 (*"close out EPIC-032 and merge it"*). No
+environment was skipped because none exists past `main`. The Delivery Board was not refreshed by
+this run; it is stale by this merge.
+
+**Recommended next**: rebase `EPIC-031` (PR #4) on `main` and merge it — it consumes Evidence
+Contracts. Then `EPIC-038` (PR #5), then `EPIC-047`. `EPIC-030` owns `DEF-032-006`, which holds
+`T862g` and `T1796`.
