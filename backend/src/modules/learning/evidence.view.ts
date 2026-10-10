@@ -41,6 +41,13 @@ export interface ReaderView {
   readonly withheldEvidenceCount: number;
 }
 
+/** The rule, once: a resolved item's state for one citation (`FR-LRN-015`). */
+export function stateOf(citation: Pick<CitationRecord, 'digest'>, resolved: ResolvedEvidence | undefined): ProducedState {
+  if (resolved === undefined || resolved.resolution === 'unresolvable') return 'unresolvable';
+  if (resolved.integrity === 'failed' || resolved.subjectDigest !== citation.digest) return 'integrity-failed';
+  return 'verified';
+}
+
 export class EvidenceView {
   constructor(private readonly ports: Pick<LearningPorts, 'evidence' | 'readerAccess'>) {}
 

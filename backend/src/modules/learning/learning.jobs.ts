@@ -22,9 +22,11 @@
  */
 import { ValidationFailedError } from '../../core/errors.js';
 import { runWithLimits } from '../jobs/job-runner.service.js';
+import { retryMissingAttestations } from './attestation.js';
 import { MAX_DECISION_ATTEMPTS, type DecisionRequester } from './decision.requester.js';
+import { stateOf } from './evidence.view.js';
 import { LEARNING_POLICY_DEFAULTS, type LearningPolicyReader } from './learning-policy.js';
-import type { LearningStore } from './learning.store.js';
+import { newLearningId, type CandidateRecord, type FlagRecord, type LearningStore } from './learning.store.js';
 import type { LearningPorts } from './learning.tokens.js';
 import type { Materialiser } from './materialiser.js';
 
@@ -79,6 +81,7 @@ export class LearningJobs {
     this.handlers.set('learning.resolve-decisions', (o, t) => this.resolveDecisions(o, t));
     this.handlers.set('learning.request-pending', (o, t) => this.requestPending(o, t));
     this.handlers.set('learning.expire', (o, t) => this.expire(o, t));
+    this.handlers.set('learning.flags', (o, t) => this.flags(o, t));
   }
 
   /** Run one job by name, under a hard time limit. Per-item failures are reported, not thrown. */
@@ -107,6 +110,91 @@ export class LearningJobs {
         tally.errors.push(`${candidate.id}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
+  }
+
+  /**
+   * `FR-LRN-037` (T2369) — flags, never status changes. Deprecation is a human
+   * decision; the platform only says *look at this again*.
+   *
+   * - `evidence-changed` on a current version whose citations are no longer all
+   *   verified, cleared by a later row when they are;
+   * - `source-invalid` on a current version, and on an open candidate (`C3`),
+   *   whose source execution carries an invalidating governance event
+   *   (`R-048-17`) — permanent, since the registry is append-only;
+   * - the attestation retry (`R-048-19`).
+   *
+   * An unreachable Evidence Store or registry is reported, never read as change.
+   */
+  private async flags(options: RunOptions, tally: Tally): Promise<void> {
+    const { store, ports } = this.deps;
+    const at = this.now();
+    const openOf = async (workspaceId: string, ref: { versionId?: string; candidateId?: string }, kind: FlagRecord['kind']): Promise<FlagRecord[]> => {
+      const all = await store.flags(workspaceId, ref);
+      const cleared = new Set(all.map((f) => f.clearsFlagId).filter((id): id is string => id !== null));
+      return all.filter((f) => f.kind === kind && f.clearsFlagId === null && !cleared.has(f.id));
+    };
+    const raise = (workspaceId: string, ref: { versionId?: string; candidateId?: string }, kind: FlagRecord['kind'], detail: string, clears: string | null = null): Promise<void> =>
+      store.transaction((tx) =>
+        tx.appendFlag({ id: newLearningId('kf'), workspaceId, versionId: ref.versionId ?? null, candidateId: ref.candidateId ?? null, kind, detail, raisedAt: at, clearsFlagId: clears }),
+      );
+    const invalidity = async (candidate: CandidateRecord): Promise<readonly string[]> => {
+      if (candidate.executionId === null) return [];
+      const facts = await ports.executions.describe(candidate.workspaceId, candidate.executionId);
+      return facts?.invalidatedBy ?? [];
+    };
+
+    for (const version of await store.currentVersions(options.workspaceId)) {
+      tally.examined += 1;
+      const ws = version.workspaceId;
+      const candidate = await store.candidate(ws, version.candidateId);
+      if (candidate === null) continue;
+      const ref = { versionId: version.id };
+
+      try {
+        const citations = (await store.citations(ws, candidate.id)).filter((c) => c.corroborationId === null);
+        const resolved = await ports.evidence.resolve(ws, citations.map((c) => c.evidenceId));
+        const broken = citations.map((c) => ({ id: c.evidenceId, state: stateOf(c, resolved.get(c.evidenceId)) })).filter((c) => c.state !== 'verified');
+        const open = await openOf(ws, ref, 'evidence-changed');
+        if (broken.length > 0 && open.length === 0) {
+          await raise(ws, ref, 'evidence-changed', `evidence changed since approval: ${broken.map((b) => `${b.id} ${b.state}`).join(', ')}`);
+          tally.changed += 1;
+        } else if (broken.length === 0) {
+          for (const f of open) await raise(ws, ref, 'evidence-changed', 'every citation verified again', f.id);
+          tally.changed += open.length;
+        }
+      } catch (err) {
+        tally.errors.push(`${version.id} evidence: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
+      try {
+        const invalid = await invalidity(candidate);
+        if (invalid.length > 0 && (await openOf(ws, ref, 'source-invalid')).length === 0) {
+          await raise(ws, ref, 'source-invalid', `source execution ${candidate.executionId} carries ${invalid.join(', ')}`);
+          tally.changed += 1;
+        }
+      } catch (err) {
+        tally.errors.push(`${version.id} source: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // C3 — an open candidate from an invalid source is flagged before anyone decides it.
+    for (const { candidate } of await store.candidatesInStates(['proposed', 'pending-review'], options.workspaceId)) {
+      tally.examined += 1;
+      try {
+        const invalid = await invalidity(candidate);
+        const ref = { candidateId: candidate.id };
+        if (invalid.length > 0 && (await openOf(candidate.workspaceId, ref, 'source-invalid')).length === 0) {
+          await raise(candidate.workspaceId, ref, 'source-invalid', `source execution ${candidate.executionId} carries ${invalid.join(', ')}`);
+          tally.changed += 1;
+        }
+      } catch (err) {
+        tally.errors.push(`${candidate.id} source: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    const retried = await retryMissingAttestations({ store, ports, now: this.now }, options.workspaceId);
+    tally.changed += retried.contributed;
+    tally.errors.push(...retried.failed);
   }
 
   /**

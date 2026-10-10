@@ -349,13 +349,13 @@ order.
   - provenance answers *where from, who approved, what it replaces* from the record alone (`SC-LRN-006`);
   - nothing is deleted (`FR-LRN-039`)
 - [X] T2367 [US4] Implement `backend/src/modules/learning/knowledge.service.ts` (unit test: T2366) — **Done**: `knowledge.service.ts`: `browse` (rows with status, retrievability, open flags), `entry` (current + provenance), `history` (versions with candidate, decision, status events, flags; events ordered by the approval that caused them).
-- [ ] T2368 [P] [US4] Write failing job tests `backend/tests/integration/learning-flags-job.spec.ts`:
+- [X] T2368 [P] [US4] Write failing job tests `backend/tests/integration/learning-flags-job.spec.ts`: — **Done**: 5 cases on the composed app, all red first: integrity-failed and unresolvable raise `evidence-changed` once and a recovery clears it with a new row; an unreachable store flags nothing and is reported; `source-invalid` on the version **and** an open candidate (C3); the attestation retry; status never changes.
   - `learning.flags` raises `evidence-changed` when a cited item turns `integrity-failed` or `unresolvable`;
   - it raises `source-invalid` on `validation-failed`, `transition-refused`, `transition-inconsistent` or `execution-reconciliation-conflicted` (`R-048-17`);
   - a later row clears a flag;
   - an **open** candidate (`proposed`/`pending-review`) from an invalid source is flagged `source-invalid` too, so its reviewer sees it (spec Edge Case; analysis finding `C3`);
   - **status never changes** (`FR-LRN-037`)
-- [ ] T2369 [US4] Implement `learning.flags` in `learning.jobs.ts` (integration test: T2368)
+- [X] T2369 [US4] Implement `learning.flags` in `learning.jobs.ts` (integration test: T2368) — **Done**: `learning.flags` in `learning.jobs.ts` (evidence via the shared `stateOf` rule, source invalidity from `ExecutionFacts.invalidatedBy`, attestation retry).
 - [ ] T2370 [P] [US4] Write failing route tests `backend/tests/integration/learning-knowledge-route.spec.ts`:
   - `GET /learning/knowledge`, `/:entryId`, `/:entryId/history`;
   - there is **no** `PUT`, `PATCH` or `DELETE` under `/learning/knowledge` (`FR-LRN-031`, `FR-LRN-042`);
