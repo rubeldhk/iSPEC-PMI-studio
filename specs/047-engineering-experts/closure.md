@@ -125,3 +125,62 @@ Two new migrations after `20261009090000_epic047_experts`. `ExpertsStore` gained
 `noteUnreported`, and `endSession` now returns `Promise<boolean>` — any other implementation of the
 interface must follow. `ExpertSession` gained a required `actorId`. No change to
 `governance/known-red.json`, `package.json`, `README.md` or the `EPIC-036` area counts.
+
+---
+
+## 2026-10-10 — Phase 9: the dependency adapters (`T1977`–`T1982`)
+
+Unblocked when `EPIC-032` (#3), `EPIC-031` (#4) and `EPIC-038` (#5) merged to `main`. Three of the
+five ports that refused are now bound to their owners; two still refuse.
+
+| Port | Bound to | Adapter |
+|---|---|---|
+| `ContractApprovals` | `EPIC-031` — `DecisionEngine.decide`, and the repository's `get` / `resolutionOf` | `adapters/decisions.adapter.ts` |
+| `EvidenceContracts` | `EPIC-032` — `ContractCatalog.get` | `adapters/evidence.adapter.ts` |
+| `ContextAssembler` | `EPIC-038` — `AssemblyService.assemble` / `bindExecution` | `adapters/context.adapter.ts` |
+| `ExpertGateways` | still refusing — `R-047-2` | — |
+| `ExpertExecutions` | still refusing — `DEF-047-001` | — |
+
+### Decisions taken
+
+- **Workspace scope for a decision.** Every `EPIC-031` decision names a `projectId`; an Expert
+  belongs to a workspace (`FR-EXP-008`). Submissions are scoped `workspace:<id>`, which no
+  project-scoped steering rule matches and no real project id resembles. `EPIC-031` has no
+  workspace-scoped decision of its own — a gap, recorded here and in the adapter where it is
+  crossed.
+- **The resolution is read, never cached.** The decision that resolved one wins; otherwise the
+  decision itself — `auto-executed`/`approved` read as approved, `refused` as refused, `pending` as
+  pending. A decision id `EPIC-031` cannot find is a fault, never *pending*. An `exception` outcome
+  is unreachable for a gate-less decision and is never read as approved.
+- **The author is `requestedBy`.** `EPIC-031` therefore refuses self-approval unless policy names
+  the class (`FR-DPE-015`): the author of a contract does not approve it.
+- **`EPIC-031`'s module now exports `DECISION_REPOSITORY`** — additive, read-only use. It offers no
+  callback, and the engine has no read of its own.
+- **The local `RiskBand` stays**, asserted identical to `@pmi/decision-contract`'s, value and type
+  (`R-047-6`).
+
+### Tests
+
+| Suite | Result |
+|---|---|
+| `expert-adapter-decisions` / `-evidence` / `-context` (unit) | observed failing first (no module), then **25 passed** |
+| All `expert-*` and `decision-*` unit tests | **335 passed** in 62 files |
+| `experts-reachability` (composed, no database) | **7 passed**; the inversion in [mutation-proofs.md](./mutation-proofs.md) §3 fails 3 |
+| Experts route tests (Testcontainers PostgreSQL) | **29 passed** in 5 files, including a new case registered under `task-completion@1`, submitted, decided `pending` at the `high` band and read back |
+
+Two composed assertions changed meaning and were rewritten, not deleted: registering the fixture's
+`implementation@1` is now **400 — a dangling reference** that `EPIC-032`'s catalog does not hold,
+where it was `503`; and submitting no longer refuses `503`. Without a database the composed
+`ContractApprovals` refuses on `EPIC-004`'s terms — no audit writer, so no decision is taken
+(`FR-DPE-016`) — which the reachability test asserts as its proof of wiring.
+
+### Still not done
+
+`T1993` is no longer among them: the `BR-0101`/`BR-0105` owner annotations landed with
+#6, approved by the Project Owner on 2026-10-10. What remains is `T1992` (Tier 2 transcript) and `DEF-047-001` — no Expert run can be dispatched while
+`ExpertGateways` and `ExpertExecutions` refuse. Promotion, as above.
+
+### Recommended next command
+
+`/speckit-specify` for the `DEF-047-001` follow-up — an Expert execution identity over `EPIC-043`'s
+principals and a runner over `EPIC-028`'s seam — or a defect task under this Epic.
