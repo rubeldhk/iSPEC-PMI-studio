@@ -26,6 +26,8 @@
  */
 import { Module } from '@nestjs/common';
 import { prismaClient } from '../../persistence/prisma.js';
+import { AccessModule } from '../access/access.module.js';
+import { AccessInheritanceService } from '../access/access-inheritance.service.js';
 import { AgentsModule } from '../agents/agents.module.js';
 import { PrincipalRegistryService } from '../agents/principal-registry.service.js';
 import { AuditModule } from '../audit/audit.module.js';
@@ -33,6 +35,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { ConnectorModule } from '../connector/connector.module.js';
 import { EvidenceModule } from '../evidence/evidence.module.js';
 import { EvidenceService } from '../evidence/evidence.service.js';
+import { AccessControlEvidencePolicy } from '../evidence/access.adapter.js';
 import { ExecutionsModule } from '../executions/executions.module.js';
 import { ExecutionEventService } from '../executions/execution-event.service.js';
 import { ExecutionRegistrationService } from '../executions/execution-registration.service.js';
@@ -49,6 +52,7 @@ import { PrismaKnowledgeWriter, PrismaLearningStore, type LearningPrismaClient }
 import { KNOWLEDGE_WRITER, LEARNING_PORTS, LEARNING_PORTS_TOKEN, LEARNING_STORE, refusingPorts, type AuditPort, type LearningPorts } from './learning.tokens.js';
 import { auditPort, executionsPort, principalsPort, projectsPort } from './main-ports.js';
 import { attestationsAdapter } from './adapters/attestations.adapter.js';
+import { evidenceReadsAdapter, readerAccessAdapter } from './adapters/evidence.adapter.js';
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
 import { CandidateViewService } from './candidate.view.js';
@@ -75,7 +79,7 @@ export class LearningService {
 const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
 
 @Module({
-  imports: [AgentsModule, AuditModule, ConnectorModule, EvidenceModule, ExecutionsModule, ProjectsModule, SteeringModule],
+  imports: [AccessModule, AgentsModule, AuditModule, ConnectorModule, EvidenceModule, ExecutionsModule, ProjectsModule, SteeringModule],
   controllers: [LearningController, LearningConnectorController],
   providers: [
     { provide: LearningService, useFactory: (): LearningService => new LearningService() },
@@ -87,7 +91,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       provide: LEARNING_PORTS_TOKEN,
-      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService],
+      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService, AccessInheritanceService],
       useFactory: (
         facade: ExecutionRegistryFacade,
         registration: ExecutionRegistrationService,
@@ -98,6 +102,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         projects: ProjectsService,
         store: LearningStore,
         evidence: EvidenceService,
+        readability: AccessInheritanceService,
       ): LearningPorts => {
         const ports: LearningPorts = refusingPorts();
         // The SecretScreen is pure code — EPIC-037's patterns — and needs no database.
@@ -119,6 +124,9 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         // Phase 9 — owners now on main (R-048-20). Each owner picks its own
         // persistence by DATABASE_URL, so these bind with or without one.
         Object.assign(ports, {
+          // T2395 — EPIC-032's resolve (A-032-1), and its own access rule over EPIC-024.
+          evidence: evidenceReadsAdapter(evidence),
+          readerAccess: readerAccessAdapter(new AccessControlEvidencePolicy(readability)),
           // T2389 — EPIC-032's contribute, the platform-source branch.
           attestations: attestationsAdapter({
             evidence,

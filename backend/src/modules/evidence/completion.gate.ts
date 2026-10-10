@@ -27,6 +27,7 @@ import {
   type ContractStatus,
   type EvidenceKind,
   type EvidenceStorage,
+  type SubjectDigest,
 } from '@pmi/evidence-contract';
 import { assess, assessForRollup, deriveStatus, type AssessedEvidence } from './contract.status.js';
 import type { ContractCatalog } from './contract.loader.js';
@@ -77,6 +78,21 @@ function attachedFrom(
   });
 }
 
+/**
+ * `A-032-1` (`EPIC-048` `T2395`) — one attestation read by id: the view a Room
+ * lists, plus what a citation is compared with (the stored subject digest) and
+ * what an access check asks about (the attested target). Never the payload.
+ */
+export interface ResolvedAttestation extends AttachedEvidence {
+  readonly subjectDigest: SubjectDigest;
+  /**
+   * The subject of the Contract bound to the work the item is attached to —
+   * what `FR-EVS-015` asks about when the work's evidence is read. With no
+   * Contract bound, the work itself.
+   */
+  readonly attestedTarget: { readonly type: string; readonly id: string };
+}
+
 /** One binding's status for the rollup, or why it could not be evaluated. */
 export type RollupStatus =
   | { readonly evaluated: true; readonly status: ContractStatus }
@@ -119,6 +135,41 @@ export class CompletionGate {
         reason: 'the evidence store could not be reached, so the Contract cannot be evaluated (FR-EVS-035)',
       };
     }
+  }
+
+  /**
+   * `A-032-1` — attestations by id, assessed exactly as `evaluate` assesses
+   * them: integrity re-derived on this read. Throws when the store cannot be
+   * read; the service turns that into `FR-EVS-035`'s unavailability.
+   */
+  async resolve(workspaceId: string, ids: readonly string[]): Promise<Map<string, ResolvedAttestation>> {
+    const out = new Map<string, ResolvedAttestation>();
+    if (ids.length === 0) return out;
+    const rows = await this.repository.byIds(workspaceId, ids);
+    const assessed = await assess(rows, this.storage);
+    const bindingOf = new Map<string, WorkBinding | null>();
+    for (const [i, row] of rows.entries()) {
+      const key = refKey(row.attachedTo);
+      if (!bindingOf.has(key)) bindingOf.set(key, (await this.repository.bindings(workspaceId, row.attachedTo)).at(-1) ?? null);
+      const binding = bindingOf.get(key) ?? null;
+      const judged = assessed[i]!;
+      out.set(row.id, {
+        id: row.id,
+        predicateType: row.predicateType,
+        kind: kindOf(row.predicateType),
+        source: { uri: row.sourceUri, version: row.sourceVersion },
+        producedAt: row.producedAt.toISOString(),
+        attestedArtifact: { id: row.attestedArtifactId, version: row.attestedVersion },
+        storage: row.storage,
+        integrity: judged.integrity,
+        resolution: judged.resolution,
+        reportsFailure: judged.reportsFailure === true,
+        current: binding !== null && row.attestedArtifactId === binding.subjectArtifactId && row.attestedVersion === binding.subjectVersion,
+        subjectDigest: row.subjectDigest,
+        attestedTarget: binding !== null ? { type: binding.subjectArtifactType, id: binding.subjectArtifactId } : { type: row.attachedTo.type, id: row.attachedTo.id },
+      });
+    }
+    return out;
   }
 
   /** The evaluation of one binding against evidence already loaded. */

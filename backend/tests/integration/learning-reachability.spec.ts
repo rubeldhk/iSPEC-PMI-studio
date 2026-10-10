@@ -86,5 +86,17 @@ describe('T2301 · the Learning module is reachable through the composed applica
       expect(outcome).toHaveProperty('error');
       expect(String((outcome as { error: Error }).error.message)).toContain('lc_none');
     });
+
+    it('T2395 · EvidenceReads reaches EPIC-032 (an id nobody holds is absent, not unbound)', async () => {
+      const p = await ports();
+      const outcome = await notUnbound(() => p.evidence.resolve('ws_x', ['ev_none']));
+      expect(outcome).toEqual({ value: new Map() });
+    });
+
+    it('T2395 · ReaderAccess is EPIC-032’s policy: an ungoverned target is readable, a governed one without a grant is not', async () => {
+      const p = await ports();
+      expect(await p.readerAccess.canRead({ workspaceId: 'ws_x', userId: 'u_x' }, { type: 'task', id: 'T-1' })).toBe(true);
+      expect(await p.readerAccess.canRead({ workspaceId: 'ws_x', userId: 'u_x' }, { type: 'specification', id: 'spec_none' })).toBe(false);
+    });
   });
 });
