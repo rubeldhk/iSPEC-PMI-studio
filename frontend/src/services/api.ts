@@ -1374,6 +1374,17 @@ export class ApiClient {
     return this.request('POST', `/decisions/${encodeURIComponent(decisionId)}/approve`);
   }
 
+  /**
+   * `FR-DPE-017` — close a pending decision without approving it. `403` carries
+   * the decision's own reason when the caller may not close it.
+   */
+  async refuseDecision(
+    decisionId: string,
+    closure: { kind: 'rejected' | 'withdrawn'; reason: string },
+  ): Promise<DecisionOutcomeView> {
+    return this.request('POST', `/decisions/${encodeURIComponent(decisionId)}/refuse`, closure);
+  }
+
   // ---- execution timeline (EPIC-043) ----
 
   async listExecutions(projectId: string, filters: ExecutionTimelineFilters = {}): Promise<ExecutionTimelinePage> {

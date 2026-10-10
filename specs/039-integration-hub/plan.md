@@ -56,7 +56,7 @@ facts), `EPIC-036` (shell) — on this branch; and **`EPIC-031`** (decisions), *
 ports bound refusing until they merge (`R-039-13`).
 
 **Storage**: PostgreSQL 16 via Prisma (`ADR-0003`). **10 new tables** in one migration
-`backend/prisma/migrations/20261009120000_epic039_integration_hub/` ([data-model.md](./data-model.md));
+`backend/prisma/migrations/20261009130000_epic039_integration_hub/` ([data-model.md](./data-model.md));
 three append-only via the shared `reject_mutation()`, one write-once trigger on approved contract
 versions. One additive event type in `packages/execution-registry-contract`.
 
@@ -192,7 +192,7 @@ packages/execution-registry-contract/src/events.ts  + 'capability-resolved' in G
 packages/mcp-server/                                  unchanged (asserted: no capability tool)
 
 backend/prisma/schema.prisma                         + 10 models
-backend/prisma/migrations/20261009120000_epic039_integration_hub/   tables, triggers, v1 contract seed
+backend/prisma/migrations/20261009130000_epic039_integration_hub/   tables, triggers, v1 contract seed
 
 backend/tests/architecture/capability-independence.spec.ts   FR-HUB-061 (mutation proof SC-HUB-001)
 backend/tests/architecture/integrations-credentials-boundary.spec.ts   only the vault reads ciphertext

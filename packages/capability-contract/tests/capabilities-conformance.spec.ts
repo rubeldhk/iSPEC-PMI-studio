@@ -25,7 +25,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const PACKAGE = resolve(here, '..');
 const REPO_ROOT = resolve(PACKAGE, '../..');
 const CAPABILITIES = join(PACKAGE, 'capabilities');
-const MIGRATION = join(REPO_ROOT, 'backend/prisma/migrations/20261009120000_epic039_integration_hub/migration.sql');
+const MIGRATION = join(REPO_ROOT, 'backend/prisma/migrations/20261009130000_epic039_integration_hub/migration.sql');
 
 /**
  * `FR-HUB-014` — the capabilities allowed to change state at a provider.

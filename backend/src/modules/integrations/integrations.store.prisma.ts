@@ -2,7 +2,7 @@
  * `T2130` (EPIC-039) — the Integration Hub's store over PostgreSQL.
  *
  * The behaviour of `integrations.store.ts`'s in-memory binding, against the
- * ten tables of `20261009120000_epic039_integration_hub`. Two rules carried
+ * ten tables of `20261009130000_epic039_integration_hub`. Two rules carried
  * across from the port:
  *
  * - **Append-only stays append-only**: there is no `update` or `delete` call on

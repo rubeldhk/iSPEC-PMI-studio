@@ -8,6 +8,8 @@
  * - **An auto-approved high-band decision is not representable**:
  *   `effectiveClass = 'high' ⇒ actorKind = 'human'`.
  *
+ * A closure (`FR-DPE-017`) carries its kind and its reason together, or neither.
+ *
  * And the tables are append-only: a decision taken stays taken, and an
  * explanation written stays as written (`FR-DPE-044`).
  */
@@ -128,6 +130,32 @@ suite('T732 · the decision fences hold in PostgreSQL', () => {
 
     it('accepts a pending decision with no decider yet', async () => {
       await insertDecision(db, 'd_pending', { outcome: 'pending', decidedBy: null });
+    });
+  });
+
+  describe('T2508 · FR-DPE-017 — a closure states its kind and its reason together', () => {
+    const insertExplanation = (id: string, kind: string | null, reason: string | null) =>
+      db.query(
+        `INSERT INTO "decision_explanations" ("id","workspaceId","policyVersion","riskClass","authorityApplied","closureKind","closureReason")
+         VALUES ($1,$2,'1','high','closed',$3,$4)`,
+        [id, WS, kind, reason],
+      );
+
+    it.each([
+      ['a closure kind with no reason', 'rejected', null],
+      ['a closure kind with a blank reason', 'withdrawn', '   '],
+      ['a reason with no closure kind', null, 'because'],
+      ['an unknown closure kind', 'cancelled', 'because'],
+    ])('refuses %s', async (_label, kind, reason) => {
+      await expect(insertExplanation(`ex_${Math.random()}`, kind, reason)).rejects.toThrow(/closure_states_kind_and_reason/);
+    });
+
+    it.each(['rejected', 'withdrawn', 'expired'])('accepts a %s closure with its reason', async (kind) => {
+      await insertExplanation(`ex_${kind}`, kind, 'stated reason');
+    });
+
+    it('accepts an explanation that is not a closure — both columns absent', async () => {
+      await insertExplanation('ex_not_a_closure', null, null);
     });
   });
 

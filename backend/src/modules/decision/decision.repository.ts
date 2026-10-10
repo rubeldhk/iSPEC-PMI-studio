@@ -8,7 +8,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { Prisma, type PrismaClient } from '@prisma/client';
-import type { DecisionOutcome, Explanation, GateOutcome, RiskBand } from '@pmi/decision-contract';
+import type { ClosureKind, DecisionOutcome, Explanation, GateOutcome, RiskBand } from '@pmi/decision-contract';
 import type { TenantPolicyDocument } from './policy.loader.js';
 
 export interface DecisionRecord {
@@ -145,6 +145,10 @@ function toExplanation(row: Record<string, unknown>): Explanation & { id: string
     ...optional('constraintCited'),
     ...optional('proposalDisagreement'),
     ...optional('triggerRule'),
+    // `FR-DPE-017` — the database holds both or neither.
+    ...(typeof row['closureKind'] === 'string'
+      ? { closure: { kind: row['closureKind'] as ClosureKind, reason: row['closureReason'] as string } }
+      : {}),
   } as Explanation & { id: string };
 }
 
@@ -192,6 +196,8 @@ export class PrismaDecisionRepository implements DecisionRepository {
           constraintCited: e.constraintCited ?? null,
           proposalDisagreement: e.proposalDisagreement ?? null,
           triggerRule: e.triggerRule ?? null,
+          closureKind: e.closure?.kind ?? null,
+          closureReason: e.closure?.reason ?? null,
         },
       });
       return tx.policyDecision.create({

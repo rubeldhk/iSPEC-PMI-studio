@@ -4,7 +4,7 @@
 **Contract**: [contracts/integration-hub-api.md](./contracts/integration-hub-api.md)
 
 **Ten new tables**, all workspace-scoped except the vocabulary (§1) and the deployment binding record (§8a), in one migration
-`backend/prisma/migrations/20261009120000_epic039_integration_hub/`. Three are **append-only** by
+`backend/prisma/migrations/20261009130000_epic039_integration_hub/`. Three are **append-only** by
 trigger (`integration_health_checks`, `capability_resolutions`, `capability_invocations`) plus the deployment binding record (§8a), one is **immutable after
 approval** by trigger (`capability_contract_versions`), and one holds **ciphertext only**
 (`integration_credentials`). Plus one additive event type in `packages/execution-registry-contract`
