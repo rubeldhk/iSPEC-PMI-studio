@@ -76,6 +76,14 @@ describe('T2135 · a changed version is detected against the last observed one',
   });
 });
 
+describe('T2160 · github-rest joins the catalog', () => {
+  it('serves the three reads with a credential required', () => {
+    const c = createAdapterCatalog();
+    expect(c.descriptor('github-rest')).toMatchObject({ provider: 'github', transport: 'native-api', credentialRequired: true });
+    expect(c.implementing('ReadTestResults').map((a) => a.descriptor.key).sort()).toEqual(['fixture-ci', 'github-rest']);
+  });
+});
+
 describe('T2136 · the composition file builds the catalog', () => {
   it('holds the fixture read adapters, each conforming to assertDescriptor', () => {
     const keys = createAdapterCatalog().keys();

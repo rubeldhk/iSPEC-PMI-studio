@@ -13,6 +13,7 @@
  * adapters, which are composed in the worker (`R-039-1`).
  */
 import { FixtureCiAdapter, FixtureGitAdapter } from '@pmi/capability-adapter-fixture';
+import { GitHubRestAdapter } from '@pmi/capability-adapter-github';
 import { AdapterCatalog } from '../modules/integrations/catalog.service.js';
 
 export interface CatalogOptions {
@@ -20,6 +21,11 @@ export interface CatalogOptions {
   readonly fetch?: typeof fetch;
 }
 
-export function createAdapterCatalog(_options: CatalogOptions = {}): AdapterCatalog {
-  return new AdapterCatalog([new FixtureGitAdapter(), new FixtureCiAdapter()]);
+export function createAdapterCatalog(options: CatalogOptions = {}): AdapterCatalog {
+  const fetchLike = options.fetch;
+  return new AdapterCatalog([
+    new FixtureGitAdapter(),
+    new FixtureCiAdapter(),
+    new GitHubRestAdapter(fetchLike ? { fetch: (url, init) => fetchLike(url, init as RequestInit) } : {}),
+  ]);
 }
