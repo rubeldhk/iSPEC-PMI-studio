@@ -131,12 +131,12 @@ Steps 1–3 may land in any order among themselves. Step 4 needs all three; step
   - `lowRisk` absent reads `false` (`FR-LRN-026`);
   - a new steering version is the policy change, with actor and instant (`FR-LRN-047`)
 - [X] T2323 Implement `backend/src/modules/learning/learning-policy.ts` over `SteeringService` and admit subject `learning_policy` in `backend/src/modules/steering/steering.validation.ts` (unit test: T2322) — `R-048-3` — **Done**: `learning-policy.ts` (`parseLearningPolicy`, `LearningPolicy`, `LearningPolicyReader.require`, `steeringPolicySource`); `learning_policy` admitted in `steering.validation.ts` (EPIC-019's T234 updated to name it) and filtered out of `resolvedSteeringForProject` (EPIC-042) so configuration is never rendered as guidance; 110/110 across learning, steering and governance units.
-- [ ] T2324 [P] Write a failing unit test `packages/execution-registry-contract/tests/learning-event.spec.ts`:
+- [X] T2324 [P] Write a failing unit test `packages/execution-registry-contract/tests/learning-event.spec.ts`: — **Done**: 4 red, then green.
   - `learning-candidate-recorded` is a content-class member of the union;
   - `isExecutionEventType` accepts it;
   - `classOf` is `content`;
   - it is permitted after a terminal lifecycle event
-- [ ] T2325 Add `learning-candidate-recorded` to `packages/execution-registry-contract/src/events.ts` and assert it in `backend/tests/integration/execution-parity.spec.ts` (unit test: T2324) — `A-037-2`. **The event count moves 29 → 30 on this branch and resolves to 31 on rebase after `EPIC-047` merges**; that conflict is expected and resolved by keeping both
+- [X] T2325 Add `learning-candidate-recorded` to `packages/execution-registry-contract/src/events.ts` and assert it in `backend/tests/integration/execution-parity.spec.ts` (unit test: T2324) — `A-037-2`. **The event count moves 29 → 30 on this branch and resolves to 31 on rebase after `EPIC-047` merges**; that conflict is expected and resolved by keeping both — **Done**: `learning-candidate-recorded` in `CONTENT_EVENTS`; T1024 now asserts 9 + 5 + 4 + 12 = 30; the parity spec records one after `completed` through the REST surface (5/5 green). Rebase onto EPIC-047 resolves to 31.
 
 **Checkpoint**:
 - types that cannot name an AI approver;

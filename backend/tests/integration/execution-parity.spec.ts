@@ -173,6 +173,23 @@ suite('T1435 · parity across the four surfaces (AC-EXR-01–04)', () => {
     expect(local.body.items.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('T2325 (EPIC-048, A-037-2) · learning-candidate-recorded is a content event, recordable after completion', async () => {
+    // R-048-17: a late submission inside the grace period is recorded on an
+    // execution that has already finished — only lifecycle events stop at terminal.
+    const done = await throughRest('learning');
+    const api = started.app.getHttpServer();
+    const auth = { Authorization: `Bearer ${token}`, ...HEADERS };
+    await request(api)
+      .post(`/v1/executions/${done.executionId}/events`)
+      .set(auth)
+      .set('Idempotency-Key', 'learn_late')
+      .send({ type: 'learning-candidate-recorded', payload: { kind: 'late-submitted', candidateId: 'lc_1' }, occurredAt: new Date().toISOString(), idempotencyKey: 'learn_late' })
+      .expect(201);
+    const history = await request(api).get(`/v1/executions/${done.executionId}/history`).set(auth).expect(200);
+    const types = (history.body as { type: string }[]).map((e) => e.type);
+    expect(types.indexOf('learning-candidate-recorded')).toBeGreaterThan(types.indexOf('completed'));
+  });
+
   it('history through MCP and through REST is the same event sequence', async () => {
     const api = started.app.getHttpServer();
     const auth = { Authorization: `Bearer ${token}`, ...HEADERS };
