@@ -1,0 +1,37 @@
+{
+ "provider": "ollama",
+ "recordedOn": "2026-10-10",
+ "provenance": "Constructed on 2026-10-10 from the Ollama API documentation (Context7 /ollama/ollama: GET /api/tags). The bound model has been re-pulled: same name, a new weights digest — the model version change of FR-HUB-082 / CC-12. NOT captured from live traffic.",
+ "interactions": [
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/tags"
+   },
+   "response": {
+    "status": 200,
+    "json": {
+     "models": [
+      {
+       "name": "nomic-embed-text:latest",
+       "model": "nomic-embed-text:latest",
+       "modified_at": "2026-10-09T09:00:00.000000000Z",
+       "size": 274302450,
+       "digest": "970aa74c0a90ef7482477cf803618e776e173c007bf957f635f1015bfcfef0e6",
+       "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "nomic-bert",
+        "families": [
+         "nomic-bert"
+        ],
+        "parameter_size": "137M",
+        "quantization_level": "F16"
+       }
+      }
+     ]
+    }
+   }
+  }
+ ]
+}
