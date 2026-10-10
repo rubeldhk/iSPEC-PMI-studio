@@ -145,6 +145,14 @@ suite('T1435 · parity across the four surfaces (AC-EXR-01–04)', () => {
     expect(new Set(all.map((s) => s.executionId)).size).toBe(4);
   });
 
+  it('the snapshot names the project the execution was registered under (EPIC-038 T1857)', async () => {
+    // Additive. Context retrieval scopes execution history by project
+    // (FR-CTX-050); a snapshot silent on the project would make every
+    // execution's history look workspace-wide.
+    const managed = await throughFacade('managed-sandbox', 'p');
+    expect(managed.projectId).toBe(projectId);
+  });
+
   it('nothing local came from the caller: a body naming assurance or surface is refused (SC-PIC-008)', async () => {
     const api = started.app.getHttpServer();
     const auth = { Authorization: `Bearer ${token}`, ...HEADERS };

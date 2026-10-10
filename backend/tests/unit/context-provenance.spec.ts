@@ -16,7 +16,17 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ProvenanceService } from '../../src/modules/context/provenance.service.js';
-import { baselines } from '../helpers/context-fixtures.js';
+import { AssemblyService } from '../../src/modules/context/assembly.service.js';
+import { InMemoryContextStore } from '../../src/modules/context/context.store.js';
+import {
+  allow,
+  baselines,
+  candidates,
+  classes,
+  input,
+  noAuthorisations,
+  retrieval,
+} from '../helpers/context-fixtures.js';
 
 const source = { sourceType: 'requirement', sourceId: 'rq_1', sourceVersion: 'v3' };
 
@@ -66,5 +76,63 @@ describe('T1247 · SC-CTX-002 — every item carries a status', () => {
     const subject = new ProvenanceService(baselines({}));
     const resolved = await subject.resolve('ws_1', source);
     expect(resolved.authoritativeStatus).toBeDefined();
+  });
+});
+
+/**
+ * `T1250` — provenance resolution **at assembly**. The service above was
+ * tested alone and never called; these require the assembled items to carry
+ * what it resolves.
+ */
+describe('T1250 · assembly resolves each item through ProvenanceService', () => {
+  async function assembled(provenance: ProvenanceService | null, found = candidates(['rq_1', 'rq_2'])) {
+    const store = new InMemoryContextStore();
+    const result = await new AssemblyService(store, {
+      retrieval: retrieval(found),
+      access: allow(),
+      sourceClasses: classes(['requirement', 'execution-history']),
+      authorisations: noAuthorisations(),
+      executions: { async projectedVersion() { return 'v1'; } },
+      provenance,
+    }).assemble(input());
+    return { store, result, items: await store.itemsFor('ws_1', result.packageId) };
+  }
+
+  it('a superseded source is recorded superseded, naming its successor', async () => {
+    const { items } = await assembled(
+      new ProvenanceService(baselines({ 'rq_1@v1': { status: 'current' }, 'rq_2@v1': { status: 'superseded', supersededBy: 'rq_2@v2' } })),
+    );
+    const byId = Object.fromEntries(items.map((i) => [i.sourceId, i]));
+    expect(byId['rq_1']?.authoritativeStatus).toBe('current');
+    expect(byId['rq_2']).toMatchObject({ authoritativeStatus: 'superseded', supersededBy: 'rq_2@v2' });
+  });
+
+  it('execution history is current as of its projection', async () => {
+    const { items } = await assembled(new ProvenanceService(baselines({})), [
+      { sourceType: 'execution-history', sourceId: 'ex_7', sourceVersion: 'v1', relevanceScore: 0.9, workspaceId: 'ws_1' },
+    ]);
+    expect(items[0]?.authoritativeStatus).toBe('current');
+  });
+
+  it('with no baseline reader bound, items are undetermined, naming the owner', async () => {
+    const { items } = await assembled(null);
+    for (const item of items) {
+      expect(item.authoritativeStatus).toBe('undetermined');
+      expect(item.authoritativeStatus === 'undetermined' ? item.undeterminedReason : '').toMatch(/EPIC-033/);
+    }
+  });
+
+  it('a malformed answer refuses before anything is written', async () => {
+    const store = new InMemoryContextStore();
+    await expect(
+      new AssemblyService(store, {
+        retrieval: retrieval(candidates(['rq_1'])),
+        access: allow(),
+        sourceClasses: classes(['requirement']),
+        authorisations: noAuthorisations(),
+        provenance: new ProvenanceService(baselines({ 'rq_1@v1': { status: 'superseded', supersededBy: '' } })),
+      }).assemble(input()),
+    ).rejects.toThrow(/successor/);
+    expect(await store.packagesForExecution('ws_1', 'ex_1')).toEqual([]);
   });
 });

@@ -30,6 +30,24 @@
       "evidence": "specs/035-defect-room/tier2-transcript.md",
       "owes": "T999t (EPIC-035) — the Tier 2 defect-room journey, all seven steps: report, triage, reproduce, failing test, repair tasks, verify, close",
       "why": "The journey is keyboard-only against a running application, and two of its seven steps refuse in this deployment because RepairTaskPort and TestExecution are unbound. Typing the transcript is the fabrication the check exists to test for."
+    },
+    {
+      "id": "T1294",
+      "file": "backend/tests/architecture/context-transcript.spec.ts",
+      "project": "architecture",
+      "gatedScript": "test:arch:gated",
+      "evidence": "specs/038-engineering-context/tier2-transcript.md",
+      "owes": "T1301 (EPIC-038) — the Tier 2 assemble, inspect and follow-an-exclusion journey, keyboard-only against a running application, with a run-generated transcript",
+      "why": "POST /context/packages answers 503 in every deployment because EmbeddingPort has no owner anywhere in the programme, so the journey's first step cannot complete. Typing the transcript is the fabrication the check exists to test for."
+    },
+    {
+      "id": "T792",
+      "file": "backend/tests/architecture/decision-inbox-transcript.spec.ts",
+      "project": "architecture",
+      "gatedScript": "test:arch:gated",
+      "evidence": "docs/uat/EPIC-031-inbox-transcript.md",
+      "owes": "T791 (EPIC-031) — run e2e/tests/epic-031-inbox.spec.ts against the reference-local stack: the Decision Inbox journey, reached in one action, approved by keyboard, the item leaving",
+      "why": "The run needs the reference-local stack and a seeded user's password, which an agent does not hold. The harness writes the transcript; typing one instead is the fabrication the check exists to test for."
     }
   ]
 }

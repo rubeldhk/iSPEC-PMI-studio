@@ -163,11 +163,15 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // EPIC-042 T1480 — a render is appended per governance write; the
     // constraint and policy tables are the inputs it is rendered from.
     'constitution_renders',
+    'context_budget_policies',
     'context_exclusions',
     'context_items',
+    'context_live_state',
     'context_packages',
     'context_reusable_authorisations',
     'context_source_classes',
+    'decision_explanations',
+    'decision_gate_exceptions',
     'decomposition_policies',
     'defect_classifications',
     'defect_escape_records',
@@ -202,6 +206,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'loop_objects',
       'loop_transitions',
       'organizations',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'policy_decisions',
       'principal_delegations',
       'principal_identity_snapshots',
       'principal_state_events',
@@ -240,6 +246,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'task_sync_lines',
       'task_syncs',
       'tasks',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'tenant_policies',
       'traceability_links',
       'users',
       'validation_findings',
