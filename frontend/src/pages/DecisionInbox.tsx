@@ -3,7 +3,8 @@
  * `UX-0021`, `UX-0051`, styled against the `EPIC-029` system.
  *
  * Everything awaiting the reader, in one place, without opening an artifact:
- * approvals they may give, and their own work that is blocked — each naming the
+ * approvals they may give — or reject, with a stated reason (`FR-DPE-017`,
+ * `T2512`) — and their own work that is blocked — each naming the
  * action, the object and version it concerns, and what would unblock it. The
  * backend derives the list on every read (`R-031-4`), so this page holds no
  * queue of its own: after an approval it simply reads again.
@@ -25,6 +26,7 @@ import { EmptyState } from '../design/components/EmptyState';
 import { ErrorState } from '../design/components/ErrorState';
 import { LoadingIndicator } from '../design/components/LoadingIndicator';
 import { StatusPill } from '../design/components/StatusPill';
+import { TextInput } from '../design/components/TextInput';
 import { ApiError, type ApiClient, type InboxEntry } from '../services/api';
 
 export interface DecisionInboxPageProps {
@@ -53,6 +55,7 @@ export function DecisionInboxPage({ api }: DecisionInboxPageProps): ReactElement
   const [announcement, setAnnouncement] = useState('');
   const [refusals, setRefusals] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
   const heading = useRef<HTMLHeadingElement>(null);
 
   const read = useCallback(async (): Promise<InboxEntry[] | null> => {
@@ -90,6 +93,30 @@ export function DecisionInboxPage({ api }: DecisionInboxPageProps): ReactElement
     }
   };
 
+  /** `T2512`, `FR-DPE-017` — a rejection is a decision too, and states its reason. */
+  const reject = async (entry: InboxEntry): Promise<void> => {
+    const reason = (reasons[entry.decisionId] ?? '').trim();
+    if (reason === '') {
+      setRefusals((r) => ({ ...r, [entry.decisionId]: 'State a reason before rejecting.' }));
+      return;
+    }
+    setBusy(entry.decisionId);
+    try {
+      await api.refuseDecision(entry.decisionId, { kind: 'rejected', reason });
+      setRefusals(({ [entry.decisionId]: _gone, ...rest }) => rest);
+      setReasons(({ [entry.decisionId]: _done, ...rest }) => rest);
+      setAnnouncement(`Rejected ${describe(entry)}.`);
+      await read();
+      heading.current?.focus();
+    } catch (error) {
+      const why = refusalReason(error);
+      setRefusals((r) => ({ ...r, [entry.decisionId]: why }));
+      setAnnouncement(`Rejection refused: ${why}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const approvals = load.state === 'ready' ? load.entries.filter((e) => e.kind === 'approval') : [];
   const blocked = load.state === 'ready' ? load.entries.filter((e) => e.kind !== 'approval') : [];
 
@@ -119,6 +146,29 @@ export function DecisionInboxPage({ api }: DecisionInboxPageProps): ReactElement
         >
           Approve
         </Button>
+      )}
+      {entry.kind === 'approval' && (
+        <div className="decision-inbox__reject">
+          <TextInput
+            aria-label={`Reason for rejecting ${describe(entry)}`}
+            placeholder="Reason for rejecting"
+            value={reasons[entry.decisionId] ?? ''}
+            disabled={busy !== null}
+            onChange={(event) => {
+              const value = event.target.value;
+              setReasons((r) => ({ ...r, [entry.decisionId]: value }));
+            }}
+          />
+          <Button
+            variant="secondary"
+            loading={busy === entry.decisionId}
+            disabled={busy !== null}
+            onClick={() => void reject(entry)}
+            aria-label={`Reject ${describe(entry)}`}
+          >
+            Reject
+          </Button>
+        </div>
       )}
     </li>
   );
