@@ -180,7 +180,7 @@ reasons. A context assembly after it contains no candidate. No route writes know
 - [X] T2332 [P] [US1] Write the failing architecture test `backend/tests/architecture/learning-single-write-path.spec.ts`: — **Done**: 8 assertions over every backend source file; red on the missing `supply.ts` (and on an over-broad `insertVersion` match into EPIC-045's artifact store, scoped to code that can reach the writer).
   - only `materialiser.ts` imports `knowledge.writer.ts`;
   - no controller or job maps to a knowledge write;
-  - `supply.ts` reads only knowledge versions, never candidates (`FR-LRN-001`, `FR-LRN-002`, `SC-LRN-001`; MP-1a's guard)
+  - `supply.ts` reads only knowledge versions, never candidates (`FR-LRN-001`, `FR-LRN-002`, `SC-LRN-001`, `SC-LRN-002`; MP-1a's guard)
 - [X] T2333 [US1] Implement the `KnowledgeSourceReader` half of `backend/src/modules/learning/supply.ts` over versions only (architecture test: T2332) — **Done**: `KnowledgeReader` over `KnowledgeReads` — a store narrowing with no candidate read; current / superseded / deprecated answered from status rows; 8/8.
 - [X] T2334 [P] [US1] Write failing route tests `backend/tests/integration/learning-submission-route.spec.ts` against the composed module: — **Done**: 12 cases against `AppModule` + PostgreSQL + a real credential and execution; observed red (no ports token), then green. Q3 asserted with the default refusing binding before `EvidenceReads` is rebound to a recorder; Q26 wraps the real `Executions` port for one id (EPIC-037 cannot register a provisional execution on `main`). U1's `401`s here; its `404` for another workspace's candidate is asserted with the read route in T2344.
   - `POST /learning/candidates` (session);
@@ -347,7 +347,7 @@ order.
   - history lists every version, the candidate and decision behind each, every status event and flag in order (`FR-LRN-035`);
   - browse filters by project, scope, category and status (`FR-LRN-073`);
   - provenance answers *where from, who approved, what it replaces* from the record alone (`SC-LRN-006`);
-  - nothing is deleted (`FR-LRN-039`)
+  - nothing is deleted (`FR-LRN-039`); every approved entry's history is reconstructable and no superseded or deprecated version reads current (`SC-LRN-004`)
 - [X] T2367 [US4] Implement `backend/src/modules/learning/knowledge.service.ts` (unit test: T2366) — **Done**: `knowledge.service.ts`: `browse` (rows with status, retrievability, open flags), `entry` (current + provenance), `history` (versions with candidate, decision, status events, flags; events ordered by the approval that caused them).
 - [X] T2368 [P] [US4] Write failing job tests `backend/tests/integration/learning-flags-job.spec.ts`: — **Done**: 5 cases on the composed app, all red first: integrity-failed and unresolvable raise `evidence-changed` once and a recovery clears it with a new row; an unreachable store flags nothing and is reported; `source-invalid` on the version **and** an open candidate (C3); the attestation retry; status never changes.
   - `learning.flags` raises `evidence-changed` when a cited item turns `integrity-failed` or `unresolvable`;
@@ -384,7 +384,7 @@ retrievability recorded honestly.
   - archived project → `boundary` with `archived:`;
   - an Expert declaring `none` → `permission` with `memory-policy:`.
 
-  The batch for 200 candidates makes one store read (`FR-LRN-040`, `FR-LRN-041`, `FR-LRN-043`, `FR-LRN-044`, `FR-LRN-045`, `FR-LRN-046`, `FR-LRN-055`)
+  The batch for 200 candidates makes one store read (`FR-LRN-040`, `FR-LRN-041`, `FR-LRN-043`, `FR-LRN-044`, `FR-LRN-045`, `FR-LRN-046`, `FR-LRN-055`; `SC-LRN-005`)
 - [X] T2373 [US5] Implement the `KnowledgeAdmission` half of `backend/src/modules/learning/supply.ts` (unit test: T2372) — **Done**: `KnowledgeGate` in `supply.ts` over the new single-read `admissionFacts` (in-memory + PostgreSQL); provided and exported with `KnowledgeReader` for T2399 to bind into EPIC-038.
 - [X] T2374 [P] [US5] Write failing unit tests `backend/tests/unit/learning-widen-scope.spec.ts`: — **Done**: 6 cases end to end; 1 red first (a supersede smuggling a wider scope) — strict widening, review-only, supersession on approval and review-terms narrowing were already in place from T2327/T2347/T2353/T2355.
   - `widen-scope` must be wider than the current scope;
@@ -510,12 +510,12 @@ retrievability recorded honestly.
   - one `learning.resolve-decisions` pass materialises an already-resolved decision in < 600 ms, so with the 30 s interval a decision taken in `EPIC-031`'s Inbox becomes knowledge in ≤ 60 s (analysis finding `C4`);
   - approval → `KnowledgeIndex.reindex` attempted < 5 s, measured against a recording in-test index (analysis finding `C4`)
 - [X] T2409 Make T2408 pass — the indexes on `(workspaceId, subjectKey)`, `(candidateId, seq DESC)` and `(entryId, version)`, and the batched admission read (performance test: T2408) — **Done**: no new code: the three indexes are in the T2317 migration (`learning_candidates_subject_idx`, `learning_candidate_transitions_latest_idx`, `knowledge_entry_versions_entry_version_key`, plus a browse index) and admission's single read is T2373's `admissionFacts`.
-- [ ] T2410 [P] Write the failing conformance check `backend/tests/architecture/learning-docs.spec.ts`:
+- [X] T2410 [P] Write the failing conformance check `backend/tests/architecture/learning-docs.spec.ts`: — **Done**: 7 assertions (2 skipped until `closure.md` exists — V2's owner annotations and ADR status); red on real drift: SC-LRN-002, -004 and -005 were cited by no task or scenario.
   - every `FR-LRN-0xx` in `spec.md` (62) is cited by at least one task in this file;
   - every `SC-LRN-00x` (9) by a quickstart scenario or task;
   - the plan's merge order and prerequisite list match this file's;
   - once `closure.md` exists (T2417), PMI-DOC-004 §6.12 names `EPIC-048` as owner of `BR-0114`–`BR-0118` and `ADR-0021` reads Decided — skipped, not passed, before then (analysis finding `V2`)
-- [ ] T2411 Correct any drift T2410 reports in `specs/048-governed-learning/` (conformance check: T2410)
+- [X] T2411 Correct any drift T2410 reports in `specs/048-governed-learning/` (conformance check: T2410) — **Done**: the three success criteria now cited where they are tested (T2332, T2366, T2372); 62/62 FR-LRN and 9/9 SC-LRN covered; plan and tasks agree on the five-step merge order and the five prerequisites.
 - [ ] T2412 [P] Write the conformance check `backend/tests/architecture/learning-steering-example.spec.ts` validating the example `learning_policy` document in `specs/048-governed-learning/examples/learning-policy.example.json` against `learning-policy.ts`
 - [ ] T2413 Write `specs/048-governed-learning/examples/learning-policy.example.json` with categories, reuse and defaults, plus the matching `EPIC-031` classification-rule and tenant `automatedActions` examples quickstart's prerequisites name (conformance check: T2412) — `RK-9`
 
