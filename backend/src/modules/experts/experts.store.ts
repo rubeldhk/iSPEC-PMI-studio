@@ -53,6 +53,22 @@ export interface ExpertsStore {
 
   putLimit(row: SessionLimit): Promise<SessionLimit>;
   limitsFor(workspaceId: string, executionId: string): Promise<SessionLimit[]>;
+  /**
+   * `T2007`, `FR-EXP-036` — add `amount` to a limit's consumption **atomically**,
+   * so siblings charging one ancestor at once both land. A limit crossing its
+   * value by this charge becomes `detected-late` at `at` (`FR-EXP-046`), and
+   * `crossed` says this charge was the one that crossed it. `null` when there is
+   * no such limit.
+   */
+  chargeLimit(
+    workspaceId: string,
+    executionId: string,
+    limit: SessionLimit['limit'],
+    amount: number,
+    at: string,
+  ): Promise<{ consumed: number; value: number; crossed: boolean } | null>;
+  /** `FR-EXP-045` — give a still-unreported limit its reason; a reported one is left alone. */
+  noteUnreported(workspaceId: string, executionId: string, limit: SessionLimit['limit'], reason: string): Promise<void>;
 
   addAssignment(row: Assignment): Promise<Assignment>;
   /** Newest first. */
@@ -187,6 +203,35 @@ export class InMemoryExpertsStore implements ExpertsStore {
     const session = this.#sessions.get(executionId);
     if (!session || session.workspaceId !== workspaceId) return [];
     return [...this.#limits.values()].filter((l) => l.executionId === executionId).map(copy);
+  }
+
+  // Read and write with no await between them: atomic on the event loop.
+  async chargeLimit(
+    workspaceId: string,
+    executionId: string,
+    limit: SessionLimit['limit'],
+    amount: number,
+    at: string,
+  ): Promise<{ consumed: number; value: number; crossed: boolean } | null> {
+    const session = this.#sessions.get(executionId);
+    const row = this.#limits.get(`${executionId}:${limit}`);
+    if (!session || session.workspaceId !== workspaceId || !row) return null;
+    const consumed = (row.consumed ?? 0) + amount;
+    const crossed = consumed > row.value && row.reached === 'no';
+    this.#limits.set(`${executionId}:${limit}`, {
+      ...row,
+      consumed,
+      consumedReason: null,
+      ...(crossed ? { reached: 'detected-late' as const, detectedAt: at } : {}),
+    });
+    return { consumed, value: row.value, crossed };
+  }
+
+  async noteUnreported(workspaceId: string, executionId: string, limit: SessionLimit['limit'], reason: string): Promise<void> {
+    const session = this.#sessions.get(executionId);
+    const row = this.#limits.get(`${executionId}:${limit}`);
+    if (!session || session.workspaceId !== workspaceId || !row || row.consumed !== null) return;
+    this.#limits.set(`${executionId}:${limit}`, { ...row, consumedReason: reason });
   }
 
   async addAssignment(row: Assignment): Promise<Assignment> {

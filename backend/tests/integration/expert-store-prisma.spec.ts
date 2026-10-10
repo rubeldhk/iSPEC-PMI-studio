@@ -126,4 +126,21 @@ suite('T1911 · PrismaExpertsStore', () => {
     await expect(store.endSession('ws_1', 'exe_actor', { outcome: 'stopped-by-parent', endedAt: at })).resolves.toBe(false);
     expect((await store.findSession('ws_1', 'exe_actor'))?.outcome).toBe('succeeded');
   });
+
+  it('T2006 · concurrent charges to one limit both land, and only the crossing one says so', async () => {
+    await store.putLimit({
+      executionId: 'exe_actor', limit: 'tokens', value: 1000, requested: null, enforcement: 'unenforceable',
+      consumed: null, consumedReason: 'not yet reported', reached: 'no', detectedAt: null,
+    });
+    const at = '2026-10-09T09:05:00.000Z';
+    const charges = await Promise.all(
+      Array.from({ length: 6 }, () => store.chargeLimit('ws_1', 'exe_actor', 'tokens', 200, at)),
+    );
+    expect(charges.filter((c) => c?.crossed)).toHaveLength(1);
+    const row = (await store.limitsFor('ws_1', 'exe_actor')).find((l) => l.limit === 'tokens');
+    expect(row).toMatchObject({ consumed: 1200, consumedReason: null, reached: 'detected-late', detectedAt: at });
+    await store.noteUnreported('ws_1', 'exe_actor', 'tokens', 'unreported');
+    expect((await store.limitsFor('ws_1', 'exe_actor')).find((l) => l.limit === 'tokens')?.consumedReason).toBeNull();
+    expect(await store.chargeLimit('ws_2', 'exe_actor', 'tokens', 1, at)).toBeNull();
+  });
 });

@@ -295,7 +295,23 @@ export class DispatchService {
       started = true;
       for (const limit of plan.limits) await this.store.putLimit({ ...limit, executionId });
 
-      const stoppedResult = async (): Promise<DispatchResult> => {
+      // `FR-EXP-036`, `FR-EXP-045`, `FR-EXP-046` — charged here and up the chain
+      // on every exit path (`T2007`); a crossing is only ever late. Without a
+      // report, each limit gets its reason instead of a silent null.
+      const charge = async (report: RunReport | null): Promise<void> => {
+        const amounts = report === null ? {} : reported(report);
+        for (const breach of await chargeConsumption(this.store, ws, executionId, amounts, this.#clock())) {
+          await ports.executions.record(ws, breach.executionId, 'limit-breach-detected-late', {
+            ...breach,
+            detectedAt: this.#clock(),
+            reason: 'reported after the run; recorded as detected late, never as prevented (FR-EXP-046)',
+          });
+        }
+      };
+
+      const stoppedResult = async (report: RunReport | null): Promise<DispatchResult> => {
+        // A run stopped by its parent still spent what it spent (`T2007`).
+        await charge(report);
         // `FR-EXP-037` — whatever this run left running stops with it.
         await this.#stopDelegates(ws, executionId);
         const now = await this.store.findSession(ws, executionId);
@@ -318,7 +334,7 @@ export class DispatchService {
         const parent = await this.store.findSession(ws, parentId);
         if (parent === null || parent.outcome !== null) {
           await this.#stopOne(ws, executionId, parentId);
-          return stoppedResult();
+          return stoppedResult(null);
         }
       }
 
@@ -332,6 +348,7 @@ export class DispatchService {
       }, timeMs);
       this.#running.set(executionId, controller);
       let report: RunReport;
+      const startedMs = Date.now();
       try {
         report = await choice.runner.run(
           { capability: req.capabilities[0] as AgentCapability, command: `${req.command}: ${objective}` },
@@ -342,12 +359,19 @@ export class DispatchService {
         this.#running.delete(executionId);
       }
 
+      // `T2007`, `FR-EXP-045` — time consumed is the time that elapsed, measured here.
+      const time = (await this.store.limitsFor(ws, executionId)).find((l) => l.limit === 'time')!;
+      await this.store.putLimit({
+        ...time,
+        consumed: Date.now() - startedMs,
+        consumedReason: null,
+        ...(timedOut ? { reached: 'stopped' as const } : {}),
+      });
+
       // Stopped by its own parent while it ran: already recorded and closed.
-      if ((await this.store.findSession(ws, executionId))?.outcome === 'stopped-by-parent') return stoppedResult();
+      if ((await this.store.findSession(ws, executionId))?.outcome === 'stopped-by-parent') return stoppedResult(report);
 
       if (timedOut) {
-        const time = (await this.store.limitsFor(ws, executionId)).find((l) => l.limit === 'time')!;
-        await this.store.putLimit({ ...time, reached: 'stopped' });
         await ports.executions.record(ws, executionId, 'limit-reached', { limit: 'time', value: timeMs });
       }
       // `T2003` — this run is marked ended first, and only then are its delegates
@@ -355,18 +379,10 @@ export class DispatchService {
       const { outcome, won } = await this.#settle(ws, executionId, contract, authority, report, timedOut);
       if (!won) {
         // The parent's cascade got there first: it recorded and closed this run.
-        if ((await this.store.findSession(ws, executionId))?.outcome === 'stopped-by-parent') return stoppedResult();
+        if ((await this.store.findSession(ws, executionId))?.outcome === 'stopped-by-parent') return stoppedResult(report);
       }
       await this.#stopDelegates(ws, executionId);
-
-      // `FR-EXP-036`, `FR-EXP-046` — charged here and up the chain; a crossing is only ever late.
-      for (const breach of await chargeConsumption(this.store, ws, executionId, reported(report), this.#clock())) {
-        await ports.executions.record(ws, breach.executionId, 'limit-breach-detected-late', {
-          ...breach,
-          detectedAt: this.#clock(),
-          reason: 'reported after the run; recorded as detected late, never as prevented (FR-EXP-046)',
-        });
-      }
+      await charge(report);
 
       // 5 — close: complete, or propose for review.
       const worked = outcome === 'succeeded' || outcome === 'incomplete';

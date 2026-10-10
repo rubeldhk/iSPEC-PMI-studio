@@ -117,23 +117,21 @@ export async function chargeConsumption(
       if (row.limit === 'time') continue;
       const amount = amounts[row.limit];
       if (amount === undefined) {
-        if (own && row.consumed === null) {
-          await store.putLimit({
-            ...row,
-            consumedReason: `the provider did not report ${row.limit} consumption for this run (FR-EXP-045)`,
-          });
+        if (own) {
+          await store.noteUnreported(
+            workspaceId,
+            walk,
+            row.limit,
+            `the provider did not report ${row.limit} consumption for this run (FR-EXP-045)`,
+          );
         }
         continue;
       }
-      const consumed = (row.consumed ?? 0) + amount;
-      const crossed = consumed > row.value && row.reached === 'no';
-      await store.putLimit({
-        ...row,
-        consumed,
-        consumedReason: null,
-        ...(crossed ? { reached: 'detected-late' as const, detectedAt: at } : {}),
-      });
-      if (crossed) breaches.push({ executionId: walk, limit: row.limit, consumed, value: row.value });
+      // `T2007` — atomic, so a sibling charging the same ancestor cannot overwrite this charge.
+      const charged = await store.chargeLimit(workspaceId, walk, row.limit, amount, at);
+      if (charged?.crossed) {
+        breaches.push({ executionId: walk, limit: row.limit, consumed: charged.consumed, value: charged.value });
+      }
     }
     walk = session.delegatedFromExecutionId;
     own = false;

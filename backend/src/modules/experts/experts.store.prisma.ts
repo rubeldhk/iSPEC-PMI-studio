@@ -38,6 +38,8 @@ export interface ExpertsPrismaClient {
   readonly expertSession: Delegate;
   readonly expertSessionLimit: Delegate;
   readonly taskAssignment: Delegate;
+  /** `T2007` — one statement, so a charge is a single atomic increment. */
+  $queryRawUnsafe(query: string, ...values: unknown[]): Promise<unknown>;
 }
 
 type Row = Record<string, unknown>;
@@ -321,6 +323,45 @@ export class PrismaExpertsStore implements ExpertsStore {
 
   async limitsFor(workspaceId: string, executionId: string): Promise<SessionLimit[]> {
     return ((await this.prisma.expertSessionLimit.findMany({ where: { workspaceId, executionId } })) as Row[]).map(toLimit);
+  }
+
+  async chargeLimit(
+    workspaceId: string,
+    executionId: string,
+    limit: SessionLimit['limit'],
+    amount: number,
+    at: string,
+  ): Promise<{ consumed: number; value: number; crossed: boolean } | null> {
+    // One UPDATE — the increment and the late-breach flip under the row lock, so
+    // a concurrent charge is re-evaluated against the committed row. This charge
+    // crossed the value iff the row is now over it and was not before it
+    // (`consumed - amount` is the pre-update consumption).
+    const rows = (await this.prisma.$queryRawUnsafe(
+      `UPDATE "expert_session_limits"
+          SET "consumed" = COALESCE("consumed", 0) + $4::numeric,
+              "consumedReason" = NULL,
+              "reached" = CASE WHEN "reached" = 'no' AND COALESCE("consumed", 0) + $4::numeric > "value"
+                               THEN 'detected-late' ELSE "reached" END,
+              "detectedAt" = CASE WHEN "reached" = 'no' AND COALESCE("consumed", 0) + $4::numeric > "value"
+                                  THEN $5::timestamp(3) ELSE "detectedAt" END
+        WHERE "workspaceId" = $1 AND "executionId" = $2 AND "limit" = $3
+        RETURNING "consumed", "value",
+                  ("reached" = 'detected-late' AND "consumed" > "value" AND "consumed" - $4::numeric <= "value") AS "crossed"`,
+      workspaceId,
+      executionId,
+      limit,
+      amount,
+      new Date(at),
+    )) as Row[];
+    const r = rows[0];
+    return r ? { consumed: num(r['consumed']), value: num(r['value']), crossed: Boolean(r['crossed']) } : null;
+  }
+
+  async noteUnreported(workspaceId: string, executionId: string, limit: SessionLimit['limit'], reason: string): Promise<void> {
+    await this.prisma.expertSessionLimit.updateMany({
+      where: { workspaceId, executionId, limit, consumed: null },
+      data: { consumedReason: reason },
+    });
   }
 
   async addAssignment(row: Assignment): Promise<Assignment> {
