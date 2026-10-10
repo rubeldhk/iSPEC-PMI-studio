@@ -211,6 +211,13 @@ export interface BrowsePage {
   readonly nextCursor: string | null;
 }
 
+/** What admission needs for one version, in one read (`R-048-22`). */
+export interface AdmissionFact {
+  readonly version: VersionRecord;
+  readonly entry: EntryRecord;
+  readonly status: StatusEventRecord | null;
+}
+
 export interface CandidateWithState {
   readonly candidate: CandidateRecord;
   readonly current: TransitionRecord;
@@ -238,6 +245,8 @@ export interface LearningReads {
   versionsOfEntry(workspaceId: string, entryId: string): Promise<VersionRecord[]>;
   versionForCandidate(workspaceId: string, candidateId: string): Promise<VersionRecord | null>;
   versionsByIds(workspaceId: string, ids: readonly string[]): Promise<VersionRecord[]>;
+  /** Versions with their entry and latest status, in **one** read — admission's batch (`R-048-22`). */
+  admissionFacts(workspaceId: string, versionIds: readonly string[]): Promise<AdmissionFact[]>;
   /** The version whose current status is `current`, for an entry with this subject key. */
   currentVersionBySubjectKey(workspaceId: string, subjectKey: string): Promise<VersionRecord | null>;
   statusEvents(workspaceId: string, versionIds: readonly string[]): Promise<StatusEventRecord[]>;
@@ -505,6 +514,17 @@ export class InMemoryLearningStore implements LearningStore {
   async versionsByIds(workspaceId: string, ids: readonly string[]): Promise<VersionRecord[]> {
     const wanted = new Set(ids);
     return this.tables.versions.filter((v) => v.workspaceId === workspaceId && wanted.has(v.id));
+  }
+
+  async admissionFacts(workspaceId: string, versionIds: readonly string[]): Promise<AdmissionFact[]> {
+    const wanted = new Set(versionIds);
+    const out: AdmissionFact[] = [];
+    for (const version of this.tables.versions) {
+      if (version.workspaceId !== workspaceId || !wanted.has(version.id)) continue;
+      const entry = this.tables.entries.find((e) => e.id === version.entryId);
+      if (entry !== undefined) out.push({ version, entry, status: this.latestStatus(workspaceId, version.id) });
+    }
+    return out;
   }
 
   async currentVersionBySubjectKey(workspaceId: string, subjectKey: string): Promise<VersionRecord | null> {

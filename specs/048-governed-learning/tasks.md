@@ -374,7 +374,7 @@ retrievability recorded honestly.
 
 **Independent test**: quickstart Q21–Q24, with in-test `KnowledgeAdmission` consumers until T2399.
 
-- [ ] T2372 [P] [US5] Write failing unit tests `backend/tests/unit/learning-admission.spec.ts`. The verdict matrix of `R-048-11`:
+- [X] T2372 [P] [US5] Write failing unit tests `backend/tests/unit/learning-admission.spec.ts`. The verdict matrix of `R-048-11`: — **Done**: 17 cases, 16 red first: every row of the R-048-11 matrix, no policy ⇒ nothing beyond the origin, ExpertProvenance unbound excludes an execution's package, 200 candidates in **one** store read in order (< 250 ms in memory); the T2333 reader is asserted here too.
   - project scope elsewhere → `boundary` with `scope:`;
   - classification not permitted → `classification`;
   - undetermined outside its origin → `classification`;
@@ -385,7 +385,7 @@ retrievability recorded honestly.
   - an Expert declaring `none` → `permission` with `memory-policy:`.
 
   The batch for 200 candidates makes one store read (`FR-LRN-040`, `FR-LRN-041`, `FR-LRN-043`, `FR-LRN-044`, `FR-LRN-045`, `FR-LRN-046`, `FR-LRN-055`)
-- [ ] T2373 [US5] Implement the `KnowledgeAdmission` half of `backend/src/modules/learning/supply.ts` (unit test: T2372)
+- [X] T2373 [US5] Implement the `KnowledgeAdmission` half of `backend/src/modules/learning/supply.ts` (unit test: T2372) — **Done**: `KnowledgeGate` in `supply.ts` over the new single-read `admissionFacts` (in-memory + PostgreSQL); provided and exported with `KnowledgeReader` for T2399 to bind into EPIC-038.
 - [ ] T2374 [P] [US5] Write failing unit tests `backend/tests/unit/learning-widen-scope.spec.ts`:
   - `widen-scope` must be wider than the current scope;
   - it always takes human review;

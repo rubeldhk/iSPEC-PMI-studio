@@ -21,6 +21,7 @@ import {
   decodeCursor,
   encodeCursor,
   newLearningId,
+  type AdmissionFact,
   type BrowseFilter,
   type BrowsePage,
   type CandidateRecord,
@@ -394,6 +395,25 @@ class PrismaLearningReads implements LearningReads {
     if (ids.length === 0) return [];
     const r = await this.rows(`SELECT * FROM "knowledge_entry_versions" WHERE "workspaceId" = $1 AND "id" = ANY($2::text[])`, workspaceId, [...ids]);
     return r.map(toVersion);
+  }
+
+  async admissionFacts(workspaceId: string, versionIds: readonly string[]): Promise<AdmissionFact[]> {
+    if (versionIds.length === 0) return [];
+    const r = await this.rows(
+      `SELECT v.*,
+              e."id" AS "e_id", e."workspaceId" AS "e_workspaceId", e."category" AS "e_category",
+              e."subjectKey" AS "e_subjectKey", e."originProjectId" AS "e_originProjectId", e."createdAt" AS "e_createdAt",
+              st."id" AS "s_id", st."workspaceId" AS "s_workspaceId", st."versionId" AS "s_versionId", st."status" AS "s_status",
+              st."successorVersionId" AS "s_successorVersionId", st."reason" AS "s_reason", st."actorId" AS "s_actorId",
+              st."decisionId" AS "s_decisionId", st."candidateId" AS "s_candidateId", st."at" AS "s_at"
+         FROM "knowledge_entry_versions" v
+         JOIN "knowledge_entries" e ON e."id" = v."entryId"
+         ${LATEST_STATUS}
+        WHERE v."workspaceId" = $1 AND v."id" = ANY($2::text[])`,
+      workspaceId,
+      [...versionIds],
+    );
+    return r.map((row) => ({ version: toVersion(row), entry: toEntry(row, 'e_'), status: row['s_id'] === null || row['s_id'] === undefined ? null : toStatus(row, 's_') }));
   }
 
   async currentVersionBySubjectKey(workspaceId: string, subjectKey: string): Promise<VersionRecord | null> {

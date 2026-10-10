@@ -58,6 +58,7 @@ import { LearningJobs } from './learning.jobs.js';
 import { LearningSweeps } from './learning.sweeps.js';
 import { ReviewService } from './review.service.js';
 import { KnowledgeService } from './knowledge.service.js';
+import { KnowledgeGate, KnowledgeReader } from './supply.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -179,6 +180,20 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
       useFactory: (jobs: LearningJobs): LearningSweeps => new LearningSweeps(jobs),
     },
     {
+      // What EPIC-038 reads for source type knowledge-entry (T2333) — bound into
+      // its sources adapter by T2399, after EPIC-038 merges with A-038-1.
+      provide: KnowledgeReader,
+      inject: [LEARNING_STORE],
+      useFactory: (store: LearningStore): KnowledgeReader => new KnowledgeReader(store),
+    },
+    {
+      // The admission port EPIC-038 consults (T2373; bound into AssemblyPorts by T2399).
+      provide: KnowledgeGate,
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN],
+      useFactory: (store: LearningStore, ports: LearningPorts): KnowledgeGate =>
+        new KnowledgeGate({ reads: store, ports, policy: new LearningPolicyReader({ current: (ws) => ports.policy.current(ws) }) }),
+    },
+    {
       provide: KnowledgeService,
       inject: [LEARNING_STORE],
       useFactory: (store: LearningStore): KnowledgeService => new KnowledgeService({ reads: store }),
@@ -190,6 +205,6 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         new CandidateViewService({ reads: store, ports, eligibilityOf: (candidate) => requester.eligibility(candidate) }),
     },
   ],
-  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService, Materialiser, LearningJobs],
+  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService, Materialiser, LearningJobs, KnowledgeReader, KnowledgeGate],
 })
 export class LearningModule {}
