@@ -18,7 +18,7 @@ import type { INestApplication } from '@nestjs/common';
 import { Replay, startReplayServer, type Recording } from '@pmi/capability-contract/replay';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { embedOverlay } from '../../../packages/capability-adapters/ollama/tests/embed-replay.js';
+import { embedOverlay } from '@pmi/capability-adapter-ollama/testing';
 import { rebootApp } from '../helpers/authenticated-app.js';
 import { startIntegrationsApp, type IntegrationsApp } from '../helpers/integrations-app.js';
 

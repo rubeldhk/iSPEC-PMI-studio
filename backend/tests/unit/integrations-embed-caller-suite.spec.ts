@@ -17,7 +17,7 @@ import { embedChecked, type EmbeddingPort } from '../../src/modules/context/retr
 import { DeploymentBindingService } from '../../src/modules/integrations/embedding/deployment-binding.service.js';
 import { HubEmbeddingPort } from '../../src/modules/integrations/embedding/hub-embedding-port.js';
 import { InMemoryIntegrationsStore } from '../../src/modules/integrations/integrations.store.js';
-import { embedOverlay } from '../../../packages/capability-adapters/ollama/tests/embed-replay.js';
+import { embedOverlay } from '@pmi/capability-adapter-ollama/testing';
 
 const BASE = 'http://127.0.0.1:11434';
 const RECORDING = JSON.parse(readFileSync(new URL('../../../packages/capability-adapters/ollama/tests/recordings/2026-10-10.ollama-embed.json', import.meta.url), 'utf8')) as Recording;

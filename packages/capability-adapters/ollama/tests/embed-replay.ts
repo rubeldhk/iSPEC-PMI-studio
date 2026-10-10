@@ -9,7 +9,8 @@
  * keeps the recorded dimension and norm. Not a model: the values mean nothing
  * (the recording's provenance says so).
  *
- * Not a `.spec.ts`: imported, never collected.
+ * Not a `.spec.ts`: imported, never collected. Exported as
+ * `@pmi/capability-adapter-ollama/testing` for the backend's route tests.
  */
 import type { RecordedResponse, Recording, SeenRequest } from '@pmi/capability-contract/replay';
 
