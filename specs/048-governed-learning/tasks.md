@@ -337,12 +337,12 @@ order.
 
 **Independent test**: quickstart Q19, Q20, Q29 (backend).
 
-- [ ] T2364 [P] [US4] Write failing unit tests `backend/tests/unit/learning-supersession.spec.ts`:
+- [X] T2364 [P] [US4] Write failing unit tests `backend/tests/unit/learning-supersession.spec.ts`: — **Done**: 8 cases end to end (submission → requester → materialiser). **Green on first run, not observed red**: the behaviour had already landed with T2327 (`checkTarget`), T2347 (`kind-not-new`) and T2353 (status events) — recorded as a Constitution V deviation.
   - `supersede` and `deprecate` candidates always take `learning.review.*` (`FR-LRN-034`, US4-5);
   - an approved deprecation writes `deprecated` with reason, actor and instant and no new version (`FR-LRN-033`);
   - a target that is not the current version is refused `400`;
   - an approved version is never edited (`FR-LRN-031`)
-- [ ] T2365 [US4] Implement supersession and deprecation in `submission.service.ts` and `materialiser.ts` (unit test: T2364)
+- [X] T2365 [US4] Implement supersession and deprecation in `submission.service.ts` and `materialiser.ts` (unit test: T2364) — **Done**: no new code was needed — supersession, deprecation and the current-version check exist in `submission.service.ts` and `materialiser.ts`; this task's suite pins them through the full path.
 - [ ] T2366 [P] [US4] Write failing unit tests `backend/tests/unit/learning-knowledge-service.spec.ts`:
   - history lists every version, the candidate and decision behind each, every status event and flag in order (`FR-LRN-035`);
   - browse filters by project, scope, category and status (`FR-LRN-073`);
