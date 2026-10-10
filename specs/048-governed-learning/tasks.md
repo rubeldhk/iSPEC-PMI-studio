@@ -177,11 +177,11 @@ reasons. A context assembly after it contains no candidate. No route writes know
   - payloads carry no statement text;
   - a person-sourced candidate appends nothing (`FR-LRN-060`)
 - [X] T2331 [US1] Implement event recording in `submission.service.ts` (unit test: T2330) — **Done**: `recordOutcome` (submitted / late-submitted, keyed per candidate, re-appended on replay) and best-effort `recordRefusal` (refused / bound-exceeded / memory-policy-refused, only for a registered execution); payloads through `learningEventPayload`; 35/35 across the three submission suites.
-- [ ] T2332 [P] [US1] Write the failing architecture test `backend/tests/architecture/learning-single-write-path.spec.ts`:
+- [X] T2332 [P] [US1] Write the failing architecture test `backend/tests/architecture/learning-single-write-path.spec.ts`: — **Done**: 8 assertions over every backend source file; red on the missing `supply.ts` (and on an over-broad `insertVersion` match into EPIC-045's artifact store, scoped to code that can reach the writer).
   - only `materialiser.ts` imports `knowledge.writer.ts`;
   - no controller or job maps to a knowledge write;
   - `supply.ts` reads only knowledge versions, never candidates (`FR-LRN-001`, `FR-LRN-002`, `SC-LRN-001`; MP-1a's guard)
-- [ ] T2333 [US1] Implement the `KnowledgeSourceReader` half of `backend/src/modules/learning/supply.ts` over versions only (architecture test: T2332)
+- [X] T2333 [US1] Implement the `KnowledgeSourceReader` half of `backend/src/modules/learning/supply.ts` over versions only (architecture test: T2332) — **Done**: `KnowledgeReader` over `KnowledgeReads` — a store narrowing with no candidate read; current / superseded / deprecated answered from status rows; 8/8.
 - [ ] T2334 [P] [US1] Write failing route tests `backend/tests/integration/learning-submission-route.spec.ts` against the composed module:
   - `POST /learning/candidates` (session);
   - `POST /projects/:projectId/learning/candidates` through `ConnectorAuthGuard` with scope `learning.submit`;
