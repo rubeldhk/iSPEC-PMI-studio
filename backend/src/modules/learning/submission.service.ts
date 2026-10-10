@@ -23,6 +23,7 @@
  */
 import { createHash } from 'node:crypto';
 import {
+  learningEventPayload,
   parseSubmission,
   scopeIncludesProject,
   type LearningSubmissionV1,
@@ -136,6 +137,15 @@ export class SubmissionService {
   }
 
   async submit(input: SubmitInput): Promise<SubmissionOutcome> {
+    try {
+      return await this.intake(input);
+    } catch (err) {
+      await this.recordRefusal(input, err);
+      throw err;
+    }
+  }
+
+  private async intake(input: SubmitInput): Promise<SubmissionOutcome> {
     const { actor } = input;
     const ws = actor.workspaceId;
     const named = this.namedExecution(input.body);
@@ -165,7 +175,13 @@ export class SubmissionService {
 
     // 2. Replay (FR-LRN-061).
     const replay = await this.replay(ws, s.idempotencyKey, objectDigest);
-    if (replay !== null) return replay;
+    if (replay !== null) {
+      // The event is appended again under the same key — a no-op if it landed,
+      // the recovery if the first response was lost before it did (FR-LRN-060).
+      const prior = await this.deps.store.candidate(ws, replay.body.candidateId);
+      if (prior !== null) await this.recordOutcome(prior, prior.late ? 'late-submitted' : 'submitted');
+      return replay;
+    }
 
     // 3. Policy and category (FR-LRN-003).
     const policy = await this.deps.policy.require(ws);
@@ -239,6 +255,7 @@ export class SubmissionService {
       { lockKeys: [`learning-subject:${ws}:${candidate.subjectKey}`] },
     );
 
+    await this.recordOutcome(candidate, candidate.late ? 'late-submitted' : 'submitted');
     return { status: 201, body: await this.afterRecord(candidate) };
   }
 
@@ -260,6 +277,50 @@ export class SubmissionService {
       ...(outcome.eligibility.automatic ? {} : { reasonIfNot: outcome.eligibility.failedConditions }),
       ...(outcome.reason !== undefined && !outcome.eligibility.automatic ? { reasonIfNot: [...outcome.eligibility.failedConditions, outcome.reason] } : {}),
     };
+  }
+
+  /**
+   * `FR-LRN-060` — a recorded outcome on the source execution. Content class, so
+   * it is accepted after the execution's terminal event (`R-048-17`). A person's
+   * candidate has no execution and appends nothing.
+   */
+  private async recordOutcome(candidate: CandidateRecord, kind: 'submitted' | 'late-submitted' | 'corroborated', corroborationId?: string): Promise<void> {
+    if (candidate.executionId === null || candidate.sourceKind !== 'execution') return;
+    await this.deps.ports.executions.appendLearningEvent({
+      workspaceId: candidate.workspaceId,
+      executionId: candidate.executionId,
+      payload: learningEventPayload({ kind, candidateId: candidate.id }),
+      idempotencyKey: `learning:${corroborationId ?? candidate.id}:${kind}`,
+      emittedBy: candidate.sourcePrincipalId,
+    });
+  }
+
+  /**
+   * `FR-LRN-060`, `FR-LRN-007` — a refusal is an event on the execution it names,
+   * when that execution is registered in this workspace. Recording is best
+   * effort: the refusal itself is what the caller must see, and a registry
+   * outage must not turn a 400 into a 503.
+   */
+  private async recordRefusal(input: SubmitInput, err: unknown): Promise<void> {
+    if (input.actor.kind !== 'agent' || !(err instanceof ValidationFailedError)) return;
+    const executionId = this.namedExecution(input.body);
+    if (executionId === null) return;
+    try {
+      const facts = await this.deps.ports.executions.describe(input.actor.workspaceId, executionId);
+      if (facts === null) return;
+      const details = (err.details ?? {}) as Record<string, unknown>;
+      const kind = details['bound'] !== undefined ? 'bound-exceeded' : details['memoryPolicy'] !== undefined ? 'memory-policy-refused' : 'refused';
+      const key = typeof (input.body as Record<string, unknown>)['idempotencyKey'] === 'string' ? String((input.body as Record<string, unknown>)['idempotencyKey']) : newLearningId('anon');
+      await this.deps.ports.executions.appendLearningEvent({
+        workspaceId: input.actor.workspaceId,
+        executionId,
+        payload: learningEventPayload({ kind, reason: err.message.slice(0, 500) }),
+        idempotencyKey: `learning:refused:${key}:${kind}`,
+        emittedBy: input.actor.principalId,
+      });
+    } catch {
+      // Best effort — see above.
+    }
   }
 
   private namedExecution(body: unknown): string | null {

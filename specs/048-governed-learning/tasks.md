@@ -172,11 +172,11 @@ reasons. A context assembly after it contains no candidate. No route writes know
   - **no** row exists afterwards (`FR-LRN-018`);
   - `SecretScreen` unbound refuses
 - [X] T2329 [US1] Implement `backend/src/modules/learning/secret.screen.ts` and call it first in `submission.service.ts` (unit test: T2328) — **Done**: `secret.screen.ts` (every string leaf by path, over `secretRuleMatching`); called first in `submit`, before parsing; 26/26 with T2326.
-- [ ] T2330 [P] [US1] Write failing unit tests `backend/tests/unit/learning-execution-events.spec.ts`:
+- [X] T2330 [P] [US1] Write failing unit tests `backend/tests/unit/learning-execution-events.spec.ts`: — **Done**: 9 cases, 6 red first; `corroborated` is asserted with corroboration in T2342, where it is produced.
   - `submitted`, `late-submitted`, `refused`, `bound-exceeded` and `corroborated` are appended to the source execution through `Executions.appendEvent` with an idempotency key;
   - payloads carry no statement text;
   - a person-sourced candidate appends nothing (`FR-LRN-060`)
-- [ ] T2331 [US1] Implement event recording in `submission.service.ts` (unit test: T2330)
+- [X] T2331 [US1] Implement event recording in `submission.service.ts` (unit test: T2330) — **Done**: `recordOutcome` (submitted / late-submitted, keyed per candidate, re-appended on replay) and best-effort `recordRefusal` (refused / bound-exceeded / memory-policy-refused, only for a registered execution); payloads through `learningEventPayload`; 35/35 across the three submission suites.
 - [ ] T2332 [P] [US1] Write the failing architecture test `backend/tests/architecture/learning-single-write-path.spec.ts`:
   - only `materialiser.ts` imports `knowledge.writer.ts`;
   - no controller or job maps to a knowledge write;
