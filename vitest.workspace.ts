@@ -12,6 +12,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'backend-unit',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/unit/**/*.spec.ts'],
       environment: 'node',
@@ -20,6 +25,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'backend-contract',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/contract/**/*.spec.ts'],
       environment: 'node',
@@ -34,6 +44,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'backend-integration',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/integration/**/*.spec.ts'],
       environment: 'node',
@@ -73,6 +88,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'architecture',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/architecture/**/*.spec.ts'],
       environment: 'node',
