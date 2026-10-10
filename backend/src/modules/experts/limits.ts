@@ -78,6 +78,97 @@ export function planLimits(
   return { limits, narrowed, unenforceable, refusal: refusals.length > 0 ? refusals.join('; ') : null };
 }
 
+/**
+ * `T2009`, `R-047-7`, `FR-EXP-036` — what the chain above a delegate has left
+ * of each token, cost and resource limit: the smallest `value - consumed`
+ * across every ancestor that has the limit. Time is per session and not shared.
+ */
+export async function chainRemaining(
+  store: ExpertsStore,
+  workspaceId: string,
+  parentExecutionId: string,
+): Promise<Partial<Record<LimitKind, number>>> {
+  const out: Partial<Record<LimitKind, number>> = {};
+  const seen = new Set<string>();
+  let walk: string | null = parentExecutionId;
+  while (walk !== null && !seen.has(walk)) {
+    seen.add(walk);
+    const session = await store.findSession(workspaceId, walk);
+    if (session === null) break;
+    for (const row of await store.limitsFor(workspaceId, walk)) {
+      if (row.limit === 'time') continue;
+      const left = row.value - (row.consumed ?? 0);
+      out[row.limit] = Math.min(out[row.limit] ?? Number.POSITIVE_INFINITY, left);
+    }
+    walk = session.delegatedFromExecutionId;
+  }
+  return out;
+}
+
+export interface ChainCap {
+  readonly plan: LimitPlan;
+  /** Each limit lowered (or added) to the chain's remaining budget; `requested` is null where the delegate had none. */
+  readonly capped: readonly { limit: LimitKind; requested: number | null; applied: number }[];
+  readonly refusal: string | null;
+}
+
+/**
+ * `T2009` — cap a delegate's plan at its chain's remaining budget. A limit the
+ * delegate lacks but its chain has is added at what is left: a delegate cannot
+ * be unlimited where the chain above it is limited. A chain with nothing left
+ * of a limit delegates nothing. Added limits follow the delegate's runner for
+ * enforceability and are recorded, not refused — the chain's own posture was
+ * applied when its root was dispatched.
+ */
+export function capByChain(
+  plan: LimitPlan,
+  remaining: Partial<Record<LimitKind, number>>,
+  enforceable: readonly EnforceableLimit[] | undefined,
+): ChainCap {
+  const limits = [...plan.limits];
+  const unenforceable = [...plan.unenforceable];
+  const capped: { limit: LimitKind; requested: number | null; applied: number }[] = [];
+  const empty: LimitKind[] = [];
+  for (const kind of LIMIT_KINDS) {
+    const left = remaining[kind];
+    if (kind === 'time' || left === undefined) continue;
+    if (left <= 0) {
+      empty.push(kind);
+      continue;
+    }
+    const at = limits.findIndex((l) => l.limit === kind);
+    if (at >= 0) {
+      const existing = limits[at]!;
+      if (existing.value > left) {
+        limits[at] = { ...existing, value: left };
+        capped.push({ limit: kind, requested: existing.value, applied: left });
+      }
+      continue;
+    }
+    const enforced = (enforceable ?? []).includes(kind);
+    if (!enforced) unenforceable.push(kind);
+    limits.push({
+      limit: kind,
+      value: left,
+      requested: null,
+      enforcement: enforced ? 'enforced' : 'unenforceable',
+      consumed: null,
+      consumedReason: 'not yet reported',
+      reached: 'no',
+      detectedAt: null,
+    });
+    capped.push({ limit: kind, requested: null, applied: left });
+  }
+  return {
+    plan: { ...plan, limits, unenforceable },
+    capped,
+    refusal:
+      empty.length > 0
+        ? empty.map((k) => `the delegation chain has no ${k} budget left, so it delegates nothing more (FR-EXP-036)`).join('; ')
+        : null,
+  };
+}
+
 /** What a report says was consumed, per limit; `undefined` where it said nothing. */
 export function reported(report: RunReport): Partial<Record<LimitKind, number>> {
   const out: Partial<Record<LimitKind, number>> = {};

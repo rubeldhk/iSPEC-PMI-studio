@@ -30,7 +30,7 @@ import { currentAssignment } from './assignment.service.js';
 import { authorityOf, contractRefusal, targetRefusal, type DispatchTarget } from './authority.js';
 import { admitDelegation, DelegationRefusal } from './delegation.service.js';
 import type { ExpertContract, ExpertSession, LimitKind, SessionOutcome } from './expert.types.js';
-import { chargeConsumption, planLimits, reported } from './limits.js';
+import { capByChain, chainRemaining, chargeConsumption, planLimits, reported, type ChainCap } from './limits.js';
 import type { ExpertsStore } from './experts.store.js';
 import type { ActorAccess, ExpertGateways, ExpertPorts, ExpertRunner, RunReport } from './experts.tokens.js';
 
@@ -242,8 +242,16 @@ export class DispatchService {
       if ('refused' in choice) throw new Refusal(choice.refused);
 
       // `FR-EXP-040`…`FR-EXP-044` — what this provider can enforce decides what may run.
-      const plan = planLimits(contract.budget, req.limits ?? {}, choice.runner.descriptor.enforceableLimits);
+      let plan = planLimits(contract.budget, req.limits ?? {}, choice.runner.descriptor.enforceableLimits);
       if (plan.refusal !== null) throw new Refusal(plan.refusal);
+      // `T2009`, `R-047-7`, `FR-EXP-036` — a delegate gets no more than its chain has left.
+      let chainCapped: ChainCap['capped'] = [];
+      if (parentId !== null) {
+        const cap = capByChain(plan, await chainRemaining(this.store, ws, parentId), choice.runner.descriptor.enforceableLimits);
+        if (cap.refusal !== null) throw new DelegationRefusal(cap.refusal, parentId);
+        plan = cap.plan;
+        chainCapped = cap.capped;
+      }
 
       const { packageId } = await ports.context.assemble({
         workspaceId: ws,
@@ -263,6 +271,12 @@ export class DispatchService {
       }
       for (const n of plan.narrowed) {
         await ports.executions.record(ws, executionId, 'limit-narrowed', { ...n, reason: "the contract's limit applies (FR-EXP-044)" });
+      }
+      for (const n of chainCapped) {
+        await ports.executions.record(ws, executionId, 'limit-narrowed', {
+          ...n,
+          reason: "capped at what the delegation chain has left of its budget (FR-EXP-036, FR-EXP-044)",
+        });
       }
       for (const kind of plan.unenforceable) {
         await ports.executions.record(ws, executionId, 'limit-unenforceable', {
