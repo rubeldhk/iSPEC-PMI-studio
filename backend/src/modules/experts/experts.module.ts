@@ -16,10 +16,11 @@
  * `ActorAccess` is `EPIC-024`'s, and bound for real. Phase 9 (`T1978`, `T1980`,
  * `T1982`) binds three more to their owners: `ContractApprovals` to `EPIC-031`'s
  * decision engine, `EvidenceContracts` to `EPIC-032`'s catalog and
- * `ContextAssembler` to `EPIC-038`'s assembly. Two still refuse, each naming
- * itself in its `503`: `ExpertGateways` (`R-047-2` — nothing selects a gateway
- * by model yet) and `ExpertExecutions` (`DEF-047-001` — no execution identity
- * for a platform-dispatched run).
+ * `ContextAssembler` to `EPIC-038`'s assembly. Phase 15 (`DEF-047-001`) binds
+ * `ExpertExecutions` to `EPIC-037`'s registry under an agent principal minted
+ * per Expert and sponsor, and `ExpertGateways` to a runner over `EPIC-028`'s
+ * seam — which refuses, naming `DEF-047-002`, until a composition root supplies
+ * `EXPERT_AGENT_RUNTIME`.
  */
 import { Module } from '@nestjs/common';
 import { AssemblyService } from '../context/assembly.service.js';
@@ -34,6 +35,16 @@ import { EVIDENCE_CATALOG } from '../evidence/evidence.tokens.js';
 import { prismaClient } from '../../persistence/prisma.js';
 import { AccessInheritanceService } from '../access/access-inheritance.service.js';
 import { AccessModule } from '../access/access.module.js';
+import { PrincipalDelegationService } from '../access/principal-delegation.service.js';
+import { AgentsModule } from '../agents/agents.module.js';
+import { IdentitySnapshotService, PrincipalRegistryService } from '../agents/principal-registry.service.js';
+import { ExecutionRegistrationService } from '../executions/execution-registration.service.js';
+import { ExecutionRegistryFacade } from '../executions/execution-registry.facade.js';
+import { ExecutionTimelineService } from '../executions/execution-timeline.service.js';
+import { ExecutionsModule } from '../executions/executions.module.js';
+import { expertExecutions } from './adapters/executions.adapter.js';
+import { InMemoryExpertIdentityStore, PrismaExpertIdentityStore, type IdentityStoreClient } from './adapters/identity.store.js';
+import { EXPERT_AGENT_RUNTIME, expertGateways, type AgentRuntime } from './adapters/runners.adapter.js';
 import { assemblyContext } from './adapters/context.adapter.js';
 import { decisionApprovals } from './adapters/decisions.adapter.js';
 import { catalogEvidence } from './adapters/evidence.adapter.js';
@@ -64,7 +75,7 @@ export class ExpertsService {
 }
 
 @Module({
-  imports: [AccessModule, DecisionModule, EvidenceModule, ContextModule],
+  imports: [AccessModule, AgentsModule, DecisionModule, EvidenceModule, ContextModule, ExecutionsModule],
   controllers: [ExpertsController],
   providers: [
     { provide: ExpertsService, useFactory: (): ExpertsService => new ExpertsService() },
@@ -92,19 +103,62 @@ export class ExpertsService {
     },
     // R-047-13, Phase 9 — EPIC-031/032/038 bound to their adapters; gateways and
     // executions still refuse (R-047-2, DEF-047-001).
+    // T2566 — no agent runtime is composed into the API process (DEF-047-002):
+    // `backend/` may name no adapter or provider. A composition root that can
+    // overrides this token; until one does, ExpertGateways refuses naming why.
+    { provide: EXPERT_AGENT_RUNTIME, useValue: null },
     {
       provide: EXPERT_PORTS,
-      inject: [DecisionEngine, DECISION_REPOSITORY, EVIDENCE_CATALOG, AssemblyService],
+      inject: [
+        DecisionEngine,
+        DECISION_REPOSITORY,
+        EVIDENCE_CATALOG,
+        AssemblyService,
+        ACTOR_ACCESS,
+        PrincipalRegistryService,
+        IdentitySnapshotService,
+        PrincipalDelegationService,
+        ExecutionRegistryFacade,
+        ExecutionRegistrationService,
+        ExecutionTimelineService,
+        EXPERT_AGENT_RUNTIME,
+      ],
       useFactory: (
         engine: DecisionEngine,
         decisions: DecisionRepository,
         catalog: ContractCatalog,
         assembly: AssemblyService,
+        access: ActorAccess,
+        principals: PrincipalRegistryService,
+        snapshots: IdentitySnapshotService,
+        delegations: PrincipalDelegationService,
+        registry: ExecutionRegistryFacade,
+        registration: ExecutionRegistrationService,
+        timeline: ExecutionTimelineService,
+        runtime: AgentRuntime | null,
       ): ExpertPorts => ({
         ...refusingPorts(),
         approvals: decisionApprovals(engine, decisions),
         evidence: catalogEvidence(catalog),
         context: assemblyContext(assembly),
+        // T2564, DEF-047-001 — registered under the Expert's own agent principal.
+        executions: expertExecutions(
+          {
+            access,
+            principals,
+            snapshots,
+            delegations,
+            registry,
+            timeline: {
+              projectIdOf: (ws, id) => registration.projectIdOf(ws, id),
+              events: (ws, projectId, id) => timeline.events(ws, projectId, id),
+            },
+          },
+          process.env['DATABASE_URL']
+            ? new PrismaExpertIdentityStore(prismaClient() as unknown as IdentityStoreClient)
+            : new InMemoryExpertIdentityStore(),
+        ),
+        gateways: expertGateways(runtime),
       }),
     },
     {
