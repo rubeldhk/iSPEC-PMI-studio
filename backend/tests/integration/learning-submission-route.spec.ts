@@ -120,20 +120,21 @@ afterAll(async () => {
 }, 120_000);
 
 suite('T2334 · submission through the composed application', () => {
-  describe('before EPIC-047 and EPIC-032 merge — the default bindings', () => {
-    it('an agent’s submission is refused 503 naming ExpertProvenance — its Expert, if any, cannot be judged (R-048-10)', async () => {
-      const res = await asAgent().send(body({ idempotencyKey: 'no-047' })).expect(503);
-      expect(res.body.error.message).toContain('ExpertProvenance');
-      expect(await count('learning_candidates')).toBe(0);
+  /**
+   * Phase 9 (`T2395`, `T2401`) — EPIC-047 and EPIC-032 are on main and bound.
+   * These two cases first asserted the 503s those ports gave while unbound;
+   * they now assert what the real owners answer.
+   */
+  describe('the default bindings — EPIC-047 and EPIC-032 answer for real', () => {
+    it('an execution that is no Expert session is not refused for want of ExpertProvenance (R-048-10)', async () => {
+      const res = await asAgent().send(body({ idempotencyKey: 'real-047' }));
+      expect(res.status).not.toBe(503);
+      expect(JSON.stringify(res.body)).not.toContain('ExpertProvenance');
     });
 
-    it('Q3 · refuses 503 naming EvidenceReads, storing nothing', async () => {
-      // EPIC-047's read, bound visibly to "not an Expert session" for the rest of
-      // this file, so the next unbound port is the one Q3 is about.
-      ports.experts = { async forExecution() { return null; } };
-      const res = await asAgent().send(body({ idempotencyKey: 'q3' })).expect(503);
-      expect(res.body.error.code).toBe('governance_seam_unbound');
-      expect(res.body.error.message).toContain('EvidenceReads');
+    it('Q3 · evidence EPIC-032 does not hold is refused 400 naming it, storing nothing (FR-LRN-012)', async () => {
+      const res = await asAgent().send(body({ idempotencyKey: 'q3' })).expect(400);
+      expect(res.body.error.details.unresolvable).toEqual(['ev_1']);
       expect(await count('learning_candidates')).toBe(0);
     });
   });
