@@ -53,6 +53,8 @@ export interface DeploymentBindingDeps {
   readonly env: Readonly<Record<string, string | undefined>>;
   /** `EPIC-024` read on the caller's `integration-registry` — for the one read route. */
   readonly access?: { requireReadable(workspaceId: string, userId: string): Promise<void> };
+  /** The registry's first-read seeding (it grants the workspace creator), shared so this read behaves like §1's. */
+  readonly ensureSeeded?: (workspaceId: string) => Promise<void>;
 }
 
 export interface DeploymentCapabilitiesView {
@@ -71,6 +73,13 @@ export interface DeploymentCapabilitiesView {
     readonly explanation: string | null;
     readonly observations: readonly Omit<DeploymentObservationRecord, 'providerBinding'>[];
   }[];
+}
+
+/** Key order is not meaning: PostgreSQL's jsonb reorders keys, so compare a sorted rendering. */
+function canonical(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(',')}]`;
+  if (v !== null && typeof v === 'object') return `{${Object.keys(v as object).sort().map((k) => `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`).join(',')}}`;
+  return JSON.stringify(v);
 }
 
 interface Read {
@@ -106,6 +115,7 @@ export class DeploymentBindingService {
   /** `GET /integrations/deployment/capabilities` — read only. */
   async view(workspaceId: string, userId: string): Promise<DeploymentCapabilitiesView> {
     if (this.deps.access === undefined) throw new NotFoundError('Not found.');
+    await this.deps.ensureSeeded?.(workspaceId);
     await this.deps.access.requireReadable(workspaceId, userId);
     const s = this.current;
     const rows = await this.deps.store.listObservations('Embed', 10);
@@ -226,7 +236,7 @@ export class DeploymentBindingService {
     const same =
       latest !== null &&
       latest.adapterKey === s.adapterKey &&
-      JSON.stringify(latest.providerBinding) === JSON.stringify(s.providerBinding) &&
+      canonical(latest.providerBinding) === canonical(s.providerBinding) &&
       latest.modelId === s.modelId &&
       latest.health === s.health &&
       (latest.reason ?? null) === s.reason;

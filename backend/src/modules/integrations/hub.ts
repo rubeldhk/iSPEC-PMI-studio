@@ -82,7 +82,7 @@ export function createHub(deps: HubDeps): Hub {
   const credentials = new CredentialService({ store: deps.store, catalog: deps.catalog, vault, health, ownerGate: deps.ownerGate, audit: deps.audit, clock: deps.clock });
   const intake = new EvidenceIntakeService({ store: deps.store, requests, evidence: deps.evidence, clock: deps.clock });
   const notifications = new NotificationService({ store: deps.store, requests });
-  const deployment = new DeploymentBindingService({ store: deps.store, catalog: deps.catalog, clock: deps.clock, env: deps.env ?? {}, access: deps.access });
+  const deployment = new DeploymentBindingService({ store: deps.store, catalog: deps.catalog, clock: deps.clock, env: deps.env ?? {}, access: deps.access, ensureSeeded: (workspaceId) => registry.ensureSeeded(workspaceId) });
   const embedding = new HubEmbeddingPort({ deployment, catalog: deps.catalog, store: deps.store, clock: deps.clock });
   return { deps, cipher, vault, health, resolver, configuration, requests, registry, credentials, intake, notifications, deployment, embedding };
 }
