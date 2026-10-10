@@ -12,7 +12,7 @@
  * backend workflows) — the deliberate divergence from engine and agent
  * adapters, which are composed in the worker (`R-039-1`).
  */
-import { FixtureCiAdapter, FixtureGitAdapter } from '@pmi/capability-adapter-fixture';
+import { FixtureCiAdapter, FixtureGitAdapter, FixtureNotifyAdapter } from '@pmi/capability-adapter-fixture';
 import { GitHubRestAdapter } from '@pmi/capability-adapter-github';
 import { AdapterCatalog } from '../modules/integrations/catalog.service.js';
 
@@ -26,6 +26,7 @@ export function createAdapterCatalog(options: CatalogOptions = {}): AdapterCatal
   return new AdapterCatalog([
     new FixtureGitAdapter(),
     new FixtureCiAdapter(),
+    new FixtureNotifyAdapter(),
     new GitHubRestAdapter(fetchLike ? { fetch: (url, init) => fetchLike(url, init as RequestInit) } : {}),
   ]);
 }

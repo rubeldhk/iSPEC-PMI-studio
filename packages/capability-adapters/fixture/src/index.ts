@@ -5,3 +5,4 @@
 export { FixtureAdapter, FIXTURE_BINDING_SCHEMA, FIXTURE_VERSION, commitFor, type FixtureScript, type InvokeScript } from './shared.js';
 export { FixtureGitAdapter } from './git.fixture.js';
 export { FixtureCiAdapter } from './ci.fixture.js';
+export { FixtureNotifyAdapter, type FixtureDelivery } from './notify.fixture.js';
