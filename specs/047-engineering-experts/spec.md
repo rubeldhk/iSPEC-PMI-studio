@@ -49,6 +49,21 @@ policy (`BR-0152`, folded in per ranking decision 3)."
   only.** Contracts are authored through the API and approved in `EPIC-031`'s Decision Inbox;
   in-screen authoring waits for administrator roles (`FR-EXP-076`).
 
+### Amendments 2026-10-09 — for `EPIC-048` Governed Learning
+
+Approved by the Project Owner on 2026-10-09 as `EPIC-048`'s clarification Q1 = A; recorded in
+`EPIC-048`'s `contracts/learning-contract.md` §6 as `A-047-1` and `A-047-2`.
+
+- **`A-047-1`** — `FR-EXP-020` gains a second value, **`governed-knowledge`**. It supersedes the
+  2026-10-09 answer above that `none` is the only accepted value. An Expert declaring it may submit
+  learning candidates to `EPIC-048` and receive approved knowledge **only through context**
+  (`EPIC-038`). It grants no private memory, and changing it needs a new contract version approved
+  like any other. Until `EPIC-048` exists, a contract declaring it validates and can be approved;
+  the learning ports stay unbound and refuse, and nothing in this Epic builds `EPIC-048`'s behaviour.
+- **`A-047-2`** — a read that answers which Expert and which contract version ran a given execution,
+  with that version's memory policy (`FR-EXP-064`), exported from `ExpertsModule` for `EPIC-048`'s
+  `ExpertProvenance` port. Additive.
+
 ## SRS Traceability *(mandatory — Constitution II)*
 
 | Source | Section | Covers |
@@ -302,10 +317,16 @@ versions and the delegation tree on the screen.
 - **FR-EXP-018**: Where no declared model is available, dispatch MUST refuse.
 - **FR-EXP-019**: Dispatch MUST refuse when the workspace does not meet the contract's workspace
   requirements, naming the unmet requirement.
-- **FR-EXP-020**: The memory policy MUST be declared, and in this Epic its only accepted value is
-  **`none`** — a session retains nothing beyond itself *(clarified 2026-10-09)*. A contract
-  declaring any other value MUST be rejected, naming Governed Learning as where cross-session
-  memory is decided. The platform MUST NOT persist session memory.
+- **FR-EXP-020**: The memory policy MUST be declared, and its accepted values are **`none`** — a
+  session retains nothing beyond itself *(clarified 2026-10-09)* — and **`governed-knowledge`**
+  *(amended 2026-10-09, `A-047-1`, for `EPIC-048`)*: the Expert MAY submit learning candidates to
+  Governed Learning (`EPIC-048`) and MAY receive approved knowledge only through its context
+  (`EPIC-038`). `governed-knowledge` MUST NOT grant any private or per-Expert memory, and changing
+  an Expert's memory policy MUST be a new contract version approved through this Epic's path. A
+  contract declaring any other value MUST be rejected, naming Governed Learning as where
+  cross-session memory is decided. The platform MUST NOT persist session memory. Until `EPIC-048`'s
+  learning ports are bound, a contract declaring `governed-knowledge` MUST validate and be
+  approvable, and those ports MUST refuse.
 - **FR-EXP-021**: Expected outputs MUST be checked when a run ends; a run that did not produce a
   required output MUST be recorded as incomplete, not succeeded.
 - **FR-EXP-022**: A contract referencing an Evidence Contract, context policy or delegate Expert that
@@ -378,6 +399,11 @@ versions and the delegation tree on the screen.
   review (`BR-0061`, `EPIC-023`) rather than bypass release controls: the session is recorded as
   **requiring review**, and its completion is **proposed** through `EPIC-037`, never applied by the
   Expert.
+- **FR-EXP-064**: For a given workspace and execution, the platform MUST answer which Expert and
+  which contract version ran it, with that version's memory policy, or that the execution is not an
+  Expert session *(amended 2026-10-09, `A-047-2`, for `EPIC-048`'s `ExpertProvenance`)*. The answer
+  MUST be read from the session record, never cached, and an execution in another workspace MUST
+  read as not an Expert session.
 
 **The Engineering Experts screen** *(PMI-DOC-006 §4, Delivery group)*
 

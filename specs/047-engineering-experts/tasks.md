@@ -255,3 +255,26 @@ suites assert.
 - [X] T2013 Register before reading the effective version in `backend/src/modules/experts/dispatch.service.ts` (unit test: T2012) per FR-EXP-061 (contradicts) — *registered under the newest version; the version in force, when different, is recorded as `contract-version-in-force`*
 - [X] T2014 [P] Write failing unit and route tests in `backend/tests/unit/expert-request-limits.spec.ts` — request limits that are not finite positive numbers are refused `400` before registration per FR-EXP-044, FR-EXP-040 (partial) — *8 unit cases (7 failed first); route case in `tests/integration/experts-dispatch-route.spec.ts`*
 - [X] T2015 Validate request limits in `backend/src/modules/experts/dispatch.service.ts` (unit test: T2014) per FR-EXP-044 (partial) — *every problem named; the controller now passes a malformed `limits` through instead of dropping it*
+
+---
+
+## Phase 12: Amendment `A-047-1` — `memoryPolicy: governed-knowledge` (`FR-EXP-020`)
+
+> Appended 2026-10-09 for `EPIC-048` Governed Learning (its clarification Q1 = A; `EPIC-048`
+> `contracts/learning-contract.md` §6). Identifiers `T2016`–`T2099` are this Epic's;
+> `T2100`–`T2299` are reserved for `EPIC-039` and `T2300`–`T2499` for `EPIC-048`.
+> **No `EPIC-048` behaviour is built here**: a contract declaring `governed-knowledge` validates and
+> can be approved, and nothing in this Epic submits learning or supplies knowledge.
+
+- [ ] T2016 [P] Write failing unit tests in `backend/tests/unit/expert-memory-policy.spec.ts`, and update `backend/tests/unit/expert-types.spec.ts` — `MEMORY_POLICIES` is exactly `none | governed-knowledge`; a contract declaring `governed-knowledge` validates, registers and can be submitted and approved; any other value (`session`) is still refused naming Governed Learning; dispatching a `governed-knowledge` Expert asks context for exactly what a `none` Expert's does (no learning behaviour here) per FR-EXP-020 (amended, A-047-1)
+- [ ] T2017 Admit `governed-knowledge` in `MEMORY_POLICIES` (`backend/src/modules/experts/expert.types.ts`) and the validation message (`contract.validation.ts`) (unit test: T2016) per FR-EXP-020 (amended)
+- [ ] T2018 [P] Update the failing integration test `backend/tests/integration/expert-constraints.spec.ts` — a stored contract declaring `governed-knowledge` satisfies the `CHECK`; `session` still violates it per FR-EXP-020 (amended)
+- [ ] T2019 Replace `expert_contract_versions_memory_check` in a new migration `backend/prisma/migrations/20261009110000_epic047_memory_governed_knowledge/migration.sql` with `IN ('none', 'governed-knowledge')` (integration test: T2018) per FR-EXP-020 (amended)
+- [ ] T2020 [P] Write failing component tests in `frontend/tests/unit/pages/Experts.memory.spec.tsx` — a contract declaring `governed-knowledge` is shown with what it means: learning through Governed Learning, knowledge only through context, no private memory per FR-EXP-020 (amended), FR-EXP-072
+- [ ] T2021 Widen `ExpertContractView.memoryPolicy` in `frontend/src/services/api.ts` and describe the policy in `frontend/src/pages/Experts.tsx` (unit test: T2020) per FR-EXP-020 (amended)
+- [ ] T2022 Update `specs/047-engineering-experts/quickstart.md` Q2 (`session` still `400`; `governed-knowledge` now `201`) and `data-model.md` (`memoryPolicy` values) per FR-EXP-020 (amended)
+
+## Phase 13: Amendment `A-047-2` — which Expert ran an execution (`FR-EXP-064`)
+
+- [ ] T2023 [P] Write failing unit tests in `backend/tests/unit/expert-provenance.spec.ts` — `forExecution(workspaceId, executionId)` returns `{expertId, contractVersionId, contractVersion, memoryPolicy}` for an Expert session, the version it **started** under even after a later one is approved; `null` for an execution that is not an Expert session or is in another workspace; and add to `backend/tests/integration/experts-reachability.spec.ts` that `ExpertsModule` exports and resolves `EXPERT_PROVENANCE` per FR-EXP-064 (A-047-2)
+- [ ] T2024 Implement `backend/src/modules/experts/provenance.ts` over `findSession` and `versionsFor`, and bind and export `EXPERT_PROVENANCE` in `experts.module.ts` (unit test: T2023) per FR-EXP-064 (A-047-2)
