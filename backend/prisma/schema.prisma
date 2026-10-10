@@ -3251,6 +3251,9 @@ model DecisionExplanation {
   constraintCited      String?
   proposalDisagreement String?
   triggerRule          String?
+  /// FR-DPE-017 — rejected | withdrawn | expired, with its reason; both or neither (CHECK).
+  closureKind          String?
+  closureReason        String?
   createdAt            DateTime         @default(now())
   decisions            PolicyDecision[]
 
