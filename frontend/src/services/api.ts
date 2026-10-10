@@ -317,7 +317,8 @@ export interface ExpertContractView {
   permissions: { artifactType: string; action: 'read' | 'edit' }[];
   riskClass: 'low' | 'medium' | 'high';
   budget: Partial<Record<'time' | 'resource' | 'tokens' | 'cost', ExpertLimitSetting>>;
-  memoryPolicy: 'none';
+  /** `FR-EXP-020`; `governed-knowledge` by amendment `A-047-1`. */
+  memoryPolicy: 'none' | 'governed-knowledge';
   expectedOutputs: { kind: string; required: boolean }[];
   evidenceContract: { workClass: string; contractVersion: number };
   delegatesTo: string[];

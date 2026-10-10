@@ -25,7 +25,7 @@ pnpm --filter backend vitest run tests/integration/expert- --no-file-parallelism
 | # | Scenario | Expected |
 |---|---|---|
 | Q1 | Register an Expert omitting three contract elements | `400` naming all three |
-| Q2 | Register with `memoryPolicy: "session"` | `400` naming Governed Learning (`FR-EXP-020`) |
+| Q2 | Register with `memoryPolicy: "session"`; then with `memoryPolicy: "governed-knowledge"` | `session`: `400` naming Governed Learning; `governed-knowledge`: `201`, a draft that can be submitted and approved like any other (`FR-EXP-020`, amended by `A-047-1`) |
 | Q3 | Submit a version while `ContractApprovals` is unbound | `503` naming the port; version stays `draft` |
 | Q4 | **(after merge)** Submit, approve in the Decision Inbox, read the Expert | Version `approved`, effective |
 | Q5 | Dispatch with a tool outside the contract | `400`; a `dispatch-refused` event on a registered execution |

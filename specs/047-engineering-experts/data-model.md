@@ -38,7 +38,7 @@ Immutable after insert except `decisionId`, written once on submission (`R-047-1
 | `prohibitedActions` | text[] | Take precedence over allowances (`FR-EXP-013`) |
 | `riskClass` | `low` \| `medium` \| `high` | `RiskBand` (`R-047-6`) |
 | `budget` | jsonb `{timeMs, tokens?, cost?, resource?}` + per-limit `onUnenforceable: refuse \| proceed` | Defaults per `FR-EXP-043`; `resource` = maximum tool calls (`FR-EXP-040`) |
-| `memoryPolicy` | `none` | Only accepted value (`FR-EXP-020`) |
+| `memoryPolicy` | `none` \| `governed-knowledge` | `FR-EXP-020`; `governed-knowledge` by amendment `A-047-1` (learning through `EPIC-048`, knowledge only through context, no private memory). `CHECK` replaced by `20261009110000_epic047_memory_governed_knowledge` |
 | `expectedOutputs` | jsonb `[{kind, required}]` | Checked at run end (`FR-EXP-021`) |
 | `evidenceContract` | jsonb `{workClass, contractVersion}` | `R-047-11` |
 | `delegatesTo` | text[] (Expert keys) | Empty = may not delegate |
@@ -75,6 +75,7 @@ One row per Expert run, keyed by `EPIC-037`'s execution (`R-047-3`).
 | `executionId` | text PK | `EPIC-037` execution, registered before the run |
 | `workspaceId`, `expertId`, `contractVersionId` | | The version it **started** under (`FR-EXP-062`) |
 | `delegatedFromExecutionId?` | text | Delegation parent — **not** `EPIC-037`'s re-run parent |
+| `actorId` | text | The actor who started the **root** run; a delegate inherits it (`FR-EXP-034`, `T2005`, migration `20261009100000_epic047_session_actor`) |
 | `depth` | int | 0 for a root |
 | `model` | text | The model actually used |
 | `usedFallback` | bool + `fallbackReason?` | `FR-EXP-017` |

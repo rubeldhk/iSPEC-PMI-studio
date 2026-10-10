@@ -283,7 +283,7 @@ function ContractView({ version, contract }: { version: number; contract: Expert
         {limits.map(([kind, s]) => `${kind} ${s?.value ?? ''}${s?.onUnenforceable ? ` (if unenforceable: ${s.onUnenforceable})` : ''}`).join('; ')}
       </dd>
       <dt>Memory policy</dt>
-      <dd>{contract.memoryPolicy}</dd>
+      <dd>{MEMORY_POLICY_MEANING[contract.memoryPolicy] ?? contract.memoryPolicy}</dd>
       <dt>Expected outputs</dt>
       <dd>{contract.expectedOutputs.map((o) => `${o.kind}${o.required ? '' : ' (optional)'}`).join(', ')}</dd>
       <dt>Evidence Contract</dt>
@@ -296,7 +296,14 @@ function ContractView({ version, contract }: { version: number; contract: Expert
   );
 }
 
-const describeContextPolicy = (p: ExpertContractView['contextPolicy']): string =>
+/** `FR-EXP-020` (amended by `A-047-1`) — what each memory policy means, in words. */
+const MEMORY_POLICY_MEANING: Record<ExpertContractView['memoryPolicy'], string> = {
+  none: 'none — the session retains nothing beyond the session',
+  'governed-knowledge':
+    'governed-knowledge — may submit learning to Governed Learning, and receives approved knowledge only through context; no private memory',
+};
+
+const describeContextPolicy =(p: ExpertContractView['contextPolicy']): string =>
   [
     `${p.budgetTokens} tokens, cost ${p.budgetCost}`,
     p.includeLiveState ? 'live state included' : 'live state not included',

@@ -270,9 +270,9 @@ suites assert.
 - [X] T2017 Admit `governed-knowledge` in `MEMORY_POLICIES` (`backend/src/modules/experts/expert.types.ts`) and the validation message (`contract.validation.ts`) (unit test: T2016) per FR-EXP-020 (amended) — *message names both values, Governed Learning and "no private memory"*
 - [X] T2018 [P] Update the failing integration test `backend/tests/integration/expert-constraints.spec.ts` — a stored contract declaring `governed-knowledge` satisfies the `CHECK`; `session` still violates it per FR-EXP-020 (amended) — *observed failing with the new migration held back, then passing (16/16)*
 - [X] T2019 Replace `expert_contract_versions_memory_check` in a new migration `backend/prisma/migrations/20261009110000_epic047_memory_governed_knowledge/migration.sql` with `IN ('none', 'governed-knowledge')` (integration test: T2018) per FR-EXP-020 (amended)
-- [ ] T2020 [P] Write failing component tests in `frontend/tests/unit/pages/Experts.memory.spec.tsx` — a contract declaring `governed-knowledge` is shown with what it means: learning through Governed Learning, knowledge only through context, no private memory per FR-EXP-020 (amended), FR-EXP-072
-- [ ] T2021 Widen `ExpertContractView.memoryPolicy` in `frontend/src/services/api.ts` and describe the policy in `frontend/src/pages/Experts.tsx` (unit test: T2020) per FR-EXP-020 (amended)
-- [ ] T2022 Update `specs/047-engineering-experts/quickstart.md` Q2 (`session` still `400`; `governed-knowledge` now `201`) and `data-model.md` (`memoryPolicy` values) per FR-EXP-020 (amended)
+- [X] T2020 [P] Write failing component tests in `frontend/tests/unit/pages/Experts.memory.spec.tsx` — a contract declaring `governed-knowledge` is shown with what it means: learning through Governed Learning, knowledge only through context, no private memory per FR-EXP-020 (amended), FR-EXP-072 — *2 cases; both failed first*
+- [X] T2021 Widen `ExpertContractView.memoryPolicy` in `frontend/src/services/api.ts` and describe the policy in `frontend/src/pages/Experts.tsx` (unit test: T2020) per FR-EXP-020 (amended)
+- [X] T2022 Update `specs/047-engineering-experts/quickstart.md` Q2 (`session` still `400`; `governed-knowledge` now `201`) and `data-model.md` (`memoryPolicy` values) per FR-EXP-020 (amended) — *`data-model.md` also gains `expert_sessions.actorId` (`T2005`)*
 
 ## Phase 13: Amendment `A-047-2` — which Expert ran an execution (`FR-EXP-064`)
 
