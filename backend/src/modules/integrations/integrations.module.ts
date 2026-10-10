@@ -40,6 +40,7 @@ import { ProjectsService } from '../projects/projects.service.js';
 import type { AdapterCatalog } from './catalog.service.js';
 import { ConfigurationController } from './configuration.controller.js';
 import { CredentialsController } from './credentials/credentials.controller.js';
+import { DeploymentController } from './embedding/deployment.controller.js';
 import { EvidenceIntakeController } from './evidence/intake.controller.js';
 import { startIntakeJob } from './evidence/intake.job.js';
 import { createHub, type Hub } from './hub.js';
@@ -75,7 +76,7 @@ export const HEALTH_TICK_MS = 30_000;
 
 @Module({
   imports: [AuditModule, AccessModule, ProjectsModule, ConnectorModule, ExecutionsModule],
-  controllers: [RegistryController, ConfigurationController, CredentialsController, CapabilityRequestsController, EvidenceIntakeController],
+  controllers: [RegistryController, ConfigurationController, CredentialsController, CapabilityRequestsController, EvidenceIntakeController, DeploymentController],
   providers: [
     { provide: PLATFORM_ENVIRONMENT, useFactory: (): string => resolvePlatformEnvironment(process.env) },
     {
@@ -146,6 +147,7 @@ export const HEALTH_TICK_MS = 30_000;
           keyring,
           clock: () => new Date(),
           environment,
+          env: process.env,
           audit: { record: (row) => audit.record(row) },
           events: {
             appendCapabilityResolved: async ({ workspaceId, executionId, emittedBy, resolutionId, payload }) => {
@@ -193,9 +195,12 @@ export class IntegrationsModule implements OnModuleInit, OnModuleDestroy {
     @Inject(INTEGRATIONS_TICKER) private readonly ticker: Ticker,
   ) {}
 
-  onModuleInit(): void {
+  async onModuleInit(): Promise<void> {
+    // The deployment's Embed binding is read once, here (FR-HUB-084, analysis I1).
+    await this.hub.deployment.observeAtBoot();
     this.ticker.start(HEALTH_TICK_MS, async () => {
       await this.hub.health.runDueHealthChecks();
+      await this.hub.deployment.recheck();
     });
     startIntakeJob(this.ticker, this.hub.intake);
   }

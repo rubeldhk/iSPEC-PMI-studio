@@ -11,6 +11,7 @@ import { staticConnectorFacts, type ProjectConnectorFacts, type StaticConnectorF
 import { CredentialCipher } from './credentials/credential.cipher.js';
 import { CredentialService } from './credentials/credential.service.js';
 import { CredentialVault } from './credentials/credential.vault.js';
+import { DeploymentBindingService } from './embedding/deployment-binding.service.js';
 import { EvidenceIntakeService } from './evidence/evidence-intake.service.js';
 import { NotificationService } from './notifications/notification.service.js';
 import { HealthService } from './health/health.service.js';
@@ -37,6 +38,8 @@ export interface HubDeps {
   readonly workspaces: WorkspaceDirectoryPort;
   readonly projectConnectors: ProjectConnectorFacts;
   readonly connectors?: StaticConnectorFacts;
+  /** Deployment configuration (`PMI_EMBED_ADAPTER`, `PMI_EMBED_BINDING`), read at boot. */
+  readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
 export interface Hub {
@@ -51,6 +54,7 @@ export interface Hub {
   readonly credentials: CredentialService;
   readonly intake: EvidenceIntakeService;
   readonly notifications: NotificationService;
+  readonly deployment: DeploymentBindingService;
 }
 
 export function createHub(deps: HubDeps): Hub {
@@ -75,5 +79,6 @@ export function createHub(deps: HubDeps): Hub {
   const credentials = new CredentialService({ store: deps.store, catalog: deps.catalog, vault, health, ownerGate: deps.ownerGate, audit: deps.audit, clock: deps.clock });
   const intake = new EvidenceIntakeService({ store: deps.store, requests, evidence: deps.evidence, clock: deps.clock });
   const notifications = new NotificationService({ store: deps.store, requests });
-  return { deps, cipher, vault, health, resolver, configuration, requests, registry, credentials, intake, notifications };
+  const deployment = new DeploymentBindingService({ store: deps.store, catalog: deps.catalog, clock: deps.clock, env: deps.env ?? {}, access: deps.access });
+  return { deps, cipher, vault, health, resolver, configuration, requests, registry, credentials, intake, notifications, deployment };
 }

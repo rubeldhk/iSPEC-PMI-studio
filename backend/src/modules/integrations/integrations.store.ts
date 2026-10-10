@@ -496,11 +496,12 @@ export class InMemoryIntegrationsStore implements IntegrationsStore {
   }
 
   async latestObservation(capability: string): Promise<DeploymentObservationRecord | null> {
-    return this.observations.filter((o) => o.capability === capability).sort(byDesc((o) => o.observedAt))[0] ?? null;
+    // Newest first; at an equal instant the later append wins, as `createdAt` breaks the tie in PostgreSQL.
+    return this.observations.filter((o) => o.capability === capability).reverse().sort(byDesc((o) => o.observedAt))[0] ?? null;
   }
 
   async listObservations(capability: string, limit: number): Promise<DeploymentObservationRecord[]> {
-    return this.observations.filter((o) => o.capability === capability).sort(byDesc((o) => o.observedAt)).slice(0, limit);
+    return this.observations.filter((o) => o.capability === capability).reverse().sort(byDesc((o) => o.observedAt)).slice(0, limit);
   }
 
   async appendObservation(input: Omit<DeploymentObservationRecord, 'id'>): Promise<DeploymentObservationRecord> {
