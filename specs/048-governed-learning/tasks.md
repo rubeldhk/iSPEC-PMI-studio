@@ -445,10 +445,10 @@ retrievability recorded honestly.
 
 ## Phase 9: Dependency adapters — ⛔ **BLOCKED until `EPIC-032`, `EPIC-031`, `EPIC-038` and `EPIC-047` merge in the stated order, with their prerequisites**
 
-- [ ] T2388 [P] ⛔ **BLOCKED on `EPIC-032` merge** — Write failing tests `backend/tests/unit/learning-adapter-attestations.spec.ts`:
+- [X] T2388 [P] Write failing tests `backend/tests/unit/learning-adapter-attestations.spec.ts`: — **Done**: 4 cases against the real `EvidenceService` + in-memory repository, red on the missing adapter: approval/v1 from `pmi:learning` attached to the decision, attesting entry@version with the version digest as subject; predicate is exactly the R-048-19 body (no statement); an unknown candidate is refused, never given a guessed project; an Evidence Store outage flags `attestation-missing` through the hook and does not throw.
   - `ApprovalAttestations` calls `EvidenceService.contribute` with the platform source and the body of `R-048-19`;
   - a fault flags rather than throwing into the approval
-- [ ] T2389 ⛔ **BLOCKED on `EPIC-032` merge** — Implement `backend/src/modules/learning/adapters/attestations.adapter.ts` and bind it (unit test: T2388)
+- [X] T2389 Implement `backend/src/modules/learning/adapters/attestations.adapter.ts` and bind it (unit test: T2388) — **Done**: `adapters/attestations.adapter.ts` (project read from this Epic's store); bound in `learning.module.ts` with `EvidenceModule` imported; `learning-reachability.spec.ts` gained a Phase 9 assertion (red, then green) that the composed graph's port is no longer unbound.
 - [ ] T2390 [P] ⛔ **BLOCKED on `EPIC-031` merge + `A-031-1`** — Write failing tests `backend/tests/unit/learning-adapter-decisions.spec.ts`:
   - `decide`, `approve`, `refuse` and `resolutionOf` pass straight to `DecisionEngine`;
   - a test in `EPIC-031`'s suite asserts the `resolutionOf` export (`A-031-3`);

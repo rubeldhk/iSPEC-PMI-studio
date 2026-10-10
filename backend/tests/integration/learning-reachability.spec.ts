@@ -55,4 +55,36 @@ describe('T2301 · the Learning module is reachable through the composed applica
     const res = await request(app.getHttpServer()).get('/v1/learning/knowledge');
     expect(res.status).toBe(401);
   });
+
+  /**
+   * Phase 9 — each port whose owner is on `main` is bound to its adapter in the
+   * graph the application builds, not left refusing (`R-048-20`). Asked through
+   * the module's own ports object, so a rebinding in some other test proves
+   * nothing here. Ports whose owner is not on `main` stay refusing.
+   */
+  describe('Phase 9 · ports bound to owners on main', () => {
+    const ports = async () => {
+      const { LearningModule } = await import('../../src/modules/learning/learning.module.js');
+      const { LEARNING_PORTS_TOKEN } = await import('../../src/modules/learning/learning.tokens.js');
+      return app.select(LearningModule).get(LEARNING_PORTS_TOKEN, { strict: false }) as import('../../src/modules/learning/learning.tokens.js').LearningPorts;
+    };
+    const notUnbound = async (call: () => Promise<unknown>) => {
+      const { GovernanceSeamUnboundError } = await import('../../src/core/errors.js');
+      const outcome = await call().then(
+        (value) => ({ value }),
+        (error: unknown) => ({ error }),
+      );
+      if ('error' in outcome) expect(outcome.error).not.toBeInstanceOf(GovernanceSeamUnboundError);
+      return outcome;
+    };
+
+    it('T2389 · ApprovalAttestations reaches EPIC-032 (an unknown candidate is NotFound, not unbound)', async () => {
+      const p = await ports();
+      const outcome = await notUnbound(() =>
+        p.attestations.contribute({ workspaceId: 'ws_x', candidateId: 'lc_none' } as never),
+      );
+      expect(outcome).toHaveProperty('error');
+      expect(String((outcome as { error: Error }).error.message)).toContain('lc_none');
+    });
+  });
 });

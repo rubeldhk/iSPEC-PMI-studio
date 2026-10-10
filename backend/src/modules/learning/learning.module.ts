@@ -31,6 +31,8 @@ import { PrincipalRegistryService } from '../agents/principal-registry.service.j
 import { AuditModule } from '../audit/audit.module.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ConnectorModule } from '../connector/connector.module.js';
+import { EvidenceModule } from '../evidence/evidence.module.js';
+import { EvidenceService } from '../evidence/evidence.service.js';
 import { ExecutionsModule } from '../executions/executions.module.js';
 import { ExecutionEventService } from '../executions/execution-event.service.js';
 import { ExecutionRegistrationService } from '../executions/execution-registration.service.js';
@@ -46,6 +48,7 @@ import { InMemoryLearningStore, type LearningStore } from './learning.store.js';
 import { PrismaKnowledgeWriter, PrismaLearningStore, type LearningPrismaClient } from './learning.store.prisma.js';
 import { KNOWLEDGE_WRITER, LEARNING_PORTS, LEARNING_PORTS_TOKEN, LEARNING_STORE, refusingPorts, type AuditPort, type LearningPorts } from './learning.tokens.js';
 import { auditPort, executionsPort, principalsPort, projectsPort } from './main-ports.js';
+import { attestationsAdapter } from './adapters/attestations.adapter.js';
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
 import { CandidateViewService } from './candidate.view.js';
@@ -72,7 +75,7 @@ export class LearningService {
 const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
 
 @Module({
-  imports: [AgentsModule, AuditModule, ConnectorModule, ExecutionsModule, ProjectsModule, SteeringModule],
+  imports: [AgentsModule, AuditModule, ConnectorModule, EvidenceModule, ExecutionsModule, ProjectsModule, SteeringModule],
   controllers: [LearningController, LearningConnectorController],
   providers: [
     { provide: LearningService, useFactory: (): LearningService => new LearningService() },
@@ -84,7 +87,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       provide: LEARNING_PORTS_TOKEN,
-      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService],
+      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService],
       useFactory: (
         facade: ExecutionRegistryFacade,
         registration: ExecutionRegistrationService,
@@ -93,6 +96,8 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         audit: AuditService,
         steering: SteeringService,
         projects: ProjectsService,
+        store: LearningStore,
+        evidence: EvidenceService,
       ): LearningPorts => {
         const ports: LearningPorts = refusingPorts();
         // The SecretScreen is pure code — EPIC-037's patterns — and needs no database.
@@ -111,9 +116,17 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
             }),
           });
         }
-        // Unmerged — stay refusing until Phase 9 (R-048-20): decisions (EPIC-031),
-        // evidence + attestations + reader access (EPIC-032), index (EPIC-038),
-        // experts (EPIC-047).
+        // Phase 9 — owners now on main (R-048-20). Each owner picks its own
+        // persistence by DATABASE_URL, so these bind with or without one.
+        Object.assign(ports, {
+          // T2389 — EPIC-032's contribute, the platform-source branch.
+          attestations: attestationsAdapter({
+            evidence,
+            projectOf: async (workspaceId: string, candidateId: string) => (await store.candidate(workspaceId, candidateId))?.projectId ?? null,
+          }),
+        });
+        // Still refusing: decisions (EPIC-031 — A-031-1 and A-031-2 are in open
+        // PR #8, not on main).
         return ports;
       },
     },
