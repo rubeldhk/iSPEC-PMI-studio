@@ -41,6 +41,7 @@ import type { AdapterCatalog } from './catalog.service.js';
 import { ConfigurationController } from './configuration.controller.js';
 import { CredentialsController } from './credentials/credentials.controller.js';
 import { DeploymentController } from './embedding/deployment.controller.js';
+import { HubEmbeddingPort } from './embedding/hub-embedding-port.js';
 import { EvidenceIntakeController } from './evidence/intake.controller.js';
 import { startIntakeJob } from './evidence/intake.job.js';
 import { createHub, type Hub } from './hub.js';
@@ -186,8 +187,10 @@ export const HEALTH_TICK_MS = 30_000;
         });
       },
     },
+    // `R-039-18` — what `EPIC-038`'s `ContextModule` binds `EMBEDDING_PORT` to.
+    { provide: HubEmbeddingPort, inject: [HUB], useFactory: (hub: Hub): HubEmbeddingPort => hub.embedding },
   ],
-  exports: [HUB, CapabilityPolicySeam, EvidenceSinkSeam, CredentialKeyringSeam, INTEGRATIONS_TICKER],
+  exports: [HUB, CapabilityPolicySeam, EvidenceSinkSeam, CredentialKeyringSeam, INTEGRATIONS_TICKER, HubEmbeddingPort],
 })
 export class IntegrationsModule implements OnModuleInit, OnModuleDestroy {
   constructor(

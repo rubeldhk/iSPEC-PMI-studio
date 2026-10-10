@@ -262,6 +262,10 @@ export class PrismaIntegrationsStore implements IntegrationsStore {
     return invocation(await this.db.capabilityInvocation.create({ data: { ...input } }));
   }
 
+  async listDeploymentResolutions(capability: string, limit: number): Promise<ResolutionRecord[]> {
+    return (await this.db.capabilityResolution.findMany({ where: { scope: 'deployment', capability }, orderBy: { decidedAt: 'desc' }, take: limit })).map(resolution);
+  }
+
   async listResolutions(workspaceId: string, filter: ResolutionFilter): Promise<ResolutionRecord[]> {
     requireScope(workspaceId);
     const where: Prisma.CapabilityResolutionWhereInput = { workspaceId, ...(filter.projectId !== undefined ? { projectId: filter.projectId } : {}) };

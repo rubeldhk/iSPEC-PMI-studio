@@ -12,6 +12,7 @@ import { CredentialCipher } from './credentials/credential.cipher.js';
 import { CredentialService } from './credentials/credential.service.js';
 import { CredentialVault } from './credentials/credential.vault.js';
 import { DeploymentBindingService } from './embedding/deployment-binding.service.js';
+import { HubEmbeddingPort } from './embedding/hub-embedding-port.js';
 import { EvidenceIntakeService } from './evidence/evidence-intake.service.js';
 import { NotificationService } from './notifications/notification.service.js';
 import { HealthService } from './health/health.service.js';
@@ -55,6 +56,8 @@ export interface Hub {
   readonly intake: EvidenceIntakeService;
   readonly notifications: NotificationService;
   readonly deployment: DeploymentBindingService;
+  /** `EPIC-038`'s `EmbeddingPort`, filled (`R-039-18`). */
+  readonly embedding: HubEmbeddingPort;
 }
 
 export function createHub(deps: HubDeps): Hub {
@@ -80,5 +83,6 @@ export function createHub(deps: HubDeps): Hub {
   const intake = new EvidenceIntakeService({ store: deps.store, requests, evidence: deps.evidence, clock: deps.clock });
   const notifications = new NotificationService({ store: deps.store, requests });
   const deployment = new DeploymentBindingService({ store: deps.store, catalog: deps.catalog, clock: deps.clock, env: deps.env ?? {}, access: deps.access });
-  return { deps, cipher, vault, health, resolver, configuration, requests, registry, credentials, intake, notifications, deployment };
+  const embedding = new HubEmbeddingPort({ deployment, catalog: deps.catalog, store: deps.store, clock: deps.clock });
+  return { deps, cipher, vault, health, resolver, configuration, requests, registry, credentials, intake, notifications, deployment, embedding };
 }

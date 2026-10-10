@@ -255,6 +255,8 @@ export interface IntegrationsStore {
   listResolutions(workspaceId: string, filter: ResolutionFilter): Promise<ResolutionRecord[]>;
   findResolution(workspaceId: string | null, id: string): Promise<ResolutionRecord | null>;
   findInvocation(resolutionId: string): Promise<InvocationRecord | null>;
+  /** Deployment-scope resolutions (no workspace) of one capability, newest first. */
+  listDeploymentResolutions(capability: string, limit: number): Promise<ResolutionRecord[]>;
   // evidence intake
   createIntake(input: IntakeInput): Promise<IntakeRecord>;
   updateIntake(workspaceId: string, id: string, change: IntakeChange): Promise<IntakeRecord>;
@@ -446,6 +448,10 @@ export class InMemoryIntegrationsStore implements IntegrationsStore {
       .filter((r) => r.workspaceId === workspaceId && (filter.projectId === undefined || r.projectId === filter.projectId) && (filter.registryEntryId === undefined || r.registryEntryId === filter.registryEntryId || JSON.stringify(r.reasons).includes(`"${filter.registryEntryId}"`)))
       .sort(byDesc((r) => r.decidedAt))
       .slice(0, filter.limit ?? 50);
+  }
+
+  async listDeploymentResolutions(capability: string, limit: number): Promise<ResolutionRecord[]> {
+    return [...this.resolutions.values()].filter((r) => r.scope === 'deployment' && r.capability === capability).reverse().sort(byDesc((r) => r.decidedAt)).slice(0, limit);
   }
 
   async findResolution(workspaceId: string | null, id: string): Promise<ResolutionRecord | null> {
