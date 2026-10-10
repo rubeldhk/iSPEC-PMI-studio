@@ -410,14 +410,14 @@ retrievability recorded honestly.
 
 **Independent test**: quickstart Q28, Q29 (component level here; Tier 2 in T2415).
 
-- [ ] T2378 [P] [US6] Write failing component tests `frontend/tests/unit/pages/LearningCandidateDetail.spec.tsx`:
+- [X] T2378 [P] [US6] Write failing component tests `frontend/tests/unit/pages/LearningCandidateDetail.spec.tsx`: — **Done**: 14 component cases, red on the missing page: the FR-LRN-071 fields on one view, evidence states with withheld as a count, corroborations, conflict, side-by-side labelled figures (`lrn-approved` solid / `lrn-proposed` dashed), approve with edit + narrowing (options never exceed the claim), reject needs a reason, a refusal is an alert; 360px asserted on the stylesheet (no width floor > 360, one-column collapse, `overflow-wrap: anywhere`).
   - statement, category, source session, evidence with state, confidence and basis, claimed scope, corroborations, conflict, all on one view (`FR-LRN-071`, `UX-0032`);
   - superseded entry and proposal side by side (`FR-LRN-072`);
   - agent-proposed vs approved content visually distinct (`FR-LRN-074`);
   - withheld evidence shown as a count;
   - approve with narrowing and editing, and reject with a reason;
   - readable at 360px (`FR-LRN-075`)
-- [ ] T2379 [US6] Implement `frontend/src/pages/inbox-details/LearningCandidateDetail.tsx` and its calls in `frontend/src/services/api.ts` (unit test: T2378)
+- [X] T2379 [US6] Implement `frontend/src/pages/inbox-details/LearningCandidateDetail.tsx` and its calls in `frontend/src/services/api.ts` (unit test: T2378) — **Done**: `pages/inbox-details/LearningCandidateDetail.tsx` + `learning.css`; `ApiClient` gains `getLearningCandidate`, `reviewLearningCandidate`, `withdrawLearningCandidate`, `browseKnowledge`, `knowledgeEntry`, `knowledgeHistory` and their types; frontend `tsc` clean.
 - [ ] T2380 [P] [US6] Write failing component tests `frontend/tests/unit/pages/KnowledgeBrowser.spec.tsx`:
   - filter by project, scope, category and status (`FR-LRN-073`);
   - current, superseded, deprecated and not-yet-retrievable are visually distinct (`FR-LRN-074`);

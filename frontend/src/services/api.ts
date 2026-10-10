@@ -1606,6 +1606,39 @@ export class ApiClient {
 
   // ---- transport ----
 
+  // ---- governed learning (EPIC-048, contracts/learning-api.md) ----
+
+  /** `FR-LRN-071` — one candidate, everything a reviewer needs; evidence filtered for this reader. */
+  async getLearningCandidate(candidateId: string): Promise<LearningCandidateView> {
+    return this.request('GET', `/learning/candidates/${encodeURIComponent(candidateId)}`);
+  }
+
+  /** `FR-LRN-027`…`029` — a person decides. The reviewer is the session's user. */
+  async reviewLearningCandidate(candidateId: string, input: LearningReviewInput): Promise<LearningReviewResult> {
+    return this.request('POST', `/learning/candidates/${encodeURIComponent(candidateId)}/review`, input);
+  }
+
+  async withdrawLearningCandidate(candidateId: string): Promise<{ state: 'withdrawn' }> {
+    return this.request('POST', `/learning/candidates/${encodeURIComponent(candidateId)}/withdraw`);
+  }
+
+  /** `FR-LRN-073` — approved knowledge, newest first, 50 a page. */
+  async browseKnowledge(filter: KnowledgeFilter = {}): Promise<KnowledgePage> {
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(filter)) if (value) query.set(key, value);
+    const qs = query.toString();
+    return this.request('GET', `/learning/knowledge${qs ? `?${qs}` : ''}`);
+  }
+
+  async knowledgeEntry(entryId: string): Promise<KnowledgeEntryView> {
+    return this.request('GET', `/learning/knowledge/${encodeURIComponent(entryId)}`);
+  }
+
+  /** `FR-LRN-035` — every version, candidate, decision, status change and flag, in order. */
+  async knowledgeHistory(entryId: string): Promise<KnowledgeHistory> {
+    return this.request('GET', `/learning/knowledge/${encodeURIComponent(entryId)}/history`);
+  }
+
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method,
@@ -1872,4 +1905,142 @@ export interface DefectEvidenceSummary {
     resolvedBy: string;
     rationale: string;
   }[];
+}
+
+// ---------------------------------------------------------------- EPIC-048
+
+/** `FR-LRN-014` — claimed or approved; a proposal until a decision says otherwise. */
+export interface LearningScope {
+  kind: 'project' | 'workspace' | 'projects';
+  projectIds: string[];
+}
+
+export type LearningEvidence =
+  | { state: 'verified' | 'integrity-failed' | 'unresolvable'; evidenceId: string; digest: string; predicateType: string | null; reason?: string }
+  | { state: 'withheld' };
+
+export interface LearningTransition {
+  seq: number;
+  state: string;
+  reason: string | null;
+  at: string;
+  actorKind: string;
+  actorId: string;
+}
+
+/** `GET /learning/candidates/:id` (contracts/learning-api.md). */
+export interface LearningCandidateView {
+  candidate: {
+    id: string;
+    kind: 'new' | 'supersede' | 'deprecate' | 'widen-scope';
+    statement: string;
+    category: string;
+    subject: string;
+    projectId: string;
+    confidenceLevel: 'low' | 'medium' | 'high';
+    confidenceBasis: string;
+    claimedScope: LearningScope;
+    state: string;
+    submittedAt: string;
+    late: boolean;
+    transitions: LearningTransition[];
+  };
+  source:
+    | { kind: 'execution'; executionId: string; principalId: string; expert?: { id: string; contractVersionId: string; contractVersion: number } }
+    | { kind: 'person'; userId: string };
+  evidence: LearningEvidence[];
+  withheldEvidenceCount: number;
+  corroborations: {
+    id: string;
+    sourceKind: 'execution' | 'person';
+    executionId: string | null;
+    sourcePrincipalId: string;
+    statement: string;
+    confidenceLevel: string;
+    confidenceBasis: string;
+    submittedAt: string;
+    evidence: LearningEvidence[];
+  }[];
+  conflictsWith?: { entryId: string; versionId: string; version: number; statement: string };
+  supersedes?: { entryId: string; versionId: string; version: number; statement: string; scope: LearningScope; classification: string; status: string };
+  decision?: { decisionId: string; outcome?: string; effectiveClass?: string; explanation?: unknown; unavailable?: string };
+  eligibility?: { automatic: boolean; failedConditions: string[] };
+  flags: { kind: string; detail: string; raisedAt: string; open: boolean }[];
+}
+
+export type LearningReviewInput =
+  | { decision: 'approve'; statement?: string; scope?: LearningScope; classification?: string }
+  | { decision: 'reject'; reason: string };
+
+export interface Retrievability {
+  outcome: 'retrievable' | 'not-yet-retrievable';
+  reason: string | null;
+}
+
+export interface LearningReviewResult {
+  state: string;
+  reason?: string;
+  entryId?: string;
+  versionId?: string;
+  version?: number;
+  retrievability?: Retrievability;
+}
+
+export interface KnowledgeFilter {
+  projectId?: string;
+  scope?: '' | 'project' | 'workspace' | 'projects';
+  category?: string;
+  status?: '' | 'current' | 'superseded' | 'deprecated';
+  cursor?: string;
+}
+
+/** One version as the browser lists it (`FR-LRN-073`, `FR-LRN-074`). */
+export interface KnowledgeItem {
+  entryId: string;
+  category: string;
+  subjectKey: string;
+  originProjectId: string;
+  versionId: string;
+  version: number;
+  statement: string;
+  scope: LearningScope;
+  classification: string;
+  status: 'current' | 'superseded' | 'deprecated' | null;
+  successorVersionId: string | null;
+  approvedByKind: 'human' | 'policy';
+  approvedBy: string;
+  approvedAt: string;
+  retrievability: Retrievability;
+  openFlags: string[];
+}
+
+export interface KnowledgePage {
+  items: KnowledgeItem[];
+  nextCursor: string | null;
+}
+
+export interface KnowledgeEntryView {
+  entry: { id: string; category: string; subjectKey: string; originProjectId: string };
+  current: { id: string; version: number; statement: string; scope: LearningScope; classification: string } | null;
+  status: string | null;
+  provenance: unknown;
+  retrievability: Retrievability | null;
+  openFlags: string[];
+}
+
+export interface KnowledgeHistory {
+  entry: { id: string; category: string; subjectKey: string; originProjectId: string };
+  versions: {
+    id: string;
+    version: number;
+    statement: string;
+    proposedStatement: string;
+    scope: LearningScope;
+    classification: string;
+    candidate: { id: string; kind: string; sourceKind: string; sourcePrincipalId: string; executionId: string | null };
+    decision: { decisionId: string; resolvingDecisionId: string | null; approvedByKind: 'human' | 'policy'; approvedBy: string; approvedAt: string };
+    statusEvents: { status: string; successorVersionId: string | null; reason: string | null; actorId: string; at: string }[];
+    flags: { id: string; kind: string; detail: string; raisedAt: string; open: boolean }[];
+  }[];
+  events: { at: string; type: string; versionId: string; detail?: string }[];
 }
