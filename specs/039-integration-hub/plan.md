@@ -97,7 +97,7 @@ trigger; `EmbeddingPort`'s shape is not changed (`FR-HUB-087`).
 10 tables, 5 capabilities, **7 adapters** — 4 fixture adapters in one package (`fixture-git`,
 `fixture-ci`, `fixture-notify`, `fixture-embed`) and 3 real ones in three packages (`github-rest`
 serving three capabilities, `resend-email`, `ollama-embed`) — so every capability has exactly two;
-5 inbound connector entries (`pmi-studio` + four `EPIC-037` surfaces); 20 HTTP routes; 6 declared
+5 inbound connector entries (`pmi-studio` + four `EPIC-037` surfaces); 15 HTTP routes (20 before the I1 remediation withdrew the five deployment-binding write routes); 6 declared
 ports + 2 filled; 1 screen.
 
 > Counted from the artifacts, not asserted (the `EPIC-032` rule): requirements from `spec.md`
@@ -183,7 +183,7 @@ backend/src/modules/integrations/                  NEW
 ├── health/{health.service.ts, ticker.ts, health-scheduler.ts}  R-039-6
 ├── evidence/{evidence-intake.service.ts, intake.job.ts, attestation-source.adapter.ts, evidence-sink.adapter.ts}  R-039-11
 ├── notifications/notification.service.ts          US6
-├── embedding/{hub-embedding-port.ts, deployment-binding.service.ts, deployment.controller.ts}  R-039-18
+├── embedding/{hub-embedding-port.ts, deployment-binding.service.ts, deployment.controller.ts}  R-039-18 (binding read at boot; controller read-only — I1)
 ├── policy/capability-policy.adapter.ts            EPIC-031 (blocked until merge)
 ├── integrations.store.ts                          interfaces + in-memory (unit tests only)
 └── integrations.store.prisma.ts                   PostgreSQL; the only file naming `ciphertext` besides the vault
@@ -297,6 +297,6 @@ anything else.
 | **A new contract package and four adapter packages** | `BR-0126` needs two adapters per capability behind one contract | The storage pattern; a barrel was rejected for `EPIC-030`–`032` (`R-039-2`) |
 | **Two new runtime dependencies** | JUnit XML and zip parsing for `ReadTestResults` on GitHub | Confined to `@pmi/capability-adapter-github`; both small, pure JS, configured for untrusted input (`R-039-9`) |
 | **First real encryption at rest in the repository** | Adapters must *present* credentials, so hashing does not work | `node:crypto` AES-256-GCM behind a keyring port; KMS is a later binding (`R-039-10`) |
-| **A periodic ticker** | `FR-HUB-027` requires interval health; nothing periodic exists | A `Ticker` port and a lease; BullMQ rejected because its queue is optional (`R-039-6`) |
-| **`Embed` at deployment scope** — a stated exception to per-project configuration | `EmbeddingPort` takes no project and `EPIC-038` keeps one vector space per workspace | `FR-HUB-084`; per-project would need an `EPIC-038` port change, rejected (`R-039-18`) |
+| **A periodic ticker** | `FR-HUB-027` requires interval health; nothing periodic exists | A `Ticker` port and a lease — the check row inserted after the check with `ON CONFLICT DO NOTHING` on a partial unique index (analysis U2); BullMQ rejected because its queue is optional (`R-039-6`) |
+| **`Embed` at deployment scope** — a stated exception to per-project configuration | `EmbeddingPort` takes no project and `EPIC-038` keeps one vector space per workspace | `FR-HUB-084`; per-project would need an `EPIC-038` port change, rejected (`R-039-18`). **Remediated 2026-10-10 (analysis I1, option (a))**: the binding is deployment configuration recorded at boot (`PMI_EMBED_ADAPTER`, `PMI_EMBED_BINDING`), not a route; no workspace grant can change the model every workspace's index depends on; no `Embed` credential route in v1 |
 | **Gate XII is PARTIAL for authoring commands** | The commands producing these artifacts run outside a registered execution | The programme-level gap `EPIC-038` and `EPIC-047` recorded |

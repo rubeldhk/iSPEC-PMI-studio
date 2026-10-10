@@ -55,3 +55,19 @@ produced this Epic's own artifacts — the programme-wide gap `EPIC-038` and `EP
 
 No CRITICAL finding: Phases 1–3 (the MVP) may start. Resolve I1 before Phase 9 (done — option a),
 and remediate C1–C4, U1 and U2 with tasks from `T2242`–`T2299`.
+
+## Remediation (2026-10-10, `/speckit-implement` Step 0)
+
+Applied before Phase 9 with new tasks from `T2242`–`T2249` only; no identifier renumbered.
+
+| ID | Disposition |
+|---|---|
+| I1 | data-model §8a (append-only boot observation record, not tenant-scoped), §4 (`projectId` required), §5, §6; API §4a (one read route; five write routes withdrawn); plan (routes 20 → 15, Complexity Tracking); research `R-039-18` Decision 1; quickstart Q21; `T2106`, `T2124`, `T2200`–`T2204` rewritten |
+| U1 | API §5 and data-model §6: over HTTP only `room:*`; `T2242`/`T2243`; `T2149`, `T2193` amended |
+| U2 | Check row inserted after the check, `ON CONFLICT DO NOTHING` on a partial unique index; data-model §5, research `R-039-6`, plan; `T2244`/`T2245`; `T2124`, `T2168` amended |
+| C1 | Git history is `FR-HUB-015`'s record; seeded rows name their file; `T2246`; data-model §1 |
+| C2 | `T2248` — timed route test from the recorded instants |
+| C3 | `T2249` — `Embed` caller-level suite through `HubEmbeddingPort` against both adapters |
+| C4 | `T2247` — register rows and the governance check extended, before `T2102` |
+| C5, C6, D1, P1 | `T2238`, `T2152`, `T2240` → `T2232`, `T2213`/`T2237` amended in `tasks.md` |
+| I2, I3 | Reported in the closing report |

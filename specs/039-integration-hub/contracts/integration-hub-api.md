@@ -75,14 +75,21 @@ the project artifact (`R-039-10`).
 Setting, replacing and removing are audited with actor and instant, never the value
 (`FR-HUB-046`).
 
-## 4a. Deployment-scope binding (`Embed`, `FR-HUB-084`) — `EPIC-024` edit on `integration-registry`
+## 4a. Deployment-scope binding (`Embed`, `FR-HUB-084`) — **read only**
+
+*Remediated 2026-10-10 (analysis I1, Project Owner option (a)).* The `Embed` binding is
+**deployment configuration recorded at boot** — `PMI_EMBED_ADAPTER` and `PMI_EMBED_BINDING`
+([data-model.md](../data-model.md) §8a). **No route sets, switches or unbinds it, no workspace grant
+can, and v1 has no `Embed` credential route.** Switching is an operator action that takes effect on
+restart, and the boot appends a `deployment_capability_bindings` row recording the change with
+`reindexRequired: true` whenever `modelId` changed (`US7` AS4).
 
 | Method | Route | Purpose | Notes |
 |---|---|---|---|
-| `GET` | `/integrations/deployment/capabilities` | Every deployment-scope capability: bound adapter, observed model `{ model, version, dimension }`, derived health, credential status | Read on `integration-registry` |
-| `PUT` | `/integrations/deployment/capabilities/Embed` | `{ registryEntryId, providerBinding, permittedEnvironments?, healthIntervalSeconds? }` | `400` for an unlisted model, an inbound/retired entry, or a binding naming a different adapter/model from another workspace's binding (one vector space per deployment). Response `{ observedModel, reindexRequired: boolean }` — `true` whenever `modelId` changed (`US7` AS4) |
-| `DELETE` | `/integrations/deployment/capabilities/Embed` | Unbind | `EPIC-038` returns to the `503` naming `EmbeddingPort` (`FR-HUB-085`) |
-| `PUT` / `DELETE` / `GET` | `/integrations/deployment/credentials/:entryId` | Deployment credential — same semantics as §4 | Edit on `integration-registry` instead of the project owner grant |
+| `GET` | `/integrations/deployment/capabilities` | Every deployment-scope capability: bound adapter (or *not applicable — "not bound"*), observed model `{ model, version, dimension }`, `modelId`, health, the latest recorded observations with `reindexRequired` | Read on the caller's workspace `integration-registry`; `404` without it. Never a configuration value that is secret — the binding is validated non-secret at boot |
+
+The `PUT`/`DELETE` routes on `/integrations/deployment/capabilities/Embed` and the
+`/integrations/deployment/credentials/:entryId` routes of the 2026-10-09 draft are **withdrawn**.
 
 ## 5. Capability requests (`BR-0120`, `BR-0121`) — platform-side callers only
 
@@ -102,8 +109,17 @@ Setting, replacing and removing are audited with actor and instant, never the va
   deployment scope through EmbeddingPort"`.
 - **Who may call**: an authenticated **session** principal acting through a platform caller.
   A **connector** principal — the developer's local agent, `pmi-studio`, any `EPIC-041` connector
-  credential — is refused `403 surface_not_accepted` before anything else is read (`FR-HUB-004`,
-  `US1` AS5). There is no MCP tool for this route, and `mcp-server-boundary.spec.ts` gains a case
+  credential — is refused `surface_not_accepted` before anything else is read (`FR-HUB-004`,
+  `US1` AS5). *(Implementation note 2026-10-10: the platform's existing `SurfaceNotAcceptedError`
+  maps to HTTP `400`, not `403`; the code, not the status, is the contract, and no new error class
+  is added.)*
+- **Which callers over HTTP** *(remediated 2026-10-10, analysis U1)*: `caller` is client-declared, so
+  the route accepts **only `room:*` callers** — `room:requirement`, `room:change`, `room:defect`,
+  the Rooms that run in the browser. `loop`, `context-assembly`, `evidence-intake` and
+  `notification-dispatch` are **derived from in-process calls** through the `CapabilityRequests`
+  service by the module that owns them, and a body naming one of them is a `200` refusal
+  `caller-not-platform`, recorded like every other refusal. A session cannot claim to be evidence
+  intake. There is no MCP tool for this route, and `mcp-server-boundary.spec.ts` gains a case
   asserting none is added (`R-039-12`).
 - **The body MUST NOT name a provider, adapter or transport.** Any of the keys `adapter`,
   `adapterKey`, `provider`, `transport`, `registryEntryId`, or a value equal to a catalog key, is

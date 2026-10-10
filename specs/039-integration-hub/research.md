@@ -174,10 +174,13 @@ on them. References marked **W31**/**W32**/**W38** point into
     the job handler `runDueHealthChecks()`: select configured `(project, entry)` pairs that are due,
     **at most 50 per tick, concurrency 4, 5 s timeout per check**, tick every **30 s**.
     `PMI_INTEGRATION_SCHEDULER=off` disables it, and every test sets it.
-  - **Multi-instance safety**: a due pair is claimed with `INSERT … ON CONFLICT DO NOTHING` into a
-    one-row-per-pair lease keyed by `(projectId, entryId, intervalBucket)` inside the same
-    transaction — at most one check per pair per interval, whatever the instance count. (The lease is
-    a column pair on the health table's unique index, not a tenth table.)
+  - **Multi-instance safety** *(remediated 2026-10-10, analysis U2)*: the health table is
+    append-only and every row carries a required `state`, so no claim row can be written *before*
+    the check. The check runs, and its row is inserted **afterwards** with `INSERT … ON CONFLICT DO
+    NOTHING` against a partial unique index `(projectId, registryEntryId, intervalBucket) WHERE
+    source = 'scheduled'` — at most one **recorded** check per pair per interval, whatever the
+    instance count; a concurrent loser's probe is discarded. (A column pair and a partial index on
+    the health table, not a tenth table.)
   - A **capability request's outcome is also an observation**: `credential-rejected` writes
     `unhealthy` at once (`FR-HUB-047`); `provider-throttled` writes `degraded` with
     `retryAfterSeconds` (spec Edge Cases). A success writes nothing — a single success is not a
@@ -596,16 +599,20 @@ entries from another model (W38 `search.service.ts:98-104`).
 ### Decision 1 — deployment scope, so the shape stays
 
 - **Decision**: `Embed` is resolved at **deployment scope** (`FR-HUB-084`). One adapter is bound for
-  the deployment through `PUT /integrations/deployment/capabilities/Embed` (edit grant on
-  `integration-registry`), stored in a `deployment_capability_bindings` row. The Hub fills
+  the deployment as **deployment configuration recorded at boot** — `PMI_EMBED_ADAPTER` and
+  `PMI_EMBED_BINDING` — and each boot whose observation differs from the last appends a
+  `deployment_capability_bindings` row (*remediated 2026-10-10, analysis I1, Project Owner option
+  (a)*: the draft's `PUT /integrations/deployment/capabilities/Embed` let an editor in one workspace
+  change the model every workspace's index depends on; no route and no workspace grant can set it
+  now). The Hub fills
   `EMBEDDING_PORT` with a `HubEmbeddingPort`:
   - `modelId` = `<adapterKey>:<model>@<version>` and `dimension` from the bound adapter's
-    **declared** descriptor (`FR-HUB-081`), captured when the binding is read at boot and on every
-    binding change — so the synchronous reads are honest.
+    **declared** descriptor (`FR-HUB-081`), captured when the binding is read at boot — so the
+    synchronous reads are honest.
   - `embed(texts)` runs one resolution per call through the same `evaluateCandidates` core with
     caller `context-assembly`, `scope: 'deployment'`: in build, implements `Embed` major 1, bound,
     credential if required, health, environment. Policy reads **not applicable — "deployment-scope
-    binding, set by an identity with edit on integration-registry; EPIC-031 policy is per project"**
+    binding, set by deployment configuration; EPIC-031 policy is per project"**
     — a reason, not a blank (`FR-HUB-023`).
   - Refusal → `GovernanceSeamUnboundError` naming **`EmbeddingPort`** with the Hub's explanation
     appended (`FR-HUB-085`), so `EPIC-038`'s existing `503` contract is unchanged and the message now
@@ -618,15 +625,15 @@ entries from another model (W38 `search.service.ts:98-104`).
   workspace scope has the same shape problem and buys nothing a v1 deployment needs. Deployment
   scope is the only one the port supports today and the only one whose vector space is coherent.
   **No shape change is needed, and none is made** (`FR-HUB-087`).
-- **Switching** (`US7` AS4): a new binding (or a new model version under the same adapter) changes
-  `modelId`; `EPIC-038`'s search refuses foreign entries until each source is re-indexed. The switch
-  is recorded (audit `update` on `deployment-capability-binding`), and the response to the `PUT`
-  says re-indexing is required — this Epic does not trigger a re-index; it is `EPIC-038`'s operation.
-- **Credentials at deployment scope** (`FR-HUB-084`): `integration_credentials` gains a nullable
-  `projectId`; a row with `projectId` null is a deployment credential, set through
-  `PUT /integrations/deployment/credentials/:entryId` by an identity with edit on
-  `integration-registry`. AAD becomes `workspaceId|deployment|registryEntryId|kind`. Encryption,
-  write-only reads, the canary scan and the audit rule are unchanged.
+- **Switching** (`US7` AS4): an operator changes `PMI_EMBED_ADAPTER`/`PMI_EMBED_BINDING` (or the
+  model server reports a new digest) and restarts. The boot records the change in
+  `deployment_capability_bindings` with `reindexRequired: true` whenever `modelId` changed;
+  `EPIC-038`'s search refuses foreign entries until each source is re-indexed. This Epic does not
+  trigger a re-index; it is `EPIC-038`'s operation.
+- **No deployment credential in v1** (`FR-HUB-084`): v1's real `Embed` adapter, Ollama, needs no
+  credential in the default topology, so there is no route for one and `integration_credentials`
+  keeps `projectId` required. The adapter's optional `bearer-token` kind stays declared for a later
+  deployment-configuration binding and is exercised only at adapter level.
 
 ### Decision 2 — the real adapter is a **local** model server: Ollama
 

@@ -3,9 +3,9 @@
 **Epic**: `EPIC-039` · **Date**: 2026-10-09 · **Research**: [research.md](./research.md) ·
 **Contract**: [contracts/integration-hub-api.md](./contracts/integration-hub-api.md)
 
-**Ten new tables**, all workspace-scoped, in one migration
+**Ten new tables**, all workspace-scoped except the vocabulary (§1) and the deployment binding record (§8a), in one migration
 `backend/prisma/migrations/20261009120000_epic039_integration_hub/`. Three are **append-only** by
-trigger (`integration_health_checks`, `capability_resolutions`, `capability_invocations`), one is **immutable after
+trigger (`integration_health_checks`, `capability_resolutions`, `capability_invocations`) plus the deployment binding record (§8a), one is **immutable after
 approval** by trigger (`capability_contract_versions`), and one holds **ciphertext only**
 (`integration_credentials`). Plus one additive event type in `packages/execution-registry-contract`
 and one new contract package, `packages/capability-contract` (`R-039-2`).
@@ -48,7 +48,17 @@ the JSON files are the reviewed source, the rows are what the resolver reads (`R
 | `changesState` | bool | Only `SendNotification` is `true` in v1 (`FR-HUB-014`) |
 | `status` | `draft` \| `approved` \| `retired` | Approved rows are immutable (trigger, `FR-HUB-012`); retired = no new resolutions for that major once every minor of it is retired |
 | `approvedBy?`, `approvedAt?` | | Set once |
-| `createdBy`, `createdAt` | | `FR-HUB-015` — the change itself is recorded in the audit log with before/after |
+| `createdBy`, `createdAt` | | `createdBy` = `git:packages/capability-contract/capabilities/<file>` for a seeded row (`FR-HUB-015`, below) |
+
+**`FR-HUB-015` — the record of a contract change (remediated 2026-10-10, analysis C1).** A
+contract is defined or changed only by adding a JSON file under `capabilities/` and a migration that
+seeds it — no API writes this table. So the record of *who changed it, when, and what before/after*
+is the **Git history of that file** (author, commit instant, diff). The platform audit log cannot
+hold it anyway: `audit_entries` is workspace-scoped and a contract belongs to the deployment. The
+conformance check asserts both halves: every seeded row names its file in `createdBy`, and every
+file under `capabilities/` is tracked by Git (`git ls-files`), so a contract that exists without a
+reviewable history fails. **Not tenant-scoped** (deployment vocabulary, the `engine_registrations`
+exception).
 
 **Trigger** `capability_contract_versions_immutable`: rejects `UPDATE` of any column on a row whose
 `status` was `approved`, except `status → retired`. A change is a new row.
@@ -125,7 +135,7 @@ Per project and adapter; **ciphertext only** (`FR-HUB-040`–`FR-HUB-046`, `R-03
 |---|---|---|
 | `id` | uuid PK | The **credential reference** that travels inside the platform (`FR-HUB-042`) |
 | `workspaceId` | | |
-| `projectId?` | | **Null = a deployment-scope credential** (`Embed`, `FR-HUB-084`), set with edit on `integration-registry` |
+| `projectId` | | Required. *(Remediated 2026-10-10, I1: v1 has no deployment-scope credential; the `Embed` binding is deployment configuration and its v1 adapter needs no credential.)* |
 | `registryEntryId` | uuid | The outbound adapter it is for |
 | `kind` | text | The adapter's declared credential kind — `github-app-installation`, `github-token`, `resend-api-key`, `bearer-token`, `fixture-token` |
 | `ciphertext` | bytea | AES-256-GCM |
@@ -134,12 +144,10 @@ Per project and adapter; **ciphertext only** (`FR-HUB-040`–`FR-HUB-046`, `R-03
 | `keyId` | text | Which platform key encrypted it (rotation) |
 | `setBy`, `setAt` | | The only facts a read returns, besides *configured* (`FR-HUB-043`) |
 
-Unique: `(workspaceId, projectId, registryEntryId)` with `NULLS NOT DISTINCT` (PostgreSQL 15+), so
-one deployment credential per adapter. Replacing overwrites the row; removing deletes it (the
+Unique: `(workspaceId, projectId, registryEntryId)` — one credential per project and adapter. Replacing overwrites the row; removing deletes it (the
 audit trail keeps actor and instant, never the value — `FR-HUB-046`).
 
-**Additional authenticated data** is `workspaceId|projectId|registryEntryId|kind`, with the literal
-`deployment` in place of `projectId` for a deployment credential. A row copied or
+**Additional authenticated data** is `workspaceId|projectId|registryEntryId|kind`. A row copied or
 pointed at from another project fails to decrypt — so *"project A's credential is never used for
 project B"* (`SC-HUB-005`) holds in the cipher as well as in the query.
 
@@ -155,7 +163,9 @@ project (`FR-HUB-026`, `FR-HUB-027`).
 | Field | Type | Rule |
 |---|---|---|
 | `id` | uuid PK | |
-| `workspaceId`, `projectId?`, `registryEntryId` | | `projectId` null for a deployment-scope binding (`Embed`) |
+| `workspaceId`, `projectId`, `registryEntryId` | | Project-scoped. The deployment `Embed` binding's health is held in its snapshot and recorded in §8a (I1) |
+| `source` | `scheduled` \| `request` \| `credential-set` | What produced the row |
+| `intervalBucket?` | bigint | `scheduled` rows only: `floor(epochSeconds(checkedAt) / interval)` — the lease (U2) |
 | `state` | `healthy` \| `degraded` \| `unhealthy` | *Unknown* is never written — it is what a stale or missing row reads as |
 | `reason` | text | Required unless `healthy`; `credential-rejected`, `provider-throttled`, `provider-unreachable`, `not-configured`, `scope-wider-than-declared`, … (closed list in the contract package) |
 | `detail?` | text | Provider message, passed through `sanitiseText` first (`FR-HUB-045`) |
@@ -165,6 +175,15 @@ project (`FR-HUB-026`, `FR-HUB-027`).
 | `durationMs` | int | |
 
 Index: `(projectId, registryEntryId, checkedAt DESC)`.
+
+**The lease (remediated 2026-10-10, analysis U2).** The table stays append-only and every row keeps
+its required `state`: no claim row is written before the check. A scheduled check runs, and **its
+row is inserted afterwards with `ON CONFLICT DO NOTHING`** against the partial unique index
+`(projectId, registryEntryId, intervalBucket) WHERE source = 'scheduled'`. Two instances that pick
+the same due pair in the same interval may both probe the provider, but exactly one check is
+**recorded** per pair per interval; the loser's insert is a no-op. That is the guarantee
+`FR-HUB-027` needs without a mutable claim table, and the duplicate probe is bounded by the
+instance count.
 
 **Derived current health** (`R-039-6`): the latest row for `(projectId, registryEntryId)`; if none,
 or `now − checkedAt > interval`, the state reads **unknown** with reason `never-checked` or
@@ -179,10 +198,10 @@ Append-only (trigger). One row per resolver decision (`FR-HUB-036`, `FR-HUB-037`
 | Field | Type | Rule |
 |---|---|---|
 | `id` | uuid PK | |
-| `workspaceId` | | |
+| `workspaceId?` | | Required when `scope = project` (CHECK). Null for a `deployment` resolution: `EmbeddingPort.embed` carries no workspace (I1) |
 | `scope` | `project` \| `deployment` | `deployment` for `Embed` |
 | `projectId?` | | Required when `scope = project` (CHECK) |
-| `caller` | text | A member of `PLATFORM_CALLERS` — `room:<roomType>`, `loop`, `context-assembly`, `evidence-intake`, `notification-dispatch` (`FR-HUB-004`, `R-039-12`) |
+| `caller` | text | A member of `PLATFORM_CALLERS` — `room:<roomType>`, `loop`, `context-assembly`, `evidence-intake`, `notification-dispatch` (`FR-HUB-004`, `R-039-12`). **Over HTTP only `room:*` is accepted**; the others are set by the in-process caller that owns them (analysis U1) |
 | `actorPrincipalId` | text | The principal the caller acted for |
 | `executionId?` | text | The `EPIC-037` execution, where the caller acts inside one (`FR-HUB-038`) |
 | `capability`, `requestedMajor` | text, int | |
@@ -245,31 +264,49 @@ record of trying to obtain it.
 | `attempts`, `nextAttemptAt?`, `giveUpAt` | int, timestamptz | Re-read every 120 s until `giveUpAt` (default 30 min) (`FR-HUB-054`, `R-039-15`) |
 | `createdAt`, `updatedAt` | | Mutable: this is a work queue, and its history is the resolutions it references |
 
-## 8a. `deployment_capability_bindings` — `DeploymentCapabilityBinding`
+## 8a. `deployment_capability_bindings` — `DeploymentBindingObservation`
 
-One row per capability resolved at deployment scope — in v1, `Embed` only (`FR-HUB-084`,
-`R-039-18`). Mutable; every change is an audit `update` with before/after.
+**Remediated 2026-10-10 (analysis I1, Project Owner option (a)).** The `Embed` binding is
+**deployment configuration recorded at boot** (`FR-HUB-084`). No API route and no workspace grant
+can set, switch or unbind it, and v1 has **no `Embed` credential route**. This table is therefore
+not a configuration a workspace edits: it is the **append-only record** of what each boot
+observed, so that a switch — an operator action that takes effect on restart — is a recorded
+configuration change rather than an invisible one.
+
+The binding is read from two deployment variables at boot:
+
+- `PMI_EMBED_ADAPTER` — the catalog key of the bound adapter (`fixture-embed`, `ollama-embed`);
+  absent or empty = **unbound** → every `embed()` refuses (`FR-HUB-085`).
+- `PMI_EMBED_BINDING` — JSON, the adapter's non-secret binding, e.g. `{ "baseUrl":
+  "http://127.0.0.1:11434", "model": "nomic-embed-text" }`. Validated against the adapter's
+  binding schema; `looksLikeSecret` refused; an unlisted model is refused at boot (the binding
+  reads *ineligible: model not listed*, never a guessed dimension).
 
 | Field | Type | Rule |
 |---|---|---|
-| `workspaceId` | text | The deployment's binding is held per workspace row for scoping and access, and the module refuses a second workspace binding that names a different adapter or model — one vector space per deployment |
-| `capability` | text PK part | `Embed` |
-| `registryEntryId?` | uuid | Null = unbound → `FR-HUB-085` refusal |
-| `providerBinding` | jsonb | `{ baseUrl, model }` for `ollama-embed`; `looksLikeSecret` refused |
-| `observedModel?` | jsonb `{ model, version, dimension }` | Read at binding and refreshed by health checks; a changed `version` is recorded (`FR-HUB-082`) |
-| `permittedEnvironments` | text[] | As for projects |
-| `onNotNarrowable` | `refuse` \| `proceed-and-record` | `proceed-and-record` default (`Embed` changes no state) |
-| `healthIntervalSeconds` | int, default 300 | |
-| `updatedBy`, `updatedAt` | | |
+| `id` | uuid PK | |
+| `capability` | text | `Embed` in v1 |
+| `adapterKey?` | text | Null = the boot observed **no** binding |
+| `providerBinding` | jsonb | As read from `PMI_EMBED_BINDING` (non-secret by validation) |
+| `observedModel?` | jsonb `{ model, version, dimension }` | The declared dimension and the version the adapter reported (`FR-HUB-082`) |
+| `modelId?` | text | `<adapterKey>:<model>@<version>` — what `HubEmbeddingPort.modelId` answers |
+| `previousModelId?` | text | The latest earlier row's `modelId` |
+| `reindexRequired` | bool | `true` when `modelId` differs from `previousModelId` (`US7` AS4) |
+| `health` | text | `healthy` \| `degraded` \| `unhealthy`; `reason` required otherwise |
+| `reason?` | text | e.g. `model-not-present`, `provider-unreachable`, `not-bound`, `model-not-listed` |
+| `observedBy` | text | `system:deployment-config` at boot, `system:health` from the ticker |
+| `observedAt`, `createdAt` | timestamptz | |
 
-PK `(workspaceId, capability)`.
+**Append-only** (`reject_mutation()`). A row is written **only when the observation differs from
+the latest row** (adapter, binding, `modelId` or health state), so restarts with unchanged
+configuration add nothing. **Not tenant-scoped**: like `engine_registrations`, it belongs to the
+deployment — `EmbeddingPort` carries no workspace, and one model serves every workspace's index.
+That is exactly why no workspace may change it.
 
-> **Why per workspace row and not one global row**: every table in this repository carries
-> `workspaceId` (FR-002, `schema.prisma:6-8`) and access is checked per workspace. A single-tenant
-> reference-local deployment has one workspace; a multi-workspace deployment binds each workspace
-> to the **same** adapter and model, which the module enforces, so `EPIC-038`'s process-wide port
-> still has exactly one `modelId`. Flagged in plan.md as the point a future per-workspace model
-> would revisit — together with `EPIC-038`'s port shape.
+**Health during the process lifetime** is re-observed by the health ticker and held in the
+in-memory binding snapshot `HubEmbeddingPort` reads synchronously; a changed state is appended here.
+`GET /integrations/deployment/capabilities` (read on the caller's `integration-registry`) shows the
+current snapshot and the latest rows — **read only**.
 
 ## 8. `notification_deliveries` — `NotificationDelivery`
 
