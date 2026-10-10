@@ -34,7 +34,19 @@ export interface ReviewDeps {
   readonly now?: () => Date;
 }
 
-export type ReviewResult = ApplyResult;
+export interface RetrievabilityView {
+  readonly outcome: 'retrievable' | 'not-yet-retrievable';
+  readonly reason: string | null;
+}
+
+/** What the review route answers: the resolution, and — for an approval — whether it can be retrieved yet. */
+export type ReviewResult = ApplyResult & { readonly retrievability?: RetrievabilityView };
+
+/** `FR-LRN-053` — the latest attempt, or *not yet retrievable — indexing not attempted*; never retrievable by default. */
+export async function retrievabilityOf(store: Pick<LearningStore, 'latestRetrievability'>, workspaceId: string, versionId: string): Promise<RetrievabilityView> {
+  const latest = await store.latestRetrievability(workspaceId, versionId);
+  return latest === null ? { outcome: 'not-yet-retrievable', reason: 'indexing not attempted' } : { outcome: latest.outcome, reason: latest.reason };
+}
 
 export class ReviewService {
   private readonly now: () => Date;
@@ -72,7 +84,9 @@ export class ReviewService {
     await this.recordTerms(candidate, decisionId, reviewerId, terms);
     // EPIC-031 decides whether this person may approve (incl. self-approval, FR-DPE-015).
     const resolution = await this.deps.ports.decisions.approve({ workspaceId, decisionId, approver: { kind: 'human', id: reviewerId } });
-    return this.deps.materialiser.applyResolution(workspaceId, candidateId, resolution);
+    const applied = await this.deps.materialiser.applyResolution(workspaceId, candidateId, resolution);
+    if (applied.state !== 'approved' || applied.versionId === undefined) return applied;
+    return { ...applied, retrievability: await retrievabilityOf(store, workspaceId, applied.versionId) };
   }
 
   /**

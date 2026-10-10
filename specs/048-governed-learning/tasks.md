@@ -319,11 +319,11 @@ T2402 and T2405–T2407.
   - `POST /learning/candidates/:id/withdraw` reads `withdrawn`;
   - both are inspectable (`FR-LRN-030`, US1 Edge Case)
 - [X] T2361 [US3] Implement `learning.expire` and the withdraw route in `learning.jobs.ts` and `learning.controller.ts` (integration test: T2360) — **Done**: `learning.expire` in `learning.jobs.ts` (window from the policy, default 30 d, `asOf` for the judged instant) and `ReviewService.withdraw` + `POST /learning/candidates/:id/withdraw`.
-- [ ] T2362 [P] [US3] Write failing route tests `backend/tests/integration/learning-review-route.spec.ts` against the composed module, with recording in-test `LearningDecisions`, `EvidenceReads` and `Principals`:
+- [X] T2362 [P] [US3] Write failing route tests `backend/tests/integration/learning-review-route.spec.ts` against the composed module, with recording in-test `LearningDecisions`, `EvidenceReads` and `Principals`: — **Done**: 12 cases on the composed app, 7 red first: 503 naming LearningDecisions, Q6, Q9 (policy approval, attestation, explanation through the view), Q10, Q11 (policy edited through EPIC-019's PATCH; an auto-executed *review* is not accepted), Q12, Q13 (the credential's own principal → 403, audited), Q15 (both forms kept; `not-yet-retrievable`), Q16, Q17, 409 on a second decision; the review route answers neither the connector path nor a bearer credential.
   - quickstart Q6, Q9–Q17;
   - `503` naming `LearningDecisions` while unbound;
   - the review route is absent from the connector guard
-- [ ] T2363 [US3] Implement `POST /learning/candidates/:id/review` in `learning.controller.ts` (integration test: T2362)
+- [X] T2363 [US3] Implement `POST /learning/candidates/:id/review` in `learning.controller.ts` (integration test: T2362) — **Done**: `POST /learning/candidates/:id/review` (session only, 200) → `ReviewService.review`, which now answers retrievability for an approval (`not-yet-retrievable — indexing not attempted` until T2377).
 
 **Checkpoint**: the gate exists, and the only way through it is a decision that a human or explicit
 policy took.

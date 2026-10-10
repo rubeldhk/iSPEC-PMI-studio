@@ -14,7 +14,7 @@ import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req, Res } from '
 import { NotAvailableUntilError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import { CandidateViewService, type CandidateViewBody } from './candidate.view.js';
-import { ReviewService } from './review.service.js';
+import { ReviewService, type ReviewResult } from './review.service.js';
 import { SubmissionService, type SubmissionBody } from './submission.service.js';
 
 export interface ActingUser {
@@ -50,6 +50,19 @@ export class LearningController {
     @Inject(CandidateViewService) private readonly candidates: CandidateViewService,
     @Inject(ReviewService) private readonly reviews: ReviewService,
   ) {}
+
+  /**
+   * `FR-LRN-027`…`029` (T2363) — a person decides. **Session only**: this route is
+   * not behind the connector guard, and a bearer credential here is no session
+   * (`401`). The reviewer is the session's user; the body names only the decision
+   * and, for an approval, the terms.
+   */
+  @Post('learning/candidates/:id/review')
+  @HttpCode(200)
+  review(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string, @Body() body: unknown): Promise<ReviewResult> {
+    const user = requireSession(ctx);
+    return this.reviews.review(user.workspaceId, user.userId, id, strip(body));
+  }
 
   /** `FR-LRN-030` (T2361) — the submitter withdraws their own open candidate. */
   @Post('learning/candidates/:id/withdraw')
