@@ -37,6 +37,8 @@ import { EvidenceModule } from '../evidence/evidence.module.js';
 import { EvidenceService } from '../evidence/evidence.service.js';
 import { AccessControlEvidencePolicy } from '../evidence/access.adapter.js';
 import { ExecutionsModule } from '../executions/executions.module.js';
+import { ExpertsModule } from '../experts/experts.module.js';
+import { EXPERT_PROVENANCE, type ExpertProvenance } from '../experts/provenance.js';
 import { ExecutionEventService } from '../executions/execution-event.service.js';
 import { ExecutionRegistrationService } from '../executions/execution-registration.service.js';
 import { ExecutionRegistryFacade } from '../executions/execution-registry.facade.js';
@@ -53,6 +55,7 @@ import { KNOWLEDGE_WRITER, LEARNING_PORTS, LEARNING_PORTS_TOKEN, LEARNING_STORE,
 import { auditPort, executionsPort, principalsPort, projectsPort } from './main-ports.js';
 import { attestationsAdapter } from './adapters/attestations.adapter.js';
 import { evidenceReadsAdapter, readerAccessAdapter } from './adapters/evidence.adapter.js';
+import { expertsAdapter } from './adapters/experts.adapter.js';
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
 import { CandidateViewService } from './candidate.view.js';
@@ -79,7 +82,7 @@ export class LearningService {
 const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
 
 @Module({
-  imports: [AccessModule, AgentsModule, AuditModule, ConnectorModule, EvidenceModule, ExecutionsModule, ProjectsModule, SteeringModule],
+  imports: [AccessModule, AgentsModule, AuditModule, ConnectorModule, EvidenceModule, ExecutionsModule, ExpertsModule, ProjectsModule, SteeringModule],
   controllers: [LearningController, LearningConnectorController],
   providers: [
     { provide: LearningService, useFactory: (): LearningService => new LearningService() },
@@ -91,7 +94,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       provide: LEARNING_PORTS_TOKEN,
-      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService, AccessInheritanceService],
+      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService, AccessInheritanceService, EXPERT_PROVENANCE],
       useFactory: (
         facade: ExecutionRegistryFacade,
         registration: ExecutionRegistrationService,
@@ -103,6 +106,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         store: LearningStore,
         evidence: EvidenceService,
         readability: AccessInheritanceService,
+        provenance: ExpertProvenance,
       ): LearningPorts => {
         const ports: LearningPorts = refusingPorts();
         // The SecretScreen is pure code — EPIC-037's patterns — and needs no database.
@@ -127,6 +131,8 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
           // T2395 — EPIC-032's resolve (A-032-1), and its own access rule over EPIC-024.
           evidence: evidenceReadsAdapter(evidence),
           readerAccess: readerAccessAdapter(new AccessControlEvidencePolicy(readability)),
+          // T2401 — EPIC-047's provenance read (A-047-2); governed-knowledge is A-047-1.
+          experts: expertsAdapter(provenance),
           // T2389 — EPIC-032's contribute, the platform-source branch.
           attestations: attestationsAdapter({
             evidence,

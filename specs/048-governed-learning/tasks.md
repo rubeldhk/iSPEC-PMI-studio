@@ -477,11 +477,11 @@ retrievability recorded honestly.
   - a knowledge item's `inclusionReason` begins `approved knowledge —`;
   - a package assembled before a supersession still shows the version as supplied, with a drift note on inspection (`FR-LRN-050`, `FR-LRN-052`, `FR-LRN-054`)
 - [ ] T2399 ⛔ **BLOCKED on `EPIC-038` merge + `A-038-1`** — Implement `backend/src/modules/learning/adapters/context.adapter.ts` and bind it (unit test: T2398)
-- [ ] T2400 [P] ⛔ **BLOCKED on `EPIC-047` merge + `A-047-1` + `A-047-2`** — Write failing tests `backend/tests/unit/learning-adapter-experts.spec.ts`:
+- [X] T2400 [P] Write failing tests `backend/tests/unit/learning-adapter-experts.spec.ts`: — **Done**: 6 cases, red on the missing adapter: answers through `expertProvenance` over EPIC-047's own store rows (Expert, a contract version passed through `validateContract`, a session) with the started-under version; non-Expert / other workspace ⇒ null; a fault is thrown, never read as null; `validateContract` admits `governed-knowledge` and `none` and refuses `session`; through `SubmissionService` a governed-knowledge Expert is accepted and a none Expert refused with `memory-policy-refused` on its execution. **Deviation**: the database CHECK half of A-047-1 is asserted by EPIC-047's own `expert-constraints.spec.ts` (merged), not duplicated in a learning unit file that has no database.
   - `ExpertProvenance` answers through `EPIC-047`'s export;
   - `governed-knowledge` is accepted and `none` refused against a **real** contract version row (proving the amended `CHECK`);
   - a non-Expert execution returns `null`
-- [ ] T2401 ⛔ **BLOCKED on `EPIC-047` merge + `A-047-1` + `A-047-2`** — Implement `backend/src/modules/learning/adapters/experts.adapter.ts` and bind it (unit test: T2400)
+- [X] T2401 Implement `backend/src/modules/learning/adapters/experts.adapter.ts` and bind it (unit test: T2400) — **Done**: `adapters/experts.adapter.ts` over `EXPERT_PROVENANCE`; `ExpertsModule` imported and the port bound in `learning.module.ts`; `learning-reachability.spec.ts` asserts it (red, then green).
 - [ ] T2402 ⛔ **BLOCKED on all four merges and every prerequisite** — Write and pass the Constitution XI **Tier 1** suite `backend/tests/integration/learning-tier1.spec.ts`. It covers quickstart Q1–Q27 through the real routes, the connector route and the job runner, against the composed `AppModule` with **real** adapters, and in-test bindings only for the unowned embedding port
 
 **Checkpoint**: nothing in the module refuses for want of a sibling.

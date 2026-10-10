@@ -8,7 +8,7 @@
  * - nothing is stored per Expert: governed learning confers no private memory.
  *
  * These use an in-test `ExpertProvenance`, bound visibly. The real one is
- * `T2401`, which waits on `A-047-1`/`A-047-2` (`EPIC-047`).
+ * `T2401` (`adapters/experts.adapter.ts`), asserted in `learning-adapter-experts.spec.ts`.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ValidationFailedError } from '../../src/core/errors.js';

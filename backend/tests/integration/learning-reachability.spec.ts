@@ -98,5 +98,11 @@ describe('T2301 · the Learning module is reachable through the composed applica
       expect(await p.readerAccess.canRead({ workspaceId: 'ws_x', userId: 'u_x' }, { type: 'task', id: 'T-1' })).toBe(true);
       expect(await p.readerAccess.canRead({ workspaceId: 'ws_x', userId: 'u_x' }, { type: 'specification', id: 'spec_none' })).toBe(false);
     });
+
+    it('T2401 · ExpertProvenance reaches EPIC-047 (an execution that is no Expert session reads null, not unbound)', async () => {
+      const p = await ports();
+      const outcome = await notUnbound(() => p.experts.forExecution('ws_x', 'exe_none'));
+      expect(outcome).toEqual({ value: null });
+    });
   });
 });
