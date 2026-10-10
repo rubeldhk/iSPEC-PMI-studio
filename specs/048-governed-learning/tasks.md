@@ -386,12 +386,12 @@ retrievability recorded honestly.
 
   The batch for 200 candidates makes one store read (`FR-LRN-040`, `FR-LRN-041`, `FR-LRN-043`, `FR-LRN-044`, `FR-LRN-045`, `FR-LRN-046`, `FR-LRN-055`)
 - [X] T2373 [US5] Implement the `KnowledgeAdmission` half of `backend/src/modules/learning/supply.ts` (unit test: T2372) — **Done**: `KnowledgeGate` in `supply.ts` over the new single-read `admissionFacts` (in-memory + PostgreSQL); provided and exported with `KnowledgeReader` for T2399 to bind into EPIC-038.
-- [ ] T2374 [P] [US5] Write failing unit tests `backend/tests/unit/learning-widen-scope.spec.ts`:
+- [X] T2374 [P] [US5] Write failing unit tests `backend/tests/unit/learning-widen-scope.spec.ts`: — **Done**: 6 cases end to end; 1 red first (a supersede smuggling a wider scope) — strict widening, review-only, supersession on approval and review-terms narrowing were already in place from T2327/T2347/T2353/T2355.
   - `widen-scope` must be wider than the current scope;
   - it always takes human review;
   - when approved it creates a new version and supersedes the old;
   - no other path changes scope (`FR-LRN-042`, US5-5)
-- [ ] T2375 [US5] Implement scope widening in `submission.service.ts` and `materialiser.ts` (unit test: T2374)
+- [X] T2375 [US5] Implement scope widening in `submission.service.ts` and `materialiser.ts` (unit test: T2374) — **Done**: `checkTarget` now refuses a `supersede` whose claimed scope is not ⊆ the current version's, naming `widen-scope`; the widening path itself already existed; 256/256 learning units.
 - [ ] T2376 [P] [US5] Write failing unit tests `backend/tests/unit/learning-retrievability.spec.ts`:
   - every approval, supersession, deprecation and widening calls `KnowledgeIndex.reindex` with `knowledge-entry`, entry id and version id (`FR-LRN-051`);
   - `indexed`/`current` → `retrievable`;

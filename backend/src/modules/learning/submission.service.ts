@@ -24,6 +24,7 @@
 import { createHash } from 'node:crypto';
 import {
   learningEventPayload,
+  isNarrowerOrEqual,
   parseSubmission,
   scopeIncludesProject,
   type LearningSubmissionV1,
@@ -530,6 +531,14 @@ export class SubmissionService {
         targetVersionId: target.id,
         status: status?.status ?? null,
       });
+    }
+    if (s.kind === 'supersede' && !isNarrowerOrEqual(s.claimedScope, target.scope)) {
+      // FR-LRN-042 (T2375): scope widens only through a widen-scope candidate,
+      // so a supersession may keep or narrow the scope and never widen it.
+      throw new ValidationFailedError(
+        'A supersede candidate may keep or narrow the current version’s scope; to widen it, submit a widen-scope candidate (FR-LRN-042).',
+        { currentScope: target.scope, claimedScope: s.claimedScope },
+      );
     }
     if (s.kind === 'widen-scope') {
       const { isStrictlyWider } = await import('@pmi/learning-contract');
