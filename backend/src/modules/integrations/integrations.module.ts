@@ -40,6 +40,8 @@ import { ProjectsService } from '../projects/projects.service.js';
 import type { AdapterCatalog } from './catalog.service.js';
 import { ConfigurationController } from './configuration.controller.js';
 import { CredentialsController } from './credentials/credentials.controller.js';
+import { EvidenceIntakeController } from './evidence/intake.controller.js';
+import { startIntakeJob } from './evidence/intake.job.js';
 import { createHub, type Hub } from './hub.js';
 import { HUB } from './hub.token.js';
 import { RegistryController } from './registry.controller.js';
@@ -73,7 +75,7 @@ export const HEALTH_TICK_MS = 30_000;
 
 @Module({
   imports: [AuditModule, AccessModule, ProjectsModule, ConnectorModule, ExecutionsModule],
-  controllers: [RegistryController, ConfigurationController, CredentialsController, CapabilityRequestsController],
+  controllers: [RegistryController, ConfigurationController, CredentialsController, CapabilityRequestsController, EvidenceIntakeController],
   providers: [
     { provide: PLATFORM_ENVIRONMENT, useFactory: (): string => resolvePlatformEnvironment(process.env) },
     {
@@ -195,6 +197,7 @@ export class IntegrationsModule implements OnModuleInit, OnModuleDestroy {
     this.ticker.start(HEALTH_TICK_MS, async () => {
       await this.hub.health.runDueHealthChecks();
     });
+    startIntakeJob(this.ticker, this.hub.intake);
   }
 
   onModuleDestroy(): void {
