@@ -13,6 +13,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Client } from 'pg';
 import request from 'supertest';
 import { CapabilityPolicySeam, INTEGRATIONS_TICKER, type CapabilityPolicy, type PolicyStatusView } from '../../src/modules/integrations/integrations.tokens.js';
 import type { ManualTicker } from '../../src/modules/integrations/health/ticker.js';
@@ -32,6 +33,10 @@ export interface IntegrationsApp extends AuthenticatedApp {
   bindPolicy(policy?: RecordingPolicy): RecordingPolicy;
   register(key: string): Promise<string>;
   configure(projectId: string, capability: string, adapters: { registryEntryId: string; preference?: number; binding?: Record<string, unknown> }[], extra?: Record<string, unknown>): request.Test;
+  /** Run SQL against the test database (seeding a backdated row, reading a table). */
+  sql<R = Record<string, unknown>>(text: string, values?: unknown[]): Promise<R[]>;
+  /** A session cookie for another user of the same workspace, created here with no grant. */
+  asUser(userId: string): Promise<string>;
   stop(): Promise<void>;
 }
 
@@ -111,6 +116,28 @@ export async function startIntegrationsApp(ids: { workspaceId: string; userId: s
         .put(`/v1/projects/${projectId}/integrations/configuration/${capability}`)
         .set('Cookie', started.cookie)
         .send({ adapters: adapters.map((x, i) => ({ preference: i + 1, ...x })), ...extra }),
+    sql: async (text, values = []) => {
+      const db = new Client({ connectionString: started.databaseUrl });
+      await db.connect();
+      try {
+        return (await db.query(text, values)).rows;
+      } finally {
+        await db.end();
+      }
+    },
+    asUser: async (userId) => {
+      const db = new Client({ connectionString: started.databaseUrl });
+      await db.connect();
+      try {
+        await db.query(`INSERT INTO "users" ("id","workspaceId","email","displayName","passwordHash","updatedAt") VALUES ($1,$2,$3,'Other','unused',now()) ON CONFLICT DO NOTHING`, [userId, ids.workspaceId, `${userId}@example.test`]);
+      } finally {
+        await db.end();
+      }
+      const { SessionService } = await import('../../src/modules/auth/sessions.js');
+      const { SESSION_COOKIE } = await import('../../src/modules/auth/auth.controller.js');
+      const session = started.app.get(SessionService, { strict: false }).create({ userId, workspaceId: ids.workspaceId, email: `${userId}@example.test`, displayName: 'Other' });
+      return `${SESSION_COOKIE}=${session.token}`;
+    },
     stop: async () => {
       await started.close();
       rmSync(root, { recursive: true, force: true });
