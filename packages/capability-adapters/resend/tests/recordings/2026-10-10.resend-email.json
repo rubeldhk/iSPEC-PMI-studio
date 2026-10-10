@@ -1,0 +1,22 @@
+{
+  "provider": "resend",
+  "recordedOn": "2026-10-10",
+  "provenance": "Constructed on 2026-10-10 from the Resend API documentation (Context7 /websites/resend: POST /emails with the Idempotency-Key header, the restricted_api_key error a sending_access key receives on GET /domains, rate_limit_exceeded 429). NOT captured from live traffic: no Resend key was available to this session. A live run (quickstart Q23, T2231) replaces these with captured responses.",
+  "interactions": [
+    {
+      "request": { "method": "POST", "path": "/emails" },
+      "response": {
+        "status": 200,
+        "headers": { "content-type": "application/json" },
+        "json": { "id": "4ef9a417-02e9-4d39-ad75-9611e0fcc33c" }
+      }
+    },
+    {
+      "request": { "method": "GET", "path": "/domains" },
+      "response": {
+        "status": 401,
+        "json": { "statusCode": 401, "name": "restricted_api_key", "message": "This API key is restricted to only send emails" }
+      }
+    }
+  ]
+}

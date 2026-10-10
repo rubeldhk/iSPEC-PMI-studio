@@ -14,6 +14,7 @@
  */
 import { FixtureCiAdapter, FixtureGitAdapter, FixtureNotifyAdapter } from '@pmi/capability-adapter-fixture';
 import { GitHubRestAdapter } from '@pmi/capability-adapter-github';
+import { ResendEmailAdapter } from '@pmi/capability-adapter-resend';
 import { AdapterCatalog } from '../modules/integrations/catalog.service.js';
 
 export interface CatalogOptions {
@@ -28,5 +29,6 @@ export function createAdapterCatalog(options: CatalogOptions = {}): AdapterCatal
     new FixtureCiAdapter(),
     new FixtureNotifyAdapter(),
     new GitHubRestAdapter(fetchLike ? { fetch: (url, init) => fetchLike(url, init as RequestInit) } : {}),
+    new ResendEmailAdapter(fetchLike ? { fetch: (url, init) => fetchLike(url, init as RequestInit) } : {}),
   ]);
 }
