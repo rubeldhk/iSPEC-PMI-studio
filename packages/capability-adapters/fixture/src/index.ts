@@ -6,3 +6,4 @@ export { FixtureAdapter, FIXTURE_BINDING_SCHEMA, FIXTURE_VERSION, commitFor, typ
 export { FixtureGitAdapter } from './git.fixture.js';
 export { FixtureCiAdapter } from './ci.fixture.js';
 export { FixtureNotifyAdapter, type FixtureDelivery } from './notify.fixture.js';
+export { FixtureEmbedAdapter, letterVector, FIXTURE_EMBED_MODEL, FIXTURE_EMBED_DIMENSION, FIXTURE_EMBED_VERSION } from './embed.fixture.js';
