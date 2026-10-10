@@ -15,7 +15,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { DecisionInboxPage } from '../../../src/pages/DecisionInbox';
+import { createInboxRendererRegistry, inboxRenderers, type InboxRendererRegistry } from '../../../src/pages/decision-inbox-renderers';
 import { ApiError, type ApiClient, type InboxEntry } from '../../../src/services/api';
+import { NO_IDENTITY_PROJECT_SET, ShellProvider } from '../../../src/shell/shell-context';
 
 afterEach(cleanup);
 
@@ -174,5 +176,61 @@ describe('T2511 · FR-DPE-017 — rejecting from the Inbox', () => {
     const item = await screen.findByRole('listitem');
     expect(await within(item).findByText(/may withdraw it instead/)).toBeTruthy();
     expect(screen.getByRole('status').textContent).toMatch(/Rejection refused/);
+  });
+});
+
+/**
+ * EPIC-048 `T2384` (`FR-LRN-070`, `-071`; amendment `A-031-2`) — the learning
+ * candidate's view, registered in the application's renderer registry. An
+ * entry for a `learning-candidate` renders `LearningCandidateDetail` inside its
+ * row, reading the candidate through the shell's client; every other type
+ * renders exactly as an Inbox with no registrations does.
+ */
+describe('T2384 · EPIC-048 registers LearningCandidateDetail for learning-candidate', () => {
+  const learning = entry({ decisionId: 'd2', actionType: 'learning.review.new', objectRef: { type: 'learning-candidate', id: 'lc_1' }, objectVersion: '1' });
+
+  function shellApi(entries: InboxEntry[]): ApiClient {
+    const base = stubApi([entries]) as unknown as Record<string, unknown>;
+    return {
+      ...base,
+      getLearningCandidate: vi.fn(async () => {
+        throw new ApiError('not_found', 'no such candidate', 404);
+      }),
+      reviewLearningCandidate: vi.fn(),
+    } as unknown as ApiClient;
+  }
+
+  async function inShell(api: ApiClient, renderers?: InboxRendererRegistry): Promise<HTMLElement[]> {
+    render(
+      <ShellProvider api={api} identity={null} projectId={null} projectSet={NO_IDENTITY_PROJECT_SET} selectProject={() => undefined}>
+        <DecisionInboxPage api={api} {...(renderers ? { renderers } : {})} />
+      </ShellProvider>,
+    );
+    return screen.findAllByRole('listitem');
+  }
+
+  it('the application registers a renderer for learning-candidate, and only for it', async () => {
+    await import('../../../src/shell/area-views');
+    expect(inboxRenderers.rendererFor('learning-candidate')).toBeDefined();
+    expect(inboxRenderers.rendererFor('release')).toBeUndefined();
+  });
+
+  it('a learning-candidate entry renders LearningCandidateDetail inside its row, read through the shell’s client', async () => {
+    await import('../../../src/shell/area-views');
+    const api = shellApi([entry(), learning]);
+    const [plain, candidateRow] = await inShell(api);
+    expect(await within(candidateRow!).findByText(/no such candidate/)).toBeTruthy();
+    expect(api.getLearningCandidate).toHaveBeenCalledWith('lc_1');
+    expect(within(plain!).queryByText(/no such candidate/)).toBeNull();
+    // The Inbox's own actions are still there, around the detail.
+    expect(within(candidateRow!).getByRole('button', { name: 'Approve learning.review.new on learning-candidate lc_1' })).toBeTruthy();
+  });
+
+  it('every other type renders the plain row unchanged', async () => {
+    await import('../../../src/shell/area-views');
+    const withApp = (await inShell(shellApi([entry()])))[0]!.innerHTML;
+    cleanup();
+    const bare = (await inShell(shellApi([entry()]), createInboxRendererRegistry()))[0]!.innerHTML;
+    expect(withApp).toBe(bare);
   });
 });

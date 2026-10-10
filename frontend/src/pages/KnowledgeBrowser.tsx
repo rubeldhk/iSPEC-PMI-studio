@@ -4,7 +4,7 @@
  *
  * Hosted at `/context/knowledge`, a sub-view of `EPIC-038`'s Context area, reached
  * from the Context page (`FR-LRN-070`, `UX-0003`). The route and the link are
- * `T2387`, blocked until `EPIC-038` merges; this Epic adds no navigation area.
+ * `T2387` (`routes.tsx`, `Context.tsx`); this Epic adds no navigation area.
  *
  * - Filters by project, scope, category and status go to the server; the table
  *   keeps its own row filter as well (PMI-DOC-005).

@@ -15,8 +15,8 @@
  * reason. The review route decides who may (`FR-LRN-027`); a refusal is shown,
  * not swallowed.
  *
- * Hosted by `EPIC-031`'s Inbox through its renderer registry (`A-031-2`); the
- * registration is `T2385`, blocked until that Epic merges. No navigation area of
+ * Hosted by `EPIC-031`'s Inbox through its renderer registry (`A-031-2`),
+ * registered for `learning-candidate` in `register.tsx` (`T2385`). No navigation area of
  * its own (`FR-LRN-070`).
  */
 import { useCallback, useEffect, useId, useMemo, useState, type ReactElement } from 'react';

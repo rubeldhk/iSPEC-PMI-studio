@@ -243,6 +243,10 @@ export function ContextPage({ api }: ContextPageProps): ReactElement {
     <main className="context">
       <h1>Context</h1>
       <p>What an AI session was given, as it was given — and what was left out, and why.</p>
+      {/* EPIC-048 `T2387` (`FR-LRN-070`) — knowledge is browsed here, in Context. */}
+      <p>
+        <a href="/context/knowledge">Browse approved knowledge</a>
+      </p>
 
       <form onSubmit={(e) => void submit(e)}>
         <label htmlFor="context-execution">Execution</label>{' '}

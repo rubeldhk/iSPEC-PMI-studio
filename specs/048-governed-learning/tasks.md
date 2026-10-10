@@ -430,14 +430,14 @@ retrievability recorded honestly.
   - the `learning` module declares no workflow type (`FR-LRN-070`);
   - the two views live where the plan puts them (`pages/inbox-details/`, `pages/KnowledgeBrowser.tsx`) — the confirmation T2383 used to carry (analysis finding `V1`)
 - [X] T2383 [US6] **Folded into T2382** (analysis finding `V1`): it produced no code, and its PMI-DOC-006 §9 back-fill text moves to T2419, which writes it. Ticked when T2382 passes — **Done**: folded into T2382 (analysis V1): the placement confirmation is T2382's last two assertions; the PMI-DOC-006 §9 back-fill text is T2419's.
-- [ ] T2384 [P] [US6] ⛔ **BLOCKED on `EPIC-031` merge + `A-031-2`** — Write failing tests in `frontend/tests/unit/pages/DecisionInbox.spec.tsx`:
+- [X] T2384 [P] [US6] Write failing tests in `frontend/tests/unit/pages/DecisionInbox.spec.tsx`: — **Done**: 3 cases appended to `DecisionInbox.spec.tsx`, 2 red (no renderer registered; no detail in the row): the application registry has a renderer for `learning-candidate` and none for `release`; inside a `ShellProvider` the candidate row renders `LearningCandidateDetail`, reading `getLearningCandidate('lc_1')` through the shell's client, with the Inbox's Approve control still around it; a release row's HTML is identical to an Inbox with an empty registry.
   - an entry whose `objectRef.type` is `learning-candidate` renders `LearningCandidateDetail`;
   - every other type renders the plain row unchanged
-- [ ] T2385 [US6] ⛔ **BLOCKED on `EPIC-031` merge + `A-031-2`** — Register `LearningCandidateDetail` for `learning-candidate` in `EPIC-031`'s renderer registry (unit test: T2384)
-- [ ] T2386 [P] [US6] ⛔ **BLOCKED on `EPIC-038` merge** — Write failing tests in `frontend/tests/unit/shell/routes.spec.tsx` and `frontend/tests/unit/pages/Context.spec.tsx`:
+- [X] T2385 [US6] Register `LearningCandidateDetail` for `learning-candidate` in `EPIC-031`'s renderer registry (unit test: T2384) — **Done**: `pages/inbox-details/register.tsx` — `LearningCandidateInboxDetail` (entry → the view, api from `useShell`, since the registry passes the entry only) registered idempotently in `inboxRenderers`; imported for its effect by `shell/area-views.tsx`. 16/16 in the file.
+- [X] T2386 [P] [US6] Write failing tests in `frontend/tests/unit/shell/routes.spec.tsx` and `frontend/tests/unit/pages/Context.spec.tsx`: — **Done**: 2 cases, both red: `routes.spec.tsx` — exactly one `SUB_VIEWS` entry for `/context/knowledge`, inside the `/context` area, no area of its own, not address-scoped; `Context.spec.tsx` — a link named *Browse approved knowledge* to `/context/knowledge`.
   - `/context/knowledge` resolves to one owner as a `SUB_VIEWS` entry;
   - the Context page links to it (`FR-LRN-070`, `UX-0003`)
-- [ ] T2387 [US6] ⛔ **BLOCKED on `EPIC-038` merge** — Add `/context/knowledge` to `SUB_VIEWS` in `frontend/src/shell/routes.tsx` and the link in `frontend/src/pages/Context.tsx` (unit test: T2386)
+- [X] T2387 [US6] Add `/context/knowledge` to `SUB_VIEWS` in `frontend/src/shell/routes.tsx` and the link in `frontend/src/pages/Context.tsx` (unit test: T2386) — **Done**: `KnowledgeView` in `shell/area-views.tsx` over `KnowledgeBrowser`, the `SUB_VIEWS` entry, and the link in `Context.tsx` (a plain anchor: the page renders outside a router in its own tests). Shell and pages: 65 files, 762 cases green.
 
 **Checkpoint**: both views exist; T2385 and T2387 make them reachable once their hosts are on `main`.
 

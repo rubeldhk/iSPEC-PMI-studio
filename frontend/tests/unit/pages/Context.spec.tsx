@@ -290,3 +290,12 @@ describe('T1268 · the Context screen', () => {
     expect(container.querySelector('table')).toBeNull();
   });
 });
+
+/** EPIC-048 `T2386` (`FR-LRN-070`, `UX-0003`) — Context links to its knowledge sub-view. */
+describe('T2386 · the Context page links to approved knowledge', () => {
+  it('offers a link to /context/knowledge, named for what it is', () => {
+    render(<ContextPage api={stubApi([])} />);
+    const link = screen.getByRole('link', { name: /approved knowledge/i });
+    expect(link.getAttribute('href')).toBe('/context/knowledge');
+  });
+});

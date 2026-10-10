@@ -45,7 +45,10 @@ import { TraceabilityPage } from '../pages/Traceability';
 import { Home } from './Home';
 import { useShell } from './shell-context';
 import { ContextPage } from '../pages/Context';
+import { KnowledgeBrowser } from '../pages/KnowledgeBrowser';
 import { DecisionInboxPage } from '../pages/DecisionInbox';
+// EPIC-048 `T2385` — registers the learning candidate's Inbox detail (A-031-2).
+import '../pages/inbox-details/register';
 import type { Requirement } from '../services/api';
 
 /**
@@ -636,6 +639,20 @@ export function ExpertsView(): ReactElement {
 export function ContextView(): ReactElement {
   const { api } = useShell();
   return <ContextPage api={api} />;
+}
+
+/**
+ * EPIC-048 `T2387` (`FR-LRN-070`, `FR-LRN-073`) — approved knowledge, browsed
+ * inside `EPIC-038`'s Context area rather than an area of its own.
+ * Workspace-scoped: the browser filters by project itself.
+ */
+export function KnowledgeView(): ReactElement {
+  const { api } = useShell();
+  return (
+    <MainLandmark>
+      <KnowledgeBrowser api={api} />
+    </MainLandmark>
+  );
 }
 
 /**

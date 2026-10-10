@@ -34,6 +34,7 @@ import {
   EpicTaskBoardView,
   TasksView,
   TraceabilityView,
+  KnowledgeView,
 } from './area-views';
 
 /**
@@ -74,6 +75,9 @@ export const SUB_VIEWS: readonly { path: string; element: () => ReactElement }[]
   // area has no index yet, and `routes.spec.tsx` only forbids routing an
   // undelivered area's OWN path, which this is not.
   { path: '/defect-room/:defectId', element: DefectRoomView },
+  // EPIC-048 `T2387` — approved knowledge, inside Context (`FR-LRN-070`): a
+  // sub-view, never an area of its own.
+  { path: '/context/knowledge', element: KnowledgeView },
 ]);
 
 /**
