@@ -62,6 +62,28 @@ export interface DecisionRequest {
   readonly triggeredBy?: { readonly ruleId: string; readonly eventId: string };
 }
 
+/**
+ * `T2502`, `FR-DPE-017` — the three ways a pending decision closes without an
+ * approval. Each is recorded with outcome `refused`: a closure can only refuse.
+ *
+ * - `rejected` — by an authorized human who is not the requester;
+ * - `withdrawn` — by the requester;
+ * - `expired` — by the requesting automation, for its own request only.
+ */
+export const CLOSURE_KINDS = Object.freeze(['rejected', 'withdrawn', 'expired'] as const);
+
+export type ClosureKind = (typeof CLOSURE_KINDS)[number];
+
+export function isClosureKind(value: unknown): value is ClosureKind {
+  return typeof value === 'string' && (CLOSURE_KINDS as readonly string[]).includes(value);
+}
+
+export interface Closure {
+  readonly kind: ClosureKind;
+  /** Never empty — the database refuses a closure without one. */
+  readonly reason: string;
+}
+
 export interface Explanation {
   readonly policyVersion: string;
   /** `null` states that no rule matched (`FR-DPE-004`) — required either way. */
@@ -76,6 +98,11 @@ export interface Explanation {
   readonly proposalDisagreement?: string;
   /** `FR-DPE-032` — the rule that fired an automated decision. */
   readonly triggerRule?: string;
+  /**
+   * `FR-DPE-017` (amendment `A-031-1`) — present only on the row that closes a
+   * pending decision without approving it. Kind and reason travel together.
+   */
+  readonly closure?: Closure;
 }
 
 export interface DecisionResult {
