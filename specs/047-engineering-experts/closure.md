@@ -62,3 +62,66 @@ package suites for `agent-contract` and `execution-registry-contract` pass.
 
 `/speckit-converge EPIC-047` — then, once #3, #4 and #5 merge, `/speckit-implement EPIC-047 for
 T1977–T1982`.
+
+---
+
+## 2026-10-09 — Convergence implemented, and amendments `A-047-1` / `A-047-2`
+
+**Branch**: `epic/047-engineering-experts` · **Base**: `5af0831` · not pushed.
+
+### Convergence (`T2000`–`T2015`, Phase 11) — all eight pairs done, test first
+
+| Pair | What changed |
+|---|---|
+| `T2000`/`T2001` | A failure after the session row exists is a **failed run**, never `dispatch-refused`: the session ends `failed`, `run-failed` is recorded, the execution closes `failed` (once), delegates stop, and the error carries the execution id |
+| `T2002`/`T2003` | The parent is marked ended **before** its cascade; a delegate admitted but recorded after its parent ended re-checks and stops without running; `endSession` returns whether it won, so only the winner records and closes |
+| `T2004`/`T2005` | `expert_sessions.actorId` (migration `20261009100000_epic047_session_actor`): the root run's actor, inherited by delegates; targets checked against it; another user cannot delegate under the session. Pre-existing rows get `''`, which matches no user (fails closed) |
+| `T2006`/`T2007` | Consumption charged on every exit path (a stopped delegate still charges what it reported); ancestor charges are one atomic `UPDATE` (`chargeLimit`), so concurrent siblings both land; time records the elapsed milliseconds |
+| `T2008`/`T2009` | A delegate's token, cost and resource limits are capped at the smallest remaining budget across its ancestors (added where it had none), recorded as `limit-narrowed`; a chain with nothing left delegates nothing |
+| `T2010`/`T2011` | The screen compares **any** two versions (two pickers), shows all twelve elements including context policy and workspace requirements, and reads any version's contract even when none is approved |
+| `T2012`/`T2013` | Registration now precedes reading the effective version, so a `ContractApprovals` fault is a `dispatch-refused` on a registered execution (still `503`); the version in force, when not the newest, is recorded as `contract-version-in-force` |
+| `T2014`/`T2015` | Request limits that are not finite positive numbers, or not limits at all, are refused `400` before registration |
+
+### Amendment `A-047-1` — `memoryPolicy: governed-knowledge` (`T2016`–`T2022`)
+
+Approved by the Project Owner on 2026-10-09 as `EPIC-048`'s clarification Q1 = A. `FR-EXP-020`
+now admits `governed-knowledge`: the Expert may submit learning candidates to `EPIC-048` and receive
+approved knowledge only through context; no private memory; changing it is a new contract version.
+Delivered: `MEMORY_POLICIES`, the validation message, migration
+`20261009110000_epic047_memory_governed_knowledge` (CHECK replaced), the frontend type and a
+plain-words description, quickstart Q2 (`session` still `400`; `governed-knowledge` `201`) and
+`data-model.md`. **No `EPIC-048` behaviour is built**: a `governed-knowledge` Expert dispatches
+exactly like a `none` one (asserted), and no learning port exists in this Epic. Matches `A-047-1`
+as written in `EPIC-048`'s `contracts/learning-contract.md` §6 and `research.md` `R-048-10`.
+
+### Amendment `A-047-2` — which Expert ran an execution (`T2023`/`T2024`, `FR-EXP-064`)
+
+`ExpertsModule` exports `EXPERT_PROVENANCE`:
+`forExecution(workspaceId, executionId) → {expertId, contractVersionId, contractVersion, memoryPolicy} | null`,
+read from the session record each time, answering with the version the session **started** under;
+another workspace or a non-Expert execution reads `null`.
+
+### Tests (2026-10-09/10)
+
+- Backend Experts unit: **190 passed in 38 files** (was 147 in 29).
+- Experts integration, one file at a time (Testcontainers): **63 passed in 10 files** —
+  constraints 16, store 8, registry 8, dispatch 8, delegation 3, delegation policy 4, limits 4,
+  assignment 5, performance 4, reachability 3.
+- Architecture `experts-mutation-proofs`: 3 passed. Frontend Experts: **13 passed in 3 files**.
+- Governance project: 1107 passed; 2 failed, both in `accessibility-record.spec.ts` (`EPIC-029`'s
+  known red, excluded by `test:governance:gated`).
+- Backend and frontend `tsc --noEmit` clean; ESLint clean on the 31 changed TypeScript files.
+
+### Still open
+
+- `T1977`–`T1982` (blocked on `EPIC-031`/`032`/`038` merging), `T1992` (Tier 2 transcript), and
+  `DEF-047-001` — unchanged from the report above.
+- `T1993` — the SRS owner annotations for `BR-0101`/`BR-0105` were not edited in this pass; the
+  edit was refused by the session's permission check and is left for the main session.
+
+### Merge notes
+
+Two new migrations after `20261009090000_epic047_experts`. `ExpertsStore` gained `chargeLimit` and
+`noteUnreported`, and `endSession` now returns `Promise<boolean>` — any other implementation of the
+interface must follow. `ExpertSession` gained a required `actorId`. No change to
+`governance/known-red.json`, `package.json`, `README.md` or the `EPIC-036` area counts.
