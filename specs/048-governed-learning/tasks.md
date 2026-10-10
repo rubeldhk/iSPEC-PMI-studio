@@ -356,12 +356,12 @@ order.
   - an **open** candidate (`proposed`/`pending-review`) from an invalid source is flagged `source-invalid` too, so its reviewer sees it (spec Edge Case; analysis finding `C3`);
   - **status never changes** (`FR-LRN-037`)
 - [X] T2369 [US4] Implement `learning.flags` in `learning.jobs.ts` (integration test: T2368) — **Done**: `learning.flags` in `learning.jobs.ts` (evidence via the shared `stateOf` rule, source invalidity from `ExecutionFacts.invalidatedBy`, attestation retry).
-- [ ] T2370 [P] [US4] Write failing route tests `backend/tests/integration/learning-knowledge-route.spec.ts`:
+- [X] T2370 [P] [US4] Write failing route tests `backend/tests/integration/learning-knowledge-route.spec.ts`: — **Done**: 10 cases on the composed app, 5 red first: Q19 (a low-risk supersession still asks `learning.review.supersede`; an auto-executed review is refused and re-requested; approved, v1 superseded naming v2), Q29 history in order, four filters + a bad status 400, PUT/PATCH/DELETE/POST under `/learning/knowledge` write nothing, U1 401/404.
   - `GET /learning/knowledge`, `/:entryId`, `/:entryId/history`;
   - there is **no** `PUT`, `PATCH` or `DELETE` under `/learning/knowledge` (`FR-LRN-031`, `FR-LRN-042`);
   - Q19 and Q29 through the real routes;
   - no session → `401`; another workspace's entry → `404` (analysis finding `U1`)
-- [ ] T2371 [US4] Implement the knowledge routes in `learning.controller.ts` (integration test: T2370)
+- [X] T2371 [US4] Implement the knowledge routes in `learning.controller.ts` (integration test: T2370) — **Done**: `GET /learning/knowledge`, `/:entryId`, `/:entryId/history` over `KnowledgeService`; the T2302 placeholder is gone.
 
 **Checkpoint**: knowledge changes without forgetting.
 

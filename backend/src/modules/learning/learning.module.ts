@@ -57,6 +57,7 @@ import { approvalAttestation } from './attestation.js';
 import { LearningJobs } from './learning.jobs.js';
 import { LearningSweeps } from './learning.sweeps.js';
 import { ReviewService } from './review.service.js';
+import { KnowledgeService } from './knowledge.service.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -176,6 +177,11 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
       provide: LearningSweeps,
       inject: [LearningJobs],
       useFactory: (jobs: LearningJobs): LearningSweeps => new LearningSweeps(jobs),
+    },
+    {
+      provide: KnowledgeService,
+      inject: [LEARNING_STORE],
+      useFactory: (store: LearningStore): KnowledgeService => new KnowledgeService({ reads: store }),
     },
     {
       provide: CandidateViewService,

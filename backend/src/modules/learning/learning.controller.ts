@@ -10,10 +10,12 @@
  * **There is no route here that creates, edits or deletes knowledge**
  * (`SC-LRN-001`); `T2332` asserts it over every controller in the application.
  */
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
-import { NotAvailableUntilError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import { CandidateViewService, type CandidateViewBody } from './candidate.view.js';
+import { KnowledgeService } from './knowledge.service.js';
+import type { BrowseFilter } from './learning.store.js';
 import { ReviewService, type ReviewResult } from './review.service.js';
 import { SubmissionService, type SubmissionBody } from './submission.service.js';
 
@@ -49,6 +51,7 @@ export class LearningController {
     @Inject(SubmissionService) private readonly submissions: SubmissionService,
     @Inject(CandidateViewService) private readonly candidates: CandidateViewService,
     @Inject(ReviewService) private readonly reviews: ReviewService,
+    @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
   ) {}
 
   /**
@@ -101,10 +104,37 @@ export class LearningController {
     return this.candidates.view(user.workspaceId, user, id);
   }
 
-  /** `FR-LRN-073` — browse approved knowledge. The listing itself is `T2371`. */
+  /**
+   * `FR-LRN-073` (T2371) — browse approved knowledge, 50 a page:
+   * `?projectId=&scope=&category=&status=&cursor=`. Read-only: supersession,
+   * deprecation and widening are **submissions**, never edits, so there is no
+   * `PUT`, `PATCH` or `DELETE` here (`FR-LRN-031`, `FR-LRN-042`).
+   */
   @Get('learning/knowledge')
-  browse(@Req() ctx: WorkspaceContext | undefined): never {
-    requireSession(ctx);
-    throw new NotAvailableUntilError('EPIC-048 T2371', 'Browsing approved knowledge');
+  browse(@Req() ctx: WorkspaceContext | undefined, @Query() query: Record<string, string | undefined>): Promise<unknown> {
+    const user = requireSession(ctx);
+    const filter: BrowseFilter = {
+      ...(query['projectId'] ? { projectId: query['projectId'] } : {}),
+      ...(query['scope'] ? { scopeKind: query['scope'] as BrowseFilter['scopeKind'] } : {}),
+      ...(query['category'] ? { category: query['category'] } : {}),
+      ...(query['status'] ? { status: query['status'] as BrowseFilter['status'] } : {}),
+      ...(query['cursor'] ? { cursor: query['cursor'] } : {}),
+      ...(query['limit'] && Number.isInteger(Number(query['limit'])) ? { limit: Number(query['limit']) } : {}),
+    };
+    return this.knowledge.browse(user.workspaceId, filter);
+  }
+
+  /** `SC-LRN-006` — one entry: its current version and where it came from. */
+  @Get('learning/knowledge/:entryId')
+  entry(@Req() ctx: WorkspaceContext | undefined, @Param('entryId') entryId: string): Promise<unknown> {
+    const user = requireSession(ctx);
+    return this.knowledge.entry(user.workspaceId, entryId);
+  }
+
+  /** `FR-LRN-035` — every version, candidate, decision, status change and flag, in order. */
+  @Get('learning/knowledge/:entryId/history')
+  history(@Req() ctx: WorkspaceContext | undefined, @Param('entryId') entryId: string): Promise<unknown> {
+    const user = requireSession(ctx);
+    return this.knowledge.history(user.workspaceId, entryId);
   }
 }
