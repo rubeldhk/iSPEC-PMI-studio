@@ -418,13 +418,13 @@ retrievability recorded honestly.
   - approve with narrowing and editing, and reject with a reason;
   - readable at 360px (`FR-LRN-075`)
 - [X] T2379 [US6] Implement `frontend/src/pages/inbox-details/LearningCandidateDetail.tsx` and its calls in `frontend/src/services/api.ts` (unit test: T2378) — **Done**: `pages/inbox-details/LearningCandidateDetail.tsx` + `learning.css`; `ApiClient` gains `getLearningCandidate`, `reviewLearningCandidate`, `withdrawLearningCandidate`, `browseKnowledge`, `knowledgeEntry`, `knowledgeHistory` and their types; frontend `tsc` clean.
-- [ ] T2380 [P] [US6] Write failing component tests `frontend/tests/unit/pages/KnowledgeBrowser.spec.tsx`:
+- [X] T2380 [P] [US6] Write failing component tests `frontend/tests/unit/pages/KnowledgeBrowser.spec.tsx`: — **Done**: 9 component cases, red on the missing page: the not-authoritative label, four server-side filters, the table's own row filter, four distinct status readings (text + tone), history in order with who proposed and approved each version, no width of its own.
   - filter by project, scope, category and status (`FR-LRN-073`);
   - current, superseded, deprecated and not-yet-retrievable are visually distinct (`FR-LRN-074`);
   - history readable in order;
   - the item is labelled *approved knowledge, not authoritative* (`FR-LRN-052`);
   - 360px
-- [ ] T2381 [US6] Implement `frontend/src/pages/KnowledgeBrowser.tsx` and its calls in `frontend/src/services/api.ts` (unit test: T2380)
+- [X] T2381 [US6] Implement `frontend/src/pages/KnowledgeBrowser.tsx` and its calls in `frontend/src/services/api.ts` (unit test: T2380) — **Done**: `pages/KnowledgeBrowser.tsx` over `listProjects` / `browseKnowledge` / `knowledgeHistory`, sharing `learning.css`; not routed yet — `/context/knowledge` is T2387 (blocked on EPIC-038).
 - [ ] T2382 [P] [US6] Write the failing architecture test `backend/tests/architecture/learning-no-new-area.spec.ts`:
   - `frontend/src/shell/areas.ts` has no entry owned by `EPIC-048`;
   - the `learning` module declares no workflow type (`FR-LRN-070`);
