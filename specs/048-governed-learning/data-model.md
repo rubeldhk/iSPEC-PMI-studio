@@ -102,9 +102,24 @@ Corroboration never changes the candidate or its eligibility (spec Edge Case).
 | `at` | timestamptz | |
 
 CHECKs: `state = 'approved'` ⇒ `decisionId IS NOT NULL AND actorKind IN ('human','policy')`;
-`state = 'rejected'` ⇒ `reason` non-empty and `actorKind = 'human'` (`FR-LRN-029`). A trigger refuses
-any row after a terminal state. **Current state = row with max `seq`**, served by an index on
-`(candidateId, seq DESC)` and a view `learning_candidate_current`.
+`state = 'rejected'` ⇒ `reason` non-empty and `actorKind = 'human'` (`FR-LRN-029`).
+
+Trigger `learning_transitions_guard` (`BEFORE INSERT`) refuses:
+- any row after a terminal state;
+- `state = 'approved'` unless a `knowledge_entry_versions` row for the candidate already exists
+  **in the same transaction** — the version is inserted first, then the transition, so an
+  `approved` candidate without its version cannot be written (plan migration item 2.4; analysis
+  finding `I5`).
+
+**Current state = row with max `seq`**, served by an index on `(candidateId, seq DESC)` and a view
+`learning_candidate_current`.
+
+**A resolution the approver guard does not accept** (`R-048-6`, amended for analysis finding `I1`)
+appends `proposed` with reason `decision-not-accepted` or `policy-auto-executed-review`, the
+refused `decisionId`, `actorKind = 'platform'`. It does **not** stay in `pending-review`: its
+`EPIC-031` decision is resolved, so nothing could ever move it again. `learning.request-pending`
+requests a new decision for it, at most three decision attempts per candidate (counted as
+`pending-review` rows). After the third, it stays `proposed` and the review window expires it.
 
 ## 5. `learning_review_terms` — what the reviewer approved
 

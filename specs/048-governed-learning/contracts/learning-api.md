@@ -12,6 +12,13 @@ Errors use the platform classes: `400 ValidationFailedError` (lists **every** pr
 ForbiddenError`, `404 NotFoundError` (another workspace's resource is absent, not forbidden),
 `409 ConflictError`, `503 GovernanceSeamUnboundError` (the body names the port).
 
+**Permissions** *(stated 2026-10-09, analysis finding `U1`; spec Assumption 11)*. No session → `401`;
+another workspace's resource → `404`. Any workspace member may `GET` a candidate, browse knowledge,
+read history and submit as a person (any `kind`). Only the submitter may withdraw. Review is a human
+session and never one of the candidate's AI source identities; the authority to decide is
+`EPIC-031`'s. Agents submit only through the connector route, scope `learning.submit`. Route tests
+`T2334` and `T2370` assert the `401` and `404` halves.
+
 **There is no route that creates, edits or deletes knowledge.** An architecture test enumerates
 the composed application's routes and fails if one appears (`SC-LRN-001`, `MP-1`).
 

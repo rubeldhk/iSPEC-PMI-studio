@@ -280,6 +280,9 @@ without opening another screen, then find the resulting entry and read its histo
 - **Approved knowledge contradicts an approved specification or steering rule.** Knowledge never
   overrides authoritative content: context marks knowledge as *approved knowledge*, distinct from
   the authoritative specification, and the conflict is reported to the reviewer.
+  *Deferred in part (analysis finding `C1`): the distinction holds through `FR-LRN-052`; detecting
+  the conflict and reporting it to the reviewer needs semantic comparison and is open as
+  `DEF-048-001`, discharged by `T2420`–`T2421` once `EPIC-039`'s `Embed` capability is on `main`.*
 - **A pending candidate is never decided.** After the configured review window it reads **expired**
   — not rejected, not approved — and drops out of the queue; it remains inspectable and can be
   resubmitted.
@@ -416,7 +419,9 @@ without opening another screen, then find the resulting entry and read its histo
 - **FR-LRN-044**: An entry whose classification cannot be determined MUST be treated as not
   reusable outside its originating project.
 - **FR-LRN-045**: Every reuse refusal at assembly MUST appear as an exclusion in the context
-  package, naming scope, classification or boundary as the reason.
+  package, naming scope, classification or boundary as the reason. A scope refusal is recorded with
+  `EPIC-038`'s reason `boundary` and a detail beginning `scope:` — the record names scope without
+  a new reason code *(reworded 2026-10-09, analysis finding `A1`; `R-048-11`)*.
 - **FR-LRN-046**: When a project is archived, entries scoped only to it MUST stop being supplied;
   their history MUST remain.
 - **FR-LRN-047**: The workspace's reuse policy MUST be configuration, versioned and recorded with
@@ -453,8 +458,12 @@ without opening another screen, then find the resulting entry and read its histo
 - **FR-LRN-061**: Agents and connectors MUST submit through the authenticated, versioned integration
   contract with idempotency and correlation controls; a retried submission MUST NOT create a second
   candidate.
-- **FR-LRN-062**: Every decision, supersession, deprecation, scope change and reuse-policy change
-  MUST be written to the immutable audit record (`EPIC-004`).
+- **FR-LRN-062**: Every decision, supersession, deprecation and scope change MUST be written to the
+  immutable audit record (`EPIC-004`). A reuse-policy change MUST be recorded immutably with actor
+  and instant; it is a new version of the `EPIC-019` steering document (`FR-LRN-047`), whose
+  append-only history is that record *(narrowed 2026-10-09, analysis finding `I2`: `EPIC-019`'s
+  steering edit writes no `EPIC-004` row, and this Epic does not perform the edit; raised to
+  `EPIC-019` as a follow-up, `R-048-3`)*.
 - **FR-LRN-063**: A provisional (offline) execution MAY submit candidates; they MUST remain
   **proposed** and ineligible for any decision until the execution is reconciled as governed.
 
@@ -546,7 +555,17 @@ without opening another screen, then find the resulting entry and read its histo
     exists yet; it is restated in this Epic's closing report and recorded against Governed Learning
     in the `EPIC-027` register as the remainder of `BR-0118`. Discharge requires an Epic that
     registers knowledge entries as `EPIC-038` reusable knowledge sources.
-11. **Out of scope**: automatic extraction of observations from transcripts (agents submit
+11. **Who may do what** *(stated 2026-10-09, analysis finding `U1`)*. Every route is
+    workspace-scoped through the session; a caller with no session is `401`, and another
+    workspace's candidate or entry is `404`, never `403`. Within the workspace: **any member** may
+    read a candidate (its evidence filtered per reader, `FR-LRN-016`), browse knowledge and read
+    history, and submit a candidate as a person — including a `supersede`, `deprecate` or
+    `widen-scope` candidate, because each still needs a human decision (`FR-LRN-034`). **Only the
+    submitter** may withdraw. **Deciding** is `EPIC-031`'s authority, plus this Epic's rule that the
+    decider is a human and none of the candidate's AI source identities (`FR-LRN-027`). Agents
+    submit only through the connector route with scope `learning.submit`. No other permission is
+    introduced.
+12. **Out of scope**: automatic extraction of observations from transcripts (agents submit
     explicitly); confidence scoring; per-Expert private memory; knowledge export or a public
     knowledge marketplace (Expansion Plane); measuring the effect of knowledge on outcomes
     (`EPIC-040`).
@@ -558,6 +577,20 @@ host of the knowledge view in its Context area — **open branch**), `EPIC-047` 
 `memoryPolicy = governed-knowledge` before `FR-LRN-055` can be delivered), `EPIC-031` also hosts
 the candidate review in its Decision Inbox, `EPIC-037` (execution registry), `EPIC-024` (access), `EPIC-019`
 (steering for learning categories), `EPIC-004` (audit), `EPIC-036` (application shell).
+
+**Prerequisites made by their owning Epics** *(back-filled 2026-10-09 from `plan.md` and
+`contracts/learning-contract.md` §6; analysis finding `I3`)*:
+- **`A-031-1`** (`EPIC-031`): `DecisionEngine.refuse` and `POST /decisions/:id/refuse`, and a Reject
+  control in the Inbox. **Hard prerequisite, no workaround** — rejection, withdrawal and expiry
+  (`FR-LRN-029`, `FR-LRN-030`) cannot be recorded without a second approval record, which
+  `FR-LRN-021` forbids.
+- **`A-031-2`** (`EPIC-031`): the Decision Inbox detail-renderer registry keyed by `objectRef.type`,
+  into which this Epic registers the candidate view (`FR-LRN-070`, `FR-LRN-071`).
+- **`A-038-1`** (`EPIC-038`): `FR-CTX-015` amended to admit `knowledge-entry` to the approved source
+  set (`FR-LRN-050`).
+- **`A-047-1`** and **`A-047-2`** (`EPIC-047`): `FR-EXP-020` and its `CHECK` admit
+  `governed-knowledge`, and the Expert provenance read is exported (`FR-LRN-011`, `FR-LRN-055`).
+  Hard prerequisite, no workaround.
 
 **Follow-ups on acceptance** (not done by this specification): update the `EPIC-027` register row
 for Governed Learning from `UNOWNED` to `EPIC-048` and run `pnpm register:build`; set the
@@ -586,6 +619,8 @@ This Epic may be declared complete and promoted out of `local` only when ALL hol
 - [ ] **`FR-LRN-022` is mutation-tested**: the explicit-category check is removed and the suite
       observed failing (`SC-LRN-003`)
 - [ ] The `EPIC-027` register, PMI-DOC-004 §6.12 owner annotations and `ADR-0021` name `EPIC-048`
-- [ ] `EPIC-047`'s `FR-EXP-020` admits `governed-knowledge`, or `FR-LRN-055`/`FR-LRN-056` are
-      deferred to a named Epic
+- [ ] `EPIC-047`'s `FR-EXP-020` admits `governed-knowledge` (`A-047-1`). This is a hard
+      prerequisite with no deferral: `FR-LRN-055`/`FR-LRN-056` may not be deferred to another Epic.
+      *(Amended 2026-10-09: the Project Owner made the amendment a hard prerequisite, `R-048-10`;
+      analysis finding `I4`.)*
 - [ ] `DEFER-048-01` (reuse across workspaces) is restated in the closing report

@@ -138,4 +138,6 @@ Every absent port fails **closed**. None of them makes something approved, suppl
 (spec follow-up, `RK-5`); `EPIC-031` — `ActorRef` cannot express *agent* and its HTTP service
 labels every principal human (`R-048-6`); `EPIC-032` — retirement (`RK-6`); `EPIC-038` —
 `DEF-038-007` configuration write path, without which `knowledge-entry` has no source class
-(`RK-2`).
+(`RK-2`). `EPIC-019` — `SteeringService.edit` writes no `EPIC-004` audit row, so a learning-policy change
+is recorded by version history only (`R-048-3`, analysis finding `I2`). `EPIC-039` — the `Embed`
+capability, on which `DEF-048-001` (contradiction with authoritative content) waits.

@@ -60,3 +60,22 @@ liveness defect, not a safety one: a refused AI approval still writes no knowled
 
 Resolve I1 and C1 in `tasks.md`, `research.md` and `data-model.md`, then `/speckit-implement` Phases
 1–3 (`T2300`–`T2335`), which neither finding affects.
+
+## Remediation (2026-10-09, before `/speckit-implement`)
+
+| ID | Disposition | Where |
+|---|---|---|
+| I1 | **Resolved.** A refused resolution returns the candidate to `proposed` with the reason and a flag; `learning.request-pending` requests a new decision, at most three attempts in all, which also bounds the `RK-5` loop | `research.md` `R-048-6`, `R-048-12`, `R-048-14`; data-model §4; `T2350`, `T2358` |
+| C1 | **Deferred with a defect.** No cheap structural check is honest (both candidates considered are recorded); semantic detection waits on `EPIC-039`'s `Embed` | `defects/DEF-048-001-…`; `T2420`–`T2421` (blocked); spec Edge Case note; `R-048-15` |
+| U1 | **Resolved.** The permission rule is stated; route tests assert `401`/`404` | spec Assumption 11; `contracts/learning-api.md`; `T2334`, `T2370` |
+| I2 | **Resolved by narrowing.** `SteeringService.edit` writes no audit row (verified); `FR-LRN-062`'s policy clause is met by `EPIC-019`'s version history; follow-up raised to `EPIC-019` | spec `FR-LRN-062`; `R-048-3`; `learning-contract.md` follow-ups |
+| I3 | **Resolved.** Spec Dependencies list `A-031-1`, `A-031-2`, `A-038-1`, `A-047-1/2` | spec *Dependencies* |
+| I4 | **Resolved.** Exit-criteria deferral clause struck | spec *Epic Exit Criteria* |
+| A1 | **Resolved.** `FR-LRN-045` reworded: scope refusals are `boundary` with `scope:` detail | spec `FR-LRN-045` |
+| C2 | **Resolved in the task** (still blocked): `T2415` times a five-evidence decision | `T2415` |
+| C3 | **Resolved.** `T2368` flags open candidates from an invalid source | `T2368` |
+| C4 | **Resolved.** `T2408` measures the sweep half of the 60 s target and reindex-attempt latency | `T2408` |
+| V1 | **Resolved.** `T2383` folded into `T2382`; back-fill text moved to `T2419` | `T2382`, `T2383`, `T2419` |
+| V2 | **Resolved.** `T2410` asserts the owner annotations and `ADR-0021` once `closure.md` exists, skipped before | `T2410` |
+| I5 | **Resolved.** data-model §4 states the `learning_transitions_guard` version-in-transaction rule | data-model §4 |
+| R1 | **Open, by nature.** A rebase after `EPIC-047` merges resolves the event count to 31 | `T2325` |

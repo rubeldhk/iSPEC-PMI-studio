@@ -104,6 +104,14 @@ Four further gaps were found that the preliminary list did not have. Each is a d
   ```
 - **No document → no categories → every submission refused** naming the missing policy
   (`FR-LRN-003`). `lowRisk` defaults to `false` and is never inferred (`FR-LRN-026`).
+- **Audit of a policy change** (analysis finding `I2`, verified 2026-10-09):
+  `SteeringService.edit` appends a version with `createdById` and `createdAt`, and writes **no**
+  `EPIC-004` audit row (`steering/steering.service.ts:71-95`). `FR-LRN-062`'s *reuse-policy change*
+  clause is therefore met by `EPIC-019`'s append-only version history (actor, instant, content —
+  the same record `FR-LRN-047` requires), not by an audit row this Epic cannot write for an edit it
+  does not perform. `FR-LRN-062` is narrowed to say so, and the missing audit of steering edits is
+  raised to `EPIC-019` as a follow-up. Every other `FR-LRN-062` clause — decision, supersession,
+  deprecation, scope change — is audited here by the materialiser (`T2352`).
 - **Rationale**: `EPIC-031` puts classification rules in steering for the same reasons
   (`specs/031-decision-policy-engine/data-model.md` §1); the spec's Key Entities say categories are
   "declared through steering".
@@ -170,9 +178,22 @@ Four further gaps were found that the preliminary list did not have. Each is a d
      - outcome `auto-executed`, on a request this Epic made through the **automatic path**
        (`R-048-12`), whose actor is this Epic's policy automation — policy, not an AI.
 
-     Anything else is **not accepted**: no knowledge is written, the candidate transitions to
-     `pending review` with reason `decision-not-accepted`, and an audit record names why. The
-     decision itself is `EPIC-031`'s and is left untouched.
+     Anything else is **not accepted**: no knowledge is written, the candidate transitions **back
+     to `proposed`** with reason `decision-not-accepted` (or `policy-auto-executed-review`, the
+     `RK-5` shape), a `knowledge_flags` row names the candidate and the reason, and an audit record
+     names why. The decision itself is `EPIC-031`'s and is left untouched.
+
+     *Amended 2026-10-09 (analysis finding `I1`).* The first text left the candidate in
+     `pending review`. That strands it: its `EPIC-031` decision is already **resolved**, so no
+     Inbox item exists, `learning.expire` has no pending decision to refuse, and the candidate never
+     terminates. Returning it to `proposed` puts it back where `learning.request-pending` looks:
+     that job requests a **new** decision for a candidate the guard returned, so a real human can
+     decide it in the Inbox. The re-request is bounded — **at most three decision attempts per
+     candidate** (`MAX_DECISION_ATTEMPTS`). The bound matters for `RK-5`: a workspace that classifies
+     `learning.review.*` as `low` would auto-execute every re-request, and an unbounded sweep would
+     loop. After the third unaccepted decision the candidate stays `proposed`, flagged, and the
+     review window expires it. A refused AI approval still writes no knowledge at any point, so this
+     was a liveness defect, never a safety one (Constitution XII rule 6).
   3. **Database** — `knowledge_entry_versions` CHECKs `approvedByKind IN ('human','policy')`, and the
      insert trigger (`R-048-4`) refuses `approvedBy` equal to the candidate's
      `sourcePrincipalId` or `expertId`.
@@ -338,8 +359,11 @@ Four further gaps were found that the preliminary list did not have. Each is a d
   exactly as 031 defines automation; nothing is special-cased.
 - **Defence in depth**: if 031 ever returns `auto-executed` for a `learning.review.*` request (a
   workspace classified it `low`), the approver guard (`R-048-6`) does not accept it. The candidate is
-  flagged `policy-auto-executed-review` and waits for a human — whom 031 can no longer route, since
-  the decision is closed. **Recorded as risk `RK-5`**, with the spec's existing follow-up asking 031
+  flagged `policy-auto-executed-review` and returns to `proposed`; `learning.request-pending` asks
+  031 for a new decision, at most three times in all (`R-048-6`, amended for analysis finding
+  `I1`). While the workspace still classifies the review action `low`, every attempt auto-executes
+  and is refused, so the candidate ends `proposed`, flagged, until the review window expires it.
+  **Recorded as risk `RK-5`**, with the spec's existing follow-up asking 031
   to put `learning.review.*` in `IRREDUCIBLY_HIGH` (`policy/classification.ts:46-50`).
 - **Medium band**: 031 refuses a medium-band request naming no gates (`evaluator.ts:309-316`). This
   Epic sends none, so a category classified `medium` is refused and stays `proposed` with that
@@ -376,7 +400,10 @@ Four further gaps were found that the preliminary list did not have. Each is a d
      └──────────── withdrawn ◀─────────┘
   ```
   `approved`, `rejected`, `expired` and `withdrawn` are terminal. Only `materialiser.ts` writes
-  `approved` (`FR-LRN-004`: *no other state leads to approved knowledge*).
+  `approved` (`FR-LRN-004`: *no other state leads to approved knowledge*). `decision-not-accepted`
+  (and `policy-auto-executed-review`) is the approver guard returning a candidate whose resolved
+  decision it refused (`R-048-6`, amended for `I1`). A `proposed` candidate past the review window
+  also expires; it has no open decision to refuse, so nothing is sent to `EPIC-031`.
 - **Expiry and withdrawal close the 031 decision** through `A-031-1` (the requesting automation
   refuses its own request with reason `expired`/`withdrawn`), so the item leaves the Inbox
   (spec Edge Case *never decided*). Until `A-031-1` exists the candidate cannot expire cleanly —
@@ -395,6 +422,14 @@ Four further gaps were found that the preliminary list did not have. Each is a d
 - **Out of scope, stated**: semantic contradiction between differently worded subjects. Detecting it
   needs an embedding model nobody provides (`RK-2`); the reviewer sees same-category entries in the
   candidate view.
+- **Deferred with a defect** (analysis finding `C1`): the spec Edge Case *approved knowledge
+  contradicts an approved specification or steering rule* has no detection and no reviewer
+  surfacing. An exact-subject match cannot find it, because a specification and a knowledge entry
+  share no `subjectKey`; any honest check is semantic. Recorded as
+  `defects/DEF-048-001-contradiction-with-authoritative-content-undetected.md`, owned by this Epic,
+  discharged by `T2420`–`T2421` once `EPIC-039`'s `Embed` capability is on `main`. What holds today:
+  knowledge never overrides authoritative content, because `EPIC-038` labels every knowledge item
+  *approved knowledge, not authoritative* (`FR-LRN-052`, `T2398`).
 
 ## R-048-16 — Screens: a detail renderer in 031's Inbox, a sub-view in 038's Context area
 

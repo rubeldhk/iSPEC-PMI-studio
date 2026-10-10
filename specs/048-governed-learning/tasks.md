@@ -6,9 +6,14 @@
 [data-model.md](./data-model.md) · [contracts/learning-api.md](./contracts/learning-api.md) ·
 [contracts/learning-contract.md](./contracts/learning-contract.md) · [quickstart.md](./quickstart.md)
 
-**Task ID range**: `T2300`–`T2419`, **120 tasks**, inside the block `T2300`–`T2499` reserved for this
-Epic. `EPIC-039` holds `T2100`–`T2299`; `EPIC-047` stays below `T2100`. `T2420`–`T2499` are left for
-analysis remediation and convergence. Identifiers are never renumbered once written (`G-26-15`).
+**Task ID range**: `T2300`–`T2421`, **122 tasks**, inside the block `T2300`–`T2499` reserved for this
+Epic. `EPIC-039` holds `T2100`–`T2299`; `EPIC-047` stays below `T2100`. `T2420`–`T2421` were added by
+the analysis remediation of 2026-10-09 (finding `C1`); `T2422`–`T2499` are left for convergence.
+Identifiers are never renumbered once written (`G-26-15`).
+
+**Analysis remediation (2026-10-09)**, applied before `/speckit-implement`: `I1` (T2350, T2358
+amended), `C1` (`DEF-048-001`, T2420–T2421), `U1` (T2334, T2370), `C2` (T2415), `C3` (T2368), `C4`
+(T2408), `V1` (T2383 folded into T2382), `V2` (T2410). See `analysis.md` *Remediation*.
 
 **Tests are not optional here.** Constitution V: every implementation task names the test task that
 must precede it and fail first. Every migration has an integration test that attempts the forbidden
@@ -182,7 +187,8 @@ reasons. A context assembly after it contains no candidate. No route writes know
   - `POST /projects/:projectId/learning/candidates` through `ConnectorAuthGuard` with scope `learning.submit`;
   - quickstart Q1, Q2, Q4, Q5, Q26;
   - `503` naming `EvidenceReads` while unbound (Q3);
-  - identity fields in the body are ignored
+  - identity fields in the body are ignored;
+  - no session → `401`; a candidate of another workspace → `404` (analysis finding `U1`, spec Assumption 11)
 - [ ] T2335 [US1] Implement `backend/src/modules/learning/learning.controller.ts` (submission) and `backend/src/modules/learning/learning-connector.controller.ts`, registering scope `learning.submit` with `registerConnectorScope` (integration test: T2334)
 
 **Checkpoint**: agents and people can submit; nothing they submit is, or can become, knowledge by
@@ -280,7 +286,7 @@ T2402 and T2405–T2407.
   - `auto-executed` on any `learning.review.*` (flag `policy-auto-executed-review`);
   - `Principals` unbound.
 
-  Each refusal transitions to `pending-review` with reason `decision-not-accepted` and an audit record (`FR-LRN-027`, `R-048-6`; MP-3's target)
+  Each refusal transitions the candidate **back to `proposed`** with reason `decision-not-accepted` (or `policy-auto-executed-review`), raises a `knowledge_flags` row naming it, and writes an audit record — never leaving it in `pending-review` with a resolved decision (`FR-LRN-027`, `R-048-6` as amended for analysis finding `I1`; MP-3's target)
 - [ ] T2351 [US3] Implement `backend/src/modules/learning/approver.guard.ts` over `Principals` (unit test: T2350)
 - [ ] T2352 [P] [US3] Write failing unit tests `backend/tests/unit/learning-materialiser.spec.ts`:
   - writes a version only on an accepted resolution;
@@ -304,7 +310,8 @@ T2402 and T2405–T2407.
 - [ ] T2357 [US3] Implement `backend/src/modules/learning/attestation.ts` and call it after materialisation (unit test: T2356)
 - [ ] T2358 [P] [US3] Write failing job tests `backend/tests/integration/learning-resolve-job.spec.ts`, driven through the jobs runner:
   - `learning.resolve-decisions` reads `resolutionOf` for `pending-review` candidates and materialises or rejects;
-  - `learning.request-pending` requests decisions after reconciliation and after an outage (`R-048-7`, `FR-LRN-063`)
+  - `learning.request-pending` requests decisions after reconciliation and after an outage (`R-048-7`, `FR-LRN-063`);
+  - it requests a **new** decision for a candidate the approver guard returned to `proposed`, and stops after three decision attempts in all, leaving it `proposed` and flagged (`R-048-6` as amended for `I1`; `RK-5`)
 - [ ] T2359 [US3] Implement `learning.resolve-decisions` and `learning.request-pending` in `backend/src/modules/learning/learning.jobs.ts` (integration test: T2358)
 - [ ] T2360 [P] [US3] Write failing job tests `backend/tests/integration/learning-expire-job.spec.ts`:
   - past the review window a candidate reads `expired`, not `rejected`;
@@ -346,12 +353,14 @@ order.
   - `learning.flags` raises `evidence-changed` when a cited item turns `integrity-failed` or `unresolvable`;
   - it raises `source-invalid` on `validation-failed`, `transition-refused`, `transition-inconsistent` or `execution-reconciliation-conflicted` (`R-048-17`);
   - a later row clears a flag;
+  - an **open** candidate (`proposed`/`pending-review`) from an invalid source is flagged `source-invalid` too, so its reviewer sees it (spec Edge Case; analysis finding `C3`);
   - **status never changes** (`FR-LRN-037`)
 - [ ] T2369 [US4] Implement `learning.flags` in `learning.jobs.ts` (integration test: T2368)
 - [ ] T2370 [P] [US4] Write failing route tests `backend/tests/integration/learning-knowledge-route.spec.ts`:
   - `GET /learning/knowledge`, `/:entryId`, `/:entryId/history`;
   - there is **no** `PUT`, `PATCH` or `DELETE` under `/learning/knowledge` (`FR-LRN-031`, `FR-LRN-042`);
-  - Q19 and Q29 through the real routes
+  - Q19 and Q29 through the real routes;
+  - no session → `401`; another workspace's entry → `404` (analysis finding `U1`)
 - [ ] T2371 [US4] Implement the knowledge routes in `learning.controller.ts` (integration test: T2370)
 
 **Checkpoint**: knowledge changes without forgetting.
@@ -418,8 +427,9 @@ retrievability recorded honestly.
 - [ ] T2381 [US6] Implement `frontend/src/pages/KnowledgeBrowser.tsx` and its calls in `frontend/src/services/api.ts` (unit test: T2380)
 - [ ] T2382 [P] [US6] Write the failing architecture test `backend/tests/architecture/learning-no-new-area.spec.ts`:
   - `frontend/src/shell/areas.ts` has no entry owned by `EPIC-048`;
-  - the `learning` module declares no workflow type (`FR-LRN-070`)
-- [ ] T2383 [US6] Confirm the module and pages satisfy T2382, and record the PMI-DOC-006 §9 back-fill text for the closing report in `specs/048-governed-learning/closure.md` draft notes (architecture test: T2382)
+  - the `learning` module declares no workflow type (`FR-LRN-070`);
+  - the two views live where the plan puts them (`pages/inbox-details/`, `pages/KnowledgeBrowser.tsx`) — the confirmation T2383 used to carry (analysis finding `V1`)
+- [ ] T2383 [US6] **Folded into T2382** (analysis finding `V1`): it produced no code, and its PMI-DOC-006 §9 back-fill text moves to T2419, which writes it. Ticked when T2382 passes
 - [ ] T2384 [P] [US6] ⛔ **BLOCKED on `EPIC-031` merge + `A-031-2`** — Write failing tests in `frontend/tests/unit/pages/DecisionInbox.spec.tsx`:
   - an entry whose `objectRef.type` is `learning-candidate` renders `LearningCandidateDetail`;
   - every other type renders the plain row unchanged
@@ -496,12 +506,15 @@ retrievability recorded honestly.
   - review → materialised < 600 ms;
   - admission < 25 ms at 200 candidates;
   - browser page < 1 s at 5,000 entries;
-  - history < 300 ms at 50 versions
+  - history < 300 ms at 50 versions;
+  - one `learning.resolve-decisions` pass materialises an already-resolved decision in < 600 ms, so with the 30 s interval a decision taken in `EPIC-031`'s Inbox becomes knowledge in ≤ 60 s (analysis finding `C4`);
+  - approval → `KnowledgeIndex.reindex` attempted < 5 s, measured against a recording in-test index (analysis finding `C4`)
 - [ ] T2409 Make T2408 pass — the indexes on `(workspaceId, subjectKey)`, `(candidateId, seq DESC)` and `(entryId, version)`, and the batched admission read (performance test: T2408)
 - [ ] T2410 [P] Write the failing conformance check `backend/tests/architecture/learning-docs.spec.ts`:
   - every `FR-LRN-0xx` in `spec.md` (62) is cited by at least one task in this file;
   - every `SC-LRN-00x` (9) by a quickstart scenario or task;
-  - the plan's merge order and prerequisite list match this file's
+  - the plan's merge order and prerequisite list match this file's;
+  - once `closure.md` exists (T2417), PMI-DOC-004 §6.12 names `EPIC-048` as owner of `BR-0114`–`BR-0118` and `ADR-0021` reads Decided — skipped, not passed, before then (analysis finding `V2`)
 - [ ] T2411 Correct any drift T2410 reports in `specs/048-governed-learning/` (conformance check: T2410)
 - [ ] T2412 [P] Write the conformance check `backend/tests/architecture/learning-steering-example.spec.ts` validating the example `learning_policy` document in `specs/048-governed-learning/examples/learning-policy.example.json` against `learning-policy.ts`
 - [ ] T2413 Write `specs/048-governed-learning/examples/learning-policy.example.json` with categories, reuse and defaults, plus the matching `EPIC-031` classification-rule and tenant `automatedActions` examples quickstart's prerequisites name (conformance check: T2412) — `RK-9`
@@ -511,7 +524,7 @@ retrievability recorded honestly.
 ## Phase Z: Closure
 
 - [ ] T2414 ⛔ **BLOCKED on Phase 9** — Run `/speckit-converge` for `EPIC-048` (Constitution IV). Every remainder is built or deferred to a named Epic. `DEFER-048-01` and the `PP-019` deferral to `EPIC-040` are restated. **`FR-LRN-055`/`-056` are not deferred**: if `A-047-1` has not landed, convergence fails rather than deferring
-- [ ] T2415 ⛔ **BLOCKED on T2385, T2387 and Phase 9** — Write the failing conformance check `backend/tests/architecture/learning-transcript.spec.ts` and generate `docs/uat/EPIC-048-transcript.md` from a run of `e2e/tests/epic-048-learning.spec.ts` against a running stack. The run reaches **Decision Inbox** and **Context → Knowledge** through primary navigation, approves a superseding candidate narrowed at 360px, and reads its history (quickstart Q6, Q15, Q19, Q28, Q29). This is Constitution XI **Tier 2**: generated by the run, never hand-written, known-red until it is (`RK-8`)
+- [ ] T2415 ⛔ **BLOCKED on T2385, T2387 and Phase 9** — Write the failing conformance check `backend/tests/architecture/learning-transcript.spec.ts` and generate `docs/uat/EPIC-048-transcript.md` from a run of `e2e/tests/epic-048-learning.spec.ts` against a running stack. The run reaches **Decision Inbox** and **Context → Knowledge** through primary navigation, approves a superseding candidate narrowed at 360px, and reads its history (quickstart Q6, Q15, Q19, Q28, Q29). The run **times** one decision of a candidate with five evidence items, from opening the Inbox entry to the decision recorded, and asserts < 2 minutes (`SC-LRN-007`; analysis finding `C2`). This is Constitution XI **Tier 2**: generated by the run, never hand-written, known-red until it is (`RK-8`)
 - [ ] T2416 Run the full test suite (`pnpm test`) **only when no other suite is running on the machine**, with `DOCKER_UNAVAILABLE` unset. Record the result and every known-red in the closing report; never report an unrun suite as passing (Constitution IX)
 - [ ] T2417 Write the closing report `specs/048-governed-learning/closure.md`, then `pnpm register:update`:
   - **Work Completed** and **Work Deferred**:
@@ -523,7 +536,17 @@ retrievability recorded honestly.
   - The follow-ups raised to `EPIC-031`: `learning.review.*` in `IRREDUCIBLY_HIGH`; `ActorRef` has no *agent*.
   - The recommended next command.
 - [ ] T2418 Update the `EPIC-027` register row for Governed Learning from `UNOWNED` to `EPIC-048` in `specs/027-ai-native-amendment/register/capability-areas.md`, record `DEFER-048-01` against it, and run `pnpm register:build`
-- [ ] T2419 Set the PMI-DOC-004 §6.12 owner annotations for `BR-0114`–`BR-0118` to `EPIC-048` in `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md`, move `adr/ADR-0021-governed-learning.md` from Open to Decided, and back-fill PMI-DOC-006 §9 with `EPIC-048` against the Decision Inbox and Context areas — **requires the Project Owner's sign-off** (Constitution II), then refresh the Delivery Board (Constitution IX)
+- [ ] T2419 Set the PMI-DOC-004 §6.12 owner annotations for `BR-0114`–`BR-0118` to `EPIC-048` in `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md`, move `adr/ADR-0021-governed-learning.md` from Open to Decided, and back-fill PMI-DOC-006 §9 with `EPIC-048` against the Decision Inbox and Context areas (the back-fill text T2383 used to draft is written here, analysis finding `V1`) — **requires the Project Owner's sign-off** (Constitution II), then refresh the Delivery Board (Constitution IX)
+
+---
+
+## Analysis remediation — `C1` (added 2026-10-09)
+
+- [ ] T2420 [P] ⛔ **BLOCKED on `EPIC-039`'s `Embed` capability on `main`** — Write failing tests `backend/tests/unit/learning-authoritative-contradiction.spec.ts` (`DEF-048-001`, spec Edge Case *knowledge contradicts an approved specification or steering rule*):
+  - a candidate semantically opposed to an approved specification or steering document of its workspace carries `contradictsAuthoritative` in `GET /learning/candidates/:id`, naming the item and version;
+  - it is ineligible for automatic approval;
+  - an unbound `Embed` reads *contradiction check unavailable*, never *no contradiction*
+- [ ] T2421 ⛔ **BLOCKED on `EPIC-039`'s `Embed` capability on `main`** — Implement the check over `EPIC-038`'s retrieval of authoritative source types (no second index), surface it in the candidate view and `eligibility.ts`, and close `DEF-048-001` (unit test: T2420)
 
 ---
 
@@ -558,8 +581,9 @@ retrievability recorded honestly.
 | `EPIC-038` merge + `A-038-1` | T2396, T2397, T2398, T2399 |
 | `EPIC-047` merge + `A-047-1` + `A-047-2` | T2400, T2401 |
 | All four merges + prerequisites | T2402, T2414, T2415 |
+| `EPIC-039` `Embed` on `main` | T2420, T2421 |
 
-**25 tasks are blocked; 95 can start now.**
+**27 tasks are blocked; 95 can start now.**
 
 ## Parallel opportunities
 
