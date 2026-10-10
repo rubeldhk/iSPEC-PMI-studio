@@ -425,11 +425,11 @@ retrievability recorded honestly.
   - the item is labelled *approved knowledge, not authoritative* (`FR-LRN-052`);
   - 360px
 - [X] T2381 [US6] Implement `frontend/src/pages/KnowledgeBrowser.tsx` and its calls in `frontend/src/services/api.ts` (unit test: T2380) — **Done**: `pages/KnowledgeBrowser.tsx` over `listProjects` / `browseKnowledge` / `knowledgeHistory`, sharing `learning.css`; not routed yet — `/context/knowledge` is T2387 (blocked on EPIC-038).
-- [ ] T2382 [P] [US6] Write the failing architecture test `backend/tests/architecture/learning-no-new-area.spec.ts`:
+- [X] T2382 [P] [US6] Write the failing architecture test `backend/tests/architecture/learning-no-new-area.spec.ts`: — **Done**: 6 assertions, green on first run — they assert absences (no EPIC-048 area, no learning/knowledge area, no workflow type) and the presence of the two views T2379/T2381 had just created, so there was no red state to observe; recorded as a Constitution V note.
   - `frontend/src/shell/areas.ts` has no entry owned by `EPIC-048`;
   - the `learning` module declares no workflow type (`FR-LRN-070`);
   - the two views live where the plan puts them (`pages/inbox-details/`, `pages/KnowledgeBrowser.tsx`) — the confirmation T2383 used to carry (analysis finding `V1`)
-- [ ] T2383 [US6] **Folded into T2382** (analysis finding `V1`): it produced no code, and its PMI-DOC-006 §9 back-fill text moves to T2419, which writes it. Ticked when T2382 passes
+- [X] T2383 [US6] **Folded into T2382** (analysis finding `V1`): it produced no code, and its PMI-DOC-006 §9 back-fill text moves to T2419, which writes it. Ticked when T2382 passes — **Done**: folded into T2382 (analysis V1): the placement confirmation is T2382's last two assertions; the PMI-DOC-006 §9 back-fill text is T2419's.
 - [ ] T2384 [P] [US6] ⛔ **BLOCKED on `EPIC-031` merge + `A-031-2`** — Write failing tests in `frontend/tests/unit/pages/DecisionInbox.spec.tsx`:
   - an entry whose `objectRef.type` is `learning-candidate` renders `LearningCandidateDetail`;
   - every other type renders the plain row unchanged
