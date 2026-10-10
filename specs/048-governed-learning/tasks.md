@@ -95,12 +95,12 @@ Steps 1–3 may land in any order among themselves. Step 4 needs all three; step
   - `LEARNING_EVENT_KINDS` is exactly the six of `R-048-17`;
   - no event payload type carries statement text
 - [X] T2310 Implement `packages/learning-contract/src/supply.ts` and `packages/learning-contract/src/events.ts` (unit test: T2309) — `KnowledgeSourceReader`, `KnowledgeAdmission` — **Done**: `supply.ts` (ports, reasons, detail prefixes, the unbound-admission verdict) and `events.ts` (`learningEventPayload` drops any statement); package 55/55 green.
-- [ ] T2311 [P] Write failing unit tests `backend/tests/unit/learning-ports.spec.ts`. Each of the eleven ports in `contracts/learning-contract.md` §5, bound refusing, does what its row says:
+- [X] T2311 [P] Write failing unit tests `backend/tests/unit/learning-ports.spec.ts`. Each of the eleven ports in `contracts/learning-contract.md` §5, bound refusing, does what its row says: — **Done**: red on the missing module, then 18/18.
   - `EvidenceReads`, `ExpertProvenance`, `LearningDecisions`, `KnowledgeIndex` throw `GovernanceSeamUnboundError` naming themselves;
   - `ReaderAccess` withholds;
   - `KnowledgeAdmission` absent excludes;
   - none answers permissively
-- [ ] T2312 Implement `backend/src/modules/learning/learning.tokens.ts` with the ports and their refusing bindings (unit test: T2311) — `R-048-20`
+- [X] T2312 Implement `backend/src/modules/learning/learning.tokens.ts` with the ports and their refusing bindings (unit test: T2311) — `R-048-20` — **Done**: `learning.tokens.ts`: the eleven ports, their descriptors, `refusingPorts()` and `unboundAdmission`; a twelfth, `Projects` (EPIC-006, on `main`), added for `FR-LRN-014`/`-046` — recorded as a deviation.
 - [ ] T2313 [P] Write failing unit tests `backend/tests/unit/learning-store.spec.ts`:
   - workspace scoping on every read (`FR-LRN-008`);
   - candidates, citations, corroborations, transitions, terms, versions, status events, flags and retrievability are append-only;
