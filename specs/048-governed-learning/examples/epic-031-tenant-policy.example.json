@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "bandTreatment": {
+    "low": "auto-execute",
+    "medium": "gates-required",
+    "high": "human-approval"
+  },
+  "selfApprovalAllowed": [],
+  "automatedActions": [
+    { "actionPattern": "learning.*", "ruleId": "learning.candidate-submitted" }
+  ],
+  "approvedBy": "u_workspace_owner"
+}

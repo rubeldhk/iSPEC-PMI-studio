@@ -1,0 +1,6 @@
+{
+  "rules": [
+    { "actionPattern": "learning.approve.test-setup", "band": "low" },
+    { "actionPattern": "learning.review.*", "band": "high" }
+  ]
+}

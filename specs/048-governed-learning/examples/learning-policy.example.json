@@ -1,0 +1,35 @@
+{
+  "categories": [
+    {
+      "key": "test-setup",
+      "description": "How this workspace's test suites are run and what they need first",
+      "lowRisk": true,
+      "defaultClassification": "internal"
+    },
+    {
+      "key": "architecture",
+      "description": "Structural decisions and the reasons for them",
+      "lowRisk": false,
+      "defaultClassification": "internal"
+    },
+    {
+      "key": "security",
+      "description": "Anything about credentials, access or exposure",
+      "lowRisk": false,
+      "defaultClassification": "restricted"
+    }
+  ],
+  "reuse": {
+    "workspaceScopeAllowed": true,
+    "namedSetsAllowed": true,
+    "permittedClassifications": {
+      "default": ["internal"],
+      "byProject": {
+        "p_platform": ["internal", "restricted"]
+      }
+    }
+  },
+  "gracePeriodHours": 24,
+  "reviewWindowDays": 30,
+  "maxCandidatesPerExecution": 20
+}
