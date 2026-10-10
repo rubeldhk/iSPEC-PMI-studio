@@ -25,12 +25,15 @@ const suite = noRuntime ? describe.skip : describe;
 
 const here = dirname(fileURLToPath(import.meta.url));
 const RECORDINGS = resolve(here, '../../../packages/capability-adapters/github/tests/recordings');
+const RESEND_RECORDINGS = resolve(here, '../../../packages/capability-adapters/resend/tests/recordings');
+const RESEND_KEY = 're_test_0123456789abcdefghijklmnopqrstuv';
 const SHA = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const APP_CREDENTIAL = JSON.stringify({ appId: '12345', installationId: '4242', privateKeyPem: privateKey.export({ type: 'pkcs1', format: 'pem' }).toString() });
 
 let t: IntegrationsApp;
 let replay: { url: string; close(): Promise<void> };
+let sendReplay: Replay;
 const ids: Record<string, string> = {};
 
 const READS: { capability: CapabilityName; input: Record<string, unknown> }[] = [
@@ -62,11 +65,16 @@ function shape(v: unknown): unknown {
 
 beforeAll(async () => {
   if (noRuntime) return;
-  const recordings = ['2026-10-10.github-rest.json'].map((f) => JSON.parse(readFileSync(join(RECORDINGS, f), 'utf8')) as Recording);
-  replay = await startReplayServer(new Replay(recordings));
+  const recordings = [
+    ...['2026-10-10.github-rest.json'].map((f) => JSON.parse(readFileSync(join(RECORDINGS, f), 'utf8')) as Recording),
+    // T2193 — Resend's paths (/emails, /domains) do not overlap GitHub's; one loopback replay serves both.
+    JSON.parse(readFileSync(join(RESEND_RECORDINGS, '2026-10-10.resend-email.json'), 'utf8')) as Recording,
+  ];
+  sendReplay = new Replay(recordings);
+  replay = await startReplayServer(sendReplay);
   t = await startIntegrationsApp({ workspaceId: 'ws_suite', userId: 'u_suite' });
   t.bindPolicy();
-  for (const key of ['fixture-git', 'fixture-ci', 'github-rest']) ids[key] = await t.register(key);
+  for (const key of ['fixture-git', 'fixture-ci', 'github-rest', 'fixture-notify', 'resend-email']) ids[key] = await t.register(key);
 }, 600_000);
 
 afterAll(async () => {
@@ -122,5 +130,54 @@ suite('T2161 · the caller-level suite, twice (SC-HUB-001)', () => {
     } finally {
       await db.end();
     }
+  });
+});
+
+/** `T2193` — `SendNotification` through the same entry point, by both of its callers. */
+async function notifySuite(expectAdapter: string, n: number): Promise<Record<string, unknown>[]> {
+  const outputs: Record<string, unknown>[] = [];
+  const input = { recipients: [{ address: 'reviewer@example.test' }], subject: 'A decision is waiting', body: { text: 'Decision dec_1 needs you.' }, idempotencyKey: `suite-${expectAdapter}-${n}` };
+  // A Room, over HTTP.
+  const res = await request(t.api).post(`/v1/projects/${t.projectA}/capability-requests`).set('Cookie', t.cookie).send({ capability: 'SendNotification', major: 1, caller: 'room:change', input }).expect(200);
+  expect(res.body.outcome, JSON.stringify(res.body.refusal ?? res.body.invocation)).toBe('resolved');
+  expect(res.body.resolution.adapterKey).toBe(expectAdapter);
+  expect(res.body.invocation).toEqual({ outcome: 'succeeded' });
+  expect(validate(contractFor('SendNotification', 1)!.outputSchema, res.body.result)).toEqual({ ok: true });
+  outputs.push(res.body.result);
+  // notification-dispatch, in process — the caller a session cannot claim (U1).
+  const out = await t.hub.notifications.notify({ workspaceId: 'ws_suite', userId: 'u_suite' }, t.projectA, { cause: { kind: 'decision-waiting', ref: 'dec_1' }, recipients: [{ userId: 'u_suite', address: 'reviewer@example.test' }], subject: 'A decision is waiting', body: { text: 'Decision dec_1 needs you.' } });
+  expect(out.outcome, JSON.stringify(out)).toBe('delivered');
+  const [row] = await t.sql<{ caller: string; adapterKey: string }>(`SELECT "caller", "adapterKey" FROM "capability_resolutions" WHERE "id" = $1`, [out.resolutionId]);
+  expect(row).toEqual({ caller: 'notification-dispatch', adapterKey: expectAdapter });
+  return outputs;
+}
+
+suite('T2193 · SendNotification in the caller-level suite, twice (SC-HUB-001, Q10)', () => {
+  let fixtureOutputs: Record<string, unknown>[] = [];
+  let realOutputs: Record<string, unknown>[] = [];
+
+  it('notification-dispatch is not accepted over HTTP (U1)', async () => {
+    const res = await request(t.api).post(`/v1/projects/${t.projectA}/capability-requests`).set('Cookie', t.cookie).send({ capability: 'SendNotification', major: 1, caller: 'notification-dispatch', input: { recipients: [{ address: 'a@example.test' }], subject: 's', body: { text: 't' }, idempotencyKey: 'u1' } }).expect(200);
+    expect(res.body).toMatchObject({ outcome: 'refused', refusal: { code: 'caller-not-platform' } });
+  });
+
+  it('run 1 — fixture-notify', async () => {
+    await t.configure(t.projectA, 'SendNotification', [{ registryEntryId: ids['fixture-notify']! }]).expect(200);
+    await t.tick();
+    fixtureOutputs = await notifySuite('fixture-notify', 1);
+  });
+
+  it('run 2 — the same suite after ONLY a configuration change to resend-email (recorded responses), with a sending-only key', async () => {
+    await t.configure(t.projectA, 'SendNotification', [{ registryEntryId: ids['resend-email']!, binding: { from: 'PMI Studio <notify@acme.test>', apiBaseUrl: replay.url } }]).expect(200);
+    await request(t.api).put(`/v1/projects/${t.projectA}/integrations/credentials/${ids['resend-email']}`).set('Cookie', t.cookie).send({ kind: 'resend-api-key', value: RESEND_KEY }).expect(204);
+    realOutputs = await notifySuite('resend-email', 2);
+    const sent = sendReplay.seen.filter((r) => r.method === 'POST' && r.path === '/emails');
+    expect(sent).toHaveLength(2);
+    expect(sent.every((r) => typeof r.headers['idempotency-key'] === 'string')).toBe(true);
+  });
+
+  it('both runs return the same contract shape', () => {
+    const required = contractFor('SendNotification', 1)!.outputSchema.required ?? [];
+    expect(Object.keys(shape(realOutputs[0]) as object).filter((k) => required.includes(k))).toEqual(Object.keys(shape(fixtureOutputs[0]) as object).filter((k) => required.includes(k)));
   });
 });
