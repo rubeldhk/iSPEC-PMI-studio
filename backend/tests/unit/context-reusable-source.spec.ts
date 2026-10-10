@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
 import { judgeBoundary } from '../../src/modules/context/isolation.js';
 import type { AuthorisationReader } from '../../src/modules/context/isolation.js';
 
-const handbook = { sourceType: 'handbook', sourceId: 'hb_1', workspaceId: 'ws_b' };
+const handbook = { sourceType: 'decision', sourceId: 'hb_1', workspaceId: 'ws_b' };
 
 /** A reader holding one authorisation: `ws_b`'s handbook may be read by `ws_a`. */
 const authorised: AuthorisationReader = {
@@ -35,7 +35,7 @@ const authorised: AuthorisationReader = {
       input.toWorkspaceId === 'ws_a'
       ? {
           id: 'rka_1',
-          sourceType: 'handbook',
+          sourceType: 'decision',
           sourceId: 'hb_1',
           workspaceId: 'ws_b',
           toWorkspaceId: 'ws_a',

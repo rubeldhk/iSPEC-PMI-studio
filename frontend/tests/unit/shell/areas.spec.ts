@@ -88,8 +88,9 @@ describe('T436f · the area registry is well-formed', () => {
     // make the whole matrix decorative.
     // EPIC-042 T1514 delivered Governance (the Constraints screen): twelve became eleven.
     // EPIC-046 T1737 delivered Plan & Tasks (the landing this area never had): eleven became ten.
-    // EPIC-031 T759 delivered the Decision Inbox (it renders GET /v1/inbox): ten became nine.
-    expect(owed.length, 'no areas are awaiting their owners').toBe(9);
+    // EPIC-038 T1269 delivered Context (the inspection screen reads GET /context/packages) and
+    // EPIC-031 T759 delivered the Decision Inbox (it renders GET /v1/inbox): ten became eight.
+    expect(owed.length, 'no areas are awaiting their owners').toBe(8);
     for (const area of owed) {
       expect(area.epic, `${area.id} is owed by nobody`).toMatch(/^EPIC-\d{3}(\s*·\s*EPIC-\d{3})*$/);
     }
@@ -166,16 +167,16 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
    * count followed. `areas.ts` carries the note forbidding the reverse — a
    * landing invented to justify a status is the status driving the product.
    */
-  it('counts 7 delivered, 2 partly delivered, 9 owed, 0 undeclared across all eighteen (EPIC-031 delivered the Decision Inbox)', () => {
+  it('counts 8 delivered, 2 partly delivered, 8 owed, 0 undeclared across all eighteen (EPIC-038 delivered Context, EPIC-031 the Decision Inbox)', () => {
     expect({
       delivered: by('delivered').length,
       partly: by('partly-delivered').length,
       owed: by('declared-not-delivered').length,
       undeclared: by('undeclared').length,
-    }).toEqual({ delivered: 7, partly: 2, owed: 9, undeclared: 0 });
+    }).toEqual({ delivered: 8, partly: 2, owed: 8, undeclared: 0 });
   });
 
-  it('counts 6 / 2 / 9 / 0 across the seventeen prototype screens — the approved matrix plus Governance, Plan & Tasks and the Decision Inbox', () => {
+  it('counts 7 / 2 / 8 / 0 across the seventeen prototype screens — the approved matrix plus Governance, Plan & Tasks, Context and the Decision Inbox', () => {
     const n = (status: Area['status']): number =>
       PROTOTYPE_17.filter((area) => area.status === status).length;
     expect(PROTOTYPE_17).toHaveLength(17);
@@ -184,7 +185,7 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
       partly: n('partly-delivered'),
       owed: n('declared-not-delivered'),
       undeclared: n('undeclared'),
-    }).toEqual({ delivered: 6, partly: 2, owed: 9, undeclared: 0 });
+    }).toEqual({ delivered: 7, partly: 2, owed: 8, undeclared: 0 });
   });
 
   it('T1173 · the Requirement Room area is delivered AND renders', () => {
@@ -247,12 +248,12 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
     // apart: every member must actually hold `delivered`, so a reachable-but-
     // incomplete area cannot rejoin the count by being routed.
     expect(deliveredAreas().every((area) => area.status === 'delivered')).toBe(true);
-    // Seven in the registry since EPIC-031 delivered the Decision Inbox; six of them
-    // are prototype screens. (Six after EPIC-046's Plan & Tasks, five after EPIC-042's Governance.)
-    expect(deliveredAreas().length).toBe(7);
+    // Eight in the registry since EPIC-038 delivered Context and EPIC-031 the Decision Inbox;
+    // seven of them are prototype screens. (Six after EPIC-046's Plan & Tasks, five after EPIC-042's Governance.)
+    expect(deliveredAreas().length).toBe(8);
     expect(
       deliveredAreas().filter((a) => a.id !== 'workspace-administration').length,
-    ).toBe(6);
+    ).toBe(7);
   });
 
   it('maps the seventeen V2 prototype pages plus Workspace & Administration', () => {

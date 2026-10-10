@@ -42,7 +42,10 @@ describe('T1241 · an essential item excluded by budget refuses', () => {
       access: allow(),
       sourceClasses: classes(['requirement']),
       authorisations: noAuthorisations(),
-      costOf: () => 1000,
+      // `T1874` — rq_2 alone exceeds the budget. Essential material is charged
+      // first, so an essential item that merely ranks lower than one which
+      // fits is admitted; only one the budget cannot fit refuses.
+      costOf: (c) => (c.sourceId === 'rq_2' ? 1500 : 1000),
     });
 
   it('refuses when the budget cannot fit it', async () => {

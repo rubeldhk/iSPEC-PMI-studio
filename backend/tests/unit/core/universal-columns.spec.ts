@@ -163,8 +163,10 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // EPIC-042 T1480 — a render is appended per governance write; the
     // constraint and policy tables are the inputs it is rendered from.
     'constitution_renders',
+    'context_budget_policies',
     'context_exclusions',
     'context_items',
+    'context_live_state',
     'context_packages',
     'context_reusable_authorisations',
     'context_source_classes',
@@ -183,6 +185,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'engine_registrations',
       // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
       'epics',
+      // EPIC-032 T856o — the completion record (data-model §5).
+      'evidence_completion_attempts',
       'evidence_contract_items',
       'evidence_contracts',
       'evidence_items',
@@ -247,6 +251,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'traceability_links',
       'users',
       'validation_findings',
+      // EPIC-032 T856o — work bound to its Contract version (data-model §4).
+      'work_evidence_bindings',
       'workspaces',
       // EPIC-043 T1409 — one row per credential, touched by pmi.health.
       'workstation_connections',

@@ -94,6 +94,9 @@ export function input(over: Partial<AssembleInput> = {}): AssembleInput {
   return {
     workspaceId: 'ws_1',
     projectId: 'pr_1',
+    // `FR-CTX-062` — the execution this package feeds. Explicit here so every
+    // assembly test binds one, and a test about an unbound package says so.
+    executionId: 'ex_1',
     objective: 'why does the booking notify twice',
     actorId: 'u_1',
     actorRole: 'engineer',

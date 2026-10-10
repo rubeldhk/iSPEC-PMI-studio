@@ -24,6 +24,10 @@ export interface AttestationSubject {
 }
 ```
 
+> **As built (2026-10-07, [`DEF-032-005`](../defects/DEF-032-005-contract-digest-required-all-algorithms.md)).**
+> `digest` is *at least one of* `sha256`, `gitCommit`, `gitBlob` — not all three. The in-toto spec
+> requires a digest set, any algorithm; requiring all three refused every real test result.
+
 **`subject` is a non-empty tuple type.** `FR-EVS-042` refuses a contribution naming no artifact
 version; making the array non-empty at the type level means that particular refusal is a compile
 error before it is ever a runtime check.
@@ -138,6 +142,12 @@ one failure direction.
 
 `400` on an attestation with no subject digest (`FR-EVS-042`), `403` when the attested artifact's
 access rules refuse the read (`FR-EVS-015`), `409` on a refused completion carrying its unmet list.
+
+> **As built (2026-10-07, [`DEF-032-002`](../defects/DEF-032-002-http-surface-differs-from-contract.md)).**
+> A sixth route, `POST /evidence/bindings`, creates the binding `FR-EVS-021` requires — otherwise
+> reachable from no real entry point. And an unreadable subject is **`404`, not `403`**: the
+> platform rule in `backend/src/core/errors.ts` keeps artifact visibility at 404 so a refusal does
+> not confirm existence.
 
 ---
 
