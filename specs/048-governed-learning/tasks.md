@@ -252,7 +252,7 @@ review with narrowing, rejection, expiry, withdrawal and the approval attestatio
 Built against in-test `LearningDecisions` bindings. Tests that need `EPIC-031`'s real engine are
 T2402 and T2405–T2407.
 
-- [ ] T2346 [P] [US3] Write failing unit tests `backend/tests/unit/learning-eligibility.spec.ts`. The automatic path is chosen only when **all** hold:
+- [X] T2346 [P] [US3] Write failing unit tests `backend/tests/unit/learning-eligibility.spec.ts`. The automatic path is chosen only when **all** hold: — **Done**: 19 cases, red on the missing module; every condition alone fails it, all six named together, SC-LRN-008 over every category × kind.
   - the category exists and is declared `lowRisk: true`;
   - the scope is exactly the source project;
   - every citation is `verified`;
@@ -261,7 +261,7 @@ T2402 and T2405–T2407.
   - the execution is governed.
 
   Each failing condition is named in `failedConditions`. With no category opted in, 100% route to review (`FR-LRN-022`, `FR-LRN-026`, `FR-LRN-034`, `SC-LRN-008`; MP-2's target)
-- [ ] T2347 [US3] Implement `backend/src/modules/learning/eligibility.ts` (unit test: T2346)
+- [X] T2347 [US3] Implement `backend/src/modules/learning/eligibility.ts` (unit test: T2346) — **Done**: `eligibility.ts` — pure `eligibilityOf`, six named conditions; a reconciled provisional execution counts as governed (`FR-LRN-063`).
 - [ ] T2348 [P] [US3] Write failing unit tests `backend/tests/unit/learning-decision-requester.spec.ts`. The `DecisionRequest`:
   - targets `{type: 'learning-candidate', id}`;
   - uses `objectVersion = sha256(canonical core)`;
