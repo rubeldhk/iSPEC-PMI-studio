@@ -43,6 +43,9 @@ import type { ProjectConstraintStore } from './project-constraint.store.js';
 export async function resolvedSteeringForProject(steering: Pick<SteeringService, 'list'>, workspaceId: string, projectId: string): Promise<ResolvedSteeringForRender[]> {
   const documents = await steering.list(workspaceId);
   const applicable = documents.filter((d) => {
+    // EPIC-048 T2323: the learning policy is configuration read by the learning
+    // module, not guidance for an engine or a constitution.
+    if (d.subject === 'learning_policy') return false;
     if (d.scope.scopeType === 'organization') return true;
     if (d.scope.scopeType === 'workspace') return d.scope.scopeRef === workspaceId;
     if (d.scope.scopeType === 'project') return d.scope.scopeRef === projectId;

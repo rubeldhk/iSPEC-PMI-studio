@@ -124,13 +124,13 @@ Steps 1–3 may land in any order among themselves. Step 4 needs all three; step
   - `secretRuleMatching` returns the rule name for each pattern (`github-token`, `aws-access-key`, `private-key`, `jwt`, …) and `null` for clean text;
   - `looksLikeSecret` is unchanged for every existing case
 - [X] T2321 Name each pattern and export `secretRuleMatching` from `backend/src/modules/executions/sanitisation.ts`; `looksLikeSecret` delegates (unit test: T2320) — `A-037-1`, `R-048-18` — **Done**: patterns named in `sanitisation.ts` (unchanged), `secretRuleMatching` + `SECRET_RULE_NAMES` exported, `looksLikeSecret` delegates; EPIC-037's executions unit suite still green (98/98 with T2320).
-- [ ] T2322 [P] Write failing unit tests `backend/tests/unit/learning-policy.spec.ts`:
+- [X] T2322 [P] Write failing unit tests `backend/tests/unit/learning-policy.spec.ts`: — **Done**: red on the missing module; 20 cases incl. nine malformed shapes refused, a retired or foreign policy is none, and the policy never reaches a constitution render.
   - a `learning_policy` steering document parses into categories, `lowRisk`, reuse and the three defaults (24 h, 30 d, 20);
   - a malformed document refuses;
   - no document means no categories, so every submission is refused naming the missing policy (`FR-LRN-003`);
   - `lowRisk` absent reads `false` (`FR-LRN-026`);
   - a new steering version is the policy change, with actor and instant (`FR-LRN-047`)
-- [ ] T2323 Implement `backend/src/modules/learning/learning-policy.ts` over `SteeringService` and admit subject `learning_policy` in `backend/src/modules/steering/steering.validation.ts` (unit test: T2322) — `R-048-3`
+- [X] T2323 Implement `backend/src/modules/learning/learning-policy.ts` over `SteeringService` and admit subject `learning_policy` in `backend/src/modules/steering/steering.validation.ts` (unit test: T2322) — `R-048-3` — **Done**: `learning-policy.ts` (`parseLearningPolicy`, `LearningPolicy`, `LearningPolicyReader.require`, `steeringPolicySource`); `learning_policy` admitted in `steering.validation.ts` (EPIC-019's T234 updated to name it) and filtered out of `resolvedSteeringForProject` (EPIC-042) so configuration is never rendered as guidance; 110/110 across learning, steering and governance units.
 - [ ] T2324 [P] Write a failing unit test `packages/execution-registry-contract/tests/learning-event.spec.ts`:
   - `learning-candidate-recorded` is a content-class member of the union;
   - `isExecutionEventType` accepts it;

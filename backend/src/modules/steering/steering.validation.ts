@@ -1,7 +1,8 @@
 /**
  * T235 — subject validation (FR-ENH-002).
  *
- * The ten subjects the source document names, and NOTHING else. The refusal
+ * The ten subjects the source document names, plus EPIC-048's `learning_policy`
+ * (A-019-1), and NOTHING else. The refusal
  * names both the rejected subject and the valid set, so a caller can act on
  * it without reading this file. Framework-free (PC-1).
  */
@@ -18,6 +19,11 @@ export const STEERING_SUBJECTS = [
   'business_rules',
   'technology_stack',
   'ai_governance',
+  // EPIC-048 T2323 (A-019-1, R-048-3) — the learning policy: categories, their
+  // explicit low-risk flag and the reuse policy, versioned with actor and instant
+  // by this service. Configuration rather than guidance, so it is never rendered
+  // into a constitution (governance.module.ts) or handed to an engine.
+  'learning_policy',
 ] as const;
 
 export type SteeringSubject = (typeof STEERING_SUBJECTS)[number];
