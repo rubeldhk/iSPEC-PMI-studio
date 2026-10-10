@@ -3,8 +3,8 @@
  *
  * - `AuditSink` → `EPIC-004`'s `AuditService`. Its action vocabulary is fixed,
  *   so a decision is recorded as a `create` of a `policy_decision`, with the
- *   decision's own outcome in `detail`; a refused decision is audited as
- *   `refused`. Nothing is added to `EPIC-004`'s vocabulary.
+ *   decision's own outcome in `detail`; a refused decision, and a refused
+ *   approval or closure attempt (`FR-DPE-017`), is audited as `refused`. Nothing is added to `EPIC-004`'s vocabulary.
  * - `PolicySource` → the workspace's latest issued `TenantPolicy`, **validated
  *   again on every read** by `loadPolicy`, so a row that would not load today
  *   refuses rather than governs. With none issued, the platform default.
@@ -29,7 +29,7 @@ export class AuditServiceSink implements AuditSink {
       action: 'create',
       targetType: 'policy_decision',
       targetId: entry.decisionId,
-      outcome: entry.outcome === 'refused' || entry.outcome === 'approval-refused' ? 'refused' : 'success',
+      outcome: ['refused', 'approval-refused', 'closure-refused'].includes(entry.outcome) ? 'refused' : 'success',
       detail: { actionType: entry.actionType, decisionOutcome: entry.outcome },
     });
   }

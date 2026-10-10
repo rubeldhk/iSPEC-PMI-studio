@@ -35,7 +35,11 @@ function entry(over: Partial<InboxEntry> = {}): InboxEntry {
   };
 }
 
-function stubApi(inbox: InboxEntry[][] | Error, approve?: () => Promise<unknown>): ApiClient {
+function stubApi(
+  inbox: InboxEntry[][] | Error,
+  approve?: () => Promise<unknown>,
+  refuse?: () => Promise<unknown>,
+): ApiClient {
   let call = 0;
   return {
     decisionInbox: vi.fn(async () => {
@@ -45,6 +49,7 @@ function stubApi(inbox: InboxEntry[][] | Error, approve?: () => Promise<unknown>
       return { entries };
     }),
     approveDecision: vi.fn(approve ?? (async () => ({ outcome: 'approved' }))),
+    refuseDecision: vi.fn(refuse ?? (async () => ({ outcome: 'refused' }))),
   } as unknown as ApiClient;
 }
 
@@ -119,5 +124,55 @@ describe('T757 · approving from the Inbox', () => {
     const item = await screen.findByRole('listitem');
     expect(await within(item).findByText(/may not approve it \(FR-DPE-015\)/)).toBeTruthy();
     expect(screen.getByRole('status').textContent).toMatch(/Approval refused/);
+  });
+});
+
+describe('T2511 · FR-DPE-017 — rejecting from the Inbox', () => {
+  const reasonFor = () => screen.findByRole('textbox', { name: /reason for rejecting release\.promote on release r-1/i });
+  const reject = () => screen.getByRole('button', { name: /reject release\.promote on release r-1/i });
+
+  it('offers each approval a Reject control with a reason field, and blocked work neither', async () => {
+    render(<DecisionInboxPage api={stubApi([[entry(), entry({ decisionId: 'd2', kind: 'blocked', blockedBy: 'policy refused', objectRef: { type: 'release', id: 'r-2' } })]])} />);
+    expect(await reasonFor()).toBeTruthy();
+    expect(reject()).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /^reject/i })).toHaveLength(1);
+  });
+
+  it('does not send a rejection without a reason, and says why', async () => {
+    const api = stubApi([[entry()]]);
+    render(<DecisionInboxPage api={api} />);
+    await reasonFor();
+    fireEvent.click(reject());
+    const item = screen.getByRole('listitem');
+    expect(await within(item).findByText(/state a reason/i)).toBeTruthy();
+    expect(api.refuseDecision).not.toHaveBeenCalled();
+  });
+
+  it('rejects with the stated reason, announces it, and the item leaves (FR-DPE-024)', async () => {
+    const api = stubApi([[entry()], []]);
+    render(<DecisionInboxPage api={api} />);
+    fireEvent.change(await reasonFor(), { target: { value: 'the release notes are incomplete' } });
+    fireEvent.click(reject());
+    await waitFor(() =>
+      expect(api.refuseDecision).toHaveBeenCalledWith('d1', { kind: 'rejected', reason: 'the release notes are incomplete' }),
+    );
+    expect(await screen.findByText(/nothing is waiting for you/i)).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toMatch(/Rejected release\.promote on release r-1/);
+  });
+
+  it('shows why a rejection was refused, from the decision’s own explanation', async () => {
+    const refused = new ApiError('forbidden', 'You may not close this decision.', 403, {
+      decisionId: 'd1',
+      result: { explanation: { authorityApplied: 'u_alice requested this and may not reject it; a requester may withdraw it instead (FR-DPE-017)' } },
+    });
+    const api = stubApi([[entry()]], undefined, async () => {
+      throw refused;
+    });
+    render(<DecisionInboxPage api={api} />);
+    fireEvent.change(await reasonFor(), { target: { value: 'changed my mind' } });
+    fireEvent.click(reject());
+    const item = await screen.findByRole('listitem');
+    expect(await within(item).findByText(/may withdraw it instead/)).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toMatch(/Rejection refused/);
   });
 });

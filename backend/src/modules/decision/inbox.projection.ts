@@ -13,7 +13,9 @@
  *   anyone in the workspace but the requester, unless policy permits
  *   self-approval for the class (`FR-DPE-015`). Never to automation.
  * - **blocked** — a refused request nobody has resolved or superseded, shown to
- *   the person it blocks, naming what would unblock it (`FR-DPE-025`).
+ *   the person it blocks, naming what would unblock it (`FR-DPE-025`). A
+ *   closure of a pending decision is refused too, and is **not** blocked work:
+ *   it is the decision, and it leaves with the item (`FR-DPE-017`).
  *
  * `review` and `escalation` are kinds the contract names and no source produces
  * yet: review requests are `EPIC-021`'s, escalation `EPIC-031`'s follow-on.
@@ -67,6 +69,9 @@ export function inboxFor(
   const entries: InboxEntry[] = [];
   for (const d of decisions) {
     if (resolved.has(d.id)) continue;
+    // `T2506`, `FR-DPE-017` — a closure (rejected, withdrawn, expired) is a
+    // decision taken, not work blocked: it leaves with the item it closed.
+    if (d.explanation.closure !== undefined) continue;
     const requester = d.requestedBy ?? d.actorId;
     const base = {
       decisionId: d.id,

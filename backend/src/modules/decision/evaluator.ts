@@ -25,16 +25,19 @@
  *
  * ## Never throws on a governance outcome
  *
- * `decide`, `approve` and `recordException` return a `DecisionResult` for every
+ * `decide`, `approve`, `refuse` and `recordException` return a `DecisionResult` for every
  * refusal — the reason travels as data a Room can render (`FR-DPE-043`). They
  * throw only for a caller error (an unknown decision, an exception missing its
  * reason) or an attempt to resolve a decision twice.
  */
 import {
+  CLOSURE_KINDS,
   GATE_RESULTS,
   MOST_RESTRICTIVE_BAND,
+  isClosureKind,
   type ActorRef,
   type AuditSink,
+  type ClosureKind,
   type DecisionOutcome,
   type DecisionRequest,
   type DecisionResult,
@@ -194,6 +197,98 @@ export class DecisionEngine {
       authorityBasis: authorityApplied,
       resolvesDecisionId: pending.id,
       explanation: { ...prior, authorityApplied },
+    });
+    await this.audit(record);
+    return fromRecord(record);
+  }
+
+  // ─────────────────────────────────────────────────────────────── refuse
+
+  /**
+   * `T2504`, `FR-DPE-017` (amendment `A-031-1`) — close a pending decision
+   * without approving it. The closure is a new row resolving the pending one,
+   * always with outcome `refused`, carrying its kind and reason in the
+   * explanation and its actor under `FR-DPE-014`:
+   *
+   * - `rejected` — by a human who is not the requester (a requester withdraws);
+   * - `withdrawn` — by the requester: the human it names, or the automation
+   *   that made it;
+   * - `expired` — by the automation that made the request, and only that one.
+   *
+   * An attempt outside those is **not recorded as a resolution**: it is audited
+   * as `closure-refused` and the decision stays pending — the same shape as an
+   * unauthorized approval. A closure cannot approve; there is no branch here
+   * that writes anything but `refused`.
+   */
+  async refuse(input: {
+    workspaceId: string;
+    decisionId: string;
+    by: ActorRef;
+    kind: ClosureKind;
+    reason: string;
+  }): Promise<DecisionResult> {
+    if (!isClosureKind(input.kind)) {
+      throw new ValidationFailedError(`a closure is one of ${CLOSURE_KINDS.join(', ')} (FR-DPE-017)`);
+    }
+    const reason = typeof input.reason === 'string' ? input.reason.trim() : '';
+    if (reason === '') throw new ValidationFailedError('a closure states its reason (FR-DPE-017)');
+    const pending = await this.pendingDecision(input.workspaceId, input.decisionId);
+    const requester = pending.requestedBy ?? pending.actorId;
+    const madeIt = pending.actorKind === 'automation' && pending.actorId === input.by.id;
+
+    const refusal = ((): string | null => {
+      if (input.by.kind === 'automation' && !madeIt) {
+        return `automation may close only its own request; ${input.by.id} did not request ${pending.id} (FR-DPE-017)`;
+      }
+      switch (input.kind) {
+        case 'rejected':
+          if (input.by.kind !== 'human') return `only an authorized human may reject a decision; ${input.by.id} is automation (FR-DPE-017)`;
+          if (input.by.id === requester) {
+            return `${input.by.id} requested this and may not reject it; a requester may withdraw it instead (FR-DPE-017)`;
+          }
+          return null;
+        case 'withdrawn':
+          if (input.by.kind === 'human' && input.by.id !== requester) {
+            return `only ${requester}, who requested it, may withdraw ${pending.id} (FR-DPE-017)`;
+          }
+          return null;
+        case 'expired':
+          if (input.by.kind === 'human') return 'a decision is expired only by the automation that requested it (FR-DPE-017)';
+          return null;
+      }
+    })();
+
+    const { id: _explanationId, ...prior } = pending.explanation;
+    if (refusal !== null) {
+      await this.deps.audit?.record({
+        workspaceId: input.workspaceId,
+        decisionId: pending.id,
+        actionType: pending.actionType,
+        outcome: 'closure-refused',
+        actor: input.by.id,
+      });
+      return {
+        decisionId: pending.id,
+        outcome: 'refused',
+        effectiveClass: pending.effectiveClass,
+        explanation: { ...prior, authorityApplied: refusal },
+        gateOutcomes: pending.gateOutcomes,
+      };
+    }
+
+    const authorityApplied =
+      `${input.kind} by ${input.by.id} (${input.by.kind}) — ${reason}; the pending decision is closed without ` +
+      `approval (FR-DPE-017)`;
+    const record = await this.deps.repository.append({
+      ...this.carry(pending),
+      outcome: 'refused',
+      decidedBy: input.by.id,
+      decidedAt: this.now(),
+      actorKind: input.by.kind,
+      actorId: input.by.id,
+      authorityBasis: authorityApplied,
+      resolvesDecisionId: pending.id,
+      explanation: { ...prior, authorityApplied, closure: { kind: input.kind, reason } },
     });
     await this.audit(record);
     return fromRecord(record);
