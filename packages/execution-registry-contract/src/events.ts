@@ -42,11 +42,38 @@ export const CONTENT_EVENTS = Object.freeze([
   'evidence-attached',
   'comment-added',
   'comment-redacted',
+  /**
+   * EPIC-047 `T1916`, `R-047-4` — what governed an Engineering Expert's run:
+   * a refused dispatch, a fallback, a limit, a delegation. One type with a
+   * `kind` (below), so the change to this vocabulary is a single line.
+   */
+  'expert-governance-recorded',
   // EPIC-048 T2325 (A-037-2, R-048-17) — a learning submission's outcome on its
   // source execution: {kind, candidateId?, reason?}, never the statement. Content,
   // so a late submission inside the grace period is recordable after terminal.
   'learning-candidate-recorded',
 ] as const);
+
+/** EPIC-047 `R-047-4` — the closed set of `kind`s an `expert-governance-recorded` payload carries. */
+export const EXPERT_GOVERNANCE_KINDS = Object.freeze([
+  'dispatch-refused',
+  'fallback-used',
+  'limit-narrowed',
+  'limit-unenforceable',
+  'limit-reached',
+  'limit-breach-detected-late',
+  'tool-use-unobserved',
+  'tool-call-breach',
+  'delegation-refused',
+  'stopped-by-parent',
+  'outputs-incomplete',
+  'review-required',
+] as const);
+export type ExpertGovernanceKind = (typeof EXPERT_GOVERNANCE_KINDS)[number];
+
+export function isExpertGovernanceKind(value: string): value is ExpertGovernanceKind {
+  return (EXPERT_GOVERNANCE_KINDS as readonly string[]).includes(value);
+}
 
 /** Class 3 — an execution recorded offline catching up with the registry. */
 export const REGISTRATION_EVENTS = Object.freeze([
@@ -91,7 +118,7 @@ export const EVENT_CLASSES = Object.freeze([
 ] as const);
 export type EventClass = (typeof EVENT_CLASSES)[number];
 
-/** Every type, in declaration order. Exactly 30 (29 + EPIC-048's one). */
+/** Every type, in declaration order. Exactly 31 (29 + EPIC-047's `expert-governance-recorded` + EPIC-048's `learning-candidate-recorded`). */
 export const ALL_EVENT_TYPES: readonly ExecutionEventType[] = Object.freeze([
   ...LIFECYCLE_EVENTS,
   ...CONTENT_EVENTS,

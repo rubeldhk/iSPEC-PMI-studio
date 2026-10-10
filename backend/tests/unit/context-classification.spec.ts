@@ -39,7 +39,7 @@ const mixed: Candidate[] = [
     workspaceId: 'ws_1',
   },
   {
-    sourceType: 'imported-doc',
+    sourceType: 'decision',
     sourceId: 'im_1',
     sourceVersion: 'v1',
     relevanceScore: 0.88,
@@ -78,7 +78,7 @@ describe('T1239 · a source type with no class is excluded', () => {
     const store = new InMemoryContextStore();
     const result = await service(store, ['requirement']).assemble(input());
     const exclusions = await store.exclusionsFor('ws_1', result.packageId);
-    expect(exclusions[0]?.detail).toMatch(/imported-doc/);
+    expect(exclusions[0]?.detail).toMatch(/decision/);
   });
 
   it('the package still assembles around it', async () => {
@@ -100,7 +100,7 @@ describe('T1239 · a classified type marked not-indexable is also excluded', () 
     const subject = new AssemblyService(store, {
       retrieval: retrieval(mixed),
       access: allow(),
-      sourceClasses: classifiedNotIndexable(['requirement', 'imported-doc']),
+      sourceClasses: classifiedNotIndexable(['requirement', 'decision']),
       authorisations: noAuthorisations(),
     });
 
@@ -117,7 +117,7 @@ describe('T1239 · a classified type marked not-indexable is also excluded', () 
     const subject = new AssemblyService(store, {
       retrieval: retrieval(mixed),
       access: allow(),
-      sourceClasses: classifiedNotIndexable(['requirement', 'imported-doc']),
+      sourceClasses: classifiedNotIndexable(['requirement', 'decision']),
       authorisations: noAuthorisations(),
     });
 
@@ -139,7 +139,7 @@ describe('T1239 · SC-CTX-007 — zero unclassified sources are admitted', () =>
 
   it('and with both registered, both are admitted — so the check is not vacuous', async () => {
     const store = new InMemoryContextStore();
-    const result = await service(store, ['requirement', 'imported-doc']).assemble(input());
+    const result = await service(store, ['requirement', 'decision']).assemble(input());
     expect(await store.itemsFor('ws_1', result.packageId)).toHaveLength(2);
     expect(await store.exclusionsFor('ws_1', result.packageId)).toHaveLength(0);
   });

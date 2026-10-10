@@ -32,6 +32,9 @@ import { GOVERNED_LOOP } from './composition/governed-loop.js';
 import { ChangeRoomModule } from './modules/change-room/change-room.module.js';
 import { DefectRoomModule } from './modules/defect-room/defect-room.module.js';
 import { ContextModule } from './modules/context/context.module.js';
+import { ExpertsModule } from './modules/experts/experts.module.js';
+import { DecisionModule } from './modules/decision/decision.module.js';
+import { EvidenceModule } from './modules/evidence/evidence.module.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
 import { LearningModule } from './modules/learning/learning.module.js';
 
@@ -119,6 +122,12 @@ function clientBuildPath(): string {
     ChangeRoomModule,
     DefectRoomModule,
     ContextModule,
+    // T1902 — EPIC-047. Registered in the change that created it; T1901 proves the wiring.
+    ExpertsModule,
+    // T738 — EPIC-031. The wiring decision-reachability.spec.ts (T736) exists to prove.
+    DecisionModule,
+    // T857b — EPIC-032. The wiring evidence-reachability.spec.ts (T856s) exists to prove.
+    EvidenceModule,
     // T2302 — EPIC-048 governed learning. Registered in the commit that created
     // it; T2301 is the wiring proof (DEF-005-001).
     LearningModule,

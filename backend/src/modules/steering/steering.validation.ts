@@ -19,6 +19,11 @@ export const STEERING_SUBJECTS = [
   'business_rules',
   'technology_stack',
   'ai_governance',
+  // EPIC-031 R-031-1 (clarified 2026-08-22, FR-DPE-005): classification rules
+  // are steering documents, so storage, versioning and BR-0071 precedence stay
+  // EPIC-019's. The one subject not named by the source document — recorded as
+  // DEF-031-001 so FR-ENH-002's "exactly ten" is amended on purpose, not drift.
+  'risk-classification',
   // EPIC-048 T2323 (A-019-1, R-048-3) — the learning policy: categories, their
   // explicit low-risk flag and the reuse policy, versioned with actor and instant
   // by this service. Configuration rather than guidance, so it is never rendered

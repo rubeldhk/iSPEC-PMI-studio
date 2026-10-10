@@ -33,6 +33,19 @@ Two questions, both answered with the recommended option, in a consolidated roun
 - Q: Should `U-08` be this new Epic, or an `EPIC-015` extension? -> A: **This new Epic stands.** The store, the Contract mechanism and the completion gate are substrate for **every** governed workflow — the Requirement, Change and Defect Rooms all consume them — not only for Epic-level QA validation. `EPIC-015` becomes a **consumer** of this store rather than its host, and `FR-EVS-050` continues to prevent a second validation path in either direction. This closes the only capability area in `brs-v2-reconciliation.md` §4 whose home was recorded as an alternative.
 - Q: When the evidence store is unreachable, does the completion gate refuse or allow? -> A: **Refuse — fail closed** (`FR-EVS-035`). Unstated before this session, and the wrong default would have been invisible: an outage would have become a window in which *"done"* needed no proof, which is precisely what `BG-08` exists to prevent. This also makes all three substrate Epics fail the same direction — `EPIC-030` `FR-GEL-041`, `EPIC-031` `FR-DPE-050`, and this.
 
+### Session 2026-10-08
+
+One question, raised by implementation rather than by specification (`DEF-032-004`), answered by
+the Project Owner with the recommended option.
+
+- Q: A `test-result` attestation whose `result` is `FAILED` satisfied an item reading *"automated
+  tests pass"*, because items match on `predicateType` alone. Keep the rule that blocks it, or match
+  the spec as written? -> A: **Ratify the rule** as `FR-EVS-036`. A type says what kind of proof a
+  document is, not what it proved; without the rule a failing run opens the completion gate, which
+  undoes `BR-0144` for the most common item there is. Implemented as `declaresFailure`
+  (`packages/evidence-contract/src/predicates.ts`); the residual — a **referenced** test result whose
+  predicate cannot be read back — stays deferred to `EPIC-039`.
+
 **Deferred, deliberately.** Attestation and provenance format selection (`PP-015`) and retention and
 volume targets (`PP-018`) are plan-level. The PMI-DOC-006 approval is an act of the project owner.
 `BR-0143` and `BR-0036` remain `U-09` and are not this Epic's to settle.
@@ -305,6 +318,7 @@ the gate treats it identically.
 - **FR-EVS-032**: A refused completion MUST name the unmet items.
 - **FR-EVS-033**: A refused completion MUST be recorded.
 - **FR-EVS-034**: An item satisfied by evidence that fails its integrity check MUST count as unmet. Presence is not validity.
+- **FR-EVS-036**: Evidence whose standard predicate **declares a failure** of what it attests MUST NOT satisfy a Contract item, even where its type is accepted. Scoped to predicates with a standard outcome field — in-toto `test-result`, whose `result` of `FAILED` declares failure and of `WARNED` does not — so the gate reads one field of one schema and judges no other content *(ratified 2026-10-08, `DEF-032-004`)*.
 - **FR-EVS-035**: Where the evidence store cannot be reached, the completion gate MUST **refuse** rather than allow. An unreachable store means the Contract cannot be evaluated, and an unevaluated Contract is not a satisfied one. This matches `EPIC-030` `FR-GEL-041` and `EPIC-031` `FR-DPE-050`: all three substrate Epics fail closed *(clarified 2026-08-22)*.
 
 *External contribution — `BR-0146`, `ADR-0022` decided boundary.*

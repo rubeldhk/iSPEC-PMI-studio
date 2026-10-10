@@ -107,6 +107,7 @@ async function room(port: RequirementIntakePort | undefined) {
     defectId: 'df_1',
     reproducible: 'always',
     environment: 'production, EU region',
+    steps: '',
     evidenceRefs: ['ev_har_1'],
     affectedBehaviourRef: 'rv_absent',
     notAutomatableReason: null,

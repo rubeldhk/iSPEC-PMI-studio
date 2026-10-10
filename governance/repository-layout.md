@@ -187,6 +187,7 @@ path added or removed without updating this document fails the build.
 - `specs/044-epic-model-journey-board/`
 - `specs/045-artifact-sync-markdown-viewer/`
 - `specs/046-task-kanban-governed-status/`
+- `specs/047-engineering-experts/`
 - `specs/048-governed-learning/`
 - `packages/epic-stage/` — the SHARED stage derivation (`EPIC-044` `T1550`, PMI-DOC-007 `R-06`): the
   configuration document (mirrored as `governance/epic-stage.config.json`, `G-44-01`), the
@@ -214,6 +215,14 @@ path added or removed without updating this document fails the build.
   deletes a proof; the suite reads the directory, so adding one is covered without an edit
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T993f`)
+- `packages/decision-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
+  `backend/src/modules/decision/`; the three risk bands, the decision-authority record published for
+  `U-02`, the decide types and the four ports the Rooms and `EPIC-030` build against (EPIC-031 `T719`)
+- `packages/evidence-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
+  `backend/src/modules/evidence/`; the in-toto attestation envelope, the Evidence Contract and the
+  completion gate's result, which three Rooms, `EPIC-030` and `EPIC-031` build against (EPIC-032
+  `T855d`). Its `contracts/` directory holds the Evidence Contract definitions that
+  `evidence-contract-conformance.spec.ts` reads
 - `backend/src/modules/change-room/` — `EPIC-034`'s module (`T406c`). Registered in
   `backend/src/app.module.ts` and asserted by `change-room-independence.spec.ts`, which reads this
   directory to prove the Room imports the shared contract rather than forking it

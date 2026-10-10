@@ -102,3 +102,9 @@ export const CONTEXT_STORE = Symbol('CONTEXT_STORE');
 export function absentBehaviourOf(name: string): AbsentBehaviour | null {
   return CONTEXT_PORTS.find((port) => port.name === name)?.absent ?? null;
 }
+
+/** `T1810`, `T1812` — the governed sources: current versions and text. */
+export const CONTEXT_SOURCES = Symbol('CONTEXT_SOURCES');
+
+/** `T1279` — the vector index: pgvector when `DATABASE_URL` is set. */
+export const CONTEXT_VECTOR_INDEX = Symbol('CONTEXT_VECTOR_INDEX');

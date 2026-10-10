@@ -18,18 +18,23 @@
  * which is what `DEF-033-001` was missing when a body looked authoritative
  * because nothing visibly took it away.
  *
- * ## The routes refuse in this deployment, and say which seam is unbound
+ * ## Assembly refuses in this deployment, and says which seam is unbound
  *
- * `EmbeddingPort` has no owner anywhere in the programme (`FR-CTX-013`), and
- * `AccessPolicy` is bound in `T1258`. Until then `POST /context/packages`
- * answers `503` **naming the seam**, because a 503 saying nothing is the same
- * defect with a better number.
+ * `EmbeddingPort` has no owner anywhere in the programme (`FR-CTX-013`), so
+ * `POST /context/packages` answers `503` **naming the seam**, because a 503
+ * saying nothing is the same defect with a better number. `AccessPolicy` is
+ * `EPIC-024`'s and is bound (`T1258`).
+ *
+ * The inspection routes do not depend on that seam: they read what was stored,
+ * and are served by a service that has no assembler (`FR-CTX-063`).
  */
-import { Body, Controller, Get, Inject, Post, Req } from '@nestjs/common';
-import { UnauthenticatedError } from '../../core/errors.js';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req } from '@nestjs/common';
+import { NotFoundError, UnauthenticatedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import { AssemblyService, type AssembleInput } from './assembly.service.js';
-import { CONTEXT_STORE } from './context.tokens.js';
+import { CONTEXT_SOURCES, CONTEXT_STORE } from './context.tokens.js';
+import { InspectionService, type Inspection, type SourceVersionReader } from './inspection.service.js';
+import { IndexService, type IndexHealth } from './retrieval/index.service.js';
 import type { ContextStore } from './context.store.js';
 
 interface ActingPrincipal {
@@ -76,6 +81,9 @@ export class ContextController {
     // @Inject by token: esbuild/tsx emits no `design:paramtypes` (DEF-001-005).
     @Inject(AssemblyService) private readonly assembly: AssemblyService,
     @Inject(CONTEXT_STORE) private readonly store: ContextStore,
+    @Inject(InspectionService) private readonly inspection: InspectionService,
+    @Inject(IndexService) private readonly index: IndexService,
+    @Inject(CONTEXT_SOURCES) private readonly versions: SourceVersionReader,
   ) {}
 
   /**
@@ -94,17 +102,108 @@ export class ContextController {
     const principal = requireAuth(ctx);
     const rest = strip(body) as Partial<AssembleRest>;
     return this.assembly.assemble({
-      projectId: String(rest.projectId ?? ''),
-      objective: String(rest.objective ?? ''),
-      budgetTokens: Number(rest.budgetTokens ?? 0),
-      budgetCost: Number(rest.budgetCost ?? 0),
+      // `T1859` — passed as given; the service type-checks. `String(x ?? '')`
+      // stored "[object Object]" as an objective.
+      projectId: (rest.projectId ?? '') as string,
+      objective: (rest.objective ?? '') as string,
+      // `T1849` — passed as given and validated by the service. `Number(x ?? 0)`
+      // turned a missing budget into zero and `true` into one: a budget nobody
+      // stated, recorded as if somebody had.
+      budgetTokens: rest.budgetTokens as number,
+      budgetCost: rest.budgetCost as number,
       // `FR-CTX-038` — absent means nothing was marked essential, which is a
       // different thing from marking nothing and is treated the same way.
-      essentialSources: rest.essentialSources ?? [],
+      essentialSources: rest.essentialSources === undefined ? [] : (rest.essentialSources as AssembleInput['essentialSources']),
+      // `FR-CTX-020` — opt-in, and only an explicit `true` opts in.
+      includeLiveState: rest.includeLiveState === true,
+      // `FR-CTX-062` — the execution this feeds, when the caller has one. The
+      // foreign key to `executions` refuses an id that names nothing.
+      // `T1859` — a non-text id is refused by the service, never dropped.
+      ...(rest.executionId !== undefined && rest.executionId !== null && rest.executionId !== ''
+        ? { executionId: rest.executionId as string }
+        : {}),
       workspaceId: principal.workspaceId,
       actorId: principal.userId,
       actorRole: principal.role,
     });
+  }
+
+  /**
+   * `FR-CTX-062` — the packages one execution was given.
+   *
+   * `executionId` is required, and its absence is a `400` naming it: a
+   * workspace-wide listing would become the thing people page through instead
+   * of the audit path.
+   */
+  @Get('context/packages')
+  packagesForExecution(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Query('executionId') executionId: string | undefined,
+  ): Promise<Inspection[]> {
+    const principal = requireAuth(ctx);
+    return this.inspection.forExecution(principal.workspaceId, executionId ?? '');
+  }
+
+  /**
+   * `FR-CTX-060`, `FR-CTX-063` — one package as supplied. `404` for another
+   * workspace's package: absent rather than forbidden (`FR-002`).
+   */
+  @Get('context/packages/:id')
+  async package(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+  ): Promise<Inspection> {
+    const principal = requireAuth(ctx);
+    const found = await this.inspection.inspect(principal.workspaceId, id);
+    if (found === null) throw new NotFoundError('Not found.');
+    return found;
+  }
+
+  /**
+   * `T1830`, `FR-CTX-062` — bind a package assembled ahead of its execution,
+   * once. `404` for another workspace's package, `409` if already bound to a
+   * different execution, `400` for an execution `EPIC-037` has not registered.
+   */
+  @Post('context/packages/:id/execution')
+  @HttpCode(200)
+  async bindExecution(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ): Promise<Inspection> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body);
+    await this.assembly.bindExecution(principal.workspaceId, id, String(rest['executionId'] ?? ''));
+    const bound = await this.inspection.inspect(principal.workspaceId, id);
+    if (bound === null) throw new NotFoundError('Not found.');
+    return bound;
+  }
+
+  /**
+   * `FR-CTX-018`, `R-038-6` — re-index ONE source. `200` whether it was
+   * indexed or already current; there is deliberately no rebuild-all route.
+   */
+  @Post('context/index/reindex')
+  @HttpCode(200)
+  reindex(@Req() ctx: WorkspaceContext | undefined, @Body() body: unknown): Promise<unknown> {
+    const principal = requireAuth(ctx);
+    const rest = strip(body);
+    return this.index.reindex({
+      workspaceId: principal.workspaceId,
+      sourceType: String(rest['sourceType'] ?? ''),
+      sourceId: String(rest['sourceId'] ?? ''),
+      sourceVersion: String(rest['sourceVersion'] ?? ''),
+    });
+  }
+
+  /**
+   * `FR-CTX-012`, `FR-CTX-017` — what the index knows about itself. The stale
+   * count is the point, and is `null` with a reason when it cannot be known.
+   */
+  @Get('context/index/health')
+  health(@Req() ctx: WorkspaceContext | undefined): Promise<IndexHealth> {
+    const principal = requireAuth(ctx);
+    return this.index.health(principal.workspaceId, this.versions);
   }
 
   /**
