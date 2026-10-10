@@ -206,7 +206,7 @@ adapters and is blocked until those PRs merge.
 - [X] T1984 [P] Write the failing performance test in `backend/tests/integration/experts-performance.spec.ts` — dispatch check p95 < 300 ms; 156-session tree p95 < 500 ms; compare p95 < 200 ms; `GET /experts` at 100 Experts p95 < 1.2 s (`R-047-15`, analysis P1)
 - [X] T1985 Write the closing report `specs/047-engineering-experts/closure.md` — work completed, work deferred (including that no current gateway can enforce token or cost limits, `R-047-7`), and the recommended next command — then `pnpm register:update`
 - [ ] T1992 [P] Write the failing conformance check `backend/tests/architecture/experts-transcript.spec.ts` and generate `specs/047-engineering-experts/tier2-transcript.md` from a run against a running stack — Constitution XI Tier 2; known-red until the run produces it, never hand-written (analysis I3)
-- [ ] T1993 Update the PMI-DOC-004 §6.11 owner annotations for `BR-0101` and `BR-0105` to `EPIC-047` in `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` — **requires the Project Owner's sign-off** (Constitution II: the SRS is the requirement source of truth) (analysis I3)
+- [X] T1993 Update the PMI-DOC-004 §6.11 owner annotations for `BR-0101` and `BR-0105` to `EPIC-047` in `SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md` — **requires the Project Owner's sign-off** (Constitution II: the SRS is the requirement source of truth) (analysis I3) *(Project Owner sign-off 2026-10-09 (chat); owner annotations for `BR-0101` and `BR-0105` changed to `EPIC-047`. Line 342's Engineering Experts note still names `EPIC-028` — left unchanged, outside this sign-off.)*
 
 ---
 
