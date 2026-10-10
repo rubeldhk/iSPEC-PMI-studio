@@ -223,12 +223,12 @@ the record alone.
   - eligibility reads the **unfiltered** state (`R-048-9`);
   - `retired` is never produced (`R-048-8`)
 - [X] T2341 [US2] Implement `backend/src/modules/learning/evidence.view.ts` over `EvidenceReads` and `ReaderAccess` (unit test: T2340) — **Done**: `evidence.view.ts`: `unfiltered` (eligibility's view; `EvidenceReads` unbound reads `unresolvable`, never `verified`) and `forReader` (withheld = no id, no digest, counted; access asked of the attested target; `ReaderAccess` unbound withholds all); 117/117 learning units.
-- [ ] T2342 [P] [US2] Write failing unit tests `backend/tests/unit/learning-corroboration.spec.ts`:
+- [X] T2342 [P] [US2] Write failing unit tests `backend/tests/unit/learning-corroboration.spec.ts`: — **Done**: 10 cases, 8 red first; includes T2330's deferred `corroborated` event (on the corroborating execution) and a concurrent pair under the subject lock.
   - a submission whose `subjectKey` matches an open candidate attaches as a corroboration with its source and evidence, and creates no second candidate;
   - two concurrent submissions of one subject produce one candidate (advisory lock);
   - a subject matching a **current** approved entry without `supersede` is `conflicting` and names it (`FR-LRN-017`, `FR-LRN-036`);
   - corroboration never changes eligibility
-- [ ] T2343 [US2] Implement corroboration and conflict detection in `submission.service.ts` (unit test: T2342) — `R-048-15`
+- [X] T2343 [US2] Implement corroboration and conflict detection in `submission.service.ts` (unit test: T2342) — `R-048-15` — **Done**: corroboration inside the subject-locked transaction (same subject, kind and target; own idempotency replay); `findConflict` derives `FR-LRN-036` from the current version on the subject; 127/127 learning units.
 - [ ] T2344 [P] [US2] Write failing route tests `backend/tests/integration/learning-candidate-view-route.spec.ts`:
   - `GET /learning/candidates/:id` returns everything `FR-LRN-071` lists in one response, including corroborations and the side-by-side superseded entry;
   - `404` for another workspace;

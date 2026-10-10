@@ -30,7 +30,15 @@ import {
 } from '@pmi/learning-contract';
 import { ConflictError, ValidationFailedError } from '../../core/errors.js';
 import type { LearningPolicy, LearningPolicyReader } from './learning-policy.js';
-import { newLearningId, type CandidateRecord, type CitationRecord, type LearningStore } from './learning.store.js';
+import {
+  newLearningId,
+  type CandidateRecord,
+  type CitationRecord,
+  type CorroborationRecord,
+  type LearningReads,
+  type LearningStore,
+  type VersionRecord,
+} from './learning.store.js';
 import type { ExpertFacts, LearningPorts } from './learning.tokens.js';
 import { assertNoSecret } from './secret.screen.js';
 
@@ -129,6 +137,20 @@ export function objectDigestOf(s: LearningSubmissionV1, source: { projectId: str
 
 const HOUR = 3_600_000;
 
+/**
+ * `FR-LRN-036` (T2343) — a `new` candidate whose subject matches a **current**
+ * approved entry contradicts it without proposing to supersede it. Derived on
+ * read, never stored: the entry it conflicts with can itself change.
+ */
+export async function findConflict(
+  reads: Pick<LearningReads, 'currentVersionBySubjectKey'>,
+  candidate: Pick<CandidateRecord, 'workspaceId' | 'kind' | 'subjectKey'>,
+): Promise<{ entryId: string; versionId: string; version: number; statement: string } | null> {
+  if (candidate.kind !== 'new') return null;
+  const current: VersionRecord | null = await reads.currentVersionBySubjectKey(candidate.workspaceId, candidate.subjectKey);
+  return current === null ? null : { entryId: current.entryId, versionId: current.id, version: current.version, statement: current.statement };
+}
+
 /** `FR-LRN-055` — the one memory policy that permits governed learning (`A-047-1`). */
 export const GOVERNED_KNOWLEDGE = 'governed-knowledge';
 
@@ -176,7 +198,7 @@ export class SubmissionService {
     const projectId = input.projectId;
     const objectDigest = objectDigestOf(s, { projectId, sourcePrincipalId });
 
-    // 2. Replay (FR-LRN-061).
+    // 2. Replay (FR-LRN-061) — of a candidate, or of a corroboration.
     const replay = await this.replay(ws, s.idempotencyKey, objectDigest);
     if (replay !== null) {
       // The event is appended again under the same key — a no-op if it landed,
@@ -185,6 +207,8 @@ export class SubmissionService {
       if (prior !== null) await this.recordOutcome(prior, prior.late ? 'late-submitted' : 'submitted');
       return replay;
     }
+    const corroborationReplay = await this.replayCorroboration(ws, s);
+    if (corroborationReplay !== null) return corroborationReplay;
 
     // 3. Policy and category (FR-LRN-003).
     const policy = await this.deps.policy.require(ws);
@@ -238,13 +262,39 @@ export class SubmissionService {
       correlationId: s.correlationId,
       submittedAt: at,
     };
-    const citations = this.citationsFor(candidate, s, null);
-    await this.deps.store.transaction(
-      async (tx) => {
+    // R-048-15 (T2343): the subject lock serialises concurrent submissions of one
+    // subject, so two of them produce one candidate and one corroboration.
+    const recorded = await this.deps.store.transaction(
+      async (tx): Promise<{ kind: 'candidate' } | { kind: 'corroboration'; open: CandidateRecord; corroboration: CorroborationRecord }> => {
         if ((await tx.candidateByIdempotencyKey(ws, s.idempotencyKey)) !== null) {
           throw new ConflictError(`idempotency key ${s.idempotencyKey} was recorded concurrently; retry to receive the original answer.`);
         }
-        await tx.insertCandidate(candidate, citations, {
+        // FR-LRN-017: an open candidate with this subject (same kind, same target)
+        // takes the submission as corroboration — its source and evidence kept,
+        // the candidate itself untouched, no second candidate.
+        const open = await tx.openCandidateFor(ws, candidate.subjectKey, candidate.kind, candidate.targetVersionId);
+        if (open !== null) {
+          const corroboration: CorroborationRecord = {
+            id: newLearningId('lco'),
+            workspaceId: ws,
+            candidateId: open.id,
+            sourceKind: candidate.sourceKind,
+            executionId: candidate.executionId,
+            sourcePrincipalId,
+            expertId: candidate.expertId,
+            expertContractVersionId: candidate.expertContractVersionId,
+            statement: s.statement,
+            confidenceLevel: s.confidence.level,
+            confidenceBasis: s.confidence.basis,
+            late: source.late,
+            idempotencyKey: s.idempotencyKey,
+            correlationId: s.correlationId,
+            submittedAt: at,
+          };
+          await tx.insertCorroboration(corroboration, this.citationsFor(open, s, corroboration.id));
+          return { kind: 'corroboration', open, corroboration };
+        }
+        await tx.insertCandidate(candidate, this.citationsFor(candidate, s, null), {
           workspaceId: ws,
           candidateId: candidate.id,
           state: 'proposed',
@@ -254,10 +304,15 @@ export class SubmissionService {
           actorId: 'learning-intake',
           at,
         });
+        return { kind: 'candidate' };
       },
       { lockKeys: [`learning-subject:${ws}:${candidate.subjectKey}`] },
     );
 
+    if (recorded.kind === 'corroboration') {
+      await this.recordCorroborated(recorded.open, recorded.corroboration);
+      return { status: 200, body: await this.corroborationBody(recorded.open, recorded.corroboration) };
+    }
     await this.recordOutcome(candidate, candidate.late ? 'late-submitted' : 'submitted');
     return { status: 201, body: await this.afterRecord(candidate) };
   }
@@ -296,6 +351,43 @@ export class SubmissionService {
       idempotencyKey: `learning:${corroborationId ?? candidate.id}:${kind}`,
       emittedBy: candidate.sourcePrincipalId,
     });
+  }
+
+  /** `corroborated`, on the **corroborating** execution, naming the candidate it joined. */
+  private async recordCorroborated(open: CandidateRecord, corroboration: CorroborationRecord): Promise<void> {
+    if (corroboration.executionId === null) return;
+    await this.deps.ports.executions.appendLearningEvent({
+      workspaceId: corroboration.workspaceId,
+      executionId: corroboration.executionId,
+      payload: learningEventPayload({ kind: 'corroborated', candidateId: open.id }),
+      idempotencyKey: `learning:${corroboration.id}:corroborated`,
+      emittedBy: corroboration.sourcePrincipalId,
+    });
+  }
+
+  private async corroborationBody(open: CandidateRecord, corroboration: CorroborationRecord, replayed = false): Promise<SubmissionBody> {
+    const current = await this.deps.store.currentTransition(open.workspaceId, open.id);
+    return {
+      candidateId: open.id,
+      corroborationId: corroboration.id,
+      state: current?.state ?? 'proposed',
+      late: corroboration.late,
+      provisional: open.provisional,
+      eligibleForAutomatic: false,
+      ...(replayed ? { replayed: true as const } : {}),
+    };
+  }
+
+  private async replayCorroboration(ws: string, s: LearningSubmissionV1): Promise<SubmissionOutcome | null> {
+    const prior = await this.deps.store.corroborationByIdempotencyKey(ws, s.idempotencyKey);
+    if (prior === null) return null;
+    if (prior.statement !== s.statement) {
+      throw new ConflictError(`idempotency key ${s.idempotencyKey} was already used for a different submission (FR-LRN-061).`, { idempotencyKey: s.idempotencyKey });
+    }
+    const open = await this.deps.store.candidate(ws, prior.candidateId);
+    if (open === null) return null;
+    await this.recordCorroborated(open, prior);
+    return { status: 200, body: await this.corroborationBody(open, prior, true) };
   }
 
   /**
