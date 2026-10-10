@@ -36,4 +36,12 @@ describe('T1901 · the Experts module is reachable through the composed applicat
     expect(service.area).toBe('engineering-experts');
     expect(service).not.toHaveProperty('workflowType');
   });
+
+  it('T2023 · exports and resolves EXPERT_PROVENANCE for EPIC-048 (A-047-2, FR-EXP-064)', async () => {
+    const { ExpertsModule } = await import('../../src/modules/experts/experts.module.js');
+    const { EXPERT_PROVENANCE } = await import('../../src/modules/experts/provenance.js');
+    expect(Reflect.getMetadata('exports', ExpertsModule)).toContain(EXPERT_PROVENANCE);
+    const provenance = app.select(ExpertsModule).get(EXPERT_PROVENANCE, { strict: false }) as { forExecution: unknown };
+    expect(typeof provenance.forExecution).toBe('function');
+  });
 });

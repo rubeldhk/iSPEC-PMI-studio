@@ -27,6 +27,7 @@ import { Authoring } from './authoring.js';
 import { DispatchService } from './dispatch.service.js';
 import { ExpertsController } from './experts.controller.js';
 import { InMemoryExpertsStore, type ExpertsStore } from './experts.store.js';
+import { EXPERT_PROVENANCE, expertProvenance, type ExpertProvenance } from './provenance.js';
 import { PrismaExpertsStore, type ExpertsPrismaClient } from './experts.store.prisma.js';
 import { RegistryService } from './registry.service.js';
 import { SessionsService } from './sessions.service.js';
@@ -115,6 +116,12 @@ export class ExpertsService {
         },
       }),
     },
+    // `A-047-2`, `FR-EXP-064` — for EPIC-048's `ExpertProvenance` port.
+    {
+      provide: EXPERT_PROVENANCE,
+      inject: [EXPERTS_STORE],
+      useFactory: (store: ExpertsStore): ExpertProvenance => expertProvenance(store),
+    },
     {
       provide: AssignmentService,
       inject: [EXPERTS_STORE, Authoring, EXPERT_PORTS, TASK_LOOKUP],
@@ -128,6 +135,6 @@ export class ExpertsService {
         }),
     },
   ],
-  exports: [ExpertsService, EXPERT_PORTS],
+  exports: [ExpertsService, EXPERT_PORTS, EXPERT_PROVENANCE],
 })
 export class ExpertsModule {}
