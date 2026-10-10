@@ -10,9 +10,10 @@
  * **There is no route here that creates, edits or deletes knowledge**
  * (`SC-LRN-001`); `T2332` asserts it over every controller in the application.
  */
-import { Body, Controller, Get, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Req, Res } from '@nestjs/common';
 import { NotAvailableUntilError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
+import { CandidateViewService, type CandidateViewBody } from './candidate.view.js';
 import { SubmissionService, type SubmissionBody } from './submission.service.js';
 
 export interface ActingUser {
@@ -42,7 +43,11 @@ interface StatusResponse {
 
 @Controller()
 export class LearningController {
-  constructor(@Inject(SubmissionService) private readonly submissions: SubmissionService) {}
+  constructor(
+    // @Inject by token: esbuild/tsx emits no design:paramtypes (DEF-001-005).
+    @Inject(SubmissionService) private readonly submissions: SubmissionService,
+    @Inject(CandidateViewService) private readonly candidates: CandidateViewService,
+  ) {}
 
   /** `FR-LRN-006` — a person submits as themselves. `201` recorded, `200` replay or corroboration. */
   @Post('learning/candidates')
@@ -61,6 +66,16 @@ export class LearningController {
     const outcome = await this.submissions.submit({ actor: { kind: 'person', workspaceId: user.workspaceId, userId: user.userId }, projectId, body: safe });
     res.status(outcome.status);
     return outcome.body;
+  }
+
+  /**
+   * `FR-LRN-071` (T2345) — one candidate, everything a reviewer needs. Evidence is
+   * filtered for **this** reader (`FR-LRN-016`); another workspace's candidate is 404.
+   */
+  @Get('learning/candidates/:id')
+  candidate(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string): Promise<CandidateViewBody> {
+    const user = requireSession(ctx);
+    return this.candidates.view(user.workspaceId, user, id);
   }
 
   /** `FR-LRN-073` — browse approved knowledge. The listing itself is `T2371`. */

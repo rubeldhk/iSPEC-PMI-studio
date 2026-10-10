@@ -48,6 +48,7 @@ import { LEARNING_PORTS, LEARNING_PORTS_TOKEN, LEARNING_STORE, refusingPorts, ty
 import { auditPort, executionsPort, principalsPort, projectsPort } from './main-ports.js';
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
+import { CandidateViewService } from './candidate.view.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -117,7 +118,12 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
       useFactory: (store: LearningStore, ports: LearningPorts, policy: LearningPolicyReader): SubmissionService =>
         new SubmissionService({ store, ports, policy }),
     },
+    {
+      provide: CandidateViewService,
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN],
+      useFactory: (store: LearningStore, ports: LearningPorts): CandidateViewService => new CandidateViewService({ reads: store, ports }),
+    },
   ],
-  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService],
+  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService],
 })
 export class LearningModule {}

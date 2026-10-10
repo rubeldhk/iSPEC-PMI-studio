@@ -229,11 +229,11 @@ the record alone.
   - a subject matching a **current** approved entry without `supersede` is `conflicting` and names it (`FR-LRN-017`, `FR-LRN-036`);
   - corroboration never changes eligibility
 - [X] T2343 [US2] Implement corroboration and conflict detection in `submission.service.ts` (unit test: T2342) — `R-048-15` — **Done**: corroboration inside the subject-locked transaction (same subject, kind and target; own idempotency replay); `findConflict` derives `FR-LRN-036` from the current version on the subject; 127/127 learning units.
-- [ ] T2344 [P] [US2] Write failing route tests `backend/tests/integration/learning-candidate-view-route.spec.ts`:
+- [X] T2344 [P] [US2] Write failing route tests `backend/tests/integration/learning-candidate-view-route.spec.ts`: — **Done**: 8 cases through `AppModule`; 6 red first. Q8 corroborates through the connector route; the default `ReaderAccess` withholds and a visible in-test grant reveals; supersedes side by side; conflict named; another workspace's session gets `404`, no session `401` (U1).
   - `GET /learning/candidates/:id` returns everything `FR-LRN-071` lists in one response, including corroborations and the side-by-side superseded entry;
   - `404` for another workspace;
   - Q8 through the real routes
-- [ ] T2345 [US2] Implement `GET /learning/candidates/:id` in `learning.controller.ts` (integration test: T2344)
+- [X] T2345 [US2] Implement `GET /learning/candidates/:id` in `learning.controller.ts` (integration test: T2344) — **Done**: `candidate.view.ts` (`CandidateViewService`: evidence per reader incl. corroborations', source, conflict, target version, decision read from EPIC-031 or marked unavailable, open flags) and `GET /learning/candidates/:id`; eligibility joins the view once T2347 exists.
 
 **Checkpoint**: a reviewer can trace any candidate without asking the agent's operator.
 
