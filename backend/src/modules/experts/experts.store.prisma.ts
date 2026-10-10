@@ -284,8 +284,9 @@ export class PrismaExpertsStore implements ExpertsStore {
     workspaceId: string,
     executionId: string,
     end: { outcome: NonNullable<ExpertSession['outcome']>; endedAt: string; toolObservation?: ExpertSession['toolObservation'] },
-  ): Promise<void> {
-    await this.prisma.expertSession.updateMany({
+  ): Promise<boolean> {
+    // Conditional on still running: the count says whether this call won (`T2003`).
+    const { count } = await this.prisma.expertSession.updateMany({
       where: { executionId, workspaceId, outcome: null },
       data: {
         outcome: end.outcome,
@@ -293,6 +294,7 @@ export class PrismaExpertsStore implements ExpertsStore {
         ...(end.toolObservation ? { toolObservation: end.toolObservation } : {}),
       },
     });
+    return count > 0;
   }
 
   async putLimit(row: SessionLimit): Promise<SessionLimit> {

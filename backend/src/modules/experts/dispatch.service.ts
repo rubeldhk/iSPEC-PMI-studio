@@ -291,6 +291,33 @@ export class DispatchService {
       started = true;
       for (const limit of plan.limits) await this.store.putLimit({ ...limit, executionId });
 
+      const stoppedResult = async (): Promise<DispatchResult> => {
+        // `FR-EXP-037` — whatever this run left running stops with it.
+        await this.#stopDelegates(ws, executionId);
+        const now = await this.store.findSession(ws, executionId);
+        return {
+          executionId,
+          contractVersion: effective.version,
+          model: choice.model,
+          usedFallback: choice.usedFallback,
+          toolObservation: now?.toolObservation ?? 'unobserved',
+          contextPackageId: packageId,
+          outcome: 'stopped-by-parent',
+          reviewRequired: unattended,
+        };
+      };
+
+      // `T2003`, `FR-EXP-037` — admitted while the parent ran, but the parent may
+      // have ended (and run its cascade) before this row existed. Re-check now
+      // that the cascade can see it.
+      if (parentId !== null) {
+        const parent = await this.store.findSession(ws, parentId);
+        if (parent === null || parent.outcome !== null) {
+          await this.#stopOne(ws, executionId, parentId);
+          return stoppedResult();
+        }
+      }
+
       // `FR-EXP-041` — time is enforced here, whatever the provider does with its timeout.
       const timeMs = plan.limits.find((l) => l.limit === 'time')!.value;
       const controller = new AbortController();
@@ -309,31 +336,24 @@ export class DispatchService {
       } finally {
         clearTimeout(timer);
         this.#running.delete(executionId);
-        // `FR-EXP-037` — whatever happened to this run, its delegates do not outlive it.
-        await this.#stopDelegates(ws, executionId);
       }
 
       // Stopped by its own parent while it ran: already recorded and closed.
-      const now = await this.store.findSession(ws, executionId);
-      if (now?.outcome === 'stopped-by-parent') {
-        return {
-          executionId,
-          contractVersion: effective.version,
-          model: choice.model,
-          usedFallback: choice.usedFallback,
-          toolObservation: now.toolObservation,
-          contextPackageId: packageId,
-          outcome: 'stopped-by-parent',
-          reviewRequired: unattended,
-        };
-      }
+      if ((await this.store.findSession(ws, executionId))?.outcome === 'stopped-by-parent') return stoppedResult();
 
       if (timedOut) {
         const time = (await this.store.limitsFor(ws, executionId)).find((l) => l.limit === 'time')!;
         await this.store.putLimit({ ...time, reached: 'stopped' });
         await ports.executions.record(ws, executionId, 'limit-reached', { limit: 'time', value: timeMs });
       }
-      const outcome = await this.#settle(ws, executionId, contract, authority, report, timedOut);
+      // `T2003` — this run is marked ended first, and only then are its delegates
+      // stopped, so none is admitted in between.
+      const { outcome, won } = await this.#settle(ws, executionId, contract, authority, report, timedOut);
+      if (!won) {
+        // The parent's cascade got there first: it recorded and closed this run.
+        if ((await this.store.findSession(ws, executionId))?.outcome === 'stopped-by-parent') return stoppedResult();
+      }
+      await this.#stopDelegates(ws, executionId);
 
       // `FR-EXP-036`, `FR-EXP-046` — charged here and up the chain; a crossing is only ever late.
       for (const breach of await chargeConsumption(this.store, ws, executionId, reported(report), this.#clock())) {
@@ -383,7 +403,12 @@ export class DispatchService {
     const reason = error instanceof Error ? error.message : 'the run failed';
     const executions = this.deps.ports.executions;
     // Each step on its own, so one failing write does not leave the others undone.
-    await this.store.endSession(ws, executionId, { outcome: 'failed', endedAt: this.#clock() }).catch(() => false);
+    const won = await this.store.endSession(ws, executionId, { outcome: 'failed', endedAt: this.#clock() }).catch(() => false);
+    if (!won) {
+      // Stopped by its parent: the cascade already recorded and closed it.
+      const now = await this.store.findSession(ws, executionId).catch(() => null);
+      if (now?.outcome === 'stopped-by-parent') closed = true;
+    }
     await executions.record(ws, executionId, 'run-failed', { reason }).catch(() => undefined);
     if (!closed) {
       await executions.complete(ws, executionId, 'failed', `Expert run failed: ${reason}`).catch(() => undefined);
@@ -394,18 +419,29 @@ export class DispatchService {
 
   /** `FR-EXP-037` — every running delegate of `executionId`, transitively. */
   async #stopDelegates(ws: string, executionId: string): Promise<void> {
-    const executions = this.deps.ports.executions;
     for (const child of await this.store.childrenOf(ws, executionId)) {
       if (child.outcome !== null) continue;
-      await this.store.endSession(ws, child.executionId, { outcome: 'stopped-by-parent', endedAt: this.#clock() });
-      await executions.record(ws, child.executionId, 'stopped-by-parent', {
-        parentExecutionId: executionId,
-        reason: 'the session that delegated this run ended, and a delegate does not outlive it (FR-EXP-037)',
-      });
-      await executions.complete(ws, child.executionId, 'cancelled', `stopped: parent ${executionId} ended`);
-      this.#running.get(child.executionId)?.abort();
+      await this.#stopOne(ws, child.executionId, executionId);
       await this.#stopDelegates(ws, child.executionId);
     }
+  }
+
+  /**
+   * `T2003` — end one delegate as `stopped-by-parent`. Only the call whose
+   * `endSession` won records and closes it: a child that settled first keeps
+   * its own outcome, and a stopped child is closed once.
+   */
+  async #stopOne(ws: string, executionId: string, parentExecutionId: string): Promise<boolean> {
+    const won = await this.store.endSession(ws, executionId, { outcome: 'stopped-by-parent', endedAt: this.#clock() });
+    if (!won) return false;
+    const executions = this.deps.ports.executions;
+    await executions.record(ws, executionId, 'stopped-by-parent', {
+      parentExecutionId,
+      reason: 'the session that delegated this run ended, and a delegate does not outlive it (FR-EXP-037)',
+    });
+    await executions.complete(ws, executionId, 'cancelled', `stopped: parent ${parentExecutionId} ended`);
+    this.#running.get(executionId)?.abort();
+    return true;
   }
 
   /** What the run reported, recorded: tool observation, outputs, outcome. */
@@ -416,7 +452,7 @@ export class DispatchService {
     authority: ReturnType<typeof authorityOf>,
     report: RunReport,
     timedOut: boolean,
-  ): Promise<SessionOutcome> {
+  ): Promise<{ outcome: SessionOutcome; won: boolean }> {
     const record = this.deps.ports.executions.record.bind(this.deps.ports.executions);
     let breach = false;
     if (report.toolCalls === undefined) {
@@ -455,12 +491,12 @@ export class DispatchService {
       }
     }
 
-    await this.store.endSession(ws, executionId, {
+    const won = await this.store.endSession(ws, executionId, {
       outcome,
       endedAt: this.#clock(),
       toolObservation: report.toolCalls === undefined ? 'unobserved' : 'observed',
     });
-    return outcome;
+    return { outcome, won };
   }
 
   /**

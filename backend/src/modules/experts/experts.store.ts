@@ -40,11 +40,16 @@ export interface ExpertsStore {
   /** Newest first. */
   sessionsForExpert(workspaceId: string, expertId: string, limit: number): Promise<ExpertSession[]>;
   childrenOf(workspaceId: string, executionId: string): Promise<ExpertSession[]>;
+  /**
+   * Once, from `outcome = null`. Resolves `true` when this call ended the
+   * session and `false` when it had already ended — so of two racing ends,
+   * exactly one acts on its win (`T2003`, `FR-EXP-037`).
+   */
   endSession(
     workspaceId: string,
     executionId: string,
     end: { outcome: NonNullable<ExpertSession['outcome']>; endedAt: string; toolObservation?: ExpertSession['toolObservation'] },
-  ): Promise<void>;
+  ): Promise<boolean>;
 
   putLimit(row: SessionLimit): Promise<SessionLimit>;
   limitsFor(workspaceId: string, executionId: string): Promise<SessionLimit[]>;
@@ -161,15 +166,16 @@ export class InMemoryExpertsStore implements ExpertsStore {
     workspaceId: string,
     executionId: string,
     end: { outcome: NonNullable<ExpertSession['outcome']>; endedAt: string; toolObservation?: ExpertSession['toolObservation'] },
-  ): Promise<void> {
+  ): Promise<boolean> {
     const row = this.#sessions.get(executionId);
-    if (!row || row.workspaceId !== workspaceId || row.outcome !== null) return;
+    if (!row || row.workspaceId !== workspaceId || row.outcome !== null) return false;
     this.#sessions.set(executionId, {
       ...row,
       outcome: end.outcome,
       endedAt: end.endedAt,
       ...(end.toolObservation ? { toolObservation: end.toolObservation } : {}),
     });
+    return true;
   }
 
   async putLimit(row: SessionLimit): Promise<SessionLimit> {
