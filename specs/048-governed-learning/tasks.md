@@ -101,13 +101,13 @@ Steps 1–3 may land in any order among themselves. Step 4 needs all three; step
   - `KnowledgeAdmission` absent excludes;
   - none answers permissively
 - [X] T2312 Implement `backend/src/modules/learning/learning.tokens.ts` with the ports and their refusing bindings (unit test: T2311) — `R-048-20` — **Done**: `learning.tokens.ts`: the eleven ports, their descriptors, `refusingPorts()` and `unboundAdmission`; a twelfth, `Projects` (EPIC-006, on `main`), added for `FR-LRN-014`/`-046` — recorded as a deviation.
-- [ ] T2313 [P] Write failing unit tests `backend/tests/unit/learning-store.spec.ts`:
+- [X] T2313 [P] Write failing unit tests `backend/tests/unit/learning-store.spec.ts`: — **Done**: red on the missing store; 14 assertions incl. a rolled-back transaction leaves nothing and the writer refuses when audit cannot be written.
   - workspace scoping on every read (`FR-LRN-008`);
   - candidates, citations, corroborations, transitions, terms, versions, status events, flags and retrievability are append-only;
   - the store interface given to services has **no** version-insert method;
   - only `KnowledgeWriter` has one;
   - current state and current version are the latest rows
-- [ ] T2314 Implement `backend/src/modules/learning/learning.store.ts` (interface + in-memory, unit tests only) and `backend/src/modules/learning/knowledge.writer.ts` (unit test: T2313) — `R-048-4` fence 1
+- [X] T2314 Implement `backend/src/modules/learning/learning.store.ts` (interface + in-memory, unit tests only) and `backend/src/modules/learning/knowledge.writer.ts` (unit test: T2313) — `R-048-4` fence 1 — **Done**: `learning.store.ts` (records, `LearningStore` with no version insert, serialised in-memory store) and `knowledge.writer.ts` (`KnowledgeWriter.insertVersion`, audit-first in-memory writer); status events carry `candidateId` so a deprecation can satisfy the transitions guard — recorded in data-model; 14/14.
 - [ ] T2315 [P] Write the failing integration test `backend/tests/integration/learning-constraints.spec.ts`, using raw SQL around the services:
   - `UPDATE`/`DELETE` on each of the ten tables is rejected by `reject_mutation()`;
   - the transition after a terminal state is rejected;
