@@ -187,6 +187,11 @@ export class DispatchService {
       objective,
     });
 
+    // `FR-EXP-061` — set once the session row exists. Before it, a failure is a
+    // refused dispatch; after it, the dispatch was admitted and a failure is a
+    // failed run (`T2001`).
+    let started = false;
+    let closed = false;
     try {
       // 3 — the checks.
       if (expert.status === 'retired') throw new Refusal(`Expert '${expert.key}' is retired (FR-EXP-006)`);
@@ -283,6 +288,7 @@ export class DispatchService {
         startedAt: this.#clock(),
         endedAt: null,
       });
+      started = true;
       for (const limit of plan.limits) await this.store.putLimit({ ...limit, executionId });
 
       // `FR-EXP-041` — time is enforced here, whatever the provider does with its timeout.
@@ -348,6 +354,7 @@ export class DispatchService {
       } else {
         await ports.executions.complete(ws, executionId, COMPLETION[outcome], `Expert '${expert.key}' run ${outcome}`);
       }
+      closed = true;
 
       return {
         executionId,
@@ -360,8 +367,29 @@ export class DispatchService {
         reviewRequired: unattended,
       };
     } catch (error) {
+      if (started) throw await this.#failed(ws, executionId, error, closed);
       throw await this.#refused(ws, executionId, error);
     }
+  }
+
+  /**
+   * `T2001`, `FR-EXP-061`, `FR-EXP-037` — a failure after the session started:
+   * the session ends `failed` (unless it already ended), a run failure is
+   * recorded, and the execution is closed as failed unless it was already
+   * closed. Never `dispatch-refused`: this dispatch was admitted. The error is
+   * rethrown with the execution id added.
+   */
+  async #failed(ws: string, executionId: string, error: unknown, closed: boolean): Promise<Error> {
+    const reason = error instanceof Error ? error.message : 'the run failed';
+    const executions = this.deps.ports.executions;
+    // Each step on its own, so one failing write does not leave the others undone.
+    await this.store.endSession(ws, executionId, { outcome: 'failed', endedAt: this.#clock() }).catch(() => false);
+    await executions.record(ws, executionId, 'run-failed', { reason }).catch(() => undefined);
+    if (!closed) {
+      await executions.complete(ws, executionId, 'failed', `Expert run failed: ${reason}`).catch(() => undefined);
+    }
+    await this.#stopDelegates(ws, executionId).catch(() => undefined);
+    return withExecutionId(error, executionId);
   }
 
   /** `FR-EXP-037` — every running delegate of `executionId`, transitively. */
@@ -456,13 +484,19 @@ export class DispatchService {
     if (error instanceof Refusal || error instanceof DelegationRefusal) {
       return new ValidationFailedError(`dispatch refused: ${reason}`, { executionId, reason });
     }
-    if (error instanceof PlatformError) {
-      const Same = error.constructor as new (message: string, details?: unknown) => PlatformError;
-      const base = typeof error.details === 'object' && error.details !== null ? error.details : {};
-      return new Same(error.message, { ...base, executionId });
-    }
-    return error instanceof Error ? error : new Error(String(error));
+    return withExecutionId(error, executionId);
   }
+}
+
+/** The same class of error — a `400` stays a `400`, a `503` a `503` — with the execution id in its details. */
+function withExecutionId(error: unknown, executionId: string): Error {
+  if (error instanceof PlatformError) {
+    const Same = error.constructor as new (message: string, details?: unknown) => PlatformError;
+    const base = typeof error.details === 'object' && error.details !== null ? error.details : {};
+    return new Same(error.message, { ...base, executionId });
+  }
+  const plain = error instanceof Error ? error : new Error(String(error));
+  return Object.assign(plain, { details: { executionId } });
 }
 
 const COMPLETION: Record<SessionOutcome, 'completed' | 'partially-completed' | 'failed' | 'cancelled' | 'timed-out'> = {
