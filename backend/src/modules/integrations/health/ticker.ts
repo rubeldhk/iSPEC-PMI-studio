@@ -63,7 +63,11 @@ export class ManualTicker implements Ticker {
   }
 }
 
-/** `PMI_INTEGRATION_SCHEDULER=off` — every test process sets it — starts nothing. */
+/**
+ * `PMI_INTEGRATION_SCHEDULER=off` — every test process sets it — starts nothing;
+ * `manual` binds the `ManualTicker`, which a route test advances through the
+ * `INTEGRATIONS_TICKER` token (the job handler driven as production drives it).
+ */
 export class DisabledTicker implements Ticker {
   start(): void {}
   stop(): void {}
@@ -73,5 +77,8 @@ export class DisabledTicker implements Ticker {
 }
 
 export function tickerFromEnvironment(env: Readonly<Record<string, string | undefined>>): Ticker {
-  return env['PMI_INTEGRATION_SCHEDULER'] === 'off' ? new DisabledTicker() : new TimerTicker();
+  const mode = env['PMI_INTEGRATION_SCHEDULER'];
+  if (mode === 'off') return new DisabledTicker();
+  if (mode === 'manual') return new ManualTicker();
+  return new TimerTicker();
 }

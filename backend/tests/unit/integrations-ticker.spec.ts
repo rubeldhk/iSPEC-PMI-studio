@@ -71,6 +71,10 @@ describe('T2137 · PMI_INTEGRATION_SCHEDULER', () => {
     expect(t.handles()).toEqual([]);
   });
 
+  it('manual is the ManualTicker a route test advances', () => {
+    expect(tickerFromEnvironment({ PMI_INTEGRATION_SCHEDULER: 'manual' })).toBeInstanceOf(ManualTicker);
+  });
+
   it('anything else is the timer', () => {
     expect(tickerFromEnvironment({})).toBeInstanceOf(TimerTicker);
   });
