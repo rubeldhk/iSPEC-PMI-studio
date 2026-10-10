@@ -112,4 +112,18 @@ suite('T1911 · PrismaExpertsStore', () => {
     expect(await store.policyFor('ws_1')).toEqual({ ...policy, maxDepth: 2 });
     expect(await store.policyFor('ws_2')).toBeNull();
   });
+
+  it('T2004 · a session keeps its originating actor, and ends once', async () => {
+    const at = '2026-10-09T09:00:00.000Z';
+    await store.addSession({
+      executionId: 'exe_actor', workspaceId: 'ws_1', expertId: 'ex_test', contractVersionId: 'cv_1',
+      delegatedFromExecutionId: null, actorId: 'u_1', depth: 0, model: 'm', usedFallback: false, fallbackReason: null,
+      effectiveAuthority: { capabilities: [], tools: [], permissions: [], prohibitedActions: [] },
+      toolObservation: 'unobserved', unattended: false, reviewRequired: false, outcome: null, startedAt: at, endedAt: null,
+    });
+    expect((await store.findSession('ws_1', 'exe_actor'))?.actorId).toBe('u_1');
+    await expect(store.endSession('ws_1', 'exe_actor', { outcome: 'succeeded', endedAt: at })).resolves.toBe(true);
+    await expect(store.endSession('ws_1', 'exe_actor', { outcome: 'stopped-by-parent', endedAt: at })).resolves.toBe(false);
+    expect((await store.findSession('ws_1', 'exe_actor'))?.outcome).toBe('succeeded');
+  });
 });

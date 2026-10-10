@@ -46,6 +46,7 @@ export async function admitDelegation(
   parentExecutionId: string,
   child: EngineeringExpert,
   childContract: ExpertContract,
+  actorId: string,
 ): Promise<Admitted> {
   const parent = await store.findSession(workspaceId, parentExecutionId);
   if (parent === null) {
@@ -56,6 +57,13 @@ export async function admitDelegation(
   };
   if (parent.outcome !== null) {
     refuse(`session ${parent.executionId} has ended (${parent.outcome}); a finished session delegates nothing (FR-EXP-037)`);
+  }
+  // `FR-EXP-034`, `T2005` — a chain acts for the person who started it, and only for them.
+  if (parent.actorId !== actorId) {
+    refuse(
+      `session ${parent.executionId} was started by another actor; a delegate runs for the actor who started ` +
+        'its chain, so only that actor may delegate under it (FR-EXP-034)',
+    );
   }
   const policy = await store.policyFor(workspaceId);
   if (policy === null) {

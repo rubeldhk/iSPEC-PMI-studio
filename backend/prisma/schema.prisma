@@ -3268,6 +3268,8 @@ model ExpertSession {
   contractVersionId        String
   /// The DELEGATION parent — never EPIC-037's re-run parent.
   delegatedFromExecutionId String?
+  /// FR-EXP-034 — the actor who started the root run; a delegate inherits it.
+  actorId                  String
   depth                    Int                   @default(0)
   model                    String
   usedFallback             Boolean               @default(false)

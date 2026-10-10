@@ -13,7 +13,7 @@ import { expert, version } from '../helpers/expert-fixtures.js';
 
 function session(executionId: string, parent: string | null, depth: number, over: Partial<ExpertSession> = {}): ExpertSession {
   return {
-    executionId, workspaceId: 'ws_1', expertId: 'ex_test', contractVersionId: 'cv_1', delegatedFromExecutionId: parent,
+    executionId, workspaceId: 'ws_1', expertId: 'ex_test', contractVersionId: 'cv_1', delegatedFromExecutionId: parent, actorId: 'u_1',
     depth, model: 'm', usedFallback: false, fallbackReason: null,
     effectiveAuthority: { capabilities: [], tools: [], permissions: [], prohibitedActions: [] },
     toolObservation: 'unobserved', unattended: false, reviewRequired: false, outcome: 'succeeded',

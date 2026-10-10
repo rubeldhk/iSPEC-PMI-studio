@@ -16,7 +16,7 @@ import { contract } from '../helpers/expert-fixtures.js';
 /** A session row still running, as a delegation parent. */
 function running(executionId: string, expertId: string, contractVersionId: string, depth: number, parent: string | null): ExpertSession {
   return {
-    executionId, workspaceId: 'ws_1', expertId, contractVersionId, delegatedFromExecutionId: depth === 0 ? null : parent,
+    executionId, workspaceId: 'ws_1', expertId, contractVersionId, delegatedFromExecutionId: depth === 0 ? null : parent, actorId: 'u_1',
     depth, model: 'claude-opus-5-5', usedFallback: false, fallbackReason: null,
     effectiveAuthority: { capabilities: ['test', 'analyze'], tools: ['read-file', 'run-tests'], permissions: [{ artifactType: 'specification', action: 'read' }], prohibitedActions: ['push', 'delete-branch'] },
     toolObservation: 'unobserved', unattended: false, reviewRequired: false, outcome: null,

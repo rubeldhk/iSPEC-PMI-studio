@@ -98,6 +98,7 @@ function toSession(r: Row): ExpertSession {
     expertId: String(r['expertId']),
     contractVersionId: String(r['contractVersionId']),
     delegatedFromExecutionId: (r['delegatedFromExecutionId'] as string | null) ?? null,
+    actorId: String(r['actorId']),
     depth: num(r['depth']),
     model: String(r['model']),
     usedFallback: Boolean(r['usedFallback']),

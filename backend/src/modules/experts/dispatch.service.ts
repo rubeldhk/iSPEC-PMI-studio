@@ -224,15 +224,18 @@ export class DispatchService {
       let authority = authorityOf(contract);
       let depth = 0;
       let parentId: string | null = null;
+      // `FR-EXP-034` — the actor who started the chain; a delegate inherits it (`T2005`).
+      let originator = actor.userId;
       if (req.delegatedFromExecutionId !== undefined) {
-        const admitted = await admitDelegation(this.store, ws, req.delegatedFromExecutionId, expert, contract);
+        const admitted = await admitDelegation(this.store, ws, req.delegatedFromExecutionId, expert, contract, actor.userId);
         authority = admitted.authority;
         depth = admitted.depth;
         parentId = admitted.parent.executionId;
+        originator = admitted.parent.actorId;
       }
       const byContract = contractRefusal(authority, req);
       if (byContract) throw new Refusal(byContract);
-      const byTarget = await targetRefusal(ws, actor.userId, authority, req.targets, this.deps.access);
+      const byTarget = await targetRefusal(ws, originator, authority, req.targets, this.deps.access);
       if (byTarget) throw new Refusal(byTarget);
 
       const choice = await selectRunner(contract, req.capabilities, ports.gateways, { unattended: req.unattended === true });
@@ -276,6 +279,7 @@ export class DispatchService {
         expertId: expert.id,
         contractVersionId: effective.id,
         delegatedFromExecutionId: parentId,
+        actorId: originator,
         depth,
         model: choice.model,
         usedFallback: choice.usedFallback,

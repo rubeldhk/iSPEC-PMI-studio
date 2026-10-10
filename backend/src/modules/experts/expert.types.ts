@@ -200,6 +200,12 @@ export interface ExpertSession {
   readonly contractVersionId: string;
   /** The delegation parent — **not** `EPIC-037`'s re-run parent. */
   readonly delegatedFromExecutionId: string | null;
+  /**
+   * `FR-EXP-034` — the actor who started this session's **root** run. A delegate
+   * inherits it; its targets are checked against this actor, and nobody else may
+   * delegate under the session (`T2005`).
+   */
+  readonly actorId: string;
   readonly depth: number;
   readonly model: string;
   readonly usedFallback: boolean;
