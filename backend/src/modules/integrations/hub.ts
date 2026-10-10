@@ -9,6 +9,7 @@ import type { AdapterCatalog } from './catalog.service.js';
 import { ConfigurationService, type OwnerGatePort } from './configuration.service.js';
 import { staticConnectorFacts, type ProjectConnectorFacts, type StaticConnectorFacts } from './connector-facts.js';
 import { CredentialCipher } from './credentials/credential.cipher.js';
+import { CredentialService } from './credentials/credential.service.js';
 import { CredentialVault } from './credentials/credential.vault.js';
 import { HealthService } from './health/health.service.js';
 import type { AuditPort, CapabilityPolicySeam, Clock, CredentialKeyringSeam, EvidenceSinkSeam, ExecutionEventsPort } from './integrations.tokens.js';
@@ -45,6 +46,7 @@ export interface Hub {
   readonly configuration: ConfigurationService;
   readonly requests: CapabilityRequests;
   readonly registry: RegistryService;
+  readonly credentials: CredentialService;
 }
 
 export function createHub(deps: HubDeps): Hub {
@@ -66,5 +68,6 @@ export function createHub(deps: HubDeps): Hub {
     projects: deps.projects,
     clock: deps.clock,
   });
-  return { deps, cipher, vault, health, resolver, configuration, requests, registry };
+  const credentials = new CredentialService({ store: deps.store, catalog: deps.catalog, vault, health, ownerGate: deps.ownerGate, audit: deps.audit, clock: deps.clock });
+  return { deps, cipher, vault, health, resolver, configuration, requests, registry, credentials };
 }

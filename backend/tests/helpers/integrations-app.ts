@@ -31,7 +31,7 @@ export interface IntegrationsApp extends AuthenticatedApp {
   tick(): Promise<void>;
   bindPolicy(policy?: RecordingPolicy): RecordingPolicy;
   register(key: string): Promise<string>;
-  configure(projectId: string, capability: string, adapters: { registryEntryId: string; preference?: number; binding?: Record<string, unknown> }[], extra?: Record<string, unknown>): Promise<request.Response>;
+  configure(projectId: string, capability: string, adapters: { registryEntryId: string; preference?: number; binding?: Record<string, unknown> }[], extra?: Record<string, unknown>): request.Test;
   stop(): Promise<void>;
 }
 

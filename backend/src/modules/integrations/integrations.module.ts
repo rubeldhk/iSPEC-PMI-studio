@@ -39,6 +39,7 @@ import { ProjectsModule } from '../projects/projects.module.js';
 import { ProjectsService } from '../projects/projects.service.js';
 import type { AdapterCatalog } from './catalog.service.js';
 import { ConfigurationController } from './configuration.controller.js';
+import { CredentialsController } from './credentials/credentials.controller.js';
 import { createHub, type Hub } from './hub.js';
 import { HUB } from './hub.token.js';
 import { RegistryController } from './registry.controller.js';
@@ -72,7 +73,7 @@ export const HEALTH_TICK_MS = 30_000;
 
 @Module({
   imports: [AuditModule, AccessModule, ProjectsModule, ConnectorModule, ExecutionsModule],
-  controllers: [RegistryController, ConfigurationController, CapabilityRequestsController],
+  controllers: [RegistryController, ConfigurationController, CredentialsController, CapabilityRequestsController],
   providers: [
     { provide: PLATFORM_ENVIRONMENT, useFactory: (): string => resolvePlatformEnvironment(process.env) },
     {
