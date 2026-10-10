@@ -194,3 +194,37 @@ suite('T1435 · parity across the four surfaces (AC-EXR-01–04)', () => {
     }
   });
 });
+
+suite('T1916 (EPIC-047) · the registry accepts expert-governance-recorded', () => {
+  it('records an Expert governance fact as an event on the execution, with its kind', async () => {
+    // `R-047-4`, `FR-EXP-061` — refusals, fallbacks and limit stops belong on
+    // the execution, not in a side log, so the registry must accept the type.
+    const { ExecutionRegistryFacade } = await import('../../src/modules/executions/execution-registry.facade.js');
+    const facade = started.app.get(ExecutionRegistryFacade, { strict: false });
+    const snapshot = await facade.register({ ...registration('expert'), workspaceId: 'ws_par', projectId, surface: 'managed-sandbox', identity });
+    await facade.appendEvent({
+      executionId: snapshot.executionId,
+      workspaceId: 'ws_par',
+      type: 'expert-governance-recorded',
+      payload: { kind: 'fallback-used', model: 'claude-sonnet-5-5', reason: 'preferred model has no gateway' },
+      occurredAt: new Date().toISOString(),
+      identity,
+      idempotencyKey: 'expert_fallback',
+    });
+    const history = await facade.history('ws_par', snapshot.executionId);
+    expect(history.map((e) => e.type)).toContain('expert-governance-recorded');
+    // The history projection carries no payloads; the stored event does.
+    const { Client: Pg } = await import('pg');
+    const db = new Pg({ connectionString: started.databaseUrl });
+    await db.connect();
+    try {
+      const { rows } = await db.query(
+        `SELECT "payload" FROM "execution_events" WHERE "executionId" = $1 AND "type" = 'expert-governance-recorded'`,
+        [snapshot.executionId],
+      );
+      expect(rows[0]?.payload).toMatchObject({ kind: 'fallback-used' });
+    } finally {
+      await db.end();
+    }
+  });
+});

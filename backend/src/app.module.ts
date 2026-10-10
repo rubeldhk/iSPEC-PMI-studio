@@ -32,6 +32,7 @@ import { GOVERNED_LOOP } from './composition/governed-loop.js';
 import { ChangeRoomModule } from './modules/change-room/change-room.module.js';
 import { DefectRoomModule } from './modules/defect-room/defect-room.module.js';
 import { ContextModule } from './modules/context/context.module.js';
+import { ExpertsModule } from './modules/experts/experts.module.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
 
 /**
@@ -118,6 +119,8 @@ function clientBuildPath(): string {
     ChangeRoomModule,
     DefectRoomModule,
     ContextModule,
+    // T1902 — EPIC-047. Registered in the change that created it; T1901 proves the wiring.
+    ExpertsModule,
     // T150g — EPIC-014 F-11.3. The API serves the built web client, so the
     // containerised stack is ONE origin and the client's `/v1` assumption holds
     // without the client changing (`R-014-1`).

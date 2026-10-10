@@ -30,6 +30,15 @@
       "evidence": "specs/035-defect-room/tier2-transcript.md",
       "owes": "T999t (EPIC-035) — the Tier 2 defect-room journey, all seven steps: report, triage, reproduce, failing test, repair tasks, verify, close",
       "why": "The journey is keyboard-only against a running application, and two of its seven steps refuse in this deployment because RepairTaskPort and TestExecution are unbound. Typing the transcript is the fabrication the check exists to test for."
+    },
+    {
+      "id": "T1992",
+      "file": "backend/tests/architecture/experts-transcript.spec.ts",
+      "project": "architecture",
+      "gatedScript": "test:arch:gated",
+      "evidence": "specs/047-engineering-experts/tier2-transcript.md",
+      "owes": "T1992 (EPIC-047) — the Tier 2 Engineering Experts journey: open /experts, open an Expert, compare versions, open a run with its delegation tree, at 360px",
+      "why": "The journey needs a running application with real Experts and real runs. In this deployment registering refuses until EPIC-032 binds EvidenceContracts, approving until EPIC-031 binds ContractApprovals, and no run can exist because dispatch has no runner and no execution identity (DEF-047-001). Typing the transcript is the fabrication the check exists to test for."
     }
   ]
 }

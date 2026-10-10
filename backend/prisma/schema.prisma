@@ -109,6 +109,9 @@ model Workspace {
   applicationPolicies ApplicationPolicy[]
 
 
+  /// EPIC-047
+  engineeringExperts      EngineeringExpert[]
+  expertDelegationPolicy  ExpertDelegationPolicy?
   @@map("workspaces")
 }
 
@@ -516,6 +519,8 @@ model Task {
   epic          Epic?          @relation(fields: [epicId], references: [id])
   statusProposals TaskStatusProposal[]
 
+  /// EPIC-047 — who holds this task, and why (FR-EXP-050)
+  assignments     TaskAssignment[]
   @@index([workspaceId])
   @@index([specificationId, status])
   // FR-KAN-031: one row per identifier per Epic, under retry and concurrency.
@@ -3195,4 +3200,132 @@ model TaskStatusProposal {
   @@index([taskId, proposedAt(sort: Desc)])
   @@index([workspaceId])
   @@map("task_status_proposals")
+}
+
+// ---------------------------------------------------------------- EPIC-047
+// Engineering Experts (data-model.md). Six tables; CHECK constraints and the
+// two immutability triggers live in the hand-written migration
+// 20261009090000_epic047_experts, because Prisma cannot express them.
+
+/// FR-EXP-001…008 — a governed AI role in one workspace, with a stable identity.
+model EngineeringExpert {
+  id           String    @id @default(uuid())
+  workspaceId  String
+  key          String
+  name         String
+  status       String    @default("active")
+  registeredBy String
+  registeredAt DateTime  @default(now())
+  retiredBy    String?
+  retiredAt    DateTime?
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  versions     ExpertContractVersion[]
+  sessions     ExpertSession[]
+
+  @@unique([workspaceId, key])
+  @@map("engineering_experts")
+}
+
+/// FR-EXP-004 — immutable after insert, except `decisionId`, written once (R-047-14).
+/// No status column: approval is EPIC-031's decision, read when needed (R-047-5).
+model ExpertContractVersion {
+  id          String            @id @default(uuid())
+  workspaceId String
+  expertId    String
+  version     Int
+  contract    Json
+  decisionId  String?
+  createdBy   String
+  createdAt   DateTime          @default(now())
+  expert      EngineeringExpert @relation(fields: [expertId], references: [id])
+  sessions    ExpertSession[]
+
+  @@unique([expertId, version])
+  @@index([workspaceId])
+  @@map("expert_contract_versions")
+}
+
+/// FR-EXP-030, FR-EXP-033, FR-EXP-054 — one per workspace; absent means no delegation.
+model ExpertDelegationPolicy {
+  workspaceId       String    @id
+  maxDepth          Int       @default(3)
+  maxFanOut         Int       @default(5)
+  allowedPairs      Json      @default("[]")
+  maxUnattendedBand String
+  updatedBy         String
+  updatedAt         DateTime
+  createdAt         DateTime  @default(now())
+  workspace         Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@map("expert_delegation_policies")
+}
+
+/// R-047-3 — one Expert run, keyed by its EPIC-037 execution.
+model ExpertSession {
+  executionId              String                @id
+  workspaceId              String
+  expertId                 String
+  contractVersionId        String
+  /// The DELEGATION parent — never EPIC-037's re-run parent.
+  delegatedFromExecutionId String?
+  depth                    Int                   @default(0)
+  model                    String
+  usedFallback             Boolean               @default(false)
+  fallbackReason           String?
+  effectiveAuthority       Json
+  toolObservation          String
+  unattended               Boolean               @default(false)
+  reviewRequired           Boolean               @default(false)
+  outcome                  String?
+  startedAt                DateTime              @default(now())
+  endedAt                  DateTime?
+  expert                   EngineeringExpert     @relation(fields: [expertId], references: [id])
+  contractVersion          ExpertContractVersion @relation(fields: [contractVersionId], references: [id])
+  delegatedFrom            ExpertSession?        @relation("ExpertDelegation", fields: [delegatedFromExecutionId], references: [executionId])
+  delegates                ExpertSession[]       @relation("ExpertDelegation")
+  limits                   ExpertSessionLimit[]
+
+  @@index([workspaceId, expertId])
+  @@index([delegatedFromExecutionId])
+  @@map("expert_sessions")
+}
+
+/// FR-EXP-040…046 — never `enforced` without a provider control.
+model ExpertSessionLimit {
+  executionId    String
+  workspaceId    String
+  limit          String
+  value          Decimal       @db.Decimal(20, 4)
+  requested      Decimal?      @db.Decimal(20, 4)
+  enforcement    String
+  consumed       Decimal?      @db.Decimal(20, 4)
+  consumedReason String?
+  reached        String        @default("no")
+  detectedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  session        ExpertSession @relation(fields: [executionId], references: [executionId])
+
+  @@id([executionId, limit])
+  @@index([workspaceId])
+  @@map("expert_session_limits")
+}
+
+/// FR-EXP-050…056 — append-only, beside EPIC-046's task; superseded, never edited.
+model TaskAssignment {
+  id           String    @id @default(uuid())
+  workspaceId  String
+  taskId       String
+  assigneeKind String
+  assigneeId   String
+  rule         String
+  state        String
+  decisionId   String?
+  assignedBy   String
+  assignedAt   DateTime  @default(now())
+  supersededAt DateTime?
+  supersededBy String?
+  task         Task      @relation(fields: [taskId], references: [id])
+
+  @@index([workspaceId, taskId])
+  @@map("task_assignments")
 }

@@ -287,6 +287,106 @@ export interface ReviewQuestion {
   answers: ReviewAnswer[];
 }
 
+// ---------------------------------------------------------------- EPIC-047
+// Engineering Experts — the view-only registry (FR-EXP-070…076). Mirrors
+// `contracts/experts-api.md`; authoring is through the API, not this client.
+
+export interface ExpertSummary {
+  id: string;
+  key: string;
+  name: string;
+  status: 'active' | 'retired';
+  rolePurpose: string;
+  riskClass: 'low' | 'medium' | 'high';
+  /** The highest approved version, or null — nothing runs without one. */
+  effectiveVersion: number | null;
+  latestVersion: number;
+}
+
+export interface ExpertLimitSetting {
+  value: number;
+  onUnenforceable?: 'refuse' | 'proceed';
+}
+
+export interface ExpertContractView {
+  rolePurpose: string;
+  models: { preferred: string; fallbacks: string[] };
+  capabilities: string[];
+  allowedTools: string[];
+  prohibitedActions: string[];
+  permissions: { artifactType: string; action: 'read' | 'edit' }[];
+  riskClass: 'low' | 'medium' | 'high';
+  budget: Partial<Record<'time' | 'resource' | 'tokens' | 'cost', ExpertLimitSetting>>;
+  memoryPolicy: 'none';
+  expectedOutputs: { kind: string; required: boolean }[];
+  evidenceContract: { workClass: string; contractVersion: number };
+  delegatesTo: string[];
+  contextPolicy: { budgetTokens: number; budgetCost: number; includeLiveState: boolean };
+  workspaceRequirements: Record<string, unknown>;
+}
+
+export interface ExpertVersionView {
+  id: string;
+  version: number;
+  /** Derived from EPIC-031's decision when read — never stored. */
+  status: 'draft' | 'submitted' | 'approved' | 'refused';
+  contract: ExpertContractView;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface ExpertDetail {
+  expert: { id: string; key: string; name: string; status: 'active' | 'retired' };
+  versions: ExpertVersionView[];
+  effectiveVersion: ExpertVersionView | null;
+}
+
+export interface ExpertElementDifference {
+  element: string;
+  changed: boolean;
+  from: Record<string, unknown>;
+  to: Record<string, unknown>;
+}
+
+export interface ExpertSessionSummary {
+  executionId: string;
+  model: string;
+  usedFallback: boolean;
+  fallbackReason: string | null;
+  outcome: string | null;
+  toolObservation: 'observed' | 'unobserved';
+  depth: number;
+  startedAt: string;
+  reviewRequired: boolean;
+}
+
+export interface ExpertSessionLimit {
+  limit: 'time' | 'resource' | 'tokens' | 'cost';
+  value: number;
+  requested: number | null;
+  enforcement: 'enforced' | 'unenforceable';
+  consumed: number | null;
+  consumedReason: string | null;
+  reached: 'no' | 'stopped' | 'detected-late';
+}
+
+export interface ExpertTreeNode {
+  executionId: string;
+  expertKey: string;
+  contractVersion: number | null;
+  depth: number;
+  outcome: string | null;
+  model: string;
+  children?: ExpertTreeNode[];
+}
+
+export interface ExpertSessionView {
+  session: ExpertSessionSummary;
+  limits: ExpertSessionLimit[];
+  events: { kind: string; detail: Record<string, unknown> }[];
+  tree: { ancestors: ExpertTreeNode[]; node: ExpertTreeNode };
+}
+
 /**
  * T200d — a run, as `GET /projects/:projectId/runs` returns it.
  *
@@ -1113,6 +1213,28 @@ export class ApiClient {
   }
 
   // ---- review sessions (EPIC-023) ----
+
+  // ---- Engineering Experts (EPIC-047) — read-only ----
+
+  async listExperts(): Promise<ExpertSummary[]> {
+    return this.request('GET', '/experts');
+  }
+
+  async getExpert(id: string): Promise<ExpertDetail> {
+    return this.request('GET', `/experts/${encodeURIComponent(id)}`);
+  }
+
+  async compareExpertVersions(id: string, from: number, to: number): Promise<ExpertElementDifference[]> {
+    return this.request('GET', `/experts/${encodeURIComponent(id)}/contract-versions/compare?from=${from}&to=${to}`);
+  }
+
+  async expertSessions(id: string, limit = 20): Promise<ExpertSessionSummary[]> {
+    return this.request('GET', `/experts/${encodeURIComponent(id)}/sessions?limit=${limit}`);
+  }
+
+  async expertSession(executionId: string): Promise<ExpertSessionView> {
+    return this.request('GET', `/experts/sessions/${encodeURIComponent(executionId)}`);
+  }
 
   /**
    * T200d — the runs of a project.

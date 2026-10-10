@@ -28,6 +28,7 @@ import { RequirementRooms } from '../pages/RequirementRooms';
 import { RequirementsPage } from '../pages/Requirements';
 import { ReviewSessionPage } from '../pages/ReviewSession';
 import { RunsPage } from '../pages/Runs';
+import { ExpertsPage } from '../pages/Experts';
 import { SpecificationList } from '../pages/SpecificationList';
 import { SpecificationView } from '../pages/Specification';
 import { StorageConnectionsPage } from '../pages/StorageConnections';
@@ -608,5 +609,19 @@ export function DefectRoomView(): ReactElement {
         </MainLandmark>
       )}
     </RequireProject>
+  );
+}
+
+/**
+ * `T1976` (EPIC-047, `FR-EXP-070`) — the Engineering Experts area: a
+ * workspace-scoped, view-only registry. Needs no project: an Expert belongs to
+ * the workspace, not to one project.
+ */
+export function ExpertsView(): ReactElement {
+  const { api } = useShell();
+  return (
+    <MainLandmark>
+      <ExpertsPage api={api} />
+    </MainLandmark>
   );
 }
