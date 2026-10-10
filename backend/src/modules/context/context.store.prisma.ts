@@ -30,13 +30,17 @@
  * with `$executeRaw` — the one place this module reaches past the ORM, and it
  * is named here so nobody has to discover it.
  */
+import { ValidationFailedError } from '../../core/errors.js';
 import type { ContextPackage, PackageItem } from './package.types.js';
 import type { ExclusionRecord } from './retrieval/outcome.types.js';
-import type { ContextStore, IndexEntry, SourceClass } from './context.store.js';
+import type { BudgetPolicy, ContextStore, IndexEntry, SourceClass } from './context.store.js';
+import type { ReusableAuthorisation } from './isolation.js';
+import type { LiveStateElement } from './live-state.js';
 
 /** The Prisma surface this store uses, named rather than imported (PC-1). */
 interface Delegate {
   create(args: unknown): Promise<unknown>;
+  updateMany(args: unknown): Promise<{ count: number }>;
   findFirst(args: unknown): Promise<unknown>;
   findMany(args: unknown): Promise<unknown[]>;
   deleteMany(args: unknown): Promise<unknown>;
@@ -48,13 +52,27 @@ export interface ContextPrismaClient {
   readonly contextExclusion: Delegate;
   readonly contextIndexEntry: Delegate;
   readonly contextSourceClass: Delegate;
+  readonly contextReusableAuthorisation: Delegate;
+  readonly contextLiveState: Delegate;
+  readonly contextBudgetPolicy: Delegate;
 }
 
 export class PrismaContextStore implements ContextStore {
   constructor(private readonly prisma: ContextPrismaClient) {}
 
   async createPackage(row: ContextPackage): Promise<ContextPackage> {
-    return (await this.prisma.contextPackage.create({ data: row })) as ContextPackage;
+    try {
+      return (await this.prisma.contextPackage.create({ data: row })) as ContextPackage;
+    } catch (error) {
+      // `FR-CTX-062` — the foreign key to `executions` refused the binding.
+      // Said in words a caller can act on, rather than a constraint name and a 500.
+      if (/executionId_fkey/.test(error instanceof Error ? error.message : '')) {
+        throw new ValidationFailedError(
+          `execution ${row.executionId} is not registered, so no package can be bound to it (FR-CTX-062)`,
+        );
+      }
+      throw error;
+    }
   }
 
   /**
@@ -70,6 +88,38 @@ export class PrismaContextStore implements ContextStore {
     return (await this.prisma.contextPackage.findFirst({
       where: { id, workspaceId },
     })) as ContextPackage | null;
+  }
+
+  /**
+   * `T1830` — moved only from null, by the predicate: two concurrent binds
+   * cannot both win, and a bound package cannot be re-pointed. The foreign key
+   * refuses an execution that is not registered.
+   */
+  async bindExecution(workspaceId: string, id: string, executionId: string): Promise<ContextPackage | null> {
+    let count: number;
+    try {
+      ({ count } = await this.prisma.contextPackage.updateMany({
+        where: { id, workspaceId, executionId: null },
+        data: { executionId },
+      }));
+    } catch (error) {
+      if (/executionId_fkey/.test(error instanceof Error ? error.message : '')) {
+        throw new ValidationFailedError(
+          `execution ${executionId} is not registered, so no package can be bound to it (FR-CTX-062)`,
+        );
+      }
+      throw error;
+    }
+    return count === 0 ? null : this.findPackage(workspaceId, id);
+  }
+
+  async authorisationsInto(workspaceId: string): Promise<ReusableAuthorisation[]> {
+    return (await this.prisma.contextReusableAuthorisation.findMany({
+      // `T1853` — a project grant never crosses workspaces (CHECKed); filtered
+      // here too, so a row the CHECK predates cannot be retrieved and then
+      // fail the boundary with a false reason.
+      where: { toWorkspaceId: workspaceId, NOT: { workspaceId }, fromProjectId: null },
+    })) as ReusableAuthorisation[];
   }
 
   async packagesForExecution(workspaceId: string, executionId: string): Promise<ContextPackage[]> {
@@ -108,6 +158,37 @@ export class PrismaContextStore implements ContextStore {
     })) as ExclusionRecord[];
   }
 
+  async addLiveState(row: LiveStateElement): Promise<LiveStateElement> {
+    return (await this.prisma.contextLiveState.create({ data: row })) as LiveStateElement;
+  }
+
+  /** Scoped on the element's own `workspaceId`, as items and exclusions are. */
+  async liveStateFor(workspaceId: string, packageId: string): Promise<LiveStateElement[]> {
+    return (await this.prisma.contextLiveState.findMany({
+      where: { workspaceId, packageId },
+      orderBy: { readAt: 'asc' },
+    })) as LiveStateElement[];
+  }
+
+  /**
+   * `FR-CTX-036` — `null` for a workspace with no policy. `costPerThousandTokens`
+   * is a `NUMERIC`, which the client returns as a `Decimal`; it is converted
+   * here so arithmetic downstream is on numbers.
+   */
+  async budgetPolicyFor(workspaceId: string): Promise<BudgetPolicy | null> {
+    const row = (await this.prisma.contextBudgetPolicy.findFirst({ where: { workspaceId } })) as
+      | (Omit<BudgetPolicy, 'costPerThousandTokens'> & { costPerThousandTokens: unknown })
+      | null;
+    return row === null
+      ? null
+      : {
+          workspaceId: row.workspaceId,
+          retrievalLimit: row.retrievalLimit,
+          tokensPerCandidate: row.tokensPerCandidate,
+          costPerThousandTokens: Number(row.costPerThousandTokens),
+        };
+  }
+
   /** `FR-CTX-034` — `null` for an unregistered type. Never a default. */
   async classifySource(workspaceId: string, sourceType: string): Promise<SourceClass | null> {
     return (await this.prisma.contextSourceClass.findFirst({
@@ -120,6 +201,32 @@ export class PrismaContextStore implements ContextStore {
       where: { workspaceId },
       orderBy: { sourceType: 'asc' },
     })) as SourceClass[];
+  }
+
+  /**
+   * `FR-CTX-053` — all four keys in the predicate, and direction is in two of
+   * them. A lookup on the source alone lets every workspace in once one is let
+   * in; a lookup ignoring direction grants the reverse crossing nobody stated.
+   */
+  async find(input: {
+    sourceType: string;
+    sourceId: string;
+    fromWorkspaceId: string;
+    toWorkspaceId: string;
+    fromProjectId?: string | null;
+    toProjectId?: string | null;
+  }): Promise<ReusableAuthorisation | null> {
+    return (await this.prisma.contextReusableAuthorisation.findFirst({
+      where: {
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        workspaceId: input.fromWorkspaceId,
+        toWorkspaceId: input.toWorkspaceId,
+        // `T1808` — a workspace grant and a project grant are different grants.
+        fromProjectId: input.fromProjectId ?? null,
+        toProjectId: input.toProjectId ?? null,
+      },
+    })) as ReusableAuthorisation | null;
   }
 
   /**
@@ -142,6 +249,13 @@ export class PrismaContextStore implements ContextStore {
       },
     });
     return (await this.prisma.contextIndexEntry.create({ data: row })) as IndexEntry;
+  }
+
+  /** On `(workspaceId, sourceType, sourceId)`, which the migration indexes. */
+  async indexEntryFor(workspaceId: string, sourceType: string, sourceId: string): Promise<IndexEntry | null> {
+    return (await this.prisma.contextIndexEntry.findFirst({
+      where: { workspaceId, sourceType, sourceId },
+    })) as IndexEntry | null;
   }
 
   async indexEntriesFor(workspaceId: string): Promise<IndexEntry[]> {

@@ -166,6 +166,14 @@ suite('T1230 · the Context tables refuse at the database', () => {
     });
 
     it('and accepts one that names it', async () => {
+      // `T1260` made the reference a real foreign key, so the authorisation it
+      // names has to exist — granted to this workspace, for this source.
+      await db.query(
+        `INSERT INTO "context_reusable_authorisations"
+           ("id","sourceType","sourceId","workspaceId","toWorkspaceId","authorisedBy","rationale")
+         VALUES ('rka_1','requirement','rq_1','ws_owner',$1,'u_owner','shared handbook')`,
+        [WS],
+      );
       const p = await pkg();
       await expect(
         item(p, { crossBoundary: true, authorisationRef: 'rka_1' }),
@@ -204,5 +212,95 @@ suite('T1230 · the Context tables refuse at the database', () => {
         expect(names, `${expected} is gone`).toContain(expected);
       }
     });
+  });
+});
+
+/**
+ * `T1286`, `T1281` — the degrading ports and the short read, refused at the
+ * database as well as by the service.
+ */
+suite('T1286 · live state, execution history and retrieval counts refuse at the database', () => {
+  it('refuses unavailable live state with no reason (FR-CTX-022)', async () => {
+    await expect(pkg({ liveState: 'unavailable' })).rejects.toThrow(/live_state|check/i);
+  });
+
+  it('refuses unavailable execution history with no reason (FR-CTX-015)', async () => {
+    await expect(pkg({ executionHistory: 'unavailable' })).rejects.toThrow(/execution_history|check/i);
+  });
+
+  it('accepts both when they say why', async () => {
+    await expect(
+      pkg({
+        liveState: 'unavailable',
+        liveStateReason: 'no LiveStateReader is bound',
+        executionHistory: 'unavailable',
+        executionHistoryReason: 'no ExecutionProjections reader is bound',
+      }),
+    ).resolves.toBeTruthy();
+  });
+
+  it('refuses more returned than requested, and one count without the other (R-038-3)', async () => {
+    await expect(pkg({ retrievalRequested: 10, retrievalReturned: 11 })).rejects.toThrow(/retrieval|check/i);
+    await expect(pkg({ retrievalRequested: 10 })).rejects.toThrow(/retrieval|check/i);
+  });
+
+  it('refuses a live-state element with no read instant (FR-CTX-021)', async () => {
+    const p = await pkg();
+    await expect(
+      db.query(
+        `INSERT INTO "context_live_state" ("id","workspaceId","packageId","kind","ref","state")
+         VALUES ($1,$2,$3,'build','build#1','failing')`,
+        [id('ls'), WS, p],
+      ),
+    ).rejects.toThrow(/readAt|null/i);
+  });
+
+  it('refuses a live-state kind nobody declared', async () => {
+    const p = await pkg();
+    await expect(
+      db.query(
+        `INSERT INTO "context_live_state" ("id","workspaceId","packageId","kind","ref","state","readAt")
+         VALUES ($1,$2,$3,'mood','team','grumpy',now())`,
+        [id('ls'), WS, p],
+      ),
+    ).rejects.toThrow(/kind|check/i);
+  });
+});
+
+/** `T1802`, `T1804` — the budget policy refuses nonsense at the database. */
+suite('T1804 · budget policy constraints', () => {
+  const policy = (over: Record<string, unknown>) =>
+    db.query(
+      `INSERT INTO "context_budget_policies" ("id","workspaceId","retrievalLimit","tokensPerCandidate","costPerThousandTokens")
+       VALUES ($1,$2,$3,$4,$5)`,
+      [id('bp'), over['ws'] ?? id('ws'), over['limit'] ?? 40, over['tokens'] ?? 500, over['price'] ?? 0],
+    );
+
+  it('accepts a sane policy, and a zero price', async () => {
+    await expect(policy({})).resolves.toBeTruthy();
+  });
+
+  it('refuses a non-positive limit or estimate, and a negative price', async () => {
+    await expect(policy({ limit: 0 })).rejects.toThrow(/limit_positive|check/i);
+    await expect(policy({ tokens: 0 })).rejects.toThrow(/estimate_positive|check/i);
+    await expect(policy({ price: -1 })).rejects.toThrow(/price_not_negative|check/i);
+  });
+
+  it('refuses a second policy for one workspace', async () => {
+    await policy({ ws: 'ws_one_policy' });
+    await expect(policy({ ws: 'ws_one_policy' })).rejects.toThrow(/one_per_workspace|unique|duplicate/i);
+  });
+});
+
+/** `T1820` — the model id is nullable for refusals only. */
+suite('T1820 · an assembled package still names its model', () => {
+  it('refuses an assembled package with no model', async () => {
+    await expect(pkg({ embeddingModelId: null })).rejects.toThrow(/assembled_names_model|check/i);
+  });
+
+  it('accepts a refusal that never ranked, with no model', async () => {
+    await expect(
+      pkg({ state: 'refused', refusalReason: 'no embedding provider is bound', embeddingModelId: null }),
+    ).resolves.toBeTruthy();
   });
 });

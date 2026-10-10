@@ -80,7 +80,7 @@ describe('T437k · SC-SHL-002 — nothing that is not delivered appears', () => 
     },
   );
 
-  it('offers nine fewer destinations than the product specifies', async () => {
+  it('offers seven fewer destinations than the product specifies', async () => {
     // The arithmetic, stated so it cannot drift silently again: navigation
     // carries the REACHABLE areas — `delivered` plus `partly-delivered` — and
     // eighteen are specified.
@@ -88,13 +88,14 @@ describe('T437k · SC-SHL-002 — nothing that is not delivered appears', () => 
     // It was `5` until `T1172`, when the Requirement Room area was delivered.
     // The title said *twelve* throughout, and was wrong until `T1514`: with five
     // destinations the gap was thirteen. EPIC-042 made it twelve and EPIC-046
-    // `T1737` makes it TEN — the gap shrinks only when an area is really
-    // delivered, which is the whole point of counting it here. EPIC-047
-    // `T1976` (Engineering Experts) makes it NINE.
+    // `T1737` made it ten, EPIC-038 `T1269` (Context) and EPIC-031 `T759` (the
+    // Decision Inbox) landed together and made it eight, and EPIC-047 `T1976`
+    // (Engineering Experts) makes it SEVEN — the gap shrinks only when an area is
+    // really delivered, which is the whole point of counting it here.
     renderAt('/');
     await waitFor(() => expect(labels().length).toBeGreaterThan(0));
     expect(AREAS).toHaveLength(18);
-    expect(labels()).toHaveLength(9);
-    expect(AREAS.length - labels().length, 'the title and the arithmetic disagree').toBe(9);
+    expect(labels()).toHaveLength(11);
+    expect(AREAS.length - labels().length, 'the title and the arithmetic disagree').toBe(7);
   });
 });

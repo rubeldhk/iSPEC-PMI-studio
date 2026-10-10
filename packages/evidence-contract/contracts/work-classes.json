@@ -1,0 +1,9 @@
+{
+  "$comment": "EPIC-032 T856q. The governed work classes an Evidence Contract may be written for. A class is data a deployment configures, not a type in src/ (evidence-independence.spec.ts). Adding a class here without a <class>.v<N>.json beside it fails evidence-contract-conformance.spec.ts.",
+  "workClasses": [
+    { "id": "requirement-baseline", "consumer": "EPIC-033", "description": "Freezing a requirement set as an approved baseline (BR-0026)" },
+    { "id": "change-closure", "consumer": "EPIC-034", "description": "Closing an approved change request (BR-0047)" },
+    { "id": "defect-repair", "consumer": "EPIC-035", "description": "Closing a repaired defect (BR-0056)" },
+    { "id": "task-completion", "consumer": "EPIC-012 / EPIC-046", "description": "Completing a governed implementation task (BR-0144)" }
+  ]
+}

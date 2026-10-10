@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "workClass": "task-completion",
+  "contractVersion": 1,
+  "items": [
+    { "itemId": "tests-pass", "description": "Automated tests pass for the task's change", "acceptingPredicateTypes": ["https://in-toto.io/attestation/test-result/v0.1"] },
+    { "itemId": "reviewed", "description": "The change was reviewed — a review finding record or an approval", "acceptingPredicateTypes": ["https://pmi.studio/attestation/review-finding/v1", "https://pmi.studio/attestation/approval/v1"] }
+  ]
+}

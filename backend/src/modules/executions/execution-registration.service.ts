@@ -457,12 +457,13 @@ export class ExecutionRegistrationService {
         assurance: string;
         governanceState: string;
         parentExecutionId: string | null;
+        projectId: string | null;
         lifecycleState: string | null;
         projectedThroughSequence: number | null;
       }[]
     >(
       `SELECT e."id", e."workspaceId", e."command", e."surface", e."assurance", e."governanceState",
-              e."parentExecutionId", s."lifecycleState", s."projectedThroughSequence"
+              e."parentExecutionId", e."projectId", s."lifecycleState", s."projectedThroughSequence"
          FROM "executions" e
          LEFT JOIN "execution_state" s ON s."executionId" = e."id"
         WHERE e."id" = $1 AND e."workspaceId" = $2`,
@@ -481,6 +482,7 @@ export class ExecutionRegistrationService {
       governanceState: row.governanceState as ExecutionSnapshot['governanceState'],
       projectedThroughSequence: row.projectedThroughSequence ?? 0,
       parentExecutionId: row.parentExecutionId,
+      projectId: row.projectId,
     };
   }
 }
