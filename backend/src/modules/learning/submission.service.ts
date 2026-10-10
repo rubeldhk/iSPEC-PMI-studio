@@ -129,6 +129,9 @@ export function objectDigestOf(s: LearningSubmissionV1, source: { projectId: str
 
 const HOUR = 3_600_000;
 
+/** `FR-LRN-055` — the one memory policy that permits governed learning (`A-047-1`). */
+export const GOVERNED_KNOWLEDGE = 'governed-knowledge';
+
 export class SubmissionService {
   private readonly now: () => Date;
 
@@ -393,6 +396,17 @@ export class SubmissionService {
     // version. 503 naming ExpertProvenance while EPIC-047's read is unbound — an
     // execution that may be an Expert's cannot be judged, so it is not recorded.
     const expert = await this.deps.ports.experts.forExecution(ws, executionId);
+    // FR-LRN-055 (T2339): only `governed-knowledge` may contribute. `none` — and
+    // any value this Epic does not recognise — is refused; the refusal is recorded
+    // on the execution as `memory-policy-refused` (`recordRefusal`, via the
+    // `memoryPolicy` detail). Nothing is stored per Expert (FR-LRN-056).
+    if (expert !== null && expert.memoryPolicy !== GOVERNED_KNOWLEDGE) {
+      throw new ValidationFailedError(
+        `Expert ${expert.expertId} runs contract version ${expert.contractVersion}, whose memory policy "${expert.memoryPolicy}" does not permit ` +
+          `contributing to governed learning; only "${GOVERNED_KNOWLEDGE}" does (FR-LRN-055).`,
+        { memoryPolicy: expert.memoryPolicy, expertId: expert.expertId, contractVersionId: expert.contractVersionId, contractVersion: expert.contractVersion },
+      );
+    }
     return { late, provisional: facts.governanceState !== 'governed', expert };
   }
 

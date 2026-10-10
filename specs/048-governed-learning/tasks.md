@@ -211,12 +211,12 @@ the record alone.
   - stated confidence is stored as given and never raised (`FR-LRN-013`);
   - claimed scope is stored as claimed, `projects` requires ≥ 2 projects of the workspace (`FR-LRN-014`, US2-5)
 - [X] T2337 [US2] Implement provenance capture in `submission.service.ts` (unit test: T2336) — **Done**: `source()` asks `ExpertProvenance` for every execution-sourced submission — `503` naming it while unbound, so in the composed app every agent submission is refused until `A-047-2` (as `R-048-10` says); the T2334 route suite now asserts that `503` first and binds the port visibly; 100/100 learning units, 13/13 route.
-- [ ] T2338 [P] [US2] Write failing unit tests `backend/tests/unit/learning-memory-policy.spec.ts`:
+- [X] T2338 [P] [US2] Write failing unit tests `backend/tests/unit/learning-memory-policy.spec.ts`: — **Done**: 7 cases, 5 red first; in-test `ExpertProvenance` (the real one is T2401).
   - an Expert whose contract version declares `none` is refused and `memory-policy-refused` is appended;
   - `governed-knowledge` is accepted;
   - nothing is stored per Expert (`FR-LRN-055`, `FR-LRN-056`, `SC-LRN-009`).
   These use an in-test `ExpertProvenance`. The real one is T2401, which waits on `A-047-1`/`A-047-2`
-- [ ] T2339 [US2] Implement the memory-policy check in `submission.service.ts` (unit test: T2338)
+- [X] T2339 [US2] Implement the memory-policy check in `submission.service.ts` (unit test: T2338) — **Done**: only `governed-knowledge` contributes; `none` or any unrecognised value is refused `400` with `memory-policy-refused` on the execution; the store has no Expert-keyed state; 107/107 learning units.
 - [ ] T2340 [P] [US2] Write failing unit tests `backend/tests/unit/learning-evidence-view.spec.ts`:
   - each citation is `verified`, `integrity-failed` (failed integrity **or** cited digest ≠ stored), `unresolvable`, or `withheld` for a reader `AccessControlEvidencePolicy` refuses;
   - withheld carries no id or digest, and `withheldEvidenceCount` is set (`FR-LRN-015`, `FR-LRN-016`, US2-3, US2-4);
