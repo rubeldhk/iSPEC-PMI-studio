@@ -183,6 +183,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     'defect_tests',
       'dependency_edges',
       'engine_registrations',
+      'engineering_experts',
       // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
       'epics',
       // EPIC-032 T856o — the completion record (data-model §5).
@@ -197,6 +198,10 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'execution_state',
       'execution_target_bindings',
       'executions',
+      'expert_contract_versions',
+      'expert_delegation_policies',
+      'expert_session_limits',
+      'expert_sessions',
       'gate_final_outcomes',
       'gate_outcomes',
       'generation_jobs',
@@ -238,6 +243,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'steering_scopes',
       'storage_connections',
       'structure_definitions',
+      'task_assignments',
       // EPIC-046 T1687 — the task sync. All three carry a plain `createdAt`, so
       // none needs an alias in the map below: `syncedAt` and `proposedAt` are
       // domain facts that sit BESIDE the row's creation time rather than
@@ -339,6 +345,10 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       requirement_decisions: 'decidedAt',
       baselines: 'approvedAt',
       handoffs: 'selectedAt',
+      // EPIC-047 — each table's own word for when its row came to exist.
+      engineering_experts: 'registeredAt',
+      expert_sessions: 'startedAt',
+      task_assignments: 'assignedAt',
     };
 
     const missing = [...tables.entries()]

@@ -332,11 +332,11 @@ requirement is in target scope with no declared Epic, which §13 records as a ga
 
 ## 6.11 Engineering Experts and agent sessions · BG-02, BG-04
 
-- **BR-0101** — **Expert registry.** AI engineering roles MUST be registered as governed Engineering Experts. → owner **EPIC-028** *(assigned 2026-08-25)*
+- **BR-0101** — **Expert registry.** AI engineering roles MUST be registered as governed Engineering Experts. → owner **EPIC-047** *(reassigned 2026-10-09)*
 - **BR-0102** — **Expert contract.** Each Expert MUST define role and purpose, preferred and fallback models, allowed tools and capabilities, context policy, workspace requirements, permissions, prohibited actions, risk class, budget, memory policy, expected outputs and Evidence Contract. → no owner
 - **BR-0103** — **Provider independence.** The same governed role SHOULD be executable through multiple compatible providers and agents without changing business workflow semantics. → `EPIC-028`
 - **BR-0104** — **Session record.** Every Engineering Expert run MUST create a durable session record linking inputs, context version, provider, model, actions, outputs, evidence and outcome — and MUST remain a platform record even when code execution happens inside an external provider. → `EPIC-028`
-- **BR-0105** — **Delegation.** A governed Expert MAY delegate to sub-agents or other Experts where policy permits; each delegated session remains individually attributable and traceable. → owner **EPIC-028** *(assigned 2026-08-25)*
+- **BR-0105** — **Delegation.** A governed Expert MAY delegate to sub-agents or other Experts where policy permits; each delegated session remains individually attributable and traceable. → owner **EPIC-047** *(reassigned 2026-10-09)*
 - **BR-0061** *(v1.0, broadened)* — **Unattended execution.** AI agents MUST be able to run unattended within governed bounds; the resulting work enters verification and team review rather than bypassing release controls. → `EPIC-023`
 
   > *Ownership confirmed 2026-08-25: **EPIC-023** retains `BR-0061`. Engineering Experts (`BR-0101`–`BR-0106`, **EPIC-028**) carries a cross-epic traceability link to EPIC-023 wherever an Expert session runs unattended.*
