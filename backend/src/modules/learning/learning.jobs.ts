@@ -29,6 +29,7 @@ import { LEARNING_POLICY_DEFAULTS, type LearningPolicyReader } from './learning-
 import { newLearningId, type CandidateRecord, type FlagRecord, type LearningStore } from './learning.store.js';
 import type { LearningPorts } from './learning.tokens.js';
 import type { Materialiser } from './materialiser.js';
+import type { RetrievabilityService } from './retrievability.js';
 
 export const LEARNING_JOB_INTERVALS_MS = Object.freeze({
   'learning.resolve-decisions': 30_000,
@@ -63,6 +64,7 @@ export interface LearningJobsDeps {
   readonly materialiser: Pick<Materialiser, 'applyResolution'>;
   readonly requester: Pick<DecisionRequester, 'request' | 'attempts'>;
   readonly policy?: Pick<LearningPolicyReader, 'current'>;
+  readonly retrievability?: Pick<RetrievabilityService, 'retryPending'>;
   readonly now?: () => Date;
 }
 
@@ -82,6 +84,18 @@ export class LearningJobs {
     this.handlers.set('learning.request-pending', (o, t) => this.requestPending(o, t));
     this.handlers.set('learning.expire', (o, t) => this.expire(o, t));
     this.handlers.set('learning.flags', (o, t) => this.flags(o, t));
+    this.handlers.set('learning.retrievability', (o, t) => this.retrievability(o, t));
+  }
+
+  /** `FR-LRN-053` (T2377) — retry what is not yet retrievable; record each outcome as it is. */
+  private async retrievability(options: RunOptions, tally: Tally): Promise<void> {
+    if (this.deps.retrievability === undefined) {
+      tally.errors.push('no retrievability service is composed');
+      return;
+    }
+    const { examined, nowRetrievable } = await this.deps.retrievability.retryPending(options.workspaceId);
+    tally.examined += examined;
+    tally.changed += nowRetrievable;
   }
 
   /** Run one job by name, under a hard time limit. Per-item failures are reported, not thrown. */

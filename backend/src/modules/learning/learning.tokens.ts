@@ -198,7 +198,7 @@ export interface ApprovalAttestationsPort {
 
 /** `EPIC-038` `IndexService.reindex` (`R-048-13`). */
 export interface KnowledgeIndexPort {
-  reindex(input: { readonly workspaceId: string; readonly entryId: string; readonly versionId: string }): Promise<{ readonly outcome: 'indexed' | 'current' | 'not-resolvable' }>;
+  reindex(input: { readonly workspaceId: string; readonly sourceType: 'knowledge-entry'; readonly entryId: string; readonly versionId: string }): Promise<{ readonly outcome: 'indexed' | 'current' | 'not-resolvable' }>;
 }
 
 /** `EPIC-047` (`A-047-2`) — `null` when the execution is not an Expert session. */

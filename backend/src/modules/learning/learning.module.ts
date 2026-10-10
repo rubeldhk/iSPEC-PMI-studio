@@ -54,6 +54,7 @@ import { ApproverGuard } from './approver.guard.js';
 import { InMemoryKnowledgeWriter, type KnowledgeWriter } from './knowledge.writer.js';
 import { Materialiser } from './materialiser.js';
 import { approvalAttestation } from './attestation.js';
+import { RetrievabilityService } from './retrievability.js';
 import { LearningJobs } from './learning.jobs.js';
 import { LearningSweeps } from './learning.sweeps.js';
 import { ReviewService } from './review.service.js';
@@ -134,10 +135,16 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
       },
     },
     {
+      provide: RetrievabilityService,
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN],
+      useFactory: (store: LearningStore, ports: LearningPorts): RetrievabilityService =>
+        new RetrievabilityService({ store, ports: { index: { reindex: (input) => ports.index.reindex(input) } } }),
+    },
+    {
       // R-048-4 fence 1: the writer is injected here and nowhere else (T2332).
       provide: Materialiser,
-      inject: [LEARNING_STORE, KNOWLEDGE_WRITER, LEARNING_PORTS_TOKEN, LearningPolicyReader],
-      useFactory: (store: LearningStore, writer: KnowledgeWriter, ports: LearningPorts, policy: LearningPolicyReader): Materialiser =>
+      inject: [LEARNING_STORE, KNOWLEDGE_WRITER, LEARNING_PORTS_TOKEN, LearningPolicyReader, RetrievabilityService],
+      useFactory: (store: LearningStore, writer: KnowledgeWriter, ports: LearningPorts, policy: LearningPolicyReader, retrievability: RetrievabilityService): Materialiser =>
         new Materialiser({
           store,
           writer,
@@ -145,7 +152,11 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
           policy,
           guard: new ApproverGuard({ kindOf: (ws, id) => ports.principals.kindOf(ws, id) }),
           // After the version commits: approval/v1 (T2357). A failure flags, never rolls back.
-          after: [approvalAttestation({ store, ports: { attestations: { contribute: (input) => ports.attestations.contribute(input) } } })],
+          // and the reindex, recorded as it is (T2377).
+          after: [
+            approvalAttestation({ store, ports: { attestations: { contribute: (input) => ports.attestations.contribute(input) } } }),
+            retrievability.afterMaterialise(),
+          ],
         }),
     },
     {
@@ -163,9 +174,9 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       provide: LearningJobs,
-      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, Materialiser, DecisionRequester],
-      useFactory: (store: LearningStore, ports: LearningPorts, materialiser: Materialiser, requester: DecisionRequester): LearningJobs =>
-        new LearningJobs({ store, ports, materialiser, requester, policy: new LearningPolicyReader({ current: (ws) => ports.policy.current(ws) }) }),
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, Materialiser, DecisionRequester, RetrievabilityService],
+      useFactory: (store: LearningStore, ports: LearningPorts, materialiser: Materialiser, requester: DecisionRequester, retrievability: RetrievabilityService): LearningJobs =>
+        new LearningJobs({ store, ports, materialiser, requester, retrievability, policy: new LearningPolicyReader({ current: (ws) => ports.policy.current(ws) }) }),
     },
     {
       provide: ReviewService,

@@ -36,10 +36,10 @@ export interface LearningTestWorld {
   readonly audit: AuditEntry[];
   readonly decisions: DecisionRecorder;
   readonly policyDocs: Map<string, { content: string; version: number; actorId: string }>;
-  readonly reindexed: { workspaceId: string; entryId: string; versionId: string }[];
+  readonly reindexed: { workspaceId: string; sourceType: string; entryId: string; versionId: string }[];
   readonly attestations: unknown[];
   /** Overwrite the outcome for the next reindex / attestation call. */
-  indexOutcome: 'indexed' | 'current' | 'unbound' | 'bad-request';
+  indexOutcome: 'indexed' | 'current' | 'not-resolvable' | 'unbound' | 'bad-request';
   attestationFails: boolean;
 }
 

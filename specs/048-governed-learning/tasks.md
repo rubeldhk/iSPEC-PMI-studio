@@ -392,12 +392,12 @@ retrievability recorded honestly.
   - when approved it creates a new version and supersedes the old;
   - no other path changes scope (`FR-LRN-042`, US5-5)
 - [X] T2375 [US5] Implement scope widening in `submission.service.ts` and `materialiser.ts` (unit test: T2374) — **Done**: `checkTarget` now refuses a `supersede` whose claimed scope is not ⊆ the current version's, naming `widen-scope`; the widening path itself already existed; 256/256 learning units.
-- [ ] T2376 [P] [US5] Write failing unit tests `backend/tests/unit/learning-retrievability.spec.ts`:
+- [X] T2376 [P] [US5] Write failing unit tests `backend/tests/unit/learning-retrievability.spec.ts`: — **Done**: 9 cases end to end, red on the missing module: four kinds of change each reindex `knowledge-entry`/entry/version; indexed/current → retrievable; 503, 400 and unbound → not-yet-retrievable with the reason; no attempt never reads retrievable; the sweep retries.
   - every approval, supersession, deprecation and widening calls `KnowledgeIndex.reindex` with `knowledge-entry`, entry id and version id (`FR-LRN-051`);
   - `indexed`/`current` → `retrievable`;
   - `503` or `400` → `not-yet-retrievable` with the reason;
   - no attempt reads *not yet retrievable — indexing not attempted*, never retrievable (`FR-LRN-053`)
-- [ ] T2377 [US5] Implement `backend/src/modules/learning/retrievability.ts` and the `learning.retrievability` job in `learning.jobs.ts` (unit test: T2376)
+- [X] T2377 [US5] Implement `backend/src/modules/learning/retrievability.ts` and the `learning.retrievability` job in `learning.jobs.ts` (unit test: T2376) — **Done**: `retrievability.ts` (`RetrievabilityService`: reindex + append the outcome, post-commit hook, `retryPending`) and the `learning.retrievability` job; the `KnowledgeIndex` port input now names `sourceType: 'knowledge-entry'`; 265/265 learning units.
 
 **Checkpoint**: every reuse decision is recorded where `EPIC-038` already shows exclusions.
 
