@@ -31,6 +31,7 @@ import { ConflictError, ValidationFailedError } from '../../core/errors.js';
 import type { LearningPolicy, LearningPolicyReader } from './learning-policy.js';
 import { newLearningId, type CandidateRecord, type CitationRecord, type LearningStore } from './learning.store.js';
 import type { LearningPorts } from './learning.tokens.js';
+import { assertNoSecret } from './secret.screen.js';
 
 export type SubmissionActor =
   | { readonly kind: 'person'; readonly workspaceId: string; readonly userId: string }
@@ -138,6 +139,10 @@ export class SubmissionService {
     const { actor } = input;
     const ws = actor.workspaceId;
     const named = this.namedExecution(input.body);
+
+    // 0. Secrets first (FR-LRN-018, T2329): before parsing, before any read that
+    //    could log it, before anything is stored. 503 while SecretScreen is unbound.
+    await assertNoSecret(this.deps.ports.secrets, input.body);
 
     // 1. Parse — every missing element at once (FR-LRN-010).
     const parsed = parseSubmission(input.body, { requireExecution: actor.kind === 'agent' });

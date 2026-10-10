@@ -166,12 +166,12 @@ reasons. A context assembly after it contains no candidate. No route writes know
   - a provisional execution records `proposed` and requests no decision (`FR-LRN-063`);
   - a retried `idempotencyKey` returns the original (`FR-LRN-061`)
 - [X] T2327 [US1] Implement `backend/src/modules/learning/submission.service.ts` — intake, source checks, bound, idempotency and the `proposed` transition (unit test: T2326) — **Done**: `submission.service.ts`: parse → replay (a reused key with different content is `409`) → policy/category → project/source/grace/bound → scope/target → evidence → record under the subject lock → decision hook unless provisional; 15/15.
-- [ ] T2328 [P] [US1] Write failing unit tests `backend/tests/unit/learning-secret-screen.spec.ts`:
+- [X] T2328 [P] [US1] Write failing unit tests `backend/tests/unit/learning-secret-screen.spec.ts`: — **Done**: 11 cases, red on the missing module; six fields, value never echoed, no row after, unbound → 503.
   - statement, subject, confidence basis and every free-text field are screened before any write;
   - a match is refused naming the rule and field, never the value;
   - **no** row exists afterwards (`FR-LRN-018`);
   - `SecretScreen` unbound refuses
-- [ ] T2329 [US1] Implement `backend/src/modules/learning/secret.screen.ts` and call it first in `submission.service.ts` (unit test: T2328)
+- [X] T2329 [US1] Implement `backend/src/modules/learning/secret.screen.ts` and call it first in `submission.service.ts` (unit test: T2328) — **Done**: `secret.screen.ts` (every string leaf by path, over `secretRuleMatching`); called first in `submit`, before parsing; 26/26 with T2326.
 - [ ] T2330 [P] [US1] Write failing unit tests `backend/tests/unit/learning-execution-events.spec.ts`:
   - `submitted`, `late-submitted`, `refused`, `bound-exceeded` and `corroborated` are appended to the source execution through `Executions.appendEvent` with an idempotency key;
   - payloads carry no statement text;
