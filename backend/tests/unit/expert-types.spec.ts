@@ -3,7 +3,7 @@
  *
  * Each constant below is a decision the clarification session took, encoded so
  * that widening it is an edit someone has to make on purpose: the memory policy
- * admits only `none` (`FR-EXP-020`), unenforceable limits have exactly two
+ * admits `none` and `governed-knowledge` (`FR-EXP-020`, amended by `A-047-1`), unenforceable limits have exactly two
  * postures (`FR-EXP-043`), and a contract version carries **no** status — its
  * approval is read from `EPIC-031`, never cached here (`R-047-5`).
  */
@@ -23,8 +23,8 @@ describe('T1903 · Expert types', () => {
     expect(RISK_BANDS).toEqual(['low', 'medium', 'high']);
   });
 
-  it('the memory policy admits only none (FR-EXP-020)', () => {
-    expect(MEMORY_POLICIES).toEqual(['none']);
+  it('the memory policy admits none and, by amendment A-047-1, governed-knowledge — nothing else (FR-EXP-020)', () => {
+    expect(MEMORY_POLICIES).toEqual(['none', 'governed-knowledge']);
   });
 
   it('an unenforceable limit is either refused or proceeds-and-records (FR-EXP-043)', () => {

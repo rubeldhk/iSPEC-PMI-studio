@@ -48,7 +48,7 @@ async function versionRow(expertId: string, over: Record<string, unknown> = {}):
 
 async function sessionRow(expertId: string, versionId: string, over: Record<string, unknown> = {}): Promise<string> {
   const row = {
-    executionId: id('exe'), workspaceId: WS, expertId, contractVersionId: versionId, depth: 0,
+    executionId: id('exe'), workspaceId: WS, expertId, contractVersionId: versionId, actorId: 'u_1', depth: 0,
     model: 'claude-opus-5-5', usedFallback: false, effectiveAuthority: '{}', toolObservation: 'unobserved',
     unattended: false, reviewRequired: false, ...over,
   };
@@ -84,11 +84,18 @@ suite('T1909 · engineering_experts', () => {
 });
 
 suite('T1909 · expert_contract_versions — immutable (R-047-14)', () => {
-  it('a memory policy other than none violates the check (FR-EXP-020)', async () => {
+  it('a memory policy other than none or governed-knowledge violates the check (FR-EXP-020)', async () => {
     const ex = await expertRow();
     await expect(
       versionRow(ex, { contract: JSON.stringify({ ...contract(), memoryPolicy: 'session' }) }),
     ).rejects.toThrow(/check/i);
+  });
+
+  it('T2018 · governed-knowledge satisfies the check (FR-EXP-020, amendment A-047-1)', async () => {
+    const ex = await expertRow();
+    await expect(
+      versionRow(ex, { contract: JSON.stringify({ ...contract(), memoryPolicy: 'governed-knowledge' }) }),
+    ).resolves.toBeDefined();
   });
 
   it('a risk class outside the three bands violates the check', async () => {
@@ -141,6 +148,12 @@ suite('T1909 · expert_sessions and expert_session_limits', () => {
     const ex = await expertRow();
     const cv = await versionRow(ex);
     await expect(sessionRow(ex, cv, { unattended: true, reviewRequired: false })).rejects.toThrow(/check/i);
+  });
+
+  it('T2004 · a new session names its originating actor (FR-EXP-034)', async () => {
+    const ex = await expertRow();
+    const cv = await versionRow(ex);
+    await expect(sessionRow(ex, cv, { actorId: '  ' })).rejects.toThrow(/check/i);
   });
 
   it('a fallback names its reason', async () => {

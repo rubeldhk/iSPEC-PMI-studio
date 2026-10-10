@@ -6,8 +6,9 @@
  *
  * - `RISK_BANDS` is `EPIC-031`'s band (`R-047-6`). Declared locally only until
  *   `packages/decision-contract` is on `main`; `T1977` asserts the two agree.
- * - `MEMORY_POLICIES` admits only `none` (`FR-EXP-020`, clarified 2026-10-09).
- *   Cross-session memory belongs to Governed Learning.
+ * - `MEMORY_POLICIES` admits `none` (`FR-EXP-020`, clarified 2026-10-09) and
+ *   `governed-knowledge` (amendment `A-047-1`). Cross-session memory belongs to
+ *   Governed Learning (`EPIC-048`), never to a private store here.
  * - `ContractVersion` has **no status**. Approval is `EPIC-031`'s decision,
  *   read when needed (`R-047-5`); a cached *approved* that was later refused is
  *   the divergence this programme keeps finding.
@@ -23,7 +24,13 @@ export type LimitKind = (typeof LIMIT_KINDS)[number];
 export const UNENFORCEABLE_POSTURES = ['refuse', 'proceed'] as const;
 export type UnenforceablePosture = (typeof UNENFORCEABLE_POSTURES)[number];
 
-export const MEMORY_POLICIES = ['none'] as const;
+/**
+ * `FR-EXP-020` — `none`, and by amendment `A-047-1` (2026-10-09, for `EPIC-048`)
+ * `governed-knowledge`: learning candidates go to Governed Learning, approved
+ * knowledge comes back only through context, and no private memory is granted.
+ * This Epic does no learning for either value.
+ */
+export const MEMORY_POLICIES = ['none', 'governed-knowledge'] as const;
 export type MemoryPolicy = (typeof MEMORY_POLICIES)[number];
 
 /**

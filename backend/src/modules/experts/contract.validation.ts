@@ -111,11 +111,11 @@ export function validateContract(input: unknown): ExpertContract {
 
   if (present('budget')) problems.push(...budgetProblems(c['budget']));
 
-  // `FR-EXP-020`, clarified 2026-10-09.
+  // `FR-EXP-020`, clarified 2026-10-09 and amended by `A-047-1` the same day.
   if (present('memoryPolicy') && !(MEMORY_POLICIES as readonly unknown[]).includes(c['memoryPolicy'])) {
     problems.push(
-      `the memory policy must be 'none' — a session retains nothing beyond itself in EPIC-047; ` +
-        'memory across sessions is decided by Governed Learning (FR-EXP-020)',
+      `the memory policy must be 'none' or 'governed-knowledge' — a session retains nothing beyond itself, ` +
+        'and memory across sessions is decided by Governed Learning (EPIC-048), which grants no private memory (FR-EXP-020)',
     );
   }
 
