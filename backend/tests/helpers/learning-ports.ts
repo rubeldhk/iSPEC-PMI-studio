@@ -183,7 +183,8 @@ export function learningWorld(options: { policy?: object | null } = {}): Learnin
     ['agent_2', 'agent'],
     ['expert_1', 'agent'],
   ]);
-  const readable = new Set<string>(['ev_1', 'ev_2']);
+  // Readable attested targets (by id, or 'target:<type>:<id>'): project p1.
+  const readable = new Set<string>(['p1']);
   const audit: AuditEntry[] = [];
   const decisions = new DecisionRecorder();
   const policyDocs = new Map<string, { content: string; version: number; actorId: string }>();

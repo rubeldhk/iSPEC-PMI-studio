@@ -217,12 +217,12 @@ the record alone.
   - nothing is stored per Expert (`FR-LRN-055`, `FR-LRN-056`, `SC-LRN-009`).
   These use an in-test `ExpertProvenance`. The real one is T2401, which waits on `A-047-1`/`A-047-2`
 - [X] T2339 [US2] Implement the memory-policy check in `submission.service.ts` (unit test: T2338) — **Done**: only `governed-knowledge` contributes; `none` or any unrecognised value is refused `400` with `memory-policy-refused` on the execution; the store has no Expert-keyed state; 107/107 learning units.
-- [ ] T2340 [P] [US2] Write failing unit tests `backend/tests/unit/learning-evidence-view.spec.ts`:
+- [X] T2340 [P] [US2] Write failing unit tests `backend/tests/unit/learning-evidence-view.spec.ts`: — **Done**: 10 cases, red on the missing module.
   - each citation is `verified`, `integrity-failed` (failed integrity **or** cited digest ≠ stored), `unresolvable`, or `withheld` for a reader `AccessControlEvidencePolicy` refuses;
   - withheld carries no id or digest, and `withheldEvidenceCount` is set (`FR-LRN-015`, `FR-LRN-016`, US2-3, US2-4);
   - eligibility reads the **unfiltered** state (`R-048-9`);
   - `retired` is never produced (`R-048-8`)
-- [ ] T2341 [US2] Implement `backend/src/modules/learning/evidence.view.ts` over `EvidenceReads` and `ReaderAccess` (unit test: T2340)
+- [X] T2341 [US2] Implement `backend/src/modules/learning/evidence.view.ts` over `EvidenceReads` and `ReaderAccess` (unit test: T2340) — **Done**: `evidence.view.ts`: `unfiltered` (eligibility's view; `EvidenceReads` unbound reads `unresolvable`, never `verified`) and `forReader` (withheld = no id, no digest, counted; access asked of the attested target; `ReaderAccess` unbound withholds all); 117/117 learning units.
 - [ ] T2342 [P] [US2] Write failing unit tests `backend/tests/unit/learning-corroboration.spec.ts`:
   - a submission whose `subjectKey` matches an open candidate attaches as a corroboration with its source and evidence, and creates no second candidate;
   - two concurrent submissions of one subject produce one candidate (advisory lock);
