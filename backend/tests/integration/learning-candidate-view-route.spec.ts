@@ -84,7 +84,12 @@ async function approvedEntry(candidateId: string): Promise<{ entryId: string; ve
     [versionId, WS, entryId, JSON.stringify({ kind: 'project', projectIds: [projectId] }), candidateId],
   );
   await db.query(`INSERT INTO knowledge_version_status_events (id,"workspaceId","versionId",status,"actorId","decisionId","candidateId",at) VALUES ($1,$2,$3,'current','u_owner','dec_setup',$4,now())`, [`se_${versionId}`, WS, versionId, candidateId]);
-  await db.query(`INSERT INTO learning_candidate_transitions (id,"workspaceId","candidateId",seq,state,"decisionId","actorKind","actorId",at) VALUES ($1,$2,$3,2,'approved','dec_setup','human','u_owner',now())`, [`lct_${candidateId}`, WS, candidateId]);
+  // The next sequence, whatever the intake already appended (since T2349 a decision is requested on submit).
+  await db.query(
+    `INSERT INTO learning_candidate_transitions (id,"workspaceId","candidateId",seq,state,"decisionId","actorKind","actorId",at)
+     SELECT $1,$2,$3, max(seq) + 1,'approved','dec_setup','human','u_owner',now() FROM learning_candidate_transitions WHERE "candidateId" = $3`,
+    [`lct_${candidateId}`, WS, candidateId],
+  );
   await db.query('COMMIT');
   return { entryId, versionId };
 }
