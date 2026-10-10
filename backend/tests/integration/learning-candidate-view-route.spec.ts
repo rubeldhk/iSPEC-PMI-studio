@@ -166,7 +166,7 @@ suite('T2344 · GET /learning/candidates/:id', () => {
     expect(res.body).toHaveProperty('withheldEvidenceCount');
   });
 
-  it('withholds evidence from a reader the access policy does not grant — EPIC-032's policy over EPIC-024, which grants this reader nothing on the project (FR-LRN-016)', async () => {
+  it('withholds evidence from a reader the access policy does not grant — EPIC-032’s policy over EPIC-024, which grants this reader nothing on the project (FR-LRN-016)', async () => {
     const res = await view(candidateId).expect(200);
     expect(res.body.evidence).toEqual([{ state: 'withheld' }]);
     expect(res.body.corroborations[0].evidence).toEqual([{ state: 'withheld' }]);
