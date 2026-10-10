@@ -321,8 +321,17 @@ export interface ExpertContractView {
   expectedOutputs: { kind: string; required: boolean }[];
   evidenceContract: { workClass: string; contractVersion: number };
   delegatesTo: string[];
-  contextPolicy: { budgetTokens: number; budgetCost: number; includeLiveState: boolean };
-  workspaceRequirements: Record<string, unknown>;
+  contextPolicy: {
+    budgetTokens: number;
+    budgetCost: number;
+    includeLiveState: boolean;
+    essentialSources?: { sourceType: string; sourceId: string }[];
+  };
+  workspaceRequirements: {
+    executionType?: 'headless' | 'interactive';
+    repositoryAccess?: ('read' | 'commit' | 'push' | 'pull-request')[];
+    supportsUnattended?: boolean;
+  };
 }
 
 export interface ExpertVersionView {

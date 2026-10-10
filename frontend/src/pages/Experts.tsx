@@ -100,11 +100,19 @@ function ExpertDetailView({ api, id }: { api: ApiClient; id: string }): ReactEle
   const [error, setError] = useState<string | null>(null);
   const [diff, setDiff] = useState<{ from: number; to: number; rows: ExpertElementDifference[] } | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
+  // `T2011`, `FR-EXP-072` — any two versions; defaults to the oldest and the newest.
+  const [from, setFrom] = useState<number | null>(null);
+  const [to, setTo] = useState<number | null>(null);
+  // `T2011`, `FR-EXP-071` — any version's contract, approved or not.
+  const [viewed, setViewed] = useState<number | null>(null);
 
   useEffect(() => {
     void (async (): Promise<void> => {
       try {
-        setDetail(await api.getExpert(id));
+        const loaded = await api.getExpert(id);
+        setDetail(loaded);
+        setFrom(loaded.versions[0]?.version ?? null);
+        setTo(loaded.versions[loaded.versions.length - 1]?.version ?? null);
         setRuns(await api.expertSessions(id));
       } catch (err) {
         setError(failure(err));
@@ -116,7 +124,16 @@ function ExpertDetailView({ api, id }: { api: ApiClient; id: string }): ReactEle
   if (detail === null) return <p>Loading…</p>;
 
   const versions = detail.versions;
-  const pairs = versions.slice(1).map((v, i) => [versions[i]!.version, v.version] as const);
+  const shown = viewed === null ? undefined : versions.find((v) => v.version === viewed);
+  const compare = (a: number, b: number): void => {
+    void (async (): Promise<void> => {
+      try {
+        setDiff({ from: a, to: b, rows: await api.compareExpertVersions(id, a, b) });
+      } catch (err) {
+        setError(failure(err));
+      }
+    })();
+  };
 
   return (
     <article aria-label={`Expert ${detail.expert.key}`}>
@@ -138,32 +155,59 @@ function ExpertDetailView({ api, id }: { api: ApiClient; id: string }): ReactEle
         <ul>
           {versions.map((v) => (
             <li key={v.id}>
-              v{v.version} — {v.status} — by {v.createdBy}
+              v{v.version} — {v.status} — by {v.createdBy}{' '}
+              <button type="button" aria-label={`View v${v.version} contract`} onClick={(): void => setViewed(v.version)}>
+                View contract
+              </button>
             </li>
           ))}
         </ul>
-        {pairs.map(([from, to]) => (
-          <button
-            key={`${from}-${to}`}
-            type="button"
-            aria-label={`Compare v${from} and v${to}`}
-            onClick={(): void => {
-              void (async (): Promise<void> => {
-                try {
-                  setDiff({ from, to, rows: await api.compareExpertVersions(id, from, to) });
-                } catch (err) {
-                  setError(failure(err));
-                }
-              })();
-            }}
-          >
-            Compare v{from} and v{to}
-          </button>
-        ))}
+        {versions.length > 1 && from !== null && to !== null ? (
+          <p>
+            <label>
+              Compare from{' '}
+              <select aria-label="Compare from" value={from} onChange={(e): void => setFrom(Number(e.target.value))}>
+                {versions.map((v) => (
+                  <option key={v.id} value={v.version}>
+                    v{v.version}
+                  </option>
+                ))}
+              </select>
+            </label>{' '}
+            <label>
+              to{' '}
+              <select aria-label="Compare to" value={to} onChange={(e): void => setTo(Number(e.target.value))}>
+                {versions.map((v) => (
+                  <option key={v.id} value={v.version}>
+                    v{v.version}
+                  </option>
+                ))}
+              </select>
+            </label>{' '}
+            <button
+              type="button"
+              aria-label={`Compare v${from} and v${to}`}
+              disabled={from === to}
+              onClick={(): void => compare(from, to)}
+            >
+              Compare v{from} and v{to}
+            </button>
+          </p>
+        ) : null}
       </section>
 
+      {shown !== undefined ? (
+        <section aria-label={`Contract v${shown.version}`}>
+          <h4>Contract v{shown.version}</h4>
+          <p>
+            {shown.status} — by {shown.createdBy}
+          </p>
+          <ContractView version={shown.version} contract={shown.contract} />
+        </section>
+      ) : null}
+
       {diff !== null ? (
-        <section aria-label="Comparison">
+        <section aria-label={`Comparison of v${diff.from} and v${diff.to}`}>
           <h4>
             Comparison of v{diff.from} and v{diff.to}
           </h4>
@@ -224,6 +268,10 @@ function ContractView({ version, contract }: { version: number; contract: Expert
       <dd>
         {contract.capabilities.join(', ')} · tools: {contract.allowedTools.join(', ') || 'none'}
       </dd>
+      <dt>Context policy</dt>
+      <dd>{describeContextPolicy(contract.contextPolicy)}</dd>
+      <dt>Workspace requirements</dt>
+      <dd>{describeWorkspace(contract.workspaceRequirements)}</dd>
       <dt>Prohibited actions</dt>
       <dd>{contract.prohibitedActions.join(', ') || 'none'}</dd>
       <dt>Permissions</dt>
@@ -247,6 +295,24 @@ function ContractView({ version, contract }: { version: number; contract: Expert
     </dl>
   );
 }
+
+const describeContextPolicy = (p: ExpertContractView['contextPolicy']): string =>
+  [
+    `${p.budgetTokens} tokens, cost ${p.budgetCost}`,
+    p.includeLiveState ? 'live state included' : 'live state not included',
+    ...(p.essentialSources && p.essentialSources.length > 0
+      ? [`essential: ${p.essentialSources.map((s) => `${s.sourceType} ${s.sourceId}`).join(', ')}`]
+      : []),
+  ].join('; ');
+
+const describeWorkspace = (w: ExpertContractView['workspaceRequirements']): string => {
+  const parts = [
+    ...(w.executionType ? [`execution: ${w.executionType}`] : []),
+    ...(w.repositoryAccess && w.repositoryAccess.length > 0 ? [`repository: ${w.repositoryAccess.join(', ')}`] : []),
+    ...(w.supportsUnattended ? ['must support unattended runs'] : []),
+  ];
+  return parts.length > 0 ? parts.join('; ') : 'none stated';
+};
 
 function RunView({ api, executionId }: { api: ApiClient; executionId: string }): ReactElement {
   const [view, setView] = useState<ExpertSessionView | null>(null);
