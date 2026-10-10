@@ -54,6 +54,8 @@ import { ApproverGuard } from './approver.guard.js';
 import { InMemoryKnowledgeWriter, type KnowledgeWriter } from './knowledge.writer.js';
 import { Materialiser } from './materialiser.js';
 import { approvalAttestation } from './attestation.js';
+import { LearningJobs } from './learning.jobs.js';
+import { LearningSweeps } from './learning.sweeps.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -157,12 +159,24 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         new SubmissionService({ store, ports, policy, requestDecision: (candidate) => requester.request(candidate) }),
     },
     {
+      provide: LearningJobs,
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, Materialiser, DecisionRequester],
+      useFactory: (store: LearningStore, ports: LearningPorts, materialiser: Materialiser, requester: DecisionRequester): LearningJobs =>
+        new LearningJobs({ store, ports, materialiser, requester }),
+    },
+    {
+      // Off unless PMI_LEARNING_SWEEPS=on (learning.sweeps.ts).
+      provide: LearningSweeps,
+      inject: [LearningJobs],
+      useFactory: (jobs: LearningJobs): LearningSweeps => new LearningSweeps(jobs),
+    },
+    {
       provide: CandidateViewService,
       inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, DecisionRequester],
       useFactory: (store: LearningStore, ports: LearningPorts, requester: DecisionRequester): CandidateViewService =>
         new CandidateViewService({ reads: store, ports, eligibilityOf: (candidate) => requester.eligibility(candidate) }),
     },
   ],
-  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService, Materialiser],
+  exports: [LearningService, LEARNING_STORE, LEARNING_PORTS_TOKEN, SubmissionService, CandidateViewService, Materialiser, LearningJobs],
 })
 export class LearningModule {}

@@ -118,8 +118,12 @@ export class DecisionRequester {
   }
 
   private async transition(candidate: CandidateRecord, state: 'proposed' | 'pending-review', reason: string | null, decisionId: string | null): Promise<void> {
-    await this.deps.store.transaction((tx) =>
-      tx.appendTransition({ workspaceId: candidate.workspaceId, candidateId: candidate.id, state, reason, decisionId, actorKind: 'platform', actorId: INTAKE_AUTOMATION, at: this.now() }),
-    );
+    await this.deps.store.transaction(async (tx) => {
+      // A sweep retrying through an outage would otherwise append the same
+      // "still unavailable" row every minute. A repeat says nothing new.
+      const current = await tx.currentTransition(candidate.workspaceId, candidate.id);
+      if (current !== null && current.state === state && current.reason === reason && current.decisionId === decisionId) return;
+      await tx.appendTransition({ workspaceId: candidate.workspaceId, candidateId: candidate.id, state, reason, decisionId, actorKind: 'platform', actorId: INTAKE_AUTOMATION, at: this.now() });
+    });
   }
 }
