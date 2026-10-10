@@ -105,6 +105,13 @@ describe('T2301 · the Learning module is reachable through the composed applica
       expect(outcome).toEqual({ value: null });
     });
 
+    it('T2391 · LearningDecisions reaches EPIC-031 (a decision nobody holds is NotFound, not unbound)', async () => {
+      const p = await ports();
+      const outcome = await notUnbound(() => p.decisions.resolutionOf('ws_x', 'dec_none'));
+      expect(outcome).toHaveProperty('error');
+      expect(String((outcome as { error: Error }).error.message)).toContain('dec_none');
+    });
+
     it('T2399 · KnowledgeIndex reaches EPIC-038’s IndexService — its own refusal, never “KnowledgeIndex unbound”', async () => {
       const p = await ports();
       const outcome = await p.index

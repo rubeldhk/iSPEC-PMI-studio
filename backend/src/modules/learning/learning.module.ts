@@ -14,8 +14,7 @@
  * ## Ports: real where the owner is on `main`, refusing where it is not
  *
  * `LEARNING_PORTS_TOKEN` is one object holding all twelve ports (`learning.tokens.ts`).
- * The `main` owners are bound to their services here; an owner not yet on
- * `main` (today only `decisions`, `EPIC-031`'s A-031-1, PR #8) stays **refusing**. Route tests rebind a member of that object to
+ * Every owner is on `main` and bound to its service here (Phase 9). Route tests rebind a member of that object to
  * an in-test recorder, visibly, in the test that needs it — the default never
  * changes (`R-048-20`).
  *
@@ -36,6 +35,10 @@ import { ConnectorModule } from '../connector/connector.module.js';
 import { ContextModule } from '../context/context.module.js';
 import { CONTEXT_KNOWLEDGE, type KnowledgeSupplyBinding } from '../context/context.tokens.js';
 import { IndexService } from '../context/retrieval/index.service.js';
+import { DecisionModule } from '../decision/decision.module.js';
+import { DECISION_REPOSITORY } from '../decision/decision.tokens.js';
+import type { DecisionRepository } from '../decision/decision.repository.js';
+import { DecisionEngine } from '../decision/evaluator.js';
 import { EvidenceModule } from '../evidence/evidence.module.js';
 import { EvidenceService } from '../evidence/evidence.service.js';
 import { AccessControlEvidencePolicy } from '../evidence/access.adapter.js';
@@ -59,6 +62,7 @@ import { auditPort, executionsPort, principalsPort, projectsPort } from './main-
 import { attestationsAdapter } from './adapters/attestations.adapter.js';
 import { evidenceReadsAdapter, readerAccessAdapter } from './adapters/evidence.adapter.js';
 import { expertsAdapter } from './adapters/experts.adapter.js';
+import { decisionsAdapter } from './adapters/decisions.adapter.js';
 import { bindKnowledgeIntoContext, knowledgeIndexAdapter } from './adapters/context.adapter.js';
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
@@ -89,7 +93,7 @@ export class LearningService {
 const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
 
 @Module({
-  imports: [AccessModule, AgentsModule, AuditModule, ConnectorModule, ContextModule, EvidenceModule, ExecutionsModule, ExpertsModule, ProjectsModule, SteeringModule],
+  imports: [AccessModule, AgentsModule, AuditModule, ConnectorModule, ContextModule, DecisionModule, EvidenceModule, ExecutionsModule, ExpertsModule, ProjectsModule, SteeringModule],
   controllers: [LearningController, LearningConnectorController],
   providers: [
     { provide: LearningService, useFactory: (): LearningService => new LearningService() },
@@ -101,7 +105,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       provide: LEARNING_PORTS_TOKEN,
-      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService, AccessInheritanceService, EXPERT_PROVENANCE, IndexService],
+      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService, AccessInheritanceService, EXPERT_PROVENANCE, IndexService, DecisionEngine, DECISION_REPOSITORY],
       useFactory: (
         facade: ExecutionRegistryFacade,
         registration: ExecutionRegistrationService,
@@ -115,6 +119,8 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         readability: AccessInheritanceService,
         provenance: ExpertProvenance,
         index: IndexService,
+        engine: DecisionEngine,
+        decisionRows: DecisionRepository,
       ): LearningPorts => {
         const ports: LearningPorts = refusingPorts();
         // The SecretScreen is pure code — EPIC-037's patterns — and needs no database.
@@ -149,9 +155,13 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
           // T2399 — EPIC-038's reindex. Its refusal (no embedding provider,
           // FR-CTX-013) is recorded not-yet-retrievable with its own reason.
           index: knowledgeIndexAdapter(index),
+          // T2391 — EPIC-031's DecisionEngine: decide, approve, refuse (A-031-1)
+          // and resolutionOf (A-031-3). An attempt it refuses is a 403, never a
+          // resolution.
+          decisions: decisionsAdapter(engine, decisionRows),
         });
-        // Still refusing: decisions (EPIC-031 — A-031-1 and A-031-2 are in open
-        // PR #8, not on main).
+        // Every port whose owner is on main is bound. The embedding provider
+        // EPIC-038's reindex needs is owned by no one (R-048-13).
         return ports;
       },
     },
