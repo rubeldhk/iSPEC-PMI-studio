@@ -274,7 +274,7 @@ T2402 and T2405–T2407.
   - `refused` (incl. automation not permitted, medium without gates) → stays `proposed` with the explanation;
   - an unreachable engine → `proposed` with `decision-path-unavailable` and never approved (`FR-LRN-020`, `FR-LRN-021`, `FR-LRN-024`, `FR-LRN-030`)
 - [X] T2349 [US3] Implement `backend/src/modules/learning/decision.requester.ts` and call it from `submission.service.ts` (unit test: T2348) — `R-048-5`, `R-048-12` — **Done**: `decision.requester.ts`: the `DecisionRequest` shape, `actionTypeFor`, outcomes (pending → pending-review; refused/exception → proposed with the explanation; unreachable or unbound → proposed `decision-path-unavailable`; auto-executed → handed to the resolution path), `attempts` = distinct decisions (I1); wired as the submission hook and as the candidate view's eligibility.
-- [ ] T2350 [P] [US3] Write failing unit tests `backend/tests/unit/learning-approver-guard.spec.ts`.
+- [X] T2350 [P] [US3] Write failing unit tests `backend/tests/unit/learning-approver-guard.spec.ts`. — **Done**: 16 cases, red on the missing module; the verdicts. The I1 consequence of a refusal (back to `proposed`, flag, audit) is the materialiser's and is asserted in T2352.
 
   Accepted:
   - `approved` + `human` + `decidedBy` resolving to a `User` who is not an AI source identity;
@@ -287,7 +287,7 @@ T2402 and T2405–T2407.
   - `Principals` unbound.
 
   Each refusal transitions the candidate **back to `proposed`** with reason `decision-not-accepted` (or `policy-auto-executed-review`), raises a `knowledge_flags` row naming it, and writes an audit record — never leaving it in `pending-review` with a resolved decision (`FR-LRN-027`, `R-048-6` as amended for analysis finding `I1`; MP-3's target)
-- [ ] T2351 [US3] Implement `backend/src/modules/learning/approver.guard.ts` over `Principals` (unit test: T2350)
+- [X] T2351 [US3] Implement `backend/src/modules/learning/approver.guard.ts` over `Principals` (unit test: T2350) — **Done**: `approver.guard.ts`: `ApproverGuard.judge` over `Principals` — a 'human' approval must resolve to a User and to none of the AI source identities (`aiSourceIdentities`: source agent, Expert, corroborating agents and Experts); `auto-executed` accepted only for `learning.approve.*` by `learning-intake`; `Principals` unbound refuses.
 - [ ] T2352 [P] [US3] Write failing unit tests `backend/tests/unit/learning-materialiser.spec.ts`:
   - writes a version only on an accepted resolution;
   - writes version + `current` status + `approved` transition in one transaction;
