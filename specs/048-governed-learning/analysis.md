@@ -1,6 +1,6 @@
 # EPIC-048 Governed Learning — cross-artifact analysis
 
-**Date**: 2026-10-09 · **Command**: `/speckit-analyze` · **Artifacts**: `spec.md`, `plan.md`, `tasks.md`
+**Date**: 2026-10-09 · **Session**: 2026-10-09 analysis session · **Command**: `/speckit-analyze` · **Artifacts**: `spec.md`, `plan.md`, `tasks.md`
 (and `research.md`, `data-model.md`, `contracts/`) · **Non-destructive**: no artifact was changed by
 this analysis.
 

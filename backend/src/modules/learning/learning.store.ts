@@ -196,7 +196,8 @@ export interface BrowseFilter {
   readonly scopeKind?: ClaimedScope['kind'];
   readonly category?: string;
   readonly status?: VersionStatus;
-  readonly cursor?: string;
+  /** The page after this token (`nextCursor` of the previous page). */
+  readonly after?: string;
   readonly limit?: number;
 }
 
@@ -301,9 +302,9 @@ export function encodeCursor(row: { approvedAt: Date; id: string }): string {
   return Buffer.from(`${row.approvedAt.toISOString()}|${row.id}`, 'utf8').toString('base64url');
 }
 
-export function decodeCursor(cursor: string | undefined): { approvedAt: Date; id: string } | null {
-  if (cursor === undefined || cursor === '') return null;
-  const raw = Buffer.from(cursor, 'base64url').toString('utf8');
+export function decodeCursor(token: string | undefined): { approvedAt: Date; id: string } | null {
+  if (token === undefined || token === '') return null;
+  const raw = Buffer.from(token, 'base64url').toString('utf8');
   const [at, id] = raw.split('|');
   if (!at || !id || Number.isNaN(Date.parse(at))) return null;
   return { approvedAt: new Date(at), id };
@@ -570,7 +571,7 @@ export class InMemoryLearningStore implements LearningStore {
 
   async browse(workspaceId: string, filter: BrowseFilter): Promise<BrowsePage> {
     const limit = Math.min(Math.max(filter.limit ?? BROWSE_PAGE_SIZE, 1), 200);
-    const after = decodeCursor(filter.cursor);
+    const after = decodeCursor(filter.after);
     const rows: BrowseRow[] = [];
     const sorted = this.tables.versions
       .filter((v) => v.workspaceId === workspaceId)

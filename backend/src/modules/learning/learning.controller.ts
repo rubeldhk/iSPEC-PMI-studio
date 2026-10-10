@@ -106,7 +106,7 @@ export class LearningController {
 
   /**
    * `FR-LRN-073` (T2371) — browse approved knowledge, 50 a page:
-   * `?projectId=&scope=&category=&status=&cursor=`. Read-only: supersession,
+   * `?projectId=&scope=&category=&status=&after=`. Read-only: supersession,
    * deprecation and widening are **submissions**, never edits, so there is no
    * `PUT`, `PATCH` or `DELETE` here (`FR-LRN-031`, `FR-LRN-042`).
    */
@@ -118,7 +118,7 @@ export class LearningController {
       ...(query['scope'] ? { scopeKind: query['scope'] as BrowseFilter['scopeKind'] } : {}),
       ...(query['category'] ? { category: query['category'] } : {}),
       ...(query['status'] ? { status: query['status'] as BrowseFilter['status'] } : {}),
-      ...(query['cursor'] ? { cursor: query['cursor'] } : {}),
+      ...(query['after'] ? { after: query['after'] } : {}),
       ...(query['limit'] && Number.isInteger(Number(query['limit'])) ? { limit: Number(query['limit']) } : {}),
     };
     return this.knowledge.browse(user.workspaceId, filter);

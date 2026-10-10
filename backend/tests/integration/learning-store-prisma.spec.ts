@@ -262,7 +262,7 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
       expect((await store.corroborationByIdempotencyKey(WS, `co_idem_${c.id}`))?.candidateId).toBe(c.id);
     });
 
-    it('browses newest first, filters, and pages by cursor', async () => {
+    it('browses newest first, filters, and pages by token', async () => {
       const writer = new PrismaKnowledgeWriter(prisma, recordingAudit());
       for (let i = 0; i < 3; i += 1) {
         const c = await seed({ subjectKey: `browse:${i}`, category: 'browse-cat' });
@@ -273,7 +273,7 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
       expect(first.items).toHaveLength(2);
       expect(first.nextCursor).not.toBeNull();
       expect(first.items[0]!.version.approvedAt.getTime()).toBeGreaterThan(first.items[1]!.version.approvedAt.getTime());
-      const second = await store.browse(WS, { category: 'browse-cat', limit: 2, cursor: first.nextCursor! });
+      const second = await store.browse(WS, { category: 'browse-cat', limit: 2, after: first.nextCursor! });
       expect(second.items).toHaveLength(1);
       expect(second.nextCursor).toBeNull();
       expect((await store.browse(WS, { category: 'browse-cat', status: 'superseded' })).items).toEqual([]);

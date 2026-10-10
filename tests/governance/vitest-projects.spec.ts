@@ -80,6 +80,8 @@ const PROJECT_DIRS: Record<string, string> = {
   'workspace-bundle': 'packages/workspace-bundle',
   'epic-stage': 'packages/epic-stage',
   'mcp-server': 'packages/mcp-server',
+  // EPIC-048 T2304 — the governed-learning contract package.
+  'learning-contract': 'packages/learning-contract/tests',
   // EPIC-005 T056a — the first component tests, registered the day the
   // PMI-DOC-004 hold discharged and the frontend stopped being a scaffold.
   frontend: 'frontend/tests/unit',

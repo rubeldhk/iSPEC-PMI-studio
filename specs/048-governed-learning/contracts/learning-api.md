@@ -126,9 +126,11 @@ Human session only. **Never** reachable through the connector guard.
 
 | Method | Route | Purpose |
 |---|---|---|
-| `GET` | `/learning/knowledge?projectId=&scope=&category=&status=&cursor=` | Browse, 50 per page (`FR-LRN-073`). Each row: entry, current version, status, scope, classification, retrievability, open flags |
+| `GET` | `/learning/knowledge?projectId=&scope=&category=&status=&after=` | Browse, 50 per page (`FR-LRN-073`). Each row: entry, current version, status, scope, classification, retrievability, open flags |
 | `GET` | `/learning/knowledge/:entryId` | One entry, current version, provenance (`SC-LRN-006`) |
 | `GET` | `/learning/knowledge/:entryId/history` | Every version in order, the candidate and decision behind each, every status event and flag (`FR-LRN-035`) |
+
+`after` is the previous page's `nextCursor` *(renamed from `cursor` on 2026-10-10: `EPIC-028`'s architecture test `T560` reads the bare word as the name of an AI provider and forbids it in `backend/src`)*.
 
 Supersession, deprecation and widening are **submissions** (`kind` above), not edits — there is no
 `PUT` or `PATCH` here (`FR-LRN-031`, `FR-LRN-042`).

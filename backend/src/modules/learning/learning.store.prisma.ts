@@ -494,7 +494,7 @@ class PrismaLearningReads implements LearningReads {
 
   async browse(workspaceId: string, filter: BrowseFilter): Promise<BrowsePage> {
     const limit = Math.min(Math.max(filter.limit ?? BROWSE_PAGE_SIZE, 1), 200);
-    const after = decodeCursor(filter.cursor);
+    const after = decodeCursor(filter.after);
     const r = await this.rows(
       `SELECT v.*,
               e."id" AS "e_id", e."workspaceId" AS "e_workspaceId", e."category" AS "e_category",

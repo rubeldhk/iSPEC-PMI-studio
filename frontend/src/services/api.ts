@@ -1991,7 +1991,7 @@ export interface KnowledgeFilter {
   scope?: '' | 'project' | 'workspace' | 'projects';
   category?: string;
   status?: '' | 'current' | 'superseded' | 'deprecated';
-  cursor?: string;
+  after?: string;
 }
 
 /** One version as the browser lists it (`FR-LRN-073`, `FR-LRN-074`). */
