@@ -64,11 +64,11 @@ Steps 1–3 may land in any order among themselves. Step 4 needs all three; step
 
 ## Phase 1: Setup
 
-- [ ] T2300 Confirm `specs/048-governed-learning/defects/README.md` (created by `/speckit-plan`) is tracked in git with the commit that carries these tasks — Constitution VI's sole defect intake, so `DOR-11` can read it
-- [ ] T2301 [P] Write the failing reachability test `backend/tests/integration/learning-reachability.spec.ts` importing the real `AppModule` and calling `GET /learning/knowledge` — Constitution XI Tier 1; must fail before T2302
-- [ ] T2302 Create `backend/src/modules/learning/learning.module.ts` and register it in `backend/src/app.module.ts` in the same change (integration test: T2301) — `DEF-005-001` is what an unregistered module looks like
-- [ ] T2303 [P] Write the failing test `packages/learning-contract/tests/package.spec.ts` asserting the package builds, exports `CANDIDATE_STATES`, and runs as its own `learning-contract` project in `vitest.workspace.ts`
-- [ ] T2304 Create `packages/learning-contract/` (`package.json`, `tsconfig.json`, `src/index.ts`) and add the `learning-contract` project to `vitest.workspace.ts` (test: T2303) — `R-048-2`
+- [X] T2300 Confirm `specs/048-governed-learning/defects/README.md` (created by `/speckit-plan`) is tracked in git with the commit that carries these tasks — Constitution VI's sole defect intake, so `DOR-11` can read it — **Done**: both defect files tracked (`git ls-files`), committed with the Step 0 remediation.
+- [X] T2301 [P] Write the failing reachability test `backend/tests/integration/learning-reachability.spec.ts` importing the real `AppModule` and calling `GET /learning/knowledge` — Constitution XI Tier 1; must fail before T2302 — **Done**: observed 3/3 red before T2302; no database — 401 vs 404 is the mount proof.
+- [X] T2302 Create `backend/src/modules/learning/learning.module.ts` and register it in `backend/src/app.module.ts` in the same change (integration test: T2301) — `DEF-005-001` is what an unregistered module looks like — **Done**: module + `LearningService` + session `GET /learning/knowledge` (401 without a session; listing lands in T2371), registered after `ContextModule`; T2301 3/3 green.
+- [X] T2303 [P] Write the failing test `packages/learning-contract/tests/package.spec.ts` asserting the package builds, exports `CANDIDATE_STATES`, and runs as its own `learning-contract` project in `vitest.workspace.ts` — **Done**: 4 assertions incl. a standalone `tsc --noEmit`; red before T2304.
+- [X] T2304 Create `packages/learning-contract/` (`package.json`, `tsconfig.json`, `src/index.ts`) and add the `learning-contract` project to `vitest.workspace.ts` (test: T2303) — `R-048-2` — **Done**: package, tsconfig, `learning-contract` project in `vitest.workspace.ts` and `test:unit`; backend depends on it; T2303 4/4 green.
 
 **Checkpoint**: a defect intake, a module the application builds, and a package with a test project.
 
