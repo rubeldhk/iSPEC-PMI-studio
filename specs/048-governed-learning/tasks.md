@@ -157,7 +157,7 @@ idempotent and screened, with every outcome an event on the execution — and no
 **Independent test**: quickstart Q1, Q2, Q4, Q5, Q7, Q26 — submission is recorded or refused with
 reasons. A context assembly after it contains no candidate. No route writes knowledge.
 
-- [ ] T2326 [P] [US1] Write failing unit tests `backend/tests/unit/learning-submission-source.spec.ts`:
+- [X] T2326 [P] [US1] Write failing unit tests `backend/tests/unit/learning-submission-source.spec.ts`: — **Done**: 15 cases, red with the service absent; shared recording ports in `tests/helpers/learning-ports.ts`.
   - an unregistered execution is refused (`FR-LRN-005`);
   - a submission after the terminal event is accepted within 24 h as `late` and refused after (`FR-LRN-005`);
   - a person source names the user (`FR-LRN-006`);
@@ -165,7 +165,7 @@ reasons. A context assembly after it contains no candidate. No route writes know
   - another workspace's execution is refused and its candidates are invisible (`FR-LRN-008`);
   - a provisional execution records `proposed` and requests no decision (`FR-LRN-063`);
   - a retried `idempotencyKey` returns the original (`FR-LRN-061`)
-- [ ] T2327 [US1] Implement `backend/src/modules/learning/submission.service.ts` — intake, source checks, bound, idempotency and the `proposed` transition (unit test: T2326)
+- [X] T2327 [US1] Implement `backend/src/modules/learning/submission.service.ts` — intake, source checks, bound, idempotency and the `proposed` transition (unit test: T2326) — **Done**: `submission.service.ts`: parse → replay (a reused key with different content is `409`) → policy/category → project/source/grace/bound → scope/target → evidence → record under the subject lock → decision hook unless provisional; 15/15.
 - [ ] T2328 [P] [US1] Write failing unit tests `backend/tests/unit/learning-secret-screen.spec.ts`:
   - statement, subject, confidence basis and every free-text field are screened before any write;
   - a match is refused naming the rule and field, never the value;
