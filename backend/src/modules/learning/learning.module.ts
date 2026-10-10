@@ -14,8 +14,8 @@
  * ## Ports: real where the owner is on `main`, refusing where it is not
  *
  * `LEARNING_PORTS_TOKEN` is one object holding all twelve ports (`learning.tokens.ts`).
- * The `main` owners are bound to their services here; the four unmerged owners
- * stay **refusing** until Phase 9. Route tests rebind a member of that object to
+ * The `main` owners are bound to their services here; an owner not yet on
+ * `main` (today only `decisions`, `EPIC-031`'s A-031-1, PR #8) stays **refusing**. Route tests rebind a member of that object to
  * an in-test recorder, visibly, in the test that needs it — the default never
  * changes (`R-048-20`).
  *
@@ -33,6 +33,9 @@ import { PrincipalRegistryService } from '../agents/principal-registry.service.j
 import { AuditModule } from '../audit/audit.module.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ConnectorModule } from '../connector/connector.module.js';
+import { ContextModule } from '../context/context.module.js';
+import { CONTEXT_KNOWLEDGE, type KnowledgeSupplyBinding } from '../context/context.tokens.js';
+import { IndexService } from '../context/retrieval/index.service.js';
 import { EvidenceModule } from '../evidence/evidence.module.js';
 import { EvidenceService } from '../evidence/evidence.service.js';
 import { AccessControlEvidencePolicy } from '../evidence/access.adapter.js';
@@ -56,6 +59,7 @@ import { auditPort, executionsPort, principalsPort, projectsPort } from './main-
 import { attestationsAdapter } from './adapters/attestations.adapter.js';
 import { evidenceReadsAdapter, readerAccessAdapter } from './adapters/evidence.adapter.js';
 import { expertsAdapter } from './adapters/experts.adapter.js';
+import { bindKnowledgeIntoContext, knowledgeIndexAdapter } from './adapters/context.adapter.js';
 import { secretScreenPort } from './secret.screen.js';
 import { SubmissionService } from './submission.service.js';
 import { CandidateViewService } from './candidate.view.js';
@@ -71,6 +75,9 @@ import { ReviewService } from './review.service.js';
 import { KnowledgeService } from './knowledge.service.js';
 import { KnowledgeGate, KnowledgeReader } from './supply.js';
 
+/** The provider that fills `CONTEXT_KNOWLEDGE` — instantiated with the module (T2399). */
+const CONTEXT_KNOWLEDGE_BOUND = Symbol('LEARNING_CONTEXT_KNOWLEDGE_BOUND');
+
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
   /** Hosted views, not an owned area (`FR-LRN-070`). */
@@ -82,7 +89,7 @@ export class LearningService {
 const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
 
 @Module({
-  imports: [AccessModule, AgentsModule, AuditModule, ConnectorModule, EvidenceModule, ExecutionsModule, ExpertsModule, ProjectsModule, SteeringModule],
+  imports: [AccessModule, AgentsModule, AuditModule, ConnectorModule, ContextModule, EvidenceModule, ExecutionsModule, ExpertsModule, ProjectsModule, SteeringModule],
   controllers: [LearningController, LearningConnectorController],
   providers: [
     { provide: LearningService, useFactory: (): LearningService => new LearningService() },
@@ -94,7 +101,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       provide: LEARNING_PORTS_TOKEN,
-      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService, AccessInheritanceService, EXPERT_PROVENANCE],
+      inject: [ExecutionRegistryFacade, ExecutionRegistrationService, ExecutionEventService, PrincipalRegistryService, AuditService, SteeringService, ProjectsService, LEARNING_STORE, EvidenceService, AccessInheritanceService, EXPERT_PROVENANCE, IndexService],
       useFactory: (
         facade: ExecutionRegistryFacade,
         registration: ExecutionRegistrationService,
@@ -107,6 +114,7 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
         evidence: EvidenceService,
         readability: AccessInheritanceService,
         provenance: ExpertProvenance,
+        index: IndexService,
       ): LearningPorts => {
         const ports: LearningPorts = refusingPorts();
         // The SecretScreen is pure code — EPIC-037's patterns — and needs no database.
@@ -138,6 +146,9 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
             evidence,
             projectOf: async (workspaceId: string, candidateId: string) => (await store.candidate(workspaceId, candidateId))?.projectId ?? null,
           }),
+          // T2399 — EPIC-038's reindex. Its refusal (no embedding provider,
+          // FR-CTX-013) is recorded not-yet-retrievable with its own reason.
+          index: knowledgeIndexAdapter(index),
         });
         // Still refusing: decisions (EPIC-031 — A-031-1 and A-031-2 are in open
         // PR #8, not on main).
@@ -219,17 +230,26 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       // What EPIC-038 reads for source type knowledge-entry (T2333) — bound into
-      // its sources adapter by T2399, after EPIC-038 merges with A-038-1.
+      // its sources adapter through CONTEXT_KNOWLEDGE (T2399, below).
       provide: KnowledgeReader,
       inject: [LEARNING_STORE],
       useFactory: (store: LearningStore): KnowledgeReader => new KnowledgeReader(store),
     },
     {
-      // The admission port EPIC-038 consults (T2373; bound into AssemblyPorts by T2399).
+      // The admission port EPIC-038 consults (T2373; bound into AssemblyPorts through CONTEXT_KNOWLEDGE by T2399).
       provide: KnowledgeGate,
       inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN],
       useFactory: (store: LearningStore, ports: LearningPorts): KnowledgeGate =>
         new KnowledgeGate({ reads: store, ports, policy: new LearningPolicyReader({ current: (ws) => ports.policy.current(ws) }) }),
+    },
+    {
+      // T2399, A-038-2 — fill EPIC-038's knowledge slot with the reader and
+      // admission above. EPIC-038 reads it at call time; unfilled, it serves
+      // and admits no knowledge entry.
+      provide: CONTEXT_KNOWLEDGE_BOUND,
+      inject: [CONTEXT_KNOWLEDGE, KnowledgeReader, KnowledgeGate],
+      useFactory: (binding: KnowledgeSupplyBinding, reader: KnowledgeReader, admission: KnowledgeGate): KnowledgeSupplyBinding =>
+        bindKnowledgeIntoContext(binding, { reader, admission }),
     },
     {
       provide: KnowledgeService,

@@ -559,10 +559,14 @@ export class AssemblyService {
           // thinking. An essential item was not chosen by relevance, and saying
           // it was would misdescribe the package.
           // `A-038-2` — a knowledge item says what it is: approved knowledge,
-          // not an authoritative source (`FR-LRN-052`, `FR-CTX-072`).
+          // not an authoritative source (`FR-LRN-052`, `FR-CTX-072`). The
+          // owner's note may already carry the prefix (`learning-contract.md`
+          // §3 shows it does); it is said once.
           reason:
             knowledgeNote !== null
-              ? `${KNOWLEDGE_INCLUSION_PREFIX} ${knowledgeNote}`
+              ? knowledgeNote.startsWith(KNOWLEDGE_INCLUSION_PREFIX)
+                ? knowledgeNote
+                : `${KNOWLEDGE_INCLUSION_PREFIX} ${knowledgeNote}`
               : isEssential(candidate)
                 ? `marked essential for this objective by the requester`
                 : `objective relevance ${candidate.relevanceScore.toFixed(2)} against: ${input.objective}`,

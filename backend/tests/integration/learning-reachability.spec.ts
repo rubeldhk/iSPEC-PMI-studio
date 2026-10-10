@@ -104,5 +104,23 @@ describe('T2301 · the Learning module is reachable through the composed applica
       const outcome = await notUnbound(() => p.experts.forExecution('ws_x', 'exe_none'));
       expect(outcome).toEqual({ value: null });
     });
+
+    it('T2399 · KnowledgeIndex reaches EPIC-038’s IndexService — its own refusal, never “KnowledgeIndex unbound”', async () => {
+      const p = await ports();
+      const outcome = await p.index
+        .reindex({ workspaceId: 'ws_x', sourceType: 'knowledge-entry', entryId: 'ke_none', versionId: 'kv_none' })
+        .then((value) => ({ value }), (error: unknown) => ({ error }));
+      if ('error' in outcome) expect(String((outcome.error as Error).message)).not.toMatch(/KnowledgeIndex/);
+    });
+
+    it('T2399 · this Epic’s reader and admission are bound into ContextModule (A-038-2)', async () => {
+      const { ContextModule } = await import('../../src/modules/context/context.module.js');
+      const { CONTEXT_KNOWLEDGE } = await import('../../src/modules/context/context.tokens.js');
+      const { LearningModule } = await import('../../src/modules/learning/learning.module.js');
+      const { KnowledgeGate, KnowledgeReader } = await import('../../src/modules/learning/supply.js');
+      const binding = app.select(ContextModule).get(CONTEXT_KNOWLEDGE, { strict: false }) as { reader: unknown; admission: unknown };
+      expect(binding.reader).toBe(app.select(LearningModule).get(KnowledgeReader, { strict: false }));
+      expect(binding.admission).toBe(app.select(LearningModule).get(KnowledgeGate, { strict: false }));
+    });
   });
 });
