@@ -54,7 +54,7 @@ describe('T2346 · the automatic path needs every condition', () => {
   it('names every failing condition, not the first', () => {
     const result = eligibilityOf({
       policy: policy(),
-      candidate: { ...eligible, category: 'architecture', kind: 'supersede', targetVersionId: 'kv', claimedScope: { kind: 'workspace', projectIds: [] }, provisional: true },
+      candidate: { ...eligible, category: 'architecture', kind: 'supersede', claimedScope: { kind: 'workspace', projectIds: [] }, provisional: true },
       citationStates: ['integrity-failed'],
       conflict: true,
     });
