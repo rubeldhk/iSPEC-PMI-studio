@@ -297,13 +297,13 @@ T2402 and T2405–T2407.
   - a supersession marks the predecessor `superseded` naming the successor in the same transaction;
   - every materialisation, supersession, deprecation and scope change writes an `EPIC-004` audit record through `Audit`, and `Audit` unbound refuses (`FR-LRN-031`, `FR-LRN-032`, `FR-LRN-038`, `FR-LRN-062`; MP-1b's target)
 - [X] T2353 [US3] Implement `backend/src/modules/learning/materialiser.ts` — the only caller of `KnowledgeWriter` (unit test: T2352) — **Done**: `materialiser.ts`: `applyResolution` for every outcome; the guard's verdict gates `KnowledgeWriter.insertVersion` (the `if (!verdict.accepted)` line MP-1b removes); `target-not-current` on a lost race; post-commit hooks for attestation and reindex; the module injects `KNOWLEDGE_WRITER` into `Materialiser` alone (T2332 now asserts exactly that) and the requester hands auto-executed decisions to it; 195/195 learning units.
-- [ ] T2354 [P] [US3] Write failing unit tests `backend/tests/unit/learning-review.spec.ts`:
+- [X] T2354 [P] [US3] Write failing unit tests `backend/tests/unit/learning-review.spec.ts`: — **Done**: 15 cases, red on the missing module; terms observed in the store at the moment `approve` is called.
   - approve writes terms **before** calling `approve`;
   - the scope must be ⊆ claimed (`400`);
   - reject requires a reason and calls `refuse` (`FR-LRN-029`);
   - a non-human principal or an AI source identity is refused `403` and audited, and the decision stays pending;
   - a human submitter's self-approval follows `EPIC-031`'s refusal (`FR-LRN-027`, `FR-LRN-028`)
-- [ ] T2355 [US3] Implement `backend/src/modules/learning/review.service.ts` (unit test: T2354)
+- [X] T2355 [US3] Implement `backend/src/modules/learning/review.service.ts` (unit test: T2354) — **Done**: `review.service.ts`: 404 / 409 / human-reviewer gate (403 audited, decision left pending; `Principals` unbound 503) / reject needs a reason → `refuse` / approve writes terms (scope ⊆ claimed, identical retry reused) then `approve` → materialiser.
 - [ ] T2356 [P] [US3] Write failing unit tests `backend/tests/unit/learning-attestation.spec.ts`:
   - every approval contributes `approval/v1` with `source.uri = 'pmi:learning'`, attached to the decision, attesting the entry and version, with the predicate body of `R-048-19`;
   - a contribution failure flags `attestation-missing` and does not roll back the version (`FR-LRN-025`)
