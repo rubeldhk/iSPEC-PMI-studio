@@ -22,6 +22,9 @@ export const CONNECTOR_SCOPES_OF_RECORD = [
   'execution.register',
   'execution.sync',
   'health.write',
+  // EPIC-048 T2335: the sixteenth — an agent submits a learning candidate.
+  // Submission only: deciding one is a human's (FR-LRN-027).
+  'learning.submit',
   'project.read',
   'requirements.read',
   // EPIC-046 T1692: the fifteenth — the finish hook's task sync after `tasks`
@@ -30,13 +33,13 @@ export const CONNECTOR_SCOPES_OF_RECORD = [
   'tasks.sync',
 ] as const;
 
-describe('T1416 + T1475 + T1626 + T1691 · the fifteen connector scopes', () => {
+describe('T1416 + T1475 + T1626 + T1691 + T2335 · the sixteen connector scopes', () => {
   it('are exactly the registered ones, sorted', () => {
     expect(registeredConnectorScopes()).toEqual([...CONNECTOR_SCOPES_OF_RECORD]);
   });
 
   it('nothing a Room, an approval or an administrator needs is among them', () => {
-    for (const forbidden of ['room.read', 'transition.apply', 'transition.approve', 'workspace.admin', 'grant.write']) {
+    for (const forbidden of ['room.read', 'transition.apply', 'transition.approve', 'workspace.admin', 'grant.write', 'learning.review', 'learning.approve']) {
       expect(isRegisteredConnectorScope(forbidden)).toBe(false);
     }
   });

@@ -51,7 +51,7 @@ describe('T1364 · the connector module authenticates and scopes, nothing else (
     expect(callsMutation).toEqual([]);
   });
 
-  it('exposes exactly the fifteen connector scopes of record (EPIC-041 one, EPIC-043 ten, EPIC-042 two, EPIC-045 one, EPIC-046 one)', () => {
+  it('exposes exactly the sixteen connector scopes of record (EPIC-041 one, EPIC-043 ten, EPIC-042 two, EPIC-045 one, EPIC-046 one, EPIC-048 one)', () => {
     const scope = connector.find((f) => f.rel.endsWith('connector-scope.ts'));
     expect(scope, 'connector-scope.ts is the registry').toBeDefined();
     const registered = [...(scope?.body ?? '').matchAll(/registerConnectorScope\(\s*'([^']+)'/g)].map((m) => m[1]);
@@ -69,6 +69,8 @@ describe('T1364 · the connector module authenticates and scopes, nothing else (
       'execution.register',
       'execution.sync',
       'health.write',
+      // EPIC-048 T2335 — submission only; review is never a connector's.
+      'learning.submit',
       'project.read',
       'requirements.read',
       'tasks.sync',

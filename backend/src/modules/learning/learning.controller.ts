@@ -1,14 +1,19 @@
 /**
- * `T2302` (EPIC-048) — the session routes of governed learning.
+ * `T2302`, `T2335` (EPIC-048) — the session routes of governed learning.
  *
  * PC-1: a transport. Every capability lives in a service; this file decides only
  * what a caller may say and what the session decides for them. Identity fields
- * in a body (`workspaceId`, `actor`, `requestedBy`, `reviewerId`, `approvedBy`)
- * are stripped and taken from the session — `EPIC-031`'s `strip()` convention.
+ * in a body (`workspaceId`, `actor`, `requestedBy`, `reviewerId`, `approvedBy`,
+ * `sourcePrincipalId`) are stripped and taken from the session — `EPIC-031`'s
+ * `strip()` convention.
+ *
+ * **There is no route here that creates, edits or deletes knowledge**
+ * (`SC-LRN-001`); `T2332` asserts it over every controller in the application.
  */
-import { Controller, Get, Req } from '@nestjs/common';
-import { NotAvailableUntilError, UnauthenticatedError } from '../../core/errors.js';
+import { Body, Controller, Get, Inject, Post, Req, Res } from '@nestjs/common';
+import { NotAvailableUntilError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
+import { SubmissionService, type SubmissionBody } from './submission.service.js';
 
 export interface ActingUser {
   readonly workspaceId: string;
@@ -21,8 +26,43 @@ export function requireSession(ctx: WorkspaceContext | undefined | null): Acting
   return { workspaceId: ctx.workspaceId, userId: ctx.userId };
 }
 
+/** Identity a body may not carry; overwritten from the session or credential anyway. */
+export const IDENTITY_FIELDS = Object.freeze(['workspaceId', 'actor', 'requestedBy', 'reviewerId', 'approvedBy', 'sourcePrincipalId', 'sourceKind', 'userId']);
+
+export function strip(body: unknown): Record<string, unknown> {
+  const safe: Record<string, unknown> = { ...((body ?? {}) as Record<string, unknown>) };
+  for (const field of IDENTITY_FIELDS) delete safe[field];
+  return safe;
+}
+
+/** The slice of an Express response this file uses — the status of a 200 replay. */
+interface StatusResponse {
+  status(code: number): unknown;
+}
+
 @Controller()
 export class LearningController {
+  constructor(@Inject(SubmissionService) private readonly submissions: SubmissionService) {}
+
+  /** `FR-LRN-006` — a person submits as themselves. `201` recorded, `200` replay or corroboration. */
+  @Post('learning/candidates')
+  async submit(
+    @Req() ctx: WorkspaceContext | undefined,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) res: StatusResponse,
+  ): Promise<SubmissionBody> {
+    const user = requireSession(ctx);
+    const safe = strip(body);
+    const projectId = safe['projectId'];
+    if (typeof projectId !== 'string' || projectId.trim() === '') {
+      throw new ValidationFailedError('projectId — the project the candidate comes from — is required.', { missing: ['source'], field: 'projectId' });
+    }
+    delete safe['projectId'];
+    const outcome = await this.submissions.submit({ actor: { kind: 'person', workspaceId: user.workspaceId, userId: user.userId }, projectId, body: safe });
+    res.status(outcome.status);
+    return outcome.body;
+  }
+
   /** `FR-LRN-073` — browse approved knowledge. The listing itself is `T2371`. */
   @Get('learning/knowledge')
   browse(@Req() ctx: WorkspaceContext | undefined): never {

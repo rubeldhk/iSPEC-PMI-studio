@@ -215,19 +215,23 @@ export interface ProjectsPort {
   find(workspaceId: string, projectId: string): Promise<{ readonly id: string; readonly status: 'active' | 'archived' } | null>;
 }
 
+/**
+ * Mutable on purpose: a route test rebinds one member to an in-test recorder,
+ * visibly, and every service reads the member at call time (`R-048-20`).
+ */
 export interface LearningPorts {
-  readonly executions: ExecutionsPort;
-  readonly secrets: SecretScreenPort;
-  readonly principals: PrincipalsPort;
-  readonly readerAccess: ReaderAccessPort;
-  readonly policy: LearningPolicySourcePort;
-  readonly audit: AuditPort;
-  readonly decisions: LearningDecisionsPort;
-  readonly evidence: EvidenceReadsPort;
-  readonly attestations: ApprovalAttestationsPort;
-  readonly index: KnowledgeIndexPort;
-  readonly experts: ExpertProvenancePort;
-  readonly projects: ProjectsPort;
+  executions: ExecutionsPort;
+  secrets: SecretScreenPort;
+  principals: PrincipalsPort;
+  readerAccess: ReaderAccessPort;
+  policy: LearningPolicySourcePort;
+  audit: AuditPort;
+  decisions: LearningDecisionsPort;
+  evidence: EvidenceReadsPort;
+  attestations: ApprovalAttestationsPort;
+  index: KnowledgeIndexPort;
+  experts: ExpertProvenancePort;
+  projects: ProjectsPort;
 }
 
 // --------------------------------------------------------------- the table

@@ -182,14 +182,14 @@ reasons. A context assembly after it contains no candidate. No route writes know
   - no controller or job maps to a knowledge write;
   - `supply.ts` reads only knowledge versions, never candidates (`FR-LRN-001`, `FR-LRN-002`, `SC-LRN-001`; MP-1a's guard)
 - [X] T2333 [US1] Implement the `KnowledgeSourceReader` half of `backend/src/modules/learning/supply.ts` over versions only (architecture test: T2332) — **Done**: `KnowledgeReader` over `KnowledgeReads` — a store narrowing with no candidate read; current / superseded / deprecated answered from status rows; 8/8.
-- [ ] T2334 [P] [US1] Write failing route tests `backend/tests/integration/learning-submission-route.spec.ts` against the composed module:
+- [X] T2334 [P] [US1] Write failing route tests `backend/tests/integration/learning-submission-route.spec.ts` against the composed module: — **Done**: 12 cases against `AppModule` + PostgreSQL + a real credential and execution; observed red (no ports token), then green. Q3 asserted with the default refusing binding before `EvidenceReads` is rebound to a recorder; Q26 wraps the real `Executions` port for one id (EPIC-037 cannot register a provisional execution on `main`). U1's `401`s here; its `404` for another workspace's candidate is asserted with the read route in T2344.
   - `POST /learning/candidates` (session);
   - `POST /projects/:projectId/learning/candidates` through `ConnectorAuthGuard` with scope `learning.submit`;
   - quickstart Q1, Q2, Q4, Q5, Q26;
   - `503` naming `EvidenceReads` while unbound (Q3);
   - identity fields in the body are ignored;
   - no session → `401`; a candidate of another workspace → `404` (analysis finding `U1`, spec Assumption 11)
-- [ ] T2335 [US1] Implement `backend/src/modules/learning/learning.controller.ts` (submission) and `backend/src/modules/learning/learning-connector.controller.ts`, registering scope `learning.submit` with `registerConnectorScope` (integration test: T2334)
+- [X] T2335 [US1] Implement `backend/src/modules/learning/learning.controller.ts` (submission) and `backend/src/modules/learning/learning-connector.controller.ts`, registering scope `learning.submit` with `registerConnectorScope` (integration test: T2334) — **Done**: session + connector controllers (body identity stripped; `200`/`201` from the outcome), `main-ports.ts` (Executions, Principals, Audit, Projects over their owners' public services), module wiring with the four unmerged ports refusing; `learning.submit` registered — EPIC-041/043's scope tests now name sixteen; backend `tsc` clean.
 
 **Checkpoint**: agents and people can submit; nothing they submit is, or can become, knowledge by
 any route.

@@ -96,9 +96,10 @@ describe('T1359 · a valid credential', () => {
 });
 
 describe('T1359 · the scope registry', () => {
-  it('holds exactly the fourteen scopes of record', () => {
-    // EPIC-043 T1417 widened the registry to eleven scopes; EPIC-042 T1476 to thirteen; EPIC-045 T1626 to fourteen (data-model.md §8).
-    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read', 'tasks.sync']);
+  it('holds exactly the scopes of record', () => {
+    // EPIC-043 T1417 widened the registry to eleven scopes; EPIC-042 T1476 to thirteen; EPIC-045 T1626 to fourteen (data-model.md §8);
+    // EPIC-046 T1692 to fifteen; EPIC-048 T2335 to sixteen (`learning.submit`).
+    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'learning.submit', 'project.read', 'requirements.read', 'tasks.sync']);
   });
 
   it('refuses a route that declares no scope, and one whose scope is not registered — 403, after the credential is verified', async () => {
@@ -130,7 +131,7 @@ describe('T1359 · the scope registry', () => {
     } finally {
       registerConnectorScope('never.registered', { remove: true });
     }
-    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'project.read', 'requirements.read', 'tasks.sync']);
+    expect(registeredConnectorScopes()).toEqual(['artifacts.sync', 'connector.whoami', 'constitution.read', 'decomposition.read', 'execution.append', 'execution.comment', 'execution.complete', 'execution.propose', 'execution.read', 'execution.register', 'execution.sync', 'health.write', 'learning.submit', 'project.read', 'requirements.read', 'tasks.sync']);
   });
 
   it('the decorator writes the scope as route metadata the guard reads', () => {
