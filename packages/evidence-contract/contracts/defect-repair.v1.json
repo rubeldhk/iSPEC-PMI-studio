@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "workClass": "defect-repair",
+  "contractVersion": 1,
+  "items": [
+    { "itemId": "defect-test-passes", "description": "The test demonstrating the defect now passes (BR-0054, BR-0056)", "acceptingPredicateTypes": ["https://in-toto.io/attestation/test-result/v0.1"] },
+    { "itemId": "regression-pass", "description": "Applicable regression tests pass (BR-0056)", "acceptingPredicateTypes": ["https://in-toto.io/attestation/test-result/v0.1"] }
+  ]
+}

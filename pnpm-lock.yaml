@@ -80,6 +80,9 @@ importers:
       '@pmi/epic-stage':
         specifier: workspace:*
         version: link:../packages/epic-stage
+      '@pmi/evidence-contract':
+        specifier: workspace:*
+        version: link:../packages/evidence-contract
       '@pmi/execution-contract':
         specifier: workspace:*
         version: link:../packages/execution-contract
@@ -267,6 +270,8 @@ importers:
   packages/engine-contract: {}
 
   packages/epic-stage: {}
+
+  packages/evidence-contract: {}
 
   packages/execution-contract: {}
 

@@ -2223,27 +2223,97 @@ model EvidenceContractItem {
 }
 
 model EvidenceItem {
-  id                     String               @id @default(uuid())
+  id                     String                @id @default(uuid())
   workspaceId            String
-  /// FR-EVS-003 — typed by what it proves, not by which tool produced it.
+  /// FR-EVS-003 — typed by what it proves, not by which tool produced it. For
+  /// attestations (EPIC-032 T856n) this is the in-toto `predicateType` URI.
   type                   String
-  satisfiesItemId        String
+  /// T1203's direct link from evidence to the item it was produced for. Null for
+  /// attestations, which satisfy items by type and attachment (FR-EVS-025).
+  satisfiesItemId        String?
   attestsArtifactId      String
   /// FR-EVS-011 — the version, so FR-EVS-012 can refuse superseded evidence.
   attestsArtifactVersion Int
+  /// FR-EVS-010 — the producing tool or run.
   source                 String
   producedAt             DateTime
   /// FR-EVS-034 — presence is not validity. Defaults to NOT valid.
-  integrityValid         Boolean              @default(false)
-  /// FR-EVS-014 — a referenced target that still resolves.
-  resolvable             Boolean              @default(true)
-  createdAt              DateTime             @default(now())
-  item                   EvidenceContractItem @relation(fields: [satisfiesItemId], references: [id])
+  integrityValid         Boolean               @default(false)
+  /// FR-EVS-014 — T1203's recorded resolvability. Attestations resolve live.
+  resolvable             Boolean               @default(true)
+  // EPIC-032 T856n — the attestation columns (data-model §1). Nullable here
+  // because T1203's rows predate them; the migration's CHECKs, NOT VALID for
+  // those rows, require them on every row written since.
+  projectId              String?
+  /// FR-EVS-011, FR-EVS-042 — the in-toto subject digest. Required by CHECK.
+  subjectDigest          Json?
+  subjectName            String?
+  /// FR-EVS-041 — required for an external contribution.
+  sourceVersion          String?
+  /// FR-EVS-005 — `stored` or `referenced`; exactly one of payload/reference.
+  storage                String?
+  payload                Json?
+  reference              Json?
+  /// FR-EVS-013 — the digest of the payload or reference target.
+  integrity              Json?
+  /// FR-EVS-004 — the artifact, task, decision or outcome this is evidence for.
+  attachedToType         String?
+  attachedToId           String?
+  createdAt              DateTime              @default(now())
+  item                   EvidenceContractItem? @relation(fields: [satisfiesItemId], references: [id])
 
   @@index([satisfiesItemId])
   @@index([workspaceId])
   @@index([workspaceId, attestsArtifactId, attestsArtifactVersion])
+  @@index([workspaceId, attachedToType, attachedToId])
   @@map("evidence_items")
+}
+
+/// EPIC-032 T856n — data-model §4. One governed work item tied to the Contract
+/// version it began under. Append-only: a new subject version is a new row.
+model WorkEvidenceBinding {
+  id                String   @id @default(uuid())
+  workspaceId       String
+  projectId         String
+  /// Opaque on purpose — no foreign key into a Room's tables (data-model §4).
+  workRefType       String
+  workRefId         String
+  workClass         String
+  /// FR-EVS-021, FR-EVS-023 — fixed at creation.
+  contractVersion   Int
+  /// FR-EVS-011, FR-EVS-012 — the artifact, and version, this work is judged against.
+  /// FR-EVS-015 — the type EPIC-024's access rules are keyed by.
+  subjectArtifactType String
+  subjectArtifactId String
+  subjectVersion    Int
+  createdAt         DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([workspaceId, workRefType, workRefId])
+  @@map("work_evidence_bindings")
+}
+
+/// EPIC-032 T856n — data-model §5. Every declaration of completion, accepted or
+/// refused (FR-EVS-033). Re-evaluation is a new row, never an update (FR-EVS-031).
+model EvidenceCompletionAttempt {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  workRefType     String
+  workRefId       String
+  declaredBy      String
+  declaredAt      DateTime @default(now())
+  /// `accepted` or `refused`.
+  outcome         String
+  /// FR-EVS-032 — required by CHECK when refused.
+  unmetItems      Json?
+  contractVersion Int
+  /// `declaration` or `evidence-arrival` (FR-EVS-031).
+  trigger         String
+  createdAt       DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([workspaceId, workRefType, workRefId])
+  @@map("evidence_completion_attempts")
 }
 
 /// EPIC-034 T406r — the Change Room. RULE-02's gate: no approved baseline

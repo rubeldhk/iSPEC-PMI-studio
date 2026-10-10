@@ -213,6 +213,11 @@ path added or removed without updating this document fails the build.
   deletes a proof; the suite reads the directory, so adding one is covered without an edit
 - `packages/loop-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
   `backend/src/modules/loop/`; the substrate `EPIC-031`–`EPIC-035` build against (EPIC-030 `T993f`)
+- `packages/evidence-contract/` — referenced by `vitest.workspace.ts`, `pnpm-workspace.yaml` and
+  `backend/src/modules/evidence/`; the in-toto attestation envelope, the Evidence Contract and the
+  completion gate's result, which three Rooms, `EPIC-030` and `EPIC-031` build against (EPIC-032
+  `T855d`). Its `contracts/` directory holds the Evidence Contract definitions that
+  `evidence-contract-conformance.spec.ts` reads
 - `backend/src/modules/change-room/` — `EPIC-034`'s module (`T406c`). Registered in
   `backend/src/app.module.ts` and asserted by `change-room-independence.spec.ts`, which reads this
   directory to prove the Room imports the shared contract rather than forking it
