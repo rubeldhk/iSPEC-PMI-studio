@@ -5,8 +5,8 @@
  *
  * `governance`, not `content`: it may follow a terminal lifecycle event, because
  * an execution finishing is not the end of what is decided about it. Written to
- * FAIL before `T2132`. If `EPIC-047` merges first, its own governance event makes
- * the totals 14/31; whichever merges second rebases the count.
+ * FAIL before `T2132`. `EPIC-047` merged first with a content event
+ * (`expert-governance-recorded`), so the totals are 9 + 5 + 4 + 13 = 31.
  */
 import { describe, expect, it } from 'vitest';
 import { ALL_EVENT_TYPES, GOVERNANCE_EVENTS, classOf, isExecutionEventType, permittedAfterTerminal } from '../src/events.js';

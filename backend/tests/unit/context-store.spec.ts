@@ -44,6 +44,13 @@ const pkg = (over: Partial<ContextPackage> = {}): ContextPackage => ({
   state: 'assembled',
   refusalReason: null,
   embeddingModelId: 'model-a',
+  retrievalRequested: 10,
+  retrievalReturned: 10,
+  liveState: 'not-requested',
+  liveStateReason: null,
+  executionHistory: 'available',
+  executionHistoryReason: null,
+  stalenessUnknown: 0,
   assembledAt: new Date(),
   ...over,
 });
@@ -210,5 +217,50 @@ describe('T1309 · the store offers no way to delete a package', () => {
     const entries = await store.indexEntriesFor('ws_1');
     expect(entries).toHaveLength(1);
     expect(entries[0]?.sourceVersion).toBe('v2');
+  });
+});
+
+describe('T1260 · the store reads authorisations one way, for one source', () => {
+  const grant = {
+    id: 'rka_1',
+    sourceType: 'decision',
+    sourceId: 'hb_1',
+    workspaceId: 'ws_owner',
+    toWorkspaceId: 'ws_reader',
+    authorisedBy: 'u_owner',
+    rationale: 'shared with the delivery partner',
+  };
+  const ask = { sourceType: 'decision', sourceId: 'hb_1', fromWorkspaceId: 'ws_owner', toWorkspaceId: 'ws_reader' };
+
+  it('finds the grant that matches all four keys', async () => {
+    const store = new InMemoryContextStore();
+    await store.addAuthorisation(grant);
+    expect((await store.find(ask))?.id).toBe('rka_1');
+  });
+
+  it('and nothing for the reverse direction, another source or another recipient', async () => {
+    const store = new InMemoryContextStore();
+    await store.addAuthorisation(grant);
+    expect(await store.find({ ...ask, fromWorkspaceId: 'ws_reader', toWorkspaceId: 'ws_owner' })).toBeNull();
+    expect(await store.find({ ...ask, sourceId: 'hb_2' })).toBeNull();
+    expect(await store.find({ ...ask, toWorkspaceId: 'ws_third' })).toBeNull();
+  });
+
+  it('and with no grants at all, nothing — the absence of a prohibition is not a permission', async () => {
+    expect(await new InMemoryContextStore().find(ask)).toBeNull();
+  });
+});
+
+describe('T1292 · one source is looked up by its key', () => {
+  it('indexEntryFor finds the entry for one source, scoped to the workspace', async () => {
+    const store = new InMemoryContextStore();
+    const entry = {
+      id: 'ie_1', workspaceId: 'ws_1', sourceType: 'requirement', sourceId: 'rq_1',
+      sourceVersion: 'v1', embeddingModelId: 'model-a', dimension: 3, indexedAt: new Date(),
+    };
+    await store.upsertIndexEntry(entry);
+    expect((await store.indexEntryFor('ws_1', 'requirement', 'rq_1'))?.id).toBe('ie_1');
+    expect(await store.indexEntryFor('ws_2', 'requirement', 'rq_1')).toBeNull();
+    expect(await store.indexEntryFor('ws_1', 'requirement', 'rq_2')).toBeNull();
   });
 });

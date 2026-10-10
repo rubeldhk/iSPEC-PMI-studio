@@ -12,12 +12,15 @@
  */
 import type { ComponentType } from 'react';
 import {
+  ExpertsView,
   GovernanceArea,
   HomeArea,
   PlanLandingView,
   RequirementRoomIndexView,
   ProjectsArea,
   RunsArea,
+  ContextView,
+  DecisionInboxView,
   SpecificationsArea,
   WorkspaceAdministrationArea,
 } from './area-views';
@@ -133,8 +136,10 @@ export const AREAS: readonly Area[] = Object.freeze([
     label: 'Decision Inbox',
     path: '/decisions',
     epic: 'EPIC-031',
-    status: 'declared-not-delivered',
-    note: 'Decisions and policy are specified and not built yet.',
+    // EPIC-031 `T759`. Promoted because the Inbox renders and reads the real
+    // `GET /inbox` — the screen first, the status after it (`T1172`'s rule).
+    status: 'delivered',
+    element: DecisionInboxView,
   },
   // ------------------------------------------------------- Intent & Control
   {
@@ -217,9 +222,13 @@ export const AREAS: readonly Area[] = Object.freeze([
     group: 'delivery',
     label: 'Engineering Experts',
     path: '/experts',
-    epic: 'EPIC-028',
-    status: 'declared-not-delivered',
-    note: 'Engineering Experts are specified and not built yet.',
+    // EPIC-047 T1976. Owned by EPIC-047 since it took BR-0101 and BR-0105 over
+    // from EPIC-028, which closed without them. The view-only registry was
+    // built first (`T1974`), then `element` was set, then the status followed —
+    // the order this file requires.
+    epic: 'EPIC-047',
+    status: 'delivered',
+    element: ExpertsView,
   },
   {
     id: 'runs',
@@ -255,8 +264,11 @@ export const AREAS: readonly Area[] = Object.freeze([
     label: 'Context',
     path: '/context',
     epic: 'EPIC-038',
-    status: 'declared-not-delivered',
-    note: 'Engineering Context is owned and not scheduled yet.',
+    // EPIC-038 `T1269`. Promoted because the inspection screen renders and reads
+    // the real `GET /context/packages` — the screen first, the status after it
+    // (`T1172`'s rule). An area, not a Room (`FR-CTX-070`).
+    status: 'delivered',
+    element: ContextView,
   },
   {
     id: 'integrations',

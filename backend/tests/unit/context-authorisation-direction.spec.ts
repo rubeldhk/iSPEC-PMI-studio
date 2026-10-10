@@ -45,8 +45,8 @@ const oneWay: AuthorisationReader = {
   },
 };
 
-const bsHandbook = { sourceType: 'handbook', sourceId: 'hb_b', workspaceId: 'ws_b' };
-const asHandbook = { sourceType: 'handbook', sourceId: 'hb_a', workspaceId: 'ws_a' };
+const bsHandbook = { sourceType: 'decision', sourceId: 'hb_b', workspaceId: 'ws_b' };
+const asHandbook = { sourceType: 'decision', sourceId: 'hb_a', workspaceId: 'ws_a' };
 
 describe('T1255 · the granted direction works', () => {
   it('ws_a may read ws_b’s handbook', async () => {

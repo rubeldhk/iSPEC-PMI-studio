@@ -42,14 +42,14 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-029](../specs/029-design-system/) | Design System | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-030](../specs/030-governed-engineering-loop/) | Governed Engineering Loop | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-031](../specs/031-decision-policy-engine/) | Decision & Policy Engine | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-032](../specs/032-evidence-store-contracts/) | Evidence Store & Evidence Contracts | delivery | Ready | — | Ready | `/speckit-implement` |
+| [EPIC-032](../specs/032-evidence-store-contracts/) | Evidence Store & Evidence Contracts | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-033](../specs/033-requirement-room/) | Requirement Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-034](../specs/034-change-room/) | Change Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-035](../specs/035-defect-room/) | Defect Room | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-036](../specs/036-application-shell/) | Application Shell & Dashboard | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-037](../specs/037-governed-execution-registry/) | Governed Execution Registry | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-038](../specs/038-engineering-context/) | Engineering Context | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-040](../specs/040-metrics-reporting/) | Metrics \& Reporting | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-041](../specs/041-local-project-workspace/) | Local Project Workspace | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-042](../specs/042-pmi-spec-kit-extension/) | PMI Spec Kit Extension, Setup Skill and Constitution Sync | delivery | Ready | — | Ready | `/speckit-implement` |
@@ -57,6 +57,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-044](../specs/044-epic-model-journey-board/) | Epic Model and Spec Journey Board | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-045](../specs/045-artifact-sync-markdown-viewer/) | Artifact Sync and Markdown Viewer | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-046](../specs/046-task-kanban-governed-status/) | Task Kanban with Governed Auto-Status | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
+| [EPIC-047](../specs/047-engineering-experts/) | Engineering Experts | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 
 ## Findings
 

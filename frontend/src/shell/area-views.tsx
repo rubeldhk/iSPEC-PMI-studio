@@ -28,6 +28,7 @@ import { RequirementRooms } from '../pages/RequirementRooms';
 import { RequirementsPage } from '../pages/Requirements';
 import { ReviewSessionPage } from '../pages/ReviewSession';
 import { RunsPage } from '../pages/Runs';
+import { ExpertsPage } from '../pages/Experts';
 import { SpecificationList } from '../pages/SpecificationList';
 import { SpecificationView } from '../pages/Specification';
 import { StorageConnectionsPage } from '../pages/StorageConnections';
@@ -43,6 +44,8 @@ import { PlanLandingPage } from '../pages/PlanLanding';
 import { TraceabilityPage } from '../pages/Traceability';
 import { Home } from './Home';
 import { useShell } from './shell-context';
+import { ContextPage } from '../pages/Context';
+import { DecisionInboxPage } from '../pages/DecisionInbox';
 import type { Requirement } from '../services/api';
 
 /**
@@ -609,4 +612,38 @@ export function DefectRoomView(): ReactElement {
       )}
     </RequireProject>
   );
+}
+
+/**
+ * `T1976` (EPIC-047, `FR-EXP-070`) — the Engineering Experts area: a
+ * workspace-scoped, view-only registry. Needs no project: an Expert belongs to
+ * the workspace, not to one project.
+ */
+export function ExpertsView(): ReactElement {
+  const { api } = useShell();
+  return (
+    <MainLandmark>
+      <ExpertsPage api={api} />
+    </MainLandmark>
+  );
+}
+
+/**
+ * EPIC-038 `T1269` — the Context inspection screen. Workspace-scoped, and
+ * listed per execution rather than per project: the audit path runs from an
+ * execution to what it was shown (`FR-CTX-062`).
+ */
+export function ContextView(): ReactElement {
+  const { api } = useShell();
+  return <ContextPage api={api} />;
+}
+
+/**
+ * EPIC-031 `T759` — the Decision Inbox, one action from every screen
+ * (`FR-DPE-026`, `UX-0021`). Workspace-wide rather than project-scoped: what
+ * awaits a reviewer does not wait for them to pick the right project first.
+ */
+export function DecisionInboxView(): ReactElement {
+  const { api } = useShell();
+  return <DecisionInboxPage api={api} />;
 }

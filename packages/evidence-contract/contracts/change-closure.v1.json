@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "workClass": "change-closure",
+  "contractVersion": 1,
+  "items": [
+    { "itemId": "change-approval", "description": "The change was approved by an authorized decision-maker (BR-0046)", "acceptingPredicateTypes": ["https://pmi.studio/attestation/approval/v1"] },
+    { "itemId": "tests-pass", "description": "Automated tests pass against the changed artifacts", "acceptingPredicateTypes": ["https://in-toto.io/attestation/test-result/v0.1"] }
+  ]
+}

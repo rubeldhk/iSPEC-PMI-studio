@@ -171,11 +171,15 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     // EPIC-042 T1480 — a render is appended per governance write; the
     // constraint and policy tables are the inputs it is rendered from.
     'constitution_renders',
+    'context_budget_policies',
     'context_exclusions',
     'context_items',
+    'context_live_state',
     'context_packages',
     'context_reusable_authorisations',
     'context_source_classes',
+    'decision_explanations',
+    'decision_gate_exceptions',
     'decomposition_policies',
     'defect_classifications',
     'defect_escape_records',
@@ -188,8 +192,11 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'dependency_edges',
       'deployment_capability_bindings',
       'engine_registrations',
+      'engineering_experts',
       // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
       'epics',
+      // EPIC-032 T856o — the completion record (data-model §5).
+      'evidence_completion_attempts',
       'evidence_contract_items',
       'evidence_contracts',
       'evidence_intake_attempts',
@@ -201,6 +208,10 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'execution_state',
       'execution_target_bindings',
       'executions',
+      'expert_contract_versions',
+      'expert_delegation_policies',
+      'expert_session_limits',
+      'expert_sessions',
       'gate_final_outcomes',
       'gate_outcomes',
       'generation_jobs',
@@ -214,6 +225,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'loop_transitions',
       'notification_deliveries',
       'organizations',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'policy_decisions',
       'principal_delegations',
       'principal_identity_snapshots',
       'principal_state_events',
@@ -245,6 +258,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'steering_scopes',
       'storage_connections',
       'structure_definitions',
+      'task_assignments',
       // EPIC-046 T1687 — the task sync. All three carry a plain `createdAt`, so
       // none needs an alias in the map below: `syncedAt` and `proposedAt` are
       // domain facts that sit BESIDE the row's creation time rather than
@@ -253,9 +267,13 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'task_sync_lines',
       'task_syncs',
       'tasks',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'tenant_policies',
       'traceability_links',
       'users',
       'validation_findings',
+      // EPIC-032 T856o — work bound to its Contract version (data-model §4).
+      'work_evidence_bindings',
       'workspaces',
       // EPIC-043 T1409 — one row per credential, touched by pmi.health.
       'workstation_connections',
@@ -342,6 +360,10 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       requirement_decisions: 'decidedAt',
       baselines: 'approvedAt',
       handoffs: 'selectedAt',
+      // EPIC-047 — each table's own word for when its row came to exist.
+      engineering_experts: 'registeredAt',
+      expert_sessions: 'startedAt',
+      task_assignments: 'assignedAt',
     };
 
     const missing = [...tables.entries()]

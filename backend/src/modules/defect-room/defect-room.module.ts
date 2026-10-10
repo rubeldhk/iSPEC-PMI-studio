@@ -36,6 +36,9 @@ import { ChangeIntakeService } from '../change-room/intake.service.js';
 import { RequirementRoomModule } from '../requirement-room/requirement-room.module.js';
 import { IntakeService as RequirementIntakeService } from '../requirement-room/intake.service.js';
 import { prismaClient } from '../../persistence/prisma.js';
+import { EvidenceModule } from '../evidence/evidence.module.js';
+import { EvidenceService } from '../evidence/evidence.service.js';
+import { EvidenceServiceStore } from './evidence-store.adapter.js';
 import { DefectRoomController } from './defect-room.controller.js';
 import { InMemoryDefectRoomStore, type DefectRoomStore } from './defect-room.store.js';
 import {
@@ -71,7 +74,7 @@ export class DefectRoomService {
 @Module({
   // The two destinations `FR-DFR-071` and `FR-DFR-076` name. Imported, not
   // reimplemented — `FR-DFR-002`.
-  imports: [ChangeRoomModule, RequirementRoomModule],
+  imports: [ChangeRoomModule, RequirementRoomModule, EvidenceModule],
   controllers: [DefectRoomController],
   providers: [
     { provide: DefectRoomService, useFactory: (): DefectRoomService => new DefectRoomService() },
@@ -181,17 +184,18 @@ export class DefectRoomService {
     {
       provide: ReproductionService,
       /**
-       * Bound with `EvidenceStore` **unfilled** (`EPIC-032`).
+       * `EvidenceStore` — filled by `EPIC-032` (`T1797`), once `DEF-035-002`
+       * made a reproduction writable at all.
        *
-       * So every reproduction carrying evidence refuses, and none is stored
-       * under this Room's access rules instead of the artifact's (`FR-DFR-033`,
-       * `BR-0062`, `R-035-7`). This is the route where a user is encouraged to
-       * paste a payload that reproduces a failure (`PP-008`); refusing is the
-       * safe direction to be wrong in.
+       * It was bound **unfilled** until then, so every reproduction carrying
+       * evidence refused rather than being stored under this Room's access
+       * rules instead of the artifact's (`FR-DFR-033`, `BR-0062`, `R-035-7`).
+       * Reproduction evidence now lands in the evidence store, attesting the
+       * version the defect contests (`evidence-store.adapter.ts`).
        */
-      useFactory: (store: DefectRoomStore): ReproductionService =>
-        new ReproductionService(store, undefined),
-      inject: [DEFECT_ROOM_STORE],
+      useFactory: (store: DefectRoomStore, evidence: EvidenceService): ReproductionService =>
+        new ReproductionService(store, new EvidenceServiceStore(store, evidence)),
+      inject: [DEFECT_ROOM_STORE, EvidenceService],
     },
     {
       provide: VerificationService,

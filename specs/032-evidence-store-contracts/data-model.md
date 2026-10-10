@@ -8,6 +8,14 @@ write to mark an item satisfied.
 
 ---
 
+> **As built (2026-10-07, [`DEF-032-001`](./defects/DEF-032-001-schema-evolved-not-replaced.md)).**
+> The scoped slice (`T1203`) had already created `evidence_items` and `evidence_contracts` with a
+> narrower shape that two shipped Rooms read. §1 was therefore **added beside** the slice's columns
+> rather than replacing them; the §2 Contract stays repository-resident JSON with no table of its
+> own; §4 and §5 are new tables (`work_evidence_bindings`, `evidence_completion_attempts`). §4 also
+> records the subject's **type and id** — the type keys `EPIC-024`'s access rules (`FR-EVS-015`),
+> the id stops evidence for another artifact at the same version number from counting.
+
 ## 0. The one structural idea
 
 ```text

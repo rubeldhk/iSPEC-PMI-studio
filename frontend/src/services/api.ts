@@ -287,6 +287,116 @@ export interface ReviewQuestion {
   answers: ReviewAnswer[];
 }
 
+// ---------------------------------------------------------------- EPIC-047
+// Engineering Experts — the view-only registry (FR-EXP-070…076). Mirrors
+// `contracts/experts-api.md`; authoring is through the API, not this client.
+
+export interface ExpertSummary {
+  id: string;
+  key: string;
+  name: string;
+  status: 'active' | 'retired';
+  rolePurpose: string;
+  riskClass: 'low' | 'medium' | 'high';
+  /** The highest approved version, or null — nothing runs without one. */
+  effectiveVersion: number | null;
+  latestVersion: number;
+}
+
+export interface ExpertLimitSetting {
+  value: number;
+  onUnenforceable?: 'refuse' | 'proceed';
+}
+
+export interface ExpertContractView {
+  rolePurpose: string;
+  models: { preferred: string; fallbacks: string[] };
+  capabilities: string[];
+  allowedTools: string[];
+  prohibitedActions: string[];
+  permissions: { artifactType: string; action: 'read' | 'edit' }[];
+  riskClass: 'low' | 'medium' | 'high';
+  budget: Partial<Record<'time' | 'resource' | 'tokens' | 'cost', ExpertLimitSetting>>;
+  /** `FR-EXP-020`; `governed-knowledge` by amendment `A-047-1`. */
+  memoryPolicy: 'none' | 'governed-knowledge';
+  expectedOutputs: { kind: string; required: boolean }[];
+  evidenceContract: { workClass: string; contractVersion: number };
+  delegatesTo: string[];
+  contextPolicy: {
+    budgetTokens: number;
+    budgetCost: number;
+    includeLiveState: boolean;
+    essentialSources?: { sourceType: string; sourceId: string }[];
+  };
+  workspaceRequirements: {
+    executionType?: 'headless' | 'interactive';
+    repositoryAccess?: ('read' | 'commit' | 'push' | 'pull-request')[];
+    supportsUnattended?: boolean;
+  };
+}
+
+export interface ExpertVersionView {
+  id: string;
+  version: number;
+  /** Derived from EPIC-031's decision when read — never stored. */
+  status: 'draft' | 'submitted' | 'approved' | 'refused';
+  contract: ExpertContractView;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface ExpertDetail {
+  expert: { id: string; key: string; name: string; status: 'active' | 'retired' };
+  versions: ExpertVersionView[];
+  effectiveVersion: ExpertVersionView | null;
+}
+
+export interface ExpertElementDifference {
+  element: string;
+  changed: boolean;
+  from: Record<string, unknown>;
+  to: Record<string, unknown>;
+}
+
+export interface ExpertSessionSummary {
+  executionId: string;
+  model: string;
+  usedFallback: boolean;
+  fallbackReason: string | null;
+  outcome: string | null;
+  toolObservation: 'observed' | 'unobserved';
+  depth: number;
+  startedAt: string;
+  reviewRequired: boolean;
+}
+
+export interface ExpertSessionLimit {
+  limit: 'time' | 'resource' | 'tokens' | 'cost';
+  value: number;
+  requested: number | null;
+  enforcement: 'enforced' | 'unenforceable';
+  consumed: number | null;
+  consumedReason: string | null;
+  reached: 'no' | 'stopped' | 'detected-late';
+}
+
+export interface ExpertTreeNode {
+  executionId: string;
+  expertKey: string;
+  contractVersion: number | null;
+  depth: number;
+  outcome: string | null;
+  model: string;
+  children?: ExpertTreeNode[];
+}
+
+export interface ExpertSessionView {
+  session: ExpertSessionSummary;
+  limits: ExpertSessionLimit[];
+  events: { kind: string; detail: Record<string, unknown> }[];
+  tree: { ancestors: ExpertTreeNode[]; node: ExpertTreeNode };
+}
+
 /**
  * T200d — a run, as `GET /projects/:projectId/runs` returns it.
  *
@@ -296,6 +406,30 @@ export interface ReviewQuestion {
  * the backend's `RunBody` types them as `Date` because that is what it holds
  * before serialisation.
  */
+/**
+ * EPIC-031 — one Decision Inbox entry (`GET /inbox`). Derived by the backend at
+ * read time; `blockedBy` names what would unblock it (`FR-DPE-025`).
+ */
+export interface InboxEntry {
+  decisionId: string;
+  kind: 'approval' | 'blocked' | 'review' | 'escalation';
+  actionType: string;
+  objectRef: { type: string; id: string };
+  objectVersion: string;
+  projectId: string;
+  band: 'low' | 'medium' | 'high';
+  requestedBy: string;
+  blockedBy: string;
+  since: string;
+}
+
+export interface DecisionOutcomeView {
+  decisionId: string;
+  outcome: 'auto-executed' | 'approved' | 'refused' | 'pending' | 'exception';
+  effectiveClass: 'low' | 'medium' | 'high';
+  explanation: { authorityApplied: string; [key: string]: unknown };
+}
+
 export interface Run {
   id: string;
   projectId: string;
@@ -307,6 +441,78 @@ export interface Run {
   outcomeReason: string | null;
   startedAt: string;
   endedAt: string | null;
+}
+
+// ---- engineering context (EPIC-038, FR-CTX-060–066) ----
+
+/** One retained package, as `GET /context/packages/:id` returns it. */
+export interface ContextInspection {
+  package: {
+    id: string;
+    workspaceId: string;
+    projectId: string;
+    executionId: string | null;
+    objective: string;
+    actorId: string;
+    actorRole: string;
+    budgetTokens: number;
+    budgetCost: number | string;
+    state: 'assembled' | 'refused';
+    refusalReason: string | null;
+    /** `T1820` — null on a refusal made before anything was ranked. */
+    embeddingModelId: string | null;
+    /** `R-038-3` — a difference is a short read, recorded. */
+    retrievalRequested?: number | null;
+    retrievalReturned?: number | null;
+    liveState?: 'not-requested' | 'read' | 'unavailable' | null;
+    liveStateReason?: string | null;
+    executionHistory?: 'available' | 'unavailable' | null;
+    executionHistoryReason?: string | null;
+    assembledAt: string;
+  };
+  items: Array<{
+    id: string;
+    sourceType: string;
+    sourceId: string;
+    sourceVersion: string;
+    authoritativeStatus: 'current' | 'superseded' | 'undetermined';
+    supersededBy?: string | null;
+    undeterminedReason?: string | null;
+    inclusionReason: string;
+    relevanceScore: number;
+    crossBoundary: boolean;
+    authorisationRef?: string | null;
+    /** `T1839` — the workspace that owns the source. */
+    sourceWorkspaceId?: string | null;
+    /** `T1863` — the security classification it was admitted under. */
+    securityClassification?: string | null;
+    drift:
+      | { kind: 'unchanged' }
+      | { kind: 'moved'; currentVersion: string; note: string }
+      | { kind: 'unresolvable'; note: string }
+      | { kind: 'unknown'; note: string };
+  }>;
+  exclusions: Array<{
+    id: string;
+    sourceType: string;
+    sourceId: string;
+    reason: 'permission' | 'classification' | 'budget' | 'boundary' | 'stale';
+    detail: string;
+    wasEssential: boolean;
+  }>;
+  /** `T1833`, `FR-CTX-035` — the budget excluded something. */
+  bounded?: boolean;
+  /** `FR-CTX-021` — as given, each with the instant it was read. */
+  liveState?: Array<{ id: string; kind: string; ref: string; state: string; readAt: string }>;
+  execution: {
+    executionId: string | null;
+    registered: boolean;
+    consequential: boolean | 'undetermined';
+    reason?: string;
+    /** `T1816` — from EPIC-037's lifecycle; `'unknown'` where there is none to read. */
+    ran?: boolean | 'unknown';
+    consumption?: string;
+  };
 }
 
 // ---- execution timeline (EPIC-043 US1, FR-PIC-050–054) ----
@@ -1114,6 +1320,28 @@ export class ApiClient {
 
   // ---- review sessions (EPIC-023) ----
 
+  // ---- Engineering Experts (EPIC-047) — read-only ----
+
+  async listExperts(): Promise<ExpertSummary[]> {
+    return this.request('GET', '/experts');
+  }
+
+  async getExpert(id: string): Promise<ExpertDetail> {
+    return this.request('GET', `/experts/${encodeURIComponent(id)}`);
+  }
+
+  async compareExpertVersions(id: string, from: number, to: number): Promise<ExpertElementDifference[]> {
+    return this.request('GET', `/experts/${encodeURIComponent(id)}/contract-versions/compare?from=${from}&to=${to}`);
+  }
+
+  async expertSessions(id: string, limit = 20): Promise<ExpertSessionSummary[]> {
+    return this.request('GET', `/experts/${encodeURIComponent(id)}/sessions?limit=${limit}`);
+  }
+
+  async expertSession(executionId: string): Promise<ExpertSessionView> {
+    return this.request('GET', `/experts/sessions/${encodeURIComponent(executionId)}`);
+  }
+
   /**
    * T200d — the runs of a project.
    *
@@ -1123,6 +1351,27 @@ export class ApiClient {
    */
   async listRuns(projectId: string): Promise<Run[]> {
     return this.request('GET', `/projects/${encodeURIComponent(projectId)}/runs`);
+  }
+
+  // ---- engineering context (EPIC-038) ----
+
+  /** `FR-CTX-062` — `executionId` is required; there is no workspace-wide listing. */
+  async contextPackagesForExecution(executionId: string): Promise<ContextInspection[]> {
+    return this.request('GET', `/context/packages?executionId=${encodeURIComponent(executionId)}`);
+  }
+
+  async contextPackage(packageId: string): Promise<ContextInspection> {
+    return this.request('GET', `/context/packages/${encodeURIComponent(packageId)}`);
+  }
+
+  // ---- decision inbox (EPIC-031) ----
+
+  async decisionInbox(): Promise<{ entries: InboxEntry[] }> {
+    return this.request('GET', '/inbox');
+  }
+
+  async approveDecision(decisionId: string): Promise<DecisionOutcomeView> {
+    return this.request('POST', `/decisions/${encodeURIComponent(decisionId)}/approve`);
   }
 
   // ---- execution timeline (EPIC-043) ----

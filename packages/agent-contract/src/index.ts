@@ -27,6 +27,18 @@ export const AGENT_CAPABILITIES = ['execute', 'analyze', 'generate', 'review', '
 
 export type AgentCapability = (typeof AGENT_CAPABILITIES)[number];
 
+/**
+ * EPIC-047 `T1914`, `R-047-1` — the limits a gateway can stop a run on.
+ *
+ * `ADR-0020` extends the descriptor rather than replacing it. Optional, so every
+ * gateway written before it still type-checks; **absent means none declared**,
+ * which `EPIC-047` records as *unenforceable for this provider* rather than
+ * assuming a control the provider never claimed (`FR-EXP-042`).
+ */
+export const ENFORCEABLE_LIMITS = ['time', 'resource', 'tokens', 'cost'] as const;
+
+export type EnforceableLimit = (typeof ENFORCEABLE_LIMITS)[number];
+
 export interface AgentDescriptor {
   /** Registry key. Unique across registered adapters. */
   readonly name: string;
@@ -56,6 +68,8 @@ export interface AgentDescriptor {
    * agent detail in the engine.
    */
   readonly specKitIntegrationName?: string;
+  /** EPIC-047 `T1914` — see `ENFORCEABLE_LIMITS`. */
+  readonly enforceableLimits?: readonly EnforceableLimit[];
 }
 
 // ---------------------------------------------------------------- failures

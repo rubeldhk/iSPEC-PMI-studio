@@ -89,12 +89,18 @@ importers:
       '@pmi/capability-contract':
         specifier: workspace:*
         version: link:../packages/capability-contract
+      '@pmi/decision-contract':
+        specifier: workspace:*
+        version: link:../packages/decision-contract
       '@pmi/engine-contract':
         specifier: workspace:*
         version: link:../packages/engine-contract
       '@pmi/epic-stage':
         specifier: workspace:*
         version: link:../packages/epic-stage
+      '@pmi/evidence-contract':
+        specifier: workspace:*
+        version: link:../packages/evidence-contract
       '@pmi/execution-contract':
         specifier: workspace:*
         version: link:../packages/execution-contract
@@ -311,9 +317,13 @@ importers:
 
   packages/capability-contract: {}
 
+  packages/decision-contract: {}
+
   packages/engine-contract: {}
 
   packages/epic-stage: {}
+
+  packages/evidence-contract: {}
 
   packages/execution-contract: {}
 

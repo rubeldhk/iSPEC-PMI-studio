@@ -20,25 +20,44 @@
  * `T1224` asserts both, because the absence is a design decision and an absence
  * nobody checks is one somebody adds later by analogy.
  *
- * ## Two seams are bound to refusals, and that is the honest state
+ * ## One seam is bound to a refusal, and that is the honest state
  *
- * `EmbeddingPort` has **no owner anywhere in the programme** (`FR-CTX-013`), and
- * `AccessPolicy` is `EPIC-024`'s, bound in `T1258`. Both refuse rather than
- * degrade, because a package ranked by a zero vector or filtered by nothing
+ * `EmbeddingPort` has **no owner anywhere in the programme** (`FR-CTX-013`). It
+ * refuses rather than degrades, because a package ranked by a zero vector
  * would be **wrong** rather than smaller — and a wrong package is one nobody
- * can tell is wrong.
+ * can tell is wrong. `AccessPolicy` is `EPIC-024`'s and is bound (`T1258`).
  *
  * `GovernanceSeamUnboundError` carries a `503` and **names the seam**: a 503
  * saying nothing is the same defect with a better number.
  */
 import { Module } from '@nestjs/common';
-import { GovernanceSeamUnboundError } from '../../core/errors.js';
 import { prismaClient } from '../../persistence/prisma.js';
+import { AccessModule } from '../access/access.module.js';
+import { ExecutionsModule } from '../executions/executions.module.js';
+import { ExecutionRegistryFacade } from '../executions/execution-registry.facade.js';
+import { AccessInheritanceService } from '../access/access-inheritance.service.js';
+import { WorkspaceBoundaryService } from '../access/workspace-boundary.service.js';
+import { NotFoundError } from '../../core/errors.js';
+import { ProjectsModule } from '../projects/projects.module.js';
+import { ProjectsService } from '../projects/projects.service.js';
+import { RequirementsModule } from '../requirements/requirements.module.js';
+import { RequirementsService } from '../requirements/requirements.service.js';
+import { SpecificationsModule } from '../specifications/specifications.module.js';
+import { SpecificationsReadService } from '../specifications/specifications-read.service.js';
+import { governedSources } from './sources.adapter.js';
+import type { SourceVersionReader } from './inspection.service.js';
+import type { ArtifactSource } from './retrieval/index.service.js';
+import { accessPolicyFromEpic024 } from './access.adapter.js';
+import { InspectionService, type ExecutionRegistrationReader } from './inspection.service.js';
+import { IndexService } from './retrieval/index.service.js';
+import { SearchService } from './retrieval/search.service.js';
+import { InMemoryVectorIndex, type VectorIndex } from './retrieval/vector.index.js';
+import { PgVectorIndex, type PgVectorClient } from './retrieval/vector.index.pg.js';
 import { AssemblyService, type AssemblyPorts } from './assembly.service.js';
 import { ContextController } from './context.controller.js';
 import { InMemoryContextStore, type ContextStore } from './context.store.js';
 import { PrismaContextStore, type ContextPrismaClient } from './context.store.prisma.js';
-import { CONTEXT_PORTS, CONTEXT_STORE } from './context.tokens.js';
+import { CONTEXT_PORTS, CONTEXT_SOURCES, CONTEXT_STORE, CONTEXT_VECTOR_INDEX } from './context.tokens.js';
 
 /** Resolvable proof the module is in the graph — `T1224` asks for it by name. */
 export class ContextService {
@@ -55,6 +74,7 @@ export class ContextService {
 }
 
 @Module({
+  imports: [AccessModule, ExecutionsModule, ProjectsModule, RequirementsModule, SpecificationsModule],
   controllers: [ContextController],
   providers: [
     { provide: ContextService, useFactory: (): ContextService => new ContextService() },
@@ -70,62 +90,167 @@ export class ContextService {
           : new InMemoryContextStore(),
     },
     {
+      provide: CONTEXT_VECTOR_INDEX,
+      // `DATABASE_URL` decides, as it does for the store: pgvector in the
+      // running application, the exact in-memory twin in unit tests.
+      useFactory: (): VectorIndex =>
+        process.env['DATABASE_URL']
+          ? new PgVectorIndex(prismaClient() as unknown as PgVectorClient)
+          : new InMemoryVectorIndex(),
+    },
+    {
+      provide: CONTEXT_SOURCES,
+      /**
+       * `T1810`, `T1812` — requirements and specifications, read through their
+       * own modules' public services (`sources.adapter.ts`). Fills both
+       * `SourceVersionReader` and `ArtifactSource`; other governed types answer
+       * *unknown* and do not resolve.
+       */
+      useFactory: (
+        requirements: RequirementsService,
+        specifications: SpecificationsReadService,
+        executions: ExecutionRegistryFacade,
+      ): SourceVersionReader & ArtifactSource =>
+        // `T1828`, `R-038-8` — execution history through EPIC-037's projections.
+        governedSources({ requirements, specifications, executions }),
+      inject: [RequirementsService, SpecificationsReadService, ExecutionRegistryFacade],
+    },
+    {
+      provide: IndexService,
+      /**
+       * `T1276`, `T1278`, `T1812`. `ArtifactSource` reads requirements and
+       * specifications; `EmbeddingPort` is still unowned, so `reindex` answers
+       * `400` for a source that may not be indexed and `503` naming the seam for
+       * one that may.
+       */
+      useFactory: (
+        store: ContextStore,
+        vectors: VectorIndex,
+        sources: SourceVersionReader & ArtifactSource,
+      ): IndexService => new IndexService(store, vectors, null, sources),
+      inject: [CONTEXT_STORE, CONTEXT_VECTOR_INDEX, CONTEXT_SOURCES],
+    },
+    {
       provide: AssemblyService,
       /**
-       * Bound with **two seams refusing**, which is the honest state rather
-       * than an oversight.
+       * Bound with **the embedding seam refusing**, which is the honest state
+       * rather than an oversight.
        *
        * `sourceClasses` is real and reads the store — it is this Epic's own
-       * configuration and nobody else's to supply. The other two name the Epic
-       * that owes them, so a `503` sends somebody to the right place instead of
+       * configuration and nobody else's to supply. `retrieval` names the gap
+       * it refuses over, so a `503` sends somebody to the right place instead of
        * to the logs.
        */
-      useFactory: (store: ContextStore): AssemblyService => {
+      useFactory: (
+        store: ContextStore,
+        boundary: WorkspaceBoundaryService,
+        readability: AccessInheritanceService,
+        vectors: VectorIndex,
+        registry: ExecutionRegistryFacade,
+        sources: SourceVersionReader & ArtifactSource,
+        projects: ProjectsService,
+      ): AssemblyService => {
         const ports: AssemblyPorts = {
-          retrieval: {
-            async search(): Promise<never> {
-              throw new GovernanceSeamUnboundError(
-                'no embedding provider is bound (EmbeddingPort, FR-CTX-013), so the index ' +
-                  'cannot be built or queried. This capability has no owner anywhere in the ' +
-                  'programme — see EPIC-038 R-038-1 and the closing report. Assembly refuses ' +
-                  'rather than returning an unranked package, which would be a different ' +
-                  'thing rather than a degraded one (FR-CTX-012)',
-              );
+          // `T1279` — real ranking, over a provider nobody owns yet. Refuses
+          // with the `EmbeddingPort` 503 until one is bound (`FR-CTX-013`).
+          // `T1810` marks stale candidates through the governed sources.
+          // `T1826` — and the sources authorised into this workspace, ranked in
+          // their owners' partitions.
+          retrieval: new SearchService(vectors, null, sources, {}, store),
+          // `T1808`, `FR-CTX-050` — the project is asked of its own module; a
+          // project another workspace holds is indistinguishable from none.
+          projects: {
+            async inWorkspace(workspaceId, projectId) {
+              try {
+                await projects.get(workspaceId, projectId);
+                return true;
+              } catch (error) {
+                if (error instanceof NotFoundError) return false;
+                throw error;
+              }
             },
           },
-          access: {
-            async mayRead(): Promise<never> {
-              throw new GovernanceSeamUnboundError(
-                'no access adjudicator is bound (AccessPolicy, FR-CTX-054); EPIC-024 supplies ' +
-                  'it and T1258 binds it. Assembly refuses rather than including every ' +
-                  'candidate, which is the leak FR-CTX-050 exists to prevent',
-              );
+          // `T1804`, `FR-CTX-036` — the retrieval limit, estimate and price are
+          // the workspace's configuration; with none, assembly refuses.
+          budgetPolicy: store,
+          // `T1288`, `R-038-8` — EPIC-037's projections, never its event
+          // stream. A projection's version is how far it has projected.
+          executions: {
+            async projectedVersion(workspaceId, executionId) {
+              const snapshot = await registry.snapshot(workspaceId, executionId);
+              return snapshot === null ? null : String(snapshot.projectedThroughSequence);
             },
           },
+          // `FR-CTX-022` — no system in the programme supplies live state yet.
+          // Degrades: a package that asks records it as unavailable, with why.
+          liveState: null,
+          // `FR-CTX-042` — EPIC-033 records baselines but offers no "status of
+          // this source version" read, so every item is `undetermined` with a
+          // reason naming it, never `current` by default (DEF-038-003).
+          provenance: null,
+          // `T1258`, `FR-CTX-054` — `EPIC-024` adjudicates; see `access.adapter.ts`.
+          access: accessPolicyFromEpic024(boundary, readability),
           sourceClasses: {
             classify: (workspaceId, sourceType) => store.classifySource(workspaceId, sourceType),
           },
           /**
-           * `FR-CTX-053` — no authorisations are readable yet, and the honest
-           * default is **none**.
-           *
-           * `T1260` binds this to `context_reusable_authorisations`. Until
-           * then, own-workspace material is unaffected and every crossing is
-           * refused — which is the direction to be wrong in, and the direction
-           * `FR-CTX-053` names: the absence of a prohibition is not a
-           * permission, and neither is the absence of a reader.
+           * `FR-CTX-051`–`FR-CTX-053` — read from
+           * `context_reusable_authorisations` (`T1260`). No row, no crossing:
+           * the absence of a prohibition is not a permission.
            */
-          authorisations: {
-            async find(): Promise<null> {
-              return null;
-            },
-          },
+          authorisations: store,
         };
         return new AssemblyService(store, ports);
       },
-      inject: [CONTEXT_STORE],
+      inject: [
+        CONTEXT_STORE,
+        WorkspaceBoundaryService,
+        AccessInheritanceService,
+        CONTEXT_VECTOR_INDEX,
+        ExecutionRegistryFacade,
+        CONTEXT_SOURCES,
+        ProjectsService,
+      ],
+    },
+    {
+      provide: InspectionService,
+      /**
+       * `T1264`, `T1265` — read-only, and built with no assembler.
+       *
+       * `versions` reads requirements and specifications through their own
+       * modules (`T1810`); any other type's drift note says `unknown` with a
+       * reason rather than claiming `unchanged`.
+       *
+       * Registrations come from `EPIC-037`'s public facade. Its registration
+       * records no consequentiality, so a registered execution is reported as
+       * registered with consequentiality `undetermined` — `DEF-038-002`. This
+       * Epic must not decide it (`FR-CTX-061`).
+       */
+      useFactory: (
+        store: ContextStore,
+        registry: ExecutionRegistryFacade,
+        sources: SourceVersionReader & ArtifactSource,
+      ): InspectionService => {
+        const registrations: ExecutionRegistrationReader = {
+          async registrationOf(workspaceId, executionId) {
+            const snapshot = await registry.snapshot(workspaceId, executionId);
+            return snapshot === null
+              ? null
+              : {
+                  consequential: 'undetermined',
+                  reason:
+                    'EPIC-037 registers this execution but records no consequentiality, and ' +
+                    'this Epic may not decide it (FR-CTX-061, DEF-038-002)',
+                  // `T1816` — whether it ran is EPIC-037's projected fact.
+                  lifecycleState: snapshot.lifecycleState,
+                };
+          },
+        };
+        return new InspectionService(store, sources, registrations);
+      },
+      inject: [CONTEXT_STORE, ExecutionRegistryFacade, CONTEXT_SOURCES],
     },
   ],
-  exports: [ContextService, AssemblyService, CONTEXT_STORE],
+  exports: [ContextService, AssemblyService, InspectionService, IndexService, CONTEXT_STORE],
 })
 export class ContextModule {}

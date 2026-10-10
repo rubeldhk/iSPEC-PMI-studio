@@ -44,6 +44,11 @@ export interface OwnedSource {
   readonly sourceId: string;
   /** The workspace the material belongs to, which may not be the requester's. */
   readonly workspaceId: string;
+  /**
+   * `T1808`, `FR-CTX-050` — the project that owns it, or `null` for material
+   * that belongs to the workspace rather than to any one project.
+   */
+  readonly projectId?: string | null;
 }
 
 /** `FR-CTX-051` — the explicit permission for one source to cross, one way. */
@@ -55,6 +60,9 @@ export interface ReusableAuthorisation {
   readonly workspaceId: string;
   /** The single workspace permitted to read it. */
   readonly toWorkspaceId: string;
+  /** `T1808` — for a crossing between projects inside one workspace. Both or neither. */
+  readonly fromProjectId?: string | null;
+  readonly toProjectId?: string | null;
   readonly authorisedBy: string;
   readonly rationale: string;
 }
@@ -72,6 +80,9 @@ export interface AuthorisationReader {
     sourceId: string;
     fromWorkspaceId: string;
     toWorkspaceId: string;
+    /** `T1808` — present for a project crossing; absent for a workspace-level grant. */
+    fromProjectId?: string | null;
+    toProjectId?: string | null;
   }): Promise<ReusableAuthorisation | null>;
 }
 
@@ -103,8 +114,33 @@ export async function judgeBoundary(
   source: OwnedSource,
   requestingWorkspaceId: string,
   authorisations: AuthorisationReader,
+  requestingProjectId?: string,
 ): Promise<BoundaryVerdict> {
   if (source.workspaceId === requestingWorkspaceId) {
+    // `T1808`, `FR-CTX-050` — the project boundary, inside the partition. Both
+    // ends must be known for there to be a crossing: material owned by the
+    // workspace rather than a project is shared within it by design.
+    const owner = source.projectId ?? null;
+    if (owner !== null && requestingProjectId !== undefined && owner !== requestingProjectId) {
+      const authorisation = await authorisations.find({
+        sourceType: source.sourceType,
+        sourceId: source.sourceId,
+        fromWorkspaceId: source.workspaceId,
+        toWorkspaceId: requestingWorkspaceId,
+        fromProjectId: owner,
+        toProjectId: requestingProjectId,
+      });
+      if (!authorisation) {
+        return {
+          allowed: false,
+          reason:
+            `${source.sourceType} ${source.sourceId} belongs to project ${owner} and no authorisation ` +
+            `permits project ${requestingProjectId} to read it. The absence of a prohibition is not a ` +
+            'permission (FR-CTX-050, FR-CTX-053)',
+        };
+      }
+      return { allowed: true, crossBoundary: true, authorisationRef: authorisation.id };
+    }
     // Not a crossing, and therefore not marked as one. If own-workspace
     // material were marked too, `crossBoundary` would stop distinguishing
     // anything and a reviewer scanning for crossings would find every item.

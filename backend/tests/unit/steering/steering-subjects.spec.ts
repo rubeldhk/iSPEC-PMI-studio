@@ -21,9 +21,16 @@ const THE_TEN = [
   'ai_governance',
 ];
 
-describe('T234 · FR-ENH-002 — exactly the ten named subjects', () => {
-  it('the set is exactly the ten, no more, no fewer', () => {
-    expect([...STEERING_SUBJECTS].sort()).toEqual([...THE_TEN].sort());
+/**
+ * EPIC-031 `R-031-1` — classification rules live in steering. The one subject
+ * the source document does not name, added on purpose and recorded as
+ * `DEF-031-001`; listed separately so the ten stay visibly the ten.
+ */
+const ADDED_BY_EPIC_031 = ['risk-classification'];
+
+describe('T234 · FR-ENH-002 — exactly the ten named subjects, plus EPIC-031’s one', () => {
+  it('the set is exactly the ten and risk-classification, no more, no fewer', () => {
+    expect([...STEERING_SUBJECTS].sort()).toEqual([...THE_TEN, ...ADDED_BY_EPIC_031].sort());
   });
 
   it.each(THE_TEN)('accepts %s', (subject) => {

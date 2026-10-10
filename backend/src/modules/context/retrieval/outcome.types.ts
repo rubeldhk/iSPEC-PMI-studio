@@ -74,8 +74,21 @@ export interface Candidate {
    * convenience.
    */
   readonly workspaceId: string;
+  /** `T1808`, `FR-CTX-050` — the owning project, or `null` for workspace-wide material. */
+  readonly projectId?: string | null;
   /** `FR-CTX-014` — the score that ranked it. Never defaulted; see `T1308`. */
   readonly relevanceScore: number;
+  /**
+   * `FR-CTX-017`, `SC-CTX-009` — present when the entry that ranked this was
+   * built from an older version than the source's current one. Absent means
+   * current **or not known**; the ranker does not claim more than it read.
+   */
+  readonly stale?: { readonly currentVersion: string };
+  /**
+   * `T1822` — present when nobody could tell whether this is stale: no reader,
+   * or a type no module serves. Counted on the package.
+   */
+  readonly stalenessUnknown?: string;
 }
 
 /**

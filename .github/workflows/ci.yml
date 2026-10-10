@@ -78,7 +78,7 @@ jobs:
 
       # FR-017 / PC-1 — a violation fails the build, not a review.
       #
-      # `:gated` excludes the architecture check that is red by design (`T999u`).
+      # `:gated` excludes the architecture checks that are red by design (`T999u`, `T792`).
       # It is not skipped: the Known-red step below runs it and fails the build
       # if it is NOT red. `governance/known-red.json` is the list, and the README
       # §Known-red checks explains the arrangement.
