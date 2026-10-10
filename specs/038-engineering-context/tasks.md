@@ -358,3 +358,19 @@ scan actually bites.
 - [X] T1877 Record per-candidate port outages as refused rows in `assembly.service.ts`, as retrieval failures already are (unit test: T1876) per FR-CTX-065, SC-CTX-005 (partial)
 - [X] T1878 [P] Write failing unit tests in `backend/tests/unit/context-staleness-unknown-history.spec.ts` — execution history the history judge verified is not counted in `stalenessUnknown`, though search could not check it per SC-CTX-009 (partial)
 - [X] T1879 Leave judged execution history out of the `stalenessUnknown` count in `assembly.service.ts` (unit test: T1878) per SC-CTX-009 (partial)
+
+## Phase 19: Amendment A-038-1 — `knowledge-entry` is an approved source class
+
+> Approved by the Project Owner in chat on 2026-10-09, for `EPIC-048` Governed Learning
+> (`specs/048-governed-learning/contracts/learning-contract.md` §6). Task range `T2520`–`T2539`;
+> `T2528`–`T2539` are reserved and unused. `A-038-2` (the admission port, the sources-adapter and
+> provenance branches) is `EPIC-048`'s and is not here.
+
+- [X] T2520 [P] Write failing unit tests in `backend/tests/unit/context-knowledge-entry-class.spec.ts` and update `backend/tests/unit/context-approved-sources.spec.ts` — `knowledge-entry` is a member of `APPROVED_SOURCE_TYPES` and of the `ApprovedSourceType` union, and the set is otherwise unchanged per FR-CTX-015 (A-038-1)
+- [X] T2521 [P] Write failing unit tests in `backend/tests/unit/context-knowledge-entry-class.spec.ts` — a `knowledge-entry` passes the approved-set gate at re-index once a workspace registers an indexable source class for it, and is still refused where no class is registered or the class is not indexable per FR-CTX-015, FR-CTX-034 (A-038-1)
+- [X] T2522 [P] Write failing unit tests in `backend/tests/unit/context-knowledge-entry-class.spec.ts` — the production sources adapter serves no `knowledge-entry` text or version, so re-indexing one through it indexes nothing per FR-CTX-015 (A-038-1)
+- [X] T2523 [P] Write failing unit tests in `backend/tests/unit/context-knowledge-entry-class.spec.ts` — assembly excludes a `knowledge-entry` candidate as `permission`, detail beginning `admission port unbound`, and assembles the other candidates as before per FR-CTX-015, learning-contract §3 (A-038-1)
+- [X] T2524 Add `knowledge-entry` to the approved set and export `ApprovedSourceType` and `KNOWLEDGE_ENTRY_SOURCE_TYPE` in `backend/src/modules/context/retrieval/index.service.ts` (unit tests: T2520, T2521, T2522) per FR-CTX-015 (A-038-1)
+- [X] T2525 Exclude every `knowledge-entry` candidate after the boundary and before the access check in `backend/src/modules/context/assembly.service.ts`, while no admission port exists (unit test: T2523) per FR-CTX-015, learning-contract §3 (A-038-1)
+- [X] T2526 Amend `FR-CTX-015` in `specs/038-engineering-context/spec.md` and record amendment `A-038-1` with its approval per Constitution II (A-038-1)
+- [X] T2527 Record the amendment in `specs/038-engineering-context/closure.md` with its verification per Constitution IX (A-038-1)

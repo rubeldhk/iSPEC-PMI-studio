@@ -4,7 +4,7 @@
 
 **Epic**: `EPIC-038` — Engineering Context
 
-**Created**: 2026-08-25 (ownership declared) · **Specified**: 2026-08-31
+**Created**: 2026-08-25 (ownership declared) · **Specified**: 2026-08-31 · **Amended**: 2026-10-09 (`A-038-1`)
 
 **Status**: Draft
 
@@ -43,6 +43,23 @@
 - Q: Should Context be a full governed workspace with its own lifecycle and approval stages, or a
   screen for looking at packages? → A: **An inspection screen** in its own application area. No
   workflow type is declared.
+
+## Amendments
+
+### A-038-1 — `FR-CTX-015` admits `knowledge-entry` (2026-10-09)
+
+- **Approved by**: the Project Owner, in chat, 2026-10-09, for `EPIC-048` Governed Learning.
+- **Source**: `specs/048-governed-learning/contracts/learning-contract.md` §6 (`A-038-1`), and
+  `research.md` `R-048-11` on `EPIC-048`'s branch.
+- **Change**: `knowledge-entry` joins the closed approved source set. It is admitted by the type
+  system (`ApprovedSourceType`, `APPROVED_SOURCE_TYPES`) and, like every approved type, indexed only
+  where a workspace registers an indexable source class for it (`FR-CTX-034`).
+- **Until `EPIC-048` exists nothing produces such items**: this Epic's sources adapter serves no
+  knowledge entry, and assembly excludes any `knowledge-entry` candidate as `permission` with detail
+  *admission port unbound* — never admitted by default. Assembly for every other class is unchanged.
+- **Not in this amendment**: the admission port in `AssemblyPorts`, the sources-adapter and
+  provenance branches (`A-038-2`), which `EPIC-048` builds and asserts in this Epic's suites.
+- **Tasks**: `T2520`–`T2527`.
 
 ## SRS Traceability *(mandatory — Constitution II)*
 
@@ -241,7 +258,11 @@ to permissions.
 - **FR-CTX-014**: Retrieved candidates MUST carry the relevance score that ranked them.
 - **FR-CTX-015**: The approved source set MUST comprise **governed documents** — specifications,
   requirements, baselines and decisions — **and execution history** recorded under Constitution XII
-  *(clarified 2026-08-31)*. Source code and imported external documents are **out of scope**.
+  *(clarified 2026-08-31)*, **and approved knowledge entries** (`knowledge-entry`) produced by
+  `EPIC-048` Governed Learning *(amended 2026-10-09, `A-038-1`)*. The set is **closed**: no
+  configuration adds to it. Source code and imported external documents are **out of scope**. A
+  `knowledge-entry` candidate MUST NOT be supplied unless `EPIC-048`'s admission judges it may be;
+  while no admission is bound, every such candidate is excluded with a reason.
 - **FR-CTX-016**: Every index entry MUST record the source **version** it was built from.
 - **FR-CTX-017**: Where a source has changed since its entry was built, the entry MUST be treated as
   **stale** and marked so. A stale entry MUST NOT be ranked as though it were current.
