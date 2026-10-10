@@ -80,9 +80,9 @@ import { SteeringRulesetSource } from './steering.adapter.js';
     },
     {
       provide: DecisionService,
-      inject: [DecisionEngine, DECISION_REPOSITORY, DECISION_POLICY_SOURCE],
-      useFactory: (engine: DecisionEngine, repository: DecisionRepository, policies: PolicySource) =>
-        new DecisionService(engine, repository, policies),
+      inject: [DecisionEngine, DECISION_REPOSITORY, DECISION_POLICY_SOURCE, AuditService],
+      useFactory: (engine: DecisionEngine, repository: DecisionRepository, policies: PolicySource, audit: AuditService) =>
+        new DecisionService(engine, repository, policies, audit),
     },
   ],
   exports: [DecisionEngine, DecisionService],

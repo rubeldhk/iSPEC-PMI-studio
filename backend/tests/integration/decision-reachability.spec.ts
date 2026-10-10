@@ -50,6 +50,7 @@ suite('T736 · the decision engine is reachable through the composed application
     ['get', '/decisions/probe/explanation'],
     ['get', '/decision-metrics'],
     ['get', '/inbox'],
+    ['get', '/decision-objects/probe/probe/decisions'],
     ['get', '/decision-policies/current'],
     ['post', '/decision-policies'],
   ] as const)('routes %s %s — a handler answers', async (method, path) => {
@@ -92,6 +93,17 @@ suite('T736 · the decision engine is reachable through the composed application
       expect(res.body.error.message).toMatch(/release\.promote/);
     });
 
+    it('leaves the refused attempt visible in the audit log, naming the fence (T796b)', async () => {
+      // The route probe above posted an empty policy, which is refused (and audited) as malformed.
+      const res = await get('/audit?targetType=tenant_policy');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ targetId: 'v1', outcome: 'refused', detail: expect.objectContaining({ reason: 'lowers-high-band' }) }),
+        ]),
+      );
+    });
+
     it('issues a policy permitting self-approval for releases, as version 1 (FR-DPE-011)', async () => {
       const res = await post('/decision-policies', {
         bandTreatment: { low: 'auto-execute', medium: 'gates-required', high: 'human-approval' },
@@ -115,6 +127,15 @@ suite('T736 · the decision engine is reachable through the composed application
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ outcome: 'pending', effectiveClass: 'high', resolvedBy: expect.any(String) });
       expect(res.body.explanation).toMatchObject({ policyVersion: '0', riskClass: 'high', matchedRule: null });
+    });
+
+    it('reads both decisions back from the object itself, not only by id (FR-DPE-024, T796a)', async () => {
+      const res = await get('/decision-objects/release/r-1/decisions');
+      expect(res.status, JSON.stringify(res.body)).toBe(200);
+      expect(res.body.decisions).toEqual([
+        expect.objectContaining({ decisionId: pendingId, outcome: 'pending', resolvedBy: expect.any(String) }),
+        expect.objectContaining({ outcome: 'approved', resolves: pendingId }),
+      ]);
     });
 
     it('refuses an action whose gate nobody can evaluate with 409, carrying the decision (FR-DPE-013)', async () => {
