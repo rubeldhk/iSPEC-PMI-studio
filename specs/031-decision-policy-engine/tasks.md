@@ -404,6 +404,6 @@ neither.*
 - [ ] T2510 Implement `DecisionService.refuse` and `POST /decisions/:id/refuse` (integration test: T2509) — `FR-DPE-017`
 - [ ] T2511 [P] Write failing component tests in `frontend/tests/unit/pages/DecisionInbox.spec.tsx` — each approval offers a Reject control with a reason field; an empty reason is not sent; a rejection is announced and the item leaves; a refused rejection shows its reason — `FR-DPE-017`
 - [ ] T2512 Implement `ApiClient.refuseDecision` in `frontend/src/services/api.ts` and the Reject control in `frontend/src/pages/DecisionInbox.tsx` (unit test: T2511) — `FR-DPE-017`
-- [ ] T2513 [P] Write failing component tests in `frontend/tests/unit/pages/DecisionInbox.spec.tsx` — an entry with no registered renderer renders exactly as before; a registered renderer receives the entry and renders inside it; membership, order and the Approve/Reject controls are unchanged by it — `FR-DPE-027`
+- [ ] T2513 [P] Write failing component tests in `frontend/tests/unit/pages/decision-inbox-renderers.spec.tsx` — an entry with no registered renderer renders exactly as before; a registered renderer receives the entry and renders inside it; membership, order and the Approve/Reject controls are unchanged by it; a second renderer for one type is refused — `FR-DPE-027`
 - [ ] T2514 Implement the renderer registry in `frontend/src/pages/decision-inbox-renderers.ts` and render through it in `DecisionInbox.tsx` (unit test: T2513) — `FR-DPE-027`
 - [ ] T2515 Record the converge results and both amendments in [closure.md](./closure.md), dated
