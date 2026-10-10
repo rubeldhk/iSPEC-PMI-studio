@@ -18,6 +18,7 @@ import {
   RequirementRoomIndexView,
   ProjectsArea,
   RunsArea,
+  DecisionInboxView,
   SpecificationsArea,
   WorkspaceAdministrationArea,
 } from './area-views';
@@ -133,8 +134,10 @@ export const AREAS: readonly Area[] = Object.freeze([
     label: 'Decision Inbox',
     path: '/decisions',
     epic: 'EPIC-031',
-    status: 'declared-not-delivered',
-    note: 'Decisions and policy are specified and not built yet.',
+    // EPIC-031 `T759`. Promoted because the Inbox renders and reads the real
+    // `GET /inbox` — the screen first, the status after it (`T1172`'s rule).
+    status: 'delivered',
+    element: DecisionInboxView,
   },
   // ------------------------------------------------------- Intent & Control
   {

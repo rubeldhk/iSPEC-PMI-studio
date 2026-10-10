@@ -67,13 +67,16 @@ importers:
         version: 10.4.22(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)
       '@nestjs/serve-static':
         specifier: ^4.0.2
-        version: 4.0.2(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(express@4.22.1)
+        version: 4.0.2(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(express@5.2.1)
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
       '@pmi/agent-contract':
         specifier: workspace:*
         version: link:../packages/agent-contract
+      '@pmi/decision-contract':
+        specifier: workspace:*
+        version: link:../packages/decision-contract
       '@pmi/engine-contract':
         specifier: workspace:*
         version: link:../packages/engine-contract
@@ -266,6 +269,8 @@ importers:
       '@pmi/execution-contract':
         specifier: workspace:*
         version: link:../execution-contract
+
+  packages/decision-contract: {}
 
   packages/engine-contract: {}
 
@@ -4438,13 +4443,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@nestjs/serve-static@4.0.2(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(express@4.22.1)':
+  '@nestjs/serve-static@4.0.2(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@10.4.22)(express@5.2.1)':
     dependencies:
       '@nestjs/common': 10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 10.4.22(@nestjs/common@10.4.22(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@10.4.22)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       path-to-regexp: 0.2.5
     optionalDependencies:
-      express: 4.22.1
+      express: 5.2.1
 
   '@noble/hashes@1.8.0': {}
 

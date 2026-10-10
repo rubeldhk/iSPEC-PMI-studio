@@ -168,6 +168,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     'context_packages',
     'context_reusable_authorisations',
     'context_source_classes',
+    'decision_explanations',
+    'decision_gate_exceptions',
     'decomposition_policies',
     'defect_classifications',
     'defect_escape_records',
@@ -202,6 +204,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'loop_objects',
       'loop_transitions',
       'organizations',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'policy_decisions',
       'principal_delegations',
       'principal_identity_snapshots',
       'principal_state_events',
@@ -240,6 +244,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'task_sync_lines',
       'task_syncs',
       'tasks',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'tenant_policies',
       'traceability_links',
       'users',
       'validation_findings',

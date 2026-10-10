@@ -43,6 +43,7 @@ import { PlanLandingPage } from '../pages/PlanLanding';
 import { TraceabilityPage } from '../pages/Traceability';
 import { Home } from './Home';
 import { useShell } from './shell-context';
+import { DecisionInboxPage } from '../pages/DecisionInbox';
 import type { Requirement } from '../services/api';
 
 /**
@@ -609,4 +610,14 @@ export function DefectRoomView(): ReactElement {
       )}
     </RequireProject>
   );
+}
+
+/**
+ * EPIC-031 `T759` — the Decision Inbox, one action from every screen
+ * (`FR-DPE-026`, `UX-0021`). Workspace-wide rather than project-scoped: what
+ * awaits a reviewer does not wait for them to pick the right project first.
+ */
+export function DecisionInboxView(): ReactElement {
+  const { api } = useShell();
+  return <DecisionInboxPage api={api} />;
 }
