@@ -2,13 +2,17 @@
  * `T1925` (EPIC-047) — the registry through its real routes.
  *
  * Constitution XI Tier 1: the composed application, a real session, a real
- * database. The two ports whose owners are open pull requests are first shown
- * refusing **as composed**, then replaced by in-test bindings that record every
- * call (`R-047-13`, analysis finding I1) — visibly, here, never in the module.
+ * database. Since Phase 9 the two ports are bound to their owners —
+ * `EvidenceContracts` to `EPIC-032`'s catalog, `ContractApprovals` to
+ * `EPIC-031`'s engine — and are shown working **as composed**, first and last.
+ * In between, in-test bindings that record every call (`R-047-13`, analysis
+ * finding I1) drive the registry's own behaviour — visibly, here, never in the
+ * module.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import type { INestApplication } from '@nestjs/common';
+import { Client } from 'pg';
 import { EXPERT_PORTS, type ExpertPorts } from '../../src/modules/experts/experts.tokens.js';
 import { startAuthenticatedApp, type AuthenticatedApp } from '../helpers/authenticated-app.js';
 import { contract, evidenceKnowing, recordingApprovals, type RecordingApprovals } from '../helpers/expert-fixtures.js';
@@ -25,6 +29,8 @@ let harness: AuthenticatedApp;
 let app: INestApplication;
 let readerCookie = '';
 let approvals: RecordingApprovals;
+/** The composed bindings, kept before any test replaces them. */
+let composed: Pick<ExpertPorts, 'approvals' | 'evidence'>;
 
 beforeAll(async () => {
   if (noRuntime) return;
@@ -71,25 +77,24 @@ suite('T1925 · the registry routes', () => {
     expect((await api().get(`/${PREFIX}/experts`)).status).toBe(401);
   });
 
-  it('as composed, registering refuses 503 naming EvidenceContracts — never accepted unchecked', async () => {
+  it("as composed, EPIC-032's catalog refuses a contract naming an Evidence Contract it does not hold (FR-EXP-022)", async () => {
+    const ports = app.get<ExpertPorts>(EXPERT_PORTS, { strict: false });
+    composed = { approvals: ports.approvals, evidence: ports.evidence };
+    // The fixture names `implementation@1`, which EPIC-032 does not ship.
     const res = await api().post(`/${PREFIX}/experts`).set('Cookie', harness.cookie).send(body);
-    expect(res.status).toBe(503);
-    expect(JSON.stringify(res.body)).toMatch(/EvidenceContracts/);
+    expect(res.status).toBe(400);
+    expect(JSON.stringify(res.body)).toMatch(/Evidence Contract implementation@1 does not exist in EPIC-032/);
   });
 
   it('with in-test bindings: register, list, read', async () => {
     const ports = app.get<ExpertPorts>(EXPERT_PORTS, { strict: false });
     ports.evidence = evidenceKnowing('implementation@1');
     approvals = recordingApprovals();
+    ports.approvals = approvals;
 
-    // Submitting still refuses until approvals are bound — asserted before binding them.
     const created = await api().post(`/${PREFIX}/experts`).set('Cookie', harness.cookie).send(body);
     expect(created.status).toBe(201);
     const id = created.body.expert.id as string;
-    const submit = await api().post(`/${PREFIX}/experts/${id}/contract-versions/1/submit`).set('Cookie', harness.cookie);
-    expect(submit.status).toBe(503);
-    expect(JSON.stringify(submit.body)).toMatch(/ContractApprovals/);
-    ports.approvals = approvals;
 
     const list = await api().get(`/${PREFIX}/experts`).set('Cookie', harness.cookie);
     expect(list.status).toBe(200);
@@ -154,5 +159,58 @@ suite('T1925 · the registry routes', () => {
   it('an Expert in another workspace is not found (FR-EXP-008)', async () => {
     const res = await api().get(`/${PREFIX}/experts/does-not-exist`).set('Cookie', harness.cookie);
     expect(res.status).toBe(404);
+  });
+
+  it('Phase 9 · through the composed EPIC-032 and EPIC-031 bindings: registered, submitted, decided and read back', async () => {
+    const ports = app.get<ExpertPorts>(EXPERT_PORTS, { strict: false });
+    ports.evidence = composed.evidence;
+    ports.approvals = composed.approvals;
+
+    // T1980 — a contract naming an Evidence Contract EPIC-032 ships is accepted.
+    const created = await api()
+      .post(`/${PREFIX}/experts`)
+      .set('Cookie', harness.cookie)
+      .send({
+        key: 'composed-reviewer',
+        name: 'Composed Reviewer',
+        contract: contract({ evidenceContract: { workClass: 'task-completion', contractVersion: 1 } }),
+      });
+    expect(created.status).toBe(201);
+    const id = created.body.expert.id as string;
+
+    // T1978 — submitting asks EPIC-031 to decide. No steering rule classifies
+    // the action, so it takes the most restrictive band and waits for a human
+    // (FR-DPE-004, FR-DPE-010): submitted, not approved.
+    const submitted = await api().post(`/${PREFIX}/experts/${id}/contract-versions/1/submit`).set('Cookie', harness.cookie);
+    expect([submitted.status, submitted.body.status]).toEqual([201, 'submitted']);
+
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const { rows } = await db.query(
+        `SELECT "projectId","targetType","targetId","objectVersion","proposedClass","effectiveClass","outcome","requestedBy"
+           FROM "policy_decisions" WHERE "workspaceId" = $1 AND "actionType" = 'expert-contract.approve'`,
+        [WS],
+      );
+      expect(rows).toEqual([
+        {
+          projectId: `workspace:${WS}`,
+          targetType: 'expert-contract-version',
+          targetId: submitted.body.id,
+          objectVersion: '1',
+          proposedClass: 'medium',
+          effectiveClass: 'high',
+          outcome: 'pending',
+          requestedBy: AUTHOR,
+        },
+      ]);
+    } finally {
+      await db.end();
+    }
+
+    // Read back on every request, never cached: submitted, and nothing yet approved.
+    const read = await api().get(`/${PREFIX}/experts/${id}`).set('Cookie', harness.cookie);
+    expect(read.body.versions.map((v: { status: string }) => v.status)).toEqual(['submitted']);
+    expect(read.body.effectiveVersion).toBeNull();
   });
 });

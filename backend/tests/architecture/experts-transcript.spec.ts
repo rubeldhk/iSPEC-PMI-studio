@@ -7,11 +7,10 @@
  * `governance/known-red.json` rather than silenced.
  *
  * It cannot be produced here, and typing one would be the fabrication this
- * check exists to catch: in this deployment, registering an Expert refuses
- * `503` until `EPIC-032` binds `EvidenceContracts`, approving one until
- * `EPIC-031` binds `ContractApprovals`, and **no run exists to show** because
- * dispatch refuses until a runner and an execution identity exist
- * (`DEF-047-001`).
+ * check exists to catch: registering and approving an Expert work since Phase 9
+ * bound `EPIC-032` and `EPIC-031`, but **no run exists to show** because dispatch
+ * refuses until a runner and an execution identity exist (`R-047-2`,
+ * `DEF-047-001`).
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
