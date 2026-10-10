@@ -343,12 +343,12 @@ order.
   - a target that is not the current version is refused `400`;
   - an approved version is never edited (`FR-LRN-031`)
 - [X] T2365 [US4] Implement supersession and deprecation in `submission.service.ts` and `materialiser.ts` (unit test: T2364) — **Done**: no new code was needed — supersession, deprecation and the current-version check exist in `submission.service.ts` and `materialiser.ts`; this task's suite pins them through the full path.
-- [ ] T2366 [P] [US4] Write failing unit tests `backend/tests/unit/learning-knowledge-service.spec.ts`:
+- [X] T2366 [P] [US4] Write failing unit tests `backend/tests/unit/learning-knowledge-service.spec.ts`: — **Done**: 7 cases end to end, red on the missing module: ordered history incl. a deprecation and cleared flags, provenance incl. an Expert source and what it replaces, four filters, bad filters refused.
   - history lists every version, the candidate and decision behind each, every status event and flag in order (`FR-LRN-035`);
   - browse filters by project, scope, category and status (`FR-LRN-073`);
   - provenance answers *where from, who approved, what it replaces* from the record alone (`SC-LRN-006`);
   - nothing is deleted (`FR-LRN-039`)
-- [ ] T2367 [US4] Implement `backend/src/modules/learning/knowledge.service.ts` (unit test: T2366)
+- [X] T2367 [US4] Implement `backend/src/modules/learning/knowledge.service.ts` (unit test: T2366) — **Done**: `knowledge.service.ts`: `browse` (rows with status, retrievability, open flags), `entry` (current + provenance), `history` (versions with candidate, decision, status events, flags; events ordered by the approval that caused them).
 - [ ] T2368 [P] [US4] Write failing job tests `backend/tests/integration/learning-flags-job.spec.ts`:
   - `learning.flags` raises `evidence-changed` when a cited item turns `integrity-failed` or `unresolvable`;
   - it raises `source-invalid` on `validation-failed`, `transition-refused`, `transition-inconsistent` or `execution-reconciliation-conflicted` (`R-048-17`);
