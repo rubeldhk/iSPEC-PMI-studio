@@ -313,12 +313,12 @@ T2402 and T2405–T2407.
   - `learning.request-pending` requests decisions after reconciliation and after an outage (`R-048-7`, `FR-LRN-063`);
   - it requests a **new** decision for a candidate the approver guard returned to `proposed`, and stops after three decision attempts in all, leaving it `proposed` and flagged (`R-048-6` as amended for `I1`; `RK-5`)
 - [X] T2359 [US3] Implement `learning.resolve-decisions` and `learning.request-pending` in `backend/src/modules/learning/learning.jobs.ts` (integration test: T2358) — **Done**: `learning.jobs.ts` (`LearningJobs.run` under `runWithLimits`; resolve-decisions, request-pending) and `learning.sweeps.ts` (the schedule — **off unless `PMI_LEARNING_SWEEPS=on`**, a recorded deviation; unit-tested); the requester no longer repeats an identical `proposed` row.
-- [ ] T2360 [P] [US3] Write failing job tests `backend/tests/integration/learning-expire-job.spec.ts`:
+- [X] T2360 [P] [US3] Write failing job tests `backend/tests/integration/learning-expire-job.spec.ts`: — **Done**: 8 cases on the composed app, all red first: window respected, pending → `refuse(kind: expired)` then `expired`, proposed expires with no decision to close, unrefusable (A-031-1 absent) reported and left; withdraw by the submitter only (403 others / agent's candidate), 409 terminal, 404 other workspace, 401 no session; the transitions stay inspectable through the candidate view.
   - past the review window a candidate reads `expired`, not `rejected`;
   - it is refused through `LearningDecisions.refuse` with reason `expired`;
   - `POST /learning/candidates/:id/withdraw` reads `withdrawn`;
   - both are inspectable (`FR-LRN-030`, US1 Edge Case)
-- [ ] T2361 [US3] Implement `learning.expire` and the withdraw route in `learning.jobs.ts` and `learning.controller.ts` (integration test: T2360)
+- [X] T2361 [US3] Implement `learning.expire` and the withdraw route in `learning.jobs.ts` and `learning.controller.ts` (integration test: T2360) — **Done**: `learning.expire` in `learning.jobs.ts` (window from the policy, default 30 d, `asOf` for the judged instant) and `ReviewService.withdraw` + `POST /learning/candidates/:id/withdraw`.
 - [ ] T2362 [P] [US3] Write failing route tests `backend/tests/integration/learning-review-route.spec.ts` against the composed module, with recording in-test `LearningDecisions`, `EvidenceReads` and `Principals`:
   - quickstart Q6, Q9–Q17;
   - `503` naming `LearningDecisions` while unbound;

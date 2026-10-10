@@ -10,10 +10,11 @@
  * **There is no route here that creates, edits or deletes knowledge**
  * (`SC-LRN-001`); `T2332` asserts it over every controller in the application.
  */
-import { Body, Controller, Get, Inject, Param, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Req, Res } from '@nestjs/common';
 import { NotAvailableUntilError, UnauthenticatedError, ValidationFailedError } from '../../core/errors.js';
 import type { WorkspaceContext } from '../../core/workspace.guard.js';
 import { CandidateViewService, type CandidateViewBody } from './candidate.view.js';
+import { ReviewService } from './review.service.js';
 import { SubmissionService, type SubmissionBody } from './submission.service.js';
 
 export interface ActingUser {
@@ -47,7 +48,16 @@ export class LearningController {
     // @Inject by token: esbuild/tsx emits no design:paramtypes (DEF-001-005).
     @Inject(SubmissionService) private readonly submissions: SubmissionService,
     @Inject(CandidateViewService) private readonly candidates: CandidateViewService,
+    @Inject(ReviewService) private readonly reviews: ReviewService,
   ) {}
+
+  /** `FR-LRN-030` (T2361) — the submitter withdraws their own open candidate. */
+  @Post('learning/candidates/:id/withdraw')
+  @HttpCode(200)
+  withdraw(@Req() ctx: WorkspaceContext | undefined, @Param('id') id: string): Promise<{ state: 'withdrawn' }> {
+    const user = requireSession(ctx);
+    return this.reviews.withdraw(user.workspaceId, user.userId, id);
+  }
 
   /** `FR-LRN-006` — a person submits as themselves. `201` recorded, `200` replay or corroboration. */
   @Post('learning/candidates')

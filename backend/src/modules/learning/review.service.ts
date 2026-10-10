@@ -75,6 +75,33 @@ export class ReviewService {
     return this.deps.materialiser.applyResolution(workspaceId, candidateId, resolution);
   }
 
+  /**
+   * `FR-LRN-030` (T2361) — the submitter withdraws their own candidate. A pending
+   * decision is closed first by the requesting automation (`A-031-1`, kind
+   * `withdrawn`), so the item leaves the Inbox; then the candidate reads
+   * `withdrawn`, attributed to the person. Only a person's own candidate: an
+   * agent's is not a session user's to withdraw.
+   */
+  async withdraw(workspaceId: string, userId: string, candidateId: string): Promise<{ state: 'withdrawn' }> {
+    const { store } = this.deps;
+    const candidate = await store.candidate(workspaceId, candidateId);
+    if (candidate === null) throw new NotFoundError('Not found.');
+    const current = await store.currentTransition(workspaceId, candidateId);
+    if (current === null || !['proposed', 'pending-review'].includes(current.state)) {
+      throw new ConflictError(`Candidate ${candidateId} is ${current?.state ?? 'unknown'}; only an open candidate can be withdrawn.`);
+    }
+    if (candidate.sourceKind !== 'person' || candidate.sourcePrincipalId !== userId) {
+      throw new ForbiddenError('Only the person who submitted a candidate may withdraw it.');
+    }
+    if (current.state === 'pending-review' && current.decisionId !== null) {
+      await this.deps.ports.decisions.refuse({ workspaceId, decisionId: current.decisionId, by: { kind: 'automation', id: 'learning-intake' }, kind: 'withdrawn', reason: `withdrawn by the submitter ${userId}` });
+    }
+    await store.transaction((tx) =>
+      tx.appendTransition({ workspaceId, candidateId, state: 'withdrawn', reason: 'withdrawn by the submitter', decisionId: current.decisionId, actorKind: 'human', actorId: userId, at: this.now() }),
+    );
+    return { state: 'withdrawn' };
+  }
+
   /** `R-048-6` layer 1 — a person, and not one of the candidate's AI sources. Refusals are audited. */
   private async assertHumanReviewer(candidate: CandidateRecord, reviewerId: string, decisionId: string): Promise<void> {
     // 503 naming Principals while unbound: an approver whose kind is unknown is not a human.

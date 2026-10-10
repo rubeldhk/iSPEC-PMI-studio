@@ -23,6 +23,7 @@
 import { ValidationFailedError } from '../../core/errors.js';
 import { runWithLimits } from '../jobs/job-runner.service.js';
 import { MAX_DECISION_ATTEMPTS, type DecisionRequester } from './decision.requester.js';
+import { LEARNING_POLICY_DEFAULTS, type LearningPolicyReader } from './learning-policy.js';
 import type { LearningStore } from './learning.store.js';
 import type { LearningPorts } from './learning.tokens.js';
 import type { Materialiser } from './materialiser.js';
@@ -50,6 +51,8 @@ export interface RunOptions {
   readonly workspaceId?: string;
   readonly timeoutMs?: number;
   readonly signal?: AbortSignal;
+  /** The instant the sweep judges against — the clock, unless a test or a backfill says otherwise. */
+  readonly asOf?: Date;
 }
 
 export interface LearningJobsDeps {
@@ -57,6 +60,7 @@ export interface LearningJobsDeps {
   readonly ports: LearningPorts;
   readonly materialiser: Pick<Materialiser, 'applyResolution'>;
   readonly requester: Pick<DecisionRequester, 'request' | 'attempts'>;
+  readonly policy?: Pick<LearningPolicyReader, 'current'>;
   readonly now?: () => Date;
 }
 
@@ -74,6 +78,7 @@ export class LearningJobs {
     this.now = deps.now ?? ((): Date => new Date());
     this.handlers.set('learning.resolve-decisions', (o, t) => this.resolveDecisions(o, t));
     this.handlers.set('learning.request-pending', (o, t) => this.requestPending(o, t));
+    this.handlers.set('learning.expire', (o, t) => this.expire(o, t));
   }
 
   /** Run one job by name, under a hard time limit. Per-item failures are reported, not thrown. */
@@ -97,6 +102,51 @@ export class LearningJobs {
         const resolution = await this.deps.ports.decisions.resolutionOf(candidate.workspaceId, current.decisionId);
         if (resolution === null) continue;
         await this.deps.materialiser.applyResolution(candidate.workspaceId, candidate.id, resolution);
+        tally.changed += 1;
+      } catch (err) {
+        tally.errors.push(`${candidate.id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+  }
+
+  /**
+   * `FR-LRN-030` (T2361) — past the review window a candidate reads `expired`,
+   * distinct from `rejected`. A pending one's decision is first refused by the
+   * requesting automation with kind `expired` (`A-031-1`), so it leaves the
+   * Inbox; if that refusal cannot be made, the candidate is left as it is and the
+   * failure is reported — expiring it locally would leave an open decision
+   * behind it (`R-048-14`).
+   */
+  private async expire(options: RunOptions, tally: Tally): Promise<void> {
+    const asOf = (options.asOf ?? this.now()).getTime();
+    const windows = new Map<string, number>();
+    const windowDays = async (ws: string): Promise<number> => {
+      if (!windows.has(ws)) {
+        const p = this.deps.policy === undefined ? null : await this.deps.policy.current(ws);
+        windows.set(ws, p?.state === 'ok' ? p.policy.reviewWindowDays : LEARNING_POLICY_DEFAULTS.reviewWindowDays);
+      }
+      return windows.get(ws)!;
+    };
+    for (const { candidate, current } of await this.deps.store.candidatesInStates(['proposed', 'pending-review'], options.workspaceId)) {
+      tally.examined += 1;
+      const days = await windowDays(candidate.workspaceId);
+      if (candidate.submittedAt.getTime() + days * 86_400_000 > asOf) continue;
+      const reason = `review window of ${days} days elapsed`;
+      try {
+        if (current.state === 'pending-review' && current.decisionId !== null) {
+          const resolution = await this.deps.ports.decisions.refuse({
+            workspaceId: candidate.workspaceId,
+            decisionId: current.decisionId,
+            by: { kind: 'automation', id: 'learning-intake' },
+            kind: 'expired',
+            reason,
+          });
+          await this.deps.materialiser.applyResolution(candidate.workspaceId, candidate.id, resolution);
+        } else {
+          await this.deps.store.transaction((tx) =>
+            tx.appendTransition({ workspaceId: candidate.workspaceId, candidateId: candidate.id, state: 'expired', reason, decisionId: null, actorKind: 'platform', actorId: 'learning-intake', at: new Date(asOf) }),
+          );
+        }
         tally.changed += 1;
       } catch (err) {
         tally.errors.push(`${candidate.id}: ${err instanceof Error ? err.message : String(err)}`);

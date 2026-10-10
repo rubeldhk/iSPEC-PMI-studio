@@ -56,6 +56,7 @@ import { Materialiser } from './materialiser.js';
 import { approvalAttestation } from './attestation.js';
 import { LearningJobs } from './learning.jobs.js';
 import { LearningSweeps } from './learning.sweeps.js';
+import { ReviewService } from './review.service.js';
 
 /** Resolvable proof the module is in the graph — `T2301` asks for it by name. */
 export class LearningService {
@@ -162,7 +163,13 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
       provide: LearningJobs,
       inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, Materialiser, DecisionRequester],
       useFactory: (store: LearningStore, ports: LearningPorts, materialiser: Materialiser, requester: DecisionRequester): LearningJobs =>
-        new LearningJobs({ store, ports, materialiser, requester }),
+        new LearningJobs({ store, ports, materialiser, requester, policy: new LearningPolicyReader({ current: (ws) => ports.policy.current(ws) }) }),
+    },
+    {
+      provide: ReviewService,
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN, LearningPolicyReader, Materialiser],
+      useFactory: (store: LearningStore, ports: LearningPorts, policy: LearningPolicyReader, materialiser: Materialiser): ReviewService =>
+        new ReviewService({ store, ports, policy, materialiser }),
     },
     {
       // Off unless PMI_LEARNING_SWEEPS=on (learning.sweeps.ts).
