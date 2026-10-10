@@ -69,6 +69,13 @@ export interface ReproductionRow {
   readonly defectId: string;
   readonly reproducible: string;
   readonly environment: string;
+  /**
+   * `DEF-035-002` — the schema has always required `steps` and the domain never
+   * carried it, so no reproduction reached PostgreSQL. `FR-DFR-030` does not
+   * require steps; the Key Entities list does. Optional at the API, stored as
+   * given, empty where the reporter gave none.
+   */
+  readonly steps: string;
   /** `FR-DFR-032` — ids into `EPIC-032`. Never inline content. */
   readonly evidenceRefs: readonly string[];
   readonly affectedBehaviourRef: string;

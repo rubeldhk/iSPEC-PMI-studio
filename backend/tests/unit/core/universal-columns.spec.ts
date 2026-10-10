@@ -170,6 +170,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     'context_packages',
     'context_reusable_authorisations',
     'context_source_classes',
+    'decision_explanations',
+    'decision_gate_exceptions',
     'decomposition_policies',
     'defect_classifications',
     'defect_escape_records',
@@ -183,6 +185,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'engine_registrations',
       // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
       'epics',
+      // EPIC-032 T856o — the completion record (data-model §5).
+      'evidence_completion_attempts',
       'evidence_contract_items',
       'evidence_contracts',
       'evidence_items',
@@ -202,6 +206,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'loop_objects',
       'loop_transitions',
       'organizations',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'policy_decisions',
       'principal_delegations',
       'principal_identity_snapshots',
       'principal_state_events',
@@ -240,9 +246,13 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'task_sync_lines',
       'task_syncs',
       'tasks',
+      // EPIC-031 T731 — the decision engine (data-model §2–§5).
+      'tenant_policies',
       'traceability_links',
       'users',
       'validation_findings',
+      // EPIC-032 T856o — work bound to its Contract version (data-model §4).
+      'work_evidence_bindings',
       'workspaces',
       // EPIC-043 T1409 — one row per credential, touched by pmi.health.
       'workstation_connections',

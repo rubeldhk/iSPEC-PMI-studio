@@ -296,6 +296,30 @@ export interface ReviewQuestion {
  * the backend's `RunBody` types them as `Date` because that is what it holds
  * before serialisation.
  */
+/**
+ * EPIC-031 — one Decision Inbox entry (`GET /inbox`). Derived by the backend at
+ * read time; `blockedBy` names what would unblock it (`FR-DPE-025`).
+ */
+export interface InboxEntry {
+  decisionId: string;
+  kind: 'approval' | 'blocked' | 'review' | 'escalation';
+  actionType: string;
+  objectRef: { type: string; id: string };
+  objectVersion: string;
+  projectId: string;
+  band: 'low' | 'medium' | 'high';
+  requestedBy: string;
+  blockedBy: string;
+  since: string;
+}
+
+export interface DecisionOutcomeView {
+  decisionId: string;
+  outcome: 'auto-executed' | 'approved' | 'refused' | 'pending' | 'exception';
+  effectiveClass: 'low' | 'medium' | 'high';
+  explanation: { authorityApplied: string; [key: string]: unknown };
+}
+
 export interface Run {
   id: string;
   projectId: string;
@@ -1206,6 +1230,16 @@ export class ApiClient {
 
   async contextPackage(packageId: string): Promise<ContextInspection> {
     return this.request('GET', `/context/packages/${encodeURIComponent(packageId)}`);
+  }
+
+  // ---- decision inbox (EPIC-031) ----
+
+  async decisionInbox(): Promise<{ entries: InboxEntry[] }> {
+    return this.request('GET', '/inbox');
+  }
+
+  async approveDecision(decisionId: string): Promise<DecisionOutcomeView> {
+    return this.request('POST', `/decisions/${encodeURIComponent(decisionId)}/approve`);
   }
 
   // ---- execution timeline (EPIC-043) ----

@@ -183,6 +183,26 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-031 T718 — the decision contract package. No `passWithNoTests`
+    // (TS-005), registered in the same change as the first spec that fills it.
+    test: {
+      name: 'decision-contract',
+      root: './packages/decision-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    // EPIC-032 T855c — the sixth contract package. No `passWithNoTests` (TS-005),
+    // registered in the same change as the first spec that fills it.
+    test: {
+      name: 'evidence-contract',
+      root: './packages/evidence-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     test: {
       name: 'agent-adapters',
       root: './agent-adapters',

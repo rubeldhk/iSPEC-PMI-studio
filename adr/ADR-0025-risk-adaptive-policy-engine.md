@@ -69,8 +69,13 @@ as reviewed artifacts under `BR-0070` steering, not as configuration.
 **Negative** — the engine sits on the critical path of every governed action, so its availability
 and latency become product concerns.
 
-**Open** — whether risk classification is expressed in the same steering hierarchy as engineering
-constraints (`BR-0070`–`BR-0072`) or in a separate policy artifact. The owning epic (`U-07`) decides.
+**Closed 2026-10-08 (`EPIC-031` `T793`)** — risk classification **is expressed in the `BR-0070`
+steering hierarchy**, not in a separate policy artifact. Decided at `EPIC-031` clarification
+(2026-08-22, `FR-DPE-005`, `R-031-1`) and now built: rules are steering documents with subject
+`risk-classification`, `resolveSteering()` decides precedence (`BR-0071`) and the explanation quotes
+it (`FR-DPE-042`). One consequence is recorded rather than hidden: steering picks **one winning
+document per subject**, so a narrower ruleset replaces a broader one whole (`DEF-031-001`). The owning
+epic `U-07` is `EPIC-031`.
 
 ## Traceability
 

@@ -1,0 +1,36 @@
+{
+  "$comment": "EPIC-032 T860e. The shape of a Vitest --reporter=json report, as an EPIC-015 validation run writes it. A fixture, not a run: the test consumes a report and re-runs nothing (FR-EVS-050). The file names are EPIC-015's real suites (T145, T147a); the assertion titles are illustrative, not copied from a real run.",
+  "numTotalTestSuites": 2,
+  "numTotalTests": 3,
+  "numPassedTests": 3,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "success": true,
+  "startTime": 1791331200000,
+  "testResults": [
+    {
+      "name": "e2e/tests/full-journey.spec.ts",
+      "status": "passed",
+      "assertionResults": [
+        {
+          "fullName": "T145 · journey V1–V6 (illustrative)",
+          "status": "passed"
+        },
+        {
+          "fullName": "T145 · journey V7–V12 (illustrative)",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "name": "backend/tests/integration/job-outcome-rate.spec.ts",
+      "status": "passed",
+      "assertionResults": [
+        {
+          "fullName": "T147a · SC-011 outcome rate (illustrative)",
+          "status": "passed"
+        }
+      ]
+    }
+  ]
+}

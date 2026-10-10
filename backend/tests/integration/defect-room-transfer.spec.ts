@@ -86,6 +86,7 @@ async function room(port: ChangeIntakePort) {
     defectId: 'df_1',
     reproducible: 'always',
     environment: 'production, EU region',
+    steps: '',
     evidenceRefs: ['ev_har_1'],
     affectedBehaviourRef: 'rv_1',
     notAutomatableReason: null,
@@ -100,6 +101,7 @@ const offer = {
   defectId: 'df_1',
   offeredReason: 'the baseline says one hour and the system sends at one hour; you want thirty minutes',
   offeredBy: 'u_1',
+  steps: '',
   evidenceRefs: ['ev_har_1'],
   now: NOW,
 };
