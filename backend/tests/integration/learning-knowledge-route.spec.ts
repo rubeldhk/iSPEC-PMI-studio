@@ -105,6 +105,18 @@ suite('T2370 · knowledge through the real routes', () => {
       expect(after.rows[0].n).toBe(before.rows[0].n);
     });
 
+    it('the composed application maps no write verb to any knowledge path (MP-1a’s route half)', () => {
+      // Enumerated from the router the application actually built — not from source
+      // text — so a route added by any module, under any controller, is seen.
+      const instance = app.started.app.getHttpAdapter().getInstance() as { _router?: { stack: unknown[] }; router?: { stack: unknown[] } };
+      const stack = (instance._router ?? instance.router)?.stack ?? [];
+      const routes = (stack as { route?: { path: string; methods: Record<string, boolean> } }[])
+        .filter((l) => l.route !== undefined)
+        .flatMap((l) => Object.keys(l.route!.methods).map((m) => `${m.toUpperCase()} ${l.route!.path}`));
+      expect(routes.some((r) => r.startsWith('GET /v1/learning/knowledge'))).toBe(true);
+      expect(routes.filter((r) => /knowledge/i.test(r) && !r.startsWith('GET '))).toEqual([]);
+    });
+
     it('post /learning/knowledge writes nothing', async () => {
       const res = await app.api().post('/v1/learning/knowledge').set('Cookie', app.started.cookie).send({ statement: 'direct' });
       expect([200, 201]).not.toContain(res.status);

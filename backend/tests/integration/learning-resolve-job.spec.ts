@@ -72,6 +72,23 @@ suite('T2358 · learning.resolve-decisions', () => {
     expect(f.rows.map((r: { kind: string }) => r.kind)).toEqual(['decision-not-accepted']);
   });
 
+  it('Q14 · …by an agent that is NOT the candidate’s source — the guard alone refuses it (MP-3 isolated)', async () => {
+    // A second project's connector credential: another non-human principal of the
+    // workspace. Not the candidate's source, so neither the source-identity check
+    // nor the database's approver-not-source trigger stands in for the kind check.
+    const other = await app.api().post('/v1/projects').set('Cookie', app.started.cookie).send({ name: 'Other agent', rootPath: 'ws_jobs_other' }).expect(201);
+    const cred = await app.db.query(`SELECT "principalId" FROM connector_credentials WHERE id = $1`, [other.body.connectorCredential.id]);
+    const otherAgent = String(cred.rows[0].principalId);
+    expect(otherAgent).not.toBe(app.agentPrincipalId);
+
+    const res = await app.submit(app.body()).expect(201);
+    decisions.resolveAs(res.body.decisionId, { outcome: 'approved', actorKind: 'human', decidedBy: otherAgent });
+    await jobs.run('learning.resolve-decisions', { workspaceId: 'ws_jobs' });
+    expect(await state(res.body.candidateId)).toMatchObject({ state: 'proposed', reason: 'decision-not-accepted' });
+    const v = await app.db.query(`SELECT 1 FROM knowledge_entry_versions WHERE "candidateId" = $1`, [res.body.candidateId]);
+    expect(v.rowCount).toBe(0);
+  });
+
   it('a rejection closes the candidate as rejected, with the reviewer and reason', async () => {
     const res = await app.submit(app.body()).expect(201);
     decisions.resolveAs(res.body.decisionId, { outcome: 'refused', actorKind: 'human', decidedBy: 'u_rev', closure: { kind: 'rejected', reason: 'Not true here.' } });
