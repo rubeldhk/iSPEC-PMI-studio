@@ -2685,6 +2685,7 @@ model ContextPackage {
   workspaceId      String
   projectId        String
   /// FR-CTX-062 — the execution this fed. Null only while assembly is in flight.
+  /// T1267 — FK to executions(id) ON DELETE CASCADE, declared in the migration.
   executionId      String?
   /// FR-CTX-032 — what it was assembled for, in the requester's own words.
   objective        String
@@ -2696,7 +2697,20 @@ model ContextPackage {
   /// FR-CTX-065 — required when refused, CHECKed. A refusal is a row.
   refusalReason    String?
   /// R-038-4 — which model ranked these candidates.
-  embeddingModelId String
+  /// T1820 — null only on a refusal made before ranking; CHECKed for assembled rows.
+  embeddingModelId String?
+  /// T1281, R-038-3 — the short read, recorded. CHECKed in the migration.
+  retrievalRequested Int?
+  retrievalReturned  Int?
+  /// T1286, FR-CTX-022 — not-requested | read | unavailable; CHECKed. Null = not recorded.
+  liveState              String?
+  liveStateReason        String?
+  /// T1288, FR-CTX-015 — available | unavailable; CHECKed. Null = not recorded.
+  executionHistory       String?
+  executionHistoryReason String?
+  /// T1822, SC-CTX-009 — items whose staleness nobody could determine.
+  stalenessUnknown       Int?
+  liveStateElements      ContextLiveState[]
   assembledAt      DateTime          @default(now())
   createdAt        DateTime          @default(now())
   items            ContextItem[]
@@ -2717,6 +2731,10 @@ model ContextItem {
   sourceType          String
   sourceId            String
   sourceVersion       String
+  /// T1839, FR-CTX-040 — the workspace that owns the source; null on older rows.
+  sourceWorkspaceId   String?
+  /// T1863, FR-CTX-031 — the security classification it was admitted under.
+  securityClassification String?
   /// FR-CTX-042 — required, no default; CHECKed against three values.
   authoritativeStatus String
   supersededBy        String?
@@ -2726,6 +2744,8 @@ model ContextItem {
   /// FR-CTX-014 — the score that ranked it.
   relevanceScore      Float
   crossBoundary       Boolean        @default(false)
+  /// T1260 — a composite foreign key to context_reusable_authorisations
+  /// (id, toWorkspaceId, sourceType, sourceId), declared in the migration.
   authorisationRef    String?
   createdAt           DateTime       @default(now())
   package             ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
@@ -2755,6 +2775,40 @@ model ContextExclusion {
   @@map("context_exclusions")
 }
 
+/// T1286 (EPIC-038) — one element of live state as a package was given it.
+/// A reference and a state word, never a payload (FR-CTX-020, FR-CTX-021).
+model ContextLiveState {
+  id          String         @id @default(uuid())
+  workspaceId String
+  packageId   String
+  kind        String
+  ref         String
+  state       String
+  /// FR-CTX-021 — the instant it was read. No default, deliberately.
+  readAt      DateTime
+  createdAt   DateTime       @default(now())
+  package     ContextPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([packageId])
+  @@map("context_live_state")
+}
+
+/// T1802, T1804 (EPIC-038) — a workspace's budget policy (FR-CTX-031,
+/// FR-CTX-036). CHECKs in the migration.
+model ContextBudgetPolicy {
+  id                    String   @id @default(uuid())
+  workspaceId           String   @unique
+  retrievalLimit        Int
+  tokensPerCandidate    Int
+  costPerThousandTokens Decimal  @db.Decimal(12, 4)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now())
+
+  @@index([workspaceId])
+  @@map("context_budget_policies")
+}
+
 model ContextSourceClass {
   id                     String   @id @default(uuid())
   workspaceId            String
@@ -2777,6 +2831,9 @@ model ContextReusableAuthorisation {
   /// Directional: A may read B's handbook does not imply the reverse.
   workspaceId     String
   toWorkspaceId   String
+  /// T1808 — a crossing between projects inside one workspace. Both or neither (CHECKed).
+  fromProjectId   String?
+  toProjectId     String?
   authorisedBy    String
   authorisedAt    DateTime @default(now())
   rationale       String
@@ -2798,6 +2855,8 @@ model ContextIndexEntry {
   sourceId         String
   /// FR-CTX-016 — staleness is a version comparison, never a timestamp.
   sourceVersion    String
+  /// T1808, FR-CTX-050 — the owning project; null for workspace-wide material.
+  projectId        String?
   embeddingModelId String
   dimension        Int
   indexedAt        DateTime @default(now())

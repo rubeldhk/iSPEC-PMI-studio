@@ -227,6 +227,13 @@ export interface ExecutionSnapshot {
   /** Makes projection staleness visible rather than invisible. */
   readonly projectedThroughSequence: number;
   readonly parentExecutionId: string | null;
+  /**
+   * The project the execution was registered under; `null` for one registered
+   * to the workspace alone. Additive (`EPIC-038` `T1857`): a consumer that
+   * scopes by project — context retrieval — must not treat an execution as
+   * workspace-wide because the snapshot was silent.
+   */
+  readonly projectId?: string | null;
 }
 
 /**
