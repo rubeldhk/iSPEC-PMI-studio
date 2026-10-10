@@ -252,17 +252,18 @@ suite('T998k · POST /rooms/defect/:id/reproduction', () => {
     expect(res.status).toBe(401);
   });
 
-  it('refuses evidence while EPIC-032 is unbound, rather than storing it here', async () => {
-    // `R-035-7`, `FR-DFR-033`. This is the route where a user is encouraged to
-    // paste a payload that reproduces a failure (`PP-008`); a Room-local copy
-    // would be filed under "who can see defects" rather than under the
-    // artifact's own access rules.
+  it('files reproduction evidence in the EPIC-032 evidence store, not here (T1797)', async () => {
+    // `R-035-7`, `FR-DFR-033`. Until `EPIC-032` filled `EvidenceStore` this
+    // route refused evidence outright — the safe direction while there was no
+    // store honouring the artifact's access rules. Now there is one, and the
+    // payload goes there; the Room keeps only the evidence id.
     const res = await request(app.getHttpServer())
       .post(`/${PREFIX}/rooms/defect/${DEFECT}/reproduction`)
       .set('Cookie', harness.cookie)
       .send({
         reproducible: 'always',
         environment: 'production, EU region',
+        steps: 'open the form; submit twice',
         affectedBehaviourRef: 'rv_1',
         notAutomatableReason: null,
         evidence: [
@@ -270,23 +271,59 @@ suite('T998k · POST /rooms/defect/:id/reproduction', () => {
             _type: 'https://in-toto.io/Statement/v1',
             subject: [{ name: 'window', digest: { sha256: 'abc' } }],
             predicateType: 'https://pmi.studio/attestation/transcript/v1',
-            predicate: { note: 'a session cookie would live here' },
+            predicate: { note: 'the failing session, step by step' },
           },
         ],
       });
-
-    expect(res.status).toBe(400);
-    expect(JSON.stringify(res.body)).toMatch(/EPIC-032/);
+    expect(res.status, JSON.stringify(res.body)).toBeLessThan(300);
   });
 
-  it('and nothing was written', async () => {
+  it('and the evidence sits in the evidence store, attesting the version the defect contests', async () => {
     const db = new Client({ connectionString: harness.databaseUrl });
     await db.connect();
     try {
-      const rows = await db.query('SELECT * FROM "defect_reproductions" WHERE "defectId" = $1', [
-        DEFECT,
+      const evidence = await db.query(
+        `SELECT "attestsArtifactId", "attestsArtifactVersion", "attachedToType", "source"
+           FROM "evidence_items" WHERE "attachedToId" = $1`,
+        [DEFECT],
+      );
+      expect(evidence.rows).toEqual([
+        { attestsArtifactId: 'spec_route_1', attestsArtifactVersion: 3, attachedToType: 'outcome', source: 'pmi:defect-room' },
       ]);
-      expect(rows.rowCount).toBe(0);
+      const reproductions = await db.query('SELECT * FROM "defect_reproductions" WHERE "defectId" = $1', [DEFECT]);
+      expect(reproductions.rowCount).toBe(1);
+      expect(reproductions.rows[0]).toMatchObject({
+        affectedBehaviour: 'rv_1',
+        steps: 'open the form; submit twice',
+        evidenceRefs: [expect.any(String)],
+      });
+      // The Room cites the evidence; it holds no copy of the payload.
+      expect(JSON.stringify(reproductions.rows[0])).not.toContain('the failing session');
+    } finally {
+      await db.end();
+    }
+  });
+
+  it('records a reproduction with no evidence and no steps — DEF-035-002, the write that never reached the schema', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/${PREFIX}/rooms/defect/${DEFECT}/reproduction`)
+      .set('Cookie', harness.cookie)
+      .send({
+        reproducible: 'not-reproduced',
+        environment: 'staging',
+        affectedBehaviourRef: 'rv_1',
+        notAutomatableReason: null,
+        evidence: [],
+      });
+    expect(res.status, JSON.stringify(res.body)).toBeLessThan(300);
+    const db = new Client({ connectionString: harness.databaseUrl });
+    await db.connect();
+    try {
+      const rows = await db.query(
+        `SELECT "steps", "affectedBehaviour" FROM "defect_reproductions" WHERE "defectId" = $1 AND "reproducible" = 'not-reproduced'`,
+        [DEFECT],
+      );
+      expect(rows.rows).toEqual([{ steps: '', affectedBehaviour: 'rv_1' }]);
     } finally {
       await db.end();
     }

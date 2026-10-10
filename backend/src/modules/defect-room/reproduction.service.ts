@@ -66,6 +66,8 @@ export interface RecordReproductionInput {
   readonly defectId: string;
   readonly reproducible: string;
   readonly environment: string;
+  /** `DEF-035-002` — optional; `FR-DFR-030` does not require it. */
+  readonly steps?: string;
   readonly affectedBehaviourRef: string;
   /** `FR-DFR-043` — nullable, never optional. `null` states "no exception here". */
   readonly notAutomatableReason: string | null;
@@ -147,6 +149,7 @@ export class ReproductionService {
       defectId: defect.id,
       reproducible,
       environment: input.environment.trim(),
+      steps: typeof input.steps === 'string' ? input.steps.trim() : '',
       evidenceRefs,
       affectedBehaviourRef: input.affectedBehaviourRef.trim(),
       notAutomatableReason: reason === '' ? null : reason,
