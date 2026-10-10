@@ -70,6 +70,7 @@ async function room(reproducible = 'always') {
     defectId: 'df_1',
     reproducible,
     environment: 'staging',
+    steps: '',
     evidenceRefs: ['ev_1'],
     affectedBehaviourRef: 'rv_1',
     notAutomatableReason: null,

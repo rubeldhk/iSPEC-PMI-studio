@@ -183,6 +183,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'engine_registrations',
       // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
       'epics',
+      // EPIC-032 T856o — the completion record (data-model §5).
+      'evidence_completion_attempts',
       'evidence_contract_items',
       'evidence_contracts',
       'evidence_items',
@@ -247,6 +249,8 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'traceability_links',
       'users',
       'validation_findings',
+      // EPIC-032 T856o — work bound to its Contract version (data-model §4).
+      'work_evidence_bindings',
       'workspaces',
       // EPIC-043 T1409 — one row per credential, touched by pmi.health.
       'workstation_connections',

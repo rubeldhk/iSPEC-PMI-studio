@@ -93,10 +93,19 @@ function toRouting(row: unknown): RoutingRow {
  * something that is not a list, and `length > 0` on a non-array is how an
  * exception with no evidence starts passing the check that exists to stop it.
  */
+/**
+ * `DEF-035-002` — the domain says `affectedBehaviourRef`; the column is
+ * `affectedBehaviour`. Spreading one into the other is how every reproduction
+ * write failed. Mapped explicitly, both ways.
+ */
 function toReproduction(row: unknown): ReproductionRow {
-  const record = row as ReproductionRow & { evidenceRefs: unknown };
+  const { affectedBehaviour, ...record } = row as Omit<ReproductionRow, 'affectedBehaviourRef'> & {
+    evidenceRefs: unknown;
+    affectedBehaviour: string;
+  };
   return {
     ...record,
+    affectedBehaviourRef: affectedBehaviour,
     evidenceRefs: Array.isArray(record.evidenceRefs)
       ? (record.evidenceRefs as string[])
       : [],
@@ -247,7 +256,11 @@ export class PrismaDefectRoomStore implements DefectRoomStore {
   async recordReproduction(row: ReproductionRow): Promise<ReproductionRow> {
     return toReproduction(
       await this.prisma.reproduction.create({
-        data: { ...row, evidenceRefs: row.evidenceRefs as unknown },
+        data: (({ affectedBehaviourRef, ...rest }) => ({
+          ...rest,
+          affectedBehaviour: affectedBehaviourRef,
+          evidenceRefs: rest.evidenceRefs as unknown,
+        }))(row),
       }),
     );
   }

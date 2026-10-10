@@ -19,6 +19,7 @@
     "@pmi/decision-contract": "workspace:*",
     "@pmi/engine-contract": "workspace:*",
     "@pmi/execution-contract": "workspace:*",
+    "@pmi/evidence-contract": "workspace:*",
     "@pmi/execution-registry-contract": "workspace:*",
     "@pmi/loop-contract": "workspace:*",
     "@pmi/observability": "workspace:*",
