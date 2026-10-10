@@ -17,7 +17,7 @@
  * Persistence is Prisma where `DATABASE_URL` is set and in-memory otherwise,
  * the pattern every Room module follows.
  */
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import type { AccessPolicy, AttestationSource, EvidenceStorage } from '@pmi/evidence-contract';
 import { AccessModule } from '../access/access.module.js';
 import { AccessInheritanceService } from '../access/access-inheritance.service.js';
@@ -26,7 +26,7 @@ import type { ProviderRegistry } from '../storage/connection.service.js';
 import { prismaClient } from '../../persistence/prisma.js';
 import { AccessControlEvidencePolicy } from './access.adapter.js';
 import { CompletionGate } from './completion.gate.js';
-import { ContractCatalog } from './contract.loader.js';
+import { loadCatalog, type ContractCatalog } from './contract.loader.js';
 import { EvidenceController } from './evidence.controller.js';
 import {
   InMemoryEvidenceRepository,
@@ -56,23 +56,11 @@ import { StorageProviderEvidenceStorage } from './storage.adapter.js';
       // Loaded once, at startup. A malformed definition throws here, so a bad
       // Contract fails the boot rather than the first completion (R-032-4).
       // FR-EVS-024: a version weakening one that work is in flight under is
-      // refused, not loaded — so the in-flight set is read first. If the store
-      // cannot say, every version is treated as in flight: the strict reading.
+      // refused, not loaded, and the refusal is logged (T1994) — see loadCatalog.
       provide: EVIDENCE_CATALOG,
       inject: [EVIDENCE_REPOSITORY],
-      useFactory: async (repository: EvidenceRepository): Promise<ContractCatalog> => {
-        const everything = ContractCatalog.fromDirectory();
-        const inFlight = await repository.inFlightContractVersions().catch(
-          () =>
-            new Set(
-              everything.workClasses().flatMap((c) => {
-                const latest = everything.latest(c)!.contractVersion;
-                return Array.from({ length: latest }, (_, i) => `${c}@${i + 1}`);
-              }),
-            ),
-        );
-        return ContractCatalog.fromDirectory(undefined, inFlight);
-      },
+      useFactory: (repository: EvidenceRepository): Promise<ContractCatalog> =>
+        loadCatalog(repository, { report: (message) => new Logger('EvidenceModule').warn(message) }),
     },
     {
       provide: EVIDENCE_STORAGE,
