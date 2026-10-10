@@ -167,7 +167,8 @@ export class ExpertsController {
       actions: list(body, 'actions') as string[],
       targets: list(body, 'targets') as DispatchRequest['targets'],
       unattended: field(body, 'unattended') === true,
-      ...(typeof field(body, 'limits') === 'object' && field(body, 'limits') !== null
+      // Passed through whatever its shape: the service refuses a malformed one `400` (`T2015`).
+      ...(field(body, 'limits') !== undefined && field(body, 'limits') !== null
         ? { limits: field(body, 'limits') as DispatchRequest['limits'] }
         : {}),
       ...(typeof field(body, 'delegatedFromExecutionId') === 'string'

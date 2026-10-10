@@ -29,7 +29,7 @@ import { effectiveVersion } from './approval.js';
 import { currentAssignment } from './assignment.service.js';
 import { authorityOf, contractRefusal, targetRefusal, type DispatchTarget } from './authority.js';
 import { admitDelegation, DelegationRefusal } from './delegation.service.js';
-import type { ExpertContract, ExpertSession, LimitKind, SessionOutcome } from './expert.types.js';
+import { LIMIT_KINDS, type ExpertContract, type ExpertSession, type LimitKind, type SessionOutcome } from './expert.types.js';
 import { capByChain, chainRemaining, chargeConsumption, planLimits, reported, type ChainCap } from './limits.js';
 import type { ExpertsStore } from './experts.store.js';
 import type { ActorAccess, ExpertGateways, ExpertPorts, ExpertRunner, RunReport } from './experts.tokens.js';
@@ -166,24 +166,44 @@ export class DispatchService {
       if (!Array.isArray(list)) throw new ValidationFailedError(`${name} must be a list`);
     }
     if (req.capabilities.length === 0) throw new ValidationFailedError('a dispatch must name at least one capability');
+    // `T2015`, `FR-EXP-044`, `FR-EXP-040` — a request's own limits must be limits.
+    if (req.limits !== undefined) {
+      const limits: unknown = req.limits;
+      if (typeof limits !== 'object' || limits === null || Array.isArray(limits)) {
+        throw new ValidationFailedError(`limits must be an object of ${LIMIT_KINDS.join(', ')} values`);
+      }
+      const problems: string[] = [];
+      for (const [kind, value] of Object.entries(limits)) {
+        if (!(LIMIT_KINDS as readonly string[]).includes(kind)) {
+          problems.push(`'${kind}' is not a limit (one of ${LIMIT_KINDS.join(', ')})`);
+        } else if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+          problems.push(`the ${kind} limit must be a finite positive number`);
+        }
+      }
+      if (problems.length > 0) {
+        throw new ValidationFailedError(`the request's limits are invalid — ${problems.join('; ')} (FR-EXP-044)`, { problems });
+      }
+    }
 
     const ws = actor.workspaceId;
     const ports = this.deps.ports;
     const expert = await this.store.findExpert(ws, req.expertId);
     if (expert === null) throw new NotFoundError('Not found.');
     const versions = await this.store.versionsFor(ws, expert.id);
-    const effective = await effectiveVersion(versions, ports.approvals);
-    const shown = effective ?? versions[versions.length - 1]!;
+    const newest = versions[versions.length - 1]!;
 
-    // 2 — registered before any governance check (Constitution XII).
+    // 2 — registered before any governance check (Constitution XII) — including
+    // reading which version is in force, which asks EPIC-031 and can fault
+    // (`T2013`). It is registered under the newest version; the one in force,
+    // when different, is recorded as soon as it is known.
     const { executionId } = await ports.executions.register({
       workspaceId: ws,
       projectId,
       command: req.command,
       actorId: actor.userId,
       expertKey: expert.key,
-      contractVersion: shown.version,
-      model: shown.contract.models.preferred,
+      contractVersion: newest.version,
+      model: newest.contract.models.preferred,
       objective,
     });
 
@@ -194,6 +214,14 @@ export class DispatchService {
     let closed = false;
     try {
       // 3 — the checks.
+      const effective = await effectiveVersion(versions, ports.approvals);
+      if (effective !== null && effective.version !== newest.version) {
+        await ports.executions.record(ws, executionId, 'contract-version-in-force', {
+          contractVersion: effective.version,
+          model: effective.contract.models.preferred,
+          reason: `version ${newest.version} is not approved; version ${effective.version} is the one in force (FR-EXP-005)`,
+        });
+      }
       if (expert.status === 'retired') throw new Refusal(`Expert '${expert.key}' is retired (FR-EXP-006)`);
       if (effective === null) {
         throw new Refusal(`Expert '${expert.key}' has no approved contract version, so nothing may run under it (FR-EXP-005)`);

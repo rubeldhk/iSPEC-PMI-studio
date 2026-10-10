@@ -132,6 +132,19 @@ suite('T1943 · the dispatch routes', () => {
     expect(JSON.stringify(res.body)).toMatch(/prohibited by the contract: push/);
   });
 
+  it('T2014 — request limits that are not finite positive numbers are refused 400 before registration', async () => {
+    const before = executions.registered.length;
+    for (const limits of [{ tokens: -1 }, { time: 0 }, { cost: 'lots' }, 'none']) {
+      const res = await api()
+        .post(`/${PREFIX}/experts/${expertId}/dispatch`)
+        .set('Cookie', harness.cookie)
+        .send(dispatchBody({ limits }));
+      expect(res.status).toBe(400);
+      expect(JSON.stringify(res.body)).toMatch(/limit/);
+    }
+    expect(executions.registered.length).toBe(before);
+  });
+
   it('a target the requester may not read is refused, whatever the contract allows (FR-EXP-014)', async () => {
     const res = await api()
       .post(`/${PREFIX}/experts/${expertId}/dispatch`)
