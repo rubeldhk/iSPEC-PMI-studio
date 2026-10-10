@@ -37,8 +37,9 @@
  * Framework-free (PC-1).
  */
 import { NotFoundError, ValidationFailedError } from '../../core/errors.js';
+import type { KnowledgeSourceReader } from '@pmi/learning-contract';
 import type { SourceVersionReader } from './inspection.service.js';
-import type { ArtifactSource } from './retrieval/index.service.js';
+import { KNOWLEDGE_ENTRY_SOURCE_TYPE, type ArtifactSource } from './retrieval/index.service.js';
 
 /** The slice of `RequirementsService` read here. */
 export interface RequirementReader {
@@ -94,6 +95,13 @@ export interface GovernedSourceServices {
   readonly specifications: SpecificationReader;
   /** `T1828` — absent leaves execution history unknown and unreadable. */
   readonly executions?: ExecutionProjectionReader;
+  /**
+   * `A-038-2` (`EPIC-048` `T2397`, `R-048-11` item 2) — `EPIC-048`'s reader for
+   * `knowledge-entry`, asked at call time because it is bound after this
+   * module is built. Absent, or answering `null`, serves no knowledge entry —
+   * the behaviour before the seam.
+   */
+  readonly knowledge?: () => KnowledgeSourceReader | null;
 }
 
 /** `null` for absent or another workspace's — the guard's one opaque outcome. */
@@ -120,6 +128,12 @@ export function governedSources(services: GovernedSourceServices): SourceVersion
         return specification?.currentVersion
           ? { resolves: true, version: `v${specification.currentVersion.versionNumber}` }
           : { resolves: false };
+      }
+      const knowledge = sourceType === KNOWLEDGE_ENTRY_SOURCE_TYPE ? (services.knowledge?.() ?? null) : null;
+      if (knowledge !== null) {
+        // Deprecated or gone: does not resolve. The reason stays EPIC-048's.
+        const current = await knowledge.currentVersion(workspaceId, sourceId);
+        return current.resolves ? { resolves: true, version: current.version } : { resolves: false };
       }
       if (sourceType === 'execution-history' && services.executions) {
         // A projection's version is how far it has projected — the version the
@@ -154,6 +168,13 @@ export function governedSources(services: GovernedSourceServices): SourceVersion
         return found === undefined
           ? null
           : { text: `${specification.title}\n\n${found.contentRaw}`, projectId: specification.projectId };
+      }
+      const knowledge = sourceType === KNOWLEDGE_ENTRY_SOURCE_TYPE ? (services.knowledge?.() ?? null) : null;
+      if (knowledge !== null) {
+        // `projectId: null` — workspace-wide in the index. Which projects may be
+        // given it is admission's judgement (`R-048-11`), not the partition's.
+        const entry = await knowledge.read(workspaceId, sourceId, version);
+        return entry === null ? null : { text: entry.text, projectId: null };
       }
       if (sourceType === 'execution-history' && services.executions) {
         const snapshot = await services.executions.snapshot(workspaceId, sourceId);
