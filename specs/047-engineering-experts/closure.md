@@ -184,3 +184,109 @@ where it was `503`; and submitting no longer refuses `503`. Without a database t
 
 `/speckit-specify` for the `DEF-047-001` follow-up — an Expert execution identity over `EPIC-043`'s
 principals and a runner over `EPIC-028`'s seam — or a defect task under this Epic.
+
+---
+
+## 2026-10-10 — Phase 15: `DEF-047-001`, an execution identity for an Expert run (`T2560`–`T2569`)
+
+**`DEF-047-001` is resolved; its runner half is split out as `DEF-047-002`.** An Expert dispatch is
+now registered with `EPIC-037` under the Expert's own identity, through the composed application.
+Nothing yet executes it: no agent runtime is composed into the API process.
+
+| Port | Before | Now |
+|---|---|---|
+| `ExpertExecutions` | refusing (`DEF-047-001`) | `adapters/executions.adapter.ts` over `ExecutionRegistryFacade`, `ExecutionTimelineService`, `EPIC-028`'s principal registry and snapshots, `EPIC-024`'s delegations |
+| `ExpertGateways` | refusing (`R-047-2`) | `adapters/runners.adapter.ts` over `@pmi/agent-contract` / `@pmi/execution-contract`; refuses naming `DEF-047-002` while `EXPERT_AGENT_RUNTIME` is `null` |
+
+### Decisions taken
+
+- **One agent principal per *(Expert, sponsor)*.** `EPIC-028` freezes a principal's sponsor, so a
+  principal cannot serve two; the mapping is `expert_principals`, first writer wins.
+- **The sponsor must be able to edit the project.** `PrincipalDelegationService.delegate` grants
+  without checking the sponsor's own authority, so the adapter checks first (`BR-0003`). A user who
+  cannot is refused `403` before anything is minted or registered.
+- **Surface `managed-sandbox`.** The registry has no "platform" surface; this is the platform's own
+  sandbox and reads `managed` assurance.
+- **The refs are stored per execution** (`expert_execution_identities`) because `EPIC-037`
+  re-checks identity at completion and a stop cascade may complete a run from another process.
+- **A non-governed command is refused before registration**, `400`. The real registry cannot register
+  one, so the in-test `dispatch-refused` record for it no longer happens against `EPIC-037`.
+- **An unattended completion is proposed as an event.** `proposeTransition` transitions a
+  specification; an Expert run has none. `completion-proposed` is recorded and the execution left open
+  for a person (`FR-EXP-063`). This departs from `R-047-3`, which named `proposeTransition`.
+- **Three kinds join `EXPERT_GOVERNANCE_KINDS`** — `contract-version-in-force` and `run-failed`, which
+  dispatch already recorded against the in-test double only, and `completion-proposed`.
+- **A runner reports only what it observed**: no tool calls, no consumption and no output kinds,
+  because the agent contract returns none. With the default contract's required `test-report`, a
+  real run therefore ends `incomplete` until an adapter can report output kinds.
+
+### Tests
+
+| Suite | Result |
+|---|---|
+| `expert-event.spec.ts` (contract) | observed failing (4), then **58 passed** in the package |
+| `expert-adapter-executions` / `-runners` (unit) | observed failing (no module), then **31 passed** |
+| `experts-execution-identity` (PostgreSQL, composed) | **4 passed**; unbinding the adapter fails 3 (`mutation-proofs.md` §4) |
+| Every Experts integration suite | reachability and dispatch route rewritten for the new truth; all pass |
+
+### Still not done
+
+`DEF-047-002` — needs an architecture decision; the defect records three options and recommends an API
+launcher package outside `backend/src`. `T1992` stays red until a run can execute.
+
+### Recommended next command
+
+Decide `DEF-047-002`, then `/speckit-specify` for the API composition root (or an amendment to
+`ADR-0030`) before any further Expert work.
+
+---
+
+## 2026-10-11 — Phase 16: `DEF-047-002` resolved by option A (`T2590`–`T2598`)
+
+**The last structural blocker is gone; a real run has not been exercised.** The API has a composition
+root outside `backend/src`, and the run path is proven through the composed application with a
+recording gateway and environment. No real agent ran in Docker in this session. The root:
+`api-launcher/` composes the fixture agent, one agent gateway per model in `PMI_EXPERT_MODELS` and the
+Docker execution environment, and starts the API through `@pmi/backend/api`. The container entrypoint
+starts it. `ADR-0030` is amended.
+
+| Piece | Where |
+|---|---|
+| The API's exported door — `createApi`, `bootstrapApi` | `backend/src/api.ts`, export `./api` |
+| The runtime seam — global, injected optionally | `backend/src/composition/expert-agent-runtime.ts` |
+| The composition root | `api-launcher/src/compose.ts`, `src/main.ts` |
+| Per-run sessions — the run's own correlation id in the sandbox (`PC-3`) | `runners.adapter.ts` |
+| One-way edge, linted both ways | `eslint.config.js`, `eslint-boundaries.spec.ts` |
+
+### Decisions taken
+
+- **Optional injection through a global module**, so `main.ts` and every test composing `AppModule`
+  keep the refusal: nothing became permissive by default.
+- **One gateway per configured model.** Dispatch selects by the model a contract names, so a model not
+  listed is refused naming it, never substituted.
+- **The fixture agent is always composed**, as the worker composes it; it serves only contracts that
+  name `fixture-1`.
+- **Not taken:** mounting a Docker socket in the compose `app` container. There a dispatched run fails
+  naming the provider. That is a security decision of its own.
+
+### Found by running it
+
+Started for real, the launcher first failed: tsx applies a tsconfig only to files its `include`
+covers, and the backend's Nest modules started without decorator support. `tsconfig.run.json` covers
+both directories; the scripts and the entrypoint use it. Restarted, it logged `api.started` with
+`expertAgentRuntime: true` and answered `401` on `/v1/experts`.
+
+### Tests
+
+| Suite | Result |
+|---|---|
+| runner per-run session (unit) | observed failing (2), then **14 passed** |
+| `experts-runtime-composition` (composed) | observed failing (no module), then **3 passed**; ignoring the runtime fails 1 (`mutation-proofs.md` §5) |
+| `api-launcher-unit` | observed failing (no module), then **8 passed** |
+| entrypoint | the launcher assertion observed failing on the old entrypoint, then **8 passed** |
+| lint boundary | a launcher → `worker-api` import and a backend → launcher import both rejected, then removed |
+
+### Still not done
+
+`T1992` — the Tier 2 transcript needs a running stack with Docker, the egress network and an AI
+credential, and a person at the keyboard. Promotion, as above.

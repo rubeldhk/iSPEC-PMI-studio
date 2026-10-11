@@ -59,6 +59,7 @@
     "testcontainers": "^10"
   },
   "exports": {
-    "./worker-api": "./src/worker-api.ts"
+    "./worker-api": "./src/worker-api.ts",
+    "./api": "./src/api.ts"
   }
 }

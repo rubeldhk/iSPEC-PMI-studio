@@ -48,6 +48,8 @@ function hasTestFile(dir: string): boolean {
 const PROJECT_DIRS: Record<string, string> = {
   'backend-unit': 'backend/tests/unit',
   'worker-unit': 'worker/tests/unit',
+  // EPIC-047 T2596 — the API's composition root (DEF-047-002).
+  'api-launcher-unit': 'api-launcher/tests/unit',
   'engine-contract': 'packages/engine-contract/tests',
   // EPIC-001 T661 — added when observability moved out of `backend/` so both
   // long-running processes could install it (DEF-001-001). This check failed on

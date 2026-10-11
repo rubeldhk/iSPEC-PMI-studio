@@ -46,6 +46,7 @@ const PACKAGES: readonly string[] = [
   'frontend',
   'backend',
   'worker',
+  'api-launcher',
   ...(existsSync(ADAPTER_ROOT)
     ? readdirSync(ADAPTER_ROOT)
         .filter((d) => existsSync(join(ADAPTER_ROOT, d, 'package.json')))

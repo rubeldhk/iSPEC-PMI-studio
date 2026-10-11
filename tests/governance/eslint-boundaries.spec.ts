@@ -86,6 +86,32 @@ describe('T1322 · worker may import exactly @pmi/backend/worker-api', () => {
 });
 
 /**
+ * `T2596` (EPIC-047, `DEF-047-002` option A) — the API's composition root
+ * reaches the backend through `@pmi/backend/api` and nothing else, and the
+ * backend never reaches back. The same shape as the worker's edge above, for
+ * the same reason: the edge points one way.
+ */
+describe('T2596 · api-launcher may import exactly @pmi/backend/api', () => {
+  const launcherRule = (() => {
+    const at = config.indexOf("files: ['api-launcher/**/*.ts']");
+    expect(at, 'eslint.config.js has no api-launcher/** rule').toBeGreaterThan(-1);
+    const next = config.indexOf('files:', at + 10);
+    return config.slice(at, next === -1 ? undefined : next);
+  })();
+
+  it('forbids every other backend path, and exempts the door by name', () => {
+    expect(launcherRule).toContain('@pmi/backend/*');
+    expect(launcherRule).toContain('**/backend/*');
+    expect(launcherRule).toContain("'!@pmi/backend/api'");
+  });
+
+  it('and backend never imports the launcher', () => {
+    expect(backendRule).toContain('@pmi/api-launcher');
+    expect(backendRule).toContain('**/api-launcher/*');
+  });
+});
+
+/**
  * `T1401` (EPIC-043, `R-043-1`) — the `pmi-studio` server may reach the platform
  * only over HTTP. The lint rule is the editor-time half of
  * `backend/tests/architecture/mcp-server-boundary.spec.ts`.

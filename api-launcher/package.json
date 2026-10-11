@@ -1,0 +1,21 @@
+{
+  "name": "@pmi/api-launcher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "//": "EPIC-047 DEF-047-002, option A — the API's composition root. backend/src may name no agent adapter or execution provider, so the agent runtime an Expert run executes in is composed here and handed to @pmi/backend/api, the worker's pattern applied to the API. No exports: nothing imports a launcher.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx watch --env-file-if-exists=../.env --tsconfig=tsconfig.run.json src/main.ts",
+    "start": "tsx --env-file-if-exists=../.env --tsconfig=tsconfig.run.json src/main.ts"
+  },
+  "dependencies": {
+    "@pmi/agent-adapter-claude": "workspace:*",
+    "@pmi/agent-adapter-fixture": "workspace:*",
+    "@pmi/agent-contract": "workspace:*",
+    "@pmi/backend": "workspace:*",
+    "@pmi/engine-adapter-speckit": "workspace:*",
+    "@pmi/execution-contract": "workspace:*",
+    "@pmi/execution-provider-docker": "workspace:*"
+  }
+}
