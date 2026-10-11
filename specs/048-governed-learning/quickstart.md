@@ -12,9 +12,12 @@
   Epic's adapter phase complete (`research.md` `R-048-20`, `R-048-21`). Before that, those scenarios
   must produce the documented `503` or `proposed` — which is itself a scenario (Q3).
 - A workspace with a `learning_policy` steering document declaring categories `test-setup`
-  (`lowRisk: true`) and `architecture` (`lowRisk: false`). For the automatic path (Q9) additionally:
-  an `EPIC-031` classification rule `learning.approve.test-setup → low`, and a tenant policy whose
-  `automatedActions` covers `learning.*` with rule `learning.candidate-submitted`.
+  (`lowRisk: true`) and `architecture` (`lowRisk: false`). A tenant policy (`EPIC-031`
+  `POST /decision-policies`) whose `automatedActions` covers `learning.*` with rule
+  `learning.candidate-submitted` — **for every path**, not only the automatic one: every decision this
+  Epic requests is automated, and without that entry `EPIC-031` refuses it (`FR-DPE-030`; found by
+  `T2402`). For the automatic path (Q9) additionally: an `EPIC-031` classification rule
+  `learning.approve.test-setup → low` (steering subject `risk-classification`).
 - **Classify learning actions `low` or `high`, never `medium`**: `EPIC-031` refuses a medium-band
   request that names no gates, and this Epic names none (`R-048-12`).
 
@@ -45,7 +48,7 @@ Never the whole-repository suite for this Epic's checks; the scoped projects abo
 | Q9 | **(after merge)** Submit in `test-setup`, project scope, verified evidence | `auto-executed`; entry version `approvedByKind: policy`; `approval/v1` attestation; explanation names the rule (`FR-LRN-022`, `-024`, `-025`) |
 | Q10 | Same as Q9 with `claimedScope: workspace` | `pending-review`; eligibility names `scope` (US3-6) |
 | Q11 | Same as Q9 with no `learning_policy` low-risk flag but the 031 rule still `low` | `pending-review`; eligibility names `category not declared low-risk` (`MP-2`) |
-| Q12 | Q9 with nothing configured at all | `pending-review` (unclassified ⇒ `high`); `SC-LRN-008` |
+| Q12 | Q9 with no classification rule (the tenant policy above in place) | `pending-review` (unclassified ⇒ `high`); `SC-LRN-008`. *With no tenant policy at all*, `EPIC-031` refuses every automated learning request (`FR-DPE-030`): the candidate stays `proposed`, reason `decision-refused-by-policy` — never approved either way (Tier 1 `T2402`, Q12a) |
 | Q13 | Approve Q6 through the review route as the submitting **agent's** principal | `403`; audited; decision still pending (`FR-LRN-027`) |
 | Q14 | Approve Q6 through `EPIC-031`'s own `POST /decisions/:id/approve` from a session whose user id is an agent principal | 031 records it `human`; the `learning.resolve-decisions` job **does not accept** it; no entry; flag `decision-not-accepted` (`MP-3`) |
 | Q15 | Approve Q6 as another human, narrowing scope and editing the statement | Entry v1 holds both forms (`FR-LRN-028`); retrievability `not-yet-retrievable` naming the unbound embedding port (`FR-LRN-053`) |
@@ -57,7 +60,7 @@ Never the whole-repository suite for this Epic's checks; the scoped projects abo
 | Q21 | Assemble for another project in the workspace (Q15 entry, project scope) | Exclusion `boundary`, detail `scope: …` (`FR-LRN-041`, `-045`) |
 | Q22 | Widen Q15's entry to workspace scope through `kind: widen-scope`; assemble in another project whose permitted classifications include it | Included, marked *approved knowledge* with entry, version and scope (US5-2) |
 | Q23 | Same, with a classification the receiving project does not permit | Exclusion `classification` (US5-3) |
-| Q24 | Assemble in another workspace | Exclusion `boundary`, detail `workspace: …`; inserting a `context_reusable_authorisations` row for a `knowledge-entry` fails the CHECK (`FR-LRN-043`) |
+| Q24 | Assemble in another workspace | The entry never reaches it: it is indexed in its own workspace's partition only, so the other workspace's retrieval cannot return it (the admission's `boundary`/`workspace: …` verdict is the second fence, unit-tested); inserting a `context_reusable_authorisations` row for a `knowledge-entry` fails the CHECK (`FR-LRN-043`) |
 | Q25 | Submit from an Expert whose contract version declares `none` | `400`; `memory-policy-refused` event; that Expert's packages contain no knowledge (`SC-LRN-009`) |
 | Q26 | Submit from a provisional (offline) execution | `proposed`; no decision requested until reconciliation (`FR-LRN-063`) |
 | Q27 | `INSERT` a `knowledge_entry_versions` row whose decision is `pending` | Trigger refuses; `UPDATE` of any version refused by `reject_mutation` (`FR-LRN-031`) |
