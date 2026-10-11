@@ -25,6 +25,12 @@ import { patternCovers, type TenantPolicyDocument } from './policy.loader.js';
 
 export type InboxKind = 'approval' | 'blocked' | 'review' | 'escalation';
 
+/**
+ * EPIC-047 `T2577` — how a withdrawal (`DecisionEngine.withdraw`) states its
+ * authority. A withdrawn request blocks no one: its subject is gone.
+ */
+export const WITHDRAWN = 'withdrawn by ';
+
 export interface InboxEntry {
   readonly decisionId: string;
   readonly kind: InboxKind;
@@ -89,7 +95,12 @@ export function inboxFor(
           blockedBy: `awaits approval by an authorized human other than ${requester} (FR-DPE-010, FR-DPE-015)`,
         });
       }
-    } else if (d.outcome === 'refused' && requester === reader.id && latest.get(key(d))?.id === d.id) {
+    } else if (
+      d.outcome === 'refused' &&
+      requester === reader.id &&
+      latest.get(key(d))?.id === d.id &&
+      !d.authorityBasis.startsWith(WITHDRAWN)
+    ) {
       entries.push({ ...base, kind: 'blocked', blockedBy: why(d) });
     }
   }

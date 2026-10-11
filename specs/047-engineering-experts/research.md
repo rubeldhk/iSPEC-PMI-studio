@@ -70,7 +70,10 @@ Three dependencies are **open pull requests, not merged**: `EPIC-031` (#4), `EPI
   discriminated union on `kind`: `dispatch-refused`, `fallback-used`, `limit-narrowed`,
   `limit-unenforceable`, `limit-reached`, `limit-breach-detected-late`, `tool-use-unobserved`,
   `tool-call-breach`, `delegation-refused`, `stopped-by-parent`, `outputs-incomplete`,
-  `review-required` *(added by analysis finding C2, `FR-EXP-063`)*.
+  `review-required` *(added by analysis finding C2, `FR-EXP-063`)*, `run-failed` (`T2001`) and
+  `contract-version-in-force` (`T2013`) — **fourteen**, closed in `EXPERT_GOVERNANCE_KINDS`, and
+  `ExpertExecutions.record` accepts only a member, so a fifteenth cannot be recorded without
+  joining the set *(third convergence, `T2541`)*.
 - **Rationale**: `FR-EXP-061` requires these on the execution, not in a side log. One type keeps the
   contract change to a single additive line, asserted in `EPIC-037`'s own parity suite as
   `EPIC-038` did for `projectId`.
@@ -181,6 +184,67 @@ Three dependencies are **open pull requests, not merged**: `EPIC-031` (#4), `EPI
   `decisionId` written once on submission. Enforced by a database trigger rejecting `UPDATE` of any
   other column, plus a store with no update method. A new version copies, never edits.
 - **Rationale**: `FR-EXP-004`; an application-only rule is one refactor away from gone.
+
+## R-047-16 — The project an Expert-contract decision is made against
+
+- **Decision**: `EPIC-031`'s `DecisionRequest` requires a `projectId`, and an Expert contract
+  belongs to the **workspace**, not to a project. A contract-approval decision (and an assignment's
+  risk gate, which `T1966` submits the same way) is made against the workspace scope:
+  `projectId = '(workspace)'` (`WORKSPACE_SCOPE` in `adapters/decisions.adapter.ts`).
+  `policy_decisions.projectId` is required and carries no foreign key, and `EPIC-031`'s steering
+  source matches it against project-scoped documents — none has this id — so **workspace-scoped
+  steering classifies the decision and project-scoped steering does not**. A caller that does have
+  a project may name it.
+- **Rationale**: inventing a project, or choosing "the first project in the workspace", would
+  classify a workspace-wide contract by one project's rules. Leaving the value empty is refused by
+  the schema.
+- **Resolution**: read back through `DecisionService.standing` (added for this Epic), which follows
+  a pending decision to the record that resolved it; `approved`, `auto-executed` and `exception`
+  (proceeded under an authorised gate exception) all read as approved. A decision `EPIC-031` does
+  not know is a fault, never "pending".
+- **Recorded** 2026-10-10, `T2543`; supersedes the approach in `R-047-5`'s first draft, which named
+  a `resolutionOf` read that `EPIC-031` does not export.
+
+## R-047-17 — The risk class selects the band; `EPIC-031` still classifies
+
+- **Conflict resolved**: `FR-EXP-005` says the approval authority MUST follow the contract's risk
+  class; `EPIC-031`'s `FR-DPE-003` says a requester MAY propose a class and MUST NOT assign it.
+  `EPIC-031` records `proposedClass` but classifies by its steering alone, so — as first built —
+  the class changed nothing (fourth audit, finding F1).
+- **Decision**: a contract is submitted as `expert-contract.approve.<riskClass>` (`CONTRACT_APPROVAL`
+  in `registry.service.ts`), still proposing the class. Each class is then a distinct action that
+  workspace steering classifies by its own rule — the class selects the band, and `EPIC-031` does
+  the classifying. The repository ships a workspace template,
+  `packages/decision-contract/classification-rules/expert-contracts.workspace.json`, mapping each
+  suffix to its band and restating the organization default's irreducibly-high rules (the narrower
+  document wins whole, `BR-0071`). Nothing applies until a tenant loads it, which is a reviewed
+  steering act (`FR-DPE-005`).
+- **Consequences under the platform default policy**, stated rather than hidden:
+  - with no rule, every class is high (`FR-DPE-004`) and waits for a human other than its author;
+  - **low** auto-executes — a low contract is approved with no human. An author can label their own
+    contract low, so a tenant that wants a human on every contract sets `bandTreatment.low` to
+    `human-approval` or does not load the template. Following `EPIC-031`'s own stance (its
+    organization default lowers nothing), the template is opt-in, never applied by default;
+  - **medium** needs gates. No `GateProvider` is bound (`DEF-031-004`), so a medium contract is
+    refused; it is **not refused for good** — a refused version may be submitted again (`T2575`),
+    and a tenant whose policy sends medium to a human gets a pending decision.
+- **Resubmission** (`T2575`): `EPIC-031` has no human "reject" — every `refused` outcome is policy's
+  (a gate, a band needing gates, an automation rule). So a refused version may be resubmitted; a
+  pending or approved one may not. The version's decision id is replaced compare-and-set; the
+  refused decision stays in `EPIC-031`'s append-only record, findable by its target. A fail-closed
+  refusal (`FR-DPE-050`) — or `'unrecorded'`, when even that could not be stored — is not a
+  decision at all: submission fails 503 naming why and stores nothing.
+- **Human or not** (`T2573`): `DecisionService.standing` reports whether a human resolved the
+  decision. A contract version stands on either; a gated assignment (`FR-EXP-054`) only on a human's
+  approval, so a tenant rule auto-executing `task.*` cannot make one stand unattended.
+- **Withdrawal** (`T2577`): `EPIC-031` gained `withdraw` — a refusal resolving a pending decision,
+  with a stated reason, audited. Reassigning a task withdraws its superseded assignment's pending
+  decision, so it leaves every inbox; a withdrawal blocks no one.
+- **Alternatives considered**: amending `FR-EXP-005` so `EPIC-031`'s own classification is enough
+  (a specification amendment, left to the Project Owner); passing the class as the band (rejected:
+  `FR-DPE-003`); naming a gate on every submission (rejected: with no `GateProvider`, every gate is
+  a violation, which would refuse every contract before any human saw it).
+- **Recorded** 2026-10-10, `T2571`.
 
 ## R-047-15 — Performance and scale targets (`PP-018`)
 

@@ -13,15 +13,27 @@
  *
  * ## What is bound, and what refuses
  *
- * `ActorAccess` is `EPIC-024`'s, on `main`, and bound for real. The four ports
- * whose owners are open pull requests — or, for gateways, nobody yet — are
- * bound **refusing** (`R-047-13`), each naming itself in its `503`. Phase 9
- * replaces them when `EPIC-031`, `EPIC-032` and `EPIC-038` merge.
+ * `ActorAccess` is `EPIC-024`'s and bound for real. Since `EPIC-031`,
+ * `EPIC-032` and `EPIC-038` merged, so are `ContractApprovals` (`T2543`),
+ * `EvidenceContracts` (`T2545`) and `ContextAssembler` (`T1982`).
+ * `ExpertGateways` and `ExpertExecutions` remain bound **refusing**, each
+ * naming itself in its `503`: nothing selects a runner by model, and nothing
+ * mints an execution identity for a platform-dispatched run (`DEF-047-001`).
  */
 import { Module } from '@nestjs/common';
 import { prismaClient } from '../../persistence/prisma.js';
 import { AccessInheritanceService } from '../access/access-inheritance.service.js';
 import { AccessModule } from '../access/access.module.js';
+import { AssemblyService } from '../context/assembly.service.js';
+import { ContextModule } from '../context/context.module.js';
+import { DecisionModule } from '../decision/decision.module.js';
+import { DecisionService } from '../decision/decision.service.js';
+import { DecisionEngine } from '../decision/evaluator.js';
+import { EvidenceModule } from '../evidence/evidence.module.js';
+import { EVIDENCE_CATALOG } from '../evidence/evidence.tokens.js';
+import { contextAssembler, type Assembly } from './adapters/context.adapter.js';
+import { decisionApprovals } from './adapters/decisions.adapter.js';
+import { evidenceContracts, type EvidenceCatalog } from './adapters/evidence.adapter.js';
 import { AssignmentService } from './assignment.service.js';
 import { Authoring } from './authoring.js';
 import { DispatchService } from './dispatch.service.js';
@@ -49,7 +61,7 @@ export class ExpertsService {
 }
 
 @Module({
-  imports: [AccessModule],
+  imports: [AccessModule, DecisionModule, EvidenceModule, ContextModule],
   controllers: [ExpertsController],
   providers: [
     { provide: ExpertsService, useFactory: (): ExpertsService => new ExpertsService() },
@@ -75,8 +87,23 @@ export class ExpertsService {
       inject: [ACTOR_ACCESS],
       useFactory: (access: ActorAccess): Authoring => new Authoring(access),
     },
-    // R-047-13 — bound refusing; Phase 9 binds EPIC-031/032/038's adapters.
-    { provide: EXPERT_PORTS, useFactory: (): ExpertPorts => refusingPorts() },
+    {
+      provide: EXPERT_PORTS,
+      inject: [DecisionEngine, DecisionService, EVIDENCE_CATALOG, AssemblyService],
+      // `T2543`, `T2545`, `T1982` — the three merged Epics, bound. Runner and
+      // execution identity stay refusing until `DEF-047-001` is closed.
+      useFactory: (
+        engine: DecisionEngine,
+        decisions: DecisionService,
+        catalog: EvidenceCatalog,
+        assembly: Assembly,
+      ): ExpertPorts => ({
+        ...refusingPorts(),
+        approvals: decisionApprovals(engine, decisions),
+        evidence: evidenceContracts(catalog),
+        context: contextAssembler(assembly),
+      }),
+    },
     {
       provide: RegistryService,
       inject: [EXPERTS_STORE, Authoring, EXPERT_PORTS],

@@ -114,6 +114,50 @@ suite('T1909 · expert_contract_versions — immutable (R-047-14)', () => {
     ).rejects.toThrow(/immutable/i);
   });
 
+  // `T2575`, `R-047-17` — a refused version may be resubmitted, so its decision
+  // id may be replaced, but only while the decision it names stands refused
+  // (or is EPIC-031's 'unrecorded'). Pending and approved stay immutable.
+  it('T2575 · the decision id is replaced only in place of a refused decision', async () => {
+    const decision = async (outcome: string, resolves: string | null = null): Promise<string> => {
+      const ex = id('dx');
+      await insert('decision_explanations', { id: ex, workspaceId: WS, policyVersion: '0', riskClass: 'medium', authorityApplied: 'test' });
+      const d = id('pd');
+      await insert('policy_decisions', {
+        id: d, workspaceId: WS, projectId: '(workspace)', actionType: 'expert-contract.approve.medium',
+        targetType: 'expert-contract-version', targetId: 'cv', effectiveClass: 'medium', outcome,
+        decidedBy: outcome === 'pending' ? null : 'policy:v0', authorityBasis: 'test', objectVersion: '1',
+        actorKind: 'human', actorId: 'u_1', steeringVersions: '{}', policyVersion: 0, requiredGates: '[]',
+        gateOutcomes: '[]', resolvesDecisionId: resolves, explanationId: ex,
+      });
+      return d;
+    };
+    const replace = (cv: string, to: string) =>
+      db.query(`UPDATE "expert_contract_versions" SET "decisionId"=$2 WHERE "id"=$1`, [cv, to]);
+
+    const refused = await versionRow(await expertRow(), { decisionId: await decision('refused') });
+    await expect(replace(refused, await decision('pending'))).resolves.toBeDefined();
+
+    const unrecorded = await versionRow(await expertRow(), { decisionId: 'unrecorded' });
+    await expect(replace(unrecorded, await decision('pending'))).resolves.toBeDefined();
+
+    // Refused, then approved under an exception: it stands approved, so it stays.
+    const first = await decision('refused');
+    await decision('exception', first);
+    const excepted = await versionRow(await expertRow(), { decisionId: first });
+    await expect(replace(excepted, await decision('pending'))).rejects.toThrow(/immutable/i);
+
+    // Pending, then withdrawn (a refusal resolving it): replaceable.
+    const pending = await decision('pending');
+    await decision('refused', pending);
+    const withdrawn = await versionRow(await expertRow(), { decisionId: pending });
+    await expect(replace(withdrawn, await decision('pending'))).resolves.toBeDefined();
+
+    for (const outcome of ['pending', 'approved', 'auto-executed']) {
+      const cv = await versionRow(await expertRow(), { decisionId: await decision(outcome) });
+      await expect(replace(cv, await decision('pending'))).rejects.toThrow(/immutable/i);
+    }
+  });
+
   it('no other column may change, and no version may be deleted', async () => {
     const ex = await expertRow();
     const cv = await versionRow(ex);

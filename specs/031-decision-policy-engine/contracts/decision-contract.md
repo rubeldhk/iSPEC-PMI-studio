@@ -137,6 +137,23 @@ Constitution XI Tier 1 drives these. Listed because *"the entry point MUST be th
 `403` for missing authority, `409` for a policy refusal, both carrying the decision id so the caller
 reads the explanation rather than inferring it.
 
+### 7a. Added by `EPIC-047` (2026-10-10) — in-process, no HTTP route
+
+A module that submits through `DecisionEngine.decide` must read its decision back and, sometimes,
+take it back. `EPIC-047` (Engineering Experts, `R-047-5`, `R-047-17`) added three things here
+rather than keep a second record of decisions:
+
+| Surface | What it does |
+|---|---|
+| `DecisionService.standing(workspaceId, decisionId)` | Follows a decision along the records that resolved it to the last one, and answers its outcome and `byHuman` — true when a human approved it or granted the exception it proceeds under; false for auto-executed or gates-only approval. `null` for an unknown decision. |
+| `DecisionEngine.withdraw` / `DecisionService.withdraw` | Resolves a **pending** decision whose subject is gone with a `refused` record stating who and why (`authorityBasis` starts `withdrawn by `), audited. Requires a reason; a decision not pending, or already resolved, is `409`. |
+| Inbox rule | A withdrawn decision leaves every inbox (it is resolved), and a withdrawal produces no `blocked` entry. |
+
+`evaluator.ts` also exports `FAIL_CLOSED`, `UNRECORDED_DECISION` and `refusedUnevaluated`, so a
+consumer can tell a refusal taken without evaluation (`FR-DPE-050`) from a judgement.
+Exercised by `backend/tests/unit/expert-reassignment-withdraws.spec.ts` and
+`backend/tests/integration/experts-approval-journey.spec.ts`.
+
 ---
 
 ## 8. What the contract must never contain

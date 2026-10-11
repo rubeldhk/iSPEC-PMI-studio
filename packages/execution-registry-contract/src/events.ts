@@ -62,6 +62,10 @@ export const EXPERT_GOVERNANCE_KINDS = Object.freeze([
   'stopped-by-parent',
   'outputs-incomplete',
   'review-required',
+  /** `T2001` — a run that failed after it started; never `dispatch-refused`. */
+  'run-failed',
+  /** `T2013` — the version in force, when it is not the newest one the run was registered under. */
+  'contract-version-in-force',
 ] as const);
 export type ExpertGovernanceKind = (typeof EXPERT_GOVERNANCE_KINDS)[number];
 

@@ -11,7 +11,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
-import { effectiveVersion, statusOf } from './approval.js';
+import { displayedStatusOf, statusOf, undecided } from './approval.js';
 import type { Authoring } from './authoring.js';
 import { checkReferences, validateContract } from './contract.validation.js';
 import {
@@ -62,6 +62,9 @@ export interface ElementDifference {
   readonly from: Partial<ExpertContract>;
   readonly to: Partial<ExpertContract>;
 }
+
+/** `R-047-17` — the action a contract approval is decided as, suffixed by the contract's risk class. */
+export const CONTRACT_APPROVAL = 'expert-contract.approve';
 
 /** Lowercase words joined by hyphens: `test-engineer`. */
 const KEY = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
@@ -151,7 +154,19 @@ export class RegistryService {
     });
   }
 
-  /** `FR-EXP-005` — to `EPIC-031`, with the contract's own risk class selecting the approval band. */
+  /**
+   * `FR-EXP-005`, `R-047-17` — to `EPIC-031`. The risk class is part of the
+   * action (`expert-contract.approve.<class>`), so the workspace's steering
+   * classifies each class by its own rule and the class selects the approval
+   * band — `EPIC-031` still classifies it (`FR-DPE-003`); the class is also
+   * proposed, never assigned.
+   *
+   * `T2575` — a version may be submitted again when its decision was refused:
+   * `EPIC-031` has no human "reject", so every refusal is policy's (a gate, a
+   * band needing gates), and a resubmission meets the same policy. A pending or
+   * approved version may not. Nothing is stored when `EPIC-031` could not
+   * evaluate the submission.
+   */
   async submit(workspaceId: string, actorId: string, expertId: string, versionNumber: number): Promise<VersionView> {
     await this.deps.authoring.requireAuthor(workspaceId, actorId);
     const expert = await this.#expert(workspaceId, expertId);
@@ -159,19 +174,36 @@ export class RegistryService {
       throw new ConflictError(`Expert '${expert.key}' is retired; its versions are not submitted (FR-EXP-006)`);
     }
     const version = await this.#version(workspaceId, expertId, versionNumber);
-    if (version.decisionId !== null) {
-      throw new ConflictError(`version ${versionNumber} was already submitted (decision ${version.decisionId})`);
+    if (!undecided(version)) {
+      const standing = await statusOf(version, this.deps.approvals);
+      if (standing !== 'refused') {
+        throw new ConflictError(`version ${versionNumber} was already submitted (decision ${version.decisionId}, ${standing})`);
+      }
     }
     const { decisionId } = await this.deps.approvals.submit({
       workspaceId,
-      actionType: 'expert-contract.approve',
+      actionType: `${CONTRACT_APPROVAL}.${version.contract.riskClass}`,
       targetType: 'expert-contract-version',
       targetId: version.id,
       objectVersion: version.version,
       riskClass: version.contract.riskClass,
       actorId,
     });
-    await this.store.recordDecision(workspaceId, version.id, decisionId);
+    try {
+      await this.store.recordDecision(workspaceId, version.id, decisionId, version.decisionId);
+    } catch (error) {
+      // `T2602` — another submission recorded its decision first. Ours is an
+      // orphan no version holds: withdraw it, so no reviewer approves it.
+      await this.deps.approvals
+        .withdraw({
+          workspaceId,
+          decisionId,
+          actorId,
+          reason: `another submission of version ${versionNumber} was already recorded; this one is withdrawn`,
+        })
+        .catch(() => undefined);
+      throw error;
+    }
     const submitted = { ...version, decisionId };
     return { ...submitted, status: await statusOf(submitted, this.deps.approvals) };
   }
@@ -189,7 +221,14 @@ export class RegistryService {
     for (const expert of await this.store.listExperts(workspaceId)) {
       const versions = await this.store.versionsFor(workspaceId, expert.id);
       const latest = versions[versions.length - 1]!;
-      const effective = await effectiveVersion(versions, this.deps.approvals);
+      // `T2575` — one unreadable decision must not fail the whole list.
+      let effective: ContractVersion | null = null;
+      for (const v of [...versions].reverse()) {
+        if ((await displayedStatusOf(v, this.deps.approvals)) === 'approved') {
+          effective = v;
+          break;
+        }
+      }
       const shown = effective ?? latest;
       out.push({
         id: expert.id,
@@ -210,7 +249,7 @@ export class RegistryService {
     const expert = await this.#expert(workspaceId, expertId);
     const versions: VersionView[] = [];
     for (const v of await this.store.versionsFor(workspaceId, expertId)) {
-      versions.push({ ...v, status: await statusOf(v, this.deps.approvals) });
+      versions.push({ ...v, status: await displayedStatusOf(v, this.deps.approvals) });
     }
     const effective = [...versions].reverse().find((v) => v.status === 'approved') ?? null;
     return { expert, versions, effectiveVersion: effective };

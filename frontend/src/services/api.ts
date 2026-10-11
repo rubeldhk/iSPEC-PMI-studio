@@ -338,8 +338,8 @@ export interface ExpertContractView {
 export interface ExpertVersionView {
   id: string;
   version: number;
-  /** Derived from EPIC-031's decision when read — never stored. */
-  status: 'draft' | 'submitted' | 'approved' | 'refused';
+  /** Derived from EPIC-031's decision when read — never stored. `unreadable`: the decision could not be read (T2575). */
+  status: 'draft' | 'submitted' | 'approved' | 'refused' | 'unreadable';
   contract: ExpertContractView;
   createdBy: string;
   createdAt: string;

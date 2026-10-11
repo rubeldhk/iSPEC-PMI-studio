@@ -37,6 +37,36 @@ describe('T1901 · the Experts module is reachable through the composed applicat
     expect(service).not.toHaveProperty('workflowType');
   });
 
+  // `T2579` — the three merged Epics' adapters are what the module binds, not
+  // the refusing stand-ins: a refusing port rejects with
+  // `GovernanceSeamUnboundError` naming itself; a bound one reaches its owner.
+  it('T2579 · binds EPIC-031, EPIC-032 and EPIC-038 for real; only gateways and executions refuse', async () => {
+    const { ExpertsModule } = await import('../../src/modules/experts/experts.module.js');
+    const { EXPERT_PORTS } = await import('../../src/modules/experts/experts.tokens.js');
+    const { GovernanceSeamUnboundError } = await import('../../src/core/errors.js');
+    const ports = app.select(ExpertsModule).get(EXPERT_PORTS, { strict: false }) as import('../../src/modules/experts/experts.tokens.js').ExpertPorts;
+    const unbound = async (call: () => Promise<unknown>) => (await call().then(() => null, (e: unknown) => e)) instanceof GovernanceSeamUnboundError;
+
+    expect(await unbound(() => ports.approvals.resolutionOf('ws_reach', 'no-such-decision'))).toBe(false);
+    expect(await unbound(() => ports.evidence.exists({ workClass: 'task-completion', contractVersion: 1 }))).toBe(false);
+    expect(typeof ports.context.bind).toBe('function');
+    expect(
+      await unbound(() =>
+        ports.context.assemble({
+          workspaceId: 'ws_reach',
+          projectId: 'p_reach',
+          objective: 'reachability',
+          actorId: 'u_reach',
+          actorRole: 'engineer',
+          policy: { budgetTokens: 1000, budgetCost: 1, includeLiveState: false },
+        }),
+      ),
+    ).toBe(false);
+
+    expect(await unbound(() => ports.gateways.gatewaysFor('any-model'))).toBe(true);
+    expect(await unbound(() => ports.executions.eventsOf('ws_reach', 'e_reach'))).toBe(true);
+  });
+
   it('T2023 · exports and resolves EXPERT_PROVENANCE for EPIC-048 (A-047-2, FR-EXP-064)', async () => {
     const { ExpertsModule } = await import('../../src/modules/experts/experts.module.js');
     const { EXPERT_PROVENANCE } = await import('../../src/modules/experts/provenance.js');

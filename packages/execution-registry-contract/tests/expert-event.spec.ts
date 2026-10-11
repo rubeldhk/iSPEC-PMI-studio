@@ -23,7 +23,7 @@ describe('T1915 · expert-governance-recorded', () => {
     expect(classOf('expert-governance-recorded')).toBe('content');
   });
 
-  it('carries exactly the twelve kinds of R-047-4', () => {
+  it('carries exactly the fourteen kinds of R-047-4 — every kind the Experts module records (T2540)', () => {
     expect([...EXPERT_GOVERNANCE_KINDS].sort()).toEqual(
       [
         'dispatch-refused',
@@ -38,6 +38,8 @@ describe('T1915 · expert-governance-recorded', () => {
         'stopped-by-parent',
         'outputs-incomplete',
         'review-required',
+        'run-failed',
+        'contract-version-in-force',
       ].sort(),
     );
     expect(isExpertGovernanceKind('review-required')).toBe(true);

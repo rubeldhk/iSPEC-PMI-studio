@@ -12,9 +12,9 @@ the platform classes: `400 ValidationFailedError`, `404 NotFoundError`, `409 Con
 |---|---|---|---|
 | `POST` | `/experts` | Register an Expert with its first contract version (draft) | `400` lists **every** missing element (`FR-EXP-011`) and every dangling reference (`FR-EXP-022`); `409` on a duplicate key |
 | `GET` | `/experts` | List: key, name, role, risk class, effective version, status | |
-| `GET` | `/experts/:id` | One Expert: effective contract, versions with derived status | |
+| `GET` | `/experts/:id` | One Expert: effective contract, versions with derived status | Status is `draft`, `submitted`, `approved`, `refused`, or `unreadable` when the decision cannot be read — shown, never dispatched on (`T2575`) |
 | `POST` | `/experts/:id/contract-versions` | New draft version (full contract; never a patch) | Approved versions are immutable (`FR-EXP-004`) |
-| `POST` | `/experts/:id/contract-versions/:version/submit` | Submit to `EPIC-031` | `503` naming `ContractApprovals` while unbound; `409` if already submitted |
+| `POST` | `/experts/:id/contract-versions/:version/submit` | Submit to `EPIC-031` as `expert-contract.approve.<riskClass>` (`R-047-17`) | `503` naming `ContractApprovals` while unbound, or when `EPIC-031` refuses without evaluating (`FR-DPE-050`) — nothing is stored and the version stays a draft; a **refused** version may be submitted again; `409` only while its decision is pending or approved, or when another submission was recorded first (whose loser's decision is withdrawn, `T2602`) |
 | `GET` | `/experts/:id/contract-versions/compare?from=&to=` | Element-by-element difference | `FR-EXP-072` |
 | `POST` | `/experts/:id/retire` | Retire | Idempotent; history unchanged (`FR-EXP-006`) |
 

@@ -64,7 +64,10 @@ async function view(store: ExpertsStore, approvals: ContractApprovals, a: Assign
   let state: AssignmentState = a.state;
   if (a.state === 'pending-decision' && a.decisionId !== null) {
     const resolution = await approvals.resolutionOf(a.workspaceId, a.decisionId);
-    state = resolution === 'approved' ? 'standing' : resolution === 'refused' ? 'refused' : 'pending-decision';
+    // `T2573`, `FR-EXP-054` — only a human's approval makes it stand. One policy
+    // let through unattended is not the human decision this gate requires.
+    state =
+      resolution === 'approved' ? 'standing' : resolution === 'pending' ? 'pending-decision' : 'refused';
   }
   const retired =
     a.assigneeKind === 'expert' && (await store.findExpert(a.workspaceId, a.assigneeId))?.status === 'retired';
@@ -152,9 +155,9 @@ export class AssignmentService {
     }
 
     const at = this.#clock();
-    for (const prior of await this.store.assignmentsFor(workspaceId, taskId)) {
-      if (prior.supersededAt === null) await this.store.supersedeAssignment(workspaceId, prior.id, actorId, at);
-    }
+    // `T2600` — the new assignment is recorded before anything is superseded,
+    // and the superseded decisions are withdrawn last, so no failure leaves the
+    // task holding nothing.
     const row = await this.store.addAssignment({
       id: this.#ids(),
       workspaceId,
@@ -169,7 +172,49 @@ export class AssignmentService {
       supersededAt: null,
       supersededBy: null,
     });
+    // `T2605` — read again **after** recording, and supersede every other
+    // current assignment recorded before this one (by instant, then id). A
+    // concurrent reassignment's row is then superseded by whichever of the two
+    // was recorded last, so exactly one stays current; a prior the other
+    // request already superseded is done, not an error, and only the request
+    // that superseded it withdraws its decision.
+    const before = (a: Assignment): boolean =>
+      a.assignedAt < row.assignedAt || (a.assignedAt === row.assignedAt && a.id < row.id);
+    const superseded: Assignment[] = [];
+    for (const other of await this.store.assignmentsFor(workspaceId, taskId)) {
+      if (other.id === row.id || other.supersededAt !== null || !before(other)) continue;
+      try {
+        await this.store.supersedeAssignment(workspaceId, other.id, actorId, at);
+        superseded.push(other);
+      } catch (error) {
+        if (!(error instanceof ConflictError)) throw error;
+      }
+    }
+    for (const prior of superseded) await this.#withdrawDecisionOf(workspaceId, actorId, prior);
     return view(this.store, this.deps.approvals, row);
+  }
+
+  /**
+   * `T2577`, `T2600` — a superseded assignment's pending decision leaves the
+   * inbox, so no reviewer is asked to approve an assignment that no longer
+   * exists. Best effort: the reassignment has already happened, and a decision
+   * resolved meanwhile (`EPIC-031` answers 409) is simply nothing to withdraw.
+   * A decision left pending by an outage approves a superseded assignment,
+   * which nothing reads as standing.
+   */
+  async #withdrawDecisionOf(workspaceId: string, actorId: string, prior: Assignment): Promise<void> {
+    if (prior.state !== 'pending-decision' || prior.decisionId === null) return;
+    try {
+      if ((await this.deps.approvals.resolutionOf(workspaceId, prior.decisionId)) !== 'pending') return;
+      await this.deps.approvals.withdraw({
+        workspaceId,
+        decisionId: prior.decisionId,
+        actorId,
+        reason: `the task was reassigned; assignment ${prior.id} is superseded (FR-EXP-055)`,
+      });
+    } catch {
+      // See above: never undo a reassignment that has been recorded.
+    }
   }
 
   /** `FR-EXP-055` — every assignment the task has had, current first. */

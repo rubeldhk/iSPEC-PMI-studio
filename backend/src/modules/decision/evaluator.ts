@@ -49,7 +49,19 @@ import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/
 import { classifyAction } from './classifier.js';
 import { buildExplanation } from './explanation.builder.js';
 import type { DecisionRecord, DecisionRepository, GateExceptionRecord } from './decision.repository.js';
+import { WITHDRAWN } from './inbox.projection.js';
 import { patternCovers, type PolicySource, type TenantPolicyDocument } from './policy.loader.js';
+
+/** `FR-DPE-050` — how a refusal taken without evaluation cites itself. */
+export const FAIL_CLOSED = 'fail closed — ';
+
+/** The id a fail-closed refusal carries when not even the refusal could be stored. */
+export const UNRECORDED_DECISION = 'unrecorded';
+
+/** True when a decision was refused because a source could not be read, not judged. */
+export function refusedUnevaluated(result: { outcome: DecisionOutcome; explanation: { constraintCited?: string } }): boolean {
+  return result.outcome === 'refused' && (result.explanation.constraintCited ?? '').startsWith(FAIL_CLOSED);
+}
 
 export interface DecisionEngineDeps {
   readonly steering: SteeringSource | null;
@@ -191,6 +203,36 @@ export class DecisionEngine {
       decidedAt: this.now(),
       actorKind: 'human',
       actorId: input.approver.id,
+      authorityBasis: authorityApplied,
+      resolvesDecisionId: pending.id,
+      explanation: { ...prior, authorityApplied },
+    });
+    await this.audit(record);
+    return fromRecord(record);
+  }
+
+  // ─────────────────────────────────────────────────────────────── withdraw
+
+  /**
+   * EPIC-047 `T2577` — the requesting module withdraws a pending decision whose
+   * subject no longer exists (a superseded assignment). Recorded as a refusal
+   * that **resolves** the pending one, so it leaves every inbox; the reason is
+   * stated and audited, and the withdrawal itself blocks no one.
+   */
+  async withdraw(input: { workspaceId: string; decisionId: string; by: string; reason: string }): Promise<DecisionResult> {
+    if (typeof input.reason !== 'string' || input.reason.trim() === '') {
+      throw new ValidationFailedError('a withdrawal states its reason');
+    }
+    const pending = await this.pendingDecision(input.workspaceId, input.decisionId);
+    const authorityApplied = `${WITHDRAWN}${input.by}: ${input.reason.trim()}`;
+    const { id: _explanationId, ...prior } = pending.explanation;
+    const record = await this.deps.repository.append({
+      ...this.carry(pending),
+      outcome: 'refused',
+      decidedBy: input.by,
+      decidedAt: this.now(),
+      actorKind: 'human',
+      actorId: input.by,
       authorityBasis: authorityApplied,
       resolvesDecisionId: pending.id,
       explanation: { ...prior, authorityApplied },
@@ -392,14 +434,14 @@ export class DecisionEngine {
       policy,
       matchedRule: null,
       classificationReason: 'not classified: the engine could not be consulted',
-      constraintCited: `fail closed — ${why}`,
+      constraintCited: `${FAIL_CLOSED}${why}`,
     };
     try {
       return await this.record(judgement, 'refused', 'refused without evaluation', [], null);
     } catch {
       // Not even the refusal could be stored. Still refused, still explained.
       return {
-        decisionId: 'unrecorded',
+        decisionId: UNRECORDED_DECISION,
         outcome: 'refused',
         effectiveClass: MOST_RESTRICTIVE_BAND,
         explanation: buildExplanation({
@@ -407,7 +449,7 @@ export class DecisionEngine {
           matchedRule: null,
           riskClass: MOST_RESTRICTIVE_BAND,
           authorityApplied: 'refused without evaluation; the refusal itself could not be recorded',
-          constraintCited: `fail closed — ${why}`,
+          constraintCited: `${FAIL_CLOSED}${why}`,
         }),
         gateOutcomes: [],
       };

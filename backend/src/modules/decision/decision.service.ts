@@ -10,6 +10,7 @@ import {
   isRiskBand,
   RISK_BANDS,
   type ActorRef,
+  type DecisionOutcome,
   type DecisionRequest,
   type DecisionResult,
   type Explanation,
@@ -36,6 +37,16 @@ function record(value: unknown, what: string): Record<string, unknown> {
 function text(value: unknown, what: string): string {
   if (typeof value !== 'string' || value.trim() === '') throw new ValidationFailedError(`${what} is required.`);
   return value.trim();
+}
+
+/** EPIC-047 `T2573` — where a decision stands, and whether a human put it there. */
+export interface DecisionStanding {
+  readonly outcome: DecisionOutcome;
+  /**
+   * A human resolved it — approved it, or granted the exception it proceeds
+   * under. An auto-executed decision, or one approved by gates alone, was not.
+   */
+  readonly byHuman: boolean;
 }
 
 export interface DecisionMetrics {
@@ -88,6 +99,35 @@ export class DecisionService {
       throw new ConflictError('The decision was refused by policy.', { decisionId: result.decisionId, result });
     }
     return result;
+  }
+
+  /**
+   * EPIC-047 `T2543`, `T2573`, `R-047-5` — where a decision stands now, for a
+   * module that submitted it through `DecisionEngine.decide` and must read it
+   * back. A decision is followed along the records that resolved it — an
+   * approval, a withdrawal, or an exception re-concluding a refusal — to the
+   * last. `null` when no such decision exists in the workspace.
+   */
+  async standing(workspaceId: string, decisionId: string): Promise<DecisionStanding | null> {
+    let decision = await this.repository.get(workspaceId, decisionId);
+    if (decision === null) return null;
+    for (let next = await this.repository.resolutionOf(workspaceId, decision.id); next !== null; ) {
+      decision = next;
+      next = await this.repository.resolutionOf(workspaceId, decision.id);
+    }
+    const approvedOrExcepted = decision.outcome === 'approved' || decision.outcome === 'exception';
+    return {
+      outcome: decision.outcome,
+      byHuman: approvedOrExcepted && decision.resolvesDecisionId !== null && decision.actorKind === 'human',
+    };
+  }
+
+  /**
+   * EPIC-047 `T2577` — withdraw a pending decision whose subject is gone. The
+   * module that submitted it calls this; there is no HTTP route.
+   */
+  async withdraw(workspaceId: string, decisionId: string, by: string, reason: string): Promise<DecisionResult> {
+    return this.engine.withdraw({ workspaceId, decisionId, by, reason });
   }
 
   /** `POST /decisions/:id/approve` — 403 when the caller lacks the authority, with the reason. */

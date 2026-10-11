@@ -25,6 +25,7 @@ let harness: AuthenticatedApp;
 let app: INestApplication;
 let readerCookie = '';
 let approvals: RecordingApprovals;
+let composedId = '';
 
 beforeAll(async () => {
   if (noRuntime) return;
@@ -71,10 +72,37 @@ suite('T1925 · the registry routes', () => {
     expect((await api().get(`/${PREFIX}/experts`)).status).toBe(401);
   });
 
-  it('as composed, registering refuses 503 naming EvidenceContracts — never accepted unchecked', async () => {
-    const res = await api().post(`/${PREFIX}/experts`).set('Cookie', harness.cookie).send(body);
-    expect(res.status).toBe(503);
-    expect(JSON.stringify(res.body)).toMatch(/EvidenceContracts/);
+  // `T2545` — since EPIC-032 merged, the composed application checks Evidence
+  // Contracts against EPIC-032's real catalogue: a contract it does not hold is
+  // a dangling reference (400), one it holds is accepted.
+  it('as composed, the EPIC-032 catalogue decides whether the Evidence Contract exists', async () => {
+    const unknown = await api().post(`/${PREFIX}/experts`).set('Cookie', harness.cookie).send(body);
+    expect(unknown.status).toBe(400);
+    expect(JSON.stringify(unknown.body)).toMatch(/implementation@1/);
+    const real = await api()
+      .post(`/${PREFIX}/experts`)
+      .set('Cookie', harness.cookie)
+      .send({
+        key: 'composed',
+        name: 'Composed',
+        contract: contract({ evidenceContract: { workClass: 'task-completion', contractVersion: 1 } }),
+      });
+    expect(real.status).toBe(201);
+    composedId = real.body.expert.id as string;
+  });
+
+  // `T2543` — submitting reaches EPIC-031's decision engine, and the version's
+  // status is read back from the decision it created — whatever EPIC-031's
+  // policy made of it, the two must agree.
+  it('as composed, submitting reaches EPIC-031, and the status is read back from its decision', async () => {
+    const submitted = await api()
+      .post(`/${PREFIX}/experts/${composedId}/contract-versions/1/submit`)
+      .set('Cookie', harness.cookie);
+    expect(submitted.status).toBe(201);
+    expect(submitted.body.decisionId).toBeTruthy();
+    expect(['submitted', 'approved', 'refused']).toContain(submitted.body.status);
+    const read = await api().get(`/${PREFIX}/experts/${composedId}`).set('Cookie', harness.cookie);
+    expect(read.body.versions[0].status).toBe(submitted.body.status);
   });
 
   it('with in-test bindings: register, list, read', async () => {
@@ -82,18 +110,14 @@ suite('T1925 · the registry routes', () => {
     ports.evidence = evidenceKnowing('implementation@1');
     approvals = recordingApprovals();
 
-    // Submitting still refuses until approvals are bound — asserted before binding them.
+    ports.approvals = approvals;
     const created = await api().post(`/${PREFIX}/experts`).set('Cookie', harness.cookie).send(body);
     expect(created.status).toBe(201);
     const id = created.body.expert.id as string;
-    const submit = await api().post(`/${PREFIX}/experts/${id}/contract-versions/1/submit`).set('Cookie', harness.cookie);
-    expect(submit.status).toBe(503);
-    expect(JSON.stringify(submit.body)).toMatch(/ContractApprovals/);
-    ports.approvals = approvals;
 
     const list = await api().get(`/${PREFIX}/experts`).set('Cookie', harness.cookie);
     expect(list.status).toBe(200);
-    expect(list.body).toEqual([expect.objectContaining({ key: 'test-engineer', effectiveVersion: null, latestVersion: 1 })]);
+    expect(list.body).toContainEqual(expect.objectContaining({ key: 'test-engineer', effectiveVersion: null, latestVersion: 1 }));
     const one = await api().get(`/${PREFIX}/experts/${id}`).set('Cookie', harness.cookie);
     expect(one.body.versions.map((v: { status: string }) => v.status)).toEqual(['draft']);
   });
@@ -115,7 +139,9 @@ suite('T1925 · the registry routes', () => {
   });
 
   it('version, submit, approve, compare and retire', async () => {
-    const [summary] = (await api().get(`/${PREFIX}/experts`).set('Cookie', harness.cookie)).body as { id: string }[];
+    const summary = ((await api().get(`/${PREFIX}/experts`).set('Cookie', harness.cookie)).body as { id: string; key: string }[]).find(
+      (e) => e.key === 'test-engineer',
+    );
     const id = summary!.id;
     const v2 = await api()
       .post(`/${PREFIX}/experts/${id}/contract-versions`)
