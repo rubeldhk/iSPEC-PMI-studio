@@ -31,7 +31,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** The workspaces whose scripts this check reads. */
-const PACKAGES = ['backend', 'frontend', 'worker', 'packages/room-contract'] as const;
+const PACKAGES = ['backend', 'frontend', 'worker', 'api-launcher', 'packages/room-contract'] as const;
 
 interface Script {
   readonly pkg: string;

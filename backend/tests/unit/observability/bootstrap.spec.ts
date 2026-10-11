@@ -38,7 +38,11 @@ function code(path: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
-const apiMain = code('../../../src/main.ts');
+// T2593 (EPIC-047, DEF-047-002) — the bootstrap moved to `api.ts`, the API's
+// exported door, so a composition root outside `backend/src` starts the same
+// wiring. `main.ts` delegates to it; both halves are asserted below.
+const apiMain = code('../../../src/api.ts');
+const entry = code('../../../src/main.ts');
 
 describe('T656 · the API bootstrap installs observability', () => {
   it('main.ts builds the observability bundle', () => {
@@ -60,5 +64,13 @@ describe('T656 · the API bootstrap installs observability', () => {
     // T661/DEF-001-001: a second implementation is how the redaction rules in
     // FORBIDDEN_KEYS come to disagree between the two processes.
     expect(apiMain).toMatch(/@pmi\/observability/);
+  });
+});
+
+describe('T2593 · main.ts starts the API through its exported door', () => {
+  it('delegates to bootstrapApi, so the launcher and main.ts install the same wiring', () => {
+    expect(entry).toMatch(/bootstrapApi\s*\(\s*\)/);
+    // A second bootstrap here would be a second place the wiring could drift.
+    expect(entry).not.toMatch(/NestFactory|useGlobalInterceptors|buildObservability/);
   });
 });

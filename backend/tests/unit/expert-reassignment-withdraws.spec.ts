@@ -8,8 +8,9 @@
  * reviewer could be asked to approve an assignment that no longer exists.
  *
  * Two halves: the Experts module withdraws the decision on reassignment, and
- * `EPIC-031` gains the withdrawal — a resolving record, so the decision leaves
- * the inbox, and never a "blocked" entry for the person who reassigned.
+ * the adapter closes it through `EPIC-031`'s `refuse` (`FR-DPE-017`) —
+ * `withdrawn` by the requester, `rejected` by anyone else — so it leaves every
+ * inbox and blocks no one.
  */
 import { describe, expect, it } from 'vitest';
 import type { AuditSink, DecisionRequest } from '@pmi/decision-contract';
@@ -18,6 +19,7 @@ import { InMemoryDecisionRepository } from '../../src/modules/decision/decision.
 import { DecisionService } from '../../src/modules/decision/decision.service.js';
 import { DecisionEngine } from '../../src/modules/decision/evaluator.js';
 import { PLATFORM_DEFAULT_POLICY } from '../../src/modules/decision/policy.loader.js';
+import { decisionApprovals } from '../../src/modules/experts/adapters/decisions.adapter.js';
 import { AssignmentService } from '../../src/modules/experts/assignment.service.js';
 import { Authoring } from '../../src/modules/experts/authoring.js';
 import { InMemoryExpertsStore } from '../../src/modules/experts/experts.store.js';
@@ -85,12 +87,16 @@ function decisions() {
     audit,
     repository,
   });
-  return { engine, service: new DecisionService(engine, repository, policies) };
+  return {
+    engine,
+    service: new DecisionService(engine, repository, policies),
+    approvals: decisionApprovals(engine, repository),
+  };
 }
 
 const request: DecisionRequest = {
   workspaceId: 'ws_1',
-  projectId: '(workspace)',
+  projectId: 'workspace:ws_1',
   actionType: 'task.assign-expert',
   target: { type: 'task', id: 't_1' },
   objectVersion: '1',
@@ -100,31 +106,35 @@ const request: DecisionRequest = {
   proposedClass: 'high',
 };
 
-describe('T2576 · EPIC-031 withdraws a pending decision', () => {
-  it('the withdrawn decision leaves every inbox, and the withdrawal blocks no one', async () => {
-    const { engine, service } = decisions();
+describe('T2576 · through EPIC-031, a withdrawn decision leaves every inbox (FR-DPE-017)', () => {
+  it('the requester withdraws it; it leaves every inbox and blocks no one', async () => {
+    const { engine, service, approvals } = decisions();
     const { decisionId, outcome } = await engine.decide(request);
     expect(outcome).toBe('pending');
     expect((await service.inbox({ workspaceId: 'ws_1', userId: 'u_2' })).entries).toHaveLength(1);
 
-    await service.withdraw('ws_1', decisionId, 'u_3', 'the task was reassigned');
+    await approvals.withdraw({ workspaceId: 'ws_1', decisionId, actorId: 'u_1', reason: 'the task was reassigned' });
 
     for (const userId of ['u_1', 'u_2', 'u_3']) {
       expect((await service.inbox({ workspaceId: 'ws_1', userId })).entries).toEqual([]);
     }
-    expect(await service.standing('ws_1', decisionId)).toMatchObject({ outcome: 'refused', byHuman: false });
+    await expect(approvals.resolutionOf('ws_1', decisionId)).resolves.toBe('refused');
   });
 
-  it('withdrawing a decision already resolved, or not pending, is a conflict', async () => {
-    const { engine, service } = decisions();
+  it('someone else reassigning closes it as rejected, which still leaves every inbox', async () => {
+    const { engine, service, approvals } = decisions();
+    const { decisionId } = await engine.decide(request);
+    await approvals.withdraw({ workspaceId: 'ws_1', decisionId, actorId: 'u_3', reason: 'the task was reassigned' });
+    expect((await service.inbox({ workspaceId: 'ws_1', userId: 'u_2' })).entries).toEqual([]);
+    await expect(approvals.resolutionOf('ws_1', decisionId)).resolves.toBe('rejected');
+  });
+
+  it('withdrawing a decision already resolved is a conflict', async () => {
+    const { engine, service, approvals } = decisions();
     const { decisionId } = await engine.decide(request);
     await service.approve({ workspaceId: 'ws_1', userId: 'u_2' }, decisionId);
-    await expect(service.withdraw('ws_1', decisionId, 'u_1', 'too late')).rejects.toBeInstanceOf(ConflictError);
-  });
-
-  it('a withdrawal states its reason', async () => {
-    const { engine, service } = decisions();
-    const { decisionId } = await engine.decide(request);
-    await expect(service.withdraw('ws_1', decisionId, 'u_1', '  ')).rejects.toThrow(/reason/);
+    await expect(
+      approvals.withdraw({ workspaceId: 'ws_1', decisionId, actorId: 'u_1', reason: 'too late' }),
+    ).rejects.toBeInstanceOf(ConflictError);
   });
 });

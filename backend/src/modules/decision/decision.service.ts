@@ -7,16 +7,18 @@
  * person. Every read is scoped to the caller's workspace.
  */
 import {
+  CLOSURE_KINDS,
+  isClosureKind,
   isRiskBand,
   RISK_BANDS,
   type ActorRef,
-  type DecisionOutcome,
   type DecisionRequest,
   type DecisionResult,
   type Explanation,
   type RiskBand,
 } from '@pmi/decision-contract';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
+import type { AuditRecorder } from './adapters.js';
 import type { DecisionRepository } from './decision.repository.js';
 import type { DecisionEngine } from './evaluator.js';
 import { inboxFor, type InboxEntry } from './inbox.projection.js';
@@ -39,16 +41,6 @@ function text(value: unknown, what: string): string {
   return value.trim();
 }
 
-/** EPIC-047 `T2573` — where a decision stands, and whether a human put it there. */
-export interface DecisionStanding {
-  readonly outcome: DecisionOutcome;
-  /**
-   * A human resolved it — approved it, or granted the exception it proceeds
-   * under. An auto-executed decision, or one approved by gates alone, was not.
-   */
-  readonly byHuman: boolean;
-}
-
 export interface DecisionMetrics {
   readonly decisions: number;
   /** `FR-DPE-033` — how decisions spread across the bands. */
@@ -58,11 +50,31 @@ export interface DecisionMetrics {
   readonly outcomes: Readonly<Record<string, number>>;
 }
 
+/** `T796a` — one decision as read back from the object it concerns (`FR-DPE-024`). */
+export interface ObjectDecision {
+  readonly decisionId: string;
+  readonly actionType: string;
+  readonly outcome: string;
+  readonly effectiveClass: RiskBand;
+  readonly objectVersion: string;
+  /** The decision this one resolves, when it is an approval or exception of a pending one. */
+  readonly resolves: string | null;
+  /** The decision that resolved this one, if any. */
+  readonly resolvedBy: string | null;
+  readonly explanation: Explanation;
+  readonly createdAt: string;
+}
+
 export class DecisionService {
   constructor(
     private readonly engine: DecisionEngine,
     private readonly repository: DecisionRepository,
     private readonly policies: PolicySource,
+    /**
+     * `T796b` — `EPIC-004`'s audit log, for policy issue attempts. Optional so a
+     * test that is not about policy need not supply one; the module binds it.
+     */
+    private readonly audit?: AuditRecorder,
   ) {}
 
   private actor(principal: Principal): ActorRef {
@@ -101,35 +113,6 @@ export class DecisionService {
     return result;
   }
 
-  /**
-   * EPIC-047 `T2543`, `T2573`, `R-047-5` — where a decision stands now, for a
-   * module that submitted it through `DecisionEngine.decide` and must read it
-   * back. A decision is followed along the records that resolved it — an
-   * approval, a withdrawal, or an exception re-concluding a refusal — to the
-   * last. `null` when no such decision exists in the workspace.
-   */
-  async standing(workspaceId: string, decisionId: string): Promise<DecisionStanding | null> {
-    let decision = await this.repository.get(workspaceId, decisionId);
-    if (decision === null) return null;
-    for (let next = await this.repository.resolutionOf(workspaceId, decision.id); next !== null; ) {
-      decision = next;
-      next = await this.repository.resolutionOf(workspaceId, decision.id);
-    }
-    const approvedOrExcepted = decision.outcome === 'approved' || decision.outcome === 'exception';
-    return {
-      outcome: decision.outcome,
-      byHuman: approvedOrExcepted && decision.resolvesDecisionId !== null && decision.actorKind === 'human',
-    };
-  }
-
-  /**
-   * EPIC-047 `T2577` — withdraw a pending decision whose subject is gone. The
-   * module that submitted it calls this; there is no HTTP route.
-   */
-  async withdraw(workspaceId: string, decisionId: string, by: string, reason: string): Promise<DecisionResult> {
-    return this.engine.withdraw({ workspaceId, decisionId, by, reason });
-  }
-
   /** `POST /decisions/:id/approve` — 403 when the caller lacks the authority, with the reason. */
   async approve(principal: Principal, decisionId: string): Promise<DecisionResult> {
     const result = await this.engine.approve({
@@ -139,6 +122,31 @@ export class DecisionService {
     });
     if (result.outcome === 'refused') {
       throw new ForbiddenError('You may not approve this decision.', { decisionId, result });
+    }
+    return result;
+  }
+
+  /**
+   * `POST /decisions/:id/refuse` — `FR-DPE-017` (`A-031-1`). Closes a pending
+   * decision as `rejected` or `withdrawn` (an HTTP caller is a human; `expired`
+   * is the requesting automation's, in process). A closure that was recorded
+   * carries `explanation.closure`; one that was not is an unauthorized attempt
+   * — audited by the engine, the decision left pending — and answers `403`
+   * with the reason, as an unauthorized approval does.
+   */
+  async refuse(principal: Principal, decisionId: string, body: unknown): Promise<DecisionResult> {
+    const input = record(body, 'A closure');
+    const kind = input['kind'];
+    if (!isClosureKind(kind)) throw new ValidationFailedError(`kind is one of ${CLOSURE_KINDS.join(', ')}.`);
+    const result = await this.engine.refuse({
+      workspaceId: principal.workspaceId,
+      decisionId,
+      by: this.actor(principal),
+      kind,
+      reason: text(input['reason'], 'reason'),
+    });
+    if (result.explanation.closure === undefined) {
+      throw new ForbiddenError('You may not close this decision.', { decisionId, result });
     }
     return result;
   }
@@ -184,6 +192,36 @@ export class DecisionService {
     return { entries: inboxFor(this.actor(principal), decisions, policy) };
   }
 
+  /**
+   * `GET /decision-objects/:type/:id/decisions` — `FR-DPE-024`, `US3/AC5`: a
+   * decided item leaves the Inbox, and its decision stays retrievable **from the
+   * object**, not only by an id the object's holder does not have. Every
+   * decision on the object, oldest first, each with its stored explanation.
+   */
+  async forObject(principal: Principal, type: string, id: string): Promise<{ decisions: ObjectDecision[] }> {
+    const all = await this.repository.list(principal.workspaceId);
+    const resolvedBy = new Map<string, string>();
+    for (const d of all) if (d.resolvesDecisionId !== null) resolvedBy.set(d.resolvesDecisionId, d.id);
+    const decisions = all
+      .filter((d) => d.target.type === type && d.target.id === id)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((d): ObjectDecision => {
+        const { id: _explanationId, ...explanation } = d.explanation;
+        return {
+          decisionId: d.id,
+          actionType: d.actionType,
+          outcome: d.outcome,
+          effectiveClass: d.effectiveClass,
+          objectVersion: d.objectVersion,
+          resolves: d.resolvesDecisionId,
+          resolvedBy: resolvedBy.get(d.id) ?? null,
+          explanation,
+          createdAt: d.createdAt.toISOString(),
+        };
+      });
+    return { decisions };
+  }
+
   /** `GET /decisions/metrics` — `FR-DPE-033`, `SC-DPE-008`. First decisions only: a resolution is not a second decision. */
   async metrics(principal: Principal): Promise<DecisionMetrics> {
     const first = (await this.repository.list(principal.workspaceId)).filter((d) => d.resolvesDecisionId === null);
@@ -215,8 +253,22 @@ export class DecisionService {
     const current = await this.policies.current(principal.workspaceId);
     const candidate = { ...record(body, 'A tenant policy'), version: current.version + 1, approvedBy: principal.userId };
     const loaded = loadPolicy(candidate);
-    if (!loaded.ok) throw new ValidationFailedError(loaded.message, { reason: loaded.reason });
+    // `T796b` — the attempt is visible either way. An issued policy is its own
+    // version history; a refused one has no row there, so without this a tenant
+    // probing the high-band fence would leave no trace (spec edge case, FR-DPE-012).
+    const attempt = {
+      workspaceId: principal.workspaceId,
+      actorId: principal.userId,
+      action: 'create' as const,
+      targetType: 'tenant_policy',
+      targetId: `v${candidate.version}`,
+    };
+    if (!loaded.ok) {
+      await this.audit?.record({ ...attempt, outcome: 'refused', detail: { reason: loaded.reason, message: loaded.message } });
+      throw new ValidationFailedError(loaded.message, { reason: loaded.reason });
+    }
     await this.repository.appendPolicy(principal.workspaceId, loaded.policy, new Date());
+    await this.audit?.record({ ...attempt, outcome: 'success' });
     return loaded.policy;
   }
 }

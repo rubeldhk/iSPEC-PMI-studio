@@ -56,7 +56,7 @@ import {
   type LiveStateReading,
   type LiveStateStatus,
 } from './live-state.js';
-import { APPROVED_SOURCE_TYPES } from './retrieval/index.service.js';
+import { APPROVED_SOURCE_TYPES, KNOWLEDGE_ENTRY_SOURCE_TYPE } from './retrieval/index.service.js';
 
 /** One source, named the way a caller names it. */
 export interface SourceRef {
@@ -431,8 +431,8 @@ export class AssemblyService {
             candidate,
             reason: 'classification',
             detail:
-              `'${candidate.sourceType}' is outside the approved source set — governed documents ` +
-              'and execution history only (FR-CTX-015)',
+              `'${candidate.sourceType}' is outside the approved source set — governed documents, ` +
+              'execution history and knowledge entries only (FR-CTX-015)',
           });
           continue;
         }
@@ -450,6 +450,21 @@ export class AssemblyService {
         );
         if (!boundary.allowed) {
           rejected.push({ candidate, reason: 'boundary', detail: boundary.reason });
+          continue;
+        }
+
+        if (candidate.sourceType === KNOWLEDGE_ENTRY_SOURCE_TYPE) {
+          // `T2523`, `A-038-1` — `knowledge-entry` is approved, but only
+          // `EPIC-048`'s `KnowledgeAdmission` may say whether one entry may be
+          // supplied here, and that port (`A-038-2`) is not bound. Absent, it
+          // fails closed: never admitted by default (`learning-contract.md` §3).
+          rejected.push({
+            candidate,
+            reason: 'permission',
+            detail:
+              `admission port unbound — ${candidate.sourceType} ${candidate.sourceId} is not supplied ` +
+              'until EPIC-048 judges it (A-038-1, FR-CTX-015)',
+          });
           continue;
         }
 

@@ -190,18 +190,19 @@ Three dependencies are **open pull requests, not merged**: `EPIC-031` (#4), `EPI
 - **Decision**: `EPIC-031`'s `DecisionRequest` requires a `projectId`, and an Expert contract
   belongs to the **workspace**, not to a project. A contract-approval decision (and an assignment's
   risk gate, which `T1966` submits the same way) is made against the workspace scope:
-  `projectId = '(workspace)'` (`WORKSPACE_SCOPE` in `adapters/decisions.adapter.ts`).
-  `policy_decisions.projectId` is required and carries no foreign key, and `EPIC-031`'s steering
-  source matches it against project-scoped documents — none has this id — so **workspace-scoped
-  steering classifies the decision and project-scoped steering does not**. A caller that does have
-  a project may name it.
+  `projectId = 'workspace:<workspaceId>'` (`WORKSPACE_DECISION_SCOPE` in
+  `adapters/decisions.adapter.ts`, `T1978` on `main`; this branch's `'(workspace)'` was dropped for
+  it at the 2026-10-11 merge). `policy_decisions.projectId` is required and carries no foreign key,
+  and `EPIC-031`'s steering source matches it against project-scoped documents — none has this id
+  — so **workspace-scoped steering classifies the decision and project-scoped steering does not**.
+  A caller that does have a project may name it.
 - **Rationale**: inventing a project, or choosing "the first project in the workspace", would
   classify a workspace-wide contract by one project's rules. Leaving the value empty is refused by
   the schema.
-- **Resolution**: read back through `DecisionService.standing` (added for this Epic), which follows
-  a pending decision to the record that resolved it; `approved`, `auto-executed` and `exception`
-  (proceeded under an authorised gate exception) all read as approved. A decision `EPIC-031` does
-  not know is a fault, never "pending".
+- **Resolution**: read back from `EPIC-031`'s repository (`get`, then `resolutionOf`) by the
+  adapter: the decision that resolved it, or the decision itself. `exception` is never read as
+  approved (no gate is required, so none can be excepted). A decision `EPIC-031` does not know is a
+  fault, never "pending".
 - **Recorded** 2026-10-10, `T2543`; supersedes the approach in `R-047-5`'s first draft, which named
   a `resolutionOf` read that `EPIC-031` does not export.
 
@@ -228,18 +229,25 @@ Three dependencies are **open pull requests, not merged**: `EPIC-031` (#4), `EPI
   - **medium** needs gates. No `GateProvider` is bound (`DEF-031-004`), so a medium contract is
     refused; it is **not refused for good** — a refused version may be submitted again (`T2575`),
     and a tenant whose policy sends medium to a human gets a pending decision.
-- **Resubmission** (`T2575`): `EPIC-031` has no human "reject" — every `refused` outcome is policy's
-  (a gate, a band needing gates, an automation rule). So a refused version may be resubmitted; a
-  pending or approved one may not. The version's decision id is replaced compare-and-set; the
+- **Resubmission** (`T2575`): a version **refused by policy** (a gate, a band needing gates, an
+  automation rule) or **withdrawn** by its submitter may be resubmitted — it meets the same policy
+  again. One a human **rejected** (`FR-DPE-017`, a closure of kind `rejected`) may not: that is a
+  judgement on the version, and a new version is the way past it. Nor may a pending or approved
+  one. (First written when `EPIC-031` had no reject; corrected at the 2026-10-11 merge.) The version's decision id is replaced compare-and-set; the
   refused decision stays in `EPIC-031`'s append-only record, findable by its target. A fail-closed
   refusal (`FR-DPE-050`) — or `'unrecorded'`, when even that could not be stored — is not a
   decision at all: submission fails 503 naming why and stores nothing.
-- **Human or not** (`T2573`): `DecisionService.standing` reports whether a human resolved the
-  decision. A contract version stands on either; a gated assignment (`FR-EXP-054`) only on a human's
-  approval, so a tenant rule auto-executing `task.*` cannot make one stand unattended.
-- **Withdrawal** (`T2577`): `EPIC-031` gained `withdraw` — a refusal resolving a pending decision,
-  with a stated reason, audited. Reassigning a task withdraws its superseded assignment's pending
-  decision, so it leaves every inbox; a withdrawal blocks no one.
+- **Human or not** (`T2573`): the adapter reads an approval that **resolves** a pending decision as
+  a human's (`EPIC-031`'s `approve` admits only humans) and one taken outright — `auto-executed`,
+  or `approved` by gates alone — as `approved-unattended`. A contract version stands on either; a
+  gated assignment (`FR-EXP-054`) only on a human's approval, so a tenant rule auto-executing
+  `task.*` cannot make one stand unattended.
+- **Withdrawal** (`T2577`, `T2602`): through `EPIC-031`'s `refuse` (`FR-DPE-017`, `A-031-1`) —
+  `withdrawn` when the requester closes it, `rejected` when another human does (a reassignment by
+  someone else). Reassigning a task closes its superseded assignment's pending decision, and the
+  loser of a concurrent submission closes its own, so neither stays in an inbox; a closure blocks
+  no one. (This branch first added its own `withdraw` to `EPIC-031`; dropped for `refuse` at the
+  2026-10-11 merge.)
 - **Alternatives considered**: amending `FR-EXP-005` so `EPIC-031`'s own classification is enough
   (a specification amendment, left to the Project Owner); passing the class as the band (rejected:
   `FR-DPE-003`); naming a gate on every submission (rejected: with no `GateProvider`, every gate is

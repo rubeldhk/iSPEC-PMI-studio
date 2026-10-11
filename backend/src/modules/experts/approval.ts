@@ -23,8 +23,10 @@ export async function statusOf(version: ContractVersion, approvals: ContractAppr
   if (undecided(version)) return 'draft';
   const resolution = await approvals.resolutionOf(version.workspaceId, version.decisionId!);
   if (resolution === 'pending') return 'submitted';
-  // A contract version stands on policy's approval as on a human's (`R-047-17`).
-  return resolution === 'approved-unattended' ? 'approved' : resolution;
+  // A contract version stands on policy's approval as on a human's (`R-047-17`);
+  // a human's rejection shows as refused, though it cannot be resubmitted.
+  if (resolution === 'approved-unattended') return 'approved';
+  return resolution === 'rejected' ? 'refused' : resolution;
 }
 
 /**

@@ -48,7 +48,7 @@ export const CONTENT_EVENTS = Object.freeze([
   'expert-governance-recorded',
 ] as const);
 
-/** EPIC-047 `R-047-4` — the closed set of `kind`s an `expert-governance-recorded` payload carries. */
+/** EPIC-047 `R-047-4`, `DEF-047-001` — the closed set of `kind`s an `expert-governance-recorded` payload carries. */
 export const EXPERT_GOVERNANCE_KINDS = Object.freeze([
   'dispatch-refused',
   'fallback-used',
@@ -62,10 +62,12 @@ export const EXPERT_GOVERNANCE_KINDS = Object.freeze([
   'stopped-by-parent',
   'outputs-incomplete',
   'review-required',
-  /** `T2001` — a run that failed after it started; never `dispatch-refused`. */
-  'run-failed',
-  /** `T2013` — the version in force, when it is not the newest one the run was registered under. */
+  // EPIC-047 `T2560`, `DEF-047-001` — two kinds dispatch already recorded
+  // (`T2013`, `T2001`), and how an unattended run proposes its completion when it
+  // has no specification to transition (`FR-EXP-063`).
   'contract-version-in-force',
+  'run-failed',
+  'completion-proposed',
 ] as const);
 export type ExpertGovernanceKind = (typeof EXPERT_GOVERNANCE_KINDS)[number];
 

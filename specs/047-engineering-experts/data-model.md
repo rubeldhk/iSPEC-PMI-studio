@@ -21,7 +21,7 @@ Unique: `(workspaceId, key)`.
 
 ## 2. `expert_contract_versions` — `ExpertContractVersion`
 
-Immutable after insert except `decisionId`, written on submission and replaced only in place of a decision that stands refused, or `EPIC-031`'s `'unrecorded'` (`R-047-14`, `R-047-17`, `T2575`).
+Immutable after insert except `decisionId`, written on submission and replaced only in place of a decision that stands refused by policy or withdrawn (never rejected), or `EPIC-031`'s `'unrecorded'` (`R-047-14`, `R-047-17`, `T2575`).
 
 | Field | Type | Rule |
 |---|---|---|
@@ -42,7 +42,7 @@ Immutable after insert except `decisionId`, written on submission and replaced o
 | `expectedOutputs` | jsonb `[{kind, required}]` | Checked at run end (`FR-EXP-021`) |
 | `evidenceContract` | jsonb `{workClass, contractVersion}` | `R-047-11` |
 | `delegatesTo` | text[] (Expert keys) | Empty = may not delegate |
-| `decisionId?` | text | `EPIC-031` decision; replaced only in place of a refused one (`T2575`) |
+| `decisionId?` | text | `EPIC-031` decision; replaced only in place of one refused by policy or withdrawn (`T2575`) |
 | `createdBy`, `createdAt` | | |
 
 **Status is derived, never stored** (`R-047-5`): `draft` (no decision) → `submitted` (decision

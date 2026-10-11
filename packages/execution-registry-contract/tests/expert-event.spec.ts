@@ -23,8 +23,8 @@ describe('T1915 · expert-governance-recorded', () => {
     expect(classOf('expert-governance-recorded')).toBe('content');
   });
 
-  it('carries exactly the fourteen kinds of R-047-4 — every kind the Experts module records (T2540)', () => {
-    expect([...EXPERT_GOVERNANCE_KINDS].sort()).toEqual(
+  it('carries the twelve kinds of R-047-4', () => {
+    expect([...EXPERT_GOVERNANCE_KINDS].filter((k) => !['contract-version-in-force', 'run-failed', 'completion-proposed'].includes(k)).sort()).toEqual(
       [
         'dispatch-refused',
         'fallback-used',
@@ -38,11 +38,24 @@ describe('T1915 · expert-governance-recorded', () => {
         'stopped-by-parent',
         'outputs-incomplete',
         'review-required',
-        'run-failed',
-        'contract-version-in-force',
       ].sort(),
     );
     expect(isExpertGovernanceKind('review-required')).toBe(true);
     expect(isExpertGovernanceKind('approved-anyway')).toBe(false);
+  });
+});
+
+describe('T2560 · DEF-047-001 — the kinds a real registry must accept', () => {
+  // Dispatch has recorded `contract-version-in-force` (T2013) and `run-failed`
+  // (T2001) since the convergence pass, and `completion-proposed` is how an
+  // unattended run's completion is proposed when it has no specification to
+  // transition (FR-EXP-063). Recorded against an in-test double they were never
+  // checked; recorded against EPIC-037 they must be in the closed set.
+  it.each(['contract-version-in-force', 'run-failed', 'completion-proposed'])('admits %s', (kind) => {
+    expect(isExpertGovernanceKind(kind)).toBe(true);
+  });
+
+  it('is closed at fifteen — twelve from R-047-4, three from DEF-047-001', () => {
+    expect(EXPERT_GOVERNANCE_KINDS).toHaveLength(15);
   });
 });

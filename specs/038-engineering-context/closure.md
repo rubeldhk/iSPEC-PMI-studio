@@ -130,6 +130,28 @@ naming `FR-CTX-036`. No seed or operator route creates one yet; a deployment mus
 the requirement working as written — budget numbers are configuration — and it is stated here so
 nobody mistakes the refusal for a fault.
 
+## Amendment A-038-1 — 2026-10-09
+
+`FR-CTX-015` now admits `knowledge-entry` (approved knowledge, `EPIC-048` Governed Learning) to the
+closed approved source set; approved by the Project Owner in chat on 2026-10-09. Tasks
+`T2520`–`T2527` (`T2528`–`T2539` reserved, unused).
+
+- **Admitted** by the type system (`ApprovedSourceType`, `APPROVED_SOURCE_TYPES`,
+  `KNOWLEDGE_ENTRY_SOURCE_TYPE` in `retrieval/index.service.ts`) and by configuration: a workspace
+  that registers an indexable `knowledge-entry` source class can index one; without that class it is
+  refused as before (`FR-CTX-034`).
+- **Nothing produces one yet.** The sources adapter serves no knowledge entry, so re-indexing one in
+  the running application indexes nothing; and assembly excludes any `knowledge-entry` candidate as
+  `permission`, detail *admission port unbound*, after the boundary and before the access check —
+  the position `EPIC-048`'s `KnowledgeAdmission` will take. This fail-closed branch is the one piece
+  of `A-038-2`'s behaviour built here, because without it a ranker could supply a knowledge entry
+  nobody had judged. The port itself, and the adapter and provenance branches, remain `A-038-2`.
+- **Unchanged**: assembly for every other class. The only visible difference elsewhere is the wording
+  of the out-of-set refusal, which now names knowledge entries.
+- **Verified**: typecheck clean; lint clean on the four changed source and test files; context unit
+  tests 68 files, 351 tests passing (7 new); the 12 context integration specs, run one file at a
+  time against PostgreSQL: 138 passed, 3 skipped (`context-relevance`, `T1282`, provider-gated as before).
+
 ## Recommended next command
 
 `/speckit-converge EPIC-038` — to confirm nothing further remains. The three open tasks

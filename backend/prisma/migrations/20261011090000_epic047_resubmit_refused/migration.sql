@@ -1,14 +1,15 @@
--- EPIC-047 T2575, R-047-17 — a refused contract version may be submitted again.
+-- EPIC-047 T2575, R-047-17 — a refused or withdrawn contract version may be submitted again.
 --
 -- R-047-14's trigger let a version's decision id be written once, from null.
--- EPIC-031 has no human "reject": every refused outcome is policy's (a gate, a
--- band needing gates), so a refused version may be resubmitted and its decision
--- id replaced. The trigger still binds the rule an application refactor could
+-- A version refused by policy (a gate, a band needing gates) or withdrawn by its
+-- submitter may be resubmitted and its decision id replaced. The trigger still
+-- binds the rule an application refactor could
 -- drop: the id may be replaced only while the decision it names stands refused
--- — the last record along its resolution chain in policy_decisions is a
--- refusal — or is EPIC-031's 'unrecorded' (a refusal that could not be stored).
--- A pending or approved version's decision id still cannot change, and nothing
--- else about a version ever may.
+-- by policy or withdrawn — the last record along its resolution chain in
+-- policy_decisions is a refusal that is not a human's rejection (FR-DPE-017,
+-- closureKind 'rejected') — or is EPIC-031's 'unrecorded' (a refusal that could
+-- not be stored). A rejected, pending or approved version's decision id cannot
+-- change, and nothing else about a version ever may.
 
 CREATE OR REPLACE FUNCTION "expert_contract_versions_immutable"() RETURNS trigger AS $$
 DECLARE
@@ -32,7 +33,10 @@ BEGIN
         UNION ALL
         SELECT r."id", r."outcome" FROM "policy_decisions" r JOIN chain c ON r."resolvesDecisionId" = c."id"
     )
-    SELECT c."outcome" INTO standing FROM chain c
+    SELECT CASE WHEN e."closureKind" = 'rejected' THEN 'rejected' ELSE c."outcome" END INTO standing
+    FROM chain c
+    JOIN "policy_decisions" d ON d."id" = c."id"
+    JOIN "decision_explanations" e ON e."id" = d."explanationId"
     WHERE NOT EXISTS (SELECT 1 FROM "policy_decisions" r WHERE r."resolvesDecisionId" = c."id")
     LIMIT 1;
     IF standing = 'refused' THEN

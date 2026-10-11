@@ -1,6 +1,6 @@
 # DEF-047-001 — No identity to register an Expert run with `EPIC-037`, and no runner to run it in
 
-**Epic**: `EPIC-047` · **Found**: 2026-10-09, implementing `T1935`/`T1936` · **Status**: Open ·
+**Epic**: `EPIC-047` · **Found**: 2026-10-09, implementing `T1935`/`T1936` · **Status**: Resolved 2026-10-10 (Phase 15, `T2560`–`T2569`) · runner composition split out as `DEF-047-002` ·
 **Severity**: High (blocks `FR-EXP-060` in the composed application; no data at risk)
 
 ## What was found
@@ -36,3 +36,19 @@ captures its identity snapshot, sponsors it with the dispatching user, and holds
 binding over `EPIC-028`'s seam. Both belong in a follow-up task (or the Epic that productises agent
 integration, `G-17`), and the closing report must name this defect as open if they are not built
 here.
+
+## Resolution — 2026-10-10
+
+**The identity half is closed.** `adapters/executions.adapter.ts` registers every Expert run with
+`EPIC-037` under an agent principal minted per *(Expert, sponsoring user)* on the workspace's
+`managed-sandbox` connector registration, with a fresh snapshot per run and a sponsor-granted
+delegation for `execution.register` and `execution.report` on the project. The sponsor must be able to
+edit the project, because `EPIC-024`'s delegation service does not check. The refs are stored per
+execution (`expert_execution_identities`) and every later call acts under them.
+`experts-execution-identity.spec.ts` proves it through the composed application against PostgreSQL;
+unbinding the adapter fails three of its four cases (`mutation-proofs.md` §4).
+
+**The runner half is built but cannot be composed.** `adapters/runners.adapter.ts` runs a composed
+gateway in a session it starts and always stops. Nothing composes a runtime into the API process,
+because `backend/src` may name no adapter or provider and the API has no composition root outside it.
+That is now **`DEF-047-002`**, with the options and a recommendation.

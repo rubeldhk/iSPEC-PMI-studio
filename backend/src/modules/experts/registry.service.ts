@@ -161,11 +161,12 @@ export class RegistryService {
    * band — `EPIC-031` still classifies it (`FR-DPE-003`); the class is also
    * proposed, never assigned.
    *
-   * `T2575` — a version may be submitted again when its decision was refused:
-   * `EPIC-031` has no human "reject", so every refusal is policy's (a gate, a
-   * band needing gates), and a resubmission meets the same policy. A pending or
-   * approved version may not. Nothing is stored when `EPIC-031` could not
-   * evaluate the submission.
+   * `T2575` — a version may be submitted again when policy refused it (a gate,
+   * a band needing gates) or its submitter withdrew it: a resubmission meets the
+   * same policy. Never after a human **rejected** it (`FR-DPE-017`) — that is a
+   * judgement on this version, and a new version is the way past it. A pending
+   * or approved version may not be resubmitted either. Nothing is stored when
+   * `EPIC-031` could not evaluate the submission.
    */
   async submit(workspaceId: string, actorId: string, expertId: string, versionNumber: number): Promise<VersionView> {
     await this.deps.authoring.requireAuthor(workspaceId, actorId);
@@ -175,7 +176,12 @@ export class RegistryService {
     }
     const version = await this.#version(workspaceId, expertId, versionNumber);
     if (!undecided(version)) {
-      const standing = await statusOf(version, this.deps.approvals);
+      const standing = await this.deps.approvals.resolutionOf(workspaceId, version.decisionId!);
+      if (standing === 'rejected') {
+        throw new ConflictError(
+          `version ${versionNumber} was rejected (decision ${version.decisionId}); create a new version rather than resubmit it (FR-DPE-017)`,
+        );
+      }
       if (standing !== 'refused') {
         throw new ConflictError(`version ${versionNumber} was already submitted (decision ${version.decisionId}, ${standing})`);
       }

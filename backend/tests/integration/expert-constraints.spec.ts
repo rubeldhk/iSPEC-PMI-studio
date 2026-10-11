@@ -117,10 +117,13 @@ suite('T1909 · expert_contract_versions — immutable (R-047-14)', () => {
   // `T2575`, `R-047-17` — a refused version may be resubmitted, so its decision
   // id may be replaced, but only while the decision it names stands refused
   // (or is EPIC-031's 'unrecorded'). Pending and approved stay immutable.
-  it('T2575 · the decision id is replaced only in place of a refused decision', async () => {
-    const decision = async (outcome: string, resolves: string | null = null): Promise<string> => {
+  it('T2575 · the decision id is replaced only in place of a refused or withdrawn decision, never a rejected one', async () => {
+    const decision = async (outcome: string, resolves: string | null = null, closureKind: string | null = null): Promise<string> => {
       const ex = id('dx');
-      await insert('decision_explanations', { id: ex, workspaceId: WS, policyVersion: '0', riskClass: 'medium', authorityApplied: 'test' });
+      await insert('decision_explanations', {
+        id: ex, workspaceId: WS, policyVersion: '0', riskClass: 'medium', authorityApplied: 'test',
+        closureKind, closureReason: closureKind === null ? null : 'test',
+      });
       const d = id('pd');
       await insert('policy_decisions', {
         id: d, workspaceId: WS, projectId: '(workspace)', actionType: 'expert-contract.approve.medium',
@@ -146,11 +149,17 @@ suite('T1909 · expert_contract_versions — immutable (R-047-14)', () => {
     const excepted = await versionRow(await expertRow(), { decisionId: first });
     await expect(replace(excepted, await decision('pending'))).rejects.toThrow(/immutable/i);
 
-    // Pending, then withdrawn (a refusal resolving it): replaceable.
+    // Pending, then withdrawn by its submitter (FR-DPE-017): replaceable.
     const pending = await decision('pending');
-    await decision('refused', pending);
+    await decision('refused', pending, 'withdrawn');
     const withdrawn = await versionRow(await expertRow(), { decisionId: pending });
     await expect(replace(withdrawn, await decision('pending'))).resolves.toBeDefined();
+
+    // Pending, then rejected by a human (FR-DPE-017): a judgement, not replaceable.
+    const judged = await decision('pending');
+    await decision('refused', judged, 'rejected');
+    const rejected = await versionRow(await expertRow(), { decisionId: judged });
+    await expect(replace(rejected, await decision('pending'))).rejects.toThrow(/immutable/i);
 
     for (const outcome of ['pending', 'approved', 'auto-executed']) {
       const cv = await versionRow(await expertRow(), { decisionId: await decision(outcome) });

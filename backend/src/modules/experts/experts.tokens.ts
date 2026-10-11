@@ -1,16 +1,19 @@
 /**
  * `T1906` (EPIC-047) — the ports, and what each absence does.
  *
- * `R-047-13`. Four of these belong to work that is not on `main`:
- * `ContractApprovals` (`EPIC-031`, PR #4), `EvidenceContracts` (`EPIC-032`,
- * PR #3), `ContextAssembler` (`EPIC-038`, PR #5), and `ExpertGateways`, which
- * nothing in the programme provides yet (`R-047-2`). Until each is bound, it
- * **refuses** with a `503` naming itself and the Epic that owes it. A permissive
- * default would make an Expert look governed while nothing governed it — an
- * approval nobody gave, an Evidence Contract nobody checked.
+ * `R-047-13`. Each port with no owner **refuses** with a `503` naming itself and
+ * the Epic that owes it. A permissive default would make an Expert look governed
+ * while nothing governed it — an approval nobody gave, an Evidence Contract
+ * nobody checked.
  *
- * `ActorAccess` (`EPIC-024`) and `ExpertExecutions` (`EPIC-037`) are on `main`
- * and are bound to real adapters in `experts.module.ts`.
+ * Since Phase 9 (2026-10-10) `ContractApprovals` (`EPIC-031`),
+ * `EvidenceContracts` (`EPIC-032`) and `ContextAssembler` (`EPIC-038`) are bound
+ * to adapters under `adapters/`, and `ActorAccess` (`EPIC-024`) was bound from
+ * the start. Since Phase 15 (`DEF-047-001`) `ExpertExecutions` is bound to
+ * `EPIC-037` under an agent principal minted per Expert and sponsor, and
+ * `ExpertGateways` to a runner over `EPIC-028`'s seam that refuses, naming
+ * `DEF-047-002`, until an agent runtime is composed into the API. The refusing
+ * factories below remain the defaults for tests that compose ports themselves.
  */
 import type { AgentContext, AgentDescriptor, AgentInvocation } from '@pmi/agent-contract';
 import type { ExpertGovernanceKind } from '@pmi/execution-registry-contract';
@@ -52,12 +55,14 @@ export interface ExpertGateways {
 }
 
 /**
- * `T2573` — `approved` means a human approved it (or granted the exception it
- * proceeds under); `approved-unattended` means policy let it through with no
- * human — auto-executed, or approved by gates alone. A contract version stands
- * on either; a gated assignment (`FR-EXP-054`) only on the first.
+ * `T2573` — `approved` means a human approved it; `approved-unattended` means
+ * policy let it through with no human — auto-executed, or approved by gates
+ * alone. A contract version stands on either; a gated assignment
+ * (`FR-EXP-054`) only on the first. `rejected` is a human's closure
+ * (`FR-DPE-017`), kept apart from a policy `refused`: a version may be
+ * resubmitted after a refusal, never after a rejection (`T2575`).
  */
-export type Resolution = 'pending' | 'approved' | 'approved-unattended' | 'refused';
+export type Resolution = 'pending' | 'approved' | 'approved-unattended' | 'refused' | 'rejected';
 
 /** `R-047-5` — `EPIC-031`'s decision path. Read on demand; there is no callback. */
 export interface ContractApprovals {

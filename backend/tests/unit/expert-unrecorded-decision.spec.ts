@@ -50,10 +50,12 @@ function engineAnswering(answer: DecisionResult) {
       },
     },
     reads: {
-      async standing() {
+      async get() {
         return null;
       },
-      async withdraw() {},
+      async resolutionOf() {
+        return null;
+      },
     },
   };
 }
@@ -147,6 +149,18 @@ describe('T2574 · the registry around a decision that could not be taken', () =
     expect(second.status).toBe('submitted');
     approvals.resolve(second.decisionId!, 'approved');
     await expect(service.submit('ws_1', 'u_1', expert.id, 1)).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it('a version a human rejected (FR-DPE-017) may not be resubmitted — a new version is the way past it', async () => {
+    const approvals = recordingApprovals();
+    const { service } = registry(approvals);
+    const { expert } = await service.register('ws_1', 'u_1', input);
+    const first = await service.submit('ws_1', 'u_1', expert.id, 1);
+    approvals.resolve(first.decisionId!, 'rejected');
+    expect((await service.get('ws_1', 'u_1', expert.id)).versions[0]?.status).toBe('refused');
+    const err = await service.submit('ws_1', 'u_1', expert.id, 1).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ConflictError);
+    expect((err as Error).message).toMatch(/rejected.*new version/);
   });
 
   it('one decision that cannot be read never fails the list, and shows as unreadable', async () => {

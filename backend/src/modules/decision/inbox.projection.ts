@@ -13,7 +13,9 @@
  *   anyone in the workspace but the requester, unless policy permits
  *   self-approval for the class (`FR-DPE-015`). Never to automation.
  * - **blocked** — a refused request nobody has resolved or superseded, shown to
- *   the person it blocks, naming what would unblock it (`FR-DPE-025`).
+ *   the person it blocks, naming what would unblock it (`FR-DPE-025`). A
+ *   closure of a pending decision is refused too, and is **not** blocked work:
+ *   it is the decision, and it leaves with the item (`FR-DPE-017`).
  *
  * `review` and `escalation` are kinds the contract names and no source produces
  * yet: review requests are `EPIC-021`'s, escalation `EPIC-031`'s follow-on.
@@ -24,12 +26,6 @@ import type { DecisionRecord } from './decision.repository.js';
 import { patternCovers, type TenantPolicyDocument } from './policy.loader.js';
 
 export type InboxKind = 'approval' | 'blocked' | 'review' | 'escalation';
-
-/**
- * EPIC-047 `T2577` — how a withdrawal (`DecisionEngine.withdraw`) states its
- * authority. A withdrawn request blocks no one: its subject is gone.
- */
-export const WITHDRAWN = 'withdrawn by ';
 
 export interface InboxEntry {
   readonly decisionId: string;
@@ -73,6 +69,9 @@ export function inboxFor(
   const entries: InboxEntry[] = [];
   for (const d of decisions) {
     if (resolved.has(d.id)) continue;
+    // `T2506`, `FR-DPE-017` — a closure (rejected, withdrawn, expired) is a
+    // decision taken, not work blocked: it leaves with the item it closed.
+    if (d.explanation.closure !== undefined) continue;
     const requester = d.requestedBy ?? d.actorId;
     const base = {
       decisionId: d.id,
@@ -95,12 +94,7 @@ export function inboxFor(
           blockedBy: `awaits approval by an authorized human other than ${requester} (FR-DPE-010, FR-DPE-015)`,
         });
       }
-    } else if (
-      d.outcome === 'refused' &&
-      requester === reader.id &&
-      latest.get(key(d))?.id === d.id &&
-      !d.authorityBasis.startsWith(WITHDRAWN)
-    ) {
+    } else if (d.outcome === 'refused' && requester === reader.id && latest.get(key(d))?.id === d.id) {
       entries.push({ ...base, kind: 'blocked', blockedBy: why(d) });
     }
   }

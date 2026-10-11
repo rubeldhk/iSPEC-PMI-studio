@@ -48,20 +48,30 @@ This is the concrete type behind `loop-contract`'s `PolicyProvider`, which `EPIC
 ```ts
 export interface DecisionRequest {
   readonly workspaceId: string;
+  readonly projectId: string;
   readonly actionType: string;
   readonly target: { type: string; id: string };   // opaque — no Room vocabulary
+  readonly objectVersion: string;                  // BR-0005 — the version decided against
   readonly actor: ActorRef;
   readonly proposedClass?: RiskBand;               // MAY propose; MUST NOT assign
   readonly requiredGates: readonly string[];
+  readonly requestedBy?: string;                   // FR-DPE-015 — self-approval refused by default
+  readonly triggeredBy?: { ruleId: string; eventId: string };  // FR-DPE-031 — automation's firing rule
 }
 
 export interface DecisionResult {
+  readonly decisionId: string;
   readonly outcome: 'auto-executed' | 'approved' | 'refused' | 'pending' | 'exception';
   readonly effectiveClass: RiskBand;
   readonly explanation: Explanation;               // NOT optional — FR-DPE-040
   readonly gateOutcomes: readonly GateOutcome[];
 }
 ```
+
+*Corrected 2026-10-09 (`T2500`): this section had drifted from `types.ts` — it omitted `projectId`,
+`objectVersion`, `requestedBy`, `triggeredBy` and `decisionId`, all present since Phase 2. The code
+was right; the contract was stale. `objectVersion` matters most: it is the `BR-0005` element an
+approval is recorded against.*
 
 **`explanation` is not optional.** `FR-DPE-040` covers blocked and allowed alike, so a result
 without one is unrepresentable rather than merely discouraged. This is the type-level half of what
@@ -79,13 +89,26 @@ model-assigned class would enter without anyone deciding to allow it.
 ```ts
 export interface Explanation {
   readonly policyVersion: string;
-  readonly matchedRule: SteeringRuleRef;      // lineageId + version
+  readonly matchedRule: SteeringRuleRef | null; // lineageId + version; null STATES no rule matched (FR-DPE-004)
   readonly riskClass: RiskBand;
   readonly precedenceResolution?: string;     // present when scopes conflicted — BR-0071
   readonly authorityApplied: string;
   readonly constraintCited?: string;          // e.g. "high band not configurable" — FR-DPE-012
+  readonly proposalDisagreement?: string;     // FR-DPE-003
+  readonly triggerRule?: string;              // FR-DPE-032
+  readonly closure?: { kind: ClosureKind; reason: string };  // FR-DPE-017 — present only on a closure
 }
+
+export const CLOSURE_KINDS = ['rejected', 'withdrawn', 'expired'] as const;
+export type ClosureKind = (typeof CLOSURE_KINDS)[number];
 ```
+
+`matchedRule` is **required and nullable**: `null` is the statement that no rule matched, so an
+unclassified action's explanation says so instead of omitting the field (corrected 2026-10-09).
+
+**`closure`** (`FR-DPE-017`, amendment `A-031-1`) is on the explanation of the resolving row that
+closes a pending decision without approving it. Its outcome is always `refused`; the kind says why
+and the reason is never empty — the database refuses either half alone.
 
 `precedenceResolution` is populated from `resolveSteering()`'s `SteeringOverride`, so the
 explanation **quotes** the precedence decision rather than reconstructing it (`R-031-1`).
@@ -130,6 +153,7 @@ Constitution XI Tier 1 drives these. Listed because *"the entry point MUST be th
 |---|---|---|
 | `POST` | `/decisions` | request a decision — the Decide seam's HTTP face |
 | `POST` | `/decisions/:id/approve` | `FR-DPE-014`, `FR-DPE-015` |
+| `POST` | `/decisions/:id/refuse` | `FR-DPE-017` — body `{ kind, reason }`; `403` for an unauthorized closure, which leaves the decision pending *(added 2026-10-09, `A-031-1`)* |
 | `GET` | `/decisions/:id/explanation` | `FR-DPE-040` — for blocked **and** allowed |
 | `GET` | `/inbox` | `FR-DPE-020`–`FR-DPE-026`, role-scoped, derived |
 | `GET` | `/decisions/metrics` | `FR-DPE-033` band distribution and auto-execution rate |
@@ -137,21 +161,15 @@ Constitution XI Tier 1 drives these. Listed because *"the entry point MUST be th
 `403` for missing authority, `409` for a policy refusal, both carrying the decision id so the caller
 reads the explanation rather than inferring it.
 
-### 7a. Added by `EPIC-047` (2026-10-10) — in-process, no HTTP route
+### 7a. What `EPIC-047` relies on — in-process
 
-A module that submits through `DecisionEngine.decide` must read its decision back and, sometimes,
-take it back. `EPIC-047` (Engineering Experts, `R-047-5`, `R-047-17`) added three things here
-rather than keep a second record of decisions:
-
-| Surface | What it does |
-|---|---|
-| `DecisionService.standing(workspaceId, decisionId)` | Follows a decision along the records that resolved it to the last one, and answers its outcome and `byHuman` — true when a human approved it or granted the exception it proceeds under; false for auto-executed or gates-only approval. `null` for an unknown decision. |
-| `DecisionEngine.withdraw` / `DecisionService.withdraw` | Resolves a **pending** decision whose subject is gone with a `refused` record stating who and why (`authorityBasis` starts `withdrawn by `), audited. Requires a reason; a decision not pending, or already resolved, is `409`. |
-| Inbox rule | A withdrawn decision leaves every inbox (it is resolved), and a withdrawal produces no `blocked` entry. |
-
-`evaluator.ts` also exports `FAIL_CLOSED`, `UNRECORDED_DECISION` and `refusedUnevaluated`, so a
-consumer can tell a refusal taken without evaluation (`FR-DPE-050`) from a judgement.
-Exercised by `backend/tests/unit/expert-reassignment-withdraws.spec.ts` and
+`EPIC-047` (Engineering Experts, `R-047-5`, `R-047-17`) reads its decisions back from the
+repository (`get`, `resolutionOf`) and closes them through `DecisionEngine.refuse` (`FR-DPE-017`):
+`withdrawn` by the requester, `rejected` by another human. It tells an approval a human gave (one
+resolving a pending decision) from one taken outright, and a human's rejection from a policy
+refusal. `evaluator.ts` exports `FAIL_CLOSED`, `UNRECORDED_DECISION` and `refusedUnevaluated`, so a
+consumer can tell a refusal taken without evaluation (`FR-DPE-050`) from a judgement. Exercised by
+`backend/tests/unit/expert-reassignment-withdraws.spec.ts` and
 `backend/tests/integration/experts-approval-journey.spec.ts`.
 
 ---
