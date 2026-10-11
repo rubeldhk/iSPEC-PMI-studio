@@ -46,6 +46,8 @@ import { Home } from './Home';
 import { useShell } from './shell-context';
 import { ContextPage } from '../pages/Context';
 import { DecisionInboxPage } from '../pages/DecisionInbox';
+import { IntegrationsPage } from '../pages/Integrations';
+import { createIntegrationsClient } from '../services/integrations.client';
 import type { Requirement } from '../services/api';
 
 /**
@@ -646,4 +648,22 @@ export function ContextView(): ReactElement {
 export function DecisionInboxView(): ReactElement {
   const { api } = useShell();
   return <DecisionInboxPage api={api} />;
+}
+
+/**
+ * EPIC-039 `T2209` — the Integrations screen (`FR-HUB-071`–`FR-HUB-075`): a
+ * view-only registry of every integration surface, both directions. Workspace
+ * scoped; the selected project, when there is one, scopes the configuration
+ * and health facts, which otherwise read *not applicable* with a reason. It
+ * reads through a client that has no write function (`FR-HUB-074`).
+ */
+const INTEGRATIONS_CLIENT = createIntegrationsClient();
+
+export function IntegrationsArea(): ReactElement {
+  const { projectId } = useShell();
+  return (
+    <MainLandmark>
+      <IntegrationsPage client={INTEGRATIONS_CLIENT} projectId={projectId} />
+    </MainLandmark>
+  );
 }

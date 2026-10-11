@@ -187,7 +187,7 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
       partly: n('partly-delivered'),
       owed: n('declared-not-delivered'),
       undeclared: n('undeclared'),
-    }).toEqual({ delivered: 8, partly: 2, owed: 7, undeclared: 0 });
+    }).toEqual({ delivered: 9, partly: 2, owed: 6, undeclared: 0 });
   });
 
   it('T1173 · the Requirement Room area is delivered AND renders', () => {

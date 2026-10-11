@@ -4,7 +4,7 @@
  * **Read functions only** (`FR-HUB-074`, `R-039-16`): the registry list and
  * one entry's detail. Configuration and credentials are set through the API by
  * the project owner; this module has no function that could write either, and
- * `frontend/tests/unit/shell/integrations-read-only.spec.ts` asserts the page
+ * `frontend/tests/unit/shell/areas.spec.ts` (`T2208`) asserts the page
  * imports none.
  *
  * Shapes mirror `backend/src/modules/integrations/registry.service.ts`. A field
