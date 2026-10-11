@@ -124,3 +124,30 @@ before any execution existed, the third because it answered `503` rather than `4
 ### Reverted
 
 Restored from the copy; the suite returned to **4 passed**.
+
+---
+
+## 5. `DEF-047-002` — the API takes its agent runtime from a composition root (`T2593`)
+
+Recorded 2026-10-11.
+
+### The mutation
+
+`backend/src/api.ts` — `createApi` builds from `AppModule` alone whatever it is handed, so the
+runtime never reaches `ExpertsModule`:
+
+```diff
+-    options.expertAgentRuntime === undefined
++    true // MUTATION: the runtime handed in is ignored
+       ? AppModule
+```
+
+### Observed
+
+`vitest run --project backend-integration tests/integration/experts-runtime-composition.spec.ts` —
+**1 failed | 2 passed (3)**: the case that hands a runtime in failed, because `ExpertGateways` still
+refused naming `DEF-047-002`. The no-runtime case and the global-module case passed, as they should.
+
+### Reverted
+
+Restored from the copy; the suite returned to **3 passed**.

@@ -103,10 +103,6 @@ export class ExpertsService {
     },
     // R-047-13, Phase 9 — EPIC-031/032/038 bound to their adapters; gateways and
     // executions still refuse (R-047-2, DEF-047-001).
-    // T2566 — no agent runtime is composed into the API process (DEF-047-002):
-    // `backend/` may name no adapter or provider. A composition root that can
-    // overrides this token; until one does, ExpertGateways refuses naming why.
-    { provide: EXPERT_AGENT_RUNTIME, useValue: null },
     {
       provide: EXPERT_PORTS,
       inject: [
@@ -121,7 +117,10 @@ export class ExpertsService {
         ExecutionRegistryFacade,
         ExecutionRegistrationService,
         ExecutionTimelineService,
-        EXPERT_AGENT_RUNTIME,
+        // T2593, DEF-047-002 — supplied by a composition root outside `backend/src`
+        // (`@pmi/api-launcher`) through `ExpertAgentRuntimeModule.forRoot`, which
+        // is global. Optional: absent, ExpertGateways refuses naming the defect.
+        { token: EXPERT_AGENT_RUNTIME, optional: true },
       ],
       useFactory: (
         engine: DecisionEngine,
@@ -135,7 +134,7 @@ export class ExpertsService {
         registry: ExecutionRegistryFacade,
         registration: ExecutionRegistrationService,
         timeline: ExecutionTimelineService,
-        runtime: AgentRuntime | null,
+        runtime: AgentRuntime | undefined,
       ): ExpertPorts => ({
         ...refusingPorts(),
         approvals: decisionApprovals(engine, decisions),
@@ -158,7 +157,7 @@ export class ExpertsService {
             ? new PrismaExpertIdentityStore(prismaClient() as unknown as IdentityStoreClient)
             : new InMemoryExpertIdentityStore(),
         ),
-        gateways: expertGateways(runtime),
+        gateways: expertGateways(runtime ?? null),
       }),
     },
     {

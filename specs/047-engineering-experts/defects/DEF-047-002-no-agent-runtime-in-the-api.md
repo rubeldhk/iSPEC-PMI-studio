@@ -1,6 +1,6 @@
 # DEF-047-002 — No agent runtime is composed into the API process
 
-**Epic**: `EPIC-047` · **Found**: 2026-10-10, implementing `T2566` for `DEF-047-001` · **Status**: Open ·
+**Epic**: `EPIC-047` · **Found**: 2026-10-10, implementing `T2566` for `DEF-047-001` · **Status**: Resolved 2026-10-11 by option A (Phase 16, `T2590`–`T2598`) ·
 **Severity**: High (no Expert run can be dispatched in the composed application; no data at risk)
 
 ## What was found
@@ -39,3 +39,24 @@ This is an architecture choice, so it is recorded rather than taken here.
 - `backend/tests/integration/experts-execution-identity.spec.ts` — a runtime overridden in the test
   runs end to end through the composed application; without one, dispatch refuses naming this
   defect after the run is registered.
+
+## Resolution — 2026-10-11, option A
+
+The Project Owner chose option A. `api-launcher/` (`@pmi/api-launcher`) is the API's composition root:
+it composes the fixture agent, one agent gateway per model in `PMI_EXPERT_MODELS` and the Docker
+execution environment, builds each run's sandbox from the engine image, the AI credential and the
+run's own correlation id, and starts the API through `@pmi/backend/api`. The container entrypoint
+starts it. `ADR-0030` is amended.
+
+`main.ts` and every test that composes `AppModule` still refuse, naming this defect: the runtime is
+injected optionally through a global module, so nothing became permissive by default.
+
+Started for real on 2026-10-11, the launcher logged `api.started` with `expertAgentRuntime: true` and
+answered `401` on `/v1/experts`. Running it surfaced one defect, fixed in the same change: tsx applies
+a tsconfig only to the files its `include` covers, so the backend's Nest modules started without
+decorator support. `api-launcher/tsconfig.run.json` covers both directories, and the scripts and the
+entrypoint use it.
+
+**Still open, deliberately:** the compose `app` container mounts no Docker socket, so a run dispatched
+there fails naming the provider. Mounting one gives the API process control of the host's Docker
+daemon — a security decision, not this defect's.

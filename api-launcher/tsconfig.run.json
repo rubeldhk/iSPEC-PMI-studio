@@ -1,0 +1,5 @@
+{
+  "//": "EPIC-047 T2597 — the config the launcher RUNS under (tsx), not the one it type-checks under. tsx applies a tsconfig only to the files its include covers, and the API it starts is backend/src, whose Nest modules need the base config's experimentalDecorators. Covering both directories is what makes `pnpm --filter @pmi/api-launcher start` start.",
+  "extends": "../tsconfig.base.json",
+  "include": ["src/**/*.ts", "../backend/src/**/*.ts", "../packages/*/src/**/*.ts"]
+}

@@ -199,3 +199,36 @@ describe('T2565 · with no runtime composed, gateways refuse naming why', () => 
     await expect(refusing.gatewaysFor('model-a')).rejects.toThrow(/ExpertGateways is not bound.*DEF-047-002/);
   });
 });
+
+describe('T2590 · the session may be built per run (DEF-047-002)', () => {
+  it("calls a session function with the run's correlation id, so a sandbox carries its own (PC-3)", async () => {
+    const { env, started } = environment();
+    const asked: string[] = [];
+    const [runner] = await agentRunners({
+      gateways: [gateway(descriptor(), async () => agentOk({ exitCode: 0, stdout: '' }, descriptor()))],
+      environment: env,
+      session: ({ correlationId }) => {
+        asked.push(correlationId);
+        return { ...sessionTemplate, env: { CORRELATION: correlationId } };
+      },
+    }).gatewaysFor('model-a');
+    await runner!.run(invocation, ctx());
+    expect(asked).toEqual(['exe_1']);
+    expect(started[0]!.env).toEqual({ CORRELATION: 'exe_1' });
+  });
+
+  it('a session function that refuses fails the run before any session starts, naming why', async () => {
+    const { env, started } = environment();
+    const ran: string[] = [];
+    const [runner] = await agentRunners({
+      gateways: [gateway(descriptor(), async () => agentOk({ exitCode: 0, stdout: '' }, descriptor()), ran)],
+      environment: env,
+      session: () => {
+        throw new Error('Refusing to start a sandbox without an AI provider credential.');
+      },
+    }).gatewaysFor('model-a');
+    await expect(runner!.run(invocation, ctx())).rejects.toThrow(/without an AI provider credential/);
+    expect(started).toEqual([]);
+    expect(ran).toEqual([]);
+  });
+});

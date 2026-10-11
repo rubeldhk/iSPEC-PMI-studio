@@ -95,6 +95,23 @@ SEED_USER_EMAIL=dev@pmi.local SEED_USER_PASSWORD='choose-something' pnpm --filte
 
 The seed refuses to run with `NODE_ENV=production`.
 
+### Engineering Experts — the agent runtime (EPIC-047)
+
+An Engineering Expert run executes in an agent runtime that **`api-launcher/`** composes and hands to
+the API: `backend/src` may name no agent adapter or execution provider, so the API's composition root
+lives outside it (`DEF-047-002`, `ADR-0030`). `pnpm --filter @pmi/api-launcher start` starts the API
+that way, and so does the container's entrypoint; `pnpm --filter @pmi/backend start` still starts it
+with no runtime, and Expert dispatch then refuses naming `DEF-047-002`.
+
+| Variable | What it is | Default |
+|---|---|---|
+| `PMI_EXPERT_MODELS` | the models an Expert may be dispatched to, comma-separated; one agent gateway per model | empty: only the fixture agent |
+| `PMI_EXPERT_IMAGE` | the sandbox image an Expert run executes in | empty: the engine image |
+
+A run also needs `AI_PROVIDER_TOKEN`, a reachable Docker daemon and the `pmi-egress-generation`
+network. The containerised stack mounts no Docker socket, so there a dispatched run fails naming the
+provider — mounting one is a separate decision.
+
 ### Local workspace — the variables (EPIC-041)
 
 A project can own a **directory on your machine** that PMI Studio prepares and your own agent
@@ -350,7 +367,7 @@ again. `pnpm test:arch` and `pnpm test:governance` remain ungated, and run every
 |---|---|
 | `T884` — `tests/governance/accessibility-record.spec.ts` | Waits on `T885`, a manual keyboard and screen-reader pass. An agent cannot hear a screen reader, and a record claiming otherwise would fabricate the evidence the check exists to test for |
 | `T999u` — `backend/tests/architecture/defect-room-transcript.spec.ts` | Waits on `T999t`, the EPIC-035 Tier 2 journey. It is keyboard-only against a running application, and two of its seven steps refuse in this deployment because `RepairTaskPort` and `TestExecution` are unbound — so the transcript cannot be produced by an agent, and typing one is the fabrication the check tests for. Added to this table on 2026-09-23: it had been red since EPIC-035 while the table said anything else red was a real failure |
-| `T1992` — `backend/tests/architecture/experts-transcript.spec.ts` | Waits on the EPIC-047 Tier 2 Engineering Experts journey. It needs real Experts and real runs on a running application, and although registering, approving and registering a run with EPIC-037 all work (Phase 9, `DEF-047-001`), no run can execute because no agent runtime is composed into the API (`DEF-047-002`) — so the transcript cannot be produced by an agent, and typing one is the fabrication the check tests for |
+| `T1992` — `backend/tests/architecture/experts-transcript.spec.ts` | Waits on the EPIC-047 Tier 2 Engineering Experts journey. It needs real Experts and real runs on a running application, and although every step now exists — a run executes in the runtime `api-launcher/` composes (`DEF-047-001`, `DEF-047-002`) — it needs Docker, the egress network and an AI credential on a running stack, and the journey needs a person at the keyboard — so the transcript cannot be produced by an agent, and typing one is the fabrication the check tests for |
 | `T1294` — `backend/tests/architecture/context-transcript.spec.ts` | Waits on `T1301`, the EPIC-038 Tier 2 journey (assemble → inspect → follow an exclusion). `POST /context/packages` answers `503` in every deployment because `EmbeddingPort` has no owner anywhere in the programme, so the first step cannot complete — and typing the transcript is the fabrication the check tests for. Added 2026-10-08 |
 | `T792` — `backend/tests/architecture/decision-inbox-transcript.spec.ts` | Waits on `T791`, the EPIC-031 Tier 2 Decision Inbox journey. The harness (`e2e/tests/epic-031-inbox.spec.ts`) is authored and writes the transcript itself, but the run needs the reference-local stack and a seeded user's password, which an agent does not hold — typing the transcript is the fabrication the check tests for. Added 2026-10-08 |
 | `tests/integration/scale.spec.ts` | Load-sensitive, not broken — see above |

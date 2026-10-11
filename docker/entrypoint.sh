@@ -27,5 +27,11 @@ pnpm --filter @pmi/backend exec prisma migrate deploy
 # NODE_ENV=production outright. Both refusals must survive containerisation.
 # Seeding stays a command a person runs, with the password supplied then.
 
+# EPIC-047 T2597 (DEF-047-002, option A) — the API starts through its
+# composition root, which composes the agent runtime an Engineering Expert run
+# executes in (backend/src may name no agent adapter or execution provider).
+# This container mounts no Docker socket, so a dispatched Expert run fails
+# naming the provider; mounting one is a separate decision, not taken here.
 echo "entrypoint: starting the API on ${PORT:-3000}"
-exec pnpm --filter @pmi/backend exec tsx src/main.ts
+# tsconfig.run.json covers backend/src, whose Nest modules need decorators.
+exec pnpm --filter @pmi/api-launcher exec tsx --tsconfig=tsconfig.run.json src/main.ts

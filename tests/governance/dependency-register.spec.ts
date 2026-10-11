@@ -32,7 +32,7 @@ import { REPO_ROOT } from './helpers';
 const REGISTER = join(REPO_ROOT, 'specs', '_shared', 'dependencies.md');
 
 /** The packages whose `dependencies` this rule governs. */
-const PACKAGES = ['frontend', 'backend', 'worker'] as const;
+const PACKAGES = ['frontend', 'backend', 'worker', 'api-launcher'] as const;
 
 /**
  * Register rows name **components**, not npm package names, and a component is

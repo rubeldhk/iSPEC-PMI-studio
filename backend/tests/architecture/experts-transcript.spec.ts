@@ -9,8 +9,9 @@
  * It cannot be produced here, and typing one would be the fabrication this
  * check exists to catch: registering and approving an Expert work (Phase 9), and
  * a dispatch is registered with `EPIC-037` under the Expert's own identity
- * (`DEF-047-001`), but **no run executes to show** because no agent runtime is
- * composed into the API (`DEF-047-002`).
+ * (`DEF-047-001`) and executes in the runtime `api-launcher/` composes
+ * (`DEF-047-002`). What an agent cannot supply is the running stack — Docker,
+ * the egress network, an AI credential — and a person walking the journey.
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

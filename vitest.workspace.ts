@@ -87,6 +87,16 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-047 T2596, DEF-047-002 — the API's composition root. No
+    // `passWithNoTests` (TS-005): registered in the change that fills it.
+    test: {
+      name: 'api-launcher-unit',
+      root: './api-launcher',
+      include: ['tests/unit/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     test: {
       name: 'engine-contract',
       root: './packages/engine-contract',
