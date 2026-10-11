@@ -11,7 +11,8 @@
  * - the adapter catalog, from `composition/integration-adapters.ts`, the one
  *   backend file that imports adapter packages (`R-039-1`);
  * - the declared ports as **seams**: `CapabilityPolicy` bound to `EPIC-031`'s
- *   decision engine (`T2212`), `EvidenceSink` bound refusing, and
+ *   decision engine (`T2212`), `EvidenceSink` bound to `EPIC-032`'s service
+ *   and completion gate (`T2215`), and
  *   `CredentialKeyring` bound from `PMI_INTEGRATION_KEYS` when present
  *   (`R-039-13`, `R-039-10`);
  * - `PMI_ENVIRONMENT`, read once; the module refuses to start without it
@@ -19,7 +20,7 @@
  * - the ticker that drives `runDueHealthChecks`, off under
  *   `PMI_INTEGRATION_SCHEDULER=off` (`R-039-6`).
  */
-import { Inject, Module, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Inject, Module, forwardRef, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { CAPABILITY_CONTRACTS, PLATFORM_ENVIRONMENTS, isPlatformEnvironment } from '@pmi/capability-contract';
 import { prismaClient } from '../../persistence/prisma.js';
 import { createAdapterCatalog } from '../../composition/integration-adapters.js';
@@ -33,6 +34,9 @@ import { DecisionModule } from '../decision/decision.module.js';
 import { DECISION_REPOSITORY } from '../decision/decision.tokens.js';
 import type { DecisionRepository } from '../decision/decision.repository.js';
 import { DecisionEngine } from '../decision/evaluator.js';
+import { CompletionGate } from '../evidence/completion.gate.js';
+import { EvidenceModule } from '../evidence/evidence.module.js';
+import { EvidenceService } from '../evidence/evidence.service.js';
 import { CONNECTOR_CREDENTIAL_STORE } from '../connector/connector.tokens.js';
 import type { ConnectorCredentialStore } from '../connector/connector-credential.store.js';
 import { WorkstationConnectionService } from '../connector/workstation-connection.service.js';
@@ -50,7 +54,9 @@ import { HubEmbeddingPort } from './embedding/hub-embedding-port.js';
 import { EvidenceIntakeController } from './evidence/intake.controller.js';
 import { startIntakeJob } from './evidence/intake.job.js';
 import { createHub, type Hub } from './hub.js';
-import { HUB } from './hub.token.js';
+import { HUB, INTEGRATIONS_ATTESTATION_SOURCE } from './hub.token.js';
+import { hubAttestationSource } from './evidence/attestation-source.adapter.js';
+import { evidenceServiceSink } from './evidence/evidence-sink.adapter.js';
 import { RegistryController } from './registry.controller.js';
 import { CapabilityRequestsController } from './requests/capability-requests.controller.js';
 import { decisionCapabilityPolicy } from './policy/capability-policy.adapter.js';
@@ -82,7 +88,9 @@ export function resolvePlatformEnvironment(env: Readonly<Record<string, string |
 export const HEALTH_TICK_MS = 30_000;
 
 @Module({
-  imports: [AuditModule, AccessModule, ProjectsModule, ConnectorModule, ExecutionsModule, DecisionModule],
+  // `EvidenceModule` imports this module back for `AttestationSource`; the
+  // providers do not cycle (the source needs only the store and catalog).
+  imports: [AuditModule, AccessModule, ProjectsModule, ConnectorModule, ExecutionsModule, DecisionModule, forwardRef(() => EvidenceModule)],
   controllers: [RegistryController, ConfigurationController, CredentialsController, CapabilityRequestsController, EvidenceIntakeController, DeploymentController],
   providers: [
     { provide: PLATFORM_ENVIRONMENT, useFactory: (): string => resolvePlatformEnvironment(process.env) },
@@ -107,7 +115,23 @@ export const HEALTH_TICK_MS = 30_000;
         return seam;
       },
     },
-    { provide: EvidenceSinkSeam, useValue: new EvidenceSinkSeam() },
+    {
+      // `T2215` — evidence intake contributes through EPIC-032's service, after
+      // its completion gate says a binding would read it (`R-039-11`).
+      provide: EvidenceSinkSeam,
+      inject: [EvidenceService, CompletionGate],
+      useFactory: (service: EvidenceService, gate: CompletionGate): EvidenceSinkSeam => {
+        const seam = new EvidenceSinkSeam();
+        seam.bind(evidenceServiceSink(service, gate, () => new Date()));
+        return seam;
+      },
+    },
+    {
+      // `T2215` — what EPIC-032's `EVIDENCE_ATTESTATION_SOURCE` is bound to.
+      provide: INTEGRATIONS_ATTESTATION_SOURCE,
+      inject: [INTEGRATIONS_STORE, ADAPTER_CATALOG],
+      useFactory: (store: IntegrationsStore, catalog: AdapterCatalog) => hubAttestationSource({ store, catalog }),
+    },
     {
       provide: CredentialKeyringSeam,
       useFactory: (): CredentialKeyringSeam => {
@@ -208,7 +232,7 @@ export const HEALTH_TICK_MS = 30_000;
     // `R-039-18` — what `EPIC-038`'s `ContextModule` binds `EMBEDDING_PORT` to.
     { provide: HubEmbeddingPort, inject: [HUB], useFactory: (hub: Hub): HubEmbeddingPort => hub.embedding },
   ],
-  exports: [HUB, CapabilityPolicySeam, EvidenceSinkSeam, CredentialKeyringSeam, INTEGRATIONS_TICKER, HubEmbeddingPort],
+  exports: [HUB, CapabilityPolicySeam, EvidenceSinkSeam, CredentialKeyringSeam, INTEGRATIONS_TICKER, HubEmbeddingPort, INTEGRATIONS_ATTESTATION_SOURCE],
 })
 export class IntegrationsModule implements OnModuleInit, OnModuleDestroy {
   constructor(

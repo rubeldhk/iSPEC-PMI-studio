@@ -23,10 +23,11 @@ describe('T856i · every absent port refuses', () => {
   });
 
   it('names the Epic that fills each', () => {
+    // EPIC-039 T2215 — the U-13 adapter registry is EPIC-039's Integration Hub (R-039-11); EPIC-013 was the name it was declared under.
     expect(Object.fromEntries(EVIDENCE_PORTS.map((p) => [p.name, p.filledBy]))).toEqual({
       EvidenceStorage: 'EPIC-025',
       AccessPolicy: 'EPIC-024',
-      AttestationSource: 'EPIC-013',
+      AttestationSource: 'EPIC-039',
     });
   });
 });
