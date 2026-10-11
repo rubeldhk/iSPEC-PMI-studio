@@ -24,7 +24,8 @@ function code(path: string): string {
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
-const apiMain = code('../../../src/main.ts');
+// T2593 (EPIC-047, DEF-047-002) — the bootstrap moved to `api.ts`; `main.ts` delegates to it.
+const apiMain = code('../../../src/api.ts');
 
 const UUID = '11111111-1111-4111-8111-111111111111';
 

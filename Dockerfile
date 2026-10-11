@@ -53,6 +53,8 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY worker/package.json ./worker/
+# EPIC-047 T2597 (DEF-047-002) — the API's composition root; the entrypoint starts it.
+COPY api-launcher/package.json ./api-launcher/
 COPY e2e/package.json ./e2e/
 COPY packages ./packages
 COPY engine-adapters ./engine-adapters
@@ -84,6 +86,7 @@ RUN pnpm --filter @pmi/backend exec prisma generate
 
 COPY backend ./backend
 COPY worker ./worker
+COPY api-launcher ./api-launcher
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
 RUN chmod +x ./docker/entrypoint.sh
 

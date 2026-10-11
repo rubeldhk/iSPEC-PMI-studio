@@ -41,21 +41,30 @@ import type { ExpertGateways, ExpertRunner, RunReport } from '../experts.tokens.
 /** `T2566` — the composed runtime an Expert run executes in, when one is composed. */
 export const EXPERT_AGENT_RUNTIME = Symbol('EXPERT_AGENT_RUNTIME');
 
+/** The session request, less what each run supplies: its timeout and its signal. */
+export type SessionTemplate = Omit<ExecutionRequest, 'timeoutMs' | 'signal'>;
+
 export interface AgentRuntime {
   readonly gateways: readonly AgentGateway[];
   readonly environment: ProjectExecutionEnvironment;
-  /** The session request, less what each run supplies: its timeout and its signal. */
-  readonly session: Omit<ExecutionRequest, 'timeoutMs' | 'signal'>;
+  /**
+   * The session each run starts — fixed, or built per run (`T2591`), so a
+   * sandbox can carry the run's own correlation id (`PC-3`). A function that
+   * throws refuses the run before any session starts.
+   */
+  readonly session: SessionTemplate | ((run: { readonly correlationId: string }) => SessionTemplate);
 }
 
 function runnerFor(gateway: AgentGateway, runtime: AgentRuntime): ExpertRunner {
   return {
     descriptor: gateway.descriptor,
     async run(invocation, ctx): Promise<RunReport> {
+      const template =
+        typeof runtime.session === 'function' ? runtime.session({ correlationId: ctx.correlationId }) : runtime.session;
       let session: ExecutionSession;
       try {
         session = await runtime.environment.start({
-          ...runtime.session,
+          ...template,
           timeoutMs: ctx.timeoutMs,
           ...(ctx.signal !== undefined ? { signal: ctx.signal } : {}),
         });

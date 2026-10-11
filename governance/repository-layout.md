@@ -42,6 +42,7 @@ is how cross-references break.
 | Architecture test | `backend/tests/architecture/` | Constitution V | current |
 | Backend service | `backend/src/` | `coding-standards.md` | current |
 | Worker | `worker/src/` | `coding-standards.md` | current |
+| API composition root | `api-launcher/src/` | `ADR-0030` | current |
 | Engine contract | `packages/engine-contract/` | `ADR-0001` | current |
 | Engine adapter | `engine-adapters/<name>/` | `ADR-0001` | current |
 | Database schema | `backend/prisma/` | `_shared/data-model.md` | current |

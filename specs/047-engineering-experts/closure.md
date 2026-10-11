@@ -238,3 +238,55 @@ launcher package outside `backend/src`. `T1992` stays red until a run can execut
 
 Decide `DEF-047-002`, then `/speckit-specify` for the API composition root (or an amendment to
 `ADR-0030`) before any further Expert work.
+
+---
+
+## 2026-10-11 — Phase 16: `DEF-047-002` resolved by option A (`T2590`–`T2598`)
+
+**The last structural blocker is gone; a real run has not been exercised.** The API has a composition
+root outside `backend/src`, and the run path is proven through the composed application with a
+recording gateway and environment. No real agent ran in Docker in this session. The root:
+`api-launcher/` composes the fixture agent, one agent gateway per model in `PMI_EXPERT_MODELS` and the
+Docker execution environment, and starts the API through `@pmi/backend/api`. The container entrypoint
+starts it. `ADR-0030` is amended.
+
+| Piece | Where |
+|---|---|
+| The API's exported door — `createApi`, `bootstrapApi` | `backend/src/api.ts`, export `./api` |
+| The runtime seam — global, injected optionally | `backend/src/composition/expert-agent-runtime.ts` |
+| The composition root | `api-launcher/src/compose.ts`, `src/main.ts` |
+| Per-run sessions — the run's own correlation id in the sandbox (`PC-3`) | `runners.adapter.ts` |
+| One-way edge, linted both ways | `eslint.config.js`, `eslint-boundaries.spec.ts` |
+
+### Decisions taken
+
+- **Optional injection through a global module**, so `main.ts` and every test composing `AppModule`
+  keep the refusal: nothing became permissive by default.
+- **One gateway per configured model.** Dispatch selects by the model a contract names, so a model not
+  listed is refused naming it, never substituted.
+- **The fixture agent is always composed**, as the worker composes it; it serves only contracts that
+  name `fixture-1`.
+- **Not taken:** mounting a Docker socket in the compose `app` container. There a dispatched run fails
+  naming the provider. That is a security decision of its own.
+
+### Found by running it
+
+Started for real, the launcher first failed: tsx applies a tsconfig only to files its `include`
+covers, and the backend's Nest modules started without decorator support. `tsconfig.run.json` covers
+both directories; the scripts and the entrypoint use it. Restarted, it logged `api.started` with
+`expertAgentRuntime: true` and answered `401` on `/v1/experts`.
+
+### Tests
+
+| Suite | Result |
+|---|---|
+| runner per-run session (unit) | observed failing (2), then **14 passed** |
+| `experts-runtime-composition` (composed) | observed failing (no module), then **3 passed**; ignoring the runtime fails 1 (`mutation-proofs.md` §5) |
+| `api-launcher-unit` | observed failing (no module), then **8 passed** |
+| entrypoint | the launcher assertion observed failing on the old entrypoint, then **8 passed** |
+| lint boundary | a launcher → `worker-api` import and a backend → launcher import both rejected, then removed |
+
+### Still not done
+
+`T1992` — the Tier 2 transcript needs a running stack with Docker, the egress network and an AI
+credential, and a person at the keyboard. Promotion, as above.
