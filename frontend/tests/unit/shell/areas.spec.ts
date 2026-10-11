@@ -319,8 +319,7 @@ describe('T2208 (EPIC-039) · the Integrations area is delivered AND renders, vi
     const page = readFileSync(resolve(src, 'pages/Integrations.tsx'), 'utf8');
     const client = readFileSync(resolve(src, 'services/integrations.client.ts'), 'utf8');
     // The page imports only types from a client, and the one client it reads through has no method but GETs.
-    for (const line of page.split('
-').filter((l) => /^import /.test(l) && /services\//.test(l))) expect(line, line).toMatch(/^import type /);
+    for (const line of page.split('\n').filter((l) => /^import /.test(l) && /services\//.test(l))) expect(line, line).toMatch(/^import type /);
     expect(page).not.toMatch(/services\/api['"]/);
     expect(client).not.toMatch(/method:\s*'(POST|PUT|PATCH|DELETE)'/);
     expect(client).not.toMatch(/(put|post|patch|delete|set|create|update|remove|register|retire)[A-Z]\w*\s*[(:]/);
