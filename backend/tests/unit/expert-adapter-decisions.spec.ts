@@ -32,6 +32,8 @@ interface Row {
   readonly workspaceId: string;
   readonly outcome: DecisionOutcome;
   readonly resolvesDecisionId: string | null;
+  readonly requestedBy?: string | null;
+  readonly explanation?: { readonly closure?: { readonly kind: string } };
 }
 
 function engine(outcome: DecisionOutcome = 'pending') {
@@ -134,11 +136,25 @@ describe('T1977 · the resolution is read through resolutionOf, every time', () 
     await expect(decisionApprovals(engine(), r).resolutionOf('ws_1', 'd_1')).resolves.toBe('refused');
   });
 
-  it('auto-executed by policy is approved; refused outright is refused', async () => {
-    const r = reader([row('d_1', 'auto-executed'), row('d_2', 'refused')]);
+  // `T2573` — approved with no human (auto-executed, or by gates alone) is kept
+  // apart from a human's approval, so a gated assignment can insist on one.
+  it('auto-executed or approved outright is approved-unattended; refused outright is refused', async () => {
+    const r = reader([row('d_1', 'auto-executed'), row('d_2', 'refused'), row('d_3', 'approved')]);
     const approvals = decisionApprovals(engine(), r);
-    await expect(approvals.resolutionOf('ws_1', 'd_1')).resolves.toBe('approved');
+    await expect(approvals.resolutionOf('ws_1', 'd_1')).resolves.toBe('approved-unattended');
     await expect(approvals.resolutionOf('ws_1', 'd_2')).resolves.toBe('refused');
+    await expect(approvals.resolutionOf('ws_1', 'd_3')).resolves.toBe('approved-unattended');
+  });
+
+  // `T2575` — a human's rejection (FR-DPE-017) is not a policy refusal.
+  it('closed as rejected is rejected; closed as withdrawn is refused', async () => {
+    const closed = (id: string, kind: string): Row => ({ ...row(id, 'refused', 'd_1'), explanation: { closure: { kind } } });
+    await expect(
+      decisionApprovals(engine(), reader([row('d_1', 'pending'), closed('d_2', 'rejected')])).resolutionOf('ws_1', 'd_1'),
+    ).resolves.toBe('rejected');
+    await expect(
+      decisionApprovals(engine(), reader([row('d_1', 'pending'), closed('d_2', 'withdrawn')])).resolutionOf('ws_1', 'd_1'),
+    ).resolves.toBe('refused');
   });
 
   it('is not cached: a later resolution is the one read', async () => {
@@ -177,6 +193,43 @@ describe('T1977 · the resolution is read through resolutionOf, every time', () 
     await expect(decisionApprovals(engine(), failing).resolutionOf('ws_1', 'd_1')).rejects.toThrow(
       /decision store unreachable/,
     );
+  });
+});
+
+describe('T2575, T2577 · fail-closed submission and withdrawal', () => {
+  it('a fail-closed refusal, or one EPIC-031 could not record, is a 503 and no decision id', async () => {
+    const failing = (decisionId: string) => ({
+      async decide() {
+        return {
+          decisionId,
+          outcome: 'refused' as const,
+          explanation: { constraintCited: 'fail closed — the tenant policy could not be read' } as DecisionResult['explanation'],
+        };
+      },
+    });
+    for (const id of ['d_9', 'unrecorded']) {
+      const err = await decisionApprovals(failing(id), reader([])).submit(submission).catch((e: unknown) => e);
+      expect((err as { code?: string }).code).toBe('governance_seam_unbound');
+      expect((err as Error).message).toMatch(/tenant policy could not be read/);
+    }
+  });
+
+  it('withdraws through refuse: withdrawn by the requester, rejected by anyone else', async () => {
+    const calls: { kind: string; by: string }[] = [];
+    const maker = {
+      ...engine(),
+      async refuse(input: { by: { id: string }; kind: string }) {
+        calls.push({ kind: input.kind, by: input.by.id });
+        return { explanation: { closure: { kind: input.kind, reason: 'r' } } as unknown as DecisionResult['explanation'] };
+      },
+    };
+    const r = reader([{ ...row('d_1', 'pending'), requestedBy: 'u_author' }]);
+    await decisionApprovals(maker, r).withdraw({ workspaceId: 'ws_1', decisionId: 'd_1', actorId: 'u_author', reason: 'r' });
+    await decisionApprovals(maker, r).withdraw({ workspaceId: 'ws_1', decisionId: 'd_1', actorId: 'u_other', reason: 'r' });
+    expect(calls).toEqual([
+      { kind: 'withdrawn', by: 'u_author' },
+      { kind: 'rejected', by: 'u_other' },
+    ]);
   });
 });
 

@@ -37,6 +37,8 @@ export interface Admitted {
   readonly parent: ExpertSession;
   readonly depth: number;
   readonly authority: EffectiveAuthority;
+  /** `T2535` — the bound the delegate's session insert is held to, atomically. */
+  readonly maxFanOut: number;
 }
 
 /** `FR-EXP-030`, `FR-EXP-033`, `FR-EXP-034`, `FR-EXP-035`. */
@@ -98,7 +100,7 @@ export async function admitDelegation(
       `fan-out: session ${parent.executionId} already has ${siblings} delegate(s), the policy's maximum of ${policy!.maxFanOut} (FR-EXP-033)`,
     );
   }
-  return { parent, depth, authority: intersect(parent.effectiveAuthority, childContract) };
+  return { parent, depth, authority: intersect(parent.effectiveAuthority, childContract), maxFanOut: policy!.maxFanOut };
 }
 
 /** From the parent of `session` up to the root, nearest first. */

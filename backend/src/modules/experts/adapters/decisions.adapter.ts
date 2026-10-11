@@ -36,34 +36,76 @@
  * `workspace:<id>` — matched by no project-scoped steering rule, which is the
  * intended reading, and never mistaken for a real project id. `EPIC-031` has
  * no workspace-scoped decision; this is the gap, stated where it is crossed.
+ *
+ * ## Added by the Phase 16–17 convergence (`R-047-17`)
+ *
+ * - **Who approved it** (`T2573`). An approval that resolves a pending decision
+ *   was given by a human — `EPIC-031`'s `approve` admits no other. One taken
+ *   outright (`auto-executed`, or `approved` by gates alone) had no human, and
+ *   reads `approved-unattended`: a contract version stands on it, a gated
+ *   assignment (`FR-EXP-054`) does not.
+ * - **A rejection is not a policy refusal** (`T2575`). A closure of kind
+ *   `rejected` (`FR-DPE-017`) is a human's judgement and reads `rejected`; a
+ *   version is resubmitted after a policy refusal or a withdrawal, never after
+ *   one.
+ * - **A refusal without evaluation is not a decision** (`T2575`). When a source
+ *   cannot be read `EPIC-031` refuses fail-closed (`FR-DPE-050`), sometimes
+ *   unable to store even that (`'unrecorded'`). Submission then fails with a
+ *   503 naming why, and the caller stores nothing.
+ * - **Withdrawal** (`T2577`, `T2602`) closes a pending decision through
+ *   `refuse`: `withdrawn` when the requester takes it back, `rejected` when
+ *   another human supersedes it (a reassignment by someone else).
  */
-import type { DecisionOutcome, DecisionRequest, DecisionResult } from '@pmi/decision-contract';
+import type { ActorRef, ClosureKind, DecisionOutcome, DecisionRequest, DecisionResult } from '@pmi/decision-contract';
+import { GovernanceSeamUnboundError } from '../../../core/errors.js';
+import { FAIL_CLOSED, UNRECORDED_DECISION } from '../../decision/evaluator.js';
 import type { ContractApprovals, Resolution } from '../experts.tokens.js';
 
 /** The scope a workspace-level decision names in `EPIC-031`'s `projectId`. */
 export const WORKSPACE_DECISION_SCOPE = (workspaceId: string): string => `workspace:${workspaceId}`;
 
-/** `EPIC-031`'s `DecisionEngine`, as far as submitting needs it. */
+/** `EPIC-031`'s `DecisionEngine`, as far as submitting and withdrawing need it. */
 export interface DecisionMaker {
-  decide(request: DecisionRequest): Promise<Pick<DecisionResult, 'decisionId'>>;
+  decide(
+    request: DecisionRequest,
+  ): Promise<Pick<DecisionResult, 'decisionId'> & Partial<Pick<DecisionResult, 'outcome' | 'explanation'>>>;
+  refuse?(input: {
+    workspaceId: string;
+    decisionId: string;
+    by: ActorRef;
+    kind: ClosureKind;
+    reason: string;
+  }): Promise<Pick<DecisionResult, 'explanation'>>;
+}
+
+/** What this adapter reads of a decision record. */
+interface DecisionRow {
+  readonly outcome: DecisionOutcome;
+  readonly resolvesDecisionId?: string | null;
+  readonly requestedBy?: string | null;
+  readonly actorId?: string;
+  readonly explanation?: { readonly closure?: { readonly kind: string } };
 }
 
 /** `EPIC-031`'s `DecisionRepository`, as far as reading a resolution needs it. */
 export interface DecisionReader {
-  get(workspaceId: string, id: string): Promise<{ readonly outcome: DecisionOutcome } | null>;
+  get(workspaceId: string, id: string): Promise<DecisionRow | null>;
   /** The decision that resolved `id`, if any. */
-  resolutionOf(workspaceId: string, id: string): Promise<{ readonly outcome: DecisionOutcome } | null>;
+  resolutionOf(workspaceId: string, id: string): Promise<DecisionRow | null>;
 }
 
-function asResolution(outcome: DecisionOutcome, decisionId: string): Resolution {
+function asResolution(standing: DecisionRow, resolved: boolean, decisionId: string): Resolution {
+  const { outcome } = standing;
   switch (outcome) {
     case 'pending':
       return 'pending';
     case 'approved':
+      // Only `approve` resolves a pending decision as approved, and it admits only a human.
+      return resolved ? 'approved' : 'approved-unattended';
     case 'auto-executed':
-      return 'approved';
+      return 'approved-unattended';
     case 'refused':
-      return 'refused';
+      return standing.explanation?.closure?.kind === 'rejected' ? 'rejected' : 'refused';
     default:
       // `exception`, or any outcome added later: never approval by default.
       throw new Error(
@@ -76,9 +118,9 @@ function asResolution(outcome: DecisionOutcome, decisionId: string): Resolution 
 export function decisionApprovals(engine: DecisionMaker, decisions: DecisionReader): ContractApprovals {
   return {
     async submit(input) {
-      const { decisionId } = await engine.decide({
+      const result = await engine.decide({
         workspaceId: input.workspaceId,
-        projectId: WORKSPACE_DECISION_SCOPE(input.workspaceId),
+        projectId: input.projectId ?? WORKSPACE_DECISION_SCOPE(input.workspaceId),
         actionType: input.actionType,
         target: { type: input.targetType, id: input.targetId },
         objectVersion: String(input.objectVersion),
@@ -87,7 +129,16 @@ export function decisionApprovals(engine: DecisionMaker, decisions: DecisionRead
         proposedClass: input.riskClass,
         requiredGates: [],
       });
-      return { decisionId };
+      const cited = result.explanation?.constraintCited ?? '';
+      const unrecorded = result.decisionId === UNRECORDED_DECISION;
+      if (unrecorded || (result.outcome === 'refused' && cited.startsWith(FAIL_CLOSED))) {
+        throw new GovernanceSeamUnboundError(
+          `EPIC-031 refused without evaluating, so nothing was submitted — ${cited || 'no reason was given'}` +
+            `${unrecorded ? ' (the refusal itself could not be recorded)' : ''}. ` +
+            'Submit again once it can be consulted (FR-DPE-050, R-047-5)',
+        );
+      }
+      return { decisionId: result.decisionId };
     },
 
     async resolutionOf(workspaceId, decisionId) {
@@ -99,7 +150,24 @@ export function decisionApprovals(engine: DecisionMaker, decisions: DecisionRead
         );
       }
       const resolved = await decisions.resolutionOf(workspaceId, decisionId);
-      return asResolution((resolved ?? decision).outcome, decisionId);
+      return asResolution(resolved ?? decision, resolved !== null, decisionId);
+    },
+
+    async withdraw(input) {
+      if (engine.refuse === undefined) throw new Error('EPIC-031 offers no way to close a decision here');
+      const decision = await decisions.get(input.workspaceId, input.decisionId);
+      if (decision === null) throw new Error(`EPIC-031 holds no decision ${input.decisionId}`);
+      const requester = decision.requestedBy ?? decision.actorId;
+      const closed = await engine.refuse({
+        workspaceId: input.workspaceId,
+        decisionId: input.decisionId,
+        by: { kind: 'human', id: input.actorId },
+        kind: requester === input.actorId ? 'withdrawn' : 'rejected',
+        reason: input.reason,
+      });
+      if (closed.explanation.closure === undefined) {
+        throw new Error(`EPIC-031 did not close ${input.decisionId}: ${closed.explanation.authorityApplied}`);
+      }
     },
   };
 }

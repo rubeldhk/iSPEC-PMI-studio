@@ -308,7 +308,8 @@ describe('T2561 · what happens on the execution afterwards', () => {
 
   it('a kind outside the closed set is refused, never written as something else', async () => {
     const { w, executions, executionId } = await registered();
-    await expect(executions.record('ws_1', executionId, 'approved-anyway', {})).rejects.toThrow(/approved-anyway/);
+    // `T2541` — the type already refuses it; cast to prove the run-time check refuses it too.
+    await expect(executions.record('ws_1', executionId, 'approved-anyway' as never, {})).rejects.toThrow(/approved-anyway/);
     expect(w.appended).toEqual([]);
   });
 

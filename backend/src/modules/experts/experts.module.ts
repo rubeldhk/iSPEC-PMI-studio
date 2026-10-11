@@ -101,8 +101,9 @@ export class ExpertsService {
       inject: [ACTOR_ACCESS],
       useFactory: (access: ActorAccess): Authoring => new Authoring(access),
     },
-    // R-047-13, Phase 9 — EPIC-031/032/038 bound to their adapters; gateways and
-    // executions still refuse (R-047-2, DEF-047-001).
+    // R-047-13, Phase 9 — EPIC-031/032/038 bound to their adapters; executions
+    // bound since DEF-047-001; gateways over the runtime the composition root
+    // supplies, refusing only when none is (DEF-047-002).
     {
       provide: EXPERT_PORTS,
       inject: [

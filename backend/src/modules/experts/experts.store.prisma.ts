@@ -29,6 +29,7 @@ interface Delegate {
   findMany(args: unknown): Promise<unknown[]>;
   updateMany(args: unknown): Promise<{ count: number }>;
   upsert(args: unknown): Promise<unknown>;
+  count(args: unknown): Promise<number>;
 }
 
 export interface ExpertsPrismaClient {
@@ -40,6 +41,8 @@ export interface ExpertsPrismaClient {
   readonly taskAssignment: Delegate;
   /** `T2007` — one statement, so a charge is a single atomic increment. */
   $queryRawUnsafe(query: string, ...values: unknown[]): Promise<unknown>;
+  /** `T2535` — an interactive transaction, for the fan-out lock. */
+  $transaction<T>(fn: (tx: ExpertsPrismaClient) => Promise<T>): Promise<T>;
 }
 
 type Row = Record<string, unknown>;
@@ -146,6 +149,15 @@ function toAssignment(r: Row): Assignment {
   };
 }
 
+function sessionData(row: ExpertSession): Record<string, unknown> {
+  return {
+    ...row,
+    effectiveAuthority: row.effectiveAuthority as unknown as object,
+    startedAt: new Date(row.startedAt),
+    endedAt: row.endedAt ? new Date(row.endedAt) : null,
+  };
+}
+
 export class PrismaExpertsStore implements ExpertsStore {
   constructor(private readonly prisma: ExpertsPrismaClient) {}
 
@@ -210,9 +222,9 @@ export class PrismaExpertsStore implements ExpertsStore {
     ).map(toVersion);
   }
 
-  async recordDecision(workspaceId: string, versionId: string, decisionId: string): Promise<void> {
+  async recordDecision(workspaceId: string, versionId: string, decisionId: string, prior: string | null = null): Promise<void> {
     const { count } = await this.prisma.expertContractVersion.updateMany({
-      where: { id: versionId, workspaceId, decisionId: null },
+      where: { id: versionId, workspaceId, decisionId: prior },
       data: { decisionId },
     });
     if (count === 0) throw new ConflictError('this contract version was already submitted, or does not exist');
@@ -243,16 +255,36 @@ export class PrismaExpertsStore implements ExpertsStore {
 
   async addSession(row: ExpertSession): Promise<ExpertSession> {
     try {
-      return toSession(
-        (await this.prisma.expertSession.create({
-          data: {
-            ...row,
-            effectiveAuthority: row.effectiveAuthority as unknown as object,
-            startedAt: new Date(row.startedAt),
-            endedAt: row.endedAt ? new Date(row.endedAt) : null,
-          },
-        })) as Row,
-      );
+      return toSession((await this.prisma.expertSession.create({ data: sessionData(row) })) as Row);
+    } catch (error) {
+      if (isUnique(error)) throw new ConflictError(`session ${row.executionId} already exists`);
+      throw error;
+    }
+  }
+
+  /**
+   * `T2535` — the parent's row is locked `FOR UPDATE`, so a concurrent
+   * delegation waits; its count then runs in a new READ COMMITTED snapshot and
+   * sees this one's committed insert. Count and insert cannot interleave.
+   */
+  async addDelegateSession(row: ExpertSession, maxFanOut: number): Promise<boolean> {
+    const parentId = row.delegatedFromExecutionId;
+    if (parentId === null) return false;
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const locked = (await tx.$queryRawUnsafe(
+          `SELECT 1 FROM "expert_sessions" WHERE "executionId" = $1 AND "workspaceId" = $2 FOR UPDATE`,
+          parentId,
+          row.workspaceId,
+        )) as unknown[];
+        if (locked.length === 0) return false;
+        const siblings = await tx.expertSession.count({
+          where: { workspaceId: row.workspaceId, delegatedFromExecutionId: parentId },
+        });
+        if (siblings >= maxFanOut) return false;
+        await tx.expertSession.create({ data: sessionData(row) });
+        return true;
+      });
     } catch (error) {
       if (isUnique(error)) throw new ConflictError(`session ${row.executionId} already exists`);
       throw error;

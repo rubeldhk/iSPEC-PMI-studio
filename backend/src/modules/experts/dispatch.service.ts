@@ -30,7 +30,7 @@ import { currentAssignment } from './assignment.service.js';
 import { authorityOf, contractRefusal, targetRefusal, type DispatchTarget } from './authority.js';
 import { admitDelegation, DelegationRefusal } from './delegation.service.js';
 import { LIMIT_KINDS, type ExpertContract, type ExpertSession, type LimitKind, type SessionOutcome } from './expert.types.js';
-import { capByChain, chainRemaining, chargeConsumption, planLimits, reported, type ChainCap } from './limits.js';
+import { capByChain, chainPostures, chainRemaining, chargeConsumption, planLimits, reported, type ChainCap } from './limits.js';
 import type { ExpertsStore } from './experts.store.js';
 import type { ActorAccess, ExpertGateways, ExpertPorts, ExpertRunner, RunReport } from './experts.tokens.js';
 
@@ -76,6 +76,11 @@ export interface DispatchDeps {
   /** Read at call time. */
   readonly ports: ExpertPorts;
   readonly clock?: () => string;
+  /**
+   * `T2539`, `FR-EXP-037` — how often a running dispatch reads its own stored
+   * session, so a stop recorded by another process still stops it. Default 1 s.
+   */
+  readonly pollMs?: number;
 }
 
 export type RunnerChoice =
@@ -212,6 +217,8 @@ export class DispatchService {
     // failed run (`T2001`).
     let started = false;
     let closed = false;
+    /** `T2533` — when the runner was called, so a failure can still record the time spent. */
+    let ranSince: number | null = null;
     try {
       // 3 — the checks.
       const effective = await effectiveVersion(versions, ports.approvals);
@@ -254,12 +261,14 @@ export class DispatchService {
       let parentId: string | null = null;
       // `FR-EXP-034` — the actor who started the chain; a delegate inherits it (`T2005`).
       let originator = actor.userId;
+      let maxFanOut = 0;
       if (req.delegatedFromExecutionId !== undefined) {
         const admitted = await admitDelegation(this.store, ws, req.delegatedFromExecutionId, expert, contract, actor.userId);
         authority = admitted.authority;
         depth = admitted.depth;
         parentId = admitted.parent.executionId;
         originator = admitted.parent.actorId;
+        maxFanOut = admitted.maxFanOut;
       }
       const byContract = contractRefusal(authority, req);
       if (byContract) throw new Refusal(byContract);
@@ -275,7 +284,13 @@ export class DispatchService {
       // `T2009`, `R-047-7`, `FR-EXP-036` — a delegate gets no more than its chain has left.
       let chainCapped: ChainCap['capped'] = [];
       if (parentId !== null) {
-        const cap = capByChain(plan, await chainRemaining(this.store, ws, parentId), choice.runner.descriptor.enforceableLimits);
+        const cap = capByChain(
+          plan,
+          await chainRemaining(this.store, ws, parentId),
+          choice.runner.descriptor.enforceableLimits,
+          // `T2537` — the chain's posture decides a limit this runner cannot enforce.
+          await chainPostures(this.store, ws, parentId),
+        );
         if (cap.refusal !== null) throw new DelegationRefusal(cap.refusal, parentId);
         plan = cap.plan;
         chainCapped = cap.capped;
@@ -315,7 +330,7 @@ export class DispatchService {
 
       // 4 — the run.
       const unattended = req.unattended === true;
-      await this.store.addSession({
+      const sessionRow: ExpertSession = {
         executionId,
         workspaceId: ws,
         expertId: expert.id,
@@ -333,16 +348,25 @@ export class DispatchService {
         outcome: null,
         startedAt: this.#clock(),
         endedAt: null,
-      });
+      };
+      if (parentId === null) {
+        await this.store.addSession(sessionRow);
+      } else if (!(await this.store.addDelegateSession(sessionRow, maxFanOut))) {
+        // `T2535`, `FR-EXP-033` — the bound, checked and held in the same step as the insert.
+        throw new DelegationRefusal(
+          `fan-out: session ${parentId} already has its policy's maximum of ${maxFanOut} delegate(s) (FR-EXP-033)`,
+          parentId,
+        );
+      }
       started = true;
       for (const limit of plan.limits) await this.store.putLimit({ ...limit, executionId });
 
       // `FR-EXP-036`, `FR-EXP-045`, `FR-EXP-046` — charged here and up the chain
       // on every exit path (`T2007`); a crossing is only ever late. Without a
       // report, each limit gets its reason instead of a silent null.
-      const charge = async (report: RunReport | null): Promise<void> => {
+      const charge = async (report: RunReport | null, unreportedReason?: (limit: LimitKind) => string): Promise<void> => {
         const amounts = report === null ? {} : reported(report);
-        for (const breach of await chargeConsumption(this.store, ws, executionId, amounts, this.#clock())) {
+        for (const breach of await chargeConsumption(this.store, ws, executionId, amounts, this.#clock(), unreportedReason)) {
           await ports.executions.record(ws, breach.executionId, 'limit-breach-detected-late', {
             ...breach,
             detectedAt: this.#clock(),
@@ -376,7 +400,24 @@ export class DispatchService {
         const parent = await this.store.findSession(ws, parentId);
         if (parent === null || parent.outcome !== null) {
           await this.#stopOne(ws, executionId, parentId);
-          return stoppedResult(null);
+          // `T2533` — it never ran: no time spent, and nothing to report, said so.
+          const time = (await this.store.limitsFor(ws, executionId)).find((l) => l.limit === 'time');
+          if (time) await this.store.putLimit({ ...time, consumed: 0, consumedReason: null });
+          await charge(
+            null,
+            (limit) => `the run was stopped before it ran, so it consumed no ${limit} and its provider reported none (FR-EXP-045)`,
+          );
+          await this.#stopDelegates(ws, executionId);
+          return {
+            executionId,
+            contractVersion: effective.version,
+            model: choice.model,
+            usedFallback: choice.usedFallback,
+            toolObservation: 'unobserved',
+            contextPackageId: packageId,
+            outcome: 'stopped-by-parent',
+            reviewRequired: unattended,
+          };
         }
       }
 
@@ -389,8 +430,20 @@ export class DispatchService {
         controller.abort();
       }, timeMs);
       this.#running.set(executionId, controller);
+      // `T2539`, `FR-EXP-037` — another process may stop this run; its cascade
+      // can reach only the stored session, so the run reads it while it runs.
+      const poll = setInterval(() => {
+        void this.store
+          .findSession(ws, executionId)
+          .then((now) => {
+            if (now?.outcome === 'stopped-by-parent') controller.abort();
+          })
+          .catch(() => undefined);
+      }, this.deps.pollMs ?? 1000);
+      poll.unref?.();
       let report: RunReport;
       const startedMs = Date.now();
+      ranSince = startedMs;
       try {
         report = await choice.runner.run(
           { capability: req.capabilities[0] as AgentCapability, command: `${req.command}: ${objective}` },
@@ -398,6 +451,7 @@ export class DispatchService {
         );
       } finally {
         clearTimeout(timer);
+        clearInterval(poll);
         this.#running.delete(executionId);
       }
 
@@ -449,34 +503,80 @@ export class DispatchService {
         reviewRequired: unattended,
       };
     } catch (error) {
-      if (started) throw await this.#failed(ws, executionId, error, closed);
+      if (started) throw await this.#failed(ws, executionId, error, closed, ranSince);
       throw await this.#refused(ws, executionId, error);
     }
   }
 
   /**
-   * `T2001`, `FR-EXP-061`, `FR-EXP-037` — a failure after the session started:
-   * the session ends `failed` (unless it already ended), a run failure is
-   * recorded, and the execution is closed as failed unless it was already
-   * closed. Never `dispatch-refused`: this dispatch was admitted. The error is
-   * rethrown with the execution id added.
+   * `T2001`, `T2531`, `FR-EXP-061`, `FR-EXP-037` — a failure after the session
+   * started. Never `dispatch-refused`: this dispatch was admitted.
+   *
+   * - Not yet settled: the session ends `failed`, and the execution is closed
+   *   as failed.
+   * - **Already settled** (`T2531`): the session keeps the outcome it settled
+   *   with, the failure is recorded beside it (`settledOutcome`), and the
+   *   execution is closed as it ended — or, for unattended work, left for the
+   *   proposal it is owed (`FR-EXP-063`), never completed. The session and the
+   *   execution must not tell two stories.
+   * - Stopped by its parent: the cascade already recorded and closed it.
+   *
+   * Either way the time it ran and a reason for every unreported limit are
+   * recorded (`T2533`). The error is rethrown with the execution id added.
    */
-  async #failed(ws: string, executionId: string, error: unknown, closed: boolean): Promise<Error> {
+  async #failed(
+    ws: string,
+    executionId: string,
+    error: unknown,
+    closed: boolean,
+    ranSince: number | null,
+  ): Promise<Error> {
     const reason = error instanceof Error ? error.message : 'the run failed';
     const executions = this.deps.ports.executions;
     // Each step on its own, so one failing write does not leave the others undone.
     const won = await this.store.endSession(ws, executionId, { outcome: 'failed', endedAt: this.#clock() }).catch(() => false);
+    let settled: SessionOutcome | null = null;
+    let unattended = false;
     if (!won) {
-      // Stopped by its parent: the cascade already recorded and closed it.
       const now = await this.store.findSession(ws, executionId).catch(() => null);
       if (now?.outcome === 'stopped-by-parent') closed = true;
+      else if (now?.outcome) {
+        settled = now.outcome;
+        unattended = now.unattended;
+      }
     }
-    await executions.record(ws, executionId, 'run-failed', { reason }).catch(() => undefined);
+    await this.#accountFailure(ws, executionId, ranSince).catch(() => undefined);
+    await executions
+      .record(ws, executionId, 'run-failed', { reason, ...(settled !== null ? { settledOutcome: settled } : {}) })
+      .catch(() => undefined);
     if (!closed) {
-      await executions.complete(ws, executionId, 'failed', `Expert run failed: ${reason}`).catch(() => undefined);
+      if (settled === null) {
+        await executions.complete(ws, executionId, 'failed', `Expert run failed: ${reason}`).catch(() => undefined);
+      } else if (!(unattended && (settled === 'succeeded' || settled === 'incomplete'))) {
+        await executions
+          .complete(ws, executionId, COMPLETION[settled], `Expert run ${settled}; a later step failed: ${reason}`)
+          .catch(() => undefined);
+      }
     }
     await this.#stopDelegates(ws, executionId).catch(() => undefined);
     return withExecutionId(error, executionId);
+  }
+
+  /** `T2533`, `FR-EXP-045` — the time a failed run spent, and why each other limit has no figure. */
+  async #accountFailure(ws: string, executionId: string, ranSince: number | null): Promise<void> {
+    for (const row of await this.store.limitsFor(ws, executionId)) {
+      if (row.consumed !== null) continue;
+      if (row.limit === 'time') {
+        await this.store.putLimit({ ...row, consumed: ranSince === null ? 0 : Date.now() - ranSince, consumedReason: null });
+      } else {
+        await this.store.noteUnreported(
+          ws,
+          executionId,
+          row.limit,
+          `the run failed before its ${row.limit} consumption was reported (FR-EXP-045)`,
+        );
+      }
+    }
   }
 
   /** `FR-EXP-037` — every running delegate of `executionId`, transitively. */

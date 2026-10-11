@@ -71,7 +71,8 @@ describe('T1923 · the registry', () => {
     await service.submit('ws_1', 'u_1', expert.id, 1);
     expect(approvals.submitted).toEqual([
       expect.objectContaining({
-        actionType: 'expert-contract.approve',
+        // T2571, R-047-17: the class is part of the action, so steering can classify each class.
+        actionType: 'expert-contract.approve.medium',
         targetType: 'expert-contract-version',
         objectVersion: 1,
         riskClass: 'medium',

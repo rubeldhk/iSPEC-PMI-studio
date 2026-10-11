@@ -3,7 +3,8 @@
  * implementation for unit tests only.
  *
  * `R-047-14`, `FR-EXP-004`. There is deliberately **no** method that changes a
- * contract version: the only write after insert is `recordDecision`, once. An
+ * contract version: the only write after insert is `recordDecision` — once, or
+ * again only in place of the decision it names as refused (`T2575`). An
  * assignment is superseded, never edited (`FR-EXP-055`). Every read takes the
  * workspace, so an Expert elsewhere is indistinguishable from one that is
  * absent (`FR-EXP-008`).
@@ -30,12 +31,24 @@ export interface ExpertsStore {
   /** Ascending by version. */
   versionsFor(workspaceId: string, expertId: string): Promise<ContractVersion[]>;
   /** Once, from null. A second write is a `ConflictError`. */
-  recordDecision(workspaceId: string, versionId: string, decisionId: string): Promise<void>;
+  /**
+   * Record the version's decision, compare-and-set: only while it still holds
+   * `prior` — `null` for a first submission, the refused decision for a
+   * resubmission (`T2575`).
+   */
+  recordDecision(workspaceId: string, versionId: string, decisionId: string, prior?: string | null): Promise<void>;
 
   policyFor(workspaceId: string): Promise<DelegationPolicy | null>;
   putPolicy(row: DelegationPolicy): Promise<DelegationPolicy>;
 
   addSession(row: ExpertSession): Promise<ExpertSession>;
+  /**
+   * `T2535`, `FR-EXP-033` — insert a **delegate's** session only while its
+   * parent (in the same workspace) has fewer than `maxFanOut` delegates, as one
+   * step: the count and the insert cannot be split by a concurrent delegation.
+   * `false` when the bound is reached or the parent is not in this workspace.
+   */
+  addDelegateSession(row: ExpertSession, maxFanOut: number): Promise<boolean>;
   findSession(workspaceId: string, executionId: string): Promise<ExpertSession | null>;
   /** Newest first. */
   sessionsForExpert(workspaceId: string, expertId: string, limit: number): Promise<ExpertSession[]>;
@@ -133,10 +146,10 @@ export class InMemoryExpertsStore implements ExpertsStore {
       .map(copy);
   }
 
-  async recordDecision(workspaceId: string, versionId: string, decisionId: string): Promise<void> {
+  async recordDecision(workspaceId: string, versionId: string, decisionId: string, prior: string | null = null): Promise<void> {
     const row = this.#versions.get(versionId);
     if (!row || row.workspaceId !== workspaceId) throw new ConflictError('no such contract version');
-    if (row.decisionId !== null) {
+    if (row.decisionId !== prior) {
       throw new ConflictError(`contract version ${row.version} was already submitted (decision ${row.decisionId})`);
     }
     this.#versions.set(versionId, { ...row, decisionId });
@@ -156,6 +169,19 @@ export class InMemoryExpertsStore implements ExpertsStore {
     if (this.#sessions.has(row.executionId)) throw new ConflictError(`session ${row.executionId} already exists`);
     this.#sessions.set(row.executionId, copy(row));
     return copy(row);
+  }
+
+  async addDelegateSession(row: ExpertSession, maxFanOut: number): Promise<boolean> {
+    // No await between the count and the insert: atomic on the event loop.
+    const parent = row.delegatedFromExecutionId === null ? undefined : this.#sessions.get(row.delegatedFromExecutionId);
+    if (!parent || parent.workspaceId !== row.workspaceId) return false;
+    if (this.#sessions.has(row.executionId)) throw new ConflictError(`session ${row.executionId} already exists`);
+    const siblings = [...this.#sessions.values()].filter(
+      (s) => s.workspaceId === row.workspaceId && s.delegatedFromExecutionId === parent.executionId,
+    ).length;
+    if (siblings >= maxFanOut) return false;
+    this.#sessions.set(row.executionId, copy(row));
+    return true;
   }
 
   async findSession(workspaceId: string, executionId: string): Promise<ExpertSession | null> {

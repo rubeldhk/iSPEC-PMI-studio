@@ -19,7 +19,14 @@
  * cannot spend past its root's budget by splitting the work.
  */
 import type { EnforceableLimit } from '@pmi/agent-contract';
-import { LIMIT_KINDS, defaultPosture, type Budget, type LimitKind, type SessionLimit } from './expert.types.js';
+import {
+  LIMIT_KINDS,
+  defaultPosture,
+  type Budget,
+  type LimitKind,
+  type SessionLimit,
+  type UnenforceablePosture,
+} from './expert.types.js';
 import type { ExpertsStore } from './experts.store.js';
 import type { RunReport } from './experts.tokens.js';
 
@@ -113,22 +120,54 @@ export interface ChainCap {
 }
 
 /**
+ * `T2537`, `FR-EXP-043` — the posture the chain holds for each limit it
+ * imposes: `refuse` if any ancestor holding that limit refuses an
+ * unenforceable one (its contract's setting, or the clarified default), else
+ * `proceed`. A limit only a request set takes the default.
+ */
+export async function chainPostures(
+  store: ExpertsStore,
+  workspaceId: string,
+  parentExecutionId: string,
+): Promise<Partial<Record<LimitKind, UnenforceablePosture>>> {
+  const out: Partial<Record<LimitKind, UnenforceablePosture>> = {};
+  const seen = new Set<string>();
+  let walk: string | null = parentExecutionId;
+  while (walk !== null && !seen.has(walk)) {
+    seen.add(walk);
+    const session = await store.findSession(workspaceId, walk);
+    if (session === null) break;
+    const version = (await store.versionsFor(workspaceId, session.expertId)).find((v) => v.id === session.contractVersionId);
+    for (const row of await store.limitsFor(workspaceId, walk)) {
+      if (row.limit === 'time') continue;
+      const posture = version?.contract.budget[row.limit]?.onUnenforceable ?? defaultPosture(row.limit);
+      if (out[row.limit] !== 'refuse') out[row.limit] = posture;
+    }
+    walk = session.delegatedFromExecutionId;
+  }
+  return out;
+}
+
+/**
  * `T2009` — cap a delegate's plan at its chain's remaining budget. A limit the
  * delegate lacks but its chain has is added at what is left: a delegate cannot
  * be unlimited where the chain above it is limited. A chain with nothing left
  * of a limit delegates nothing. Added limits follow the delegate's runner for
- * enforceability and are recorded, not refused — the chain's own posture was
- * applied when its root was dispatched.
+ * enforceability; where it cannot enforce one, the **chain's** posture for it
+ * decides (`T2537`, `FR-EXP-043`) — the root's posture said nothing about this
+ * runner, which may lack a control the root's runner had.
  */
 export function capByChain(
   plan: LimitPlan,
   remaining: Partial<Record<LimitKind, number>>,
   enforceable: readonly EnforceableLimit[] | undefined,
+  postures: Partial<Record<LimitKind, UnenforceablePosture>> = {},
 ): ChainCap {
   const limits = [...plan.limits];
   const unenforceable = [...plan.unenforceable];
   const capped: { limit: LimitKind; requested: number | null; applied: number }[] = [];
   const empty: LimitKind[] = [];
+  const refused: string[] = [];
   for (const kind of LIMIT_KINDS) {
     const left = remaining[kind];
     if (kind === 'time' || left === undefined) continue;
@@ -146,7 +185,15 @@ export function capByChain(
       continue;
     }
     const enforced = (enforceable ?? []).includes(kind);
-    if (!enforced) unenforceable.push(kind);
+    if (!enforced) {
+      unenforceable.push(kind);
+      if ((postures[kind] ?? defaultPosture(kind)) === 'refuse') {
+        refused.push(
+          `the ${kind} limit the delegation chain imposes cannot be enforced by this provider, and the chain's ` +
+            `posture for an unenforceable ${kind} limit is to refuse (FR-EXP-043)`,
+        );
+      }
+    }
     limits.push({
       limit: kind,
       value: left,
@@ -163,8 +210,11 @@ export function capByChain(
     plan: { ...plan, limits, unenforceable },
     capped,
     refusal:
-      empty.length > 0
-        ? empty.map((k) => `the delegation chain has no ${k} budget left, so it delegates nothing more (FR-EXP-036)`).join('; ')
+      empty.length + refused.length > 0
+        ? [
+            ...empty.map((k) => `the delegation chain has no ${k} budget left, so it delegates nothing more (FR-EXP-036)`),
+            ...refused,
+          ].join('; ')
         : null,
   };
 }
@@ -197,6 +247,8 @@ export async function chargeConsumption(
   executionId: string,
   amounts: Partial<Record<LimitKind, number>>,
   at: string,
+  /** `T2533` — why nothing was reported, when the caller knows better than "the provider did not". */
+  unreportedReason?: (limit: LimitKind) => string,
 ): Promise<Breach[]> {
   const breaches: Breach[] = [];
   let walk: string | null = executionId;
@@ -213,7 +265,7 @@ export async function chargeConsumption(
             workspaceId,
             walk,
             row.limit,
-            `the provider did not report ${row.limit} consumption for this run (FR-EXP-045)`,
+            unreportedReason?.(row.limit) ?? `the provider did not report ${row.limit} consumption for this run (FR-EXP-045)`,
           );
         }
         continue;

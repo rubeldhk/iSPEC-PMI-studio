@@ -187,9 +187,10 @@ suite('T1925 · the registry routes', () => {
     const db = new Client({ connectionString: harness.databaseUrl });
     await db.connect();
     try {
+      // `T2571`, `R-047-17` — the action carries the contract's risk class, so steering can classify each class.
       const { rows } = await db.query(
         `SELECT "projectId","targetType","targetId","objectVersion","proposedClass","effectiveClass","outcome","requestedBy"
-           FROM "policy_decisions" WHERE "workspaceId" = $1 AND "actionType" = 'expert-contract.approve'`,
+           FROM "policy_decisions" WHERE "workspaceId" = $1 AND "actionType" = 'expert-contract.approve.medium'`,
         [WS],
       );
       expect(rows).toEqual([

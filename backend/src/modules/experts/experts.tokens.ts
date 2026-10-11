@@ -16,6 +16,7 @@
  * factories below remain the defaults for tests that compose ports themselves.
  */
 import type { AgentContext, AgentDescriptor, AgentInvocation } from '@pmi/agent-contract';
+import type { ExpertGovernanceKind } from '@pmi/execution-registry-contract';
 import { GovernanceSeamUnboundError } from '../../core/errors.js';
 import type { ContextPolicy, EvidenceContractRef, RiskBand } from './expert.types.js';
 
@@ -53,7 +54,15 @@ export interface ExpertGateways {
   gatewaysFor(model: string): Promise<readonly ExpertRunner[]>;
 }
 
-export type Resolution = 'pending' | 'approved' | 'refused';
+/**
+ * `T2573` — `approved` means a human approved it; `approved-unattended` means
+ * policy let it through with no human — auto-executed, or approved by gates
+ * alone. A contract version stands on either; a gated assignment
+ * (`FR-EXP-054`) only on the first. `rejected` is a human's closure
+ * (`FR-DPE-017`), kept apart from a policy `refused`: a version may be
+ * resubmitted after a refusal, never after a rejection (`T2575`).
+ */
+export type Resolution = 'pending' | 'approved' | 'approved-unattended' | 'refused' | 'rejected';
 
 /** `R-047-5` — `EPIC-031`'s decision path. Read on demand; there is no callback. */
 export interface ContractApprovals {
@@ -65,8 +74,17 @@ export interface ContractApprovals {
     readonly objectVersion: number;
     readonly riskClass: RiskBand;
     readonly actorId: string;
+    /** `R-047-16` — absent means the workspace scope: an Expert contract belongs to no one project. */
+    readonly projectId?: string;
   }): Promise<{ readonly decisionId: string }>;
   resolutionOf(workspaceId: string, decisionId: string): Promise<Resolution>;
+  /** `T2577` — withdraw a pending decision whose subject is gone (a superseded assignment). */
+  withdraw(input: {
+    readonly workspaceId: string;
+    readonly decisionId: string;
+    readonly actorId: string;
+    readonly reason: string;
+  }): Promise<void>;
 }
 
 /** `R-047-11` — does `EPIC-032` know this Evidence Contract? A fault propagates; it never reads as absent. */
@@ -114,7 +132,8 @@ export interface ExpertExecutions {
   record(
     workspaceId: string,
     executionId: string,
-    kind: string,
+    /** `T2541`, `R-047-4` — the closed set; a kind outside it does not type-check. */
+    kind: ExpertGovernanceKind,
     detail: Readonly<Record<string, unknown>>,
   ): Promise<void>;
   complete(
@@ -158,6 +177,9 @@ export function refusingContractApprovals(): ContractApprovals {
       return refuse();
     },
     async resolutionOf() {
+      return refuse();
+    },
+    async withdraw() {
       return refuse();
     },
   };

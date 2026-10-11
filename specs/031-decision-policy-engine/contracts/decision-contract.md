@@ -161,6 +161,17 @@ Constitution XI Tier 1 drives these. Listed because *"the entry point MUST be th
 `403` for missing authority, `409` for a policy refusal, both carrying the decision id so the caller
 reads the explanation rather than inferring it.
 
+### 7a. What `EPIC-047` relies on — in-process
+
+`EPIC-047` (Engineering Experts, `R-047-5`, `R-047-17`) reads its decisions back from the
+repository (`get`, `resolutionOf`) and closes them through `DecisionEngine.refuse` (`FR-DPE-017`):
+`withdrawn` by the requester, `rejected` by another human. It tells an approval a human gave (one
+resolving a pending decision) from one taken outright, and a human's rejection from a policy
+refusal. `evaluator.ts` exports `FAIL_CLOSED`, `UNRECORDED_DECISION` and `refusedUnevaluated`, so a
+consumer can tell a refusal taken without evaluation (`FR-DPE-050`) from a judgement. Exercised by
+`backend/tests/unit/expert-reassignment-withdraws.spec.ts` and
+`backend/tests/integration/experts-approval-journey.spec.ts`.
+
 ---
 
 ## 8. What the contract must never contain

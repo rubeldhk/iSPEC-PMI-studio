@@ -58,7 +58,12 @@ describe('T2000 · a run that fails after it started', () => {
     ]);
   });
 
-  it('a failure while proposing an unattended completion closes the run as failed', async () => {
+  it('a failure while proposing an unattended completion is recorded, without closing a settled run as failed', async () => {
+    // Corrected by `T2531`: this asserted `complete('failed')`, which left the
+    // session saying `succeeded` and the execution saying `failed` — the
+    // contradiction the second convergence audit found. The run settled; the
+    // failure is recorded beside its settled outcome, and unattended work is
+    // never completed by the Expert (FR-EXP-063).
     const w = await world();
     w.executions.proposeCompletion = async () => {
       throw new Error('the registry refused the proposal');
@@ -66,7 +71,8 @@ describe('T2000 · a run that fails after it started', () => {
     await expect(w.service.dispatch(ACTOR, ask({ unattended: true }))).rejects.toThrow(/refused the proposal/);
     expect(w.executions.kindsFor('exe_1')).toContain('run-failed');
     expect(w.executions.kindsFor('exe_1')).not.toContain('dispatch-refused');
-    expect(w.executions.completed).toEqual([expect.objectContaining({ executionId: 'exe_1', outcome: 'failed' })]);
+    expect((await w.store.findSession('ws_1', 'exe_1'))?.outcome).toBe('succeeded');
+    expect(w.executions.completed).toEqual([]);
   });
 
   it('a session whose run threw accepts no delegates afterwards', async () => {

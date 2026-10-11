@@ -1,0 +1,31 @@
+{
+  "$comment": "EPIC-047 T2571, R-047-17. A workspace risk-classification steering document that lets an Expert contract's own risk class select its approval band (FR-EXP-005) while EPIC-031 still does the classifying (FR-DPE-003): a contract is submitted as expert-contract.approve.<riskClass>, and each suffix is classified by its band here. Load it into a workspace's steering (subject risk-classification) to adopt it; nothing applies until a tenant does, and loading it is a reviewed steering act (FR-DPE-005). It is workspace-scoped, and the narrower document wins whole (BR-0071), so it restates the organization default's irreducibly-high rules. Consequences under the platform default policy: a low contract auto-approves with no human (set bandTreatment.low to human-approval to require one); a medium contract needs gates, which no GateProvider satisfies until DEF-031-004 closes, so it is refused and may be resubmitted (T2575); a high contract awaits a human other than its author. Without this document every contract is high (FR-DPE-004). Checked by classification-rules-conformance.spec.ts.",
+  "subject": "risk-classification",
+  "scopeType": "workspace",
+  "rules": [
+    {
+      "actionPattern": "requirement-room.baseline",
+      "band": "high"
+    },
+    {
+      "actionPattern": "release.promote",
+      "band": "high"
+    },
+    {
+      "actionPattern": "loop.configuration.change",
+      "band": "high"
+    },
+    {
+      "actionPattern": "expert-contract.approve.low",
+      "band": "low"
+    },
+    {
+      "actionPattern": "expert-contract.approve.medium",
+      "band": "medium"
+    },
+    {
+      "actionPattern": "expert-contract.approve.high",
+      "band": "high"
+    }
+  ]
+}

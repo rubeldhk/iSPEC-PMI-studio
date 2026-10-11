@@ -54,6 +54,20 @@ import { buildExplanation } from './explanation.builder.js';
 import type { DecisionRecord, DecisionRepository, GateExceptionRecord } from './decision.repository.js';
 import { patternCovers, type PolicySource, type TenantPolicyDocument } from './policy.loader.js';
 
+/** `FR-DPE-050` — how a refusal taken without evaluation cites itself. */
+export const FAIL_CLOSED = 'fail closed — ';
+
+/** The id a fail-closed refusal carries when not even the refusal could be stored. */
+export const UNRECORDED_DECISION = 'unrecorded';
+
+/**
+ * EPIC-047 `T2575` — true when a decision was refused because a source could
+ * not be read, not judged, so a caller can tell the two apart.
+ */
+export function refusedUnevaluated(result: { outcome: DecisionOutcome; explanation: { constraintCited?: string } }): boolean {
+  return result.outcome === 'refused' && (result.explanation.constraintCited ?? '').startsWith(FAIL_CLOSED);
+}
+
 export interface DecisionEngineDeps {
   readonly steering: SteeringSource | null;
   readonly policies: PolicySource | null;
@@ -487,14 +501,14 @@ export class DecisionEngine {
       policy,
       matchedRule: null,
       classificationReason: 'not classified: the engine could not be consulted',
-      constraintCited: `fail closed — ${why}`,
+      constraintCited: `${FAIL_CLOSED}${why}`,
     };
     try {
       return await this.record(judgement, 'refused', 'refused without evaluation', [], null);
     } catch {
       // Not even the refusal could be stored. Still refused, still explained.
       return {
-        decisionId: 'unrecorded',
+        decisionId: UNRECORDED_DECISION,
         outcome: 'refused',
         effectiveClass: MOST_RESTRICTIVE_BAND,
         explanation: buildExplanation({
@@ -502,7 +516,7 @@ export class DecisionEngine {
           matchedRule: null,
           riskClass: MOST_RESTRICTIVE_BAND,
           authorityApplied: 'refused without evaluation; the refusal itself could not be recorded',
-          constraintCited: `fail closed — ${why}`,
+          constraintCited: `${FAIL_CLOSED}${why}`,
         }),
         gateOutcomes: [],
       };

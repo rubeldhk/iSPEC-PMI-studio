@@ -32,6 +32,7 @@ async function setup(maxUnattendedBand: RiskBand | null, approvals: ContractAppr
   const both: ContractApprovals = {
     submit: (input) => approvals.submit(input),
     resolutionOf: (ws, id) => (id === 'd_ok' ? ok.resolutionOf(ws, id) : approvals.resolutionOf(ws, id)),
+    withdraw: (input) => approvals.withdraw(input),
   };
   const service = new AssignmentService(store, {
     authoring: new Authoring(accessFrom({ 'u_1:task:t_1': 'edit' })),

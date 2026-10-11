@@ -156,7 +156,8 @@ export interface ContractVersion {
 }
 
 /** Derived at read (`R-047-5`), never stored. */
-export type VersionStatus = 'draft' | 'submitted' | 'approved' | 'refused';
+/** `unreadable` — for display only: the decision could not be read (`T2575`); dispatch refuses instead. */
+export type VersionStatus = 'draft' | 'submitted' | 'approved' | 'refused' | 'unreadable';
 
 export interface DelegationPolicy {
   readonly workspaceId: string;

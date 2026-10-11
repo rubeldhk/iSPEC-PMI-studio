@@ -104,14 +104,17 @@ export const authorOfWs1 = (): ActorAccess => accessFrom({ 'u_1:expert-registry:
 
 export interface RecordingApprovals extends ContractApprovals {
   readonly submitted: Parameters<ContractApprovals['submit']>[0][];
+  readonly withdrawn: Parameters<ContractApprovals['withdraw']>[0][];
   resolve(decisionId: string, resolution: Resolution): void;
 }
 
 export function recordingApprovals(): RecordingApprovals {
   const resolutions = new Map<string, Resolution>();
   const submitted: Parameters<ContractApprovals['submit']>[0][] = [];
+  const withdrawn: Parameters<ContractApprovals['withdraw']>[0][] = [];
   return {
     submitted,
+    withdrawn,
     resolve(decisionId, resolution) {
       resolutions.set(decisionId, resolution);
     },
@@ -123,6 +126,10 @@ export function recordingApprovals(): RecordingApprovals {
     },
     async resolutionOf(_ws, decisionId) {
       return resolutions.get(decisionId) ?? 'pending';
+    },
+    async withdraw(input) {
+      withdrawn.push(input);
+      resolutions.set(input.decisionId, 'refused');
     },
   };
 }
