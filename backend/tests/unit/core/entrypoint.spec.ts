@@ -107,6 +107,15 @@ describe('T150d · the container entrypoint', () => {
     ).toBeLessThan(start);
   });
 
+  it('starts the API through its composition root (EPIC-047 T2597, DEF-047-002)', () => {
+    if (!existsSync(ENTRYPOINT)) return;
+    // `backend/src/main.ts` starts the API with no agent runtime, and Expert
+    // dispatch then refuses. The container starts the launcher, which composes
+    // one — after the migration, which the ordering test above still asserts.
+    expect(commands()).toMatch(/--filter @pmi\/api-launcher exec tsx --tsconfig=tsconfig\.run\.json src\/main\.ts/);
+    expect(commands()).not.toMatch(/--filter @pmi\/backend exec tsx src\/main\.ts/);
+  });
+
   it('does not seed — no image invents a credential', () => {
     if (!existsSync(ENTRYPOINT)) return;
     // `R-014-6`. An entrypoint that seeds must carry or generate a password,

@@ -101,3 +101,53 @@ cases because the refusal named the unbound port instead of `EPIC-031`'s or `EPI
 ### Reverted
 
 Restored from the copy; the suite returned to **7 passed**.
+
+---
+
+## 4. `DEF-047-001` — an Expert run is registered under its own identity (`T2564`)
+
+Recorded 2026-10-10. Proves `experts-execution-identity.spec.ts` (`T2568`) depends on the binding it
+claims to test — it was written after the adapter, so it had not been seen failing.
+
+### The mutation
+
+`backend/src/modules/experts/experts.module.ts` — the `executions: expertExecutions(…)` binding
+removed from the `EXPERT_PORTS` factory, so `ExpertExecutions` falls back to the refusing port.
+
+### Observed
+
+`vitest run --project backend-integration tests/integration/experts-execution-identity.spec.ts` —
+**3 failed | 1 passed (4)**: the setup case passed; the no-runtime case, the composed-runtime case
+and the outsider case all failed, the first two because dispatch refused naming the unbound port
+before any execution existed, the third because it answered `503` rather than `403`.
+
+### Reverted
+
+Restored from the copy; the suite returned to **4 passed**.
+
+---
+
+## 5. `DEF-047-002` — the API takes its agent runtime from a composition root (`T2593`)
+
+Recorded 2026-10-11.
+
+### The mutation
+
+`backend/src/api.ts` — `createApi` builds from `AppModule` alone whatever it is handed, so the
+runtime never reaches `ExpertsModule`:
+
+```diff
+-    options.expertAgentRuntime === undefined
++    true // MUTATION: the runtime handed in is ignored
+       ? AppModule
+```
+
+### Observed
+
+`vitest run --project backend-integration tests/integration/experts-runtime-composition.spec.ts` —
+**1 failed | 2 passed (3)**: the case that hands a runtime in failed, because `ExpertGateways` still
+refused naming `DEF-047-002`. The no-runtime case and the global-module case passed, as they should.
+
+### Reverted
+
+Restored from the copy; the suite returned to **3 passed**.

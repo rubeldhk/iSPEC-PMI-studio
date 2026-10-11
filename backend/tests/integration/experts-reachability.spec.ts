@@ -95,10 +95,28 @@ describe('T1901 · the Experts module is reachable through the composed applicat
       );
     });
 
-    it('ExpertGateways and ExpertExecutions still refuse, naming themselves (R-047-2, DEF-047-001)', async () => {
-      const { gateways, executions } = await ports();
-      await expect(gateways.gatewaysFor('any-model')).rejects.toThrow(/ExpertGateways is not bound/);
-      await expect(executions.eventsOf('ws_reach', 'exe_reach')).rejects.toThrow(/ExpertExecutions is not bound.*DEF-047-001/);
+    it('T2564 · ExpertExecutions is the identity adapter over EPIC-037, not the refusing port (DEF-047-001)', async () => {
+      // No database here, so only what the adapter decides before it touches one
+      // is observable: a command that is not governed is refused by the adapter
+      // itself. The refusing port would have named itself instead.
+      const { executions } = await ports();
+      const attempt = executions.register({
+        workspaceId: 'ws_reach',
+        projectId: 'pr_reach',
+        command: 'deploy',
+        actorId: 'u_reach',
+        expertKey: 'reach',
+        contractVersion: 1,
+        model: 'model-a',
+        objective: 'reachability',
+      });
+      await expect(attempt).rejects.toThrow(/not a governed command.*R-047-3/);
+      await expect(attempt).rejects.not.toThrow(/ExpertExecutions is not bound/);
+    });
+
+    it('T2566 · ExpertGateways refuses naming DEF-047-002 — no agent runtime is composed into the API', async () => {
+      const { gateways } = await ports();
+      await expect(gateways.gatewaysFor('any-model')).rejects.toThrow(/ExpertGateways is not bound.*DEF-047-002/);
     });
   });
 });

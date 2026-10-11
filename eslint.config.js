@@ -68,6 +68,35 @@ export default [
               message:
                 'backend/ must not import the worker. The one permitted edge is worker → @pmi/backend/worker-api (EPIC-041 R-041-6), never the reverse.',
             },
+            {
+              // EPIC-047 T2596 (DEF-047-002) — the launcher composes the API; the
+              // API never reaches back into what composed it.
+              group: ['@pmi/api-launcher', '**/api-launcher/*'],
+              message:
+                'backend/ must not import the API launcher. The one permitted edge is api-launcher → @pmi/backend/api (EPIC-047 DEF-047-002), never the reverse.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // EPIC-047 T2596 (DEF-047-002, option A; ADR-0030 amended) — the API's
+    // composition root reaches the backend through exactly one door,
+    // `@pmi/backend/api`. It names the agent adapters and the execution provider
+    // backend/src may not, and hands them in; it never reaches past the door.
+    // Asserted by tests/governance/eslint-boundaries.spec.ts (T2596).
+    files: ['api-launcher/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@pmi/backend/*', '**/backend/*', '!@pmi/backend/api'],
+              message:
+                'api-launcher/ may import only @pmi/backend/api — the API\'s exported door (EPIC-047 DEF-047-002). Nothing else in backend/ is the launcher\'s to reach.',
+            },
           ],
         },
       ],

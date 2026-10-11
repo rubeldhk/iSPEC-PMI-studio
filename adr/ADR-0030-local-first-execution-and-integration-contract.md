@@ -128,3 +128,28 @@ the platform imports the same package with an execution-evidence adapter. Two co
 rule, so they cannot disagree about what a stage means. The configuration is canonical in the
 package and mirrored under `governance/`, the mirror asserted identical by a governance check.
 Records: `specs/044-epic-model-journey-board/`.
+
+## Amendment — 2026-10-11, `EPIC-047` `DEF-047-002` (option A)
+
+**The API has a composition root outside `backend/src`.** An Engineering Expert run executes in an
+agent runtime — agent gateways and an execution environment. `backend/src` may name neither
+(`FR-AGT-004`, `FR-AGT-009`; `agent-independence.spec.ts`), and until now the API's only entry point,
+`backend/src/main.ts`, sat inside that rule, so nothing could hand the API a runtime.
+
+The worker already solved the same problem for itself: `worker/` composes adapters and reaches the
+backend through one exported door, `@pmi/backend/worker-api`. The API now does the same.
+`api-launcher/` (`@pmi/api-launcher`) composes the fixture agent, one agent gateway per model listed
+in `PMI_EXPERT_MODELS` and the Docker execution environment, and starts the API through
+`@pmi/backend/api` — `createApi`, `bootstrapApi` — which binds them with a global
+`ExpertAgentRuntimeModule`. `ExpertsModule` injects the runtime optionally, so every other
+composition of `AppModule`, `main.ts` included, still refuses an Expert dispatch, naming the defect.
+
+The edge points one way and is linted both ways: `api-launcher/**` may import only `@pmi/backend/api`
+from the backend, and `backend/**` may not import the launcher (`eslint-boundaries.spec.ts`). The
+container's entrypoint starts the launcher after migrating.
+
+**Not decided here:** the compose `app` container mounts no Docker socket, so there a dispatched run
+fails naming the provider. Giving the API process a Docker daemon is a security decision of its own.
+The alternatives were dispatch through the worker's queue (asynchronous dispatch; rejected for now)
+and relaxing the boundary (rejected outright). Records: `specs/047-engineering-experts/` Phase 16,
+`DEF-047-002`.
