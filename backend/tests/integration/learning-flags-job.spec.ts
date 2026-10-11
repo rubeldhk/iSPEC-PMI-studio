@@ -19,6 +19,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startLearningApp, type LearningApp } from '../helpers/learning-app.js';
 import { DecisionRecorder, verified } from '../helpers/learning-ports.js';
+import { DbDecisionRecorder } from '../helpers/learning-decisions-db.js';
 import type { ResolvedEvidence } from '../../src/modules/learning/learning.tokens.js';
 import type { LearningJobs } from '../../src/modules/learning/learning.jobs.js';
 
@@ -53,7 +54,8 @@ beforeAll(async () => {
   if (noRuntime) return;
   app = await startLearningApp({ workspaceId: 'ws_flags' });
   app.bindNotAnExpert();
-  decisions = new DecisionRecorder();
+  // T2393 — decisions are written to policy_decisions, which the version trigger reads.
+  decisions = new DbDecisionRecorder(app.db, 'ws_flags');
   app.ports.decisions = decisions;
   evidence.set('ev_1', verified('ev_1', { attestedTarget: { type: 'project', id: app.projectId } }));
   evidence.set('ev_2', verified('ev_2', { attestedTarget: { type: 'project', id: app.projectId } }));

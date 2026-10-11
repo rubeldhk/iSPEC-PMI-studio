@@ -20,6 +20,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startLearningApp, type LearningApp } from '../helpers/learning-app.js';
 import { DecisionRecorder, POLICY } from '../helpers/learning-ports.js';
+import { DbDecisionRecorder } from '../helpers/learning-decisions-db.js';
 import { DIGEST } from '../helpers/learning-fixtures.js';
 import type { LearningJobs } from '../../src/modules/learning/learning.jobs.js';
 import type { KnowledgeGate } from '../../src/modules/learning/supply.js';
@@ -49,7 +50,8 @@ beforeAll(async () => {
   app = await startLearningApp({ workspaceId: WS, policy: { ...POLICY, maxCandidatesPerExecution: 500 } });
   app.bindNotAnExpert();
   app.bindEvidence(['ev_1', 'ev_2', 'ev_3', 'ev_4', 'ev_5']);
-  decisions = new DecisionRecorder();
+  // T2393 — decisions are written to policy_decisions, which the version trigger reads.
+  decisions = new DbDecisionRecorder(app.db, 'ws_perf');
   app.ports.decisions = decisions;
   app.ports.attestations = { async contribute() { return { evidenceId: 'att' }; } };
   app.ports.readerAccess = { async canRead() { return true; } };
@@ -161,9 +163,16 @@ suite('T2408 · R-048-22 targets', () => {
     );
     await app.db.query(`INSERT INTO learning_candidate_evidence (id,"workspaceId","candidateId","evidenceId","digestAlgorithm",digest) SELECT 'blk_e_'||g, $1, 'blk_c_'||g, 'ev_1', 'sha256', $2 FROM generate_series(1,5000) g`, [WS, DIGEST]);
     await app.db.query(`INSERT INTO knowledge_entries (id,"workspaceId",category,"subjectKey","originProjectId") SELECT 'blk_k_'||g, $1, 'architecture', 'architecture:bulk '||g, $2 FROM generate_series(1,5000) g`, [WS, app.projectId]);
+    // T2393 — each version names an EPIC-031 decision approving its own candidate.
+    await app.db.query(`INSERT INTO decision_explanations (id,"workspaceId","policyVersion","riskClass","authorityApplied") SELECT 'blk_x_'||g, $1, '1', 'high', 'bulk setup' FROM generate_series(1,5000) g`, [WS]);
+    await app.db.query(
+      `INSERT INTO policy_decisions (id,"workspaceId","projectId","actionType","targetType","targetId","effectiveClass",outcome,"decidedBy","authorityBasis","objectVersion","decidedAt","actorKind","actorId","steeringVersions","policyVersion","requiredGates","gateOutcomes","explanationId")
+       SELECT 'blk_d_'||g, $1, $2, 'learning.review.new', 'learning-candidate', 'blk_c_'||g, 'high', 'approved', 'u_rev', 'bulk setup', '1', now(), 'human', 'u_rev', '{}', 1, '[]', '[]', 'blk_x_'||g FROM generate_series(1,5000) g`,
+      [WS, app.projectId],
+    );
     await app.db.query(
       `INSERT INTO knowledge_entry_versions (id,"workspaceId","entryId",version,statement,"proposedStatement",scope,"proposedScope",classification,"candidateId","decisionId","approvedByKind","approvedBy","approvedAt")
-       SELECT 'blk_v_'||g, $1, 'blk_k_'||g, 1, 'bulk statement '||g, 'bulk statement '||g, $2::jsonb, $2::jsonb, 'internal', 'blk_c_'||g, 'dec_blk', 'human', 'u_rev', now() - (g || ' seconds')::interval
+       SELECT 'blk_v_'||g, $1, 'blk_k_'||g, 1, 'bulk statement '||g, 'bulk statement '||g, $2::jsonb, $2::jsonb, 'internal', 'blk_c_'||g, 'blk_d_'||g, 'human', 'u_rev', now() - (g || ' seconds')::interval
          FROM generate_series(1,5000) g`,
       [WS, JSON.stringify({ kind: 'project', projectIds: [app.projectId] })],
     );

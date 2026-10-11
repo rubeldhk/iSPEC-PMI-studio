@@ -13,6 +13,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startLearningApp, type LearningApp } from '../helpers/learning-app.js';
 import { DecisionRecorder, POLICY } from '../helpers/learning-ports.js';
+import { DbDecisionRecorder } from '../helpers/learning-decisions-db.js';
 import { refusingPorts, type ApprovalAttestationInput } from '../../src/modules/learning/learning.tokens.js';
 
 const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
@@ -30,7 +31,8 @@ beforeAll(async () => {
   app = await startLearningApp({ workspaceId: 'ws_review' });
   app.bindNotAnExpert();
   app.bindEvidence();
-  decisions = new DecisionRecorder();
+  // T2393 — decisions are written to policy_decisions, which the version trigger reads.
+  decisions = new DbDecisionRecorder(app.db, 'ws_review');
   app.ports.decisions = decisions;
   app.ports.attestations = { async contribute(input) { attestations.push(input); return { evidenceId: `att_${attestations.length}` }; } };
 }, 600_000);

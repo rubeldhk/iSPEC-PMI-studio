@@ -17,6 +17,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startLearningApp, type LearningApp } from '../helpers/learning-app.js';
 import { DecisionRecorder } from '../helpers/learning-ports.js';
+import { DbDecisionRecorder } from '../helpers/learning-decisions-db.js';
 import { refusingPorts } from '../../src/modules/learning/learning.tokens.js';
 import type { LearningJobs } from '../../src/modules/learning/learning.jobs.js';
 
@@ -37,7 +38,8 @@ beforeAll(async () => {
   app = await startLearningApp({ workspaceId: 'ws_jobs' });
   app.bindNotAnExpert();
   app.bindEvidence();
-  decisions = new DecisionRecorder();
+  // T2393 — decisions are written to policy_decisions, which the version trigger reads.
+  decisions = new DbDecisionRecorder(app.db, 'ws_jobs');
   app.ports.decisions = decisions;
   const { LearningJobs: Jobs } = await import('../../src/modules/learning/learning.jobs.js');
   jobs = app.started.app.get(Jobs, { strict: false });

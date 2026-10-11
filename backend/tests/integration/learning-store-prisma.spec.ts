@@ -16,6 +16,7 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 import { Client } from 'pg';
 import { PrismaClient } from '@prisma/client';
 import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
+import { insertDecision } from '../helpers/learning-decisions-db.js';
 import { candidateRecord, citationFor, entryRecordFor, versionRecordFor, recordingAudit } from '../helpers/learning-fixtures.js';
 import { PrismaKnowledgeWriter, PrismaLearningStore } from '../../src/modules/learning/learning.store.prisma.js';
 import type { CandidateRecord, LearningStore } from '../../src/modules/learning/learning.store.js';
@@ -49,6 +50,25 @@ async function seed(over: Partial<CandidateRecord> = {}): Promise<CandidateRecor
     tx.insertCandidate(c, [citationFor(c)], { workspaceId: c.workspaceId, candidateId: c.id, state: 'proposed', reason: null, decisionId: null, actorKind: 'platform', actorId: 'learning-intake', at: new Date() }),
   );
   return c;
+}
+
+/**
+ * `T2393` — a version names the EPIC-031 decision that approved it, and the
+ * trigger reads it back. The writer under test is wrapped so each version's
+ * decision exists first, written as any caller would have to.
+ */
+function decided(writer: PrismaKnowledgeWriter): PrismaKnowledgeWriter {
+  const insertVersion = writer.insertVersion.bind(writer);
+  writer.insertVersion = async (m: Materialisation) => {
+    if (m.version !== null) {
+      const known = await db.query(`SELECT 1 FROM policy_decisions WHERE id = $1`, [m.version.decisionId]);
+      if (known.rowCount === 0) {
+        await insertDecision(db, { id: m.version.decisionId, workspaceId: m.workspaceId, projectId: 'p1', candidateId: m.candidateId, outcome: 'approved', actorKind: 'human', actorId: m.version.approvedBy });
+      }
+    }
+    return insertVersion(m);
+  };
+  return writer;
 }
 
 function materialisation(c: CandidateRecord, over: Partial<Materialisation> = {}): Materialisation {
@@ -107,7 +127,7 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
     it('knowledge of another workspace is absent', async () => {
       const c = await seed({ subjectKey: 'test-setup:scoped' });
       const m = materialisation(c);
-      await new PrismaKnowledgeWriter(prisma, recordingAudit()).insertVersion(m);
+      await decided(new PrismaKnowledgeWriter(prisma, recordingAudit())).insertVersion(m);
       expect(await store.entry(OTHER, m.entry!.id)).toBeNull();
       expect(await store.version(OTHER, m.version!.id)).toBeNull();
       expect(await store.versionsByIds(OTHER, [m.version!.id])).toEqual([]);
@@ -166,7 +186,7 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
     it('writes version, status, approved transition and audit in one transaction', async () => {
       const c = await seed({ subjectKey: 'test-setup:together' });
       const m = materialisation(c);
-      await expect(new PrismaKnowledgeWriter(prisma, txAudit).insertVersion(m)).resolves.toBe('written');
+      await expect(decided(new PrismaKnowledgeWriter(prisma, txAudit)).insertVersion(m)).resolves.toBe('written');
       expect((await store.currentTransition(WS, c.id))?.state).toBe('approved');
       expect((await store.currentStatus(WS, m.version!.id))?.status).toBe('current');
       const audit = await db.query(`SELECT 1 FROM audit_entries WHERE "targetId" = $1`, [m.version!.id]);
@@ -177,14 +197,14 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
       const c = await seed({ subjectKey: 'test-setup:audit-fails' });
       const m = materialisation(c);
       const failing: AuditPort = { record: async () => { throw new Error('Audit unbound'); } };
-      await expect(new PrismaKnowledgeWriter(prisma, failing).insertVersion(m)).rejects.toThrow('Audit unbound');
+      await expect(decided(new PrismaKnowledgeWriter(prisma, failing)).insertVersion(m)).rejects.toThrow('Audit unbound');
       expect(await store.version(WS, m.version!.id)).toBeNull();
       expect((await store.currentTransition(WS, c.id))?.state).toBe('proposed');
     });
 
     it('answers already-terminal for a decided candidate, writing nothing', async () => {
       const c = await seed({ subjectKey: 'test-setup:twice' });
-      const writer = new PrismaKnowledgeWriter(prisma, recordingAudit());
+      const writer = decided(new PrismaKnowledgeWriter(prisma, recordingAudit()));
       await writer.insertVersion(materialisation(c));
       const second = materialisation(c);
       await expect(writer.insertVersion(second)).resolves.toBe('already-terminal');
@@ -192,7 +212,7 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
     });
 
     it('supersedes the current version and names the successor; refuses to supersede a non-current one', async () => {
-      const writer = new PrismaKnowledgeWriter(prisma, recordingAudit());
+      const writer = decided(new PrismaKnowledgeWriter(prisma, recordingAudit()));
       const c1 = await seed({ subjectKey: 'test-setup:history' });
       const m1 = materialisation(c1);
       await writer.insertVersion(m1);
@@ -231,7 +251,7 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
       const c = await seed({ subjectKey: 'test-setup:self' });
       const m = materialisation(c);
       await expect(
-        new PrismaKnowledgeWriter(prisma, recordingAudit()).insertVersion({ ...m, version: { ...m.version!, approvedBy: c.sourcePrincipalId } }),
+        decided(new PrismaKnowledgeWriter(prisma, recordingAudit())).insertVersion({ ...m, version: { ...m.version!, approvedBy: c.sourcePrincipalId } }),
       ).rejects.toThrow(/source/);
     });
   });
@@ -263,7 +283,7 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
     });
 
     it('browses newest first, filters, and pages by token', async () => {
-      const writer = new PrismaKnowledgeWriter(prisma, recordingAudit());
+      const writer = decided(new PrismaKnowledgeWriter(prisma, recordingAudit()));
       for (let i = 0; i < 3; i += 1) {
         const c = await seed({ subjectKey: `browse:${i}`, category: 'browse-cat' });
         const m = materialisation(c);

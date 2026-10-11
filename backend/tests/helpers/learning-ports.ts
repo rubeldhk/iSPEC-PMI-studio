@@ -54,6 +54,8 @@ export class DecisionRecorder {
   readonly refusals: { workspaceId: string; decisionId: string; by: { kind: string; id: string }; kind: string; reason: string }[] = [];
   private readonly resolutions = new Map<string, ResolutionView>();
   private seq = 0;
+  /** Decision ids are `<idPrefix>_<n>`; a database-backed subclass makes them unique per instance. */
+  protected idPrefix = 'dec';
   /** What `decide` answers. `pending` unless the test says otherwise. */
   next: 'pending' | 'auto-executed' | 'refused' | 'unreachable' = 'pending';
   /** Refuse an approval by the requester (separation of duties). */
@@ -68,7 +70,7 @@ export class DecisionRecorder {
   async decide(request: LearningDecisionRequest): Promise<DecisionView> {
     if (this.next === 'unreachable') throw new Error('connect ECONNREFUSED decision engine');
     this.requests.push(request);
-    const decisionId = `dec_${++this.seq}`;
+    const decisionId = `${this.idPrefix}_${++this.seq}`;
     this.requestedBy.set(decisionId, request.requestedBy);
     this.actionTypes.set(decisionId, request.actionType);
     const outcome = this.next;

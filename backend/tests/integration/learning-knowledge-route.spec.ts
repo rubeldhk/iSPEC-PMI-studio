@@ -14,6 +14,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startLearningApp, type LearningApp } from '../helpers/learning-app.js';
 import { DecisionRecorder } from '../helpers/learning-ports.js';
+import { DbDecisionRecorder } from '../helpers/learning-decisions-db.js';
 
 const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
 const suite = noRuntime ? describe.skip : describe;
@@ -30,7 +31,8 @@ beforeAll(async () => {
   app = await startLearningApp({ workspaceId: 'ws_know' });
   app.bindNotAnExpert();
   app.bindEvidence();
-  decisions = new DecisionRecorder();
+  // T2393 — decisions are written to policy_decisions, which the version trigger reads.
+  decisions = new DbDecisionRecorder(app.db, 'ws_know');
   app.ports.decisions = decisions;
   app.ports.attestations = { async contribute() { return { evidenceId: 'att' }; } };
   reviewer = await app.cookieFor('u_rev');
