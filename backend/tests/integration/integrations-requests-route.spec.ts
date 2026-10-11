@@ -4,8 +4,10 @@
  * against `AppModule`, with only fixture adapters registered (quickstart Q4,
  * Q5, Q7, Q9 (in part), Q11).
  *
- * `CapabilityPolicy` is refusing until this file binds a recording policy, in
- * the test, after asserting the refusal (`R-039-13`).
+ * `CapabilityPolicy` is bound by the module to `EPIC-031` (`T2212`); the first
+ * suite asserts that real path, then this file binds a recording policy over
+ * it, in the test, so the read capabilities can be exercised without a person
+ * approving each configuration (`R-039-13`).
  *
  * Written to FAIL before `T2150`.
  */
@@ -36,12 +38,31 @@ afterAll(async () => {
   await t?.stop();
 }, 120_000);
 
-suite('T2149 · while CapabilityPolicy is unbound, nothing is decided permissively', () => {
-  it('a configuration PUT answers 503 naming CapabilityPolicy', async () => {
-    const res = await t.configure(t.projectA, 'ReadBuildStatus', [{ registryEntryId: ci }]);
-    expect(res.status).toBe(503);
-    expect(res.body.error).toMatchObject({ code: 'governance_seam_unbound' });
-    expect(res.body.error.message).toContain('CapabilityPolicy');
+suite('T2149, T2212 · with EPIC-031 bound by the module, nothing unclassified is decided permissively', () => {
+  // Before `T2212` this case asserted the refusing seam's 503. The module now
+  // binds `CapabilityPolicy` to EPIC-031's decision engine, so the same PUT is
+  // decided there: no classification rule names the action, it takes the most
+  // restrictive band (FR-DPE-004), waits for a person, and the adapter is
+  // ineligible as `policy-pending` until one approves.
+  it('a configuration PUT records one EPIC-031 decision for the configuration version, pending', async () => {
+    const res = await t.configure(t.projectA, 'ReadRepository', [{ registryEntryId: git }]);
+    expect(res.status).toBe(200);
+    const rows = await t.sql<{ actionType: string; outcome: string; objectVersion: string; projectId: string; requiredGates: unknown; effectiveClass: string }>(
+      `SELECT "actionType","outcome","objectVersion","projectId","requiredGates","effectiveClass" FROM "policy_decisions" WHERE "workspaceId" = $1 AND "actionType" LIKE 'integration.adapter.use.%'`,
+      ['ws_req'],
+    );
+    expect(rows).toEqual([{ actionType: 'integration.adapter.use.ReadRepository', outcome: 'pending', objectVersion: '1', projectId: t.projectA, requiredGates: [], effectiveClass: 'high' }]);
+  });
+
+  // ReadRepository, so the health tick below leaves `fixture-ci` unchecked for
+  // the next suite's first case.
+  it('a request is refused policy-pending, with EPIC-031 asked to read and not to decide again', async () => {
+    await t.tick();
+    const res = await ask({ capability: 'ReadRepository', input: { revision: 'main', mode: 'tree' } }).expect(200);
+    expect(res.body).toMatchObject({ outcome: 'refused', refusal: { code: 'no-eligible-adapter' } });
+    expect(res.body.refusal.candidates.find((c: { entryKey: string }) => c.entryKey === 'fixture-git')).toMatchObject({ ineligibleBecause: 'policy-pending' });
+    const count = await t.sql<{ n: number }>(`SELECT count(*)::int AS n FROM "policy_decisions" WHERE "workspaceId" = $1`, ['ws_req']);
+    expect(count[0]!.n).toBe(1);
   });
 });
 

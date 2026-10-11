@@ -10,9 +10,10 @@
  *   `T1330` durable-store rule);
  * - the adapter catalog, from `composition/integration-adapters.ts`, the one
  *   backend file that imports adapter packages (`R-039-1`);
- * - the declared ports as **seams bound refusing** — `CapabilityPolicy`,
- *   `EvidenceSink` — and `CredentialKeyring` bound from `PMI_INTEGRATION_KEYS`
- *   when present (`R-039-13`, `R-039-10`);
+ * - the declared ports as **seams**: `CapabilityPolicy` bound to `EPIC-031`'s
+ *   decision engine (`T2212`), `EvidenceSink` bound refusing, and
+ *   `CredentialKeyring` bound from `PMI_INTEGRATION_KEYS` when present
+ *   (`R-039-13`, `R-039-10`);
  * - `PMI_ENVIRONMENT`, read once; the module refuses to start without it
  *   (`R-039-8`);
  * - the ticker that drives `runDueHealthChecks`, off under
@@ -28,6 +29,10 @@ import { AccessModule } from '../access/access.module.js';
 import { AuditModule } from '../audit/audit.module.js';
 import { AuditService } from '../audit/audit.service.js';
 import { ConnectorModule } from '../connector/connector.module.js';
+import { DecisionModule } from '../decision/decision.module.js';
+import { DECISION_REPOSITORY } from '../decision/decision.tokens.js';
+import type { DecisionRepository } from '../decision/decision.repository.js';
+import { DecisionEngine } from '../decision/evaluator.js';
 import { CONNECTOR_CREDENTIAL_STORE } from '../connector/connector.tokens.js';
 import type { ConnectorCredentialStore } from '../connector/connector-credential.store.js';
 import { WorkstationConnectionService } from '../connector/workstation-connection.service.js';
@@ -48,6 +53,7 @@ import { createHub, type Hub } from './hub.js';
 import { HUB } from './hub.token.js';
 import { RegistryController } from './registry.controller.js';
 import { CapabilityRequestsController } from './requests/capability-requests.controller.js';
+import { decisionCapabilityPolicy } from './policy/capability-policy.adapter.js';
 import { InMemoryIntegrationsStore, type IntegrationsStore } from './integrations.store.js';
 import { PrismaIntegrationsStore } from './integrations.store.prisma.js';
 import {
@@ -76,7 +82,7 @@ export function resolvePlatformEnvironment(env: Readonly<Record<string, string |
 export const HEALTH_TICK_MS = 30_000;
 
 @Module({
-  imports: [AuditModule, AccessModule, ProjectsModule, ConnectorModule, ExecutionsModule],
+  imports: [AuditModule, AccessModule, ProjectsModule, ConnectorModule, ExecutionsModule, DecisionModule],
   controllers: [RegistryController, ConfigurationController, CredentialsController, CapabilityRequestsController, EvidenceIntakeController, DeploymentController],
   providers: [
     { provide: PLATFORM_ENVIRONMENT, useFactory: (): string => resolvePlatformEnvironment(process.env) },
@@ -88,7 +94,19 @@ export const HEALTH_TICK_MS = 30_000;
           : new InMemoryIntegrationsStore(CAPABILITY_CONTRACTS.map((d, i) => ({ id: `contract_${i}`, name: d.name, scope: d.scope, major: d.major, minor: d.minor, status: 'approved' as const, document: d as unknown as Record<string, unknown>, changesState: d.changesState }))),
     },
     { provide: ADAPTER_CATALOG, useFactory: (): AdapterCatalog => createAdapterCatalog() },
-    { provide: CapabilityPolicySeam, useValue: new CapabilityPolicySeam() },
+    {
+      // `T2212` — EPIC-031 decides whether a project may use an adapter for a
+      // capability, once per configuration version, read back at every
+      // resolution (`R-039-7`). A route test may still bind a recording
+      // policy over it, in the test.
+      provide: CapabilityPolicySeam,
+      inject: [DecisionEngine, DECISION_REPOSITORY],
+      useFactory: (engine: DecisionEngine, decisions: DecisionRepository): CapabilityPolicySeam => {
+        const seam = new CapabilityPolicySeam();
+        seam.bind(decisionCapabilityPolicy(engine, decisions));
+        return seam;
+      },
+    },
     { provide: EvidenceSinkSeam, useValue: new EvidenceSinkSeam() },
     {
       provide: CredentialKeyringSeam,

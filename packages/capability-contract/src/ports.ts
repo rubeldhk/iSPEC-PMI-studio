@@ -14,7 +14,7 @@ export const CAPABILITY_PORTS: readonly PortDeclaration[] = Object.freeze([
   {
     name: 'CapabilityPolicy',
     direction: 'declared',
-    filledBy: 'EPIC-031 DecisionEngine adapter (T2212, blocked until EPIC-031 merges)',
+    filledBy: 'EPIC-031 DecisionEngine adapter (T2212): one decision per configuration version, read back at every resolution',
     absent: 'refuse — configuration PUT and every project-scope resolution answer 503 naming CapabilityPolicy',
   },
   {

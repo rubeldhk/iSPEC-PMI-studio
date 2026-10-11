@@ -4,7 +4,7 @@
  *
  * | Port | Filled by | Absent |
  * |---|---|---|
- * | `CapabilityPolicy` | `EPIC-031` (`T2212`, blocked) | configuration `PUT` and every project resolution answer 503 naming it |
+ * | `CapabilityPolicy` | `EPIC-031` (`T2212`, bound in `integrations.module.ts`) | configuration `PUT` and every project resolution answer 503 naming it |
  * | `EvidenceSink` | `EPIC-032` (`T2215`, blocked) | intake records `refused / evidence-seam-unbound` |
  * | `CredentialKeyring` | `PMI_INTEGRATION_KEYS` | credential writes answer 503 naming it; required credentials read as missing |
  *
