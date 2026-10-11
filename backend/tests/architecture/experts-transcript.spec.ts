@@ -7,10 +7,10 @@
  * `governance/known-red.json` rather than silenced.
  *
  * It cannot be produced here, and typing one would be the fabrication this
- * check exists to catch: registering and approving an Expert work since Phase 9
- * bound `EPIC-032` and `EPIC-031`, but **no run exists to show** because dispatch
- * refuses until a runner and an execution identity exist (`R-047-2`,
- * `DEF-047-001`).
+ * check exists to catch: registering and approving an Expert work (Phase 9), and
+ * a dispatch is registered with `EPIC-037` under the Expert's own identity
+ * (`DEF-047-001`), but **no run executes to show** because no agent runtime is
+ * composed into the API (`DEF-047-002`).
  */
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

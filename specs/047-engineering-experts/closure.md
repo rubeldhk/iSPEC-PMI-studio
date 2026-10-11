@@ -184,3 +184,57 @@ where it was `503`; and submitting no longer refuses `503`. Without a database t
 
 `/speckit-specify` for the `DEF-047-001` follow-up — an Expert execution identity over `EPIC-043`'s
 principals and a runner over `EPIC-028`'s seam — or a defect task under this Epic.
+
+---
+
+## 2026-10-10 — Phase 15: `DEF-047-001`, an execution identity for an Expert run (`T2560`–`T2569`)
+
+**`DEF-047-001` is resolved; its runner half is split out as `DEF-047-002`.** An Expert dispatch is
+now registered with `EPIC-037` under the Expert's own identity, through the composed application.
+Nothing yet executes it: no agent runtime is composed into the API process.
+
+| Port | Before | Now |
+|---|---|---|
+| `ExpertExecutions` | refusing (`DEF-047-001`) | `adapters/executions.adapter.ts` over `ExecutionRegistryFacade`, `ExecutionTimelineService`, `EPIC-028`'s principal registry and snapshots, `EPIC-024`'s delegations |
+| `ExpertGateways` | refusing (`R-047-2`) | `adapters/runners.adapter.ts` over `@pmi/agent-contract` / `@pmi/execution-contract`; refuses naming `DEF-047-002` while `EXPERT_AGENT_RUNTIME` is `null` |
+
+### Decisions taken
+
+- **One agent principal per *(Expert, sponsor)*.** `EPIC-028` freezes a principal's sponsor, so a
+  principal cannot serve two; the mapping is `expert_principals`, first writer wins.
+- **The sponsor must be able to edit the project.** `PrincipalDelegationService.delegate` grants
+  without checking the sponsor's own authority, so the adapter checks first (`BR-0003`). A user who
+  cannot is refused `403` before anything is minted or registered.
+- **Surface `managed-sandbox`.** The registry has no "platform" surface; this is the platform's own
+  sandbox and reads `managed` assurance.
+- **The refs are stored per execution** (`expert_execution_identities`) because `EPIC-037`
+  re-checks identity at completion and a stop cascade may complete a run from another process.
+- **A non-governed command is refused before registration**, `400`. The real registry cannot register
+  one, so the in-test `dispatch-refused` record for it no longer happens against `EPIC-037`.
+- **An unattended completion is proposed as an event.** `proposeTransition` transitions a
+  specification; an Expert run has none. `completion-proposed` is recorded and the execution left open
+  for a person (`FR-EXP-063`). This departs from `R-047-3`, which named `proposeTransition`.
+- **Three kinds join `EXPERT_GOVERNANCE_KINDS`** — `contract-version-in-force` and `run-failed`, which
+  dispatch already recorded against the in-test double only, and `completion-proposed`.
+- **A runner reports only what it observed**: no tool calls, no consumption and no output kinds,
+  because the agent contract returns none. With the default contract's required `test-report`, a
+  real run therefore ends `incomplete` until an adapter can report output kinds.
+
+### Tests
+
+| Suite | Result |
+|---|---|
+| `expert-event.spec.ts` (contract) | observed failing (4), then **58 passed** in the package |
+| `expert-adapter-executions` / `-runners` (unit) | observed failing (no module), then **31 passed** |
+| `experts-execution-identity` (PostgreSQL, composed) | **4 passed**; unbinding the adapter fails 3 (`mutation-proofs.md` §4) |
+| Every Experts integration suite | reachability and dispatch route rewritten for the new truth; all pass |
+
+### Still not done
+
+`DEF-047-002` — needs an architecture decision; the defect records three options and recommends an API
+launcher package outside `backend/src`. `T1992` stays red until a run can execute.
+
+### Recommended next command
+
+Decide `DEF-047-002`, then `/speckit-specify` for the API composition root (or an amendment to
+`ADR-0030`) before any further Expert work.
