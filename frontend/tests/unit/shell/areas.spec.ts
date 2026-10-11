@@ -91,7 +91,8 @@ describe('T436f · the area registry is well-formed', () => {
     // EPIC-038 T1269 delivered Context (the inspection screen reads GET /context/packages) and
     // EPIC-031 T759 delivered the Decision Inbox (it renders GET /v1/inbox): ten became eight.
     // EPIC-047 T1976 delivered Engineering Experts (the view-only registry): eight became seven.
-    expect(owed.length, 'no areas are awaiting their owners').toBe(7);
+    // EPIC-039 T2209 delivered Integrations (the view-only registry reads GET /integrations/registry): seven became six.
+    expect(owed.length, 'no areas are awaiting their owners').toBe(6);
     for (const area of owed) {
       expect(area.epic, `${area.id} is owed by nobody`).toMatch(/^EPIC-\d{3}(\s*·\s*EPIC-\d{3})*$/);
     }
@@ -168,16 +169,16 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
    * count followed. `areas.ts` carries the note forbidding the reverse — a
    * landing invented to justify a status is the status driving the product.
    */
-  it('counts 9 delivered, 2 partly delivered, 7 owed, 0 undeclared across all eighteen (EPIC-038 delivered Context, EPIC-031 the Decision Inbox, EPIC-047 Engineering Experts)', () => {
+  it('counts 10 delivered, 2 partly delivered, 6 owed, 0 undeclared across all eighteen (EPIC-038 delivered Context, EPIC-031 the Decision Inbox, EPIC-047 Engineering Experts, EPIC-039 Integrations)', () => {
     expect({
       delivered: by('delivered').length,
       partly: by('partly-delivered').length,
       owed: by('declared-not-delivered').length,
       undeclared: by('undeclared').length,
-    }).toEqual({ delivered: 9, partly: 2, owed: 7, undeclared: 0 });
+    }).toEqual({ delivered: 10, partly: 2, owed: 6, undeclared: 0 });
   });
 
-  it('counts 8 / 2 / 7 / 0 across the seventeen prototype screens — the approved matrix plus Governance, Plan & Tasks, Context, the Decision Inbox and Engineering Experts', () => {
+  it('counts 9 / 2 / 6 / 0 across the seventeen prototype screens — the approved matrix plus Governance, Plan & Tasks, Context, the Decision Inbox, Engineering Experts and Integrations', () => {
     const n = (status: Area['status']): number =>
       PROTOTYPE_17.filter((area) => area.status === status).length;
     expect(PROTOTYPE_17).toHaveLength(17);
@@ -251,10 +252,11 @@ describe('T1014 · the registry expresses the approved delivery matrix', () => {
     expect(deliveredAreas().every((area) => area.status === 'delivered')).toBe(true);
     // Nine in the registry since EPIC-047 delivered Engineering Experts (eight after
     // EPIC-038's Context and EPIC-031's Decision Inbox); eight of them are prototype screens. (Six after EPIC-046's Plan & Tasks, five after EPIC-042's Governance.)
-    expect(deliveredAreas().length).toBe(9);
+    // Ten since EPIC-039 delivered Integrations; nine of them are prototype screens.
+    expect(deliveredAreas().length).toBe(10);
     expect(
       deliveredAreas().filter((a) => a.id !== 'workspace-administration').length,
-    ).toBe(8);
+    ).toBe(9);
   });
 
   it('maps the seventeen V2 prototype pages plus Workspace & Administration', () => {
@@ -294,5 +296,33 @@ describe('T1975 (EPIC-047) · the Engineering Experts area is delivered AND rend
     expect(area?.status).toBe('delivered');
     expect(area?.element, 'delivered with nothing to render').toBeTypeOf('function');
     expect(area?.path).toBe('/experts');
+  });
+});
+
+describe('T2208 (EPIC-039) · the Integrations area is delivered AND renders, view only', () => {
+  it('is owned by EPIC-039, delivered, and carries an element', () => {
+    // Element first, status second (`areas.ts`): the view-only registry was
+    // built (`T2207`) before this area was promoted.
+    const area = AREAS.find((a) => a.id === 'integrations');
+    expect(area?.epic).toBe('EPIC-039');
+    expect(area?.status).toBe('delivered');
+    expect(area?.element, 'delivered with nothing to render').toBeTypeOf('function');
+    expect(area?.path).toBe('/integrations');
+    expect(area?.group).toBe('platform');
+  });
+
+  it('the page and its area view import no write function from any client (FR-HUB-074, R-039-16)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { fileURLToPath } = await import('node:url');
+    const { dirname, resolve } = await import('node:path');
+    const src = resolve(dirname(fileURLToPath(import.meta.url)), '../../../src');
+    const page = readFileSync(resolve(src, 'pages/Integrations.tsx'), 'utf8');
+    const client = readFileSync(resolve(src, 'services/integrations.client.ts'), 'utf8');
+    // The page imports only types from a client, and the one client it reads through has no method but GETs.
+    for (const line of page.split('
+').filter((l) => /^import /.test(l) && /services\//.test(l))) expect(line, line).toMatch(/^import type /);
+    expect(page).not.toMatch(/services\/api['"]/);
+    expect(client).not.toMatch(/method:\s*'(POST|PUT|PATCH|DELETE)'/);
+    expect(client).not.toMatch(/(put|post|patch|delete|set|create|update|remove|register|retire)[A-Z]\w*\s*[(:]/);
   });
 });
