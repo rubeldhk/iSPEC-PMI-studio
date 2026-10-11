@@ -92,6 +92,7 @@ interface Read {
 
 export class DeploymentBindingService {
   private current: DeploymentBindingSnapshot;
+  private fault: string | null = null;
 
   constructor(private readonly deps: DeploymentBindingDeps) {
     this.current = this.unboundSnapshot();
@@ -227,8 +228,22 @@ export class DeploymentBindingService {
       };
     }
     this.current = next;
-    await this.record(next, observedBy);
+    // DEF-039-001 — the snapshot above is the in-memory truth `HubEmbeddingPort`
+    // reads. Recording it is append-only history: a store that cannot be
+    // reached must not abort the application's boot. The failure is kept, and
+    // the next `recheck()` compares with the latest row again and appends.
+    try {
+      await this.record(next, observedBy);
+      this.fault = null;
+    } catch (err) {
+      this.fault = err instanceof Error ? err.message : String(err);
+    }
     return next;
+  }
+
+  /** DEF-039-001 — why the last observation could not be recorded, or `null`. */
+  recordingFault(): string | null {
+    return this.fault;
   }
 
   private async record(s: DeploymentBindingSnapshot, observedBy: string): Promise<void> {

@@ -48,6 +48,26 @@ describe('T2200 · the Embed binding, read at boot (FR-HUB-084)', () => {
     expect(row).toMatchObject({ adapterKey: 'fixture-embed', observedModel: { model: 'fixture-letters', version: 'sha256:fixture-letters-1', dimension: 27 }, modelId: 'fixture-embed:fixture-letters@sha256:fixture-letters-1', previousModelId: null, reindexRequired: true, health: 'healthy', reason: null });
   });
 
+  it('DEF-039-001 · an unreachable store does not abort boot; the next recheck records the observation', async () => {
+    const s = store();
+    let down = true;
+    const flaky = new Proxy(s, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver) as unknown;
+        if (down && (prop === 'latestObservation' || prop === 'appendObservation')) return async () => { throw new Error("Can't reach database server"); };
+        return typeof value === 'function' ? (value as (...a: unknown[]) => unknown).bind(target) : value;
+      },
+    });
+    const service = new DeploymentBindingService({ store: flaky, catalog: createAdapterCatalog(), clock: () => NOW, env: { PMI_EMBED_ADAPTER: 'fixture-embed' } });
+    await expect(service.observeAtBoot()).resolves.toMatchObject({ adapterKey: 'fixture-embed', eligible: true });
+    expect(service.snapshot()).toMatchObject({ eligible: true, dimension: 27 });
+    expect(service.recordingFault()).toMatch(/reach database/);
+    down = false;
+    await service.recheck();
+    expect(service.recordingFault()).toBeNull();
+    expect(await s.listObservations('Embed', 10)).toEqual([expect.objectContaining({ adapterKey: 'fixture-embed', observedBy: 'system:health' })]);
+  });
+
   it('a reboot with the same configuration appends nothing', async () => {
     const s = store();
     await boot(s, { PMI_EMBED_ADAPTER: 'fixture-embed' });
