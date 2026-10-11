@@ -11,8 +11,8 @@
  * Bound in-test, visibly: `ExpertProvenance` (not an Expert session),
  * `EvidenceReads` (a recorder), and — in one case only — `ReaderAccess`, to show
  * the default withholds and a grant reveals. The approved entry a supersession
- * targets is written with raw SQL in setup: approving one needs `EPIC-031`
- * (`T2362` drives that path with a recording decision port).
+ * targets is written with raw SQL in setup, after the `EPIC-031` decision rows
+ * the `T2393` trigger requires (`T2362` and `T2402` drive the approval path).
  */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -24,6 +24,7 @@ import { CONTRACT_VERSION } from '@pmi/execution-registry-contract';
 import { startAuthenticatedApp, type AuthenticatedApp } from '../helpers/authenticated-app.js';
 import { DIGEST } from '../helpers/learning-fixtures.js';
 import { POLICY, verified } from '../helpers/learning-ports.js';
+import { approvedByHuman } from '../helpers/learning-decisions-db.js';
 import type { LearningPorts, ResolvedEvidence } from '../../src/modules/learning/learning.tokens.js';
 
 const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
@@ -76,19 +77,21 @@ async function register(key: string): Promise<string> {
 async function approvedEntry(candidateId: string): Promise<{ entryId: string; versionId: string }> {
   const entryId = `ke_${candidateId}`;
   const versionId = `kv_${candidateId}`;
+  // T2393: the version's EPIC-031 decision is recorded first, as the trigger requires.
+  const { decisionId, resolvingDecisionId } = await approvedByHuman(db, WS, candidateId, 'u_owner');
   await db.query('BEGIN');
   await db.query(`INSERT INTO knowledge_entries (id,"workspaceId",category,"subjectKey","originProjectId") VALUES ($1,$2,'architecture','architecture:old fact',$3)`, [entryId, WS, projectId]);
   await db.query(
-    `INSERT INTO knowledge_entry_versions (id,"workspaceId","entryId",version,statement,"proposedStatement",scope,"proposedScope",classification,"candidateId","decisionId","approvedByKind","approvedBy","approvedAt")
-     VALUES ($1,$2,$3,1,'The old fact.','The old fact.',$4::jsonb,$4::jsonb,'internal',$5,'dec_setup','human','u_owner',now())`,
-    [versionId, WS, entryId, JSON.stringify({ kind: 'project', projectIds: [projectId] }), candidateId],
+    `INSERT INTO knowledge_entry_versions (id,"workspaceId","entryId",version,statement,"proposedStatement",scope,"proposedScope",classification,"candidateId","decisionId","resolvingDecisionId","approvedByKind","approvedBy","approvedAt")
+     VALUES ($1,$2,$3,1,'The old fact.','The old fact.',$4::jsonb,$4::jsonb,'internal',$5,$6,$7,'human','u_owner',now())`,
+    [versionId, WS, entryId, JSON.stringify({ kind: 'project', projectIds: [projectId] }), candidateId, decisionId, resolvingDecisionId],
   );
-  await db.query(`INSERT INTO knowledge_version_status_events (id,"workspaceId","versionId",status,"actorId","decisionId","candidateId",at) VALUES ($1,$2,$3,'current','u_owner','dec_setup',$4,now())`, [`se_${versionId}`, WS, versionId, candidateId]);
+  await db.query(`INSERT INTO knowledge_version_status_events (id,"workspaceId","versionId",status,"actorId","decisionId","candidateId",at) VALUES ($1,$2,$3,'current','u_owner',$5,$4,now())`, [`se_${versionId}`, WS, versionId, candidateId, decisionId]);
   // The next sequence, whatever the intake already appended (since T2349 a decision is requested on submit).
   await db.query(
     `INSERT INTO learning_candidate_transitions (id,"workspaceId","candidateId",seq,state,"decisionId","actorKind","actorId",at)
-     SELECT $1,$2,$3, max(seq) + 1,'approved','dec_setup','human','u_owner',now() FROM learning_candidate_transitions WHERE "candidateId" = $3`,
-    [`lct_${candidateId}`, WS, candidateId],
+     SELECT $1,$2,$3, max(seq) + 1,'approved',$4,'human','u_owner',now() FROM learning_candidate_transitions WHERE "candidateId" = $3`,
+    [`lct_${candidateId}`, WS, candidateId, decisionId],
   );
   await db.query('COMMIT');
   return { entryId, versionId };

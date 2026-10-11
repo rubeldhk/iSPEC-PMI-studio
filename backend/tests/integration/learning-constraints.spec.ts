@@ -9,7 +9,8 @@
  * **removal** turns that into a red suite.
  *
  * The decision fences that need `EPIC-031`'s `policy_decisions` (plan item 2.3)
- * are `T2392`–`T2393`, after that Epic merges.
+ * are `T2392`–`T2393` (`learning-knowledge-fences.spec.ts`); since they landed,
+ * every version written here first records the decision that approved it.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -18,6 +19,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { Client } from 'pg';
 import { POSTGRES_IMAGE } from '../helpers/postgres-image.js';
+import { approvedByHuman } from '../helpers/learning-decisions-db.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = resolve(here, '../../prisma/migrations');
@@ -99,13 +101,17 @@ async function transition(candidateId: string, seq: number, state: string, over:
 async function approve(candidateId: string, over: Record<string, unknown> = {}): Promise<{ entryId: string; versionId: string }> {
   const entryId = id('ke');
   const versionId = id('kv');
+  // T2393: a version needs the EPIC-031 decision that approved it — recorded first,
+  // with the same SQL any other caller would need (learning-decisions-db.ts).
+  const decided = await approvedByHuman(db, WS, candidateId);
+  const row = versionRow(candidateId, entryId, versionId, { ...decided, ...over });
   await db.query('BEGIN');
   try {
     await insert('knowledge_entries', { id: entryId, workspaceId: WS, category: 'test-setup', subjectKey: `k_${entryId}`, originProjectId: 'p_1' });
-    await insert('knowledge_entry_versions', versionRow(candidateId, entryId, versionId, over));
-    await insert('knowledge_version_status_events', { id: id('se'), workspaceId: WS, versionId, status: 'current', actorId: 'u_h', decisionId: 'd_1', candidateId, at: new Date() });
+    await insert('knowledge_entry_versions', row);
+    await insert('knowledge_version_status_events', { id: id('se'), workspaceId: WS, versionId, status: 'current', actorId: 'u_h', decisionId: row['decisionId'], candidateId, at: new Date() });
     const last = await db.query(`SELECT max(seq) AS s FROM learning_candidate_transitions WHERE "candidateId" = $1`, [candidateId]);
-    await transition(candidateId, Number(last.rows[0].s) + 1, 'approved', { decisionId: 'd_1', actorKind: 'human', actorId: 'u_h' });
+    await transition(candidateId, Number(last.rows[0].s) + 1, 'approved', { decisionId: row['decisionId'], actorKind: 'human', actorId: 'u_h' });
     await db.query('COMMIT');
   } catch (err) {
     await db.query('ROLLBACK');
@@ -217,8 +223,9 @@ suite('T2315 · the learning tables refuse at the database', () => {
       const c = await candidate();
       const entryId = id('ke');
       await insert('knowledge_entries', { id: entryId, workspaceId: WS, category: 'test-setup', subjectKey: `k_${entryId}`, originProjectId: 'p_1' });
-      await insert('knowledge_entry_versions', versionRow(c, entryId, id('kv')));
-      await expect(transition(c, 2, 'approved', { decisionId: 'd_1', actorKind: 'human', actorId: 'u_h' })).rejects.toThrow(/version/);
+      const decided = await approvedByHuman(db, WS, c);
+      await insert('knowledge_entry_versions', versionRow(c, entryId, id('kv'), decided));
+      await expect(transition(c, 2, 'approved', { decisionId: decided.decisionId, actorKind: 'human', actorId: 'u_h' })).rejects.toThrow(/version/);
     });
 
     it('refuses a sequence that is not the next one', async () => {
