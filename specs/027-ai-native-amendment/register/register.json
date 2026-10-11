@@ -4,11 +4,11 @@
     "clauses.md": "a14129d7b62076217cb412f50c8ff9097411664a35a67c28d4cca0114ea2a27d",
     "verdicts.md": "c88a514dd2c7dc79637f9cc22d019a0c895d82042c2ed7349165dc8d326eaff4",
     "capabilities.md": "f54ac90c0cb703e160e6883f4312c8fea2a31584be633002c852622e304e10fb",
-    "capability-areas.md": "5687b05290b871b8d7e2907e40529e73412df2dca353f51fe631c7c5f353ab5f",
+    "capability-areas.md": "4e094036ad4526b90da83c4d2d5cfcbd4ce452cebb48d89b9a63efb9a81a3c2e",
     "premises.md": "077020efcdd8390b9900188967b4e8fd0826ace33da6f59bd7607b6242fe361a",
     "decisions.md": "1c158babcbfeadaeceb1e61123fed285aeff28839a336631b37562311f2072fe",
     "research.md": "36599a7513730c4e22f5a68d3734c0992e3bff04b1f18f848a6351534449961e",
-    "adrs.md": "76c4f11bd30ca2e76c18b0d9021c76c904b3bcefaba4bb34a5eca08a50b186c6",
+    "adrs.md": "df14d236ba2b13d98ca9d5d388565612b1aa3d5c7cf37d913a8048adc0a59bbd",
     "preserved-elements.md": "ef54fe5edfa6a3c3a799b5ffb8e86daf094032a78b5f94fd057c730efa3d90ed"
   },
   "clauses": [
@@ -12421,8 +12421,8 @@
     {
       "area": "Governed Learning",
       "verdict": "missing",
-      "home": "UNOWNED",
-      "posture": "held — no epic exists"
+      "home": "EPIC-048",
+      "posture": "BUILT 2026-10-11 — DEFER-048-01 (reuse across workspaces, the remainder of BR-0118) open, no owning epic"
     },
     {
       "area": "Specification Compliance Agent",
@@ -13273,8 +13273,8 @@
     },
     {
       "subject": "ADR-0021 Governed Learning — agent observations are not knowledge",
-      "status": "open",
-      "awaits": "PMI-DOC-004 and a Governed Learning epic",
+      "status": "decided",
+      "awaits": null,
       "supersedes": null,
       "superseded_reasoning": null
     },

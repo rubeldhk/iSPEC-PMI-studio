@@ -247,6 +247,13 @@ already happened.
 | Integrations | — | **unowned** (`U-13`) |
 | Reports | — | **unowned** (`U-16`) |
 
+> **Back-fill, 2026-10-11 (`EPIC-048` `T2419`, on the Project Owner’s instruction to finish
+> EPIC-048).** `EPIC-048` Governed Learning owns **no area** (`FR-LRN-070`). It contributes two hosted
+> views: the learning-candidate review, rendered inside the **Decision Inbox** (`EPIC-031`) through
+> its detail-renderer registry, and the approved-knowledge browser at `/context/knowledge`, inside
+> **Context** (`EPIC-038`). The rows above are left as written; this note records only `EPIC-048`’s
+> place in them.
+
 `UX-0060` — An area in the unowned rows MUST NOT be implemented before its Epic is declared. This
 document defines where it will go, not permission to build it.
 

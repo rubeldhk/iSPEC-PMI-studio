@@ -347,11 +347,11 @@ requirement is in target scope with no declared Epic, which §13 records as a ga
 > Numbering note: learning occupies `BR-0114`–`BR-0118`. `BR-0110`–`BR-0113` are approved v1.0
 > requirements, held in §6.14, §6.18 and §6.21.
 
-- **BR-0114** — **Learning candidate.** An agent observation MUST enter as an untrusted Learning Candidate, never directly as trusted organizational knowledge. → no owner
-- **BR-0115** — **Evidence and provenance.** A Learning Candidate MUST retain its source, supporting evidence, confidence and scope. → no owner
-- **BR-0116** — **Learning decision.** Policy MAY auto-approve explicitly low-risk categories; all other learning requires authorized human review. → no owner
-- **BR-0117** — **Supersession.** Approved knowledge MUST retain history, scope and supersession or deprecation status. → no owner
-- **BR-0118** — **Reuse.** Approved knowledge MAY be reused across projects only according to tenant, classification and scope policy. → no owner
+- **BR-0114** — **Learning candidate.** An agent observation MUST enter as an untrusted Learning Candidate, never directly as trusted organizational knowledge. → owner **EPIC-048** *(assigned 2026-10-11 on the Project Owner’s instruction to finish EPIC-048)*
+- **BR-0115** — **Evidence and provenance.** A Learning Candidate MUST retain its source, supporting evidence, confidence and scope. → owner **EPIC-048** *(assigned 2026-10-11 on the Project Owner’s instruction to finish EPIC-048)*
+- **BR-0116** — **Learning decision.** Policy MAY auto-approve explicitly low-risk categories; all other learning requires authorized human review. → owner **EPIC-048** *(assigned 2026-10-11 on the Project Owner’s instruction to finish EPIC-048)*
+- **BR-0117** — **Supersession.** Approved knowledge MUST retain history, scope and supersession or deprecation status. → owner **EPIC-048** *(assigned 2026-10-11 on the Project Owner’s instruction to finish EPIC-048)*
+- **BR-0118** — **Reuse.** Approved knowledge MAY be reused across projects only according to tenant, classification and scope policy. → owner **EPIC-048** *(assigned 2026-10-11 on the Project Owner’s instruction to finish EPIC-048; reuse across workspaces deferred as `DEFER-048-01`, no owning epic)*
 
 ## 6.13 Integration Hub and capability abstraction · BG-04
 

@@ -1,6 +1,6 @@
 # DEF-048-002 — the knowledge browser is built and reachable from nowhere
 
-**Epic**: `EPIC-048` | **Raised**: 2026-10-10 | **Status**: OPEN — discharged by `T2387`
+**Epic**: `EPIC-048` | **Raised**: 2026-10-10 | **Status**: CLOSED 2026-10-11 — discharged by `T2387`
 
 **Originating task**: `T2381` (`frontend/src/pages/KnowledgeBrowser.tsx`) · found by `EPIC-010`'s
 `T200a` (`frontend/tests/unit/design/page-reachability.spec.ts`), which reports the page as imported by
@@ -40,3 +40,9 @@ no change to it.
 
 Open defects block the Epic's exit (spec *Epic Exit Criteria*). This one closes in the same rebase that
 brings the Context area in, before `EPIC-048` can merge (merge-order step 5).
+
+## Discharged — 2026-10-11
+
+`EPIC-038` reached `main`; `T2386`–`T2387` routed `/context/knowledge` as a `SUB_VIEWS` entry and
+linked it from the Context page. Re-run on the branch merged with `origin/main` on 2026-10-11, with no
+change to the check: `frontend/tests/unit/design/page-reachability.spec.ts` (`T200a`) **4/4 passed**.
