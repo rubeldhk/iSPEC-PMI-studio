@@ -301,6 +301,11 @@ suite('T2315 · the learning tables refuse at the database', () => {
       await expect(approve(c, { approvedBy: 'agent_1' })).rejects.toThrow(/source/);
     });
 
+    it("a person's own approval of their own candidate is the workspace's separation-of-duties question, not refused here (T2672)", async () => {
+      const c = await candidate({ sourceKind: 'person', executionId: null, sourcePrincipalId: 'u_h' });
+      await expect(approve(c, { approvedBy: 'u_h' })).resolves.toMatchObject({ versionId: expect.any(String) });
+    });
+
     it("an approvedBy equal to the candidate's Expert is refused", async () => {
       const c = await candidate({ expertId: 'expert_1', expertContractVersionId: 'ecv_1', expertContractVersion: 1 });
       await expect(approve(c, { approvedBy: 'expert_1' })).rejects.toThrow(/source/);

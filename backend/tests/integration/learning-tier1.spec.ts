@@ -633,6 +633,27 @@ suite('T2402 · Tier 1 — Governed Learning through the composed application', 
     await expect(app.db.query(`UPDATE knowledge_entry_versions SET statement = 'edited' WHERE id = $1`, [shared.q15!.v1])).rejects.toThrow(/append-only/);
   });
 
+  it('FR-LRN-027 · a person approves their own candidate where the workspace’s separation-of-duties policy allows it (T2672)', async () => {
+    const policy = (allowed: string[]) =>
+      app.api().post('/v1/decision-policies').set('Cookie', app.started.cookie).send({
+        bandTreatment: { low: 'auto-execute', medium: 'gates-required', high: 'human-approval' },
+        selfApprovalAllowed: allowed,
+        automatedActions: [{ actionPattern: 'learning.*', ruleId: 'learning.candidate-submitted' }],
+      });
+    await policy(['learning.review.*']).expect(201);
+    try {
+      const { executionId: _x, ...personBody } = body({ subject: 'a person states what they found' });
+      const sub = await app.api().post('/v1/learning/candidates').set('Cookie', app.started.cookie).send({ ...personBody, projectId: app.projectId }).expect(201);
+      expect(sub.body.state).toBe('pending-review');
+      const out = await review(sub.body.candidateId, app.started.cookie, { decision: 'approve' }).expect(200);
+      expect(out.body).toMatchObject({ state: 'approved', version: 1 });
+      const [v] = await versionsOf(sub.body.candidateId);
+      expect(v).toMatchObject({ approvedByKind: 'human', approvedBy: 'u_owner' });
+    } finally {
+      await policy([]).expect(201);
+    }
+  });
+
   it('Q18 · past the review window: expired, not rejected; closed in EPIC-031 and gone from the Inbox (A-031-1)', async () => {
     const { candidateId, decisionId } = shared.q6!;
     expect(await inbox(reviewer)).toContain(decisionId);
