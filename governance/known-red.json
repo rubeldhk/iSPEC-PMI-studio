@@ -57,6 +57,15 @@
       "evidence": "docs/uat/EPIC-031-inbox-transcript.md",
       "owes": "T791 (EPIC-031) — run e2e/tests/epic-031-inbox.spec.ts against the reference-local stack: the Decision Inbox journey, reached in one action, approved by keyboard, the item leaving",
       "why": "The run needs the reference-local stack and a seeded user's password, which an agent does not hold. The harness writes the transcript; typing one instead is the fabrication the check exists to test for."
+    },
+    {
+      "id": "T2415",
+      "file": "backend/tests/architecture/learning-transcript.spec.ts",
+      "project": "architecture",
+      "gatedScript": "test:arch:gated",
+      "evidence": "docs/uat/EPIC-048-transcript.md",
+      "owes": "T2415 (EPIC-048) — run e2e/tests/epic-048-learning.spec.ts against the reference-local stack: a candidate with five evidence items decided in the Decision Inbox and timed under two minutes (SC-LRN-007), a supersession approved narrowed at 360px, and the history read in Context → Knowledge",
+      "why": "The harness is authored and writes the transcript itself, but the run needs the reference-local stack and a seeded user's password, which an agent does not hold, and SC-LRN-007 is a person's decision time. Typing the transcript is the fabrication the check exists to test for."
     }
   ]
 }
