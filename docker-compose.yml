@@ -88,6 +88,11 @@ services:
       PMI_INITIALISE_WAIT_MS: ${PMI_INITIALISE_WAIT_MS:-30000}
       PMI_DEFAULT_AGENT_INTEGRATION: ${PMI_DEFAULT_AGENT_INTEGRATION:-}
       PMI_DEFAULT_SCRIPT_TYPE: ${PMI_DEFAULT_SCRIPT_TYPE:-sh}
+      # EPIC-048 T2671 — the learning sweeps (`learning.sweeps.ts`): decisions taken
+      # in the Decision Inbox become knowledge, candidates expire and flags are
+      # raised only while they run. Off in code so the suites see no background
+      # sweep; on in every deployment.
+      PMI_LEARNING_SWEEPS: ${PMI_LEARNING_SWEEPS:-on}
     ports:
       - '${PMI_APP_PORT:-3000}:3000'
     volumes:
