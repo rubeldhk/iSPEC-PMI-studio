@@ -616,3 +616,41 @@ Then:
 
 Phase 9 lands as each sibling merges. Until then every route that needs a sibling refuses `503`, and
 the integration suites assert that refusal.
+
+---
+
+## Phase 11: Convergence
+
+> Appended 2026-10-14 by `/speckit-converge` (`T2414`) from an independent read-only audit of the
+> merged branch: 110 items checked (62 `FR-LRN`, 9 `SC-LRN`, 29 acceptance scenarios, 10 edge
+> cases). 15 gaps, 0 CRITICAL, 4 HIGH, 2 MEDIUM, 9 LOW. Each finding below was re-read against the code
+> before it was written here. Identifiers `T2670`–`T2719` are reserved for this phase. The known
+> remainders are not repeated: `DEF-048-001` (`T2420`–`T2421`, waiting for `EPIC-039`'s `Embed` on
+> `main`), the Tier 2 run (`T2415`), `DEFER-048-01`, `PP-019` → `EPIC-040`, *not yet retrievable*
+> while `EmbeddingPort` has no owner (`R-048-13`), and retired evidence (`RK-6`).
+
+- [ ] T2670 [P] Write the failing conformance check `backend/tests/architecture/learning-sweeps-deployment.spec.ts`: the shipped `docker-compose.yml` sets `PMI_LEARNING_SWEEPS` for the API, defaulting to `on`, and `.env.example` documents it. Today every learning job is off in a default stack, so a decision taken with the Decision Inbox's own buttons never becomes knowledge and nothing expires or is flagged — per FR-LRN-030, FR-LRN-037, FR-LRN-070, SC-LRN-003 (partial, HIGH)
+- [ ] T2671 Set `PMI_LEARNING_SWEEPS` in `docker-compose.yml` (default `on`) and document it in `.env.example`; the code default stays off for the suites that boot the app (conformance check: T2670) — per FR-LRN-030, FR-LRN-070 (partial, HIGH)
+- [ ] T2672 [P] Write failing tests: in `backend/tests/integration/learning-constraints.spec.ts`, a person's own approval of their own candidate is accepted by the database, while an execution source's principal and an Expert are still refused; in `backend/tests/integration/learning-tier1.spec.ts`, with `selfApprovalAllowed` covering `learning.review.*`, a person approves their own candidate through the review route and gets version 1 — per FR-LRN-027 sentence 2 (contradicts, HIGH)
+- [ ] T2673 Write `backend/prisma/migrations/20261011100000_epic048_approver_not_ai_source/migration.sql`: `knowledge_versions_approver_not_source` refuses the candidate's source principal only when `sourceKind = 'execution'`, plus its Expert, as `approver.guard.ts`'s `aiSourceIdentities` does — the person who submitted is a separation-of-duties question `EPIC-031` answers (integration tests: T2672) — per FR-LRN-027 (contradicts, HIGH)
+- [ ] T2674 [P] Write failing tests: `GET /learning/knowledge/:entryId` shows a reader each provenance citation as the candidate view does — `{state: 'withheld'}` with no id or digest where the reader may not read the attested target, and a `withheldEvidenceCount` — in `backend/tests/unit/learning-knowledge-service.spec.ts` and `backend/tests/integration/learning-knowledge-route.spec.ts` — per FR-LRN-016, PP-008 (partial, HIGH)
+- [ ] T2675 Filter the entry's provenance evidence through `EvidenceView.forReader` in `backend/src/modules/learning/knowledge.service.ts`, pass the session reader from `learning.controller.ts`, and amend `contracts/learning-api.md` (tests: T2674) — per FR-LRN-016 (partial, HIGH)
+- [ ] T2676 [P] Write failing tests: a candidate carrying an open `source-invalid` flag is not eligible for automatic approval, naming `source-invalid` (`backend/tests/unit/learning-eligibility.spec.ts`); the candidate detail renders its open flags (`frontend/tests/unit/pages/LearningCandidateDetail.spec.tsx`) — per spec Edge Case *source execution later found invalid*, FR-LRN-037, FR-LRN-071 (partial, MEDIUM)
+- [ ] T2677 Add the `source-invalid` eligibility condition in `eligibility.ts` (and the requester's input), and render open flags in `LearningCandidateDetail.tsx` (tests: T2676) — per FR-LRN-037, FR-LRN-071 (partial, MEDIUM)
+- [ ] T2678 Record `DEF-048-003` in `specs/048-governed-learning/defects/`: an Expert whose contract declares `memoryPolicy: none` can be supplied knowledge through `EPIC-047`'s real dispatch path, because dispatch assembles before the session row exists and without an `executionId`, so `KnowledgeGate`'s memory-policy check (`supply.ts`) has nothing to ask. Latent today — every assembly answers `503` while `EmbeddingPort` has no owner — but the `FR-LRN-055` hard prerequisite is not met on that path. The fix crosses `EPIC-047`'s dispatch order or `EPIC-038`'s `AssembleInput`, so it needs the Project Owner's choice — per FR-LRN-055, SC-LRN-009 (partial, HIGH)
+- [ ] T2679 ⛔ **BLOCKED on the Project Owner's decision on `DEF-048-003`** — Write the failing test through `EPIC-047`'s `DispatchService`: an Expert declaring `none` receives no knowledge item, and one declaring `governed-knowledge` does — per FR-LRN-055, FR-LRN-056 (partial, HIGH)
+- [ ] T2680 ⛔ **BLOCKED on the Project Owner's decision on `DEF-048-003`** — Implement the chosen fix and close `DEF-048-003` (test: T2679) — per FR-LRN-055 (partial, HIGH)
+- [ ] T2681 [P] Write the failing unit test in `backend/tests/unit/learning-widen-scope.spec.ts`: approving a `widen-scope` candidate at a scope not strictly wider than the target version's is `400` — per FR-LRN-042, FR-LRN-028 (partial, LOW)
+- [ ] T2682 Require a strictly wider approved scope for `widen-scope` in `review.service.ts` (`isStrictlyWider`) (unit test: T2681) — per FR-LRN-042 (partial, LOW)
+- [ ] T2683 [P] Write the failing unit test in `backend/tests/unit/learning-review.spec.ts`: a reviewer's edited statement, classification or rejection reason containing a secret is `400` naming the rule and field, and nothing is written — per FR-LRN-018 (partial, LOW)
+- [ ] T2684 Screen the review body with the `SecretScreen` port in `review.service.ts` before any term or transition is written (unit test: T2683) — per FR-LRN-018 (partial, LOW)
+- [ ] T2685 [P] Write the failing unit test in `backend/tests/unit/learning-corroboration.spec.ts`: a corroboration replayed under its idempotency key with different evidence or scope is `409`, as a candidate replay is — per FR-LRN-061 (partial, LOW)
+- [ ] T2686 Compare the full submission digest on a corroboration replay in `submission.service.ts` (unit test: T2685) — per FR-LRN-061 (partial, LOW)
+- [ ] T2687 [P] Write the failing test: concurrent submissions from one execution on different subjects never exceed `maxCandidatesPerExecution` — per FR-LRN-007 (partial, LOW)
+- [ ] T2688 Count the execution's submissions inside the recording transaction, under a per-execution lock, in `submission.service.ts` (test: T2687) — per FR-LRN-007 (partial, LOW)
+- [ ] T2689 [P] Write failing integration tests in `backend/tests/integration/learning-knowledge-fences.spec.ts`: a `knowledge_version_status_events` row whose `decisionId` `EPIC-031` never recorded, or one of another workspace, is refused — per FR-LRN-001, FR-LRN-033, SC-LRN-001 (partial, LOW)
+- [ ] T2690 Write `backend/prisma/migrations/20261011100100_epic048_status_event_fences/migration.sql`: the status events' `decisionId` names a recorded decision of the same workspace (integration tests: T2689) — per FR-LRN-033 (partial, LOW)
+- [ ] T2691 [P] Write failing tests in `frontend/tests/unit/pages/LearningCandidateDetail.spec.tsx`: the detail shows the candidate's age; each corroboration's evidence with its state; and for a workspace claim offers the source project as a narrowing — per US6 acceptance scenario 1, FR-LRN-071, FR-LRN-028 (partial, LOW)
+- [ ] T2692 Implement them in `LearningCandidateDetail.tsx` (tests: T2691) — per FR-LRN-071, FR-LRN-028 (partial, LOW)
+- [ ] T2693 Amend `contracts/learning-api.md`'s withdraw route to spec Assumption 11: only the person who submitted may withdraw; a connector never withdraws (conformance check: `learning-docs.spec.ts`) — per spec Assumption 11 (unrequested contract drift, LOW)
+- [ ] T2694 Record in `closure.md` the follow-ups this Epic raised to other Epics, none of which appears in their own artifacts: to `EPIC-031`, `learning.review.*` in `IRREDUCIBLY_HIGH` (`RK-5`), `ActorRef` has no *agent* (`RK-4`), and whether knowledge supersession belongs in `FR-DPE-012`'s non-configurable high band; to `EPIC-019`, a steering edit writes no `EPIC-004` audit row (`R-048-3`) — per spec *Follow-ups on acceptance*, Constitution IX (partial, LOW)
