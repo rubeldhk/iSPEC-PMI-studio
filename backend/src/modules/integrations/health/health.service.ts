@@ -71,7 +71,7 @@ export class HealthService {
     const configs = await this.deps.store.listConfigurations(workspaceId, projectId);
     const config: ConfigurationRecord | null = configs.find((c) => c.adapters.some((a) => a.registryEntryId === entry.id)) ?? null;
     const capabilities = new Set(configs.filter((c) => c.adapters.some((a) => a.registryEntryId === entry.id)).map((c) => c.capability));
-    const granted = adapter.descriptor.implements.filter((i) => capabilities.size === 0 || capabilities.has(i.capability)).flatMap((i) => Object.values(adapter.descriptor.scopeMapping).flat());
+    const granted = adapter.descriptor.implements.filter((i) => capabilities.size === 0 || capabilities.has(i.capability)).flatMap(() => Object.values(adapter.descriptor.scopeMapping).flat());
     const scope: ScopeGrant = { requested: { access: 'read', resources: [] }, granted: [...new Set(granted)], narrowing: 'exact' };
     const started = Date.now();
     const observation = await this.deps.vault.withCredential({ workspaceId, projectId, registryEntryId: entry.id }, async (credential) => {
