@@ -11,11 +11,14 @@
  *   redacted and sent (`FR-HUB-045`).
  * - A state-changing capability over a key that cannot be narrowed is refused
  *   by the resolver's scope rule (`FR-HUB-034`).
- * - A provider failure is recorded with its category; the cause is only ever
- *   read — the delivery row is the only write (`US6` AS2).
+ * - A provider failure is recorded with its category and the provider's
+ *   message, sanitised; the cause is only ever read — the delivery row is the
+ *   only write (`US6` AS2).
+ * - (`T2626`) The row is written by `CapabilityRequests`, which records one for
+ *   every `SendNotification` request whichever caller asked; this service
+ *   hands it the delivery id, the cause and the recipients.
  */
 import { randomUUID } from 'node:crypto';
-import { sanitiseText } from '@pmi/capability-contract';
 import { ValidationFailedError } from '../../../core/errors.js';
 import type { IntegrationsStore } from '../integrations.store.js';
 import type { CapabilityRequests } from '../requests/capability-requests.service.js';
@@ -60,24 +63,13 @@ export class NotificationService {
         caller: NOTIFICATION_CALLER,
         input: { recipients: message.recipients.map((r) => ({ address: r.address })), subject: message.subject, body: { text: message.body.text }, idempotencyKey: deliveryId },
       },
-      { http: false },
+      {
+        http: false,
+        delivery: { id: deliveryId, cause: { kind: message.cause.kind, ref: message.cause.ref }, recipients: message.recipients.map((r) => r.userId ?? r.address) },
+      },
     );
-    const recipients = message.recipients.map((r) => r.userId ?? r.address);
-    const cause = { kind: message.cause.kind, ref: message.cause.ref };
-    const base = { id: deliveryId, workspaceId: actor.workspaceId, projectId, cause, recipients, resolutionId: response.resolutionId };
-
-    if (response.outcome === 'refused') {
-      const reason = response.refusal?.code ?? 'refused';
-      await this.deps.store.appendDelivery({ ...base, outcome: 'refused', providerMessageId: null, failureReason: reason });
-      return { deliveryId, resolutionId: response.resolutionId, outcome: 'refused', reason };
-    }
-    if (response.invocation?.outcome !== 'succeeded') {
-      const category = response.invocation?.errorCategory ?? 'adapter-fault';
-      await this.deps.store.appendDelivery({ ...base, outcome: 'failed', providerMessageId: null, failureReason: sanitiseText(`${category}${response.invocation?.retryAfterSeconds !== undefined ? ` (retry after ${response.invocation.retryAfterSeconds} s)` : ''}`) });
-      return { deliveryId, resolutionId: response.resolutionId, outcome: 'failed', reason: category };
-    }
-    const result = (response.result ?? {}) as { delivered?: boolean; providerMessageId?: string };
-    await this.deps.store.appendDelivery({ ...base, outcome: 'delivered', providerMessageId: result.providerMessageId ?? null, failureReason: null });
+    if (response.outcome === 'refused') return { deliveryId, resolutionId: response.resolutionId, outcome: 'refused', reason: response.refusal?.code ?? 'refused' };
+    if (response.invocation?.outcome !== 'succeeded') return { deliveryId, resolutionId: response.resolutionId, outcome: 'failed', reason: response.invocation?.errorCategory ?? 'adapter-fault' };
     return { deliveryId, resolutionId: response.resolutionId, outcome: 'delivered' };
   }
 }

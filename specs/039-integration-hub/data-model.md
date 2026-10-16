@@ -310,17 +310,17 @@ current snapshot and the latest rows — **read only**.
 
 ## 8. `notification_deliveries` — `NotificationDelivery`
 
-One `SendNotification` request and its delivery outcome (`US6`).
+One `SendNotification` request and its delivery outcome (`US6`) — one row for **every** request, whichever caller asked (`T2626`, 2026-10-16).
 
 | Field | Type | Rule |
 |---|---|---|
 | `id` | uuid PK | Also the provider idempotency key (`R-039-13`) |
 | `workspaceId`, `projectId` | | |
-| `cause` | jsonb `{ kind, ref }` | The governed event that caused it — e.g. `{ kind: 'decision-waiting', ref: <decisionId> }` |
+| `cause` | jsonb `{ kind, ref }` | The governed event that caused it — e.g. `{ kind: 'decision-waiting', ref: <decisionId> }`; a Room asking through the route records `{ kind: 'capability-request', ref: <caller> }` (`T2626`) |
 | `recipients` | text[] | Platform user ids, resolved to addresses only inside the adapter call |
 | `resolutionId` | uuid | |
 | `outcome` | `delivered` \| `failed` \| `refused` | |
-| `providerMessageId?`, `failureReason?` | text | `failureReason` passed through `sanitiseText` |
+| `providerMessageId?`, `failureReason?` | text | `failureReason` is the refusal code, or the failure category and the provider's message, passed through `sanitiseText` (`T2626`) |
 | `createdAt` | | Immutable after insert |
 
 A delivery failure never touches the cause (`US6` AS2): the row is the only write.

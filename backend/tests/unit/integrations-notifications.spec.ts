@@ -96,3 +96,59 @@ describe('T2191 · notification dispatch (US6)', () => {
     }
   });
 });
+
+/**
+ * `T2626` (convergence, `US6` AS1–AS2) — one delivery row for EVERY
+ * `SendNotification` request, whichever caller asked: a Room asking through
+ * the route records its delivery as `notification-dispatch` does. A provider
+ * failure records its category AND the provider's message, sanitised.
+ */
+describe('T2626 · every SendNotification request records its delivery', () => {
+  const ROUTE_INPUT = { recipients: [{ address: 'reviewer@example.test' }], subject: 'A change needs review', body: { text: 'Please look.' }, idempotencyKey: 'room-change-ch_7-review' };
+
+  it('a room:* caller through the route records one delivered row, its cause the capability request', async () => {
+    const hub = testHub();
+    await configure(hub, 'SendNotification', ['fixture-notify']);
+    const res = await hub.requests.request(ACTOR, PROJECT, { capability: 'SendNotification', major: 1, caller: 'room:change', input: ROUTE_INPUT }, { http: true });
+    expect(res).toMatchObject({ outcome: 'resolved', invocation: { outcome: 'succeeded' } });
+    const rows = await hub.store.listDeliveries(WS, PROJECT);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ outcome: 'delivered', resolutionId: res.resolutionId, cause: { kind: 'capability-request', ref: 'room:change' }, recipients: ['reviewer@example.test'], failureReason: null });
+    expect(rows[0]!.providerMessageId).toMatch(/^fixture-msg-/);
+  });
+
+  it('a refused route request records one refused row with the refusal code', async () => {
+    const hub = testHub();
+    const res = await hub.requests.request(ACTOR, PROJECT, { capability: 'SendNotification', major: 1, caller: 'room:defect', input: ROUTE_INPUT }, { http: true });
+    expect(res.outcome).toBe('refused');
+    const rows = await hub.store.listDeliveries(WS, PROJECT);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ outcome: 'refused', resolutionId: res.resolutionId, failureReason: res.refusal!.code, providerMessageId: null });
+  });
+
+  it('a read capability records no delivery', async () => {
+    const hub = testHub();
+    await configure(hub, 'ReadBuildStatus', ['fixture-ci']);
+    await hub.requests.request(ACTOR, PROJECT, { capability: 'ReadBuildStatus', major: 1, caller: 'room:change', input: { revision: 'a'.repeat(40) } }, { http: true });
+    expect(await hub.store.listDeliveries(WS, PROJECT)).toEqual([]);
+  });
+
+  it('notify() still records exactly one row (not two) now that the request records it', async () => {
+    const hub = testHub();
+    await configure(hub, 'SendNotification', ['fixture-notify']);
+    const out = await hub.notifications.notify(ACTOR, PROJECT, MESSAGE);
+    const rows = await hub.store.listDeliveries(WS, PROJECT);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: out.deliveryId, cause: CAUSE, recipients: ['u_reviewer'] });
+  });
+
+  it('a provider failure records the category and the provider message, sanitised', async () => {
+    const hub = testHub();
+    const e = await hub.entry('fixture-notify');
+    await hub.configuration.put(ACTOR, PROJECT, 'SendNotification', { adapters: [{ registryEntryId: e.id, preference: 1, binding: { script: { invoke: 'provider-error' } } }] });
+    await hub.health.checkNow(WS, PROJECT, e);
+    await hub.notifications.notify(ACTOR, PROJECT, MESSAGE);
+    const [row] = await hub.store.listDeliveries(WS, PROJECT);
+    expect(row!.failureReason).toBe('provider-unavailable: fixture: the provider answered 500');
+  });
+});

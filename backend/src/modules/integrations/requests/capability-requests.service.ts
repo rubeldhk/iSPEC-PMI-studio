@@ -18,9 +18,18 @@
  *    checked against the contract (`FR-HUB-016`), and exactly one invocation row
  *    written — never re-resolved after a failure (`FR-HUB-039`);
  * 7. with `executionId`, `capability-resolved` is appended to that execution
- *    (`FR-HUB-038`).
+ *    (`FR-HUB-038`);
+ * 8. (`T2626`) a `SendNotification` request — through the route or in process
+ *    — records exactly one `notification_deliveries` row, whatever its
+ *    outcome, with a failure's category **and** the provider's message passed
+ *    through `sanitiseText` (`US6` AS1–AS2). `NotificationService` supplies
+ *    its own delivery id (also the provider idempotency key), cause and
+ *    recipients; a Room asking through the route gets a minted id, the cause
+ *    `{ kind: 'capability-request', ref: <caller> }`, and its own
+ *    `idempotencyKey` stays the provider's key.
  */
-import { CAPABILITY_SCOPES, acceptsOverHttp, contractFor, findSecret, isCapabilityName, isPlatformCaller, validate, type AdapterResult } from '@pmi/capability-contract';
+import { randomUUID } from 'node:crypto';
+import { CAPABILITY_SCOPES, acceptsOverHttp, contractFor, findSecret, isCapabilityName, isPlatformCaller, sanitiseText, validate, type AdapterResult } from '@pmi/capability-contract';
 import { ValidationFailedError } from '../../../core/errors.js';
 import { adapterContext, bindingFor, TIMEOUTS_MS, withTimeout } from '../adapter-context.js';
 import type { AdapterCatalog } from '../catalog.service.js';
@@ -68,6 +77,23 @@ export interface RequestsDeps {
   readonly clock: Clock;
 }
 
+/** `T2626` — how a caller that records its own cause describes the delivery. */
+export interface DeliveryContext {
+  readonly id: string;
+  readonly cause: Readonly<{ kind: string; ref: string }>;
+  readonly recipients: readonly string[];
+}
+
+export interface RequestOptions {
+  readonly http: boolean;
+  readonly delivery?: DeliveryContext;
+}
+
+interface RunOutcome {
+  readonly response: CapabilityResponse;
+  readonly providerMessage?: string;
+}
+
 const PINNING_KEYS = ['adapter', 'adapterKey', 'provider', 'transport', 'registryEntryId'] as const;
 
 function* strings(value: unknown): Generator<string> {
@@ -95,7 +121,32 @@ function hasKeyDeep(value: unknown, keys: readonly string[]): string | null {
 export class CapabilityRequests {
   constructor(private readonly deps: RequestsDeps) {}
 
-  async request(actor: { workspaceId: string; userId: string }, projectId: string, body: RequestBody, options: { http: boolean }): Promise<CapabilityResponse> {
+  async request(actor: { workspaceId: string; userId: string }, projectId: string, body: RequestBody, options: RequestOptions): Promise<CapabilityResponse> {
+    const { response, providerMessage } = await this.run(actor, projectId, body, options);
+    if (body.capability === 'SendNotification') await this.recordDelivery(actor.workspaceId, projectId, body, options.delivery, response, providerMessage);
+    return response;
+  }
+
+  /** `T2626` — one row per `SendNotification` request; the cause is only ever read. */
+  private async recordDelivery(workspaceId: string, projectId: string, body: RequestBody, given: DeliveryContext | undefined, response: CapabilityResponse, providerMessage: string | undefined): Promise<void> {
+    const input = (body.input ?? {}) as { recipients?: { address?: unknown }[] };
+    const recipients = given?.recipients ?? (Array.isArray(input.recipients) ? input.recipients.map((r) => String(r?.address ?? '')) : []);
+    const base = { id: given?.id ?? randomUUID(), workspaceId, projectId, cause: given?.cause ?? { kind: 'capability-request', ref: String(body.caller ?? '(none)') }, recipients: [...recipients], resolutionId: response.resolutionId };
+    if (response.outcome === 'refused') {
+      await this.deps.store.appendDelivery({ ...base, outcome: 'refused', providerMessageId: null, failureReason: response.refusal?.code ?? 'refused' });
+      return;
+    }
+    if (response.invocation?.outcome !== 'succeeded') {
+      const category = response.invocation?.errorCategory ?? 'adapter-fault';
+      const retry = response.invocation?.retryAfterSeconds !== undefined ? ` (retry after ${response.invocation.retryAfterSeconds} s)` : '';
+      await this.deps.store.appendDelivery({ ...base, outcome: 'failed', providerMessageId: null, failureReason: sanitiseText(`${category}${providerMessage ? `: ${providerMessage}` : ''}${retry}`) });
+      return;
+    }
+    const result = (response.result ?? {}) as { providerMessageId?: string };
+    await this.deps.store.appendDelivery({ ...base, outcome: 'delivered', providerMessageId: result.providerMessageId ?? null, failureReason: null });
+  }
+
+  private async run(actor: { workspaceId: string; userId: string }, projectId: string, body: RequestBody, options: RequestOptions): Promise<RunOutcome> {
     const capability = typeof body.capability === 'string' ? body.capability : String(body.capability ?? '');
     const major = Number.isInteger(body.major) ? (body.major as number) : NaN;
     if (Number.isNaN(major)) throw new ValidationFailedError('major is required: the capability major version the caller expects (FR-HUB-033).', { fields: [{ field: 'major', reason: 'integer ≥ 1' }] });
@@ -110,14 +161,14 @@ export class CapabilityRequests {
     const catalogKeys = new Set(this.deps.catalog.keys());
     const pinnedValue = [...strings(body)].find((s) => catalogKeys.has(s));
     if (pinnedKey !== null || pinnedValue !== undefined) {
-      return this.finish(req, await this.deps.resolver.refuse(req, 'provider-pinned', `A request names a capability, never a provider, adapter or transport (FR-HUB-001); the body carried ${pinnedKey !== null ? `"${pinnedKey}"` : `the adapter key "${pinnedValue}"`}.`));
+      return { response: await this.finish(req, await this.deps.resolver.refuse(req, 'provider-pinned', `A request names a capability, never a provider, adapter or transport (FR-HUB-001); the body carried ${pinnedKey !== null ? `"${pinnedKey}"` : `the adapter key "${pinnedValue}"`}.`)) };
     }
     // 2 · the caller
     if (!isPlatformCaller(req.caller) || (options.http && !acceptsOverHttp(req.caller))) {
       const why = !isPlatformCaller(req.caller)
         ? `${req.caller} is not a platform caller; the Hub serves Rooms, the loop, context assembly, evidence intake and notification dispatch only (FR-HUB-004).`
         : `${req.caller} is an in-process caller and cannot be declared over HTTP; only room:* callers can (analysis U1).`;
-      return this.finish(req, await this.deps.resolver.refuse(req, 'caller-not-platform', why));
+      return { response: await this.finish(req, await this.deps.resolver.refuse(req, 'caller-not-platform', why)) };
     }
     // 3 · deployment scope
     if (isCapabilityName(capability) && CAPABILITY_SCOPES[capability] === 'deployment') {
@@ -132,12 +183,12 @@ export class CapabilityRequests {
       }
       const secret = findSecret(body.input);
       if (secret !== null) {
-        return this.finish(req, await this.deps.resolver.refuse(req, 'credential-material-in-content', `The input carries credential-shaped material at ${secret}; it is refused, not redacted and sent (FR-HUB-045).`));
+        return { response: await this.finish(req, await this.deps.resolver.refuse(req, 'credential-material-in-content', `The input carries credential-shaped material at ${secret}; it is refused, not redacted and sent (FR-HUB-045).`)) };
       }
     }
     // 5 · resolve, recorded first
     const decided = await this.deps.resolver.resolve(req);
-    if (decided.resolved === undefined) return this.finish(req, decided);
+    if (decided.resolved === undefined) return { response: await this.finish(req, decided) };
 
     // 6 · invoke once
     const { adapter, entry, configuration, contract, scope } = decided.resolved;
@@ -157,15 +208,18 @@ export class CapabilityRequests {
     const durationMs = Date.now() - started;
     let invocation: InvocationRecord;
     let output: unknown;
+    let providerMessage: string | undefined;
     if (result.ok) {
       const checked = checkOutput(contract, result.output);
       if (checked.ok) {
         output = result.output;
         invocation = { resolutionId: decided.record.id, workspaceId: actor.workspaceId, projectId, outcome: 'succeeded', errorCategory: null, providerRequestId: result.providerRequestId ?? null, retryAfterSeconds: null, durationMs, endedAt: this.deps.clock() };
       } else {
+        providerMessage = checked.message;
         invocation = { resolutionId: decided.record.id, workspaceId: actor.workspaceId, projectId, outcome: 'adapter-fault', errorCategory: 'adapter-fault', providerRequestId: result.providerRequestId ?? null, retryAfterSeconds: null, durationMs, endedAt: this.deps.clock() };
       }
     } else {
+      providerMessage = result.message;
       invocation = {
         resolutionId: decided.record.id,
         workspaceId: actor.workspaceId,
@@ -180,7 +234,7 @@ export class CapabilityRequests {
       await this.deps.health.observeOutcome(actor.workspaceId, projectId, entry, adapter.descriptor.version, result);
     }
     await this.deps.store.appendInvocation(invocation);
-    return this.finish(req, decided, invocation, output);
+    return { response: await this.finish(req, decided, invocation, output), ...(providerMessage !== undefined ? { providerMessage } : {}) };
   }
 
   private async appendEvent(req: ResolveRequest, record: ResolutionRecord): Promise<void> {
