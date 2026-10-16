@@ -8,8 +8,12 @@
  * mismatch, a wrong dimension, a non-finite component, a zero vector — so a
  * bad batch is refused here, recorded as `adapter-fault`, before the port
  * would refuse it again.
+ *
+ * `T2621` (`FR-HUB-045`) — an output carrying recognisable credential material
+ * is refused the same way, before it is returned, recorded or contributed as
+ * evidence. The refusal names where the material was, never the material.
  */
-import { validate, type CapabilityContractDocument } from '@pmi/capability-contract';
+import { findSecret, validate, type CapabilityContractDocument } from '@pmi/capability-contract';
 
 export type OutputCheck = { ok: true } | { ok: false; errorCategory: 'adapter-fault'; message: string };
 
@@ -25,6 +29,10 @@ function fault(message: string): OutputCheck {
 export function checkOutput(contract: CapabilityContractDocument, output: unknown, embed?: EmbedExpectation): OutputCheck {
   const v = validate(contract.outputSchema, output);
   if (!v.ok) return fault(v.errors.map((e) => `${e.path} ${e.message}`).join('; '));
+  const secret = findSecret(output);
+  if (secret !== null) {
+    return { ok: false, errorCategory: 'adapter-fault', message: `the adapter's output carries credential material at ${secret}; it is refused, never returned or recorded (FR-HUB-045)` };
+  }
   if (contract.name === 'Embed' && embed !== undefined) {
     const o = output as { model: { dimension: number }; vectors: number[][] };
     if (o.vectors.length !== embed.texts) return fault(`returned ${o.vectors.length} vectors for ${embed.texts} texts`);

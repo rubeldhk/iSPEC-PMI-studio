@@ -44,3 +44,21 @@ describe('T2145 · Embed', () => {
     expect(r.ok ? '' : r.message).toContain(fragment);
   });
 });
+
+describe('T2621 · FR-HUB-045 — an output carrying credential material is refused, never returned or recorded', () => {
+  const canary = `pmi-canary-${'0a1b2c3d'}-4e5f-6789-abcd-ef0123456789`;
+  const output = (name: string) => ({ revision: SHA, state: 'failure', final: true, checks: [{ name, state: 'failure', final: true }], observedAt: 'now' });
+
+  it('refuses as adapter-fault, naming where — and never the value', () => {
+    const r = checkOutput(contractFor('ReadBuildStatus', 1)!, output(`deploy failed with token ${canary}`));
+    expect(r).toMatchObject({ ok: false, errorCategory: 'adapter-fault' });
+    const message = r.ok ? '' : r.message;
+    expect(message).toMatch(/credential material/);
+    expect(message).toContain('checks.0.name');
+    expect(message).not.toContain(canary);
+  });
+
+  it('passes the same output without the material', () => {
+    expect(checkOutput(contractFor('ReadBuildStatus', 1)!, output('deploy failed'))).toEqual({ ok: true });
+  });
+});

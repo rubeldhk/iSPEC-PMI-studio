@@ -197,7 +197,7 @@ export class EvidenceIntakeService {
 
     const resolution = response.resolution!;
     const repository = await this.repositoryOf(row, resolution.adapterKey);
-    const attestation = this.statement(row, output, resolution, repository);
+    const attestation = intakeStatement(row, output, resolution, repository);
     try {
       const { attestationId } = await sink.contribute({
         workspaceId: row.workspaceId,
@@ -221,41 +221,47 @@ export class EvidenceIntakeService {
     const repo = entry === null ? undefined : bindingFor(configuration, entry.id)['repository'];
     return typeof repo === 'string' ? repo : null;
   }
+}
 
-  private statement(
-    row: IntakeRecord,
-    output: Record<string, unknown>,
-    resolution: { contractVersion: string; adapterKey: string; adapterVersion: string; provider: string },
-    repository: string | null,
-  ): Record<string, unknown> {
-    const revision = row.revision!;
-    const subject = [{ name: `${repository ?? resolution.adapterKey}@${revision}`, digest: { gitCommit: revision } }];
-    if (row.capability === 'ReadTestResults') {
-      return {
-        _type: IN_TOTO_STATEMENT,
-        subject,
-        predicateType: TEST_RESULT_PREDICATE,
-        predicate: {
-          result: output['result'],
-          passedTests: Array.isArray(output['passedTests']) ? output['passedTests'] : [],
-          failedTests: Array.isArray(output['failedTests']) ? output['failedTests'] : [],
-          warnedTests: [],
-          ...(typeof output['url'] === 'string' ? { url: output['url'] } : {}),
-        },
-      };
-    }
+/**
+ * The in-toto Statement an intake contributes (`R-039-11`), carried inline.
+ *
+ * `T2620` (`FR-HUB-052`) — a test-result predicate has no field for where the
+ * result came from, so the capability and its contract version, the adapter
+ * and its version, and the provider travel as an in-toto `ResourceDescriptor`
+ * in the predicate's `configuration` (the field the test-result predicate
+ * defines for what the run was configured with). The run's URL is the
+ * contract's `source.runUrl`.
+ */
+export function intakeStatement(
+  row: Pick<IntakeRecord, 'capability' | 'revision'>,
+  output: Record<string, unknown>,
+  resolution: { contractVersion: string; adapterKey: string; adapterVersion: string; provider: string },
+  repository: string | null,
+): Record<string, unknown> {
+  const revision = row.revision!;
+  const subject = [{ name: `${repository ?? resolution.adapterKey}@${revision}`, digest: { gitCommit: revision } }];
+  const provenance = { capability: row.capability, contractVersion: resolution.contractVersion, adapter: resolution.adapterKey, adapterVersion: resolution.adapterVersion, provider: resolution.provider };
+  if (row.capability === 'ReadTestResults') {
+    const source = output['source'] as { runUrl?: unknown } | undefined;
     return {
       _type: IN_TOTO_STATEMENT,
       subject,
-      predicateType: EXTERNAL_OUTPUT_PREDICATE,
+      predicateType: TEST_RESULT_PREDICATE,
       predicate: {
-        capability: row.capability,
-        contractVersion: resolution.contractVersion,
-        adapter: resolution.adapterKey,
-        adapterVersion: resolution.adapterVersion,
-        provider: resolution.provider,
-        output,
+        result: output['result'],
+        passedTests: Array.isArray(output['passedTests']) ? output['passedTests'] : [],
+        failedTests: Array.isArray(output['failedTests']) ? output['failedTests'] : [],
+        warnedTests: [],
+        configuration: [{ name: 'pmi-capability', uri: `pmi-capability:${row.capability}@${resolution.contractVersion}`, annotations: provenance }],
+        ...(typeof source?.runUrl === 'string' ? { url: source.runUrl } : {}),
       },
     };
   }
+  return {
+    _type: IN_TOTO_STATEMENT,
+    subject,
+    predicateType: EXTERNAL_OUTPUT_PREDICATE,
+    predicate: { ...provenance, output },
+  };
 }

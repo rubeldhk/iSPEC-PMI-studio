@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { EvidenceContribution, EvidenceSink } from '../../src/modules/integrations/integrations.tokens.js';
-import { INTAKE_GIVE_UP_SECONDS, INTAKE_RETRY_SECONDS } from '../../src/modules/integrations/evidence/evidence-intake.service.js';
+import { INTAKE_GIVE_UP_SECONDS, INTAKE_RETRY_SECONDS, intakeStatement } from '../../src/modules/integrations/evidence/evidence-intake.service.js';
 import { OWNER, PROJECT, SHA, WS, configure, testHub } from './integrations-hub.fixture.js';
 
 const ACTOR = { workspaceId: WS, userId: OWNER };
@@ -187,5 +187,31 @@ describe('T2183 · the job (FR-HUB-050–FR-HUB-055)', () => {
       predicateType: 'https://pmi.studio/attestation/external-output/v1',
       predicate: { capability: 'ReadBuildStatus', contractVersion: '1.0', adapter: 'fixture-ci', adapterVersion: '0.1.0', provider: 'fixture', output: { revision: SHA, final: true } },
     });
+  });
+});
+
+describe('T2620 · FR-HUB-052 — the test-result Statement names the capability and its version, the adapter and its version, and the provider', () => {
+  const row = { capability: 'ReadTestResults', revision: SHA } as const;
+  const resolution = { contractVersion: '1.0', adapterKey: 'github-rest', adapterVersion: '1.2.0', provider: 'github' };
+  const output = { revision: SHA, final: true, result: 'FAILED', passedTests: ['a'], failedTests: ['b'], source: { artifactName: 'junit', format: 'junit-xml', runUrl: 'https://ci.example.test/runs/7' } };
+
+  it('carries the provenance as an in-toto ResourceDescriptor in the predicate configuration', () => {
+    const statement = intakeStatement(row, output, resolution, 'acme/app') as { predicate: Record<string, unknown> };
+    expect(statement.predicate['configuration']).toEqual([
+      {
+        name: 'pmi-capability',
+        uri: 'pmi-capability:ReadTestResults@1.0',
+        annotations: { capability: 'ReadTestResults', contractVersion: '1.0', adapter: 'github-rest', adapterVersion: '1.2.0', provider: 'github' },
+      },
+    ]);
+  });
+
+  it("reads the run's URL from the contract's source.runUrl", () => {
+    const statement = intakeStatement(row, output, resolution, 'acme/app') as { predicate: Record<string, unknown>; subject: unknown };
+    expect(statement.predicate['url']).toBe('https://ci.example.test/runs/7');
+    expect(statement.predicate['result']).toBe('FAILED');
+    expect(statement.subject).toEqual([{ name: `acme/app@${SHA}`, digest: { gitCommit: SHA } }]);
+    const noUrl = intakeStatement(row, { ...output, source: { artifactName: 'junit', format: 'junit-xml' } }, resolution, null) as { predicate: Record<string, unknown> };
+    expect(noUrl.predicate).not.toHaveProperty('url');
   });
 });
