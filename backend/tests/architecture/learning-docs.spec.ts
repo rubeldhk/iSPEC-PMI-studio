@@ -92,8 +92,12 @@ describe('T2410 · after closure, the owner annotations say EPIC-048 (analysis V
   it.skipIf(!closed)('PMI-DOC-004 §6.12 names EPIC-048 as the owner of BR-0114–BR-0118', () => {
     const brs = readFileSync(resolve(REPO, 'SRS/PMI-DOC-004_Business_Requirement_Specification_v2.0.md'), 'utf8');
     for (const br of ['BR-0114', 'BR-0115', 'BR-0116', 'BR-0117', 'BR-0118']) {
-      const line = brs.split('\n').find((l) => l.includes(br)) ?? '';
-      expect(line, br).toMatch(/EPIC-048/);
+      // The requirement's own line, `- **BR-0114** — …` — not the first line that
+      // mentions it (§6.12's numbering note does, and names no owner). Found the
+      // day closure.md first un-skipped this case (2026-10-16).
+      const line = brs.split('\n').find((l) => l.startsWith(`- **${br}**`)) ?? '';
+      expect(line, `${br} has no requirement line`).not.toBe('');
+      expect(line, br).toMatch(/→ owner \*\*EPIC-048\*\*/);
     }
   });
 
