@@ -51,6 +51,22 @@ suite('T2370 · knowledge through the real routes', () => {
     expect(out.body.version).toBe(1);
   });
 
+  it('T2674 · the entry withholds evidence the reader may not see — EPIC-032’s policy over EPIC-024 grants this reader nothing on the project (FR-LRN-016)', async () => {
+    const entry = await get(`/${ids.entryId}`, reviewer).expect(200);
+    expect(entry.body.provenance.evidence).toEqual([{ state: 'withheld' }]);
+    expect(entry.body.provenance.withheldEvidenceCount).toBe(1);
+    expect(JSON.stringify(entry.body.provenance)).not.toContain('ev_1');
+    const real = app.ports.readerAccess;
+    app.ports.readerAccess = { async canRead(_r, target) { return target.id === app.projectId; } };
+    try {
+      const shown = await get(`/${ids.entryId}`, reviewer).expect(200);
+      expect(shown.body.provenance.evidence[0]).toMatchObject({ evidenceId: 'ev_1', state: 'verified' });
+      expect(shown.body.provenance.withheldEvidenceCount).toBe(0);
+    } finally {
+      app.ports.readerAccess = real;
+    }
+  });
+
   it('Q19 · a supersession in a low-risk category waits for a human regardless (FR-LRN-034) — then v1 reads superseded naming v2', async () => {
     decisions.next = 'auto-executed';
     let pending;

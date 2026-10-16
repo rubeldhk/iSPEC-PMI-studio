@@ -16,6 +16,7 @@ import { ApproverGuard } from '../../src/modules/learning/approver.guard.js';
 import { DecisionRequester } from '../../src/modules/learning/decision.requester.js';
 import { InMemoryKnowledgeWriter } from '../../src/modules/learning/knowledge.writer.js';
 import { KnowledgeService } from '../../src/modules/learning/knowledge.service.js';
+import { EvidenceView } from '../../src/modules/learning/evidence.view.js';
 import { InMemoryLearningStore } from '../../src/modules/learning/learning.store.js';
 import { LearningPolicyReader } from '../../src/modules/learning/learning-policy.js';
 import { Materialiser } from '../../src/modules/learning/materialiser.js';
@@ -24,6 +25,7 @@ import { learningWorld, submission, type LearningTestWorld } from '../helpers/le
 
 const AGENT: SubmissionActor = { kind: 'agent', workspaceId: 'ws_a', principalId: 'agent_1', projectId: 'p1' };
 const PERSON: SubmissionActor = { kind: 'person', workspaceId: 'ws_a', userId: 'u_sub' };
+const READER = { workspaceId: 'ws_a', userId: 'u_reader' };
 
 let world: LearningTestWorld;
 let store: InMemoryLearningStore;
@@ -38,7 +40,7 @@ beforeEach(() => {
   materialiser = new Materialiser({ store, writer: new InMemoryKnowledgeWriter(store, world.ports.audit), ports: world.ports, policy, guard: new ApproverGuard(world.ports.principals) });
   const requester = new DecisionRequester({ store, ports: world.ports, policy });
   submissions = new SubmissionService({ store, ports: world.ports, policy, requestDecision: (c) => requester.request(c) });
-  knowledge = new KnowledgeService({ reads: store });
+  knowledge = new KnowledgeService({ reads: store, evidence: new EvidenceView(world.ports) });
 });
 
 async function approved(over: Record<string, unknown>, actor: SubmissionActor = AGENT, approver = 'u_h'): Promise<{ candidateId: string; versionId: string; entryId: string }> {
@@ -79,7 +81,7 @@ describe('T2366 · history (FR-LRN-035)', () => {
   it('another workspace’s entry is 404', async () => {
     const v1 = await approved({ subject: 'mine' });
     await expect(knowledge.history('ws_b', v1.entryId)).rejects.toBeInstanceOf(NotFoundError);
-    await expect(knowledge.entry('ws_b', v1.entryId)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(knowledge.entry('ws_b', v1.entryId, { workspaceId: 'ws_b', userId: 'u_b' })).rejects.toBeInstanceOf(NotFoundError);
   });
 });
 
@@ -88,7 +90,7 @@ describe('T2366 · provenance from the record alone (SC-LRN-006)', () => {
     world.experts.set('exe_1', { expertId: 'expert_1', contractVersionId: 'ecv_1', contractVersion: 2, memoryPolicy: 'governed-knowledge' });
     const v1 = await approved({ subject: 'provenance' });
     const v2 = await approved({ subject: 'provenance', kind: 'supersede', targetVersionId: v1.versionId, statement: 'Refined.' }, AGENT, 'u_h2');
-    const e = await knowledge.entry('ws_a', v1.entryId);
+    const e = await knowledge.entry('ws_a', v1.entryId, READER);
     expect(e.current).toMatchObject({ id: v2.versionId, version: 2, statement: 'Refined.' });
     expect(e.status).toBe('current');
     expect(e.provenance).toMatchObject({
@@ -101,6 +103,24 @@ describe('T2366 · provenance from the record alone (SC-LRN-006)', () => {
       replaces: { versionId: v1.versionId, version: 1 },
     });
     expect(e.retrievability).toEqual({ outcome: 'not-yet-retrievable', reason: 'indexing not attempted' });
+  });
+});
+
+describe('T2674 · the entry shows each reader only the evidence they may see (FR-LRN-016)', () => {
+  it('a reader without access to the attested target sees a withheld item — no id, no digest — and a count', async () => {
+    const v1 = await approved({ subject: 'withheld provenance' });
+    world.readable.clear();
+    const e = await knowledge.entry('ws_a', v1.entryId, READER);
+    expect(e.provenance!.evidence).toEqual([{ state: 'withheld' }]);
+    expect(e.provenance!.withheldEvidenceCount).toBe(1);
+    expect(JSON.stringify(e.provenance)).not.toContain('ev_1');
+  });
+
+  it('a reader who may read it sees the id, the digest and its live state', async () => {
+    const v1 = await approved({ subject: 'visible provenance' });
+    const e = await knowledge.entry('ws_a', v1.entryId, READER);
+    expect(e.provenance!.evidence).toEqual([expect.objectContaining({ evidenceId: 'ev_1', state: 'verified' })]);
+    expect(e.provenance!.withheldEvidenceCount).toBe(0);
   });
 });
 

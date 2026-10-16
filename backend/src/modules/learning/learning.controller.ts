@@ -128,7 +128,8 @@ export class LearningController {
   @Get('learning/knowledge/:entryId')
   entry(@Req() ctx: WorkspaceContext | undefined, @Param('entryId') entryId: string): Promise<unknown> {
     const user = requireSession(ctx);
-    return this.knowledge.entry(user.workspaceId, entryId);
+    // T2675 — the session's user is the reader the evidence is filtered for (FR-LRN-016).
+    return this.knowledge.entry(user.workspaceId, entryId, user);
   }
 
   /** `FR-LRN-035` — every version, candidate, decision, status change and flag, in order. */

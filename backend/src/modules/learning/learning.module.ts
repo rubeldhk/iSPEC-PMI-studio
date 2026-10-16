@@ -77,6 +77,7 @@ import { LearningJobs } from './learning.jobs.js';
 import { LearningSweeps } from './learning.sweeps.js';
 import { ReviewService } from './review.service.js';
 import { KnowledgeService } from './knowledge.service.js';
+import { EvidenceView } from './evidence.view.js';
 import { KnowledgeGate, KnowledgeReader } from './supply.js';
 
 /** The provider that fills `CONTEXT_KNOWLEDGE` — instantiated with the module (T2399). */
@@ -263,8 +264,9 @@ const hasDatabase = (): boolean => Boolean(process.env['DATABASE_URL']);
     },
     {
       provide: KnowledgeService,
-      inject: [LEARNING_STORE],
-      useFactory: (store: LearningStore): KnowledgeService => new KnowledgeService({ reads: store }),
+      inject: [LEARNING_STORE, LEARNING_PORTS_TOKEN],
+      // T2675 — provenance evidence through the same per-reader rule as the candidate view.
+      useFactory: (store: LearningStore, ports: LearningPorts): KnowledgeService => new KnowledgeService({ reads: store, evidence: new EvidenceView(ports) }),
     },
     {
       provide: CandidateViewService,

@@ -19,6 +19,13 @@ import { SCOPE_KINDS, VERSION_STATUSES, type ClaimedScope, type VersionStatus } 
 import { NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import type { BrowseFilter, CandidateRecord, EntryRecord, FlagRecord, LearningReads, StatusEventRecord, VersionRecord } from './learning.store.js';
 import { retrievabilityOf, type RetrievabilityView } from './review.service.js';
+import type { EvidenceView, ShownCitation } from './evidence.view.js';
+
+/** Who is reading — evidence is shown per reader (`FR-LRN-016`). */
+export interface KnowledgeReader {
+  readonly workspaceId: string;
+  readonly userId: string;
+}
 
 export interface BrowseItem {
   readonly entryId: string;
@@ -63,7 +70,13 @@ export interface Provenance {
   readonly source:
     | { readonly kind: 'execution'; readonly executionId: string; readonly principalId: string; readonly expert?: { readonly id: string; readonly contractVersionId: string; readonly contractVersion: number } }
     | { readonly kind: 'person'; readonly userId: string };
-  readonly evidence: readonly { readonly evidenceId: string; readonly digest: string }[];
+  /**
+   * `T2675`, `FR-LRN-016` — each citation as this reader may see it: a citation
+   * whose attested target they may not read is `{state: 'withheld'}`, with no
+   * id and no digest, and counted. The same rule as the candidate view.
+   */
+  readonly evidence: readonly ShownCitation[];
+  readonly withheldEvidenceCount: number;
   readonly approvedByKind: 'human' | 'policy';
   readonly approvedBy: string;
   readonly approvedAt: Date;
@@ -73,7 +86,7 @@ export interface Provenance {
 }
 
 export class KnowledgeService {
-  constructor(private readonly deps: { readonly reads: LearningReads }) {}
+  constructor(private readonly deps: { readonly reads: LearningReads; readonly evidence: Pick<EvidenceView, 'forReader'> }) {}
 
   async browse(workspaceId: string, filter: BrowseFilter): Promise<{ items: BrowseItem[]; nextCursor: string | null }> {
     if (filter.status !== undefined && !(VERSION_STATUSES as readonly string[]).includes(filter.status)) {
@@ -108,7 +121,7 @@ export class KnowledgeService {
     return { items, nextCursor: page.nextCursor };
   }
 
-  async entry(workspaceId: string, entryId: string): Promise<{ entry: EntryRecord; current: VersionRecord | null; status: VersionStatus | null; provenance: Provenance | null; retrievability: RetrievabilityView | null; openFlags: readonly string[] }> {
+  async entry(workspaceId: string, entryId: string, reader: KnowledgeReader): Promise<{ entry: EntryRecord; current: VersionRecord | null; status: VersionStatus | null; provenance: Provenance | null; retrievability: RetrievabilityView | null; openFlags: readonly string[] }> {
     const { entry, versions } = await this.load(workspaceId, entryId);
     const latest = versions[versions.length - 1] ?? null;
     if (latest === null) return { entry, current: null, status: null, provenance: null, retrievability: null, openFlags: [] };
@@ -118,7 +131,7 @@ export class KnowledgeService {
       entry,
       current: latest,
       status,
-      provenance: await this.provenance(workspaceId, latest, versions),
+      provenance: await this.provenance(workspaceId, latest, versions, reader),
       retrievability: await retrievabilityOf(this.deps.reads, workspaceId, latest.id),
       openFlags: [...new Set(flags.filter((f) => f.open).map((f) => f.kind))],
     };
@@ -180,10 +193,11 @@ export class KnowledgeService {
     return flags.map((f) => ({ ...f, open: f.clearsFlagId === null && !cleared.has(f.id) }));
   }
 
-  private async provenance(workspaceId: string, v: VersionRecord, versions: readonly VersionRecord[]): Promise<Provenance> {
+  private async provenance(workspaceId: string, v: VersionRecord, versions: readonly VersionRecord[], reader: KnowledgeReader): Promise<Provenance> {
     const candidate = await this.deps.reads.candidate(workspaceId, v.candidateId);
     const citations = candidate === null ? [] : (await this.deps.reads.citations(workspaceId, candidate.id)).filter((c) => c.corroborationId === null);
     const previous = versions.find((p) => p.version === v.version - 1);
+    const shown = await this.deps.evidence.forReader(workspaceId, reader, citations);
     return {
       candidateId: v.candidateId,
       source:
@@ -195,7 +209,8 @@ export class KnowledgeService {
               principalId: candidate.sourcePrincipalId,
               ...(candidate.expertId !== null ? { expert: { id: candidate.expertId, contractVersionId: candidate.expertContractVersionId!, contractVersion: candidate.expertContractVersion! } } : {}),
             },
-      evidence: citations.map((c) => ({ evidenceId: c.evidenceId, digest: c.digest })),
+      evidence: shown.citations,
+      withheldEvidenceCount: shown.withheldEvidenceCount,
       approvedByKind: v.approvedByKind,
       approvedBy: v.approvedBy,
       approvedAt: v.approvedAt,
