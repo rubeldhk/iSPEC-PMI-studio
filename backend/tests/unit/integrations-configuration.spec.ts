@@ -114,3 +114,14 @@ describe('T2141 · every change is audited with before and after (FR-HUB-062)', 
     expect(detail.after.adapters.map((a) => a.key)).toEqual(['fixture-ci-2']);
   });
 });
+
+describe('T2625 · the configuration read says when an adapter it names is retired (Edge case "retired while configured")', () => {
+  it('each adapter carries its registry status; a retired one reads retired, and the configuration is kept', async () => {
+    const hub = testHub();
+    const ci = await hub.entry('fixture-ci');
+    await hub.configuration.put(ctx, PROJECT, 'ReadBuildStatus', { adapters: [{ registryEntryId: ci.id, preference: 1 }] });
+    expect((await hub.configuration.list(WS, PROJECT))[0]!.adapters).toEqual([{ registryEntryId: ci.id, key: 'fixture-ci', preference: 1, status: 'active' }]);
+    await hub.store.retireEntry(WS, ci.id, OWNER, new Date('2026-10-16T09:00:00Z'));
+    expect((await hub.configuration.list(WS, PROJECT))[0]!.adapters).toEqual([{ registryEntryId: ci.id, key: 'fixture-ci', preference: 1, status: 'retired' }]);
+  });
+});

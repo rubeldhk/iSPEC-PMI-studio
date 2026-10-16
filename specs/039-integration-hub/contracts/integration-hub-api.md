@@ -61,7 +61,7 @@ the project artifact (`R-039-10`).
 
 | Method | Route | Purpose | Notes |
 |---|---|---|---|
-| `GET` | `/projects/:projectId/integrations/configuration` | Every capability's configuration, with derived policy status per adapter | Read grant on the project suffices |
+| `GET` | `/projects/:projectId/integrations/configuration` | Every capability's configuration, with derived policy status per adapter | Read grant on the project suffices. Each adapter carries its registry `status` (`active` · `retired` · `not-listed`), so a configuration naming a retired adapter says so (`T2625`, Edge case *retired while configured*) |
 | `PUT` | `/projects/:projectId/integrations/configuration/:capability` | Replace one capability's configuration | Body: `{ adapters: [{ registryEntryId, preference }], permitDegraded?, permittedEnvironments?, onNotNarrowable?, healthIntervalSeconds?, providerBinding? }`. `400` when `adapters` has more than one element without distinct preferences, names an inbound or retired entry, or `providerBinding` fails the adapter's binding schema or contains secret-looking material (`FR-HUB-045`). On success: `configVersion` increments, an `EPIC-031` decision is requested (`R-039-7`) and the response carries `{ configVersion, decisionId, policyStatus }`. `503` naming `CapabilityPolicy` while the decision seam is unbound |
 
 ## 4. Credentials (`FR-HUB-040`–`FR-HUB-047`) — owner grant on the project

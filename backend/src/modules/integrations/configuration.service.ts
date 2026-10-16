@@ -42,7 +42,8 @@ export type PolicyStatusRead = 'permitted' | 'pending' | 'not-permitted' | 'poli
 
 export interface ConfigurationView {
   readonly capability: string;
-  readonly adapters: { registryEntryId: string; key: string | null; preference: number }[];
+  /** `T2625` — `status` is the registry entry's, so a configuration naming a retired adapter says so. */
+  readonly adapters: { registryEntryId: string; key: string | null; preference: number; status: 'active' | 'retired' | 'not-listed' }[];
   readonly permitDegraded: boolean;
   readonly permittedEnvironments: readonly string[];
   readonly onNotNarrowable: string;
@@ -80,11 +81,11 @@ export class ConfigurationService {
   }
 
   private async view(workspaceId: string, c: ConfigurationRecord): Promise<ConfigurationView> {
-    const keys = await Promise.all(c.adapters.map(async (a) => (await this.deps.store.findEntry(workspaceId, a.registryEntryId))?.key ?? null));
+    const entries = await Promise.all(c.adapters.map(async (a) => this.deps.store.findEntry(workspaceId, a.registryEntryId)));
     const policy = await this.policyStatus(workspaceId, c.decisionId);
     return {
       capability: c.capability,
-      adapters: c.adapters.map((a, i) => ({ registryEntryId: a.registryEntryId, key: keys[i] ?? null, preference: a.preference })),
+      adapters: c.adapters.map((a, i) => ({ registryEntryId: a.registryEntryId, key: entries[i]?.key ?? null, preference: a.preference, status: entries[i]?.status ?? 'not-listed' })),
       permitDegraded: c.permitDegraded,
       permittedEnvironments: c.permittedEnvironments,
       onNotNarrowable: c.onNotNarrowable,
