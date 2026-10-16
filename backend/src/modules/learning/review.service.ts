@@ -18,6 +18,7 @@
  *
  * Framework-free (PC-1).
  */
+import { assertNoSecret } from './secret.screen.js';
 import { isNarrowerOrEqual, isStrictlyWider, parseScope, type ClaimedScope } from '@pmi/learning-contract';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import { aiSourceIdentities } from './approver.guard.js';
@@ -28,7 +29,7 @@ import type { ApplyResult, Materialiser } from './materialiser.js';
 
 export interface ReviewDeps {
   readonly store: LearningStore;
-  readonly ports: Pick<LearningPorts, 'principals' | 'decisions' | 'audit'>;
+  readonly ports: Pick<LearningPorts, 'principals' | 'decisions' | 'audit' | 'secrets'>;
   readonly policy: LearningPolicyReader;
   readonly materialiser: Pick<Materialiser, 'applyResolution'>;
   readonly now?: () => Date;
@@ -68,6 +69,10 @@ export class ReviewService {
     await this.assertHumanReviewer(candidate, reviewerId, decisionId);
 
     const raw = (body ?? {}) as Record<string, unknown>;
+    // T2684, FR-LRN-018 — a reviewer's edited statement, classification or reason
+    // is screened as a submission is, before anything is decided or written: terms,
+    // transitions and versions are append-only, so a secret could never be removed.
+    await assertNoSecret(this.deps.ports.secrets, raw);
     if (raw['decision'] === 'reject') {
       const reason = raw['reason'];
       if (typeof reason !== 'string' || reason.trim() === '') {

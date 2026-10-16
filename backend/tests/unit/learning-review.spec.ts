@@ -99,6 +99,27 @@ describe('T2354 · reject (FR-LRN-029)', () => {
   });
 });
 
+describe('T2683 · a reviewer cannot write a secret either (FR-LRN-018)', () => {
+  const TOKEN = `ghp_${'R'.repeat(36)}`;
+
+  it.each([
+    ['an edited statement', { decision: 'approve', statement: `Export ${TOKEN} before the suite.` }, 'statement'],
+    ['a classification', { decision: 'approve', classification: TOKEN }, 'classification'],
+    ['a rejection reason', { decision: 'reject', reason: `Leaked ${TOKEN} here.` }, 'reason'],
+  ])('%s carrying a token is 400 naming the rule and field; nothing is decided or written', async (_name, body, field) => {
+    const c = await pending();
+    const before = await store.transitions('ws_a', c.id);
+    const err = await review().review('ws_a', 'u_h', c.id, body).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ValidationFailedError);
+    expect((err as ValidationFailedError).details).toEqual({ rule: 'github-token', field });
+    expect(JSON.stringify((err as Error).message)).not.toContain('RRRR');
+    expect(world.decisions.approvals).toEqual([]);
+    expect(world.decisions.refusals).toEqual([]);
+    expect(await store.transitions('ws_a', c.id)).toEqual(before);
+    expect(await store.reviewTerms('ws_a', c.id, before.at(-1)!.decisionId!)).toBeNull();
+  });
+});
+
 describe('T2354 · who may decide (FR-LRN-027, R-048-6 layer 1)', () => {
   it.each([
     ['an agent principal', 'agent_9', 'agent'],
