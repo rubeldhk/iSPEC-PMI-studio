@@ -1,0 +1,14 @@
+{
+  "provider": "resend",
+  "recordedOn": "2026-10-10",
+  "provenance": "Constructed on 2026-10-10 from the Resend API documentation (Context7 /websites/resend: the GET /domains list response). A full_access key may list domains, so the health probe reads 200. NOT captured from live traffic: no Resend key was available to this session.",
+  "interactions": [
+    {
+      "request": { "method": "GET", "path": "/domains" },
+      "response": {
+        "status": 200,
+        "json": { "object": "list", "has_more": false, "data": [{ "id": "d91cd9bd-1176-453e-8fc1-35364d380206", "name": "acme.test", "status": "verified", "created_at": "2026-10-01 12:00:00.000000+00", "region": "us-east-1" }] }
+      }
+    }
+  ]
+}

@@ -62,10 +62,11 @@ describe('T1233 · five ports, each declaring what its absence does', () => {
     for (const port of CONTEXT_PORTS) {
       expect(port.filledBy.length, `${port.name} names no owner`).toBeGreaterThan(0);
     }
-    // `FR-CTX-013` — the embedding provider has no owner anywhere in the
-    // programme. Recorded as unowned rather than left blank, because a blank
-    // reads as "not looked into" and this was.
-    expect(byName('EmbeddingPort')?.filledBy).toMatch(/unowned/i);
+    // `FR-CTX-013` — the embedding provider had no owner anywhere in the
+    // programme and was recorded as unowned rather than left blank. `EPIC-039`
+    // `T2218` filled it through the Integration Hub's `Embed` capability; the
+    // entry names that owner, and the refusal when it is unusable is unchanged.
+    expect(byName('EmbeddingPort')?.filledBy).toBe('EPIC-039 (Integration Hub, Embed)');
   });
 });
 

@@ -36,6 +36,7 @@ import { ExpertsModule } from './modules/experts/experts.module.js';
 import { DecisionModule } from './modules/decision/decision.module.js';
 import { EvidenceModule } from './modules/evidence/evidence.module.js';
 import { RequirementRoomModule } from './modules/requirement-room/requirement-room.module.js';
+import { IntegrationsModule } from './modules/integrations/integrations.module.js';
 
 /**
  * Application composition root.
@@ -127,6 +128,9 @@ function clientBuildPath(): string {
     DecisionModule,
     // T857b — EPIC-032. The wiring evidence-reachability.spec.ts (T856s) exists to prove.
     EvidenceModule,
+    // T2105 — EPIC-039, the Integration Hub. Registered before ServeStaticModule
+    // in the change that created it: an unregistered module is DEF-005-001.
+    IntegrationsModule,
     // T150g — EPIC-014 F-11.3. The API serves the built web client, so the
     // containerised stack is ONE origin and the client's `/v1` assumption holds
     // without the client changing (`R-014-1`).

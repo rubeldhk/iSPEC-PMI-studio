@@ -12,14 +12,16 @@ import type { SubjectDigest } from './attestation.js';
 
 export interface PortDeclaration {
   readonly name: 'EvidenceStorage' | 'AccessPolicy' | 'AttestationSource';
-  readonly filledBy: 'EPIC-025' | 'EPIC-024' | 'EPIC-013';
+  readonly filledBy: 'EPIC-025' | 'EPIC-024' | 'EPIC-039';
   readonly absent: 'refuse';
 }
 
 export const EVIDENCE_PORTS: readonly PortDeclaration[] = Object.freeze([
   { name: 'EvidenceStorage', filledBy: 'EPIC-025', absent: 'refuse' },
   { name: 'AccessPolicy', filledBy: 'EPIC-024', absent: 'refuse' },
-  { name: 'AttestationSource', filledBy: 'EPIC-013', absent: 'refuse' },
+  // EPIC-039 T2215 — the `U-13` adapter registry (`BR-0125`) is EPIC-039's
+  // Integration Hub; this was declared under `EPIC-013` (R-039-11).
+  { name: 'AttestationSource', filledBy: 'EPIC-039', absent: 'refuse' },
 ] as const);
 
 // ─────────────────────────────────────────────────────────── EvidenceStorage
@@ -79,7 +81,8 @@ export interface AuthorisedSource {
 }
 
 /**
- * Filled by the `EPIC-013` / `U-13` adapter registry (`BR-0125`). An external
+ * Filled by the `U-13` adapter registry (`BR-0125`) — `EPIC-039`'s
+ * Integration Hub (`T2215`), which authorises `pmi-adapter:<key>`. An external
  * tool contributes through an authorised adapter, never a bespoke per-tool
  * route (`FR-EVS-040`). Absent ⇒ every external contribution is refused.
  */

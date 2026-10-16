@@ -146,3 +146,51 @@ describe('T1236 · no embedding vendor in the data model', () => {
     expect(SOURCES.some((s) => /embeddingModelId/.test(s.code))).toBe(true);
   });
 });
+
+/**
+ * `T2219` (EPIC-039, `FR-HUB-087`, `R-039-18`) — `EmbeddingPort` is filled by
+ * the Integration Hub, and the context module knows only the Hub's port.
+ *
+ * The provider is the Hub's business (`FR-HUB-061`): an `Embed` adapter key, a
+ * provider name or an adapter package named here would bind this module to one
+ * model the way `FR-CTX-013` forbids the record to be bound. So the module may
+ * reach into `integrations/` for exactly two things — the module that exports
+ * the port, and the token it is exported as (`INTEGRATIONS_EMBEDDING_PORT`) —
+ * and only from `context.module.ts`, where it is bound to `EMBEDDING_PORT`.
+ */
+const HUB_IMPORTS_ALLOWED = ['../integrations/integrations.module.js', '../integrations/hub.token.js'];
+
+function hubImports(code: string): string[] {
+  return [...code.matchAll(/from\s+['"]([^'"]*integrations\/[^'"]*)['"]/g)].map((m) => m[1]!);
+}
+
+function namesEmbedProvider(code: string): boolean {
+  return /fixture-embed|ollama|nomic-embed|capability-adapter|PMI_EMBED_ADAPTER|PMI_EMBED_BINDING/i.test(code);
+}
+
+describe('T2219 (EPIC-039) · the module depends on the Hub’s embedding port and nothing else of the Hub’s', () => {
+  it('names no Embed adapter, provider or adapter package', () => {
+    for (const source of SOURCES) expect(namesEmbedProvider(source.code), `${source.path} names an Embed provider`).toBe(false);
+  });
+
+  it('imports from integrations/ only the module and its exported token, and only in context.module.ts', () => {
+    for (const source of SOURCES) {
+      const imports = hubImports(source.code);
+      if (source.path === 'context.module.ts') expect([...imports].sort()).toEqual([...HUB_IMPORTS_ALLOWED].sort());
+      else expect(imports, `${source.path} reaches into the integrations module`).toEqual([]);
+    }
+  });
+
+  it('binds EMBEDDING_PORT to the Hub’s exported port, and passes the bound port — never null — to the index and the search', () => {
+    const module = SOURCES.find((s) => s.path === 'context.module.ts')!;
+    expect(module.code).toMatch(/provide:\s*EMBEDDING_PORT[\s\S]{0,200}inject:\s*\[INTEGRATIONS_EMBEDDING_PORT\]/);
+    expect(module.code).toMatch(/new IndexService\(store, vectors, embedding, sources\)/);
+    expect(module.code).toMatch(/new SearchService\(vectors, embedding,/);
+    expect(module.code).not.toMatch(/new (IndexService|SearchService)\([^)]*\bnull\b/);
+  });
+
+  it('the checks can fire', () => {
+    expect(namesEmbedProvider("const key = 'ollama-embed';")).toBe(true);
+    expect(hubImports("import { x } from '../integrations/hub.js';")).toEqual(['../integrations/hub.js']);
+  });
+});

@@ -186,7 +186,10 @@ export class IndexService {
     const models = await this.vectors.modelsIn(workspaceId);
     const base = {
       entryCount: entries.length,
-      embeddingModelId: this.embedding?.modelId ?? null,
+      // `EPIC-039` `T2218` — the port is always present now; a dimension of
+      // zero is how the Hub's port says no model is bound, and no model is
+      // reported rather than a placeholder name.
+      embeddingModelId: this.embedding !== null && this.embedding.dimension > 0 ? this.embedding.modelId : null,
       models,
     };
 

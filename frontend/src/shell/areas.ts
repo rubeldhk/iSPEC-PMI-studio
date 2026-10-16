@@ -21,6 +21,7 @@ import {
   RunsArea,
   ContextView,
   DecisionInboxView,
+  IntegrationsArea,
   SpecificationsArea,
   WorkspaceAdministrationArea,
 } from './area-views';
@@ -276,8 +277,12 @@ export const AREAS: readonly Area[] = Object.freeze([
     label: 'Integrations',
     path: '/integrations',
     epic: 'EPIC-039',
-    status: 'declared-not-delivered',
-    note: 'The Integration Hub is owned and not scheduled yet.',
+    // EPIC-039 `T2209`. Promoted because the view-only registry renders and
+    // reads the real `GET /integrations/registry` (`T2207`) — the screen first,
+    // the status after it (`T1172`'s rule). Configuration stays in the API
+    // (`FR-HUB-074`).
+    status: 'delivered',
+    element: IntegrationsArea,
   },
   {
     id: 'reports',

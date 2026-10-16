@@ -24,15 +24,35 @@
  * actually installs is **named somewhere in the register**, which is the half
  * `TS-001` is about and the half that silently rots.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { REPO_ROOT } from './helpers';
 
 const REGISTER = join(REPO_ROOT, 'specs', '_shared', 'dependencies.md');
 
-/** The packages whose `dependencies` this rule governs. */
-const PACKAGES = ['frontend', 'backend', 'worker', 'api-launcher'] as const;
+/**
+ * The packages whose `dependencies` this rule governs.
+ *
+ * `EPIC-039` `T2247` (analysis C4) — the capability adapters run **in the
+ * backend** in production (`R-039-1`), so a dependency one of them installs is a
+ * runtime dependency of the platform even though it sits in its own manifest.
+ * Listing only the three applications would let `fflate` and `fast-xml-parser`
+ * enter quietly, which is the exact hole `TS-001` exists to close. Discovered,
+ * not listed, so a fifth adapter package is governed the day it exists.
+ */
+const ADAPTER_ROOT = join(REPO_ROOT, 'packages', 'capability-adapters');
+const PACKAGES: readonly string[] = [
+  'frontend',
+  'backend',
+  'worker',
+  'api-launcher',
+  ...(existsSync(ADAPTER_ROOT)
+    ? readdirSync(ADAPTER_ROOT)
+        .filter((d) => existsSync(join(ADAPTER_ROOT, d, 'package.json')))
+        .map((d) => `packages/capability-adapters/${d}`)
+    : []),
+];
 
 /**
  * Register rows name **components**, not npm package names, and a component is
@@ -107,6 +127,21 @@ describe('TS-001 · every runtime dependency is in the register (T436c)', () => 
     // above and prove nothing — the shape `T436n` guards for the shell.
     expect(namedInRegister('some-package-nobody-registered', register())).toBe(false);
     expect(namedInRegister('react-router', register())).toBe(true);
+  });
+});
+
+describe('T2247 (EPIC-039, analysis C4) · the two parsers of the GitHub adapter are registered before install', () => {
+  it('names fflate and fast-xml-parser in the register', () => {
+    // `R-039-9`: the only new runtime dependencies of EPIC-039, both confined to
+    // `@pmi/capability-adapter-github`. The row comes first (`TS-001`).
+    const text = register();
+    expect(namedInRegister('fflate', text), 'fflate has no register row').toBe(true);
+    expect(namedInRegister('fast-xml-parser', text), 'fast-xml-parser has no register row').toBe(true);
+  });
+
+  it('governs the capability adapter packages once they exist', () => {
+    if (!existsSync(ADAPTER_ROOT)) return;
+    expect(PACKAGES.filter((p) => p.startsWith('packages/capability-adapters/')).length).toBeGreaterThan(0);
   });
 });
 
@@ -229,9 +264,13 @@ describe('T1694 · EPIC-046 takes no new runtime dependency', () => {
     },
   );
 
-  it('adds no D- row for EPIC-046, and the register still ends at D-32', () => {
+  it('adds no D- row for EPIC-046: the register ended at D-32, and every later row belongs to a later Epic', () => {
     const register = readFileSync(join(REPO_ROOT, 'specs/_shared/dependencies.md'), 'utf8');
-    const ids = [...register.matchAll(/\*\*(D-\d+)\*\*/g)].map((m) => Number(m[1]?.slice(2)));
-    expect(Math.max(...ids), 'a D- row appeared for EPIC-046; R-046-10 says there is none').toBe(32);
+    // `EPIC-039` `T2247` added D-33 (fflate) and D-34 (fast-xml-parser), each
+    // naming EPIC-039 in its own row. The assertion stays what it was for: no
+    // row after D-32 may be EPIC-046's.
+    const later = register.split('\n').filter((l) => /^\|\s*\*\*D-(\d+)\*\*/.test(l) && Number(/D-(\d+)/.exec(l)?.[1]) > 32);
+    expect(later.filter((l) => l.includes('EPIC-046')), 'a D- row appeared for EPIC-046; R-046-10 says there is none').toEqual([]);
+    expect(later.every((l) => l.includes('EPIC-039')), 'a row after D-32 names no owning Epic').toBe(true);
   });
 });

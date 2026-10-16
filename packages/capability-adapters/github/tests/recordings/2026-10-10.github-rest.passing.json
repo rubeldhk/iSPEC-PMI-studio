@@ -1,0 +1,45 @@
+{
+  "provider": "github",
+  "recordedOn": "2026-10-10",
+  "provenance": "Constructed on 2026-10-10 from the GitHub REST API documentation (Context7 /websites/github_en_rest: commits, git trees, repository contents, check runs, combined status, workflow runs, artifacts, installation access tokens; API version 2022-11-28). NOT captured from live traffic: no network access or GitHub App installation was available to this session. A live run (quickstart Q23, T2231) replaces these with captured responses.",
+  "interactions": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/repos/acme/widgets/actions/runs?head_sha=a1b2c3d4e5f60718293a4b5c6d7e8f9012345678&per_page=100"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "x-github-request-id": "REC:0001"
+        },
+        "json": {
+          "total_count": 1,
+          "workflow_runs": [
+            {
+              "id": 9001,
+              "name": "ci",
+              "status": "completed",
+              "conclusion": "success",
+              "head_sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+              "html_url": "https://github.com/acme/widgets/actions/runs/9001"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/repos/acme/widgets/actions/artifacts/777/zip"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/zip"
+        },
+        "bodyBase64": "UEsDBBQAAAAIAOAOSl1P4zhj+gAAAKMCAAAJAAAAanVuaXQueG1snZHPboMwDIfvfQrL9/Fn22EHoLcde9oewCOGRgsBxYHu8RcKdNBJVdVT4lj6fs7nbP/TGBjYiW5tjmmUILAtW6VtnePnx/vTG+6LXeZZvPQ6HGCp4RyH8e4Rzo0cXxEq0qZ3HIqR4Vzrpqt8665jFeBY7AD+UDPppFXNXuKG/DGSjsvIy4X7csW9gs24koShNCRyCzn1SCkBf2rB9s1X+HeI0uN7EiXJM8YPUh1XvQQ5BJZr8nrgNXcZFmCixwv+wbQjWWVC2oEOYMizu4Rhkc2K4mIbM1Vn8TfXoNt/S0i3S7hj6DVkEUTBO0GlzVpNmkzKN9OtCil2v1BLAwQUAAAACADgDkpdRNBT2gYAAAAEAAAAEgAAAGNvdmVyYWdlL2xjb3YuaW5mbwvxs+ICAFBLAwQUAAAACADgDkpdCb2S3QkAAAAHAAAACQAAAG5vdGVzLnR4dMvLL1GoyM0BAFBLAQIUABQAAAAIAOAOSl1P4zhj+gAAAKMCAAAJAAAAAAAAAAAAAAAAAAAAAABqdW5pdC54bWxQSwECFAAUAAAACADgDkpdRNBT2gYAAAAEAAAAEgAAAAAAAAAAAAAAAAAhAQAAY292ZXJhZ2UvbGNvdi5pbmZvUEsBAhQAFAAAAAgA4A5KXQm9kt0JAAAABwAAAAkAAAAAAAAAAAAAAAAAVwEAAG5vdGVzLnR4dFBLBQYAAAAAAwADAK4AAACHAQAAAAA="
+      }
+    }
+  ]
+}

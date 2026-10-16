@@ -1,0 +1,9 @@
+/**
+ * `@pmi/capability-adapter-fixture` (EPIC-039) — complete, scriptable fixture
+ * providers for the v1 capabilities (`R-039-9`).
+ */
+export { FixtureAdapter, FIXTURE_BINDING_SCHEMA, FIXTURE_VERSION, commitFor, type FixtureScript, type InvokeScript } from './shared.js';
+export { FixtureGitAdapter } from './git.fixture.js';
+export { FixtureCiAdapter } from './ci.fixture.js';
+export { FixtureNotifyAdapter, type FixtureDelivery } from './notify.fixture.js';
+export { FixtureEmbedAdapter, letterVector, FIXTURE_EMBED_MODEL, FIXTURE_EMBED_DIMENSION, FIXTURE_EMBED_VERSION } from './embed.fixture.js';

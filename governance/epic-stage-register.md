@@ -49,7 +49,7 @@ a person never writes a stage, and a machine never infers intent.
 | [EPIC-036](../specs/036-application-shell/) | Application Shell & Dashboard | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-037](../specs/037-governed-execution-registry/) | Governed Execution Registry | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-038](../specs/038-engineering-context/) | Engineering Context | delivery | Ready | — | Ready | `/speckit-implement` |
-| [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
+| [EPIC-039](../specs/039-integration-hub/) | Integration Hub | delivery | Analyzed | stalled | Not ready | `DOR evaluation` |
 | [EPIC-040](../specs/040-metrics-reporting/) | Metrics \& Reporting | delivery | Specified | stalled | Not ready | `/speckit-clarify` |
 | [EPIC-041](../specs/041-local-project-workspace/) | Local Project Workspace | delivery | Ready | — | Ready | `/speckit-implement` |
 | [EPIC-042](../specs/042-pmi-spec-kit-extension/) | PMI Spec Kit Extension, Setup Skill and Constitution Sync | delivery | Ready | — | Ready | `/speckit-implement` |

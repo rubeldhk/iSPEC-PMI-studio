@@ -7,5 +7,6 @@ packages:
   - 'packages/*'
   - 'engine-adapters/*'
   - 'packages/storage-adapters/*'
+  - 'packages/capability-adapters/*'
   - 'agent-adapters/*'
   - 'execution-providers/*'

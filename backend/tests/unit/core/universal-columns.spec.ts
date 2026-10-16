@@ -50,6 +50,11 @@ const NOT_TENANT_SCOPED = new Set([
   // EPIC-022 T297: the versioned structure definition is product
   // configuration (D-16), not tenant data.
   'structure_definitions',
+  // EPIC-039 T2125: the capability vocabulary is deployment vocabulary — the
+  // engine_registrations exception — and the Embed binding record belongs to the
+  // deployment because EmbeddingPort carries no workspace (analysis I1).
+  'capability_contract_versions',
+  'deployment_capability_bindings',
 ]);
 
 function migrationSql(): string {
@@ -136,6 +141,9 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'audit_entries',
       'baseline_exceptions',
       'baselines',
+      'capability_contract_versions',
+      'capability_invocations',
+      'capability_resolutions',
       'change_baseline_deltas',
       'change_closures',
       'change_decisions',
@@ -182,6 +190,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
     'defect_routings',
     'defect_tests',
       'dependency_edges',
+      'deployment_capability_bindings',
       'engine_registrations',
       'engineering_experts',
       // EPIC-044 T1554 — Epic as a product entity; a stage is derived, never stored.
@@ -190,6 +199,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'evidence_completion_attempts',
       'evidence_contract_items',
       'evidence_contracts',
+      'evidence_intake_attempts',
       'evidence_items',
       'execution_artifacts',
       'execution_comments',
@@ -209,10 +219,14 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'gate_outcomes',
       'generation_jobs',
       'handoffs',
+      'integration_credentials',
+      'integration_health_checks',
+      'integration_registry_entries',
       'lifecycle_transitions',
       'loop_instance_configurations',
       'loop_objects',
       'loop_transitions',
+      'notification_deliveries',
       'organizations',
       // EPIC-031 T731 — the decision engine (data-model §2–§5).
       'policy_decisions',
@@ -220,6 +234,7 @@ describe('T012a · universal columns reach the database (FR-002)', () => {
       'principal_identity_snapshots',
       'principal_state_events',
       'principals',
+      'project_capability_configurations',
       'project_constraints',
       'projects',
       'provisional_approval_overrides',

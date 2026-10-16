@@ -1,0 +1,31 @@
+{
+ "provider": "ollama",
+ "recordedOn": "2026-10-10",
+ "provenance": "Constructed on 2026-10-10 from the Ollama API documentation (Context7 /ollama/ollama): the server is up but the bound model was never pulled — GET /api/tags lists no models and POST /api/embed answers 404 with the model-not-found error. NOT captured from live traffic.",
+ "interactions": [
+  {
+   "request": {
+    "method": "GET",
+    "path": "/api/tags"
+   },
+   "response": {
+    "status": 200,
+    "json": {
+     "models": []
+    }
+   }
+  },
+  {
+   "request": {
+    "method": "POST",
+    "path": "/api/embed"
+   },
+   "response": {
+    "status": 404,
+    "json": {
+     "error": "model \"nomic-embed-text\" not found, try pulling it first"
+    }
+   }
+  }
+ ]
+}

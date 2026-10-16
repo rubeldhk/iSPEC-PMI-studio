@@ -12,6 +12,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'backend-unit',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/unit/**/*.spec.ts'],
       environment: 'node',
@@ -20,6 +25,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'backend-contract',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/contract/**/*.spec.ts'],
       environment: 'node',
@@ -34,6 +44,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'backend-integration',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/integration/**/*.spec.ts'],
       environment: 'node',
@@ -73,6 +88,11 @@ export default defineWorkspace([
   {
     test: {
       name: 'architecture',
+      // EPIC-039 R-039-8 / R-039-6 — the integrations module refuses to start
+      // without PMI_ENVIRONMENT, and every test process turns the scheduler off.
+      // Set here so every suite that boots AppModule is configured the way an
+      // operator configures the stack, not by a default in the module.
+      env: { PMI_ENVIRONMENT: 'local', PMI_INTEGRATION_SCHEDULER: 'off' },
       root: './backend',
       include: ['tests/architecture/**/*.spec.ts'],
       environment: 'node',
@@ -283,6 +303,28 @@ export default defineWorkspace([
       name: 'epic-stage',
       root: './packages/epic-stage',
       include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    // EPIC-039 T2103 — the capability contract: the vocabulary, the five
+    // contract documents and their conformance check, the resolver's pure
+    // eligibility core. No `passWithNoTests` (TS-005).
+    test: {
+      name: 'capability-contract',
+      root: './packages/capability-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    // EPIC-039 T2103 — the four adapter packages, each running the contract's
+    // exported conformance suite (fixture providers, and real providers over
+    // RECORDED responses — never the network). No `passWithNoTests`.
+    test: {
+      name: 'capability-adapters',
+      root: './packages/capability-adapters',
+      include: ['**/tests/**/*.spec.ts'],
       environment: 'node',
     },
   },

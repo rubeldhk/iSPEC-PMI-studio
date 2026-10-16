@@ -39,7 +39,7 @@ export interface ContextPort {
 export const CONTEXT_PORTS: readonly ContextPort[] = Object.freeze([
   Object.freeze({
     name: 'EmbeddingPort',
-    filledBy: 'unowned — no embedding provider exists anywhere in the programme (FR-CTX-013)',
+    filledBy: 'EPIC-039 (Integration Hub, Embed)',
     absent: 'refuse' as const,
     because:
       'a zero vector would rank every candidate identically, producing a package that looks ' +

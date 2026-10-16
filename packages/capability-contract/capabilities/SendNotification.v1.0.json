@@ -1,0 +1,104 @@
+{
+  "name": "SendNotification",
+  "major": 1,
+  "minor": 0,
+  "scope": "project",
+  "changesState": true,
+  "description": "Deliver one message to named recipient addresses. The only v1 capability that changes state at a provider.",
+  "requiredScope": {
+    "access": "write",
+    "resources": [
+      "notification.send"
+    ]
+  },
+  "errorCategories": [
+    "adapter-fault",
+    "provider-throttled",
+    "provider-unavailable",
+    "credential-rejected",
+    "not-found",
+    "timed-out",
+    "recipient-rejected",
+    "credential-material-in-content"
+  ],
+  "limits": {
+    "maxRecipients": 20,
+    "maxSubject": 200,
+    "maxBodyText": 20000
+  },
+  "inputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "recipients",
+      "subject",
+      "body",
+      "idempotencyKey"
+    ],
+    "properties": {
+      "recipients": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 20,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 320,
+              "pattern": "^[^@\\s]+@[^@\\s]+$"
+            }
+          }
+        }
+      },
+      "subject": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          }
+        }
+      },
+      "idempotencyKey": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "delivered",
+      "acceptedAt"
+    ],
+    "properties": {
+      "delivered": {
+        "type": "boolean"
+      },
+      "providerMessageId": {
+        "type": "string"
+      },
+      "acceptedAt": {
+        "type": "string"
+      }
+    }
+  }
+}

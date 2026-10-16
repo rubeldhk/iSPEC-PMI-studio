@@ -101,3 +101,24 @@ describe('T1468 · packages/mcp-server names no engine and no provider (FR-PIC-0
     expect(ENGINE.test('const toolkit = "spec-kit";')).toBe(true);
   });
 });
+
+describe('T2151 (EPIC-039) · pmi-studio exposes no capability tool (FR-HUB-004, R-039-12)', () => {
+  // The Hub serves platform-side callers only. A `pmi.capability*` or
+  // `pmi.integrations*` tool would hand the developer's local agent the
+  // operation FR-HUB-004 forbids — and the credentials behind it.
+  const tools = walk(join(SRC, 'tools')).map((p) => ({ rel: relative(REPO_ROOT, p), body: readFileSync(p, 'utf8') }));
+  const CAPABILITY_TOOL = /['"`]pmi\.(capability|capabilities|integrations?)[\w.]*['"`]/;
+
+  it('has tool sources to check', () => {
+    expect(tools.length).toBeGreaterThan(0);
+  });
+
+  it('no tool named pmi.capability* or pmi.integrations* exists', () => {
+    expect(tools.filter((f) => CAPABILITY_TOOL.test(f.body)).map((f) => f.rel)).toEqual([]);
+  });
+
+  it('the scan fails on a planted tool', () => {
+    expect(CAPABILITY_TOOL.test("{ name: 'pmi.capability.request', title: 'Run a capability' }")).toBe(true);
+    expect(CAPABILITY_TOOL.test("{ name: 'pmi.integrations.registry' }")).toBe(true);
+  });
+});
