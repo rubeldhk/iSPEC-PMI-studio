@@ -112,7 +112,7 @@ export class HubEmbeddingPort implements EmbeddingPort {
               preference: 1,
               credential: 'not-required',
               health: { state: snap.health, ...(snap.reason !== null ? { reason: snap.reason } : {}) },
-              permitDegraded: true,
+              permitDegraded: snap.permitDegraded === true, // T2624 — FR-HUB-026: healthy only, unless the deployment permits degraded
               environmentPermitted: true,
               policy: { status: 'not-applicable', reason: POLICY_NOT_APPLICABLE },
             },

@@ -40,6 +40,12 @@ export interface DeploymentBindingSnapshot {
   readonly modelId: string | null;
   readonly dimension: number | null;
   readonly health: 'healthy' | 'degraded' | 'unhealthy';
+  /**
+   * `T2624` (`FR-HUB-026`) — only *healthy* is eligible by default. The
+   * deployment may permit *degraded* (`PMI_EMBED_PERMIT_DEGRADED=true`), the
+   * deployment-scope counterpart of a project's per-capability permission.
+   */
+  readonly permitDegraded?: boolean;
   readonly reason: string | null;
   /** Why not eligible, in a sentence — appended to `EmbeddingPort`'s 503 (`FR-HUB-085`). */
   readonly explanation: string | null;
@@ -211,7 +217,8 @@ export class DeploymentBindingService {
       // The version the adapter reports; a previous one is kept while it cannot be read.
       const version = h.modelVersion ?? (this.current.adapterKey === r.adapterKey ? this.current.observedModel?.version : undefined) ?? 'unknown';
       const observedModel = { model: r.model.model, version, dimension: r.model.dimension };
-      const eligible = h.state !== 'unhealthy';
+      const permitDegraded = this.deps.env['PMI_EMBED_PERMIT_DEGRADED'] === 'true';
+      const eligible = h.state === 'healthy' || (h.state === 'degraded' && permitDegraded);
       next = {
         capability: 'Embed',
         bound: true,
@@ -222,8 +229,9 @@ export class DeploymentBindingService {
         modelId: `${r.adapterKey}:${r.model.model}@${version}`,
         dimension: r.model.dimension,
         health: h.state,
+        permitDegraded,
         reason: h.state === 'healthy' ? null : (h.reason ?? 'provider-error'),
-        explanation: eligible ? null : `the Embed binding ${r.adapterKey} is ${h.state}: ${h.reason ?? 'provider-error'}${h.detail ? ` (${h.detail})` : ''}`,
+        explanation: eligible ? null : `the Embed binding ${r.adapterKey} is ${h.state}: ${h.reason ?? 'provider-error'}${h.detail ? ` (${h.detail})` : ''}${h.state === 'degraded' ? ' — degraded is not eligible unless the deployment permits it (PMI_EMBED_PERMIT_DEGRADED, FR-HUB-026)' : ''}`,
         observedAt: now,
       };
     }

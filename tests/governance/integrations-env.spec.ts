@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { REPO_ROOT } from './helpers';
 
 const example = readFileSync(join(REPO_ROOT, '.env.example'), 'utf8');
-const VARIABLES = ['PMI_ENVIRONMENT', 'PMI_INTEGRATION_KEYS', 'PMI_INTEGRATION_ACTIVE_KEY', 'PMI_INTEGRATION_SCHEDULER', 'PMI_EMBED_ADAPTER', 'PMI_EMBED_BINDING'] as const;
+const VARIABLES = ['PMI_ENVIRONMENT', 'PMI_INTEGRATION_KEYS', 'PMI_INTEGRATION_ACTIVE_KEY', 'PMI_INTEGRATION_SCHEDULER', 'PMI_EMBED_ADAPTER', 'PMI_EMBED_BINDING', 'PMI_EMBED_PERMIT_DEGRADED'] as const;
 
 describe('T2106 · the Integration Hub variables are documented', () => {
   it.each(VARIABLES)('%s is documented in .env.example with an explanation', (name) => {

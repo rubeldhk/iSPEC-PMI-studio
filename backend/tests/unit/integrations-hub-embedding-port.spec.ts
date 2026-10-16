@@ -107,3 +107,25 @@ describe('T2202 · HubEmbeddingPort (FR-HUB-080–FR-HUB-087)', () => {
     await expect(port.embed(['a'])).rejects.toThrow(/provider-unavailable/);
   });
 });
+
+describe('T2624 · FR-HUB-026 — a degraded Embed binding is ineligible unless the deployment permits degraded', () => {
+  const degraded = { PMI_EMBED_ADAPTER: 'fixture-embed', PMI_EMBED_BINDING: JSON.stringify({ script: { health: 'degraded', healthReason: 'provider-throttled' } }) };
+
+  it('by default: refused, naming EmbeddingPort and the degraded health — no vectors', async () => {
+    const { port, deployment } = await rig(degraded);
+    expect(deployment.snapshot()).toMatchObject({ health: 'degraded', eligible: false });
+    await expect(port.embed(['a'])).rejects.toThrow(GovernanceSeamUnboundError);
+    await expect(port.embed(['a'])).rejects.toThrow(/EmbeddingPort[\s\S]*degraded/);
+  });
+
+  it('with PMI_EMBED_PERMIT_DEGRADED=true: eligible, and the resolution records it was degraded', async () => {
+    const { port, deployment } = await rig({ ...degraded, PMI_EMBED_PERMIT_DEGRADED: 'true' });
+    expect(deployment.snapshot()).toMatchObject({ health: 'degraded', eligible: true });
+    await expect(port.embed(['a'])).resolves.toHaveLength(1);
+  });
+
+  it('healthy needs no permission', async () => {
+    const { port } = await rig({ PMI_EMBED_ADAPTER: 'fixture-embed' });
+    await expect(port.embed(['a'])).resolves.toHaveLength(1);
+  });
+});
