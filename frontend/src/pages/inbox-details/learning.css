@@ -1,0 +1,101 @@
+/*
+ * EPIC-048 T2379, T2381 — governed learning's two views.
+ *
+ * UX-0040 / FR-LRN-075: readable at 360px. Nothing here sets a width floor; the
+ * side-by-side comparison collapses to one column when the two halves cannot
+ * both have four of the largest space step; long statements, ids and digests wrap instead of
+ * overflowing. FR-LRN-074: agent-proposed and approved content look different —
+ * by border and by a text label, never by colour alone (FR-DS-012).
+ */
+.lrn-view {
+  display: grid;
+  gap: var(--space-4, 1rem);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.lrn-section {
+  display: grid;
+  gap: var(--space-2, 0.5rem);
+}
+
+.lrn-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-8) * 3)), 1fr));
+  gap: var(--space-2, 0.5rem);
+  margin: 0;
+}
+
+.lrn-meta dt {
+  font-weight: 600;
+}
+
+.lrn-meta dd {
+  margin: 0;
+}
+
+.lrn-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-8) * 4)), 1fr));
+  gap: var(--space-3, 0.75rem);
+}
+
+.lrn-proposed,
+.lrn-approved {
+  margin: 0;
+  padding: var(--space-3, 0.75rem);
+  border-radius: var(--radius-md);
+}
+
+/* Agent-proposed: dashed — a claim, not a fact. */
+.lrn-proposed {
+  border: calc(var(--space-1) / 2) dashed var(--color-text-muted);
+}
+
+/* Approved: solid — a decision stands behind it. */
+.lrn-approved {
+  border: calc(var(--space-1) / 2) solid var(--color-accent);
+}
+
+.lrn-label {
+  font-size: var(--type-2-size);
+  font-weight: 600;
+  margin: 0 0 var(--space-1, 0.25rem);
+}
+
+.lrn-list {
+  display: grid;
+  gap: var(--space-2, 0.5rem);
+  margin: 0;
+  padding-left: var(--space-4, 1rem);
+}
+
+.lrn-form {
+  display: grid;
+  gap: var(--space-3, 0.75rem);
+}
+
+.lrn-form textarea,
+.lrn-form select,
+.lrn-form input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lrn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+}
+
+.lrn-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--space-7) * 3.5)), 1fr));
+  gap: var(--space-2, 0.5rem);
+}
+
+.lrn-banner {
+  margin: 0;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  border-left: var(--space-1) solid var(--color-accent);
+}

@@ -25,6 +25,9 @@
  * Framework-free (PC-1).
  */
 
+import type { KnowledgeAdmission, KnowledgeSourceReader } from '@pmi/learning-contract';
+import { KNOWLEDGE_ENTRY_SOURCE_TYPE } from './retrieval/index.service.js';
+
 export type AbsentBehaviour = 'refuse' | 'degrade';
 
 export interface ContextPort {
@@ -108,3 +111,57 @@ export const CONTEXT_SOURCES = Symbol('CONTEXT_SOURCES');
 
 /** `T1279` — the vector index: pgvector when `DATABASE_URL` is set. */
 export const CONTEXT_VECTOR_INDEX = Symbol('CONTEXT_VECTOR_INDEX');
+
+/**
+ * `A-038-2` (`EPIC-048` `T2399`, `R-048-11`) — the one slot through which
+ * `EPIC-048` supplies approved knowledge: its `KnowledgeSourceReader` and its
+ * `KnowledgeAdmission`.
+ *
+ * A slot rather than an import, because `EPIC-048`'s module already depends on
+ * this one (it calls `IndexService.reindex`); this module must not depend back.
+ * `EPIC-048` fills it when its module is built, and the sources adapter and
+ * assembly read it **at call time**, so the binding made after this module is
+ * built is the one used. Unfilled, both halves are `null`: the sources adapter
+ * serves no knowledge entry and assembly excludes every one with `permission`
+ * (`learning-contract.md` §3) — never admitted by default.
+ */
+export const CONTEXT_KNOWLEDGE = Symbol('CONTEXT_KNOWLEDGE');
+
+export interface KnowledgeSupplyBinding {
+  reader: KnowledgeSourceReader | null;
+  admission: KnowledgeAdmission | null;
+}
+
+export function unboundKnowledgeSupply(): KnowledgeSupplyBinding {
+  return { reader: null, admission: null };
+}
+
+/**
+ * `AssemblyPorts.admission` and `.knowledge` over the slot, read on every
+ * access so a later binding is seen.
+ */
+export function knowledgeSupplyPorts(binding: KnowledgeSupplyBinding): {
+  readonly admission: ReadonlyMap<string, KnowledgeAdmission> | null;
+  readonly knowledge: KnowledgeSourceReader | null;
+} {
+  return {
+    get admission() {
+      return binding.admission === null ? null : new Map([[KNOWLEDGE_ENTRY_SOURCE_TYPE, binding.admission]]);
+    },
+    get knowledge() {
+      return binding.reader;
+    },
+  };
+}
+
+/**
+ * `ports` with the slot's two getters copied on as getters. A spread would read
+ * them once, now, and freeze the unbound state into the assembler.
+ */
+export function withKnowledgeSupply<T extends object>(
+  ports: T,
+  binding: KnowledgeSupplyBinding,
+): T & ReturnType<typeof knowledgeSupplyPorts> {
+  return Object.defineProperties(ports, Object.getOwnPropertyDescriptors(knowledgeSupplyPorts(binding))) as T &
+    ReturnType<typeof knowledgeSupplyPorts>;
+}

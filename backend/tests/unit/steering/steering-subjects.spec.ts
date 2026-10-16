@@ -19,6 +19,9 @@ const THE_TEN = [
   'business_rules',
   'technology_stack',
   'ai_governance',
+  // EPIC-048 T2323 (A-019-1): the learning policy document. The ten of
+  // FR-ENH-002 are unchanged; this is the one subject another Epic added.
+  'learning_policy',
 ];
 
 /**
@@ -28,8 +31,8 @@ const THE_TEN = [
  */
 const ADDED_BY_EPIC_031 = ['risk-classification'];
 
-describe('T234 · FR-ENH-002 — exactly the ten named subjects, plus EPIC-031’s one', () => {
-  it('the set is exactly the ten and risk-classification, no more, no fewer', () => {
+describe('T234 · FR-ENH-002 — exactly the ten named subjects, plus EPIC-031’s one and EPIC-048’s learning_policy', () => {
+  it('the set is exactly the ten, risk-classification and learning_policy, no more, no fewer', () => {
     expect([...STEERING_SUBJECTS].sort()).toEqual([...THE_TEN, ...ADDED_BY_EPIC_031].sort());
   });
 

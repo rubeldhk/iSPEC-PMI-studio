@@ -22,13 +22,15 @@ import {
   type ExecutionEventType,
 } from '../src/events.js';
 
-describe('T1024 · exactly 30 events in four classes (EPIC-047 added one content event)', () => {
-  it('has 9 + 5 + 4 + 12 = 30', () => {
+describe('T1024 · exactly 31 events in four classes', () => {
+  // 29 → 31, the content class 4 → 6: EPIC-047's `expert-governance-recorded`
+  // and EPIC-048 T2325's `learning-candidate-recorded` (analysis finding R1).
+  it('has 9 + 6 + 4 + 12 = 31', () => {
     expect(LIFECYCLE_EVENTS).toHaveLength(9);
-    expect(CONTENT_EVENTS).toHaveLength(5);
+    expect(CONTENT_EVENTS).toHaveLength(6);
     expect(REGISTRATION_EVENTS).toHaveLength(4);
     expect(GOVERNANCE_EVENTS).toHaveLength(12);
-    expect(ALL_EVENT_TYPES).toHaveLength(30);
+    expect(ALL_EVENT_TYPES).toHaveLength(31);
   });
 
   it('names no event twice', () => {
@@ -44,7 +46,7 @@ describe('T1024 · exactly 30 events in four classes (EPIC-047 added one content
     const perClass = EVENT_CLASSES.map(
       (c) => ALL_EVENT_TYPES.filter((t) => classOf(t) === c).length,
     );
-    expect(perClass).toEqual([9, 5, 4, 12]);
+    expect(perClass).toEqual([9, 6, 4, 12]);
   });
 
   it('refuses a name outside the vocabulary', () => {

@@ -35,6 +35,7 @@
  *
  * Framework-free (PC-1).
  */
+import type { KnowledgeSourceReader } from '@pmi/learning-contract';
 import { ValidationFailedError } from '../../core/errors.js';
 import type { AuthoritativeStatus } from './package.types.js';
 
@@ -76,10 +77,52 @@ export type ResolvedProvenance = SourceCitation &
       }
   );
 
+/**
+ * `A-038-2` (`EPIC-048` `T2397`, `R-048-11` item 3, `FR-LRN-052`) — a
+ * `knowledge-entry` item's status, from `EPIC-048`'s reader rather than a
+ * baseline: `current`, or `superseded` naming its successor. A deprecated
+ * version is `undetermined` with the reason — admission never supplies one, so
+ * this is reached only by an item assembled before the deprecation.
+ */
+export async function resolveKnowledgeProvenance(
+  reader: KnowledgeSourceReader,
+  workspaceId: string,
+  source: SourceCitation,
+): Promise<ResolvedProvenance> {
+  let answer: Awaited<ReturnType<KnowledgeSourceReader['status']>>;
+  try {
+    answer = await reader.status(workspaceId, source.sourceId, source.sourceVersion);
+  } catch (error) {
+    return {
+      ...source,
+      authoritativeStatus: 'undetermined',
+      undeterminedReason:
+        `the knowledge reader could not be reached, so this version's status is unknown: ` +
+        `${error instanceof Error ? error.message : 'unknown error'} (FR-CTX-044)`,
+    };
+  }
+  if (answer.status === 'current') return { ...source, authoritativeStatus: 'current' };
+  if (answer.status === 'superseded') {
+    return { ...source, authoritativeStatus: 'superseded', supersededBy: answer.supersededBy };
+  }
+  return {
+    ...source,
+    authoritativeStatus: 'undetermined',
+    undeterminedReason: `deprecated: ${answer.reason} — approved knowledge, not authoritative (FR-LRN-052)`,
+  };
+}
+
 export class ProvenanceService {
-  constructor(private readonly baselines: BaselineReaderPort) {}
+  constructor(
+    private readonly baselines: BaselineReaderPort,
+    /** `A-038-2` — `EPIC-048`'s reader for `knowledge-entry`; absent leaves it to baselines. */
+    private readonly knowledge: KnowledgeSourceReader | null = null,
+  ) {}
 
   async resolve(workspaceId: string, source: SourceCitation): Promise<ResolvedProvenance> {
+    if (this.knowledge !== null && source.sourceType === 'knowledge-entry') {
+      return resolveKnowledgeProvenance(this.knowledge, workspaceId, source);
+    }
     let answer: SourceStatus;
     try {
       answer = await this.baselines.statusOf({ workspaceId, ...source });

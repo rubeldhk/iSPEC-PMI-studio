@@ -55,5 +55,5 @@ the answer §27 actually asks for.
 | ADR-0018 Governed Engineering Loops as a shared workflow abstraction | open | PMI-DOC-004 and the three Room epics | — | — |
 | ADR-0019 Context Engine composition — four capabilities, not one store | open | D-24 and a Context Engine epic | — | — |
 | ADR-0020 Engineering Expert model for registered agents | decided | — | — | — |
-| ADR-0021 Governed Learning — agent observations are not knowledge | open | PMI-DOC-004 and a Governed Learning epic | — | — |
+| ADR-0021 Governed Learning — agent observations are not knowledge | decided | — | — | — |
 | ADR-0022 Specification compliance and evidence as the differentiator | open | PMI-DOC-004 and an owning epic for the compliance agent | — | — |

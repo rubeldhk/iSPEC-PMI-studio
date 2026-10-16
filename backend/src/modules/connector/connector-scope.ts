@@ -68,3 +68,8 @@ registerConnectorScope('artifacts.sync');
 // (FR-KAN-071). With it the registry is FIFTEEN and no reserved-but-unregistered
 // scope remains — see connector-auth.guard.spec.ts.
 registerConnectorScope('tasks.sync');
+// EPIC-048 T2335 (contracts/learning-api.md, FR-LRN-061): an agent submits a
+// learning candidate through the integration contract. A WRITE scope with no
+// read beside it, and deliberately no review scope: deciding a candidate is a
+// human's, never a connector's (FR-LRN-027). The registry is SIXTEEN.
+registerConnectorScope('learning.submit');

@@ -20,7 +20,7 @@ import {
   ProviderUnavailableError,
   ValidationFailedError,
 } from '../../core/errors.js';
-import { CompletionGate, type AttachedEvidence } from './completion.gate.js';
+import { CompletionGate, type AttachedEvidence, type ResolvedAttestation } from './completion.gate.js';
 import type { ContractCatalog } from './contract.loader.js';
 import { refKey, type EvidenceRepository } from './evidence.repository.js';
 import {
@@ -145,6 +145,26 @@ export class EvidenceService {
     const evaluation = await this.gate.evaluate(principal.workspaceId, ref);
     if (!evaluation.evaluated) throw new ProviderUnavailableError(evaluation.reason);
     return { workRef: ref, ...evaluation.status, evidence: evaluation.attached };
+  }
+
+  /**
+   * `A-032-1` (`EPIC-048` `T2395`, `R-048-8`) — attestations by id, for a caller
+   * that cites evidence rather than reaching it through its work.
+   *
+   * Workspace-scoped (`FR-EVS-016`): another workspace's id is absent, as is an
+   * id nobody holds. **No reader check here** — the caller is a capability, not
+   * a person — so each item carries the `attestedTarget` the caller must ask
+   * `AccessPolicy` about before showing it to anyone (`FR-EVS-015`).
+   * Integrity is re-derived on this read. An unreachable store is `503`, never
+   * an empty answer.
+   */
+  async resolve(workspaceId: string, ids: readonly string[]): Promise<ReadonlyMap<string, ResolvedAttestation>> {
+    if (ids.length === 0) return new Map();
+    try {
+      return await this.gate.resolve(workspaceId, ids);
+    } catch {
+      throw new ProviderUnavailableError('The evidence store could not be reached (FR-EVS-035).');
+    }
   }
 
   /** `FR-EVS-022`, `SC-EVS-003` — the unmet items, without opening each piece of evidence. */

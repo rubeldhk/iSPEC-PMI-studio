@@ -57,7 +57,16 @@ import { AssemblyService, type AssemblyPorts } from './assembly.service.js';
 import { ContextController } from './context.controller.js';
 import { InMemoryContextStore, type ContextStore } from './context.store.js';
 import { PrismaContextStore, type ContextPrismaClient } from './context.store.prisma.js';
-import { CONTEXT_PORTS, CONTEXT_SOURCES, CONTEXT_STORE, CONTEXT_VECTOR_INDEX } from './context.tokens.js';
+import {
+  CONTEXT_KNOWLEDGE,
+  CONTEXT_PORTS,
+  CONTEXT_SOURCES,
+  CONTEXT_STORE,
+  CONTEXT_VECTOR_INDEX,
+  unboundKnowledgeSupply,
+  withKnowledgeSupply,
+  type KnowledgeSupplyBinding,
+} from './context.tokens.js';
 
 /** Resolvable proof the module is in the graph — `T1224` asks for it by name. */
 export class ContextService {
@@ -99,6 +108,15 @@ export class ContextService {
           : new InMemoryVectorIndex(),
     },
     {
+      /**
+       * `A-038-2` (`EPIC-048` `T2399`) — the knowledge slot. Filled by
+       * `LearningModule` once it is built; read at call time below. Unfilled,
+       * no knowledge entry is served or admitted.
+       */
+      provide: CONTEXT_KNOWLEDGE,
+      useFactory: (): KnowledgeSupplyBinding => unboundKnowledgeSupply(),
+    },
+    {
       provide: CONTEXT_SOURCES,
       /**
        * `T1810`, `T1812` — requirements and specifications, read through their
@@ -110,10 +128,12 @@ export class ContextService {
         requirements: RequirementsService,
         specifications: SpecificationsReadService,
         executions: ExecutionRegistryFacade,
+        knowledge: KnowledgeSupplyBinding,
       ): SourceVersionReader & ArtifactSource =>
         // `T1828`, `R-038-8` — execution history through EPIC-037's projections.
-        governedSources({ requirements, specifications, executions }),
-      inject: [RequirementsService, SpecificationsReadService, ExecutionRegistryFacade],
+        // `A-038-2` — knowledge entries through EPIC-048's reader, when bound.
+        governedSources({ requirements, specifications, executions, knowledge: () => knowledge.reader }),
+      inject: [RequirementsService, SpecificationsReadService, ExecutionRegistryFacade, CONTEXT_KNOWLEDGE],
     },
     {
       provide: IndexService,
@@ -149,6 +169,7 @@ export class ContextService {
         registry: ExecutionRegistryFacade,
         sources: SourceVersionReader & ArtifactSource,
         projects: ProjectsService,
+        knowledge: KnowledgeSupplyBinding,
       ): AssemblyService => {
         const ports: AssemblyPorts = {
           // `T1279` — real ranking, over a provider nobody owns yet. Refuses
@@ -200,7 +221,10 @@ export class ContextService {
            */
           authorisations: store,
         };
-        return new AssemblyService(store, ports);
+        // `A-038-2` — EPIC-048's admission and reader, read at call time (as
+        // getters: a spread would freeze the unbound state in). Unbound, every
+        // knowledge item is excluded with `permission`.
+        return new AssemblyService(store, withKnowledgeSupply(ports, knowledge));
       },
       inject: [
         CONTEXT_STORE,
@@ -210,6 +234,7 @@ export class ContextService {
         ExecutionRegistryFacade,
         CONTEXT_SOURCES,
         ProjectsService,
+        CONTEXT_KNOWLEDGE,
       ],
     },
     {
@@ -251,6 +276,6 @@ export class ContextService {
       inject: [CONTEXT_STORE, ExecutionRegistryFacade, CONTEXT_SOURCES],
     },
   ],
-  exports: [ContextService, AssemblyService, InspectionService, IndexService, CONTEXT_STORE],
+  exports: [ContextService, AssemblyService, InspectionService, IndexService, CONTEXT_STORE, CONTEXT_KNOWLEDGE],
 })
 export class ContextModule {}

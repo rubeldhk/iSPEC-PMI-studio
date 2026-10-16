@@ -294,6 +294,18 @@ export class DecisionEngine {
     return fromRecord(record);
   }
 
+  // ─────────────────────────────────────────────────────────────── resolution
+
+  /**
+   * `A-031-3` (for `EPIC-048`, `R-048-7`) — the decision that resolved
+   * `decisionId`, or `null` while it is unresolved. `EPIC-031` offers no
+   * callback, so a consumer that holds a decision id reads its resolution here.
+   * Additive: a delegation to the repository; it decides nothing.
+   */
+  async resolutionOf(workspaceId: string, decisionId: string): Promise<DecisionRecord | null> {
+    return this.deps.repository.resolutionOf(workspaceId, decisionId);
+  }
+
   // ─────────────────────────────────────────────────────────────── exceptions
 
   /**

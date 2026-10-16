@@ -1,5 +1,7 @@
 /**
- * T1023 (EPIC-037 Band A) — the 29-event vocabulary, in four classes.
+ * T1023 (EPIC-037 Band A) — the event vocabulary, in four classes: 29 on `main`,
+ * 30 with EPIC-048's `learning-candidate-recorded` (T2325, `A-037-2`), and 31
+ * once EPIC-047's `expert-governance-recorded` is rebased in (`R-048-17`).
  *
  * ## Why the classes are not cosmetic
  *
@@ -46,6 +48,10 @@ export const CONTENT_EVENTS = Object.freeze([
    * `kind` (below), so the change to this vocabulary is a single line.
    */
   'expert-governance-recorded',
+  // EPIC-048 T2325 (A-037-2, R-048-17) — a learning submission's outcome on its
+  // source execution: {kind, candidateId?, reason?}, never the statement. Content,
+  // so a late submission inside the grace period is recordable after terminal.
+  'learning-candidate-recorded',
 ] as const);
 
 /** EPIC-047 `R-047-4`, `DEF-047-001` — the closed set of `kind`s an `expert-governance-recorded` payload carries. */
@@ -118,7 +124,7 @@ export const EVENT_CLASSES = Object.freeze([
 ] as const);
 export type EventClass = (typeof EVENT_CLASSES)[number];
 
-/** Every type, in declaration order. Exactly 30 (EPIC-047 added `expert-governance-recorded`). */
+/** Every type, in declaration order. Exactly 31 (29 + EPIC-047's `expert-governance-recorded` + EPIC-048's `learning-candidate-recorded`). */
 export const ALL_EVENT_TYPES: readonly ExecutionEventType[] = Object.freeze([
   ...LIFECYCLE_EVENTS,
   ...CONTENT_EVENTS,

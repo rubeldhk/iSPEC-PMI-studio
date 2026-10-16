@@ -90,3 +90,17 @@ describe('T436j · routes come from the registry', () => {
     }
   });
 });
+
+/**
+ * EPIC-048 `T2386` (`FR-LRN-070`, `UX-0003`) — the knowledge browser lives inside
+ * `EPIC-038`'s Context area, as one sub-view with one owner: no area of its own.
+ */
+describe('T2386 · /context/knowledge is a Context sub-view', () => {
+  it('resolves to exactly one SUB_VIEWS entry, inside the Context area, with no area of its own', () => {
+    const owners = SUB_VIEWS.filter((view) => view.path === '/context/knowledge');
+    expect(owners).toHaveLength(1);
+    expect(AREAS.some((area) => area.path === '/context')).toBe(true);
+    expect(AREAS.some((area) => area.path === '/context/knowledge')).toBe(false);
+    expect(isAddressScoped('/context/knowledge')).toBe(false);
+  });
+});

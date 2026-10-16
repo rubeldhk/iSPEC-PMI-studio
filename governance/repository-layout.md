@@ -189,6 +189,7 @@ path added or removed without updating this document fails the build.
 - `specs/045-artifact-sync-markdown-viewer/`
 - `specs/046-task-kanban-governed-status/`
 - `specs/047-engineering-experts/`
+- `specs/048-governed-learning/`
 - `packages/epic-stage/` — the SHARED stage derivation (`EPIC-044` `T1550`, PMI-DOC-007 `R-06`): the
   configuration document (mirrored as `governance/epic-stage.config.json`, `G-44-01`), the
   contiguity rule, readiness and the two evidence adapters. Imported by `tests/governance/epic-stage/`

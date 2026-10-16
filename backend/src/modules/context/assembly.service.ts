@@ -39,7 +39,8 @@ import {
 } from '../../core/errors.js';
 import type { BudgetPolicy, ContextStore } from './context.store.js';
 import type { ContextPackage, PackageItem } from './package.types.js';
-import type { ProvenanceService, ResolvedProvenance } from './provenance.service.js';
+import { resolveKnowledgeProvenance, type ProvenanceService, type ResolvedProvenance } from './provenance.service.js';
+import { KNOWLEDGE_INCLUSION_PREFIX, type KnowledgeAdmission, type KnowledgeSourceReader } from '@pmi/learning-contract';
 import type {
   Candidate,
   ExclusionRecord,
@@ -151,6 +152,21 @@ export interface AssemblyPorts {
    * with a reason naming the owner: never `current` by default.
    */
   readonly provenance?: ProvenanceService | null;
+  /**
+   * `A-038-2` (`EPIC-048` `T2397`, `R-048-11` item 4) — per source type, the
+   * owner's judgement of whether one item may be supplied to this package.
+   * Consulted after `judgeBoundary` and before `access.mayRead`; a refusal is an
+   * exclusion with one of the existing reasons and the owner's `detail`.
+   * **Fails closed**: a `knowledge-entry` with no admission port bound is
+   * excluded with `permission` (`learning-contract.md` §3).
+   */
+  readonly admission?: ReadonlyMap<string, KnowledgeAdmission> | null;
+  /**
+   * `A-038-2` (`R-048-11` item 3) — `EPIC-048`'s reader, for a knowledge item's
+   * `current` / `superseded` status (`FR-LRN-052`). Absent, a knowledge item's
+   * status is whatever `provenance` says — `undetermined` when that is unbound.
+   */
+  readonly knowledge?: KnowledgeSourceReader | null;
   /**
    * `FR-CTX-031`, `FR-CTX-036` — where the workspace's budget policy is read.
    * Bound by the module always; when bound, a workspace with no policy
@@ -453,19 +469,42 @@ export class AssemblyService {
           continue;
         }
 
+        let knowledgeNote: string | null = null;
         if (candidate.sourceType === KNOWLEDGE_ENTRY_SOURCE_TYPE) {
           // `T2523`, `A-038-1` — `knowledge-entry` is approved, but only
           // `EPIC-048`'s `KnowledgeAdmission` may say whether one entry may be
-          // supplied here, and that port (`A-038-2`) is not bound. Absent, it
-          // fails closed: never admitted by default (`learning-contract.md` §3).
-          rejected.push({
-            candidate,
-            reason: 'permission',
-            detail:
-              `admission port unbound — ${candidate.sourceType} ${candidate.sourceId} is not supplied ` +
-              'until EPIC-048 judges it (A-038-1, FR-CTX-015)',
-          });
-          continue;
+          // supplied here. `A-038-2` (`T2397`) — asked after the boundary and
+          // before the actor's permission. Absent, it fails closed: never
+          // admitted by default (`learning-contract.md` §3).
+          const admission = this.ports.admission?.get(KNOWLEDGE_ENTRY_SOURCE_TYPE) ?? null;
+          if (admission === null) {
+            rejected.push({
+              candidate,
+              reason: 'permission',
+              detail:
+                `admission port unbound — ${candidate.sourceType} ${candidate.sourceId} is not supplied ` +
+                'until EPIC-048 judges it (A-038-1, FR-CTX-015)',
+            });
+            continue;
+          }
+          const [verdict] = await admission.admit(
+            [{ sourceId: candidate.sourceId, sourceVersion: candidate.sourceVersion }],
+            {
+              workspaceId: input.workspaceId,
+              projectId: input.projectId,
+              ...(input.executionId !== undefined ? { executionId: input.executionId } : {}),
+            },
+          );
+          if (verdict === undefined || !verdict.admitted) {
+            // A missing verdict is not an admission.
+            rejected.push({
+              candidate,
+              reason: verdict?.reason ?? 'permission',
+              detail: verdict?.detail ?? `the admission port gave no verdict for ${candidate.sourceId}`,
+            });
+            continue;
+          }
+          knowledgeNote = verdict.inclusionNote;
         }
 
         if (!(await this.ports.access.mayRead(input.actorId, candidate, input.workspaceId))) {
@@ -519,9 +558,18 @@ export class AssemblyService {
           // a reason reconstructed later is a guess about what this loop was
           // thinking. An essential item was not chosen by relevance, and saying
           // it was would misdescribe the package.
-          reason: isEssential(candidate)
-            ? `marked essential for this objective by the requester`
-            : `objective relevance ${candidate.relevanceScore.toFixed(2)} against: ${input.objective}`,
+          // `A-038-2` — a knowledge item says what it is: approved knowledge,
+          // not an authoritative source (`FR-LRN-052`, `FR-CTX-072`). The
+          // owner's note may already carry the prefix (`learning-contract.md`
+          // §3 shows it does); it is said once.
+          reason:
+            knowledgeNote !== null
+              ? knowledgeNote.startsWith(KNOWLEDGE_INCLUSION_PREFIX)
+                ? knowledgeNote
+                : `${KNOWLEDGE_INCLUSION_PREFIX} ${knowledgeNote}`
+              : isEssential(candidate)
+                ? `marked essential for this objective by the requester`
+                : `objective relevance ${candidate.relevanceScore.toFixed(2)} against: ${input.objective}`,
         });
       }
     } catch (error) {
@@ -1014,6 +1062,10 @@ export class AssemblyService {
    * an authorised crossing's baseline lives where the source does.
    */
   async #provenance(candidate: Candidate): Promise<ResolvedProvenance> {
+    const knowledge = this.ports.knowledge ?? null;
+    if (knowledge !== null && candidate.sourceType === KNOWLEDGE_ENTRY_SOURCE_TYPE) {
+      return resolveKnowledgeProvenance(knowledge, candidate.workspaceId, candidate);
+    }
     const service = this.ports.provenance ?? null;
     if (service === null) {
       // Never `current`: `FR-CTX-044` forbids it, and a default would supply it.

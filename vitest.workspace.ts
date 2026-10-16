@@ -287,6 +287,18 @@ export default defineWorkspace([
     },
   },
   {
+    // EPIC-048 T2304 (R-048-2) — the governed-learning contract package: the
+    // candidate vocabulary, the versioned submission schema agents use, and the
+    // two ports EPIC-038 calls. Registered in the same change as its first spec
+    // (the T537/T539 rule). No `passWithNoTests`.
+    test: {
+      name: 'learning-contract',
+      root: './packages/learning-contract',
+      include: ['tests/**/*.spec.ts'],
+      environment: 'node',
+    },
+  },
+  {
     // EPIC-043 T1399 — the pmi-studio server: driven through InMemoryTransport by
     // a real Client; the fixture conformance suite runs against it (R-037-10).
     test: {

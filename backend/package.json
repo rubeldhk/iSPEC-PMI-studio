@@ -21,6 +21,7 @@
     "@pmi/execution-contract": "workspace:*",
     "@pmi/evidence-contract": "workspace:*",
     "@pmi/execution-registry-contract": "workspace:*",
+    "@pmi/learning-contract": "workspace:*",
     "@pmi/loop-contract": "workspace:*",
     "@pmi/observability": "workspace:*",
     "@pmi/room-contract": "workspace:*",

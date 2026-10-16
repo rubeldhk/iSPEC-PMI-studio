@@ -116,6 +116,9 @@ importers:
       '@pmi/execution-registry-contract':
         specifier: workspace:*
         version: link:../packages/execution-registry-contract
+      '@pmi/learning-contract':
+        specifier: workspace:*
+        version: link:../packages/learning-contract
       '@pmi/loop-contract':
         specifier: workspace:*
         version: link:../packages/loop-contract
@@ -305,6 +308,8 @@ importers:
   packages/execution-contract: {}
 
   packages/execution-registry-contract: {}
+
+  packages/learning-contract: {}
 
   packages/loop-contract: {}
 

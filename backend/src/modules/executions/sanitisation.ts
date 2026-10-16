@@ -42,17 +42,28 @@ const CREDENTIAL_FIELDS = [
   'credentials',
 ];
 
-/** Shapes that are recognisably secrets wherever they appear. */
-const SECRET_PATTERNS: readonly RegExp[] = [
-  /-----BEGIN [A-Z ]*PRIVATE KEY-----/,
-  /\bgh[pousr]_[A-Za-z0-9]{16,}\b/, // GitHub tokens
-  /\bsk-[A-Za-z0-9-]{16,}\b/, // OpenAI-style
-  /\bsk-ant-[A-Za-z0-9-]{16,}\b/, // Anthropic-style
-  /\bAKIA[0-9A-Z]{16}\b/, // AWS access key id
-  /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/, // Slack
-  /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/, // JWT
-  /\bpostgres(?:ql)?:\/\/[^\s:]+:[^\s@]+@/, // connection string with a password
+/**
+ * Shapes that are recognisably secrets wherever they appear.
+ *
+ * EPIC-048 `T2321` (`A-037-1`, `R-048-18`): each pattern carries a **name**, so a
+ * refusal can say which rule matched without repeating the value
+ * (`FR-LRN-018`). The patterns are unchanged; `looksLikeSecret` delegates, so
+ * every existing answer is the same. Order matters only for naming: the
+ * Anthropic shape is checked before the broader OpenAI one it would also match.
+ */
+const SECRET_RULES: readonly { readonly name: string; readonly pattern: RegExp }[] = [
+  { name: 'private-key', pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
+  { name: 'github-token', pattern: /\bgh[pousr]_[A-Za-z0-9]{16,}\b/ },
+  { name: 'anthropic-key', pattern: /\bsk-ant-[A-Za-z0-9-]{16,}\b/ },
+  { name: 'openai-key', pattern: /\bsk-[A-Za-z0-9-]{16,}\b/ },
+  { name: 'aws-access-key', pattern: /\bAKIA[0-9A-Z]{16}\b/ },
+  { name: 'slack-token', pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/ },
+  { name: 'jwt', pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/ },
+  { name: 'connection-string', pattern: /\bpostgres(?:ql)?:\/\/[^\s:]+:[^\s@]+@/ },
 ];
+
+/** The rule names, for a caller that lists them. */
+export const SECRET_RULE_NAMES: readonly string[] = Object.freeze(SECRET_RULES.map((r) => r.name));
 
 export class CredentialDetectedError extends Error {
   constructor(readonly field: string) {
@@ -70,8 +81,17 @@ function isCredentialField(key: string): boolean {
   return CREDENTIAL_FIELDS.some((f) => normalised.includes(f.replace(/[^a-z_]/g, '')));
 }
 
+/**
+ * EPIC-048 `T2321` — the name of the first rule `value` matches, or `null`.
+ * Never the value itself: a refusal that echoed it would write the secret into a
+ * log, a screen and an agent transcript at once.
+ */
+export function secretRuleMatching(value: string): string | null {
+  return SECRET_RULES.find((r) => r.pattern.test(value))?.name ?? null;
+}
+
 export function looksLikeSecret(value: string): boolean {
-  return SECRET_PATTERNS.some((p) => p.test(value));
+  return secretRuleMatching(value) !== null;
 }
 
 /**

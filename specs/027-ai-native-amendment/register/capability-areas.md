@@ -45,6 +45,15 @@ someone creates epics for them.
 > Posture is unchanged: this area was never held behind `PMI-DOC-004`, and "proceeds — unspecified"
 > stays accurate. The counts in the paragraph above are therefore still correct.
 
+> **Update, 2026-10-11 (`EPIC-048` `T2418`).** *Governed Learning* now has a home: `EPIC-048`
+> (Governed Learning) built it, and its row reads **EPIC-048**. One remainder is recorded against it:
+> **`DEFER-048-01`** — reuse of approved knowledge across workspaces (the remainder of `BR-0118`),
+> which no epic owns yet; until one registers knowledge entries as `EPIC-038` reusable knowledge
+> sources, no entry crosses a workspace at all (`FR-LRN-043`, enforced by the
+> `no_cross_workspace_knowledge` CHECK). Two of the three Cosmos areas named above as unowned —
+> Governed Engineering Loops and the Specification Compliance Agent — still are; the paragraph
+> above is left as written on 2026-08-17.
+
 ## Register
 
 | area | verdict | home | posture |
@@ -67,5 +76,5 @@ someone creates epics for them.
 | Spec Kit native lifecycle | needs-enhancement | EPIC-008 / EPIC-013 | held |
 | Human/AI responsibility model | needs-enhancement | _shared/platform-spec.md | recordable now — D-37 open |
 | Governed Engineering Loops | missing | UNOWNED | held — no epic exists |
-| Governed Learning | missing | UNOWNED | held — no epic exists |
+| Governed Learning | missing | EPIC-048 | BUILT 2026-10-11 — DEFER-048-01 (reuse across workspaces, the remainder of BR-0118) open, no owning epic |
 | Specification Compliance Agent | missing | UNOWNED | held — no epic exists |

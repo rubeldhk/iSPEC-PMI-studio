@@ -51,6 +51,11 @@ export interface EvidenceRepository {
   /** Evidence attached to one piece of work, oldest first. */
   attachedTo(workspaceId: string, ref: WorkRef): Promise<StoredAttestation[]>;
   /**
+   * `A-032-1` (`EPIC-048` `T2395`) — attestations by id, in this workspace only.
+   * An id held by another workspace, or by nobody, is simply absent.
+   */
+  byIds(workspaceId: string, ids: readonly string[]): Promise<StoredAttestation[]>;
+  /**
    * Evidence attached to many pieces of work in ONE query, keyed by `refKey`.
    * The rollup's path: per-work queries took 3.8 s at 10,000 items against a
    * 500 ms target (`T862f`).
@@ -144,6 +149,11 @@ export class InMemoryEvidenceRepository implements EvidenceRepository {
     return this.items.filter(
       (i) => i.workspaceId === workspaceId && i.attachedTo.type === ref.type && i.attachedTo.id === ref.id,
     );
+  }
+
+  async byIds(workspaceId: string, ids: readonly string[]): Promise<StoredAttestation[]> {
+    const wanted = new Set(ids);
+    return this.items.filter((i) => i.workspaceId === workspaceId && wanted.has(i.id));
   }
 
   async attachedToMany(workspaceId: string, refs: readonly WorkRef[]): Promise<Map<string, StoredAttestation[]>> {
@@ -384,6 +394,17 @@ export class PrismaEvidenceRepository implements EvidenceRepository {
   async attachedTo(workspaceId: string, ref: WorkRef): Promise<StoredAttestation[]> {
     const rows = await this.prisma.evidenceItem.findMany({
       where: { workspaceId, attachedToType: ref.type, attachedToId: ref.id },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+    return (rows as unknown as ItemRow[]).map(toAttestation);
+  }
+
+  async byIds(workspaceId: string, ids: readonly string[]): Promise<StoredAttestation[]> {
+    if (ids.length === 0) return [];
+    // Attestation rows only (a subject is what makes one): the legacy T1203
+    // evidence rows carry none, and `toAttestation` refuses a row without it.
+    const rows = await this.prisma.evidenceItem.findMany({
+      where: { workspaceId, id: { in: [...new Set(ids)] }, NOT: { subjectName: null } },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
     return (rows as unknown as ItemRow[]).map(toAttestation);
