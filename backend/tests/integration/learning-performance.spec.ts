@@ -176,7 +176,8 @@ suite('T2408 · R-048-22 targets', () => {
          FROM generate_series(1,5000) g`,
       [WS, JSON.stringify({ kind: 'project', projectIds: [app.projectId] })],
     );
-    await app.db.query(`INSERT INTO knowledge_version_status_events (id,"workspaceId","versionId",status,"actorId","decisionId",at) SELECT 'blk_s_'||g, $1, 'blk_v_'||g, 'current', 'u_rev', 'dec_blk', now() FROM generate_series(1,5000) g`, [WS]);
+    // T2690 — a status event names a decision EPIC-031 recorded, too: each version's own.
+    await app.db.query(`INSERT INTO knowledge_version_status_events (id,"workspaceId","versionId",status,"actorId","decisionId",at) SELECT 'blk_s_'||g, $1, 'blk_v_'||g, 'current', 'u_rev', 'blk_d_'||g, now() FROM generate_series(1,5000) g`, [WS]);
     await app.db.query('COMMIT');
     await app.db.query('ANALYZE');
 
