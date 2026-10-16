@@ -63,21 +63,25 @@ environment exists.
 - **Corroboration digest** is nullable (`learning_corroborations` is append-only, so earlier rows
   cannot be back-filled); a replay of such a row is still compared on its statement.
 
-## Tests — measured, 2026-10-16
+## Tests — measured, 2026-10-16 (final run, on the head this report is committed with)
 
 Run one suite at a time on a machine shared with another agent; the whole-repository `pnpm test`
-was **not** run (`T2416`, below).
+was **not** run (`T2416`, below). Nothing here is reported from an earlier run.
 
 | Suite | Result |
 |---|---|
 | `pnpm -r typecheck` | clean, every package |
-| `pnpm lint` | 0 errors (7 warnings, none in this Epic's files) |
-| `pnpm test:unit` | 689 files; 6515 passed, 1 failed — `T148` did not read `T2675`'s pairing note (`tests: T2674`); the note was reworded and `T148` re-run, 4/4 (see the final run in the PR description) |
-| `pnpm test:arch:gated` | 39 files, 417 passed, 2 skipped |
+| `pnpm lint` | **0 errors**, 7 warnings (none in this Epic's files). The first run of 2026-10-14 found 6 errors in this Epic's `inbox-details/learning.css` (literal visual values, three token names that do not exist) — fixed |
+| `pnpm test:unit` | **689 files, 6516 passed** |
+| `pnpm test:arch:gated` | **39 files, 419 passed** |
+| `pnpm test:governance:gated` | **77 files, 1127 passed** |
+| `pnpm test:known-red` | the six declared known-reds — `T884`, `T999u`, `T1992`, `T1294`, `T792` and this Epic's **`T2415`** — all still red, as declared |
 | Learning integration, `--no-file-parallelism`, 12 files (all but performance) | **191 passed** — Tier 1 34, constraints 41, fences 19, store 17, submission route 14, review route 12, knowledge route 12, resolve job 11, reachability 10, view route 8, expire job 8, flags job 5 |
-| `learning-performance.spec.ts`, alone | three runs: **7/7**; **6/7** (history@50 p95 921.9 ms against 300); and history alone twice, **161.0 ms** and **288.0 ms**. Best full run: submit 97.2/56.6 ms, detail 16.7 ms, review→materialised 67.8 ms (reindex ≤ 57.4 ms after), sweep 24.8 ms, history 268.2 ms, browser@5,000 122.5 ms, admission@200 9.7 ms. History is one query per version (an N+1 read) and swings with the machine's load — a follow-up, not a fix made here |
+| `learning-performance.spec.ts`, alone | first final run **6/7**: history@50 p95 328.8 ms against 300 (it had swung 161–922 ms with machine load: three sequential reads per version). Fixed — each version's facts are now read concurrently — then **7/7 twice**: submit 113.9 / 96.5 ms, detail 56.0 ms, review→materialised 82.5 ms (reindex ≤ 71.8 ms after), resolve sweep 33.4 ms, **history@50 119.1 and 129.0 ms**, browser@5,000 182.7 ms, admission@200 16.1 ms |
+| Integration suites of the Epics this one edited (`context-*` but performance, `decision-`, `evidence-`, `experts-reachability`), `--no-file-parallelism` | **13 files, 183 passed, 3 skipped** (`context-relevance`, skipped by its own gate) |
+| `learning-docs.spec.ts` with `closure.md` present | **9/9** — its owner-annotation case, skipped until today, was red on first run (it read §6.12's numbering note instead of each requirement's own line) and was corrected |
 | Mutation proofs | MP-1a, MP-1b, MP-2, MP-3 complete — `mutation-proofs.md` |
-| Known-red | `T2415` added; `pnpm test:known-red` reports it, and the five before it, still red |
+| `pnpm register:update` | ran the governance project in write mode: 1130 passed, 2 failed — both `T884`, the declared known-red the ungated project includes. `governance/epic-stage-register.md` was already current and is unchanged; its derived row for `EPIC-048` reads *Analyzed · stalled · Not ready* (the same as `EPIC-047`), consistent with six open tasks |
 
 ## Work not done, and why
 
