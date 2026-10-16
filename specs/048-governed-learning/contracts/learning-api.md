@@ -74,7 +74,9 @@ A refusal by policy or an unreachable decision path is **not** a submission erro
 
 ### `POST /learning/candidates/:id/withdraw`
 
-Submitter only (person, or the connector acting for the source execution). `200` → `withdrawn`;
+Only the person who submitted, through the session (spec Assumption 11; amended 2026-10-16, `T2693`). A
+connector never withdraws — an agent's candidate is closed by a decision, by expiry, or by its
+submitter's session if a person submitted it; another member is `403`. `200` → `withdrawn`;
 closes the `EPIC-031` decision through `A-031-1`. `409` once terminal.
 
 ---

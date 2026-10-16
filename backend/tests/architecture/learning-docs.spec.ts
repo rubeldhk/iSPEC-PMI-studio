@@ -52,6 +52,23 @@ describe('T2410 · requirements are all planned', () => {
   });
 });
 
+describe('T2693 · the API contract says who may withdraw as spec Assumption 11 does', () => {
+  const api = read('contracts/learning-api.md');
+  const section = api.split('### `POST /learning/candidates/:id/withdraw`')[1]?.split('\n---')[0] ?? '';
+
+  it('the spec: only the submitter withdraws, and agents submit only through the connector route', () => {
+    expect(spec).toMatch(/\*\*Only the\s+submitter\*\* may withdraw/);
+  });
+
+  it('the contract names the person who submitted, through the session, and no connector', () => {
+    expect(section, 'no withdraw section in contracts/learning-api.md').not.toBe('');
+    expect(section).toMatch(/person who submitted/i);
+    expect(section).toMatch(/session/i);
+    expect(section).not.toMatch(/the connector acting for/i);
+    expect(section).toMatch(/connector never withdraws/i);
+  });
+});
+
 describe('T2410 · plan and tasks agree on what this Epic waits for', () => {
   it('the merge order is the same five steps naming the same Epics and prerequisites', () => {
     const fromPlan = mergeOrder(plan, /## Required merge order/);
