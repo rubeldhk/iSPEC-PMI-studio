@@ -118,6 +118,11 @@ function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 
+/** `FR-LRN-007` — the refusal, recorded on the execution as `bound-exceeded`. */
+function boundExceeded(executionId: string, count: number, bound: number): ValidationFailedError {
+  return new ValidationFailedError(`Execution ${executionId} has already submitted ${count} candidates; the bound is ${bound} per execution (FR-LRN-007).`, { executionId, bound });
+}
+
 /** sha256 of the canonical candidate core — the `objectVersion` sent to `EPIC-031`. */
 export function objectDigestOf(s: LearningSubmissionV1, source: { projectId: string; sourcePrincipalId: string }): string {
   const core = {
@@ -270,6 +275,13 @@ export class SubmissionService {
         if ((await tx.candidateByIdempotencyKey(ws, s.idempotencyKey)) !== null) {
           throw new ConflictError(`idempotency key ${s.idempotencyKey} was recorded concurrently; retry to receive the original answer.`);
         }
+        // T2688, FR-LRN-007 — the bound, counted again under the execution's lock:
+        // the check in source() is read before this transaction, so concurrent
+        // submissions on different subjects (different subject locks) all passed it.
+        if (candidate.executionId !== null) {
+          const count = await tx.submissionsForExecution(ws, candidate.executionId);
+          if (count >= policy.maxCandidatesPerExecution) throw boundExceeded(candidate.executionId, count, policy.maxCandidatesPerExecution);
+        }
         // FR-LRN-017: an open candidate with this subject (same kind, same target)
         // takes the submission as corroboration — its source and evidence kept,
         // the candidate itself untouched, no second candidate.
@@ -308,7 +320,12 @@ export class SubmissionService {
         });
         return { kind: 'candidate' };
       },
-      { lockKeys: [`learning-subject:${ws}:${candidate.subjectKey}`] },
+      {
+        lockKeys: [
+          `learning-subject:${ws}:${candidate.subjectKey}`,
+          ...(candidate.executionId !== null ? [`learning-execution:${ws}:${candidate.executionId}`] : []),
+        ],
+      },
     );
 
     if (recorded.kind === 'corroboration') {
@@ -482,12 +499,7 @@ export class SubmissionService {
       late = true;
     }
     const count = await this.deps.store.submissionsForExecution(ws, executionId);
-    if (count >= policy.maxCandidatesPerExecution) {
-      throw new ValidationFailedError(
-        `Execution ${executionId} has already submitted ${count} candidates; the bound is ${policy.maxCandidatesPerExecution} per execution (FR-LRN-007).`,
-        { executionId, bound: policy.maxCandidatesPerExecution },
-      );
-    }
+    if (count >= policy.maxCandidatesPerExecution) throw boundExceeded(executionId, count, policy.maxCandidatesPerExecution);
     // FR-LRN-011 (T2337): an Expert session records its Expert and contract
     // version. 503 naming ExpertProvenance while EPIC-047's read is unbound — an
     // execution that may be an Expert's cannot be judged, so it is not recorded.

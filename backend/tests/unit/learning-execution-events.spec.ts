@@ -70,6 +70,16 @@ describe('T2330 · outcomes are events on the source execution', () => {
     expect(kinds().at(-1)).toBe('bound-exceeded');
   });
 
+  it('T2687 · concurrent submissions on different subjects never exceed the bound (FR-LRN-007)', async () => {
+    const svc = service();
+    for (let i = 0; i < 18; i += 1) await svc.submit({ actor: AGENT, projectId: 'p1', body: submission({ subject: `s ${i}` }) });
+    // Two places left; five arrive at once, each on its own subject (its own subject lock).
+    const outcomes = await Promise.allSettled([0, 1, 2, 3, 4].map((i) => svc.submit({ actor: AGENT, projectId: 'p1', body: submission({ subject: `race ${i}` }) })));
+    expect(outcomes.filter((o) => o.status === 'fulfilled')).toHaveLength(2);
+    expect(await store.submissionsForExecution('ws_a', 'exe_1')).toBe(20);
+    expect(kinds().filter((k) => k === 'bound-exceeded')).toHaveLength(3);
+  });
+
   it('nothing for an execution that is not registered — there is nowhere to record it', async () => {
     await expect(service().submit({ actor: AGENT, projectId: 'p1', body: submission({ executionId: 'exe_ghost' }) })).rejects.toThrow();
     expect(world.events).toEqual([]);

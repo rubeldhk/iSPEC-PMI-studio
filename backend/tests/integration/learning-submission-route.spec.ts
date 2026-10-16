@@ -221,6 +221,22 @@ suite('T2334 · submission through the composed application', () => {
       }
     });
 
+    it('T2687 · concurrent submissions from one execution on different subjects stop at the bound, in PostgreSQL too (FR-LRN-007)', async () => {
+      const reg = await api()
+        .post('/v1/executions')
+        .set({ Authorization: `Bearer ${token}`, ...HEADERS })
+        .set('Idempotency-Key', 'reg_bound')
+        .send({ command: 'specify', argsSanitized: { feature: 'bound' }, input: { targetType: 'project', targetId: projectId, targetVersion: 1 }, correlationId: 'corr_bound', idempotencyKey: 'reg_bound', contractVersion: CONTRACT_VERSION })
+        .expect(201);
+      const exe = reg.body.executionId as string;
+      const statuses = await Promise.all(
+        Array.from({ length: POLICY.maxCandidatesPerExecution + 4 }, (_, i) => asAgent().send(body({ executionId: exe, subject: `bound race ${i}` })).then((r) => r.status)),
+      );
+      expect(statuses.filter((s) => s === 201)).toHaveLength(POLICY.maxCandidatesPerExecution);
+      expect(statuses.filter((s) => s === 400)).toHaveLength(4);
+      expect(await count('learning_candidates', `"executionId" = $1`, [exe])).toBe(POLICY.maxCandidatesPerExecution);
+    });
+
     it('identity fields in the body are ignored — the credential and the session decide', async () => {
       const res = await asAgent()
         .send(body({ workspaceId: 'ws_other', sourcePrincipalId: 'u_forged', actor: { kind: 'human', id: 'u_forged' }, requestedBy: 'u_forged' }))
