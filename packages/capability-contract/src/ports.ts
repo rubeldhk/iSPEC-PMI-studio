@@ -20,7 +20,7 @@ export const CAPABILITY_PORTS: readonly PortDeclaration[] = Object.freeze([
   {
     name: 'EvidenceSink',
     direction: 'declared',
-    filledBy: 'EPIC-032 EvidenceService adapter (T2215, blocked until EPIC-032 merges)',
+    filledBy: 'EPIC-032 EvidenceService and CompletionGate adapter (T2215)',
     absent: 'refuse — the intake records refused / evidence-seam-unbound and the Evidence Contract item stays unmet (FR-HUB-055)',
   },
   {
@@ -50,13 +50,13 @@ export const CAPABILITY_PORTS: readonly PortDeclaration[] = Object.freeze([
   {
     name: 'EmbeddingPort',
     direction: 'filled',
-    filledBy: 'EPIC-039 HubEmbeddingPort, for EPIC-038 (binding T2218, blocked until EPIC-038 retrieval merges)',
+    filledBy: 'EPIC-039 HubEmbeddingPort, for EPIC-038 — bound to EMBEDDING_PORT in ContextModule (T2218)',
     absent: 'refuse — EPIC-038 answers 503 naming EmbeddingPort, now with the Hub explanation (FR-HUB-085)',
   },
   {
     name: 'AttestationSource',
     direction: 'filled',
-    filledBy: 'EPIC-039 attestation-source adapter, for EPIC-032 (T2215, blocked until EPIC-032 merges)',
+    filledBy: 'EPIC-039 attestation-source adapter, for EPIC-032 — bound to EVIDENCE_ATTESTATION_SOURCE in EvidenceModule (T2215)',
     absent: 'refuse — EPIC-032 refuses every external source (its current null binding)',
   },
 ]);

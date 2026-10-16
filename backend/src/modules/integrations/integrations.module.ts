@@ -54,7 +54,7 @@ import { HubEmbeddingPort } from './embedding/hub-embedding-port.js';
 import { EvidenceIntakeController } from './evidence/intake.controller.js';
 import { startIntakeJob } from './evidence/intake.job.js';
 import { createHub, type Hub } from './hub.js';
-import { HUB, INTEGRATIONS_ATTESTATION_SOURCE } from './hub.token.js';
+import { HUB, INTEGRATIONS_ATTESTATION_SOURCE, INTEGRATIONS_EMBEDDING_PORT } from './hub.token.js';
 import { hubAttestationSource } from './evidence/attestation-source.adapter.js';
 import { evidenceServiceSink } from './evidence/evidence-sink.adapter.js';
 import { RegistryController } from './registry.controller.js';
@@ -231,8 +231,10 @@ export const HEALTH_TICK_MS = 30_000;
     },
     // `R-039-18` — what `EPIC-038`'s `ContextModule` binds `EMBEDDING_PORT` to.
     { provide: HubEmbeddingPort, inject: [HUB], useFactory: (hub: Hub): HubEmbeddingPort => hub.embedding },
+    // `T2218` — the token `ContextModule` binds `EMBEDDING_PORT` to.
+    { provide: INTEGRATIONS_EMBEDDING_PORT, useExisting: HubEmbeddingPort },
   ],
-  exports: [HUB, CapabilityPolicySeam, EvidenceSinkSeam, CredentialKeyringSeam, INTEGRATIONS_TICKER, HubEmbeddingPort, INTEGRATIONS_ATTESTATION_SOURCE],
+  exports: [HUB, CapabilityPolicySeam, EvidenceSinkSeam, CredentialKeyringSeam, INTEGRATIONS_TICKER, HubEmbeddingPort, INTEGRATIONS_EMBEDDING_PORT, INTEGRATIONS_ATTESTATION_SOURCE],
 })
 export class IntegrationsModule implements OnModuleInit, OnModuleDestroy {
   constructor(

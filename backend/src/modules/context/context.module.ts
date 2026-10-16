@@ -20,12 +20,19 @@
  * `T1224` asserts both, because the absence is a design decision and an absence
  * nobody checks is one somebody adds later by analogy.
  *
- * ## One seam is bound to a refusal, and that is the honest state
+ * ## `EmbeddingPort` is filled by the Integration Hub
  *
- * `EmbeddingPort` has **no owner anywhere in the programme** (`FR-CTX-013`). It
- * refuses rather than degrades, because a package ranked by a zero vector
- * would be **wrong** rather than smaller — and a wrong package is one nobody
- * can tell is wrong. `AccessPolicy` is `EPIC-024`'s and is bound (`T1258`).
+ * `EmbeddingPort` had **no owner anywhere in the programme** (`FR-CTX-013`)
+ * until `EPIC-039` (`T2218`, `R-039-18`): it is now bound to the Hub's
+ * `HubEmbeddingPort`, imported from `IntegrationsModule`, whose `Embed`
+ * binding is deployment configuration read at boot (`PMI_EMBED_ADAPTER`,
+ * `PMI_EMBED_BINDING`). **The port's shape is unchanged** (`FR-HUB-087`), and
+ * this module names no adapter or provider — `T2219` asserts it. With no
+ * usable binding it still refuses rather than degrades, because a package
+ * ranked by a zero vector would be **wrong** rather than smaller; the `503`
+ * still names `EmbeddingPort` and now carries the Hub's explanation of why the
+ * binding is not usable (`FR-HUB-085`). `AccessPolicy` is `EPIC-024`'s and is
+ * bound (`T1258`).
  *
  * `GovernanceSeamUnboundError` carries a `503` and **names the seam**: a 503
  * saying nothing is the same defect with a better number.
@@ -38,6 +45,8 @@ import { ExecutionRegistryFacade } from '../executions/execution-registry.facade
 import { AccessInheritanceService } from '../access/access-inheritance.service.js';
 import { WorkspaceBoundaryService } from '../access/workspace-boundary.service.js';
 import { NotFoundError } from '../../core/errors.js';
+import { INTEGRATIONS_EMBEDDING_PORT } from '../integrations/hub.token.js';
+import { IntegrationsModule } from '../integrations/integrations.module.js';
 import { ProjectsModule } from '../projects/projects.module.js';
 import { ProjectsService } from '../projects/projects.service.js';
 import { RequirementsModule } from '../requirements/requirements.module.js';
@@ -57,7 +66,8 @@ import { AssemblyService, type AssemblyPorts } from './assembly.service.js';
 import { ContextController } from './context.controller.js';
 import { InMemoryContextStore, type ContextStore } from './context.store.js';
 import { PrismaContextStore, type ContextPrismaClient } from './context.store.prisma.js';
-import { CONTEXT_PORTS, CONTEXT_SOURCES, CONTEXT_STORE, CONTEXT_VECTOR_INDEX } from './context.tokens.js';
+import type { EmbeddingPort } from './retrieval/embedding.port.js';
+import { CONTEXT_PORTS, CONTEXT_SOURCES, CONTEXT_STORE, CONTEXT_VECTOR_INDEX, EMBEDDING_PORT } from './context.tokens.js';
 
 /** Resolvable proof the module is in the graph — `T1224` asks for it by name. */
 export class ContextService {
@@ -74,7 +84,7 @@ export class ContextService {
 }
 
 @Module({
-  imports: [AccessModule, ExecutionsModule, ProjectsModule, RequirementsModule, SpecificationsModule],
+  imports: [AccessModule, ExecutionsModule, ProjectsModule, RequirementsModule, SpecificationsModule, IntegrationsModule],
   controllers: [ContextController],
   providers: [
     { provide: ContextService, useFactory: (): ContextService => new ContextService() },
@@ -99,6 +109,16 @@ export class ContextService {
           : new InMemoryVectorIndex(),
     },
     {
+      provide: EMBEDDING_PORT,
+      /**
+       * `EPIC-039` `T2218` — the Hub fills the port (its `HubEmbeddingPort`,
+       * exported as a token). One instance, shared by the index and the
+       * search, so both record the same model identity.
+       */
+      useFactory: (hub: EmbeddingPort): EmbeddingPort => hub,
+      inject: [INTEGRATIONS_EMBEDDING_PORT],
+    },
+    {
       provide: CONTEXT_SOURCES,
       /**
        * `T1810`, `T1812` — requirements and specifications, read through their
@@ -119,22 +139,24 @@ export class ContextService {
       provide: IndexService,
       /**
        * `T1276`, `T1278`, `T1812`. `ArtifactSource` reads requirements and
-       * specifications; `EmbeddingPort` is still unowned, so `reindex` answers
-       * `400` for a source that may not be indexed and `503` naming the seam for
-       * one that may.
+       * specifications; `EmbeddingPort` is the Hub's (`EPIC-039` `T2218`), so
+       * `reindex` answers `400` for a source that may not be indexed and, with
+       * no usable `Embed` binding, `503` naming the seam for one that may.
        */
       useFactory: (
         store: ContextStore,
         vectors: VectorIndex,
         sources: SourceVersionReader & ArtifactSource,
-      ): IndexService => new IndexService(store, vectors, null, sources),
-      inject: [CONTEXT_STORE, CONTEXT_VECTOR_INDEX, CONTEXT_SOURCES],
+        embedding: EmbeddingPort,
+      ): IndexService => new IndexService(store, vectors, embedding, sources),
+      inject: [CONTEXT_STORE, CONTEXT_VECTOR_INDEX, CONTEXT_SOURCES, EMBEDDING_PORT],
     },
     {
       provide: AssemblyService,
       /**
-       * Bound with **the embedding seam refusing**, which is the honest state
-       * rather than an oversight.
+       * Bound with **the Hub's embedding port** (`EPIC-039` `T2218`), which
+       * refuses with the `EmbeddingPort` 503 while the deployment binds no
+       * usable `Embed` adapter — the honest state rather than an oversight.
        *
        * `sourceClasses` is real and reads the store — it is this Epic's own
        * configuration and nobody else's to supply. `retrieval` names the gap
@@ -149,14 +171,16 @@ export class ContextService {
         registry: ExecutionRegistryFacade,
         sources: SourceVersionReader & ArtifactSource,
         projects: ProjectsService,
+        embedding: EmbeddingPort,
       ): AssemblyService => {
         const ports: AssemblyPorts = {
-          // `T1279` — real ranking, over a provider nobody owns yet. Refuses
-          // with the `EmbeddingPort` 503 until one is bound (`FR-CTX-013`).
+          // `T1279` — real ranking, over the Hub's `Embed` binding (`EPIC-039`
+          // `T2218`). Refuses with the `EmbeddingPort` 503 while it is not
+          // usable (`FR-CTX-013`, `FR-HUB-085`).
           // `T1810` marks stale candidates through the governed sources.
           // `T1826` — and the sources authorised into this workspace, ranked in
           // their owners' partitions.
-          retrieval: new SearchService(vectors, null, sources, {}, store),
+          retrieval: new SearchService(vectors, embedding, sources, {}, store),
           // `T1808`, `FR-CTX-050` — the project is asked of its own module; a
           // project another workspace holds is indistinguishable from none.
           projects: {
@@ -210,6 +234,7 @@ export class ContextService {
         ExecutionRegistryFacade,
         CONTEXT_SOURCES,
         ProjectsService,
+        EMBEDDING_PORT,
       ],
     },
     {

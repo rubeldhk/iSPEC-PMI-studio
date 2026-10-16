@@ -353,10 +353,20 @@ suite('T1278 · POST /context/index/reindex and GET /context/index/health', () =
   });
 
   it('is 503 naming EmbeddingPort for an indexable source, while no provider exists', async () => {
+    // `EPIC-039` `T2218` — `EmbeddingPort` is now the Integration Hub's, always
+    // present and refusing from `embed()` while no `Embed` adapter is bound
+    // (this suite sets no `PMI_EMBED_ADAPTER`). The source is therefore read
+    // before the refusal, so the 503 needs a source that exists: an unknown
+    // `rq_1` is now the 400 it would be with a provider bound.
+    const created = await request(app.getHttpServer())
+      .post(`/${PREFIX}/projects/${PROJECT}/requirements`)
+      .set('Cookie', harness.cookie)
+      .send({ description: 'An indexable requirement the embedding seam refuses over.', type: 'functional', priority: 'p2' });
+    expect(created.status, JSON.stringify(created.body)).toBe(201);
     const res = await request(app.getHttpServer())
       .post(`/${PREFIX}/context/index/reindex`)
       .set('Cookie', harness.cookie)
-      .send({ sourceType: 'requirement', sourceId: 'rq_1', sourceVersion: 'v1' });
+      .send({ sourceType: 'requirement', sourceId: created.body.id, sourceVersion: created.body.contentHash });
     expect(res.status).toBe(503);
     expect(JSON.stringify(res.body)).toMatch(/EmbeddingPort/);
   });

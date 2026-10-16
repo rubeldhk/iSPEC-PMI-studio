@@ -46,7 +46,7 @@ export interface HubEmbeddingDeps {
 
 function unbound(explanation: string): GovernanceSeamUnboundError {
   return new GovernanceSeamUnboundError(
-    `no embedding provider is available to EmbeddingPort (FR-CTX-013): the Integration Hub's Embed binding is not usable — ${explanation} (EPIC-039 FR-HUB-085). Refusing rather than ranking by a stand-in (FR-CTX-012).`,
+    `no embedding provider is available to EmbeddingPort (FR-CTX-013): the Integration Hub's Embed binding is not usable — ${explanation} (EPIC-039 FR-HUB-085). Refusing rather than ranking by a stand-in, because an unranked package would be a different thing rather than a degraded one (FR-CTX-012).`,
     { seam: 'EmbeddingPort' },
   );
 }
