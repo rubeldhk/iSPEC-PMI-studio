@@ -214,3 +214,30 @@ suite('T2392 · no_cross_workspace_knowledge (plan 2.8, FR-LRN-043, Q27)', () =>
     await expect(insert('context_reusable_authorisations', row('knowledge-entry'))).rejects.toThrow(/no_cross_workspace_knowledge/);
   });
 });
+
+suite('T2689 · a status event names a decision EPIC-031 recorded, in its own workspace (FR-LRN-033, SC-LRN-001)', () => {
+  /** An accepted version, and a status event over it naming `decisionId`. */
+  async function statusEvent(decisionId: string | null): Promise<void> {
+    const c = await candidate();
+    const approved = await approvedByHuman(db, WS, c);
+    await version(c, approved);
+    const v = await db.query(`SELECT id FROM knowledge_entry_versions WHERE "candidateId" = $1`, [c]);
+    await insert('knowledge_version_status_events', { id: id('se'), workspaceId: WS, versionId: v.rows[0].id, status: 'current', actorId: 'u_h', decisionId, candidateId: c, at: new Date() });
+  }
+
+  it('accepts a decision of this workspace, and none at all — or the refusals below are vacuous', async () => {
+    const other = await candidate();
+    const recorded = await insertDecision(db, { workspaceId: WS, candidateId: other, outcome: 'approved', actorKind: 'human' });
+    await expect(statusEvent(recorded)).resolves.toBeUndefined();
+    await expect(statusEvent(null)).resolves.toBeUndefined();
+  });
+
+  it('refuses a decision EPIC-031 never recorded', async () => {
+    await expect(statusEvent('dec_never_recorded')).rejects.toThrow(/knowledge_status_events_require_decision|foreign key|not recorded/);
+  });
+
+  it('refuses another workspace’s decision', async () => {
+    const foreign = await insertDecision(db, { workspaceId: OTHER, candidateId: 'lc_elsewhere', outcome: 'approved', actorKind: 'human' });
+    await expect(statusEvent(foreign)).rejects.toThrow(/another workspace/);
+  });
+});

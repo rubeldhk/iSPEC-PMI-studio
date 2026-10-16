@@ -202,7 +202,7 @@ this table depend on `EPIC-031`'s migration — one more reason for the merge or
 | `workspaceId`, `versionId` | | |
 | `status` | `current` \| `superseded` \| `deprecated` | |
 | `successorVersionId?` | text | Required when `superseded` (`FR-LRN-032`) |
-| `reason?`, `actorId`, `decisionId?` | | Required when `deprecated` (`FR-LRN-033`) |
+| `reason?`, `actorId`, `decisionId?` | | Required when `deprecated` (`FR-LRN-033`). When present, FK `policy_decisions.id` of the event's own workspace — `knowledge_status_events_require_decision` (`20261011100100`, `T2690`) |
 | `candidateId?` | text | The candidate whose approval caused the status — a deprecation writes no version, so this is what `learning_transitions_guard` finds in its transaction (added in `T2317`) |
 | `at` | timestamptz | |
 
