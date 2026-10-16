@@ -355,13 +355,13 @@ requirement is in target scope with no declared Epic, which §13 records as a ga
 
 ## 6.13 Integration Hub and capability abstraction · BG-04
 
-- **BR-0120** — **Capability contracts.** Core workflows MUST request vendor-neutral engineering capabilities rather than vendor-specific APIs. → no owner
-- **BR-0121** — **Capability resolver.** The platform MUST select an authorized adapter based on tenant configuration, policy, environment and capability health. → no owner
+- **BR-0120** — **Capability contracts.** Core workflows MUST request vendor-neutral engineering capabilities rather than vendor-specific APIs. → owner **EPIC-039** *(reassigned 2026-10-16 on the Project Owner's instruction of 2026-10-11)*
+- **BR-0121** — **Capability resolver.** The platform MUST select an authorized adapter based on tenant configuration, policy, environment and capability health. → owner **EPIC-039** *(reassigned 2026-10-16 on the Project Owner's instruction of 2026-10-11)*
 - **BR-0122** — **MCP support.** MCP MUST be supported as a first-class integration protocol without becoming the only integration mechanism or the business abstraction. → `EPIC-013` *(core surface; public marketplace stays Expansion Plane)*
-- **BR-0123** — **Adapter lifecycle.** Integrations MUST expose configuration, authorization, permission scope, health, version and compatibility, and audit metadata. → no owner
+- **BR-0123** — **Adapter lifecycle.** Integrations MUST expose configuration, authorization, permission scope, health, version and compatibility, and audit metadata. → owner **EPIC-039** *(reassigned 2026-10-16 on the Project Owner's instruction of 2026-10-11)*
 - **BR-0124** — **Least privilege.** A session MUST receive only the tools and capabilities its task requires. → `EPIC-024`, `EPIC-028`
-- **BR-0125** — **External evidence.** CI, test, security, review and observability tools MUST be able to contribute typed evidence to PMI Studio. → no owner
-- **BR-0126** — **Portability.** Replacing a Git, CI, AI or observability provider MUST NOT require changes to core business rules. → `EPIC-028`
+- **BR-0125** — **External evidence.** CI, test, security, review and observability tools MUST be able to contribute typed evidence to PMI Studio. → owner **EPIC-039** *(reassigned 2026-10-16 on the Project Owner's instruction of 2026-10-11)*
+- **BR-0126** — **Portability.** Replacing a Git, CI, AI or observability provider MUST NOT require changes to core business rules. → owner **EPIC-039** *(reassigned 2026-10-16 on the Project Owner's instruction of 2026-10-11; was `EPIC-028`, whose agent seam still evidences the AI-provider half — `FR-HUB-063`)*
 
 ## 6.14 Workspace Fabric and secure execution · BG-04, BG-05
 
