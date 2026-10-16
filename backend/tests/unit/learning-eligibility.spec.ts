@@ -57,8 +57,14 @@ describe('T2346 · the automatic path needs every condition', () => {
       candidate: { ...eligible, category: 'architecture', kind: 'supersede', claimedScope: { kind: 'workspace', projectIds: [] }, provisional: true },
       citationStates: ['integrity-failed'],
       conflict: true,
+      sourceInvalid: true,
     });
     expect([...result.failedConditions].sort()).toEqual([...ELIGIBILITY_CONDITIONS].sort());
+  });
+
+  it('T2676 · an open source-invalid flag fails it, naming source-invalid (spec Edge Case, FR-LRN-037)', () => {
+    expect(eligibilityOf({ ...base, citationStates: ['verified'], sourceInvalid: true })).toEqual({ automatic: false, failedConditions: ['source-invalid'] });
+    expect(eligibilityOf({ ...base, citationStates: ['verified'], sourceInvalid: false }).automatic).toBe(true);
   });
 
   it('a reconciled provisional execution is governed now (FR-LRN-063)', () => {

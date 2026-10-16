@@ -105,6 +105,28 @@ describe('T2378 · everything on one view (FR-LRN-071, UX-0032)', () => {
     expect(within(article).getByText(/pending-review/)).toBeTruthy();
   });
 
+  it('T2676 · open flags are shown with their detail; cleared ones are not (FR-LRN-037, FR-LRN-071)', async () => {
+    const article = await shown(
+      api(
+        view({
+          flags: [
+            { kind: 'source-invalid', detail: 'execution exe_42 validation-failed', raisedAt: '2026-10-10T09:00:00Z', open: true },
+            { kind: 'evidence-changed', detail: 'ev_9 integrity-failed', raisedAt: '2026-10-10T08:00:00Z', open: false },
+          ],
+        }),
+      ),
+    );
+    const flags = within(article).getByRole('region', { name: 'Open flags' });
+    expect(within(flags).getByText(/source-invalid/)).toBeTruthy();
+    expect(within(flags).getByText(/execution exe_42 validation-failed/)).toBeTruthy();
+    expect(within(flags).queryByText(/evidence-changed/)).toBeNull();
+  });
+
+  it('no open flag, no flags region', async () => {
+    const article = await shown(api());
+    expect(within(article).queryByRole('region', { name: 'Open flags' })).toBeNull();
+  });
+
   it('a conflict names the approved entry', async () => {
     const article = await shown(api(view({ conflictsWith: { entryId: 'ke_9', versionId: 'kv_9', version: 2, statement: 'The opposite is true.' } })));
     const conflict = within(article).getByRole('region', { name: 'Conflicts with approved knowledge' });

@@ -236,6 +236,22 @@ export function LearningCandidateDetail({ api, candidateId, onDecided }: Learnin
         </section>
       )}
 
+      {/* T2677, FR-LRN-037 — what was found after it was submitted; cleared flags are history, not shown here. */}
+      {view.flags.some((f) => f.open) && (
+        <section className="lrn-section" aria-label="Open flags">
+          <h3>Open flags</h3>
+          <ul>
+            {view.flags
+              .filter((f) => f.open)
+              .map((f) => (
+                <li key={`${f.kind}-${f.raisedAt}`}>
+                  <strong>{f.kind}</strong> — {f.detail}
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
+
       {view.eligibility !== undefined && !view.eligibility.automatic && (
         <p>Waits for a person because: {view.eligibility.failedConditions.join(', ')}</p>
       )}

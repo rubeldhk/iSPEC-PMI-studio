@@ -60,6 +60,16 @@ describe('T2348 · the DecisionRequest', () => {
     });
   });
 
+  it('T2676 · an open source-invalid flag sends it to review, naming source-invalid; a cleared one does not', async () => {
+    const c = await seeded();
+    await store.transaction((tx) => tx.appendFlag({ id: 'kf_src', workspaceId: 'ws_a', versionId: null, candidateId: c.id, kind: 'source-invalid', detail: 'validation-failed', raisedAt: new Date(), clearsFlagId: null }));
+    const out = await requester().request(c);
+    expect(out.eligibility).toEqual({ automatic: false, failedConditions: ['source-invalid'] });
+    expect(world.decisions.requests[0]!.actionType).toBe('learning.review.candidate');
+    await store.transaction((tx) => tx.appendFlag({ id: 'kf_src_clear', workspaceId: 'ws_a', versionId: null, candidateId: c.id, kind: 'source-invalid', detail: 'cleared', raisedAt: new Date(), clearsFlagId: 'kf_src' }));
+    expect((await requester().eligibility(c)).automatic).toBe(true);
+  });
+
   it('asks learning.approve.<category> only on the automatic path', async () => {
     const c = await seeded();
     const out = await requester().request(c);

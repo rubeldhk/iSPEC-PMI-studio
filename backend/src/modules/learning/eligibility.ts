@@ -24,6 +24,7 @@ export const ELIGIBILITY_CONDITIONS = Object.freeze([
   'conflicts-with-approved-entry',
   'kind-not-new',
   'execution-not-governed',
+  'source-invalid',
 ] as const);
 export type EligibilityCondition = (typeof ELIGIBILITY_CONDITIONS)[number];
 
@@ -35,6 +36,11 @@ export interface EligibilityInput {
   readonly conflict: boolean;
   /** A provisional execution later reconciled as governed (`FR-LRN-063`). */
   readonly reconciled?: boolean;
+  /**
+   * `T2677`, spec Edge Case *source execution later found invalid*, `FR-LRN-037`
+   * — the candidate carries an open `source-invalid` flag. Never automatic.
+   */
+  readonly sourceInvalid?: boolean;
 }
 
 export function eligibilityOf(input: EligibilityInput): Eligibility {
@@ -60,6 +66,9 @@ export function eligibilityOf(input: EligibilityInput): Eligibility {
 
   // FR-LRN-063.
   if (candidate.provisional && input.reconciled !== true) failed.push('execution-not-governed');
+
+  // T2677, FR-LRN-037 — its source was found invalid after it was submitted.
+  if (input.sourceInvalid === true) failed.push('source-invalid');
 
   return { automatic: failed.length === 0, failedConditions: failed };
 }

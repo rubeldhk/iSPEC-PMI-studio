@@ -60,7 +60,11 @@ export class DecisionRequester {
     const own = (await this.deps.store.citations(candidate.workspaceId, candidate.id)).filter((c) => c.corroborationId === null);
     const states = (await this.evidence.unfiltered(candidate.workspaceId, own)).map((s) => s.state);
     const conflict = (await findConflict(this.deps.store, candidate)) !== null;
-    return eligibilityOf({ policy, candidate, citationStates: states, conflict, ...(options.reconciled ? { reconciled: true } : {}) });
+    // T2677 — an open source-invalid flag on the candidate (raised by learning.flags, FR-LRN-037).
+    const flags = await this.deps.store.flags(candidate.workspaceId, { candidateId: candidate.id });
+    const cleared = new Set(flags.map((f) => f.clearsFlagId).filter((id): id is string => id !== null));
+    const sourceInvalid = flags.some((f) => f.kind === 'source-invalid' && f.clearsFlagId === null && !cleared.has(f.id));
+    return eligibilityOf({ policy, candidate, citationStates: states, conflict, sourceInvalid, ...(options.reconciled ? { reconciled: true } : {}) });
   }
 
   /** Distinct decisions requested for the candidate so far. */
