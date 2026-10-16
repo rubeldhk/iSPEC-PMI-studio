@@ -33,13 +33,34 @@ boot through the `Embed` observation), **fixed**; no record is open (`T2236`).
 Run on 2026-10-16 on the shared developer machine (another agent was running Testcontainers at the
 same time), each suite on its own. A skipped test is reported as skipped, never as passed.
 
-VERIFICATION_TABLE
+| Suite | Command | Observed |
+|---|---|---|
+| Typecheck | `pnpm -r typecheck` | every package **passes** |
+| Lint | `pnpm lint` | **0 errors**, 8 warnings, all unused `eslint-disable` directives (one in this Epic's `integrations.store.prisma.ts`) |
+| Unit (all unit projects, `frontend` and the two capability projects included) | `pnpm test:unit` | **697 files, 6,551 passed, 50 skipped** — after one fix: the first run failed `T148` (`test-completeness.spec.ts`) because `T2228`'s task line named source paths with no test pairing; the line now names its check (`T2230`) and the rerun is green |
+| `frontend` alone | `vitest run --project frontend` | 104 files, 1,194 passed (2026-10-11, at `T2209`); the page and shell files 309/309 after `T2627` |
+| Architecture (gated) | `pnpm test:arch:gated` | **37 files, 419 passed** |
+| Governance (gated) | `pnpm test:governance:gated` | **80 files, 1,150 passed, 1 skipped** (the Tier 2 transcript check, `skipIf` absent) |
+| Known-red gate | `pnpm test:known-red` | **passes** — all five entries still red as expected (`T884`, `T999u`, `T1992`, `T1294`, `T792`); none retired, none added |
+| Hub integration (Testcontainers, serial) | `vitest run --project backend-integration backend/tests/integration/integrations- --no-file-parallelism` | **13 files, 113 passed; 1 file skipped (2 tests)** — `integrations-embed-latency.live.spec.ts`, no Ollama |
+| `EPIC-038` and `EPIC-032` integration this Epic touched | `… backend/tests/integration/context- backend/tests/integration/evidence- --no-file-parallelism` | **17 files, 178 passed; 1 file skipped (3 tests)** — `context-relevance.spec.ts` (`T1282`), no Ollama |
+| Contract packages | `vitest run --project execution-registry-contract --project evidence-contract --project decision-contract` | **16 files, 129 passed** |
 
-**Performance (`T2222`, `R-039-15`), 50 iterations after 5 warm-up**: resolution p95 **20.1 ms**
-(target < 40); request overhead p95 **30.5 ms** (< 120; an upper bound, the fixture's provider time
-being ~0); `embed()` overhead p95 **10.4 ms** (< 15); JUnit parse at 20,000 cases **247 ms** (< 2 s);
-registry read at 50 entries p95 **144 ms** (< 250); entry detail with 100 health rows and 50
-resolutions p95 **53.8 ms** (< 350). **Live `Embed` latency (`T2223`)**: written, **2 skipped** — no
+**Performance (`T2222`, `R-039-15`), 50 iterations after 5 warm-up**, two runs on the shared
+machine — when written, and in the verification run above (after convergence added the
+approved-version and openable-credential reads to resolution):
+
+| Measure | Target | First run | Verification run |
+|---|---|---|---|
+| Resolution decision p95 | < 40 ms | 20.1 ms | **37.4 ms** |
+| Request overhead p95 (upper bound; fixture provider time ~0) | < 120 ms | 30.5 ms | 38.9 ms |
+| `embed()` overhead p95 | < 15 ms | 10.4 ms | 9.8 ms |
+| JUnit parse, 20,000 cases (one run) | < 2 s | 247 ms | 388.7 ms |
+| Registry read p95, 50 entries | < 250 ms | 144 ms | 135.4 ms |
+| Entry detail p95, 100 health rows + 50 resolutions | < 350 ms | 53.8 ms | 72.7 ms |
+
+All met. Resolution is now near its target; the two reads `T2622`/`T2623` added are the likely
+cost, and a machine shared with another Testcontainers run inflates it — worth re-measuring idle. **Live `Embed` latency (`T2223`)**: written, **2 skipped** — no
 Ollama on this machine.
 
 **Mutation proofs** (`mutation-proofs.md`, checked by `integrations-mutation-proofs.spec.ts`):
@@ -56,19 +77,19 @@ here**, not deferred.
 
 | Capability | Real entry point | Test | Observed |
 |---|---|---|---|
-| Registry read, both directions, `pmi-studio` first | `GET /integrations/registry`, `GET …/:entryId` | `integrations-registry-route.spec.ts`, `integrations-reachability.spec.ts` | TIER1_REGISTRY |
-| Registry access deny-by-default | every registry route without `EPIC-024` read | `integrations-access.spec.ts` | TIER1_ACCESS |
-| `ReadRepository`, `ReadBuildStatus`, `ReadTestResults` (fixture and GitHub recordings) | `POST /projects/:id/capability-requests` | `integrations-requests-route.spec.ts`, `integrations-caller-suite.spec.ts` | TIER1_REQUESTS |
-| `SendNotification` | the same route (`room:*`) and in process (`notification-dispatch`) | `integrations-caller-suite.spec.ts` | TIER1_CALLER |
+| Registry read, both directions, `pmi-studio` first | `GET /integrations/registry`, `GET …/:entryId` | `integrations-registry-route.spec.ts`, `integrations-reachability.spec.ts` | registry route **14/14**, reachability **3/3** |
+| Registry access deny-by-default | every registry route without `EPIC-024` read | `integrations-access.spec.ts` | **11/11** |
+| `ReadRepository`, `ReadBuildStatus`, `ReadTestResults` (fixture and GitHub recordings) | `POST /projects/:id/capability-requests` | `integrations-requests-route.spec.ts`, `integrations-caller-suite.spec.ts` | requests route **13/13**, caller suite **8/8** |
+| `SendNotification` | the same route (`room:*`) and in process (`notification-dispatch`) | `integrations-caller-suite.spec.ts` | caller suite **8/8** (both providers, both callers) |
 | Configuration → `EPIC-031` decision *(after merge)* | `PUT /projects/:id/integrations/configuration/:capability` | `integrations-requests-route.spec.ts` (`T2212` case) | as above |
-| Credentials set / status / remove; no value anywhere | `PUT/GET/DELETE /projects/:id/integrations/credentials/…` | `integrations-credential-canary.spec.ts`, `integrations-time-to-first-resolution.spec.ts` | TIER1_CREDENTIALS |
+| Credentials set / status / remove; no value anywhere | `PUT/GET/DELETE /projects/:id/integrations/credentials/…` | `integrations-credential-canary.spec.ts`, `integrations-time-to-first-resolution.spec.ts` | canary **9/9**, time to first resolution **1/1** (≈0.5 s) |
 | Health interval and staleness | the job handler on the manual ticker | `integrations-registry-route.spec.ts` | as above |
-| Evidence intake → `EPIC-032` *(after merge)* | `POST /projects/:id/integrations/evidence-intake` and the `integrations.evidence-intake` job | `integrations-evidence-intake.spec.ts` (Q17: unmet → met from fixture results) | TIER1_EVIDENCE |
-| `Embed` → `EPIC-038` *(after merge)* | `POST /context/index/reindex`, `POST /context/packages` | `integrations-embed-context.spec.ts` | TIER1_EMBED |
-| Deployment `Embed` binding, read only | `GET /integrations/deployment/capabilities` | `integrations-deployment-route.spec.ts` | TIER1_DEPLOYMENT |
+| Evidence intake → `EPIC-032` *(after merge)* | `POST /projects/:id/integrations/evidence-intake` and the `integrations.evidence-intake` job | `integrations-evidence-intake.spec.ts` (Q17: unmet → met from fixture results) | **12/12** |
+| `Embed` → `EPIC-038` *(after merge)* | `POST /context/index/reindex`, `POST /context/packages` | `integrations-embed-context.spec.ts` | **6/6**; `EPIC-038`'s own `context-*` files all green |
+| Deployment `Embed` binding, read only | `GET /integrations/deployment/capabilities` | `integrations-deployment-route.spec.ts` | **5/5** |
 | A connector cannot run a capability | the request route with a connector credential → `400 surface_not_accepted` | `integrations-requests-route.spec.ts` | as above |
-| Schema constraints and the stores | raw SQL around the services | `integrations-constraints.spec.ts`, `integrations-store-prisma.spec.ts` | TIER1_STORE |
-| Performance | the routes above | `integrations-performance.spec.ts` | TIER1_PERF |
+| Schema constraints and the stores | raw SQL around the services | `integrations-constraints.spec.ts`, `integrations-store-prisma.spec.ts` | constraints **15/15**, Prisma store **10/10** |
+| Performance | the routes above | `integrations-performance.spec.ts` | **6/6**, all targets met |
 | The Integrations screen (Tier 2) | navigation → `/integrations` | `e2e/tests/epic-039-m1.spec.ts` | **not run** — `T2233` |
 
 ## Not done, and why
