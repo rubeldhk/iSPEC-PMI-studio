@@ -91,3 +91,34 @@ describe('T2163 · every field is a value or a reason (FR-HUB-023, SC-HUB-003)',
     expect(d.resolutions[0]!.refusal!.candidates[0]).toMatchObject({ entryKey: 'fixture-ci', ineligibleBecause: 'policy-pending' });
   });
 });
+
+/**
+ * `T2628` (convergence, `FR-HUB-023` audit metadata) — `lastChangeAt` is the
+ * latest change the audit trail records for the entry (a catalog version
+ * change included), and, for a project, the latest change of its
+ * configuration naming the entry — not `retiredAt ?? registeredAt`.
+ */
+describe('T2628 · lastChangeAt follows the audit trail', () => {
+  it('a version change recorded after registration moves lastChangeAt', async () => {
+    const hub = testHub();
+    const e = await hub.registry.register(owner, 'fixture-ci');
+    const registered = hub.clock.now.toISOString();
+    hub.clock.advance(60_000);
+    await hub.deps.audit.record({ workspaceId: WS, actorId: 'system:catalog', action: 'update', targetType: 'integration-registry-entry', targetId: e.id, outcome: 'success', detail: { key: 'fixture-ci', before: { version: '0.1.0' }, after: { version: '0.2.0' } } });
+    const { entries } = await hub.registry.list(owner);
+    const view = entries.find((x) => x.id === e.id)!;
+    expect(view.audit.registeredAt).toBe(registered);
+    expect(view.audit.lastChangeAt).toBe(hub.clock.now.toISOString());
+  });
+
+  it('for a project, a later configuration naming the entry moves it too', async () => {
+    const hub = testHub();
+    const e = await hub.registry.register(owner, 'fixture-ci');
+    hub.clock.advance(120_000);
+    await configure(hub, 'ReadBuildStatus', ['fixture-ci']);
+    const withProject = (await hub.registry.list(owner, PROJECT)).entries.find((x) => x.id === e.id)!;
+    expect(withProject.audit.lastChangeAt).toBe(hub.clock.now.toISOString());
+    const withoutProject = (await hub.registry.list(owner)).entries.find((x) => x.id === e.id)!;
+    expect(withoutProject.audit.lastChangeAt).toBe(withoutProject.audit.registeredAt);
+  });
+});

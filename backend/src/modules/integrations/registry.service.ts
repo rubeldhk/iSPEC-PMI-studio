@@ -20,7 +20,7 @@ import { ConflictError, NotFoundError, ValidationFailedError } from '../../core/
 import { describeEntry, type AdapterCatalog } from './catalog.service.js';
 import { CONNECTOR_KEYS, OMITTED_CONNECTORS, isConnectorKey, type ProjectConnectorFacts, type StaticConnectorFacts } from './connector-facts.js';
 import type { HealthService } from './health/health.service.js';
-import type { AuditPort, Clock } from './integrations.tokens.js';
+import type { AuditPort, AuditTrailReader, Clock } from './integrations.tokens.js';
 import type { IntegrationsStore, RegistryEntryRecord, ResolutionRecord } from './integrations.store.js';
 import { candidateViews, type RefusalView } from './resolver/explanation.js';
 
@@ -44,6 +44,8 @@ export interface RegistryDeps {
   readonly catalog: AdapterCatalog;
   readonly health: HealthService;
   readonly audit: AuditPort;
+  /** `T2628` — `lastChangeAt` is the latest audited change of the entry. */
+  readonly auditTrail?: AuditTrailReader;
   readonly access: RegistryAccessPort;
   readonly workspaces: WorkspaceDirectoryPort;
   readonly connectors: StaticConnectorFacts;
@@ -207,13 +209,35 @@ export class RegistryService {
     return { status: found.status, ...found.document };
   }
 
+  /**
+   * `T2628` (`FR-HUB-023`) — the latest of: registration, retirement, the
+   * latest audited change of the entry (a catalog version change included),
+   * and — for a project — the latest audited change of a configuration naming
+   * it (its `updatedAt` when no audit trail is wired).
+   */
+  private async lastChangeAt(row: RegistryEntryRecord, projectId?: string): Promise<string> {
+    const instants: Date[] = [row.registeredAt];
+    if (row.retiredAt) instants.push(row.retiredAt);
+    const audited = await this.deps.auditTrail?.latestAt(row.workspaceId, 'integration-registry-entry', row.id);
+    if (audited) instants.push(audited);
+    if (projectId !== undefined && row.direction === 'outbound') {
+      for (const c of await this.deps.store.listConfigurations(row.workspaceId, projectId)) {
+        if (!c.adapters.some((a) => a.registryEntryId === row.id)) continue;
+        // The configuration's own audit entry, so every instant comes from one clock.
+        const changed = this.deps.auditTrail ? await this.deps.auditTrail.latestAt(row.workspaceId, 'capability-configuration', c.id) : c.updatedAt;
+        if (changed) instants.push(changed);
+      }
+    }
+    return new Date(Math.max(...instants.map((d) => d.getTime()))).toISOString();
+  }
+
   private async view(row: RegistryEntryRecord, projectId?: string): Promise<EntryView> {
     const audit = {
       registeredBy: row.registeredBy,
       registeredAt: row.registeredAt.toISOString(),
       ...(row.retiredBy ? { retiredBy: row.retiredBy } : {}),
       ...(row.retiredAt ? { retiredAt: row.retiredAt.toISOString() } : {}),
-      lastChangeAt: (row.retiredAt ?? row.registeredAt).toISOString(),
+      lastChangeAt: await this.lastChangeAt(row, projectId),
     };
     const common = { id: row.id, key: row.key, direction: row.direction, status: row.status, listedOrder: row.listedOrder, audit };
     if (row.direction === 'inbound') return { ...common, name: SURFACE_NAMES[row.key] ?? row.key, ...(await this.connectorFacts(row, projectId)) };

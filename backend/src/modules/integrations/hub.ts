@@ -16,7 +16,7 @@ import { HubEmbeddingPort } from './embedding/hub-embedding-port.js';
 import { EvidenceIntakeService } from './evidence/evidence-intake.service.js';
 import { NotificationService } from './notifications/notification.service.js';
 import { HealthService } from './health/health.service.js';
-import type { AuditPort, CapabilityPolicySeam, Clock, CredentialKeyringSeam, EvidenceSinkSeam, ExecutionEventsPort } from './integrations.tokens.js';
+import type { AuditPort, AuditTrailReader, CapabilityPolicySeam, Clock, CredentialKeyringSeam, EvidenceSinkSeam, ExecutionEventsPort } from './integrations.tokens.js';
 import type { IntegrationsStore } from './integrations.store.js';
 import { CapabilityRequests } from './requests/capability-requests.service.js';
 import { RegistryService, type RegistryAccessPort, type WorkspaceDirectoryPort } from './registry.service.js';
@@ -31,6 +31,8 @@ export interface HubDeps {
   readonly clock: Clock;
   readonly environment: string;
   readonly audit: AuditPort;
+  /** `T2628` — read for `lastChangeAt`. */
+  readonly auditTrail?: AuditTrailReader;
   readonly events: ExecutionEventsPort;
   readonly executions: { exists(workspaceId: string, executionId: string): Promise<boolean> };
   readonly projects: { exists(workspaceId: string, projectId: string): Promise<boolean> };
@@ -72,6 +74,7 @@ export function createHub(deps: HubDeps): Hub {
     catalog: deps.catalog,
     health,
     audit: deps.audit,
+    ...(deps.auditTrail ? { auditTrail: deps.auditTrail } : {}),
     access: deps.access,
     workspaces: deps.workspaces,
     connectors: deps.connectors ?? staticConnectorFacts(),

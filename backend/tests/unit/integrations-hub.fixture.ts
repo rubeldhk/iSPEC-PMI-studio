@@ -155,7 +155,16 @@ export function testHub(options: TestHubOptions = {}): TestHub & { policy: Recor
     environment: options.environment ?? 'local',
     audit: {
       record: async (row) => {
-        audit.rows.push(row as unknown as Record<string, unknown>);
+        audit.rows.push({ ...(row as unknown as Record<string, unknown>), occurredAt: clock.now });
+      },
+    },
+    // `T2628` — the audit trail, read back from the rows above.
+    auditTrail: {
+      latestAt: async (ws, targetType, targetId) => {
+        const at = audit.rows
+          .filter((r) => r['workspaceId'] === ws && r['targetType'] === targetType && r['targetId'] === targetId && r['occurredAt'] instanceof Date)
+          .map((r) => (r['occurredAt'] as Date).getTime());
+        return at.length === 0 ? null : new Date(Math.max(...at));
       },
     },
     events: {

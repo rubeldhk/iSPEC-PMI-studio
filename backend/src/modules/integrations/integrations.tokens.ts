@@ -32,6 +32,16 @@ export interface AuditPort {
   record(input: { workspaceId: string; actorId: string | null; action: 'create' | 'update' | 'lifecycle_transition' | 'access_refused'; targetType: string; targetId?: string; outcome: 'success' | 'refused' | 'failed'; detail?: Record<string, unknown> }): Promise<void>;
 }
 
+/**
+ * `T2628` — the audit trail, read: the instant of the latest entry recorded for
+ * a target. `AuditService` only writes, so the module reads `audit_entries`
+ * directly (as `T2227`'s version comparison does); absent in unit tests that
+ * do not need it.
+ */
+export interface AuditTrailReader {
+  latestAt(workspaceId: string, targetType: string, targetId: string): Promise<Date | null>;
+}
+
 /** `ExecutionEventService.append`, narrowed to what the Hub writes (`FR-HUB-038`). */
 export interface ExecutionEventsPort {
   appendCapabilityResolved(input: { workspaceId: string; executionId: string; emittedBy: string; resolutionId: string; payload: Record<string, unknown> }): Promise<void>;

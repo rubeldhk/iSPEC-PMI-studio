@@ -213,6 +213,15 @@ export const HEALTH_TICK_MS = 30_000;
           catalog,
           policy,
           evidence,
+          // `T2628` — `lastChangeAt` reads the audit trail (`audit_entries`).
+          ...(process.env['DATABASE_URL']
+            ? {
+                auditTrail: {
+                  latestAt: async (workspaceId: string, targetType: string, targetId: string): Promise<Date | null> =>
+                    (await prismaClient().auditEntry.findFirst({ where: { workspaceId, targetType, targetId }, orderBy: { occurredAt: 'desc' }, select: { occurredAt: true } }))?.occurredAt ?? null,
+                },
+              }
+            : {}),
           keyring,
           clock: () => new Date(),
           environment,
