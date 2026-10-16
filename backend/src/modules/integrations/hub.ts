@@ -64,7 +64,7 @@ export function createHub(deps: HubDeps): Hub {
   const cipher = new CredentialCipher(() => deps.keyring.port());
   const vault = new CredentialVault(deps.store.vaultPort(), cipher);
   const health = new HealthService({ store: deps.store, catalog: deps.catalog, vault, clock: deps.clock });
-  const resolver = new ResolverService({ store: deps.store, catalog: deps.catalog, health, policy: deps.policy, clock: deps.clock, environment: deps.environment });
+  const resolver = new ResolverService({ store: deps.store, catalog: deps.catalog, health, policy: deps.policy, clock: deps.clock, environment: deps.environment, vault });
   const configuration = new ConfigurationService({ store: deps.store, catalog: deps.catalog, policy: deps.policy, audit: deps.audit, ownerGate: deps.ownerGate, clock: deps.clock });
   const requests = new CapabilityRequests({ store: deps.store, catalog: deps.catalog, resolver, vault, health, events: deps.events, executions: deps.executions, clock: deps.clock });
   const registry = new RegistryService({

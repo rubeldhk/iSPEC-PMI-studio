@@ -62,6 +62,11 @@ export interface ResolverDeps {
   readonly policy: CapabilityPolicySeam;
   readonly clock: Clock;
   readonly environment: string;
+  /**
+   * `T2623` (`FR-HUB-031`) — a credential is *present* only when the vault can
+   * open it: a row sealed under a key that has left the keyring is missing.
+   */
+  readonly vault?: { canOpen(scope: { workspaceId: string; projectId: string; registryEntryId: string }): Promise<boolean> };
 }
 
 export class ResolverService {
@@ -78,7 +83,11 @@ export class ResolverService {
       return this.refuse(req, 'unknown-capability', `${req.capability} is not a capability in the vocabulary (FR-HUB-003).`);
     }
     const capability: CapabilityName = req.capability;
-    const contract = contractFor(capability, req.major);
+    // `T2622` — the package ships the documents; the store says which are
+    // approved. A major retired in the store is not resolved (data-model §1).
+    const packaged = contractFor(capability, req.major);
+    const approved = (await this.deps.store.listContracts()).some((c) => c.name === capability && c.major === req.major && c.status === 'approved');
+    const contract = packaged !== null && approved ? packaged : null;
     const configuration = await this.deps.store.getConfiguration(req.workspaceId, req.projectId, capability);
     const entries = (await this.deps.store.listEntries(req.workspaceId)).filter(
       (e) => this.deps.catalog.descriptor(e.key)?.implements.some((i) => i.capability === capability) === true || (configuration?.adapters.some((a) => a.registryEntryId === e.id) ?? false),
@@ -98,7 +107,8 @@ export class ResolverService {
       const descriptor = this.deps.catalog.descriptor(entry.key);
       const preference = configuration?.adapters.find((a) => a.registryEntryId === entry.id)?.preference ?? null;
       const configured = preference !== null;
-      const credentialStatus = descriptor?.credentialRequired ? await this.deps.store.credentialStatus(req.workspaceId, req.projectId, entry.id) : null;
+      const stored = descriptor?.credentialRequired ? await this.deps.store.credentialStatus(req.workspaceId, req.projectId, entry.id) : null;
+      const credentialStatus = stored !== null && this.deps.vault !== undefined && !(await this.deps.vault.canOpen({ workspaceId: req.workspaceId, projectId: req.projectId, registryEntryId: entry.id })) ? null : stored;
       const health = configured ? await this.deps.health.derive(req.workspaceId, req.projectId, entry.id) : { state: 'unknown' as const, reason: 'not configured — not checked' };
       facts.push({
         entryKey: entry.key,

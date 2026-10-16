@@ -40,6 +40,11 @@ export class CredentialVault {
    * set. A row that fails to decrypt (another project's AAD, a retired key) is
    * treated as absent, never as present.
    */
+  /** `T2623` — whether a credential is set for exactly this scope AND opens under the current keyring. */
+  async canOpen(scope: VaultScope): Promise<boolean> {
+    return this.withCredential(scope, async (handle) => handle !== null);
+  }
+
   async withCredential<T>(scope: VaultScope, fn: (handle: CredentialHandle | null) => Promise<T>): Promise<T> {
     const row = await this.port.readCredentialRow(scope.workspaceId, scope.projectId, scope.registryEntryId);
     if (row === null || row.projectId !== scope.projectId || row.registryEntryId !== scope.registryEntryId) return fn(null);

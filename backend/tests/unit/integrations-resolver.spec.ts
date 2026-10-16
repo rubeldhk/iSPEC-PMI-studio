@@ -100,3 +100,33 @@ describe('T2143 · resolution', () => {
     expect(await hub.store.findResolution(WS, out.record.id)).not.toBeNull();
   });
 });
+
+describe('T2622 · a major retired in the store is not resolved (Edge case "major retired", data-model §1)', () => {
+  it('refuses as no approved contract once the stored version is retired, though the package still ships it', async () => {
+    const hub = testHub();
+    await configure(hub, 'ReadBuildStatus', ['fixture-ci']);
+    expect((await hub.resolver.resolve(req())).record.outcome).toBe('resolved');
+    const contracts = (hub.store as unknown as { contracts: { name: string; major: number; status: string }[] }).contracts;
+    for (const c of contracts) if (c.name === 'ReadBuildStatus' && c.major === 1) Object.assign(c, { status: 'retired' });
+    const out = await hub.resolver.resolve(req());
+    expect(out.record).toMatchObject({ outcome: 'refused', refusalCode: 'no-compatible-adapter' });
+    expect(out.refusal!.message).toContain('No approved ReadBuildStatus contract exists at major 1');
+  });
+});
+
+describe('T2623 · a credential the vault cannot open is missing, never present (FR-HUB-031)', () => {
+  it('a stored credential whose key left the keyring makes the adapter ineligible as credential-missing', async () => {
+    const hub = testHub();
+    const gh = await hub.entry('github-rest');
+    await hub.configuration.put({ workspaceId: WS, userId: OWNER }, PROJECT, 'ReadBuildStatus', { adapters: [{ registryEntryId: gh.id, preference: 1, binding: { repository: 'acme/app' } }] });
+    await hub.credentials.set({ workspaceId: WS, userId: OWNER }, PROJECT, gh.id, { kind: 'github-token', value: 'ghp_' + 'x'.repeat(36) });
+    await markHealthy(hub, gh.id);
+    expect((await hub.resolver.resolve(req())).refusal?.candidates.find((c) => c.entryKey === 'github-rest')?.ineligibleBecause).not.toBe('credential-missing');
+    // The platform key the row was sealed with is rotated out of the keyring.
+    const other = Buffer.alloc(32, 7);
+    hub.keyringSeam.bind({ activeKey: () => ({ keyId: 'k2', key: other }), key: (id) => (id === 'k2' ? other : null) });
+    const out = await hub.resolver.resolve(req());
+    expect(out.record.outcome).toBe('refused');
+    expect(out.refusal!.candidates.find((c) => c.entryKey === 'github-rest')!.ineligibleBecause).toBe('credential-missing');
+  });
+});
