@@ -127,6 +127,36 @@ describe('T2378 · everything on one view (FR-LRN-071, UX-0032)', () => {
     expect(within(article).queryByRole('region', { name: 'Open flags' })).toBeNull();
   });
 
+  it('T2691 · the candidate’s age (US6 acceptance scenario 1)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-11T10:00:00Z'));
+    try {
+      const article = await shown(api());
+      expect(within(article).getByText('Age').nextElementSibling?.textContent).toBe('2 days');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('T2691 · each corroboration shows its own evidence with its state, withheld items as a count (FR-LRN-071)', async () => {
+    const article = await shown(
+      api(
+        view({
+          corroborations: [
+            {
+              ...view().corroborations[0]!,
+              evidence: [{ state: 'verified', evidenceId: 'ev_c1', digest: 'c'.repeat(64), predicateType: null }, { state: 'withheld' }],
+            },
+          ],
+        }),
+      ),
+    );
+    const corro = within(article).getByRole('region', { name: 'Corroborations' });
+    expect(within(corro).getByText('ev_c1')).toBeTruthy();
+    expect(within(corro).getByText('verified')).toBeTruthy();
+    expect(within(corro).getByText(/1 evidence item is not visible to you/)).toBeTruthy();
+  });
+
   it('a conflict names the approved entry', async () => {
     const article = await shown(api(view({ conflictsWith: { entryId: 'ke_9', versionId: 'kv_9', version: 2, statement: 'The opposite is true.' } })));
     const conflict = within(article).getByRole('region', { name: 'Conflicts with approved knowledge' });
@@ -171,6 +201,12 @@ describe('T2378 · deciding (FR-LRN-028, FR-LRN-029)', () => {
     const article = await shown(api());
     const options = within(within(article).getByLabelText('Approved scope')).getAllByRole('option').map((o) => (o as HTMLOptionElement).value);
     expect(options).toEqual(['claimed', 'project:p1', 'project:p2']);
+  });
+
+  it('T2691 · a workspace claim offers the source project as a narrowing (FR-LRN-028)', async () => {
+    const article = await shown(api(view({ candidate: { ...view().candidate, claimedScope: { kind: 'workspace', projectIds: [] } } })));
+    const options = within(within(article).getByLabelText('Approved scope')).getAllByRole('option').map((o) => (o as HTMLOptionElement).value);
+    expect(options).toEqual(['claimed', 'project:p1']);
   });
 
   it('reject needs a reason, then sends it', async () => {

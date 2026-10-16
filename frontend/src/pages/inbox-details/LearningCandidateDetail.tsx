@@ -45,13 +45,25 @@ export function describeScope(scope: LearningScope): string {
   return `projects ${scope.projectIds.join(', ')}`;
 }
 
-/** Every scope a reviewer may approve: the claim itself, or one project inside it — never wider. */
-function narrowings(claimed: LearningScope): { value: string; label: string; scope: LearningScope | null }[] {
+/**
+ * Every scope a reviewer may approve: the claim itself, or one project inside it — never wider.
+ * `T2692`, `FR-LRN-028`: a workspace claim contains the source project, so it is offered too.
+ */
+function narrowings(claimed: LearningScope, sourceProjectId: string): { value: string; label: string; scope: LearningScope | null }[] {
   const options: { value: string; label: string; scope: LearningScope | null }[] = [{ value: 'claimed', label: `As claimed — ${describeScope(claimed)}`, scope: null }];
-  if (claimed.kind === 'projects') {
-    for (const p of claimed.projectIds) options.push({ value: `project:${p}`, label: `Only project ${p}`, scope: { kind: 'project', projectIds: [p] } });
-  }
+  const inside = claimed.kind === 'projects' ? claimed.projectIds : claimed.kind === 'workspace' ? [sourceProjectId] : [];
+  for (const p of inside) options.push({ value: `project:${p}`, label: `Only project ${p}`, scope: { kind: 'project', projectIds: [p] } });
   return options;
+}
+
+/** `T2692`, US6 scenario 1 — how long the candidate has waited, in the coarsest whole unit. */
+export function ageOf(submittedAt: string, now: Date = new Date()): string {
+  const minutes = Math.max(0, Math.floor((now.getTime() - new Date(submittedAt).getTime()) / 60_000));
+  const unit = (n: number, one: string): string => `${n} ${one}${n === 1 ? '' : 's'}`;
+  if (minutes < 60) return unit(minutes, 'minute');
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return unit(hours, 'hour');
+  return unit(Math.floor(hours / 24), 'day');
 }
 
 const EVIDENCE_TONE = { verified: 'success', 'integrity-failed': 'danger', unresolvable: 'warning' } as const;
@@ -91,7 +103,7 @@ export function LearningCandidateDetail({ api, candidateId, onDecided }: Learnin
     void load();
   }, [load]);
 
-  const options = useMemo(() => (view ? narrowings(view.candidate.claimedScope) : []), [view]);
+  const options = useMemo(() => (view ? narrowings(view.candidate.claimedScope, view.candidate.projectId) : []), [view]);
 
   const decide = async (input: LearningReviewInput): Promise<void> => {
     setBusy(true);
@@ -191,6 +203,10 @@ export function LearningCandidateDetail({ api, candidateId, onDecided }: Learnin
           <dt>Claimed scope</dt>
           <dd>{describeScope(candidate.claimedScope)}</dd>
         </div>
+        <div>
+          <dt>Age</dt>
+          <dd>{ageOf(candidate.submittedAt)}</dd>
+        </div>
       </dl>
 
       <section className="lrn-section" aria-label="Evidence">
@@ -220,6 +236,28 @@ export function LearningCandidateDetail({ api, candidateId, onDecided }: Learnin
               <li key={c.id}>
                 <blockquote>{c.statement}</blockquote>
                 {c.sourceKind === 'execution' ? `Session ${c.executionId} by ${c.sourcePrincipalId}` : `Person ${c.sourcePrincipalId}`} · stated {c.confidenceLevel}
+                {/* T2692, FR-LRN-071 — its own evidence, filtered for this reader as the candidate's is. */}
+                {c.evidence.some((e) => e.state !== 'withheld') && (
+                  <ul className="lrn-list">
+                    {c.evidence.flatMap((e, i) =>
+                      e.state === 'withheld'
+                        ? []
+                        : [
+                            <li key={`${e.evidenceId}-${i}`}>
+                              <StatusPill tone={EVIDENCE_TONE[e.state]}>{e.state}</StatusPill> <span>{e.evidenceId}</span>
+                            </li>,
+                          ],
+                    )}
+                  </ul>
+                )}
+                {c.evidence.filter((e) => e.state === 'withheld').length > 0 && (
+                  <p>
+                    {c.evidence.filter((e) => e.state === 'withheld').length === 1
+                      ? '1 evidence item is'
+                      : `${c.evidence.filter((e) => e.state === 'withheld').length} evidence items are`}{' '}
+                    not visible to you.
+                  </p>
+                )}
               </li>
             ))}
           </ul>
