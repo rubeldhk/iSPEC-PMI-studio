@@ -18,9 +18,14 @@
  *   `data-health` attribute and an `aria-label` — never colour alone.
  * - **Lists, not tables**, so a row wraps instead of scrolling at 360px (`UX-0040`).
  * - It reads through `integrations.client.ts`, which has no write function.
+ * - (`T2627`, `SC-HUB-007`) It also shows the selected project's configuration
+ *   — each capability's adapters in preference order, a retired one marked, and
+ *   the `EPIC-031` policy status in words — and the deployment's `Embed`
+ *   binding (adapter, model, dimension, health, or why it is not usable). Both
+ *   are reads; each fails in its own section, never blanking the registry.
  */
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
-import type { EntryDetail, EntryView, Fact, IntegrationsReadClient } from '../services/integrations.client';
+import type { ConfigurationView, DeploymentCapabilities, EntryDetail, EntryView, Fact, IntegrationsReadClient } from '../services/integrations.client';
 
 export interface IntegrationsPageProps {
   client: IntegrationsReadClient;
@@ -66,6 +71,123 @@ function Health({ entry }: { entry: EntryView }): ReactElement {
       {words}
       {checkedAt ? <small> (checked {checkedAt})</small> : null}
     </span>
+  );
+}
+
+const POLICY_WORDS: Readonly<Record<ConfigurationView['policyStatus'], string>> = {
+  permitted: 'permitted',
+  pending: 'pending — awaiting a decision in the Decision Inbox',
+  'not-permitted': 'not permitted',
+  'policy-seam-unbound': 'cannot be read — the policy seam is unbound',
+  'no-decision': 'no decision recorded',
+};
+
+type Load<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
+
+function ProjectConfiguration({ client, projectId }: { client: IntegrationsReadClient; projectId?: string }): ReactElement {
+  const [load, setLoad] = useState<Load<readonly ConfigurationView[]>>({ state: 'loading' });
+  useEffect(() => {
+    if (projectId === undefined) return;
+    let live = true;
+    setLoad({ state: 'loading' });
+    client.listConfiguration(projectId).then(
+      (value) => {
+        if (live) setLoad({ state: 'ready', value });
+      },
+      (err: unknown) => {
+        if (live) setLoad({ state: 'error', message: message(err) });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [client, projectId]);
+  return (
+    <section className="integrations__configuration" aria-labelledby="integrations-configuration-heading">
+      <h2 id="integrations-configuration-heading">Configuration for this project</h2>
+      {projectId === undefined ? (
+        <p>
+          <NotApplicable label="Configuration" reason="no project selected" />
+        </p>
+      ) : load.state === 'loading' ? (
+        <p>Loading the configuration…</p>
+      ) : load.state === 'error' ? (
+        <p role="alert">{load.message}</p>
+      ) : load.value.length === 0 ? (
+        <p>No capability is configured for this project.</p>
+      ) : (
+        <ul>
+          {load.value.map((c) => (
+            <li key={c.capability}>
+              <h3>{c.capability}</h3>
+              <ol>
+                {[...c.adapters]
+                  .sort((a, b) => a.preference - b.preference)
+                  .map((a) => (
+                    <li key={a.registryEntryId} data-status={a.status}>
+                      {`${a.preference}. ${a.key ?? a.registryEntryId}${a.status === 'active' ? '' : ` — ${a.status}`}`}
+                    </li>
+                  ))}
+              </ol>
+              <p data-policy={c.policyStatus}>{`Policy: ${POLICY_WORDS[c.policyStatus]}`}</p>
+              <p>
+                <small>{`configuration version ${c.configVersion}, set by ${c.updatedBy} at ${c.updatedAt}`}</small>
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function DeploymentBinding({ client }: { client: IntegrationsReadClient }): ReactElement {
+  const [load, setLoad] = useState<Load<DeploymentCapabilities>>({ state: 'loading' });
+  useEffect(() => {
+    let live = true;
+    client.deploymentCapabilities().then(
+      (value) => {
+        if (live) setLoad({ state: 'ready', value });
+      },
+      (err: unknown) => {
+        if (live) setLoad({ state: 'error', message: message(err) });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [client]);
+  return (
+    <section className="integrations__deployment" aria-labelledby="integrations-deployment-heading">
+      <h2 id="integrations-deployment-heading">Deployment capabilities</h2>
+      {load.state === 'loading' ? (
+        <p>Loading the deployment binding…</p>
+      ) : load.state === 'error' ? (
+        <p role="alert">{load.message}</p>
+      ) : (
+        <ul>
+          {load.value.capabilities.map((c) => (
+            <li key={c.capability}>
+              <h3>{`${c.capability} (deployment)`}</h3>
+              {c.eligible && c.adapterKey !== null ? (
+                <p>{`${c.adapterKey} — ${c.modelId ?? 'model not observed'}, dimension ${c.dimension ?? 'unknown'}`}</p>
+              ) : (
+                <p>
+                  <em>Not usable</em>
+                  {` — ${c.explanation ?? c.reason ?? c.notApplicable ?? 'no reason recorded'}`}
+                </p>
+              )}
+              <span className={`integrations__health integrations__health--${c.health}`} data-health={c.health} aria-label={`${c.capability} health: ${c.health}${c.reason ? ` — ${c.reason}` : ''}`}>
+                {c.health}
+              </span>
+              <p>
+                <small>{c.setBy}</small>
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -261,6 +383,8 @@ export function IntegrationsPage({ client, projectId }: IntegrationsPageProps): 
           ))}
         </ul>
       )}
+      <ProjectConfiguration client={client} {...(project ? { projectId: project } : {})} />
+      <DeploymentBinding client={client} />
     </section>
   );
 }

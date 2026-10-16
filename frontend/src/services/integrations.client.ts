@@ -61,10 +61,51 @@ export interface RegistryList {
   readonly omitted: readonly { key: string; reason: string }[];
 }
 
+/**
+ * `T2627` — one capability's configuration for a project, as API §2 reads it:
+ * the adapters in preference order (each with its registry status), and the
+ * `EPIC-031` policy status derived on read.
+ */
+export interface ConfigurationView {
+  readonly capability: string;
+  readonly adapters: readonly { readonly registryEntryId: string; readonly key: string | null; readonly preference: number; readonly status: 'active' | 'retired' | 'not-listed' }[];
+  readonly permitDegraded: boolean;
+  readonly permittedEnvironments: readonly string[];
+  readonly onNotNarrowable: string;
+  readonly healthIntervalSeconds: number;
+  readonly configVersion: number;
+  readonly decisionId: string | null;
+  readonly policyStatus: 'permitted' | 'pending' | 'not-permitted' | 'policy-seam-unbound' | 'no-decision';
+  readonly policyExplanation?: unknown;
+  readonly updatedBy: string;
+  readonly updatedAt: string;
+}
+
+/** `T2627` — the deployment-scope binding (API §4a): set at boot, never through this screen. */
+export interface DeploymentCapabilities {
+  readonly capabilities: readonly {
+    readonly capability: string;
+    readonly scope: 'deployment';
+    readonly setBy: string;
+    readonly adapterKey: string | null;
+    readonly notApplicable?: string;
+    readonly eligible: boolean;
+    readonly modelId: string | null;
+    readonly dimension: number | null;
+    readonly health: string;
+    readonly reason: string | null;
+    readonly explanation: string | null;
+  }[];
+}
+
 /** Everything the screen may ask. Nothing here writes. */
 export interface IntegrationsReadClient {
   listRegistry(projectId?: string): Promise<RegistryList>;
   entryDetail(entryId: string, projectId?: string): Promise<EntryDetail>;
+  /** `GET /projects/:projectId/integrations/configuration` (`T2627`). */
+  listConfiguration(projectId: string): Promise<readonly ConfigurationView[]>;
+  /** `GET /integrations/deployment/capabilities` (`T2627`). */
+  deploymentCapabilities(): Promise<DeploymentCapabilities>;
 }
 
 export interface IntegrationsClientOptions {
@@ -92,5 +133,7 @@ export function createIntegrationsClient(options: IntegrationsClientOptions = {}
   return {
     listRegistry: (projectId) => get<RegistryList>(`/integrations/registry${query(projectId)}`),
     entryDetail: (entryId, projectId) => get<EntryDetail>(`/integrations/registry/${encodeURIComponent(entryId)}${query(projectId)}`),
+    listConfiguration: (projectId) => get<readonly ConfigurationView[]>(`/projects/${encodeURIComponent(projectId)}/integrations/configuration`),
+    deploymentCapabilities: () => get<DeploymentCapabilities>('/integrations/deployment/capabilities'),
   };
 }

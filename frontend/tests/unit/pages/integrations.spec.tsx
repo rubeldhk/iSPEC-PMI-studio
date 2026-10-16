@@ -18,7 +18,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { IntegrationsPage } from '../../../src/pages/Integrations';
-import type { EntryDetail, EntryView, IntegrationsReadClient } from '../../../src/services/integrations.client';
+import type { ConfigurationView, DeploymentCapabilities, EntryDetail, EntryView, IntegrationsReadClient } from '../../../src/services/integrations.client';
 
 afterEach(cleanup);
 
@@ -61,10 +61,29 @@ const DETAIL: EntryDetail = {
   ],
 };
 
+const CONFIGURATION: ConfigurationView[] = [
+  {
+    capability: 'ReadBuildStatus', adapters: [{ registryEntryId: 'e_gh', key: 'github-rest', preference: 1, status: 'active' }, { registryEntryId: 'e_old', key: 'old-ci', preference: 2, status: 'retired' }],
+    permitDegraded: false, permittedEnvironments: ['local', 'dev', 'stage', 'prod'], onNotNarrowable: 'proceed-and-record', healthIntervalSeconds: 300,
+    configVersion: 3, decisionId: 'dec_7', policyStatus: 'pending', updatedBy: 'u_owner', updatedAt: '2026-10-10T09:30:00.000Z',
+  },
+];
+
+const DEPLOYMENT: DeploymentCapabilities = {
+  capabilities: [
+    {
+      capability: 'Embed', scope: 'deployment', setBy: 'deployment configuration (PMI_EMBED_ADAPTER, PMI_EMBED_BINDING); read at boot',
+      adapterKey: 'fixture-embed', eligible: true, modelId: 'fixture-embed:fixture-letters@sha256:fixture-letters-1', dimension: 27, health: 'healthy', reason: null, explanation: null,
+    },
+  ],
+};
+
 function client(over: Partial<IntegrationsReadClient> = {}): IntegrationsReadClient {
   return {
     listRegistry: vi.fn(async () => ({ entries: ENTRIES, omitted: [] })),
     entryDetail: vi.fn(async () => DETAIL),
+    listConfiguration: vi.fn(async () => CONFIGURATION),
+    deploymentCapabilities: vi.fn(async () => DEPLOYMENT),
     ...over,
   };
 }
@@ -151,5 +170,65 @@ describe('T2206 · the Integrations screen (US8)', () => {
   it('a refused read is an error in words, not an empty list', async () => {
     render(<IntegrationsPage client={client({ listRegistry: vi.fn(async () => Promise.reject(new Error('Not found.'))) })} projectId="pr_1" />);
     expect(await screen.findByRole('alert')).toBeTruthy();
+  });
+});
+
+/**
+ * `T2627` (convergence, `SC-HUB-007`, API §7) — the screen also answers *which
+ * adapter would serve this project, and is policy content with it?* and *what
+ * does this deployment embed with?* Read only: no new control.
+ */
+describe('T2627 · the project configuration and the deployment Embed binding, read only', () => {
+  it('shows each capability with its adapters by preference, a retired one marked, and the policy status in words', async () => {
+    const c = client();
+    await shown(c);
+    const section = await screen.findByRole('region', { name: /Configuration for this project/ });
+    expect(c.listConfiguration).toHaveBeenCalledWith('pr_1');
+    expect(within(section).getByText(/ReadBuildStatus/)).toBeTruthy();
+    expect(within(section).getByText(/1\. github-rest/)).toBeTruthy();
+    expect(within(section).getByText(/2\. old-ci — retired/)).toBeTruthy();
+    expect(within(section).getByText(/Policy: pending/)).toBeTruthy();
+    expect(within(section).getByText(/configuration version 3/)).toBeTruthy();
+  });
+
+  it('without a project the configuration is not applicable, and nothing is asked', async () => {
+    const c = client();
+    render(<IntegrationsPage client={c} projectId={null} />);
+    await screen.findByText('GitHub (REST)');
+    const section = screen.getByRole('region', { name: /Configuration for this project/ });
+    expect(within(section).getByLabelText(/Configuration: not applicable — no project selected/)).toBeTruthy();
+    expect(c.listConfiguration).not.toHaveBeenCalled();
+  });
+
+  it('shows the deployment Embed binding: adapter, model, dimension and health — and why when it is not usable', async () => {
+    await shown();
+    const section = await screen.findByRole('region', { name: /Deployment capabilities/ });
+    await within(section).findByText(/fixture-embed:fixture-letters/);
+    expect(within(section).getByText(/dimension 27/)).toBeTruthy();
+    expect(within(section).getByLabelText(/Embed health: healthy/)).toBeTruthy();
+    expect(within(section).getByText(/read at boot/)).toBeTruthy();
+    cleanup();
+    const unbound: DeploymentCapabilities = { capabilities: [{ ...DEPLOYMENT.capabilities[0]!, adapterKey: null, eligible: false, modelId: null, dimension: null, health: 'unknown', reason: 'not-bound', explanation: 'no Embed adapter is bound for this deployment (PMI_EMBED_ADAPTER is not set)' }] };
+    await shown(client({ deploymentCapabilities: vi.fn(async () => unbound) }));
+    const s2 = await screen.findByRole('region', { name: /Deployment capabilities/ });
+    expect(await within(s2).findByText(/PMI_EMBED_ADAPTER is not set/)).toBeTruthy();
+    expect(within(s2).getByText(/not usable/i)).toBeTruthy();
+  });
+
+  it('adds no control: still only the filter and one disclosure toggle per entry (FR-HUB-074)', async () => {
+    const container = await shown();
+    await screen.findByRole('region', { name: /Deployment capabilities/ });
+    await screen.findByText(/1\. github-rest/);
+    expect(container.querySelectorAll('form, textarea')).toHaveLength(0);
+    expect(container.querySelectorAll('input')).toHaveLength(1);
+    expect(container.querySelectorAll('select')).toHaveLength(3);
+    expect(container.querySelectorAll('button')).toHaveLength(ENTRIES.length);
+  });
+
+  it('a refused configuration read is an error in its own section, and the registry still renders', async () => {
+    await shown(client({ listConfiguration: vi.fn(async () => Promise.reject(new Error('Not found.'))) }));
+    const section = await screen.findByRole('region', { name: /Configuration for this project/ });
+    expect(await within(section).findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('GitHub (REST)')).toBeTruthy();
   });
 });
