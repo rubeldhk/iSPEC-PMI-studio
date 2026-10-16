@@ -149,10 +149,22 @@ export class KnowledgeService {
       return groups.get(candidateId)!.events;
     };
     const flagEvents: HistoryEvent[] = [];
-    for (const v of versions) {
-      const candidate = await this.deps.reads.candidate(workspaceId, v.candidateId);
+    // R-048-22 (history < 300 ms at 50 versions): each version's candidate, flags
+    // and retrievability are read concurrently, not one round trip after another;
+    // the history is then assembled in version order exactly as before.
+    const reads = await Promise.all(
+      versions.map(async (v) => {
+        const [candidate, flags, retrievability] = await Promise.all([
+          this.deps.reads.candidate(workspaceId, v.candidateId),
+          this.flagViews(workspaceId, v.id),
+          retrievabilityOf(this.deps.reads, workspaceId, v.id),
+        ]);
+        return { candidate, flags, retrievability };
+      }),
+    );
+    for (const [i, v] of versions.entries()) {
+      const { candidate, flags, retrievability } = reads[i]!;
       const statusEvents = allStatus.filter((s) => s.versionId === v.id);
-      const flags = await this.flagViews(workspaceId, v.id);
       out.push({
         ...v,
         candidate: candidate === null
@@ -161,7 +173,7 @@ export class KnowledgeService {
         decision: { decisionId: v.decisionId, resolvingDecisionId: v.resolvingDecisionId, approvedByKind: v.approvedByKind, approvedBy: v.approvedBy, approvedAt: v.approvedAt },
         statusEvents,
         flags,
-        retrievability: await retrievabilityOf(this.deps.reads, workspaceId, v.id),
+        retrievability,
       });
       group(v.candidateId, v.approvedAt, v.version).push({ at: v.approvedAt, type: 'approved', versionId: v.id });
       for (const f of flags) flagEvents.push({ at: f.raisedAt, type: 'flag', versionId: v.id, detail: `${f.kind}: ${f.detail}` });
