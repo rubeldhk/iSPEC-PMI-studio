@@ -100,7 +100,7 @@ here**, not deferred.
 | **`T2231` — live caller-level run** | Needs a real GitHub App installation and a Resend sending-only key — live credentials a person must supply. The GitHub and Resend recordings were constructed from the providers' documentation and say so in their `provenance` | A person runs quickstart Q23 with those credentials and records `quickstart-results.md` |
 | **`T2220` — `EPIC-038`'s `T1282` against Ollama** | No Ollama server reachable here (checked 2026-10-11 and 2026-10-16). `context-relevance.spec.ts` stays skipped; nothing was recorded | `ollama pull nomic-embed-text`, then run that file with `CONTEXT_EMBEDDING_MODULE` = the `T2199` module |
 | **`T2223` — live `Embed` latency** | Written; skipped for the same reason | As `T2220` |
-| **`T2213` — default classification rules** | **Needs the Project Owner (or `EPIC-031`'s owner).** `organization-default.json` says a shipped low band is *a tenant's decision, not a shipped default*, and `EPIC-031`'s conformance check admits only lowercase dotted patterns, so `integration.adapter.use.Read*` is not a well-formed rule. Until decided, every adapter configuration is `high` and waits in the Decision Inbox — *correct, slower* (`R-039-7`) | A decision on whether reads may ship as `low`, and in which action-type spelling |
+| **`T2213` — default classification rules** | **Declined by the Project Owner, 2026-10-16.** `organization-default.json` says a shipped low band is *a tenant's decision, not a shipped default*, and the Owner kept that rule: no low band ships for integration calls. Every adapter configuration is `high` and waits in the Decision Inbox until a workspace's own policy classifies it — *correct, slower* (`R-039-7`) | Nothing: decided. A workspace that wants reads at `low` adds the rule to its own tenant policy |
 | **`T2235`'s full-suite run when the machine is free** | The suites were run one by one (above) on a shared machine; the single full `vitest run` was not | Run `pnpm test` on an idle machine |
 | **`T2239` — the PMI Studio Delivery Board** | Declared **stale**: it is an external artifact this run has no means to update. Its delta: `EPIC-039` moves from *specified* to *implemented on `local`, Tier 2 outstanding*; Integrations is the tenth delivered area (10 / 2 / 6 / 0); `EPIC-038`'s `EmbeddingPort` is filled; `BR-0120`, `BR-0121`, `BR-0123`, `BR-0125`, `BR-0126` are owned by `EPIC-039` | Refresh the board at its existing URL |
 | **Promotion to `dev`** | Constitution VII needs an explicit authorisation naming the environment, and no `dev` environment exists | — |
@@ -185,5 +185,5 @@ PRs"* — which was taken as the sign-off Constitution II requires for that SRS 
 ## Recommended next command
 
 `/speckit-implement EPIC-039 for T2233` on a machine with the reference-local stack running — it
-generates the Tier 2 transcript and closes `T2240` with it. Separately, the `T2213` decision goes to
-the Project Owner.
+generates the Tier 2 transcript and closes `T2240` with it. `T2213` is decided (declined, 2026-10-16):
+nothing further is owed on it.
