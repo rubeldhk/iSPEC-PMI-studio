@@ -147,6 +147,7 @@ function toCorroboration(r: Row): CorroborationRecord {
     idempotencyKey: String(r['idempotencyKey']),
     correlationId: String(r['correlationId']),
     submittedAt: d(r['submittedAt']),
+    objectDigest: s(r['objectDigest']),
   };
 }
 

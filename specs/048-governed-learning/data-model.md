@@ -84,6 +84,7 @@ stored.
 | `confidenceLevel`, `confidenceBasis` | | |
 | `late` | bool | |
 | `idempotencyKey`, `correlationId`, `submittedAt` | | Same uniqueness as candidates |
+| `objectDigest` | text, nullable | sha256 of the submission's canonical core, as the candidate's; a replay under the key with a different digest is `409` (`FR-LRN-061`). Null only on rows recorded before `20261011100200` (`T2686`) |
 
 Corroboration never changes the candidate or its eligibility (spec Edge Case).
 

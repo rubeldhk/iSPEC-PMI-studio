@@ -208,7 +208,7 @@ export class SubmissionService {
       if (prior !== null) await this.recordOutcome(prior, prior.late ? 'late-submitted' : 'submitted');
       return replay;
     }
-    const corroborationReplay = await this.replayCorroboration(ws, s);
+    const corroborationReplay = await this.replayCorroboration(ws, s, objectDigest);
     if (corroborationReplay !== null) return corroborationReplay;
 
     // 3. Policy and category (FR-LRN-003).
@@ -291,6 +291,7 @@ export class SubmissionService {
             idempotencyKey: s.idempotencyKey,
             correlationId: s.correlationId,
             submittedAt: at,
+            objectDigest,
           };
           await tx.insertCorroboration(corroboration, this.citationsFor(open, s, corroboration.id));
           return { kind: 'corroboration', open, corroboration };
@@ -379,10 +380,12 @@ export class SubmissionService {
     };
   }
 
-  private async replayCorroboration(ws: string, s: LearningSubmissionV1): Promise<SubmissionOutcome | null> {
+  private async replayCorroboration(ws: string, s: LearningSubmissionV1, objectDigest: string): Promise<SubmissionOutcome | null> {
     const prior = await this.deps.store.corroborationByIdempotencyKey(ws, s.idempotencyKey);
     if (prior === null) return null;
-    if (prior.statement !== s.statement) {
+    // T2686 — the whole submission, as a candidate replay compares it; a row from
+    // before the digest was recorded can only be compared on its statement.
+    if (prior.objectDigest !== null ? prior.objectDigest !== objectDigest : prior.statement !== s.statement) {
       throw new ConflictError(`idempotency key ${s.idempotencyKey} was already used for a different submission (FR-LRN-061).`, { idempotencyKey: s.idempotencyKey });
     }
     const open = await this.deps.store.candidate(ws, prior.candidateId);

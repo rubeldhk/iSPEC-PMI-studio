@@ -243,7 +243,7 @@ describe('T2352 · closures (A-031-1)', () => {
 describe('T2352 · corroborating agents are AI sources too', () => {
   it('an approval by a corroborating agent writes nothing', async () => {
     const c = await pending();
-    const co: CorroborationRecord = { id: 'co_1', workspaceId: 'ws_a', candidateId: c.id, sourceKind: 'execution', executionId: 'exe_2', sourcePrincipalId: 'u_h2', expertId: null, expertContractVersionId: null, statement: 's', confidenceLevel: 'low', confidenceBasis: 'b', late: false, idempotencyKey: 'co_k', correlationId: 'c', submittedAt: new Date() };
+    const co: CorroborationRecord = { id: 'co_1', workspaceId: 'ws_a', candidateId: c.id, sourceKind: 'execution', executionId: 'exe_2', sourcePrincipalId: 'u_h2', expertId: null, expertContractVersionId: null, statement: 's', confidenceLevel: 'low', confidenceBasis: 'b', late: false, idempotencyKey: 'co_k', correlationId: 'c', submittedAt: new Date(), objectDigest: null };
     await store.transaction((tx) => tx.insertCorroboration(co, [citationFor(c, { corroborationId: 'co_1' })]));
     await materialiser().applyResolution('ws_a', c.id, approvedBy('u_h2'));
     expect(await store.versionForCandidate('ws_a', c.id)).toBeNull();

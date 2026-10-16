@@ -45,7 +45,7 @@ function resolution(over: Partial<ResolutionView> = {}): ResolutionView {
 
 const corroboration = (over: Partial<CorroborationRecord>): CorroborationRecord => ({
   id: 'co_1', workspaceId: 'ws_a', candidateId: 'lc_x', sourceKind: 'execution', executionId: 'exe_2', sourcePrincipalId: 'agent_2', expertId: null, expertContractVersionId: null,
-  statement: 's', confidenceLevel: 'low', confidenceBasis: 'b', late: false, idempotencyKey: 'k', correlationId: 'c', submittedAt: new Date(), ...over,
+  statement: 's', confidenceLevel: 'low', confidenceBasis: 'b', late: false, idempotencyKey: 'k', correlationId: 'c', submittedAt: new Date(), objectDigest: null, ...over,
 });
 
 const candidate = candidateRecord({ sourcePrincipalId: 'agent_1', expertId: 'expert_1', expertContractVersionId: 'ecv', expertContractVersion: 1 });

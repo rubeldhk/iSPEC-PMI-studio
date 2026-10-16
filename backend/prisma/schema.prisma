@@ -3674,6 +3674,8 @@ model LearningCorroboration {
   idempotencyKey          String
   correlationId           String
   submittedAt             DateTime
+  /// EPIC-048 T2686 — the submission's digest (FR-LRN-061); null on rows that predate it.
+  objectDigest            String?
   createdAt               DateTime @default(now())
 
   @@unique([workspaceId, idempotencyKey], map: "learning_corroborations_workspace_idempotency_key")

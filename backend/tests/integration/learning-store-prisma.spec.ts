@@ -274,12 +274,14 @@ suite('T2318 · the PostgreSQL store behaves as T2313 says', () => {
       const c = await seed({ executionId: 'exe_count', subjectKey: 'test-setup:count' });
       await store.transaction((tx) =>
         tx.insertCorroboration(
-          { id: `co_${c.id}`, workspaceId: WS, candidateId: c.id, sourceKind: 'execution', executionId: 'exe_count', sourcePrincipalId: 'agent_2', expertId: null, expertContractVersionId: null, statement: 's', confidenceLevel: 'low', confidenceBasis: 'b', late: false, idempotencyKey: `co_idem_${c.id}`, correlationId: 'c', submittedAt: new Date() },
+          { id: `co_${c.id}`, workspaceId: WS, candidateId: c.id, sourceKind: 'execution', executionId: 'exe_count', sourcePrincipalId: 'agent_2', expertId: null, expertContractVersionId: null, statement: 's', confidenceLevel: 'low', confidenceBasis: 'b', late: false, idempotencyKey: `co_idem_${c.id}`, correlationId: 'c', submittedAt: new Date(), objectDigest: 'd'.repeat(64) },
           [citationFor(c, { corroborationId: `co_${c.id}` })],
         ),
       );
       expect(await store.submissionsForExecution(WS, 'exe_count')).toBe(2);
       expect((await store.corroborationByIdempotencyKey(WS, `co_idem_${c.id}`))?.candidateId).toBe(c.id);
+      // T2686 — the digest round-trips, so a replay can be compared (FR-LRN-061).
+      expect((await store.corroborationByIdempotencyKey(WS, `co_idem_${c.id}`))?.objectDigest).toBe('d'.repeat(64));
     });
 
     it('browses newest first, filters, and pages by token', async () => {

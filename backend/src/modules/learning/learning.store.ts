@@ -92,6 +92,12 @@ export interface CorroborationRecord {
   readonly idempotencyKey: string;
   readonly correlationId: string;
   readonly submittedAt: Date;
+  /**
+   * `T2686`, `FR-LRN-061` — the sha256 of the submission's canonical core, as a
+   * candidate's `objectDigest`, so a replay under its idempotency key can be told
+   * from a different submission. `null` on rows recorded before it existed.
+   */
+  readonly objectDigest: string | null;
 }
 
 export type TransitionActorKind = 'human' | 'policy' | 'platform';

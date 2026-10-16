@@ -80,6 +80,17 @@ describe('T2342 · corroboration (FR-LRN-017)', () => {
     expect(again.body.candidateId).not.toBe(first.body.candidateId);
   });
 
+  it.each([
+    ['different evidence', { evidence: [{ evidenceId: 'ev_2', digest: { sha256: 'a'.repeat(64) } }] }],
+    ['a different scope', { claimedScope: { kind: 'projects', projectIds: ['p1', 'p2'] } }],
+    ['a different confidence', { confidence: { level: 'high', basis: 'Saw it once more.' } }],
+  ])('T2685 · a corroboration replayed under its key with %s is 409, as a candidate replay is (FR-LRN-061)', async (_name, change) => {
+    await service().submit({ actor: AGENT_1, projectId: 'p1', body: submission({ subject: 'replayed differently' }) });
+    const body = submission({ executionId: 'exe_2', subject: 'replayed differently', idempotencyKey: 'corr-diff' });
+    await service().submit({ actor: AGENT_2, projectId: 'p1', body });
+    await expect(service().submit({ actor: AGENT_2, projectId: 'p1', body: { ...body, ...change } })).rejects.toThrow(/already used for a different submission/);
+  });
+
   it('a replayed corroboration returns the original corroboration', async () => {
     await service().submit({ actor: AGENT_1, projectId: 'p1', body: submission({ subject: 'twice' }) });
     const body = submission({ executionId: 'exe_2', subject: 'twice', idempotencyKey: 'corr-once' });
