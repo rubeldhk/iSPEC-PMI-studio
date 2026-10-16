@@ -83,6 +83,17 @@ describe('T2374 · no other path widens scope (FR-LRN-042)', () => {
     await expect(submissions.submit({ actor: AGENT, projectId: 'p1', body: submission({ subject: 'widening', kind: 'supersede', targetVersionId: versionId }) })).resolves.toMatchObject({ status: 201 });
   });
 
+  it('T2681 · a reviewer narrowing a widen-scope approval back to the current scope is 400 — nothing is decided', async () => {
+    const { versionId } = await v1();
+    const out = await submissions.submit({ actor: AGENT, projectId: 'p1', body: submission({ subject: 'widening', kind: 'widen-scope', targetVersionId: versionId, claimedScope: { kind: 'projects', projectIds: ['p1', 'p2'] } }) });
+    const approvals = world.decisions.approvals.length;
+    await expect(reviews.review('ws_a', 'u_h2', out.body.candidateId, { decision: 'approve', scope: { kind: 'project', projectIds: ['p1'] } })).rejects.toThrow(/strictly wider/);
+    expect(world.decisions.approvals.length).toBe(approvals);
+    // Narrowed but still strictly wider than v1 is fine.
+    const ok = await reviews.review('ws_a', 'u_h2', out.body.candidateId, { decision: 'approve', scope: { kind: 'projects', projectIds: ['p1', 'p2'] } });
+    expect(ok.state).toBe('approved');
+  });
+
   it('a reviewer cannot widen through the terms of an approval', async () => {
     const out = await submissions.submit({ actor: AGENT, projectId: 'p1', body: submission({ subject: 'terms' }) });
     await expect(reviews.review('ws_a', 'u_h', out.body.candidateId, { decision: 'approve', scope: workspace })).rejects.toBeInstanceOf(ValidationFailedError);

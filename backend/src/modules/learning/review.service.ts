@@ -18,7 +18,7 @@
  *
  * Framework-free (PC-1).
  */
-import { isNarrowerOrEqual, parseScope, type ClaimedScope } from '@pmi/learning-contract';
+import { isNarrowerOrEqual, isStrictlyWider, parseScope, type ClaimedScope } from '@pmi/learning-contract';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationFailedError } from '../../core/errors.js';
 import { aiSourceIdentities } from './approver.guard.js';
 import type { LearningPolicyReader } from './learning-policy.js';
@@ -154,6 +154,17 @@ export class ReviewService {
         });
       }
       scope = parsed.value;
+    }
+    // T2682, FR-LRN-042 — a widen-scope approval must still widen: narrowing it back
+    // to (or inside) the version it widens would record a widening that widens nothing.
+    if (candidate.kind === 'widen-scope' && candidate.targetVersionId !== null) {
+      const target = await this.deps.store.version(candidate.workspaceId, candidate.targetVersionId);
+      if (target !== null && !isStrictlyWider(scope, target.scope)) {
+        throw new ValidationFailedError('A widen-scope approval must be strictly wider than the version it widens (FR-LRN-042); narrow it less, or reject it.', {
+          field: 'scope',
+          currentScope: target.scope,
+        });
+      }
     }
     let classification: string | undefined;
     if (raw['classification'] !== undefined) {
