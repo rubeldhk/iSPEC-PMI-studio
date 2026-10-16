@@ -46,7 +46,8 @@ import { ExecutionsModule } from '../executions/executions.module.js';
 import { OwnerGate } from '../governance/owner-gate.js';
 import { ProjectsModule } from '../projects/projects.module.js';
 import { ProjectsService } from '../projects/projects.service.js';
-import type { AdapterCatalog } from './catalog.service.js';
+import { observeCatalogVersions, type AdapterCatalog } from './catalog.service.js';
+import type { RegistryEntryRecord } from './integrations.store.js';
 import { ConfigurationController } from './configuration.controller.js';
 import { CredentialsController } from './credentials/credentials.controller.js';
 import { DeploymentController } from './embedding/deployment.controller.js';
@@ -82,6 +83,31 @@ export function resolvePlatformEnvironment(env: Readonly<Record<string, string |
   }
   if (!isPlatformEnvironment(value)) throw new Error(`PMI_ENVIRONMENT "${value}" is not one of ${PLATFORM_ENVIRONMENTS.join(', ')} (R-039-8).`);
   return value;
+}
+
+/**
+ * `T2227` — where the boot comparison reads: every registry row, and the last
+ * `after.version` the audit trail recorded for one (the registration, or the
+ * last `system:catalog` change).
+ */
+function catalogVersionSources(catalog: AdapterCatalog, audit: AuditService): Parameters<typeof observeCatalogVersions>[0] {
+  return {
+    catalog,
+    audit: { record: (row) => audit.record(row) },
+    entries: async () => (await prismaClient().integrationRegistryEntry.findMany()) as unknown as RegistryEntryRecord[],
+    lastObservedVersion: async (workspaceId, entryId) => {
+      const rows = await prismaClient().auditEntry.findMany({
+        where: { workspaceId, targetType: 'integration-registry-entry', targetId: entryId },
+        orderBy: { occurredAt: 'desc' },
+        select: { detail: true },
+      });
+      for (const row of rows) {
+        const version = (row.detail as { after?: { version?: unknown } } | null)?.after?.version;
+        if (typeof version === 'string') return version;
+      }
+      return null;
+    },
+  };
 }
 
 /** Health ticks every 30 s (`R-039-6`). */
@@ -240,11 +266,17 @@ export class IntegrationsModule implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject(HUB) private readonly hub: Hub,
     @Inject(INTEGRATIONS_TICKER) private readonly ticker: Ticker,
+    @Inject(ADAPTER_CATALOG) private readonly catalog: AdapterCatalog,
+    @Inject(AuditService) private readonly audit: AuditService,
   ) {}
 
   async onModuleInit(): Promise<void> {
     // The deployment's Embed binding is read once, here (FR-HUB-084, analysis I1).
     await this.hub.deployment.observeAtBoot();
+    // `T2227` (FR-HUB-025) — a version the deployment changed is recorded by
+    // `system:catalog`. The last observed version is read from the audit
+    // trail, which is durable only under `DATABASE_URL`.
+    if (process.env['DATABASE_URL']) await observeCatalogVersions(catalogVersionSources(this.catalog, this.audit));
     this.ticker.start(HEALTH_TICK_MS, async () => {
       await this.hub.health.runDueHealthChecks();
       await this.hub.deployment.recheck();

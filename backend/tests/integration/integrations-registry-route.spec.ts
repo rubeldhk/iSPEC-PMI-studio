@@ -16,6 +16,7 @@
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { rebootApp } from '../helpers/authenticated-app.js';
 import { startIntegrationsApp, type IntegrationsApp } from '../helpers/integrations-app.js';
 
 const noRuntime = process.env['DOCKER_UNAVAILABLE'] === '1';
@@ -178,4 +179,32 @@ suite('T2170 · the vocabulary (FR-HUB-003)', () => {
     expect(res.body).toMatchObject({ name: 'SendNotification', status: 'approved', changesState: true });
     await get('/integrations/capabilities/SendNotification/versions/9.0').expect(404);
   });
+});
+
+suite('T2227 · a version the deployment changed is recorded at boot by system:catalog (FR-HUB-025)', () => {
+  // The audit trail is what the boot compares with. Recording an older
+  // observed version for fixture-ci stands in for "the previous deployment
+  // ran 0.0.9"; the reboot then finds 0.1.0 in the catalog.
+  it('one audit update with before/after on the reboot, and none on the next', async () => {
+    await t.sql(
+      `INSERT INTO "audit_entries" ("id","workspaceId","actorId","action","targetType","targetId","outcome","detail","occurredAt")
+       VALUES ($1,'ws_reg','system:catalog','update','integration-registry-entry',$2,'success',$3::jsonb, now())`,
+      [randomUUID(), ci, JSON.stringify({ key: 'fixture-ci', before: { version: '0.0.8' }, after: { version: '0.0.9' } })],
+    );
+    const changes = async () =>
+      t.sql<{ detail: { before: { version: string }; after: { version: string } } }>(
+        `SELECT "detail" FROM "audit_entries" WHERE "targetId" = $1 AND "actorId" = 'system:catalog' AND "action" = 'update' ORDER BY "occurredAt"`,
+        [ci],
+      );
+    const first = await rebootApp(t.databaseUrl, { workspaceId: 'ws_reg', userId: 'u_reg' });
+    await first.app.close();
+    const after = await changes();
+    expect(after.map((r) => r.detail)).toEqual([
+      { key: 'fixture-ci', before: { version: '0.0.8' }, after: { version: '0.0.9' } },
+      { key: 'fixture-ci', before: { version: '0.0.9' }, after: { version: '0.1.0' } },
+    ]);
+    const second = await rebootApp(t.databaseUrl, { workspaceId: 'ws_reg', userId: 'u_reg' });
+    await second.app.close();
+    expect(await changes()).toHaveLength(2);
+  }, 300_000);
 });
