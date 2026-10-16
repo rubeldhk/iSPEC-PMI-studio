@@ -30,6 +30,8 @@ What is **not** a table, on purpose:
 
 ---
 
+> **Updated 2026-10-16 (`T2629`, convergence).** This document lagged the code in five places, each corrected in its section: §1 the `document` column; §3 `providerBinding` held **per adapter**; §5 the `narrowing` column; §6 four refusal codes (`credential-material-in-content`, `invalid-input`, `batch-too-large`, `text-too-long`); §7 four intake reasons (`invocation-failed:*`, `no-binding`, `evidence-seam-unbound`, `evidence-store-refused:*`) and the `attestedArtifact` and `requestedBy` columns. `createdAt` columns the tables carry by convention are not listed.
+
 ## 1. `capability_contract_versions` — `CapabilityContractVersion`
 
 The vocabulary as the platform holds it (`FR-HUB-003`). Seeded from
@@ -49,6 +51,7 @@ the JSON files are the reviewed source, the rows are what the resolver reads (`R
 | `status` | `draft` \| `approved` \| `retired` | Approved rows are immutable (trigger, `FR-HUB-012`); retired = no new resolutions for that major once every minor of it is retired |
 | `approvedBy?`, `approvedAt?` | | Set once |
 | `createdBy`, `createdAt` | | `createdBy` = `git:packages/capability-contract/capabilities/<file>` for a seeded row (`FR-HUB-015`, below) |
+| `document` | jsonb | The whole contract document as committed — the seed-equality check (`T2126`) compares it with the JSON file; the columns above are its indexed projection (`T2629`) |
 
 **`FR-HUB-015` — the record of a contract change (remediated 2026-10-10, analysis C1).** A
 contract is defined or changed only by adding a JSON file under `capabilities/` and a migration that
@@ -112,7 +115,7 @@ For one project and one capability: which adapters the project uses and how (`FR
 | `permittedEnvironments` | text[] | Subset of `PLATFORM_ENVIRONMENTS` (`local`, `dev`, `stage`, `prod`); default all four (`R-039-8`) |
 | `onNotNarrowable` | `refuse` \| `proceed-and-record` | Default `refuse` when the capability `changesState`, else `proceed-and-record` (`FR-HUB-034`) |
 | `healthIntervalSeconds` | int, default 300, 60–3600 | Per project (`FR-HUB-027`); stored on the project's configuration of each capability, effective value = minimum over the project's rows naming the adapter |
-| `providerBinding` | jsonb | Provider-neutral binding data the adapter needs and that is **not secret** — for the Git host `{ repository: "owner/name" }`, for test results `{ artifactName: "test-results", resultFormat: "junit-xml" }`, for notifications `{ from: "PMI Studio <noreply@…>" }`. Validated against the adapter's declared binding schema (`R-039-4`). Any value that `looksLikeSecret` is refused (`FR-HUB-045`) |
+| `providerBinding` | jsonb `{ [registryEntryId]: binding }` | **Per adapter** (the `T2141` deviation: two adapters of one capability need different bindings), each binding provider-neutral data the adapter needs and **not secret** — for the Git host `{ repository: "owner/name" }`, for test results `{ artifactName: "test-results", resultFormat: "junit-xml" }`, for notifications `{ from: "PMI Studio <noreply@…>" }`. Validated against the adapter's declared binding schema (`R-039-4`). Any value that `looksLikeSecret` is refused (`FR-HUB-045`) |
 | `configVersion` | int ≥ 1 | Incremented on every change; the `objectVersion` of the policy decision |
 | `decisionId?` | text | `EPIC-031` decision for this configuration version (`R-039-7`); the adapter is policy-permitted only while the decision resolves `approved` or `auto-executed`. **Status derived at resolution, never cached** |
 | `updatedBy`, `updatedAt` | | Every change is a recorded configuration event (`FR-HUB-062`) and a new decision |
@@ -171,6 +174,7 @@ project (`FR-HUB-026`, `FR-HUB-027`).
 | `detail?` | text | Provider message, passed through `sanitiseText` first (`FR-HUB-045`) |
 | `retryAfterSeconds?` | int | From the provider's throttle hint |
 | `adapterVersion` | text | The version that was checked |
+| `narrowing?` | `exact` \| `narrowed-at-issue` \| `not-narrowable` | What the check learned about the credential's scope — e.g. a Resend key read as sending-only (`narrowed-at-issue`) or full access (`not-narrowable`) (`FR-HUB-034`, `T2629`) |
 | `checkedAt` | timestamptz | |
 | `durationMs` | int | |
 
@@ -207,7 +211,7 @@ Append-only (trigger). One row per resolver decision (`FR-HUB-036`, `FR-HUB-037`
 | `capability`, `requestedMajor` | text, int | |
 | `contractVersion?` | text `major.minor` | The version bound, on success |
 | `outcome` | `resolved` \| `refused` | |
-| `refusalCode?` | `unknown-capability` \| `provider-pinned` \| `caller-not-platform` \| `no-compatible-adapter` \| `no-eligible-adapter` \| `ambiguous` \| `scope-not-narrowable` \| `policy-seam-unbound` | Top-level code. Per-candidate ineligibility reasons live in `reasons`: `not-configured`, `credential-missing`, `health-unknown`, `health-unhealthy`, `health-degraded-not-permitted`, `environment-not-permitted`, `policy-pending`, `policy-not-permitted`, `incompatible-major`, `retired`, `not-in-build` |
+| `refusalCode?` | `unknown-capability` \| `provider-pinned` \| `caller-not-platform` \| `no-compatible-adapter` \| `no-eligible-adapter` \| `ambiguous` \| `scope-not-narrowable` \| `policy-seam-unbound` \| `credential-material-in-content` \| `invalid-input` \| `batch-too-large` \| `text-too-long` (the last four added by `T2629`: a secret in the input, a malformed input, and the two `Embed` limits of `FR-HUB-083`) | Top-level code. Per-candidate ineligibility reasons live in `reasons`: `not-configured`, `credential-missing`, `health-unknown`, `health-unhealthy`, `health-degraded-not-permitted`, `environment-not-permitted`, `policy-pending`, `policy-not-permitted`, `incompatible-major`, `retired`, `not-in-build` |
 | `registryEntryId?`, `adapterKey?`, `adapterVersion?`, `provider?` | | On success |
 | `modelIdentity?` | jsonb `{ model, version, dimension }` | `Embed` only — recorded on every resolution (`FR-HUB-082`) |
 | `scopeGranted?` | jsonb | `{ requested, granted, narrowing: 'exact' \| 'narrowed-at-issue' \| 'not-narrowable' }` — never a credential (`FR-HUB-034`) |
@@ -258,7 +262,9 @@ record of trying to obtain it.
 | `capability` | `ReadTestResults` \| `ReadBuildStatus` | `FR-HUB-050` |
 | `revision` | text | The commit the work produced |
 | `state` | `pending` \| `contributed` \| `not-contributed` \| `gave-up` \| `refused` | |
-| `reason?` | text | Required unless `contributed`: `no-revision`, `not-final`, `resolution-refused:<code>`, `bound-exceeded` (`FR-HUB-053`–`FR-HUB-055`) |
+| `reason?` | text | Required unless `contributed`: `no-revision`, `not-final`, `resolution-refused:<code>`, `invocation-failed:<category>`, `no-binding` (no `EPIC-032` binding reads this item), `evidence-seam-unbound`, `evidence-store-refused: <message>`, `bound-exceeded` (`FR-HUB-053`–`FR-HUB-055`; the four middle ones added by `T2629`) |
+| `attestedArtifact?` | jsonb `{ id, version }` | The governed artifact the evidence attests, when the intake names one; else the binding's subject is used (`T2215`) |
+| `requestedBy` | text | The principal that enqueued the intake (`T2629`) |
 | `resolutionIds` | uuid[] | Every resolution this intake made |
 | `attestationId?` | text | `EPIC-032`'s id for the contributed evidence |
 | `attempts`, `nextAttemptAt?`, `giveUpAt` | int, timestamptz | Re-read every 120 s until `giveUpAt` (default 30 min) (`FR-HUB-054`, `R-039-15`) |

@@ -238,18 +238,20 @@ Complete: [data-model.md](./data-model.md), [contracts/integration-hub-api.md](.
 
 ## Constitution XI — reachability plan
 
+> **Updated 2026-10-16 (`T2629`, convergence).** Two rows below said what the code does not do: `SendNotification` is not requested over HTTP as `notification-dispatch` (U1 refuses that caller over HTTP, `caller-not-platform`), and a connector credential is refused `400 surface_not_accepted`, not `403`. Corrected in place.
+
 **Tier 1 — through real entry points against `AppModule`**
 
 | Capability | Real entry point | Quickstart |
 |---|---|---|
 | Registry read (both directions, `pmi-studio` first) | `GET /integrations/registry` | Q3 |
 | Each read capability, fixture and GitHub-recorded | `POST /projects/:id/capability-requests` | Q4–Q9 |
-| `SendNotification` | the same route, caller `notification-dispatch` | Q10 |
+| `SendNotification` | the same route with a `room:*` caller, and in process through `hub.notifications` as `notification-dispatch` — a caller HTTP cannot claim (analysis U1) | Q10 |
 | Credentials set / status / remove; owner grant | `PUT/GET/DELETE /projects/:id/integrations/credentials/…` | Q12–Q14 |
 | Health interval and staleness | the `runDueHealthChecks` job handler driven by the manual ticker | Q15 |
 | Evidence intake → `EPIC-032` | `POST …/evidence-intake` and the `integrations.evidence-intake` job **(after `EPIC-032` merges)** | Q17 |
 | `Embed` → `EPIC-038` | `POST /context/packages`, `POST /context/index/reindex` **(after `EPIC-038` retrieval merges)** | Q19 |
-| Local agent cannot run a capability | the same route with a connector credential → `403` | Q11 |
+| Local agent cannot run a capability | the same route with a connector credential → `400 surface_not_accepted`, the platform's existing mapping (API §5) | Q11 |
 
 **Tier 2 — the view-only Integrations screen.** A Playwright walk (`e2e/tests/epic-039-m1.spec.ts`)
 against the reference-local stack writes `docs/uat/EPIC-039-m1-transcript.md` (run-generated,
